@@ -73,10 +73,6 @@ func (h *Handler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
 
 	req.TemplateId = ulid.Make().String()
 
-	// Fix Go template syntax by injecting dot for variables like {{name}} -> {{.name}}
-	req.TitleTpl = tplVarRegex.ReplaceAllString(req.TitleTpl, "{{.$1}}")
-	req.ContentTpl = tplVarRegex.ReplaceAllString(req.ContentTpl, "{{.$1}}")
-
 	resp, err := h.Gmsg.CreateTemplate(r.Context(), &req)
 	if err != nil {
 		slog.Error("CreateTemplate failed", "error", err)
@@ -113,10 +109,6 @@ func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-
-	// Fix Go template syntax by injecting dot for variables like {{name}} -> {{.name}}
-	req.TitleTpl = tplVarRegex.ReplaceAllString(req.TitleTpl, "{{.$1}}")
-	req.ContentTpl = tplVarRegex.ReplaceAllString(req.ContentTpl, "{{.$1}}")
 
 	resp, err := h.Gmsg.UpdateTemplate(r.Context(), &req)
 	if err != nil {

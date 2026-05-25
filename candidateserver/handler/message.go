@@ -72,7 +72,9 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 				for k, v := range payloadData {
 					valStr := fmt.Sprintf("%v", v)
 					title = strings.ReplaceAll(title, "{{"+k+"}}", valStr)
+					title = strings.ReplaceAll(title, "{{."+k+"}}", valStr)
 					content = strings.ReplaceAll(content, "{{"+k+"}}", valStr)
+					content = strings.ReplaceAll(content, "{{."+k+"}}", valStr)
 				}
 				
 				// 构建前端所需格式
