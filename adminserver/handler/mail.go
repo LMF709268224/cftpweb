@@ -42,7 +42,7 @@ func (h *Handler) SendMail(w http.ResponseWriter, r *http.Request) {
 		ToEmail:      input.ToEmail,
 		ToName:       input.ToName,
 		Subject:      subject,
-		Priority:     1, // 默认优先级
+		Priority:     0, // 默认优先级
 		TemplateId:   input.TemplateId,
 		Payload:      input.Payload,
 		IsHtml:       input.IsHtml,
