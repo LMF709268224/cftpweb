@@ -298,6 +298,7 @@ export const zh = {
     totalItems: "共 {{total}} 条",
     page: "页码",
     pageSize: "每页条数"
+  }
 }
 
 export type AppTranslations = typeof zh;

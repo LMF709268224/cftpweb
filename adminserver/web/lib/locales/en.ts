@@ -300,4 +300,5 @@ export const en: AppTranslations = {
     totalItems: "Total: {{total}}",
     page: "Page",
     pageSize: "Items/Page"
+  }
 }
