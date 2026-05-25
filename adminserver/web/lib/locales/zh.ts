@@ -229,7 +229,18 @@ export const zh = {
     alertUpdateSuccess: "模板更新成功！",
     alertDeleteNotSupported: "抱歉，底层 gmsg 微服务暂不支持删除操作。",
     confirmDelete: "确定要删除此模板吗？",
-    alertDeleteSuccess: "模板删除成功！"
+    alertDeleteSuccess: "模板删除成功！",
+    statusFilter: "状态筛选",
+    statusAll: "全部",
+    statusUnread: "未读",
+    statusRead: "已读",
+    statusDeleted: "已删除",
+    statusRevoked: "已撤回",
+    prevPage: "上一页",
+    nextPage: "下一页",
+    totalItems: "共 {{total}} 条",
+    page: "页码",
+    pageSize: "每页条数"
   },
   mailsPage: {
     title: "邮件系统",
@@ -275,8 +286,18 @@ export const zh = {
     alertUpdateSuccess: "模板更新成功！",
     alertDeleteNotSupported: "抱歉，底层 gmail 微服务暂不支持删除操作。",
     confirmDelete: "确定要删除此模板吗？",
-    alertDeleteSuccess: "模板删除成功！"
-  }
+    alertDeleteSuccess: "模板删除成功！",
+    statusFilter: "状态筛选",
+    statusAll: "全部",
+    statusScheduling: "排队中",
+    statusSent: "已下发",
+    statusFailed: "失败",
+    statusCancelled: "已取消",
+    prevPage: "上一页",
+    nextPage: "下一页",
+    totalItems: "共 {{total}} 条",
+    page: "页码",
+    pageSize: "每页条数"
 }
 
 export type AppTranslations = typeof zh;

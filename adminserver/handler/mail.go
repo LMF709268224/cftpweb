@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"regexp"
+	"strconv"
 
 	"github.com/oklog/ulid/v2"
 
@@ -71,6 +72,41 @@ func (h *Handler) GetMail(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("GetMail failed", "error", err)
 		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// ListSentMails GET /api/mails/sent
+func (h *Handler) ListSentMails(w http.ResponseWriter, r *http.Request) {
+	page := 1
+	pageSize := 50
+	
+	if p := r.URL.Query().Get("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = v
+		}
+	}
+	if ps := r.URL.Query().Get("page_size"); ps != "" {
+		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
+			pageSize = v
+		}
+	}
+
+	var statusPtr *string
+	if status := r.URL.Query().Get("status"); status != "" {
+		statusPtr = &status
+	}
+
+	resp, err := h.Gmail.ListMails(r.Context(), &gmailpb.ListMailsRequest{
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
+		Status:   statusPtr,
+	})
+	if err != nil {
+		slog.Error("ListMails failed", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to list mails")
 		return
 	}
 

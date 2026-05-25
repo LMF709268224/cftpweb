@@ -19,16 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MessageService_ListMessages_FullMethodName     = "/gmsg.MessageService/ListMessages"
-	MessageService_MarkAsRead_FullMethodName       = "/gmsg.MessageService/MarkAsRead"
-	MessageService_DeleteMessages_FullMethodName   = "/gmsg.MessageService/DeleteMessages"
-	MessageService_ClearAllMessages_FullMethodName = "/gmsg.MessageService/ClearAllMessages"
-	MessageService_SendMessage_FullMethodName      = "/gmsg.MessageService/SendMessage"
-	MessageService_RevokeMessage_FullMethodName    = "/gmsg.MessageService/RevokeMessage"
-	MessageService_CreateTemplate_FullMethodName   = "/gmsg.MessageService/CreateTemplate"
-	MessageService_GetTemplate_FullMethodName      = "/gmsg.MessageService/GetTemplate"
-	MessageService_UpdateTemplate_FullMethodName   = "/gmsg.MessageService/UpdateTemplate"
-	MessageService_ListTemplates_FullMethodName    = "/gmsg.MessageService/ListTemplates"
+	MessageService_ListMessages_FullMethodName      = "/gmsg.MessageService/ListMessages"
+	MessageService_MarkAsRead_FullMethodName        = "/gmsg.MessageService/MarkAsRead"
+	MessageService_DeleteMessages_FullMethodName    = "/gmsg.MessageService/DeleteMessages"
+	MessageService_ClearAllMessages_FullMethodName  = "/gmsg.MessageService/ClearAllMessages"
+	MessageService_SendMessage_FullMethodName       = "/gmsg.MessageService/SendMessage"
+	MessageService_RevokeMessage_FullMethodName     = "/gmsg.MessageService/RevokeMessage"
+	MessageService_ListMessagesAdmin_FullMethodName = "/gmsg.MessageService/ListMessagesAdmin"
+	MessageService_GetMessageStats_FullMethodName   = "/gmsg.MessageService/GetMessageStats"
+	MessageService_CreateTemplate_FullMethodName    = "/gmsg.MessageService/CreateTemplate"
+	MessageService_GetTemplate_FullMethodName       = "/gmsg.MessageService/GetTemplate"
+	MessageService_UpdateTemplate_FullMethodName    = "/gmsg.MessageService/UpdateTemplate"
+	MessageService_ListTemplates_FullMethodName     = "/gmsg.MessageService/ListTemplates"
 )
 
 // MessageServiceClient is the client API for MessageService service.
@@ -45,6 +47,9 @@ type MessageServiceClient interface {
 	// --- 管理端：消息操作 ---
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
 	RevokeMessage(ctx context.Context, in *RevokeMessageRequest, opts ...grpc.CallOption) (*CommonResponse, error)
+	// --- 管理端：分页列出消息与计数 ---
+	ListMessagesAdmin(ctx context.Context, in *ListMessagesAdminRequest, opts ...grpc.CallOption) (*ListMessagesAdminResponse, error)
+	GetMessageStats(ctx context.Context, in *GetMessageStatsRequest, opts ...grpc.CallOption) (*GetMessageStatsResponse, error)
 	// --- 管理端：模板 CRUD ---
 	CreateTemplate(ctx context.Context, in *CreateTemplateRequest, opts ...grpc.CallOption) (*Template, error)
 	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*Template, error)
@@ -120,6 +125,26 @@ func (c *messageServiceClient) RevokeMessage(ctx context.Context, in *RevokeMess
 	return out, nil
 }
 
+func (c *messageServiceClient) ListMessagesAdmin(ctx context.Context, in *ListMessagesAdminRequest, opts ...grpc.CallOption) (*ListMessagesAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMessagesAdminResponse)
+	err := c.cc.Invoke(ctx, MessageService_ListMessagesAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *messageServiceClient) GetMessageStats(ctx context.Context, in *GetMessageStatsRequest, opts ...grpc.CallOption) (*GetMessageStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMessageStatsResponse)
+	err := c.cc.Invoke(ctx, MessageService_GetMessageStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *messageServiceClient) CreateTemplate(ctx context.Context, in *CreateTemplateRequest, opts ...grpc.CallOption) (*Template, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Template)
@@ -174,6 +199,9 @@ type MessageServiceServer interface {
 	// --- 管理端：消息操作 ---
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
 	RevokeMessage(context.Context, *RevokeMessageRequest) (*CommonResponse, error)
+	// --- 管理端：分页列出消息与计数 ---
+	ListMessagesAdmin(context.Context, *ListMessagesAdminRequest) (*ListMessagesAdminResponse, error)
+	GetMessageStats(context.Context, *GetMessageStatsRequest) (*GetMessageStatsResponse, error)
 	// --- 管理端：模板 CRUD ---
 	CreateTemplate(context.Context, *CreateTemplateRequest) (*Template, error)
 	GetTemplate(context.Context, *GetTemplateRequest) (*Template, error)
@@ -206,6 +234,12 @@ func (UnimplementedMessageServiceServer) SendMessage(context.Context, *SendMessa
 }
 func (UnimplementedMessageServiceServer) RevokeMessage(context.Context, *RevokeMessageRequest) (*CommonResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeMessage not implemented")
+}
+func (UnimplementedMessageServiceServer) ListMessagesAdmin(context.Context, *ListMessagesAdminRequest) (*ListMessagesAdminResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMessagesAdmin not implemented")
+}
+func (UnimplementedMessageServiceServer) GetMessageStats(context.Context, *GetMessageStatsRequest) (*GetMessageStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMessageStats not implemented")
 }
 func (UnimplementedMessageServiceServer) CreateTemplate(context.Context, *CreateTemplateRequest) (*Template, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateTemplate not implemented")
@@ -348,6 +382,42 @@ func _MessageService_RevokeMessage_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessageService_ListMessagesAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMessagesAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessageServiceServer).ListMessagesAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessageService_ListMessagesAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessageServiceServer).ListMessagesAdmin(ctx, req.(*ListMessagesAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MessageService_GetMessageStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMessageStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessageServiceServer).GetMessageStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessageService_GetMessageStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessageServiceServer).GetMessageStats(ctx, req.(*GetMessageStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MessageService_CreateTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateTemplateRequest)
 	if err := dec(in); err != nil {
@@ -450,6 +520,14 @@ var MessageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeMessage",
 			Handler:    _MessageService_RevokeMessage_Handler,
+		},
+		{
+			MethodName: "ListMessagesAdmin",
+			Handler:    _MessageService_ListMessagesAdmin_Handler,
+		},
+		{
+			MethodName: "GetMessageStats",
+			Handler:    _MessageService_GetMessageStats_Handler,
 		},
 		{
 			MethodName: "CreateTemplate",

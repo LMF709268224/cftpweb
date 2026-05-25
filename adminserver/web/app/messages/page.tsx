@@ -22,6 +22,10 @@ export default function AdminMessagesPage() {
   // For listing
   const [sentMessages, setSentMessages] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [statusFilter, setStatusFilter] = useState("")
+  const [totalCount, setTotalCount] = useState(0)
 
   // For templates
   const [templates, setTemplates] = useState<any[]>([])
@@ -42,7 +46,7 @@ export default function AdminMessagesPage() {
     if (activeTab === "sent") {
       fetchSentMessages()
     }
-  }, [activeTab])
+  }, [activeTab, page, statusFilter])
 
   const fetchUsers = async () => {
     try {
@@ -142,9 +146,14 @@ export default function AdminMessagesPage() {
   const fetchSentMessages = async () => {
     setLoading(true)
     try {
-      const res = await apiClient("/api/messages/sent")
-      if (res && res.messages) {
-        setSentMessages(res.messages)
+      let query = `/api/messages/sent?page=${page}&page_size=${pageSize}`
+      if (statusFilter !== "") {
+        query += `&status=${statusFilter}`
+      }
+      const res = await apiClient(query)
+      if (res) {
+        setSentMessages(res.messages || [])
+        setTotalCount(res.total || 0)
       }
     } catch (err) {
       console.error(err)
@@ -348,7 +357,26 @@ export default function AdminMessagesPage() {
 
           {activeTab === "sent" && (
             <div className="bg-card rounded-xl border p-6">
-              <h2 className="text-lg font-semibold mb-6">{t.messagesPage.sentHistory}</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold">{t.messagesPage.sentHistory}</h2>
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium text-muted-foreground">{t.messagesPage.statusFilter}</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setPage(1)
+                      setStatusFilter(e.target.value)
+                    }}
+                    className="rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">{t.messagesPage.statusAll}</option>
+                    <option value="0">{t.messagesPage.statusUnread}</option>
+                    <option value="1">{t.messagesPage.statusRead}</option>
+                    <option value="2">{t.messagesPage.statusDeleted}</option>
+                    <option value="3">{t.messagesPage.statusRevoked}</option>
+                  </select>
+                </div>
+              </div>
 
               {loading ? (
                 <div className="text-muted-foreground py-4">{t.messagesPage.loading}</div>
@@ -356,10 +384,36 @@ export default function AdminMessagesPage() {
                 <div className="space-y-4">
                   {sentMessages.map((msg, i) => (
                     <div key={i} className="border-b pb-4 last:border-0">
-                      <div className="font-medium">{msg.template_id}</div>
-                      <div className="text-sm text-muted-foreground mt-1">{msg.payload}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium">UID: {msg.user_id} - TPL: {msg.template_id}</div>
+                        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Status: {msg.status}</div>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1 font-mono">{msg.payload}</div>
                     </div>
                   ))}
+                  
+                  <div className="flex items-center justify-between pt-4 border-t mt-6">
+                    <div className="text-sm text-muted-foreground">
+                      {t.messagesPage.totalItems.replace('{{total}}', String(totalCount))}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="px-3 py-1 border rounded text-sm disabled:opacity-50 hover:bg-muted"
+                      >
+                        {t.messagesPage.prevPage}
+                      </button>
+                      <span className="px-3 py-1 text-sm">{page}</span>
+                      <button
+                        onClick={() => setPage(p => p + 1)}
+                        disabled={page * pageSize >= totalCount}
+                        className="px-3 py-1 border rounded text-sm disabled:opacity-50 hover:bg-muted"
+                      >
+                        {t.messagesPage.nextPage}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">

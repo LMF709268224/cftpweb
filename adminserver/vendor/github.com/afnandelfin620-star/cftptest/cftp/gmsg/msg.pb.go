@@ -25,8 +25,10 @@ const (
 type MessageStatus int32
 
 const (
-	MessageStatus_UNREAD MessageStatus = 0
-	MessageStatus_READ   MessageStatus = 1
+	MessageStatus_UNREAD  MessageStatus = 0
+	MessageStatus_READ    MessageStatus = 1
+	MessageStatus_DELETED MessageStatus = 2
+	MessageStatus_REVOKED MessageStatus = 3
 )
 
 // Enum value maps for MessageStatus.
@@ -34,10 +36,14 @@ var (
 	MessageStatus_name = map[int32]string{
 		0: "UNREAD",
 		1: "READ",
+		2: "DELETED",
+		3: "REVOKED",
 	}
 	MessageStatus_value = map[string]int32{
-		"UNREAD": 0,
-		"READ":   1,
+		"UNREAD":  0,
+		"READ":    1,
+		"DELETED": 2,
+		"REVOKED": 3,
 	}
 )
 
@@ -1210,6 +1216,306 @@ func (x *MarkAsReadRequest) GetMessageIds() []string {
 	return nil
 }
 
+type ListMessagesAdminRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        *MessageStatus         `protobuf:"varint,1,opt,name=status,proto3,enum=gmsg.MessageStatus,oneof" json:"status,omitempty"` // 消息状态 [optional]
+	Page          uint32                 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`                                   // 页码 [optional]
+	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`           // 每页数量 [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMessagesAdminRequest) Reset() {
+	*x = ListMessagesAdminRequest{}
+	mi := &file_msg_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMessagesAdminRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMessagesAdminRequest) ProtoMessage() {}
+
+func (x *ListMessagesAdminRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMessagesAdminRequest.ProtoReflect.Descriptor instead.
+func (*ListMessagesAdminRequest) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ListMessagesAdminRequest) GetStatus() MessageStatus {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return MessageStatus_UNREAD
+}
+
+func (x *ListMessagesAdminRequest) GetPage() uint32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListMessagesAdminRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type MessageItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                  // 自增ID, 主键
+	MessageId     string                 `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`    // 消息ID
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // 用户ID
+	TemplateId    string                 `protobuf:"bytes,4,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"` // 模板ID
+	MsgType       MsgType                `protobuf:"varint,5,opt,name=msg_type,json=msgType,proto3,enum=gmsg.MsgType" json:"msg_type,omitempty"`
+	MsgSource     MsgSource              `protobuf:"varint,6,opt,name=msg_source,json=msgSource,proto3,enum=gmsg.MsgSource" json:"msg_source,omitempty"`
+	SenderId      string                 `protobuf:"bytes,7,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
+	Status        MessageStatus          `protobuf:"varint,8,opt,name=status,proto3,enum=gmsg.MessageStatus" json:"status,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MessageItem) Reset() {
+	*x = MessageItem{}
+	mi := &file_msg_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MessageItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MessageItem) ProtoMessage() {}
+
+func (x *MessageItem) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MessageItem.ProtoReflect.Descriptor instead.
+func (*MessageItem) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *MessageItem) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *MessageItem) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
+	}
+	return ""
+}
+
+func (x *MessageItem) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *MessageItem) GetTemplateId() string {
+	if x != nil {
+		return x.TemplateId
+	}
+	return ""
+}
+
+func (x *MessageItem) GetMsgType() MsgType {
+	if x != nil {
+		return x.MsgType
+	}
+	return MsgType_UNKNOWN_TYPE
+}
+
+func (x *MessageItem) GetMsgSource() MsgSource {
+	if x != nil {
+		return x.MsgSource
+	}
+	return MsgSource_UNKNOWN_SOURCE
+}
+
+func (x *MessageItem) GetSenderId() string {
+	if x != nil {
+		return x.SenderId
+	}
+	return ""
+}
+
+func (x *MessageItem) GetStatus() MessageStatus {
+	if x != nil {
+		return x.Status
+	}
+	return MessageStatus_UNREAD
+}
+
+func (x *MessageItem) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ListMessagesAdminResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Messages      []*MessageItem         `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
+	Total         uint32                 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMessagesAdminResponse) Reset() {
+	*x = ListMessagesAdminResponse{}
+	mi := &file_msg_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMessagesAdminResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMessagesAdminResponse) ProtoMessage() {}
+
+func (x *ListMessagesAdminResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMessagesAdminResponse.ProtoReflect.Descriptor instead.
+func (*ListMessagesAdminResponse) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ListMessagesAdminResponse) GetMessages() []*MessageItem {
+	if x != nil {
+		return x.Messages
+	}
+	return nil
+}
+
+func (x *ListMessagesAdminResponse) GetTotal() uint32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type GetMessageStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMessageStatsRequest) Reset() {
+	*x = GetMessageStatsRequest{}
+	mi := &file_msg_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMessageStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMessageStatsRequest) ProtoMessage() {}
+
+func (x *GetMessageStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMessageStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetMessageStatsRequest) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{19}
+}
+
+type GetMessageStatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StatusCounts  map[string]int64       `protobuf:"bytes,1,rep,name=status_counts,json=statusCounts,proto3" json:"status_counts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMessageStatsResponse) Reset() {
+	*x = GetMessageStatsResponse{}
+	mi := &file_msg_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMessageStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMessageStatsResponse) ProtoMessage() {}
+
+func (x *GetMessageStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMessageStatsResponse.ProtoReflect.Descriptor instead.
+func (*GetMessageStatsResponse) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetMessageStatsResponse) GetStatusCounts() map[string]int64 {
+	if x != nil {
+		return x.StatusCounts
+	}
+	return nil
+}
+
 var File_msg_proto protoreflect.FileDescriptor
 
 const file_msg_proto_rawDesc = "" +
@@ -1308,11 +1614,41 @@ const file_msg_proto_rawDesc = "" +
 	"\x11MarkAsReadRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1f\n" +
 	"\vmessage_ids\x18\x02 \x03(\tR\n" +
-	"messageIds*%\n" +
+	"messageIds\"\x88\x01\n" +
+	"\x18ListMessagesAdminRequest\x120\n" +
+	"\x06status\x18\x01 \x01(\x0e2\x13.gmsg.MessageStatusH\x00R\x06status\x88\x01\x01\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\rR\bpageSizeB\t\n" +
+	"\a_status\"\xb9\x02\n" +
+	"\vMessageItem\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x02 \x01(\tR\tmessageId\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\x12\x1f\n" +
+	"\vtemplate_id\x18\x04 \x01(\tR\n" +
+	"templateId\x12(\n" +
+	"\bmsg_type\x18\x05 \x01(\x0e2\r.gmsg.MsgTypeR\amsgType\x12.\n" +
+	"\n" +
+	"msg_source\x18\x06 \x01(\x0e2\x0f.gmsg.MsgSourceR\tmsgSource\x12\x1b\n" +
+	"\tsender_id\x18\a \x01(\tR\bsenderId\x12+\n" +
+	"\x06status\x18\b \x01(\x0e2\x13.gmsg.MessageStatusR\x06status\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\"`\n" +
+	"\x19ListMessagesAdminResponse\x12-\n" +
+	"\bmessages\x18\x01 \x03(\v2\x11.gmsg.MessageItemR\bmessages\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"\x18\n" +
+	"\x16GetMessageStatsRequest\"\xb0\x01\n" +
+	"\x17GetMessageStatsResponse\x12T\n" +
+	"\rstatus_counts\x18\x01 \x03(\v2/.gmsg.GetMessageStatsResponse.StatusCountsEntryR\fstatusCounts\x1a?\n" +
+	"\x11StatusCountsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01*?\n" +
 	"\rMessageStatus\x12\n" +
 	"\n" +
 	"\x06UNREAD\x10\x00\x12\b\n" +
-	"\x04READ\x10\x01*p\n" +
+	"\x04READ\x10\x01\x12\v\n" +
+	"\aDELETED\x10\x02\x12\v\n" +
+	"\aREVOKED\x10\x03*p\n" +
 	"\aMsgType\x12\x10\n" +
 	"\fUNKNOWN_TYPE\x10\x00\x12\x11\n" +
 	"\rSYSTEM_NOTICE\x10\x01\x12\x0f\n" +
@@ -1323,7 +1659,7 @@ const file_msg_proto_rawDesc = "" +
 	"\tMsgSource\x12\x12\n" +
 	"\x0eUNKNOWN_SOURCE\x10\x00\x12\x0f\n" +
 	"\vAUTO_SYSTEM\x10\x01\x12\x10\n" +
-	"\fMANUAL_ADMIN\x10\x022\xaa\x05\n" +
+	"\fMANUAL_ADMIN\x10\x022\xd0\x06\n" +
 	"\x0eMessageService\x12E\n" +
 	"\fListMessages\x12\x19.gmsg.ListMessagesRequest\x1a\x1a.gmsg.ListMessagesResponse\x12;\n" +
 	"\n" +
@@ -1331,7 +1667,9 @@ const file_msg_proto_rawDesc = "" +
 	"\x0eDeleteMessages\x12\x1b.gmsg.DeleteMessagesRequest\x1a\x14.gmsg.CommonResponse\x12G\n" +
 	"\x10ClearAllMessages\x12\x1d.gmsg.ClearAllMessagesRequest\x1a\x14.gmsg.CommonResponse\x12B\n" +
 	"\vSendMessage\x12\x18.gmsg.SendMessageRequest\x1a\x19.gmsg.SendMessageResponse\x12A\n" +
-	"\rRevokeMessage\x12\x1a.gmsg.RevokeMessageRequest\x1a\x14.gmsg.CommonResponse\x12=\n" +
+	"\rRevokeMessage\x12\x1a.gmsg.RevokeMessageRequest\x1a\x14.gmsg.CommonResponse\x12T\n" +
+	"\x11ListMessagesAdmin\x12\x1e.gmsg.ListMessagesAdminRequest\x1a\x1f.gmsg.ListMessagesAdminResponse\x12N\n" +
+	"\x0fGetMessageStats\x12\x1c.gmsg.GetMessageStatsRequest\x1a\x1d.gmsg.GetMessageStatsResponse\x12=\n" +
 	"\x0eCreateTemplate\x12\x1b.gmsg.CreateTemplateRequest\x1a\x0e.gmsg.Template\x127\n" +
 	"\vGetTemplate\x12\x18.gmsg.GetTemplateRequest\x1a\x0e.gmsg.Template\x12=\n" +
 	"\x0eUpdateTemplate\x12\x1b.gmsg.UpdateTemplateRequest\x1a\x0e.gmsg.Template\x12H\n" +
@@ -1350,27 +1688,33 @@ func file_msg_proto_rawDescGZIP() []byte {
 }
 
 var file_msg_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_msg_proto_goTypes = []any{
-	(MessageStatus)(0),              // 0: gmsg.MessageStatus
-	(MsgType)(0),                    // 1: gmsg.MsgType
-	(MsgSource)(0),                  // 2: gmsg.MsgSource
-	(*Message)(nil),                 // 3: gmsg.Message
-	(*Template)(nil),                // 4: gmsg.Template
-	(*CommonResponse)(nil),          // 5: gmsg.CommonResponse
-	(*ListMessagesRequest)(nil),     // 6: gmsg.ListMessagesRequest
-	(*ListMessagesResponse)(nil),    // 7: gmsg.ListMessagesResponse
-	(*DeleteMessagesRequest)(nil),   // 8: gmsg.DeleteMessagesRequest
-	(*ClearAllMessagesRequest)(nil), // 9: gmsg.ClearAllMessagesRequest
-	(*SendMessageRequest)(nil),      // 10: gmsg.SendMessageRequest
-	(*SendMessageResponse)(nil),     // 11: gmsg.SendMessageResponse
-	(*RevokeMessageRequest)(nil),    // 12: gmsg.RevokeMessageRequest
-	(*CreateTemplateRequest)(nil),   // 13: gmsg.CreateTemplateRequest
-	(*GetTemplateRequest)(nil),      // 14: gmsg.GetTemplateRequest
-	(*UpdateTemplateRequest)(nil),   // 15: gmsg.UpdateTemplateRequest
-	(*ListTemplatesRequest)(nil),    // 16: gmsg.ListTemplatesRequest
-	(*ListTemplatesResponse)(nil),   // 17: gmsg.ListTemplatesResponse
-	(*MarkAsReadRequest)(nil),       // 18: gmsg.MarkAsReadRequest
+	(MessageStatus)(0),                // 0: gmsg.MessageStatus
+	(MsgType)(0),                      // 1: gmsg.MsgType
+	(MsgSource)(0),                    // 2: gmsg.MsgSource
+	(*Message)(nil),                   // 3: gmsg.Message
+	(*Template)(nil),                  // 4: gmsg.Template
+	(*CommonResponse)(nil),            // 5: gmsg.CommonResponse
+	(*ListMessagesRequest)(nil),       // 6: gmsg.ListMessagesRequest
+	(*ListMessagesResponse)(nil),      // 7: gmsg.ListMessagesResponse
+	(*DeleteMessagesRequest)(nil),     // 8: gmsg.DeleteMessagesRequest
+	(*ClearAllMessagesRequest)(nil),   // 9: gmsg.ClearAllMessagesRequest
+	(*SendMessageRequest)(nil),        // 10: gmsg.SendMessageRequest
+	(*SendMessageResponse)(nil),       // 11: gmsg.SendMessageResponse
+	(*RevokeMessageRequest)(nil),      // 12: gmsg.RevokeMessageRequest
+	(*CreateTemplateRequest)(nil),     // 13: gmsg.CreateTemplateRequest
+	(*GetTemplateRequest)(nil),        // 14: gmsg.GetTemplateRequest
+	(*UpdateTemplateRequest)(nil),     // 15: gmsg.UpdateTemplateRequest
+	(*ListTemplatesRequest)(nil),      // 16: gmsg.ListTemplatesRequest
+	(*ListTemplatesResponse)(nil),     // 17: gmsg.ListTemplatesResponse
+	(*MarkAsReadRequest)(nil),         // 18: gmsg.MarkAsReadRequest
+	(*ListMessagesAdminRequest)(nil),  // 19: gmsg.ListMessagesAdminRequest
+	(*MessageItem)(nil),               // 20: gmsg.MessageItem
+	(*ListMessagesAdminResponse)(nil), // 21: gmsg.ListMessagesAdminResponse
+	(*GetMessageStatsRequest)(nil),    // 22: gmsg.GetMessageStatsRequest
+	(*GetMessageStatsResponse)(nil),   // 23: gmsg.GetMessageStatsResponse
+	nil,                               // 24: gmsg.GetMessageStatsResponse.StatusCountsEntry
 }
 var file_msg_proto_depIdxs = []int32{
 	1,  // 0: gmsg.Message.msg_type:type_name -> gmsg.MsgType
@@ -1381,31 +1725,41 @@ var file_msg_proto_depIdxs = []int32{
 	1,  // 5: gmsg.SendMessageRequest.msg_type:type_name -> gmsg.MsgType
 	2,  // 6: gmsg.SendMessageRequest.msg_source:type_name -> gmsg.MsgSource
 	4,  // 7: gmsg.ListTemplatesResponse.templates:type_name -> gmsg.Template
-	6,  // 8: gmsg.MessageService.ListMessages:input_type -> gmsg.ListMessagesRequest
-	18, // 9: gmsg.MessageService.MarkAsRead:input_type -> gmsg.MarkAsReadRequest
-	8,  // 10: gmsg.MessageService.DeleteMessages:input_type -> gmsg.DeleteMessagesRequest
-	9,  // 11: gmsg.MessageService.ClearAllMessages:input_type -> gmsg.ClearAllMessagesRequest
-	10, // 12: gmsg.MessageService.SendMessage:input_type -> gmsg.SendMessageRequest
-	12, // 13: gmsg.MessageService.RevokeMessage:input_type -> gmsg.RevokeMessageRequest
-	13, // 14: gmsg.MessageService.CreateTemplate:input_type -> gmsg.CreateTemplateRequest
-	14, // 15: gmsg.MessageService.GetTemplate:input_type -> gmsg.GetTemplateRequest
-	15, // 16: gmsg.MessageService.UpdateTemplate:input_type -> gmsg.UpdateTemplateRequest
-	16, // 17: gmsg.MessageService.ListTemplates:input_type -> gmsg.ListTemplatesRequest
-	7,  // 18: gmsg.MessageService.ListMessages:output_type -> gmsg.ListMessagesResponse
-	5,  // 19: gmsg.MessageService.MarkAsRead:output_type -> gmsg.CommonResponse
-	5,  // 20: gmsg.MessageService.DeleteMessages:output_type -> gmsg.CommonResponse
-	5,  // 21: gmsg.MessageService.ClearAllMessages:output_type -> gmsg.CommonResponse
-	11, // 22: gmsg.MessageService.SendMessage:output_type -> gmsg.SendMessageResponse
-	5,  // 23: gmsg.MessageService.RevokeMessage:output_type -> gmsg.CommonResponse
-	4,  // 24: gmsg.MessageService.CreateTemplate:output_type -> gmsg.Template
-	4,  // 25: gmsg.MessageService.GetTemplate:output_type -> gmsg.Template
-	4,  // 26: gmsg.MessageService.UpdateTemplate:output_type -> gmsg.Template
-	17, // 27: gmsg.MessageService.ListTemplates:output_type -> gmsg.ListTemplatesResponse
-	18, // [18:28] is the sub-list for method output_type
-	8,  // [8:18] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	0,  // 8: gmsg.ListMessagesAdminRequest.status:type_name -> gmsg.MessageStatus
+	1,  // 9: gmsg.MessageItem.msg_type:type_name -> gmsg.MsgType
+	2,  // 10: gmsg.MessageItem.msg_source:type_name -> gmsg.MsgSource
+	0,  // 11: gmsg.MessageItem.status:type_name -> gmsg.MessageStatus
+	20, // 12: gmsg.ListMessagesAdminResponse.messages:type_name -> gmsg.MessageItem
+	24, // 13: gmsg.GetMessageStatsResponse.status_counts:type_name -> gmsg.GetMessageStatsResponse.StatusCountsEntry
+	6,  // 14: gmsg.MessageService.ListMessages:input_type -> gmsg.ListMessagesRequest
+	18, // 15: gmsg.MessageService.MarkAsRead:input_type -> gmsg.MarkAsReadRequest
+	8,  // 16: gmsg.MessageService.DeleteMessages:input_type -> gmsg.DeleteMessagesRequest
+	9,  // 17: gmsg.MessageService.ClearAllMessages:input_type -> gmsg.ClearAllMessagesRequest
+	10, // 18: gmsg.MessageService.SendMessage:input_type -> gmsg.SendMessageRequest
+	12, // 19: gmsg.MessageService.RevokeMessage:input_type -> gmsg.RevokeMessageRequest
+	19, // 20: gmsg.MessageService.ListMessagesAdmin:input_type -> gmsg.ListMessagesAdminRequest
+	22, // 21: gmsg.MessageService.GetMessageStats:input_type -> gmsg.GetMessageStatsRequest
+	13, // 22: gmsg.MessageService.CreateTemplate:input_type -> gmsg.CreateTemplateRequest
+	14, // 23: gmsg.MessageService.GetTemplate:input_type -> gmsg.GetTemplateRequest
+	15, // 24: gmsg.MessageService.UpdateTemplate:input_type -> gmsg.UpdateTemplateRequest
+	16, // 25: gmsg.MessageService.ListTemplates:input_type -> gmsg.ListTemplatesRequest
+	7,  // 26: gmsg.MessageService.ListMessages:output_type -> gmsg.ListMessagesResponse
+	5,  // 27: gmsg.MessageService.MarkAsRead:output_type -> gmsg.CommonResponse
+	5,  // 28: gmsg.MessageService.DeleteMessages:output_type -> gmsg.CommonResponse
+	5,  // 29: gmsg.MessageService.ClearAllMessages:output_type -> gmsg.CommonResponse
+	11, // 30: gmsg.MessageService.SendMessage:output_type -> gmsg.SendMessageResponse
+	5,  // 31: gmsg.MessageService.RevokeMessage:output_type -> gmsg.CommonResponse
+	21, // 32: gmsg.MessageService.ListMessagesAdmin:output_type -> gmsg.ListMessagesAdminResponse
+	23, // 33: gmsg.MessageService.GetMessageStats:output_type -> gmsg.GetMessageStatsResponse
+	4,  // 34: gmsg.MessageService.CreateTemplate:output_type -> gmsg.Template
+	4,  // 35: gmsg.MessageService.GetTemplate:output_type -> gmsg.Template
+	4,  // 36: gmsg.MessageService.UpdateTemplate:output_type -> gmsg.Template
+	17, // 37: gmsg.MessageService.ListTemplates:output_type -> gmsg.ListTemplatesResponse
+	26, // [26:38] is the sub-list for method output_type
+	14, // [14:26] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_msg_proto_init() }
@@ -1414,13 +1768,14 @@ func file_msg_proto_init() {
 		return
 	}
 	file_msg_proto_msgTypes[3].OneofWrappers = []any{}
+	file_msg_proto_msgTypes[16].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_msg_proto_rawDesc), len(file_msg_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   16,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

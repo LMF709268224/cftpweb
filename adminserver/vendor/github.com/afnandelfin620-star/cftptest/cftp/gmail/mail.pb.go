@@ -1145,6 +1145,354 @@ func (x *CancelMailResponse) GetMessage() string {
 	return ""
 }
 
+type ListMailsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        *string                `protobuf:"bytes,1,opt,name=status,proto3,oneof" json:"status,omitempty"`                // 状态筛选 ("SCHEDULING", "SENT", "FAILED", "CANCELLED") [optional]
+	Page          uint32                 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`                         // 页码, 1-based [optional]
+	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // 每页数量 [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMailsRequest) Reset() {
+	*x = ListMailsRequest{}
+	mi := &file_mail_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMailsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMailsRequest) ProtoMessage() {}
+
+func (x *ListMailsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mail_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMailsRequest.ProtoReflect.Descriptor instead.
+func (*ListMailsRequest) Descriptor() ([]byte, []int) {
+	return file_mail_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ListMailsRequest) GetStatus() string {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return ""
+}
+
+func (x *ListMailsRequest) GetPage() uint32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListMailsRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type MailItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MailId        string                 `protobuf:"bytes,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`                    // 邮件ID [required]
+	BusinessUnit  string                 `protobuf:"bytes,2,opt,name=business_unit,json=businessUnit,proto3" json:"business_unit,omitempty"`  // 业务系统标识 [required]
+	FromEmail     string                 `protobuf:"bytes,3,opt,name=from_email,json=fromEmail,proto3" json:"from_email,omitempty"`           // 发件人邮箱 [required]
+	FromName      string                 `protobuf:"bytes,4,opt,name=from_name,json=fromName,proto3" json:"from_name,omitempty"`              // 发件人姓名 [required]
+	ToEmail       string                 `protobuf:"bytes,5,opt,name=to_email,json=toEmail,proto3" json:"to_email,omitempty"`                 // 收件人邮箱 [required]
+	ToName        string                 `protobuf:"bytes,6,opt,name=to_name,json=toName,proto3" json:"to_name,omitempty"`                    // 收件人姓名 [required]
+	Subject       string                 `protobuf:"bytes,7,opt,name=subject,proto3" json:"subject,omitempty"`                                // 邮件主题 [required]
+	Priority      int32                  `protobuf:"varint,8,opt,name=priority,proto3" json:"priority,omitempty"`                             // 优先级 [required]
+	TemplateId    string                 `protobuf:"bytes,9,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`        // 模板ID [optional]
+	IsHtml        bool                   `protobuf:"varint,10,opt,name=is_html,json=isHtml,proto3" json:"is_html,omitempty"`                  // 是否为html格式 [required]
+	Status        string                 `protobuf:"bytes,11,opt,name=status,proto3" json:"status,omitempty"`                                 // mail 内部状态 [required]
+	ScheduledAt   string                 `protobuf:"bytes,12,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`    // 调度时间 [required]
+	ProcessedAt   string                 `protobuf:"bytes,13,opt,name=processed_at,json=processedAt,proto3" json:"processed_at,omitempty"`    // 处理时间 [optional]
+	ErrorMessage  string                 `protobuf:"bytes,14,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 错误信息 [optional]
+	CreatedAt     string                 `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`          // 创建时间 [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *MailItem) Reset() {
+	*x = MailItem{}
+	mi := &file_mail_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailItem) ProtoMessage() {}
+
+func (x *MailItem) ProtoReflect() protoreflect.Message {
+	mi := &file_mail_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MailItem.ProtoReflect.Descriptor instead.
+func (*MailItem) Descriptor() ([]byte, []int) {
+	return file_mail_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *MailItem) GetMailId() string {
+	if x != nil {
+		return x.MailId
+	}
+	return ""
+}
+
+func (x *MailItem) GetBusinessUnit() string {
+	if x != nil {
+		return x.BusinessUnit
+	}
+	return ""
+}
+
+func (x *MailItem) GetFromEmail() string {
+	if x != nil {
+		return x.FromEmail
+	}
+	return ""
+}
+
+func (x *MailItem) GetFromName() string {
+	if x != nil {
+		return x.FromName
+	}
+	return ""
+}
+
+func (x *MailItem) GetToEmail() string {
+	if x != nil {
+		return x.ToEmail
+	}
+	return ""
+}
+
+func (x *MailItem) GetToName() string {
+	if x != nil {
+		return x.ToName
+	}
+	return ""
+}
+
+func (x *MailItem) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *MailItem) GetPriority() int32 {
+	if x != nil {
+		return x.Priority
+	}
+	return 0
+}
+
+func (x *MailItem) GetTemplateId() string {
+	if x != nil {
+		return x.TemplateId
+	}
+	return ""
+}
+
+func (x *MailItem) GetIsHtml() bool {
+	if x != nil {
+		return x.IsHtml
+	}
+	return false
+}
+
+func (x *MailItem) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *MailItem) GetScheduledAt() string {
+	if x != nil {
+		return x.ScheduledAt
+	}
+	return ""
+}
+
+func (x *MailItem) GetProcessedAt() string {
+	if x != nil {
+		return x.ProcessedAt
+	}
+	return ""
+}
+
+func (x *MailItem) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *MailItem) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ListMailsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Mails         []*MailItem            `protobuf:"bytes,1,rep,name=mails,proto3" json:"mails,omitempty"`  // 邮件列表
+	Total         uint32                 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"` // 总条数
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMailsResponse) Reset() {
+	*x = ListMailsResponse{}
+	mi := &file_mail_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMailsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMailsResponse) ProtoMessage() {}
+
+func (x *ListMailsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mail_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMailsResponse.ProtoReflect.Descriptor instead.
+func (*ListMailsResponse) Descriptor() ([]byte, []int) {
+	return file_mail_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ListMailsResponse) GetMails() []*MailItem {
+	if x != nil {
+		return x.Mails
+	}
+	return nil
+}
+
+func (x *ListMailsResponse) GetTotal() uint32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type GetMailStatsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMailStatsRequest) Reset() {
+	*x = GetMailStatsRequest{}
+	mi := &file_mail_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMailStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMailStatsRequest) ProtoMessage() {}
+
+func (x *GetMailStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mail_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMailStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetMailStatsRequest) Descriptor() ([]byte, []int) {
+	return file_mail_proto_rawDescGZIP(), []int{20}
+}
+
+type GetMailStatsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StatusCounts  map[string]int64       `protobuf:"bytes,1,rep,name=status_counts,json=statusCounts,proto3" json:"status_counts,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"` // 各状态计数
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMailStatsResponse) Reset() {
+	*x = GetMailStatsResponse{}
+	mi := &file_mail_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMailStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMailStatsResponse) ProtoMessage() {}
+
+func (x *GetMailStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mail_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMailStatsResponse.ProtoReflect.Descriptor instead.
+func (*GetMailStatsResponse) Descriptor() ([]byte, []int) {
+	return file_mail_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetMailStatsResponse) GetStatusCounts() map[string]int64 {
+	if x != nil {
+		return x.StatusCounts
+	}
+	return nil
+}
+
 var File_mail_proto protoreflect.FileDescriptor
 
 const file_mail_proto_rawDesc = "" +
@@ -1242,14 +1590,50 @@ const file_mail_proto_rawDesc = "" +
 	"\amail_id\x18\x01 \x01(\tR\x06mailId\"H\n" +
 	"\x12CancelMailResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xcf\x04\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"k\n" +
+	"\x10ListMailsRequest\x12\x1b\n" +
+	"\x06status\x18\x01 \x01(\tH\x00R\x06status\x88\x01\x01\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\rR\bpageSizeB\t\n" +
+	"\a_status\"\xca\x03\n" +
+	"\bMailItem\x12\x17\n" +
+	"\amail_id\x18\x01 \x01(\tR\x06mailId\x12#\n" +
+	"\rbusiness_unit\x18\x02 \x01(\tR\fbusinessUnit\x12\x1d\n" +
+	"\n" +
+	"from_email\x18\x03 \x01(\tR\tfromEmail\x12\x1b\n" +
+	"\tfrom_name\x18\x04 \x01(\tR\bfromName\x12\x19\n" +
+	"\bto_email\x18\x05 \x01(\tR\atoEmail\x12\x17\n" +
+	"\ato_name\x18\x06 \x01(\tR\x06toName\x12\x18\n" +
+	"\asubject\x18\a \x01(\tR\asubject\x12\x1a\n" +
+	"\bpriority\x18\b \x01(\x05R\bpriority\x12\x1f\n" +
+	"\vtemplate_id\x18\t \x01(\tR\n" +
+	"templateId\x12\x17\n" +
+	"\ais_html\x18\n" +
+	" \x01(\bR\x06isHtml\x12\x16\n" +
+	"\x06status\x18\v \x01(\tR\x06status\x12!\n" +
+	"\fscheduled_at\x18\f \x01(\tR\vscheduledAt\x12!\n" +
+	"\fprocessed_at\x18\r \x01(\tR\vprocessedAt\x12#\n" +
+	"\rerror_message\x18\x0e \x01(\tR\ferrorMessage\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x0f \x01(\tR\tcreatedAt\"P\n" +
+	"\x11ListMailsResponse\x12%\n" +
+	"\x05mails\x18\x01 \x03(\v2\x0f.gmail.MailItemR\x05mails\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"\x15\n" +
+	"\x13GetMailStatsRequest\"\xab\x01\n" +
+	"\x14GetMailStatsResponse\x12R\n" +
+	"\rstatus_counts\x18\x01 \x03(\v2-.gmail.GetMailStatsResponse.StatusCountsEntryR\fstatusCounts\x1a?\n" +
+	"\x11StatusCountsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x012\xd8\x05\n" +
 	"\vMailService\x12A\n" +
 	"\n" +
 	"CreateMail\x12\x18.gmail.CreateMailRequest\x1a\x19.gmail.CreateMailResponse\x12J\n" +
 	"\rGetMailStatus\x12\x1b.gmail.GetMailStatusRequest\x1a\x1c.gmail.GetMailStatusResponse\x128\n" +
 	"\aGetMail\x12\x15.gmail.GetMailRequest\x1a\x16.gmail.GetMailResponse\x12A\n" +
 	"\n" +
-	"CancelMail\x12\x18.gmail.CancelMailRequest\x1a\x19.gmail.CancelMailResponse\x12M\n" +
+	"CancelMail\x12\x18.gmail.CancelMailRequest\x1a\x19.gmail.CancelMailResponse\x12>\n" +
+	"\tListMails\x12\x17.gmail.ListMailsRequest\x1a\x18.gmail.ListMailsResponse\x12G\n" +
+	"\fGetMailStats\x12\x1a.gmail.GetMailStatsRequest\x1a\x1b.gmail.GetMailStatsResponse\x12M\n" +
 	"\x0eCreateTemplate\x12\x1c.gmail.CreateTemplateRequest\x1a\x1d.gmail.CreateTemplateResponse\x12M\n" +
 	"\x0eUpdateTemplate\x12\x1c.gmail.UpdateTemplateRequest\x1a\x1d.gmail.UpdateTemplateResponse\x12P\n" +
 	"\x0fGetTemplateList\x12\x1d.gmail.GetTemplateListRequest\x1a\x1e.gmail.GetTemplateListResponse\x12D\n" +
@@ -1268,7 +1652,7 @@ func file_mail_proto_rawDescGZIP() []byte {
 	return file_mail_proto_rawDescData
 }
 
-var file_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
+var file_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
 var file_mail_proto_goTypes = []any{
 	(*Template)(nil),                // 0: gmail.Template
 	(*CreateTemplateRequest)(nil),   // 1: gmail.CreateTemplateRequest
@@ -1287,31 +1671,43 @@ var file_mail_proto_goTypes = []any{
 	(*GetMailStatusResponse)(nil),   // 14: gmail.GetMailStatusResponse
 	(*CancelMailRequest)(nil),       // 15: gmail.CancelMailRequest
 	(*CancelMailResponse)(nil),      // 16: gmail.CancelMailResponse
+	(*ListMailsRequest)(nil),        // 17: gmail.ListMailsRequest
+	(*MailItem)(nil),                // 18: gmail.MailItem
+	(*ListMailsResponse)(nil),       // 19: gmail.ListMailsResponse
+	(*GetMailStatsRequest)(nil),     // 20: gmail.GetMailStatsRequest
+	(*GetMailStatsResponse)(nil),    // 21: gmail.GetMailStatsResponse
+	nil,                             // 22: gmail.GetMailStatsResponse.StatusCountsEntry
 }
 var file_mail_proto_depIdxs = []int32{
 	0,  // 0: gmail.GetTemplateListResponse.templates:type_name -> gmail.Template
 	0,  // 1: gmail.GetTemplateResponse.template:type_name -> gmail.Template
-	9,  // 2: gmail.MailService.CreateMail:input_type -> gmail.CreateMailRequest
-	13, // 3: gmail.MailService.GetMailStatus:input_type -> gmail.GetMailStatusRequest
-	11, // 4: gmail.MailService.GetMail:input_type -> gmail.GetMailRequest
-	15, // 5: gmail.MailService.CancelMail:input_type -> gmail.CancelMailRequest
-	1,  // 6: gmail.MailService.CreateTemplate:input_type -> gmail.CreateTemplateRequest
-	3,  // 7: gmail.MailService.UpdateTemplate:input_type -> gmail.UpdateTemplateRequest
-	5,  // 8: gmail.MailService.GetTemplateList:input_type -> gmail.GetTemplateListRequest
-	7,  // 9: gmail.MailService.GetTemplate:input_type -> gmail.GetTemplateRequest
-	10, // 10: gmail.MailService.CreateMail:output_type -> gmail.CreateMailResponse
-	14, // 11: gmail.MailService.GetMailStatus:output_type -> gmail.GetMailStatusResponse
-	12, // 12: gmail.MailService.GetMail:output_type -> gmail.GetMailResponse
-	16, // 13: gmail.MailService.CancelMail:output_type -> gmail.CancelMailResponse
-	2,  // 14: gmail.MailService.CreateTemplate:output_type -> gmail.CreateTemplateResponse
-	4,  // 15: gmail.MailService.UpdateTemplate:output_type -> gmail.UpdateTemplateResponse
-	6,  // 16: gmail.MailService.GetTemplateList:output_type -> gmail.GetTemplateListResponse
-	8,  // 17: gmail.MailService.GetTemplate:output_type -> gmail.GetTemplateResponse
-	10, // [10:18] is the sub-list for method output_type
-	2,  // [2:10] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	18, // 2: gmail.ListMailsResponse.mails:type_name -> gmail.MailItem
+	22, // 3: gmail.GetMailStatsResponse.status_counts:type_name -> gmail.GetMailStatsResponse.StatusCountsEntry
+	9,  // 4: gmail.MailService.CreateMail:input_type -> gmail.CreateMailRequest
+	13, // 5: gmail.MailService.GetMailStatus:input_type -> gmail.GetMailStatusRequest
+	11, // 6: gmail.MailService.GetMail:input_type -> gmail.GetMailRequest
+	15, // 7: gmail.MailService.CancelMail:input_type -> gmail.CancelMailRequest
+	17, // 8: gmail.MailService.ListMails:input_type -> gmail.ListMailsRequest
+	20, // 9: gmail.MailService.GetMailStats:input_type -> gmail.GetMailStatsRequest
+	1,  // 10: gmail.MailService.CreateTemplate:input_type -> gmail.CreateTemplateRequest
+	3,  // 11: gmail.MailService.UpdateTemplate:input_type -> gmail.UpdateTemplateRequest
+	5,  // 12: gmail.MailService.GetTemplateList:input_type -> gmail.GetTemplateListRequest
+	7,  // 13: gmail.MailService.GetTemplate:input_type -> gmail.GetTemplateRequest
+	10, // 14: gmail.MailService.CreateMail:output_type -> gmail.CreateMailResponse
+	14, // 15: gmail.MailService.GetMailStatus:output_type -> gmail.GetMailStatusResponse
+	12, // 16: gmail.MailService.GetMail:output_type -> gmail.GetMailResponse
+	16, // 17: gmail.MailService.CancelMail:output_type -> gmail.CancelMailResponse
+	19, // 18: gmail.MailService.ListMails:output_type -> gmail.ListMailsResponse
+	21, // 19: gmail.MailService.GetMailStats:output_type -> gmail.GetMailStatsResponse
+	2,  // 20: gmail.MailService.CreateTemplate:output_type -> gmail.CreateTemplateResponse
+	4,  // 21: gmail.MailService.UpdateTemplate:output_type -> gmail.UpdateTemplateResponse
+	6,  // 22: gmail.MailService.GetTemplateList:output_type -> gmail.GetTemplateListResponse
+	8,  // 23: gmail.MailService.GetTemplate:output_type -> gmail.GetTemplateResponse
+	14, // [14:24] is the sub-list for method output_type
+	4,  // [4:14] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_mail_proto_init() }
@@ -1319,13 +1715,14 @@ func file_mail_proto_init() {
 	if File_mail_proto != nil {
 		return
 	}
+	file_mail_proto_msgTypes[17].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mail_proto_rawDesc), len(file_mail_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   17,
+			NumMessages:   23,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

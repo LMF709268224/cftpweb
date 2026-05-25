@@ -19,13 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CredentialService_CreateCatalog_FullMethodName               = "/gcreds.CredentialService/CreateCatalog"
-	CredentialService_ListCatalogs_FullMethodName                = "/gcreds.CredentialService/ListCatalogs"
+	CredentialService_CreateCredentialDefinition_FullMethodName  = "/gcreds.CredentialService/CreateCredentialDefinition"
+	CredentialService_ListCredentialDefinitions_FullMethodName   = "/gcreds.CredentialService/ListCredentialDefinitions"
 	CredentialService_SubmitApplication_FullMethodName           = "/gcreds.CredentialService/SubmitApplication"
 	CredentialService_AuditApplication_FullMethodName            = "/gcreds.CredentialService/AuditApplication"
 	CredentialService_GetLatestApplication_FullMethodName        = "/gcreds.CredentialService/GetLatestApplication"
 	CredentialService_GrantUploadPermission_FullMethodName       = "/gcreds.CredentialService/GrantUploadPermission"
 	CredentialService_RevokeUploadPermission_FullMethodName      = "/gcreds.CredentialService/RevokeUploadPermission"
+	CredentialService_RequestUploadUrl_FullMethodName            = "/gcreds.CredentialService/RequestUploadUrl"
 	CredentialService_GetLatestCredential_FullMethodName         = "/gcreds.CredentialService/GetLatestCredential"
 	CredentialService_CheckCandidateQualification_FullMethodName = "/gcreds.CredentialService/CheckCandidateQualification"
 	CredentialService_GetCredentialVersion_FullMethodName        = "/gcreds.CredentialService/GetCredentialVersion"
@@ -47,20 +48,22 @@ const (
 //
 // 资格资料管理服务
 type CredentialServiceClient interface {
-	// --- 类别定义 (Catalog) ---
-	CreateCatalog(ctx context.Context, in *CreateCatalogRequest, opts ...grpc.CallOption) (*Catalog, error)
-	ListCatalogs(ctx context.Context, in *ListCatalogsRequest, opts ...grpc.CallOption) (*ListCatalogsResponse, error)
+	// --- 资格定义 (CredentialDefinition) ---
+	CreateCredentialDefinition(ctx context.Context, in *CreateCredentialDefinitionRequest, opts ...grpc.CallOption) (*CredentialDefinition, error)
+	ListCredentialDefinitions(ctx context.Context, in *ListCredentialDefinitionsRequest, opts ...grpc.CallOption) (*ListCredentialDefinitionsResponse, error)
 	// --- 申请流程 (Application) ---
 	// 考生提交资料申请
 	SubmitApplication(ctx context.Context, in *SubmitApplicationRequest, opts ...grpc.CallOption) (*Application, error)
 	// 管理员审核申请 (审核通过会生成新的 Credential 版本)
 	AuditApplication(ctx context.Context, in *AuditApplicationRequest, opts ...grpc.CallOption) (*Application, error)
-	// 获取考生在某个资格类别下最新的申请结果
+	// 获取考生在某个资格类型下最新的申请结果
 	GetLatestApplication(ctx context.Context, in *GetLatestApplicationRequest, opts ...grpc.CallOption) (*Application, error)
-	// 打开考生某个资格类别的资料上传权限
+	// 打开考生某个资格类型的资料上传权限
 	GrantUploadPermission(ctx context.Context, in *GrantUploadPermissionRequest, opts ...grpc.CallOption) (*UploadPermissionResponse, error)
-	// 关闭考生某个资格类别的资料上传权限
+	// 关闭考生某个资格类型的资料上传权限
 	RevokeUploadPermission(ctx context.Context, in *RevokeUploadPermissionRequest, opts ...grpc.CallOption) (*UploadPermissionResponse, error)
+	// 考生请求上传资料的 presigned URL
+	RequestUploadUrl(ctx context.Context, in *RequestUploadUrlRequest, opts ...grpc.CallOption) (*RequestUploadUrlResponse, error)
 	// --- 档案管理 (Credential) ---
 	// 获取考生当前的最新资格状态
 	GetLatestCredential(ctx context.Context, in *GetLatestCredentialRequest, opts ...grpc.CallOption) (*Credential, error)
@@ -93,20 +96,20 @@ func NewCredentialServiceClient(cc grpc.ClientConnInterface) CredentialServiceCl
 	return &credentialServiceClient{cc}
 }
 
-func (c *credentialServiceClient) CreateCatalog(ctx context.Context, in *CreateCatalogRequest, opts ...grpc.CallOption) (*Catalog, error) {
+func (c *credentialServiceClient) CreateCredentialDefinition(ctx context.Context, in *CreateCredentialDefinitionRequest, opts ...grpc.CallOption) (*CredentialDefinition, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Catalog)
-	err := c.cc.Invoke(ctx, CredentialService_CreateCatalog_FullMethodName, in, out, cOpts...)
+	out := new(CredentialDefinition)
+	err := c.cc.Invoke(ctx, CredentialService_CreateCredentialDefinition_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *credentialServiceClient) ListCatalogs(ctx context.Context, in *ListCatalogsRequest, opts ...grpc.CallOption) (*ListCatalogsResponse, error) {
+func (c *credentialServiceClient) ListCredentialDefinitions(ctx context.Context, in *ListCredentialDefinitionsRequest, opts ...grpc.CallOption) (*ListCredentialDefinitionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListCatalogsResponse)
-	err := c.cc.Invoke(ctx, CredentialService_ListCatalogs_FullMethodName, in, out, cOpts...)
+	out := new(ListCredentialDefinitionsResponse)
+	err := c.cc.Invoke(ctx, CredentialService_ListCredentialDefinitions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -157,6 +160,16 @@ func (c *credentialServiceClient) RevokeUploadPermission(ctx context.Context, in
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UploadPermissionResponse)
 	err := c.cc.Invoke(ctx, CredentialService_RevokeUploadPermission_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) RequestUploadUrl(ctx context.Context, in *RequestUploadUrlRequest, opts ...grpc.CallOption) (*RequestUploadUrlResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequestUploadUrlResponse)
+	err := c.cc.Invoke(ctx, CredentialService_RequestUploadUrl_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -299,20 +312,22 @@ func (c *credentialServiceClient) GetPdfCertificate(ctx context.Context, in *Get
 //
 // 资格资料管理服务
 type CredentialServiceServer interface {
-	// --- 类别定义 (Catalog) ---
-	CreateCatalog(context.Context, *CreateCatalogRequest) (*Catalog, error)
-	ListCatalogs(context.Context, *ListCatalogsRequest) (*ListCatalogsResponse, error)
+	// --- 资格定义 (CredentialDefinition) ---
+	CreateCredentialDefinition(context.Context, *CreateCredentialDefinitionRequest) (*CredentialDefinition, error)
+	ListCredentialDefinitions(context.Context, *ListCredentialDefinitionsRequest) (*ListCredentialDefinitionsResponse, error)
 	// --- 申请流程 (Application) ---
 	// 考生提交资料申请
 	SubmitApplication(context.Context, *SubmitApplicationRequest) (*Application, error)
 	// 管理员审核申请 (审核通过会生成新的 Credential 版本)
 	AuditApplication(context.Context, *AuditApplicationRequest) (*Application, error)
-	// 获取考生在某个资格类别下最新的申请结果
+	// 获取考生在某个资格类型下最新的申请结果
 	GetLatestApplication(context.Context, *GetLatestApplicationRequest) (*Application, error)
-	// 打开考生某个资格类别的资料上传权限
+	// 打开考生某个资格类型的资料上传权限
 	GrantUploadPermission(context.Context, *GrantUploadPermissionRequest) (*UploadPermissionResponse, error)
-	// 关闭考生某个资格类别的资料上传权限
+	// 关闭考生某个资格类型的资料上传权限
 	RevokeUploadPermission(context.Context, *RevokeUploadPermissionRequest) (*UploadPermissionResponse, error)
+	// 考生请求上传资料的 presigned URL
+	RequestUploadUrl(context.Context, *RequestUploadUrlRequest) (*RequestUploadUrlResponse, error)
 	// --- 档案管理 (Credential) ---
 	// 获取考生当前的最新资格状态
 	GetLatestCredential(context.Context, *GetLatestCredentialRequest) (*Credential, error)
@@ -345,11 +360,11 @@ type CredentialServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCredentialServiceServer struct{}
 
-func (UnimplementedCredentialServiceServer) CreateCatalog(context.Context, *CreateCatalogRequest) (*Catalog, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateCatalog not implemented")
+func (UnimplementedCredentialServiceServer) CreateCredentialDefinition(context.Context, *CreateCredentialDefinitionRequest) (*CredentialDefinition, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCredentialDefinition not implemented")
 }
-func (UnimplementedCredentialServiceServer) ListCatalogs(context.Context, *ListCatalogsRequest) (*ListCatalogsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListCatalogs not implemented")
+func (UnimplementedCredentialServiceServer) ListCredentialDefinitions(context.Context, *ListCredentialDefinitionsRequest) (*ListCredentialDefinitionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCredentialDefinitions not implemented")
 }
 func (UnimplementedCredentialServiceServer) SubmitApplication(context.Context, *SubmitApplicationRequest) (*Application, error) {
 	return nil, status.Error(codes.Unimplemented, "method SubmitApplication not implemented")
@@ -365,6 +380,9 @@ func (UnimplementedCredentialServiceServer) GrantUploadPermission(context.Contex
 }
 func (UnimplementedCredentialServiceServer) RevokeUploadPermission(context.Context, *RevokeUploadPermissionRequest) (*UploadPermissionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeUploadPermission not implemented")
+}
+func (UnimplementedCredentialServiceServer) RequestUploadUrl(context.Context, *RequestUploadUrlRequest) (*RequestUploadUrlResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RequestUploadUrl not implemented")
 }
 func (UnimplementedCredentialServiceServer) GetLatestCredential(context.Context, *GetLatestCredentialRequest) (*Credential, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLatestCredential not implemented")
@@ -426,38 +444,38 @@ func RegisterCredentialServiceServer(s grpc.ServiceRegistrar, srv CredentialServ
 	s.RegisterService(&CredentialService_ServiceDesc, srv)
 }
 
-func _CredentialService_CreateCatalog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateCatalogRequest)
+func _CredentialService_CreateCredentialDefinition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCredentialDefinitionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CredentialServiceServer).CreateCatalog(ctx, in)
+		return srv.(CredentialServiceServer).CreateCredentialDefinition(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CredentialService_CreateCatalog_FullMethodName,
+		FullMethod: CredentialService_CreateCredentialDefinition_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CredentialServiceServer).CreateCatalog(ctx, req.(*CreateCatalogRequest))
+		return srv.(CredentialServiceServer).CreateCredentialDefinition(ctx, req.(*CreateCredentialDefinitionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CredentialService_ListCatalogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListCatalogsRequest)
+func _CredentialService_ListCredentialDefinitions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCredentialDefinitionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CredentialServiceServer).ListCatalogs(ctx, in)
+		return srv.(CredentialServiceServer).ListCredentialDefinitions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CredentialService_ListCatalogs_FullMethodName,
+		FullMethod: CredentialService_ListCredentialDefinitions_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CredentialServiceServer).ListCatalogs(ctx, req.(*ListCatalogsRequest))
+		return srv.(CredentialServiceServer).ListCredentialDefinitions(ctx, req.(*ListCredentialDefinitionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -548,6 +566,24 @@ func _CredentialService_RevokeUploadPermission_Handler(srv interface{}, ctx cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CredentialServiceServer).RevokeUploadPermission(ctx, req.(*RevokeUploadPermissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CredentialService_RequestUploadUrl_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestUploadUrlRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).RequestUploadUrl(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_RequestUploadUrl_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).RequestUploadUrl(ctx, req.(*RequestUploadUrlRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -794,12 +830,12 @@ var CredentialService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*CredentialServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateCatalog",
-			Handler:    _CredentialService_CreateCatalog_Handler,
+			MethodName: "CreateCredentialDefinition",
+			Handler:    _CredentialService_CreateCredentialDefinition_Handler,
 		},
 		{
-			MethodName: "ListCatalogs",
-			Handler:    _CredentialService_ListCatalogs_Handler,
+			MethodName: "ListCredentialDefinitions",
+			Handler:    _CredentialService_ListCredentialDefinitions_Handler,
 		},
 		{
 			MethodName: "SubmitApplication",
@@ -820,6 +856,10 @@ var CredentialService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeUploadPermission",
 			Handler:    _CredentialService_RevokeUploadPermission_Handler,
+		},
+		{
+			MethodName: "RequestUploadUrl",
+			Handler:    _CredentialService_RequestUploadUrl_Handler,
 		},
 		{
 			MethodName: "GetLatestCredential",

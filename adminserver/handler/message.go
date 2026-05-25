@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/oklog/ulid/v2"
 
@@ -56,11 +57,40 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 
 // ListSentMessages GET /api/messages/sent
 func (h *Handler) ListSentMessages(w http.ResponseWriter, r *http.Request) {
-	// TODO: gmsg 尚未提供查询所有已发送消息的 gRPC 接口
-	// 目前先返回空数组占位
-	WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"messages": []interface{}{},
+	page := 1
+	pageSize := 50
+	
+	if p := r.URL.Query().Get("page"); p != "" {
+		if v, err := strconv.Atoi(p); err == nil && v > 0 {
+			page = v
+		}
+	}
+	if ps := r.URL.Query().Get("page_size"); ps != "" {
+		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
+			pageSize = v
+		}
+	}
+
+	var statusPtr *gmsgpb.MessageStatus
+	if statusStr := r.URL.Query().Get("status"); statusStr != "" {
+		if v, err := strconv.Atoi(statusStr); err == nil {
+			statusEnum := gmsgpb.MessageStatus(v)
+			statusPtr = &statusEnum
+		}
+	}
+
+	resp, err := h.Gmsg.ListMessagesAdmin(r.Context(), &gmsgpb.ListMessagesAdminRequest{
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
+		Status:   statusPtr,
 	})
+	if err != nil {
+		slog.Error("ListMessagesAdmin failed", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to list messages")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
 }
 
 // CreateTemplate POST /api/messages/templates

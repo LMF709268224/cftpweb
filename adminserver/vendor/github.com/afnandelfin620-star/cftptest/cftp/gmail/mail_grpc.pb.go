@@ -23,6 +23,8 @@ const (
 	MailService_GetMailStatus_FullMethodName   = "/gmail.MailService/GetMailStatus"
 	MailService_GetMail_FullMethodName         = "/gmail.MailService/GetMail"
 	MailService_CancelMail_FullMethodName      = "/gmail.MailService/CancelMail"
+	MailService_ListMails_FullMethodName       = "/gmail.MailService/ListMails"
+	MailService_GetMailStats_FullMethodName    = "/gmail.MailService/GetMailStats"
 	MailService_CreateTemplate_FullMethodName  = "/gmail.MailService/CreateTemplate"
 	MailService_UpdateTemplate_FullMethodName  = "/gmail.MailService/UpdateTemplate"
 	MailService_GetTemplateList_FullMethodName = "/gmail.MailService/GetTemplateList"
@@ -41,6 +43,10 @@ type MailServiceClient interface {
 	GetMail(ctx context.Context, in *GetMailRequest, opts ...grpc.CallOption) (*GetMailResponse, error)
 	// 撤销邮件
 	CancelMail(ctx context.Context, in *CancelMailRequest, opts ...grpc.CallOption) (*CancelMailResponse, error)
+	// 管理端：分页列出邮件
+	ListMails(ctx context.Context, in *ListMailsRequest, opts ...grpc.CallOption) (*ListMailsResponse, error)
+	// 管理端：获取邮件各类状态计数
+	GetMailStats(ctx context.Context, in *GetMailStatsRequest, opts ...grpc.CallOption) (*GetMailStatsResponse, error)
 	// 创建邮件模板
 	CreateTemplate(ctx context.Context, in *CreateTemplateRequest, opts ...grpc.CallOption) (*CreateTemplateResponse, error)
 	// 更新邮件模板
@@ -99,6 +105,26 @@ func (c *mailServiceClient) CancelMail(ctx context.Context, in *CancelMailReques
 	return out, nil
 }
 
+func (c *mailServiceClient) ListMails(ctx context.Context, in *ListMailsRequest, opts ...grpc.CallOption) (*ListMailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMailsResponse)
+	err := c.cc.Invoke(ctx, MailService_ListMails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailServiceClient) GetMailStats(ctx context.Context, in *GetMailStatsRequest, opts ...grpc.CallOption) (*GetMailStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMailStatsResponse)
+	err := c.cc.Invoke(ctx, MailService_GetMailStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mailServiceClient) CreateTemplate(ctx context.Context, in *CreateTemplateRequest, opts ...grpc.CallOption) (*CreateTemplateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateTemplateResponse)
@@ -151,6 +177,10 @@ type MailServiceServer interface {
 	GetMail(context.Context, *GetMailRequest) (*GetMailResponse, error)
 	// 撤销邮件
 	CancelMail(context.Context, *CancelMailRequest) (*CancelMailResponse, error)
+	// 管理端：分页列出邮件
+	ListMails(context.Context, *ListMailsRequest) (*ListMailsResponse, error)
+	// 管理端：获取邮件各类状态计数
+	GetMailStats(context.Context, *GetMailStatsRequest) (*GetMailStatsResponse, error)
 	// 创建邮件模板
 	CreateTemplate(context.Context, *CreateTemplateRequest) (*CreateTemplateResponse, error)
 	// 更新邮件模板
@@ -180,6 +210,12 @@ func (UnimplementedMailServiceServer) GetMail(context.Context, *GetMailRequest) 
 }
 func (UnimplementedMailServiceServer) CancelMail(context.Context, *CancelMailRequest) (*CancelMailResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelMail not implemented")
+}
+func (UnimplementedMailServiceServer) ListMails(context.Context, *ListMailsRequest) (*ListMailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMails not implemented")
+}
+func (UnimplementedMailServiceServer) GetMailStats(context.Context, *GetMailStatsRequest) (*GetMailStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMailStats not implemented")
 }
 func (UnimplementedMailServiceServer) CreateTemplate(context.Context, *CreateTemplateRequest) (*CreateTemplateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateTemplate not implemented")
@@ -286,6 +322,42 @@ func _MailService_CancelMail_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MailService_ListMails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailServiceServer).ListMails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MailService_ListMails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailServiceServer).ListMails(ctx, req.(*ListMailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailService_GetMailStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMailStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailServiceServer).GetMailStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MailService_GetMailStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailServiceServer).GetMailStats(ctx, req.(*GetMailStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MailService_CreateTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateTemplateRequest)
 	if err := dec(in); err != nil {
@@ -380,6 +452,14 @@ var MailService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CancelMail",
 			Handler:    _MailService_CancelMail_Handler,
+		},
+		{
+			MethodName: "ListMails",
+			Handler:    _MailService_ListMails_Handler,
+		},
+		{
+			MethodName: "GetMailStats",
+			Handler:    _MailService_GetMailStats_Handler,
 		},
 		{
 			MethodName: "CreateTemplate",

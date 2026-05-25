@@ -231,7 +231,18 @@ export const en: AppTranslations = {
     alertUpdateSuccess: "Template updated successfully!",
     alertDeleteNotSupported: "Sorry, the underlying gmsg microservice does not support deletion yet.",
     confirmDelete: "Are you sure you want to delete this template?",
-    alertDeleteSuccess: "Template deleted successfully!"
+    alertDeleteSuccess: "Template deleted successfully!",
+    statusFilter: "Status Filter",
+    statusAll: "All",
+    statusUnread: "Unread",
+    statusRead: "Read",
+    statusDeleted: "Deleted",
+    statusRevoked: "Revoked",
+    prevPage: "Previous",
+    nextPage: "Next",
+    totalItems: "Total: {{total}}",
+    page: "Page",
+    pageSize: "Items/Page"
   },
   mailsPage: {
     title: "Email System",
@@ -277,6 +288,16 @@ export const en: AppTranslations = {
     alertUpdateSuccess: "Template updated successfully!",
     alertDeleteNotSupported: "Sorry, the underlying gmail microservice does not support deletion yet.",
     confirmDelete: "Are you sure you want to delete this template?",
-    alertDeleteSuccess: "Template deleted successfully!"
-  }
+    alertDeleteSuccess: "Template deleted successfully!",
+    statusFilter: "Status Filter",
+    statusAll: "All",
+    statusScheduling: "Scheduling",
+    statusSent: "Sent",
+    statusFailed: "Failed",
+    statusCancelled: "Cancelled",
+    prevPage: "Previous",
+    nextPage: "Next",
+    totalItems: "Total: {{total}}",
+    page: "Page",
+    pageSize: "Items/Page"
 }

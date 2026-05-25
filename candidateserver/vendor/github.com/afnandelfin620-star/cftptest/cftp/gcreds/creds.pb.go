@@ -183,7 +183,7 @@ func (PdfRequestStatus) EnumDescriptor() ([]byte, []int) {
 	return file_creds_proto_rawDescGZIP(), []int{2}
 }
 
-type CatalogFileConstraint struct {
+type CredentialFileConstraint struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`                                 // 文件名称 [required]
 	Type          CredentialFileType     `protobuf:"varint,2,opt,name=type,proto3,enum=gcreds.CredentialFileType" json:"type,omitempty"` // 文件类型 [required]
@@ -192,20 +192,20 @@ type CatalogFileConstraint struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CatalogFileConstraint) Reset() {
-	*x = CatalogFileConstraint{}
+func (x *CredentialFileConstraint) Reset() {
+	*x = CredentialFileConstraint{}
 	mi := &file_creds_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CatalogFileConstraint) String() string {
+func (x *CredentialFileConstraint) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CatalogFileConstraint) ProtoMessage() {}
+func (*CredentialFileConstraint) ProtoMessage() {}
 
-func (x *CatalogFileConstraint) ProtoReflect() protoreflect.Message {
+func (x *CredentialFileConstraint) ProtoReflect() protoreflect.Message {
 	mi := &file_creds_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -217,56 +217,57 @@ func (x *CatalogFileConstraint) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CatalogFileConstraint.ProtoReflect.Descriptor instead.
-func (*CatalogFileConstraint) Descriptor() ([]byte, []int) {
+// Deprecated: Use CredentialFileConstraint.ProtoReflect.Descriptor instead.
+func (*CredentialFileConstraint) Descriptor() ([]byte, []int) {
 	return file_creds_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *CatalogFileConstraint) GetName() string {
+func (x *CredentialFileConstraint) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *CatalogFileConstraint) GetType() CredentialFileType {
+func (x *CredentialFileConstraint) GetType() CredentialFileType {
 	if x != nil {
 		return x.Type
 	}
 	return CredentialFileType_CREDENTIAL_FILE_TYPE_UNSPECIFIED
 }
 
-func (x *CatalogFileConstraint) GetIsRequired() bool {
+func (x *CredentialFileConstraint) GetIsRequired() bool {
 	if x != nil {
 		return x.IsRequired
 	}
 	return false
 }
 
-type Catalog struct {
-	state           protoimpl.MessageState   `protogen:"open.v1"`
-	CatalogId       string                   `protobuf:"bytes,1,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`                   // 资格类别ID ULID [required]
-	Name            string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                              // 资格类别名称 [required]
-	Description     string                   `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                                // 资格类别描述 [required]
-	FileConstraints []*CatalogFileConstraint `protobuf:"bytes,4,rep,name=file_constraints,json=fileConstraints,proto3" json:"file_constraints,omitempty"` // 文件约束
+type CredentialDefinition struct {
+	state           protoimpl.MessageState      `protogen:"open.v1"`
+	CredDefId       string                      `protobuf:"bytes,1,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`                 // 资格定义ID ULID [required]
+	Name            string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                              // 资格定义名称 [required]
+	Description     string                      `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                                // 资格定义描述 [required]
+	FileConstraints []*CredentialFileConstraint `protobuf:"bytes,4,rep,name=file_constraints,json=fileConstraints,proto3" json:"file_constraints,omitempty"` // 文件约束
+	Category        string                      `protobuf:"bytes,5,opt,name=category,proto3" json:"category,omitempty"`                                      // 资格大类，例如：学业类、法律类 [required]
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *Catalog) Reset() {
-	*x = Catalog{}
+func (x *CredentialDefinition) Reset() {
+	*x = CredentialDefinition{}
 	mi := &file_creds_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Catalog) String() string {
+func (x *CredentialDefinition) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Catalog) ProtoMessage() {}
+func (*CredentialDefinition) ProtoMessage() {}
 
-func (x *Catalog) ProtoReflect() protoreflect.Message {
+func (x *CredentialDefinition) ProtoReflect() protoreflect.Message {
 	mi := &file_creds_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -278,37 +279,44 @@ func (x *Catalog) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Catalog.ProtoReflect.Descriptor instead.
-func (*Catalog) Descriptor() ([]byte, []int) {
+// Deprecated: Use CredentialDefinition.ProtoReflect.Descriptor instead.
+func (*CredentialDefinition) Descriptor() ([]byte, []int) {
 	return file_creds_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *Catalog) GetCatalogId() string {
+func (x *CredentialDefinition) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
 
-func (x *Catalog) GetName() string {
+func (x *CredentialDefinition) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *Catalog) GetDescription() string {
+func (x *CredentialDefinition) GetDescription() string {
 	if x != nil {
 		return x.Description
 	}
 	return ""
 }
 
-func (x *Catalog) GetFileConstraints() []*CatalogFileConstraint {
+func (x *CredentialDefinition) GetFileConstraints() []*CredentialFileConstraint {
 	if x != nil {
 		return x.FileConstraints
 	}
 	return nil
+}
+
+func (x *CredentialDefinition) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
 }
 
 type Credential struct {
@@ -316,7 +324,7 @@ type Credential struct {
 	CredId        string                 `protobuf:"bytes,1,opt,name=cred_id,json=credId,proto3" json:"cred_id,omitempty"`                 // 唯一ID ULID [required]
 	CredGuid      string                 `protobuf:"bytes,2,opt,name=cred_guid,json=credGuid,proto3" json:"cred_guid,omitempty"`           // 跨版本业务唯一 ID
 	CandidateId   string                 `protobuf:"bytes,3,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`  // 考生逻辑 ID (ULID)
-	CatalogId     string                 `protobuf:"bytes,4,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`        // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,4,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`      // 资格定义ID ULID [required]
 	Version       uint32                 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`                            // 版本号 [required]
 	Status        CredentialStatus       `protobuf:"varint,6,opt,name=status,proto3,enum=gcreds.CredentialStatus" json:"status,omitempty"` // 资格状态 [required]
 	Files         []*FileInfo            `protobuf:"bytes,7,rep,name=files,proto3" json:"files,omitempty"`                                 // 文件列表 [required]
@@ -379,9 +387,9 @@ func (x *Credential) GetCandidateId() string {
 	return ""
 }
 
-func (x *Credential) GetCatalogId() string {
+func (x *Credential) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -443,6 +451,7 @@ type FileInfo struct {
 	FileExt       string                 `protobuf:"bytes,4,opt,name=file_ext,json=fileExt,proto3" json:"file_ext,omitempty"`                                    // 文件扩展名 [required]
 	FileSize      uint64                 `protobuf:"varint,5,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`                                // 文件大小 [required]
 	FileUsage     string                 `protobuf:"bytes,6,opt,name=file_usage,json=fileUsage,proto3" json:"file_usage,omitempty"`                              // 文件用途, 如 "front_view" [optional]
+	ViewUrl       string                 `protobuf:"bytes,7,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`                                    // S3 presigned view URL
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -519,11 +528,18 @@ func (x *FileInfo) GetFileUsage() string {
 	return ""
 }
 
+func (x *FileInfo) GetViewUrl() string {
+	if x != nil {
+		return x.ViewUrl
+	}
+	return ""
+}
+
 type Application struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	AppId         string                 `protobuf:"bytes,1,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`                   // 申请ID ULID [required]
 	CandidateId   string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,3,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`       // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,3,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`     // 资格定义ID ULID [required]
 	Status        string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`                              // 申请状态 "PENDING", "APPROVED", "REJECTED" [required]
 	Files         []*FileInfo            `protobuf:"bytes,5,rep,name=files,proto3" json:"files,omitempty"`                                // 文件列表 [required]
 	AuditorId     string                 `protobuf:"bytes,6,opt,name=auditor_id,json=auditorId,proto3" json:"auditor_id,omitempty"`       // 审核人ID ULID [optional]
@@ -578,9 +594,9 @@ func (x *Application) GetCandidateId() string {
 	return ""
 }
 
-func (x *Application) GetCatalogId() string {
+func (x *Application) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -627,30 +643,31 @@ func (x *Application) GetCreatedAt() string {
 	return ""
 }
 
-type CreateCatalogRequest struct {
-	state           protoimpl.MessageState   `protogen:"open.v1"`
-	CatalogId       string                   `protobuf:"bytes,1,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`                   // 资格类别ID ULID [required]
-	Name            string                   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                              // 资格类别名称 [required]
-	Description     string                   `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                                // 资格类别描述 [required]
-	FileConstraints []*CatalogFileConstraint `protobuf:"bytes,4,rep,name=file_constraints,json=fileConstraints,proto3" json:"file_constraints,omitempty"` // 文件约束 [required]
+type CreateCredentialDefinitionRequest struct {
+	state           protoimpl.MessageState      `protogen:"open.v1"`
+	CredDefId       string                      `protobuf:"bytes,1,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`                 // 资格定义ID ULID [required]
+	Name            string                      `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                              // 资格定义名称 [required]
+	Description     string                      `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                                // 资格定义描述 [required]
+	FileConstraints []*CredentialFileConstraint `protobuf:"bytes,4,rep,name=file_constraints,json=fileConstraints,proto3" json:"file_constraints,omitempty"` // 文件约束 [required]
+	Category        string                      `protobuf:"bytes,5,opt,name=category,proto3" json:"category,omitempty"`                                      // 资格大类，例如：学业类、法律类 [required]
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *CreateCatalogRequest) Reset() {
-	*x = CreateCatalogRequest{}
+func (x *CreateCredentialDefinitionRequest) Reset() {
+	*x = CreateCredentialDefinitionRequest{}
 	mi := &file_creds_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateCatalogRequest) String() string {
+func (x *CreateCredentialDefinitionRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateCatalogRequest) ProtoMessage() {}
+func (*CreateCredentialDefinitionRequest) ProtoMessage() {}
 
-func (x *CreateCatalogRequest) ProtoReflect() protoreflect.Message {
+func (x *CreateCredentialDefinitionRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_creds_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -662,59 +679,66 @@ func (x *CreateCatalogRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateCatalogRequest.ProtoReflect.Descriptor instead.
-func (*CreateCatalogRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateCredentialDefinitionRequest.ProtoReflect.Descriptor instead.
+func (*CreateCredentialDefinitionRequest) Descriptor() ([]byte, []int) {
 	return file_creds_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *CreateCatalogRequest) GetCatalogId() string {
+func (x *CreateCredentialDefinitionRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
 
-func (x *CreateCatalogRequest) GetName() string {
+func (x *CreateCredentialDefinitionRequest) GetName() string {
 	if x != nil {
 		return x.Name
 	}
 	return ""
 }
 
-func (x *CreateCatalogRequest) GetDescription() string {
+func (x *CreateCredentialDefinitionRequest) GetDescription() string {
 	if x != nil {
 		return x.Description
 	}
 	return ""
 }
 
-func (x *CreateCatalogRequest) GetFileConstraints() []*CatalogFileConstraint {
+func (x *CreateCredentialDefinitionRequest) GetFileConstraints() []*CredentialFileConstraint {
 	if x != nil {
 		return x.FileConstraints
 	}
 	return nil
 }
 
-type ListCatalogsRequest struct {
+func (x *CreateCredentialDefinitionRequest) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+type ListCredentialDefinitionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListCatalogsRequest) Reset() {
-	*x = ListCatalogsRequest{}
+func (x *ListCredentialDefinitionsRequest) Reset() {
+	*x = ListCredentialDefinitionsRequest{}
 	mi := &file_creds_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListCatalogsRequest) String() string {
+func (x *ListCredentialDefinitionsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListCatalogsRequest) ProtoMessage() {}
+func (*ListCredentialDefinitionsRequest) ProtoMessage() {}
 
-func (x *ListCatalogsRequest) ProtoReflect() protoreflect.Message {
+func (x *ListCredentialDefinitionsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_creds_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -726,32 +750,32 @@ func (x *ListCatalogsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListCatalogsRequest.ProtoReflect.Descriptor instead.
-func (*ListCatalogsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListCredentialDefinitionsRequest.ProtoReflect.Descriptor instead.
+func (*ListCredentialDefinitionsRequest) Descriptor() ([]byte, []int) {
 	return file_creds_proto_rawDescGZIP(), []int{6}
 }
 
-type ListCatalogsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Catalogs      []*Catalog             `protobuf:"bytes,1,rep,name=catalogs,proto3" json:"catalogs,omitempty"`
+type ListCredentialDefinitionsResponse struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Definitions   []*CredentialDefinition `protobuf:"bytes,1,rep,name=definitions,proto3" json:"definitions,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ListCatalogsResponse) Reset() {
-	*x = ListCatalogsResponse{}
+func (x *ListCredentialDefinitionsResponse) Reset() {
+	*x = ListCredentialDefinitionsResponse{}
 	mi := &file_creds_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ListCatalogsResponse) String() string {
+func (x *ListCredentialDefinitionsResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ListCatalogsResponse) ProtoMessage() {}
+func (*ListCredentialDefinitionsResponse) ProtoMessage() {}
 
-func (x *ListCatalogsResponse) ProtoReflect() protoreflect.Message {
+func (x *ListCredentialDefinitionsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_creds_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -763,14 +787,14 @@ func (x *ListCatalogsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ListCatalogsResponse.ProtoReflect.Descriptor instead.
-func (*ListCatalogsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ListCredentialDefinitionsResponse.ProtoReflect.Descriptor instead.
+func (*ListCredentialDefinitionsResponse) Descriptor() ([]byte, []int) {
 	return file_creds_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *ListCatalogsResponse) GetCatalogs() []*Catalog {
+func (x *ListCredentialDefinitionsResponse) GetDefinitions() []*CredentialDefinition {
 	if x != nil {
-		return x.Catalogs
+		return x.Definitions
 	}
 	return nil
 }
@@ -778,7 +802,7 @@ func (x *ListCatalogsResponse) GetCatalogs() []*Catalog {
 type SubmitApplicationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`       // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`     // 资格定义ID ULID [required]
 	Files         []*FileInfo            `protobuf:"bytes,3,rep,name=files,proto3" json:"files,omitempty"`                                // 文件列表 [required]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -821,9 +845,9 @@ func (x *SubmitApplicationRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *SubmitApplicationRequest) GetCatalogId() string {
+func (x *SubmitApplicationRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -914,7 +938,7 @@ func (x *AuditApplicationRequest) GetValidUntil() string {
 type GetLatestApplicationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`       // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`     // 资格定义ID ULID [required]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -956,9 +980,9 @@ func (x *GetLatestApplicationRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *GetLatestApplicationRequest) GetCatalogId() string {
+func (x *GetLatestApplicationRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -966,7 +990,7 @@ func (x *GetLatestApplicationRequest) GetCatalogId() string {
 type GrantUploadPermissionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`    // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`          // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`        // 资格定义ID ULID [required]
 	OperatorId    string                 `protobuf:"bytes,3,opt,name=operator_id,json=operatorId,proto3" json:"operator_id,omitempty"`       // 调用方操作人或系统ID [required]
 	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`                                 // 原因 [required]
 	SourceSystem  string                 `protobuf:"bytes,5,opt,name=source_system,json=sourceSystem,proto3" json:"source_system,omitempty"` // 系统来源 [required]
@@ -1011,9 +1035,9 @@ func (x *GrantUploadPermissionRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *GrantUploadPermissionRequest) GetCatalogId() string {
+func (x *GrantUploadPermissionRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -1042,7 +1066,7 @@ func (x *GrantUploadPermissionRequest) GetSourceSystem() string {
 type RevokeUploadPermissionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`    // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`          // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`        // 资格定义ID ULID [required]
 	OperatorId    string                 `protobuf:"bytes,3,opt,name=operator_id,json=operatorId,proto3" json:"operator_id,omitempty"`       // 调用方操作人或系统ID [required]
 	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`                                 // 原因 [required]
 	SourceSystem  string                 `protobuf:"bytes,5,opt,name=source_system,json=sourceSystem,proto3" json:"source_system,omitempty"` // 系统来源 [required]
@@ -1087,9 +1111,9 @@ func (x *RevokeUploadPermissionRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *RevokeUploadPermissionRequest) GetCatalogId() string {
+func (x *RevokeUploadPermissionRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -1118,7 +1142,7 @@ func (x *RevokeUploadPermissionRequest) GetSourceSystem() string {
 type UploadPermissionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`       // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`     // 资格定义ID ULID [required]
 	Granted       bool                   `protobuf:"varint,3,opt,name=granted,proto3" json:"granted,omitempty"`                           // 当前是否已授予上传权限 [required]
 	Message       string                 `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`                            // 人类可读说明 [required]
 	unknownFields protoimpl.UnknownFields
@@ -1162,9 +1186,9 @@ func (x *UploadPermissionResponse) GetCandidateId() string {
 	return ""
 }
 
-func (x *UploadPermissionResponse) GetCatalogId() string {
+func (x *UploadPermissionResponse) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -1186,7 +1210,7 @@ func (x *UploadPermissionResponse) GetMessage() string {
 type GetLatestCredentialRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`     // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`           // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`         // 资格定义ID ULID [required]
 	WithoutFiles  bool                   `protobuf:"varint,3,opt,name=without_files,json=withoutFiles,proto3" json:"without_files,omitempty"` // [optional] 是否排除文件列表
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1229,9 +1253,9 @@ func (x *GetLatestCredentialRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *GetLatestCredentialRequest) GetCatalogId() string {
+func (x *GetLatestCredentialRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -1246,7 +1270,7 @@ func (x *GetLatestCredentialRequest) GetWithoutFiles() bool {
 type CheckCandidateQualificationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`       // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`     // 资格定义ID ULID [required]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1288,9 +1312,9 @@ func (x *CheckCandidateQualificationRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *CheckCandidateQualificationRequest) GetCatalogId() string {
+func (x *CheckCandidateQualificationRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -1358,7 +1382,7 @@ func (x *CheckCandidateQualificationResponse) GetMessage() string {
 type GetCredentialVersionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`     // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`           // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`         // 资格定义ID ULID [required]
 	Version       uint32                 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`                               // 版本号 [required]
 	WithoutFiles  bool                   `protobuf:"varint,4,opt,name=without_files,json=withoutFiles,proto3" json:"without_files,omitempty"` // [optional] 是否排除文件列表
 	unknownFields protoimpl.UnknownFields
@@ -1402,9 +1426,9 @@ func (x *GetCredentialVersionRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *GetCredentialVersionRequest) GetCatalogId() string {
+func (x *GetCredentialVersionRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -1426,7 +1450,7 @@ func (x *GetCredentialVersionRequest) GetWithoutFiles() bool {
 type MarkExpiredRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`       // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`     // 资格定义ID ULID [required]
 	AuditorId     string                 `protobuf:"bytes,3,opt,name=auditor_id,json=auditorId,proto3" json:"auditor_id,omitempty"`       // 审核人ID ULID [required]
 	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`                              // 原因 [required]
 	unknownFields protoimpl.UnknownFields
@@ -1470,9 +1494,9 @@ func (x *MarkExpiredRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *MarkExpiredRequest) GetCatalogId() string {
+func (x *MarkExpiredRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -1494,7 +1518,7 @@ func (x *MarkExpiredRequest) GetReason() string {
 type RevokeCredentialRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ULID [required]
-	CatalogId     string                 `protobuf:"bytes,2,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`       // 资格类别ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`     // 资格定义ID ULID [required]
 	AuditorId     string                 `protobuf:"bytes,3,opt,name=auditor_id,json=auditorId,proto3" json:"auditor_id,omitempty"`       // 审核人ID ULID [required]
 	Reason        string                 `protobuf:"bytes,4,opt,name=reason,proto3" json:"reason,omitempty"`                              // 原因 [required]
 	unknownFields protoimpl.UnknownFields
@@ -1538,9 +1562,9 @@ func (x *RevokeCredentialRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *RevokeCredentialRequest) GetCatalogId() string {
+func (x *RevokeCredentialRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -1917,7 +1941,7 @@ type PdfRequest struct {
 	BusinessUnit   string                 `protobuf:"bytes,2,opt,name=business_unit,json=businessUnit,proto3" json:"business_unit,omitempty"`       // 业务系统标识 [required]
 	ExtRefId       string                 `protobuf:"bytes,3,opt,name=ext_ref_id,json=extRefId,proto3" json:"ext_ref_id,omitempty"`                 // 外部引用ID [optional]
 	CandidateId    string                 `protobuf:"bytes,4,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`          // 考生ID ULID [required]
-	CatalogId      string                 `protobuf:"bytes,5,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`                // 资格类别ID ULID [required]
+	CredDefId      string                 `protobuf:"bytes,5,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`              // 资格定义ID ULID [required]
 	DegreeNo       string                 `protobuf:"bytes,6,opt,name=degree_no,json=degreeNo,proto3" json:"degree_no,omitempty"`                   // 学位号 [required]
 	TemplateId     string                 `protobuf:"bytes,7,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`             // 模板ID ULID [required]
 	TemplateParams string                 `protobuf:"bytes,8,opt,name=template_params,json=templateParams,proto3" json:"template_params,omitempty"` // 模板渲染参数 JSON字符串 [required]
@@ -1994,9 +2018,9 @@ func (x *PdfRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *PdfRequest) GetCatalogId() string {
+func (x *PdfRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -2104,7 +2128,7 @@ type CreatePdfRequestRequest struct {
 	RequestId      string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                // 请求ID ULID, 由客户端生成 [required]
 	BusinessUnit   string                 `protobuf:"bytes,2,opt,name=business_unit,json=businessUnit,proto3" json:"business_unit,omitempty"`       // 业务系统标识 [required]
 	CandidateId    string                 `protobuf:"bytes,3,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`          // 考生ID ULID [required]
-	CatalogId      string                 `protobuf:"bytes,4,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`                // 资格类别ID ULID [required]
+	CredDefId      string                 `protobuf:"bytes,4,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`              // 资格定义ID ULID [required]
 	DegreeNo       string                 `protobuf:"bytes,5,opt,name=degree_no,json=degreeNo,proto3" json:"degree_no,omitempty"`                   // 学位号 [required]
 	TemplateId     string                 `protobuf:"bytes,6,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`             // 模板ID ULID [required]
 	TemplateParams string                 `protobuf:"bytes,7,opt,name=template_params,json=templateParams,proto3" json:"template_params,omitempty"` // 模板渲染参数 JSON字符串 [required]
@@ -2166,9 +2190,9 @@ func (x *CreatePdfRequestRequest) GetCandidateId() string {
 	return ""
 }
 
-func (x *CreatePdfRequestRequest) GetCatalogId() string {
+func (x *CreatePdfRequestRequest) GetCredDefId() string {
 	if x != nil {
-		return x.CatalogId
+		return x.CredDefId
 	}
 	return ""
 }
@@ -2455,29 +2479,156 @@ func (x *GetPdfCertificateResponse) GetFileName() string {
 	return ""
 }
 
+type RequestUploadUrlRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生 ID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`     // 资格定义 ID [required]
+	FileHash      string                 `protobuf:"bytes,3,opt,name=file_hash,json=fileHash,proto3" json:"file_hash,omitempty"`          // 文件 SHA256 哈希 [required]
+	FileExt       string                 `protobuf:"bytes,4,opt,name=file_ext,json=fileExt,proto3" json:"file_ext,omitempty"`             // 文件扩展名 [required]
+	ContentType   string                 `protobuf:"bytes,5,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"` // HTTP Content-Type (如 image/png) [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestUploadUrlRequest) Reset() {
+	*x = RequestUploadUrlRequest{}
+	mi := &file_creds_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestUploadUrlRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestUploadUrlRequest) ProtoMessage() {}
+
+func (x *RequestUploadUrlRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_creds_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestUploadUrlRequest.ProtoReflect.Descriptor instead.
+func (*RequestUploadUrlRequest) Descriptor() ([]byte, []int) {
+	return file_creds_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *RequestUploadUrlRequest) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *RequestUploadUrlRequest) GetCredDefId() string {
+	if x != nil {
+		return x.CredDefId
+	}
+	return ""
+}
+
+func (x *RequestUploadUrlRequest) GetFileHash() string {
+	if x != nil {
+		return x.FileHash
+	}
+	return ""
+}
+
+func (x *RequestUploadUrlRequest) GetFileExt() string {
+	if x != nil {
+		return x.FileExt
+	}
+	return ""
+}
+
+func (x *RequestUploadUrlRequest) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+type RequestUploadUrlResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UploadUrl     string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"` // S3 presigned PUT URL
+	FileKey       string                 `protobuf:"bytes,2,opt,name=file_key,json=fileKey,proto3" json:"file_key,omitempty"`       // 对应的 S3 Key
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestUploadUrlResponse) Reset() {
+	*x = RequestUploadUrlResponse{}
+	mi := &file_creds_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestUploadUrlResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestUploadUrlResponse) ProtoMessage() {}
+
+func (x *RequestUploadUrlResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_creds_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestUploadUrlResponse.ProtoReflect.Descriptor instead.
+func (*RequestUploadUrlResponse) Descriptor() ([]byte, []int) {
+	return file_creds_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *RequestUploadUrlResponse) GetUploadUrl() string {
+	if x != nil {
+		return x.UploadUrl
+	}
+	return ""
+}
+
+func (x *RequestUploadUrlResponse) GetFileKey() string {
+	if x != nil {
+		return x.FileKey
+	}
+	return ""
+}
+
 var File_creds_proto protoreflect.FileDescriptor
 
 const file_creds_proto_rawDesc = "" +
 	"\n" +
-	"\vcreds.proto\x12\x06gcreds\"|\n" +
-	"\x15CatalogFileConstraint\x12\x12\n" +
+	"\vcreds.proto\x12\x06gcreds\"\x7f\n" +
+	"\x18CredentialFileConstraint\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12.\n" +
 	"\x04type\x18\x02 \x01(\x0e2\x1a.gcreds.CredentialFileTypeR\x04type\x12\x1f\n" +
 	"\vis_required\x18\x03 \x01(\bR\n" +
-	"isRequired\"\xa8\x01\n" +
-	"\aCatalog\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x01 \x01(\tR\tcatalogId\x12\x12\n" +
+	"isRequired\"\xd5\x01\n" +
+	"\x14CredentialDefinition\x12\x1e\n" +
+	"\vcred_def_id\x18\x01 \x01(\tR\tcredDefId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\x12H\n" +
-	"\x10file_constraints\x18\x04 \x03(\v2\x1d.gcreds.CatalogFileConstraintR\x0ffileConstraints\"\xfa\x02\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12K\n" +
+	"\x10file_constraints\x18\x04 \x03(\v2 .gcreds.CredentialFileConstraintR\x0ffileConstraints\x12\x1a\n" +
+	"\bcategory\x18\x05 \x01(\tR\bcategory\"\xfb\x02\n" +
 	"\n" +
 	"Credential\x12\x17\n" +
 	"\acred_id\x18\x01 \x01(\tR\x06credId\x12\x1b\n" +
 	"\tcred_guid\x18\x02 \x01(\tR\bcredGuid\x12!\n" +
-	"\fcandidate_id\x18\x03 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x04 \x01(\tR\tcatalogId\x12\x18\n" +
+	"\fcandidate_id\x18\x03 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x04 \x01(\tR\tcredDefId\x12\x18\n" +
 	"\aversion\x18\x05 \x01(\rR\aversion\x120\n" +
 	"\x06status\x18\x06 \x01(\x0e2\x18.gcreds.CredentialStatusR\x06status\x12&\n" +
 	"\x05files\x18\a \x03(\v2\x10.gcreds.FileInfoR\x05files\x12\x1d\n" +
@@ -2488,7 +2639,7 @@ const file_creds_proto_rawDesc = "" +
 	" \x01(\tR\n" +
 	"validUntil\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\v \x01(\tR\tcreatedAt\"\xd4\x01\n" +
+	"created_at\x18\v \x01(\tR\tcreatedAt\"\xef\x01\n" +
 	"\bFileInfo\x12\x1b\n" +
 	"\tfile_hash\x18\x01 \x01(\tR\bfileHash\x12\x1b\n" +
 	"\tfile_name\x18\x02 \x01(\tR\bfileName\x127\n" +
@@ -2496,12 +2647,12 @@ const file_creds_proto_rawDesc = "" +
 	"\bfile_ext\x18\x04 \x01(\tR\afileExt\x12\x1b\n" +
 	"\tfile_size\x18\x05 \x01(\x04R\bfileSize\x12\x1d\n" +
 	"\n" +
-	"file_usage\x18\x06 \x01(\tR\tfileUsage\"\xa2\x02\n" +
+	"file_usage\x18\x06 \x01(\tR\tfileUsage\x12\x19\n" +
+	"\bview_url\x18\a \x01(\tR\aviewUrl\"\xa3\x02\n" +
 	"\vApplication\x12\x15\n" +
 	"\x06app_id\x18\x01 \x01(\tR\x05appId\x12!\n" +
-	"\fcandidate_id\x18\x02 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x03 \x01(\tR\tcatalogId\x12\x16\n" +
+	"\fcandidate_id\x18\x02 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x03 \x01(\tR\tcredDefId\x12\x16\n" +
 	"\x06status\x18\x04 \x01(\tR\x06status\x12&\n" +
 	"\x05files\x18\x05 \x03(\v2\x10.gcreds.FileInfoR\x05files\x12\x1d\n" +
 	"\n" +
@@ -2509,20 +2660,19 @@ const file_creds_proto_rawDesc = "" +
 	"\faudit_remark\x18\a \x01(\tR\vauditRemark\x12\x19\n" +
 	"\baudit_at\x18\b \x01(\tR\aauditAt\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\t \x01(\tR\tcreatedAt\"\xb5\x01\n" +
-	"\x14CreateCatalogRequest\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x01 \x01(\tR\tcatalogId\x12\x12\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\"\xe2\x01\n" +
+	"!CreateCredentialDefinitionRequest\x12\x1e\n" +
+	"\vcred_def_id\x18\x01 \x01(\tR\tcredDefId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\x12H\n" +
-	"\x10file_constraints\x18\x04 \x03(\v2\x1d.gcreds.CatalogFileConstraintR\x0ffileConstraints\"\x15\n" +
-	"\x13ListCatalogsRequest\"C\n" +
-	"\x14ListCatalogsResponse\x12+\n" +
-	"\bcatalogs\x18\x01 \x03(\v2\x0f.gcreds.CatalogR\bcatalogs\"\x84\x01\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x12K\n" +
+	"\x10file_constraints\x18\x04 \x03(\v2 .gcreds.CredentialFileConstraintR\x0ffileConstraints\x12\x1a\n" +
+	"\bcategory\x18\x05 \x01(\tR\bcategory\"\"\n" +
+	" ListCredentialDefinitionsRequest\"c\n" +
+	"!ListCredentialDefinitionsResponse\x12>\n" +
+	"\vdefinitions\x18\x01 \x03(\v2\x1c.gcreds.CredentialDefinitionR\vdefinitions\"\x85\x01\n" +
 	"\x18SubmitApplicationRequest\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\x12&\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12&\n" +
 	"\x05files\x18\x03 \x03(\v2\x10.gcreds.FileInfoR\x05files\"\xaf\x01\n" +
 	"\x17AuditApplicationRequest\x12\x15\n" +
 	"\x06app_id\x18\x01 \x01(\tR\x05appId\x12\x1a\n" +
@@ -2531,63 +2681,54 @@ const file_creds_proto_rawDesc = "" +
 	"auditor_id\x18\x03 \x01(\tR\tauditorId\x12!\n" +
 	"\faudit_remark\x18\x04 \x01(\tR\vauditRemark\x12\x1f\n" +
 	"\vvalid_until\x18\x05 \x01(\tR\n" +
-	"validUntil\"_\n" +
+	"validUntil\"`\n" +
 	"\x1bGetLatestApplicationRequest\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\"\xbe\x01\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\"\xbf\x01\n" +
 	"\x1cGrantUploadPermissionRequest\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\x12\x1f\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12\x1f\n" +
 	"\voperator_id\x18\x03 \x01(\tR\n" +
 	"operatorId\x12\x16\n" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\x12#\n" +
-	"\rsource_system\x18\x05 \x01(\tR\fsourceSystem\"\xbf\x01\n" +
+	"\rsource_system\x18\x05 \x01(\tR\fsourceSystem\"\xc0\x01\n" +
 	"\x1dRevokeUploadPermissionRequest\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\x12\x1f\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12\x1f\n" +
 	"\voperator_id\x18\x03 \x01(\tR\n" +
 	"operatorId\x12\x16\n" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\x12#\n" +
-	"\rsource_system\x18\x05 \x01(\tR\fsourceSystem\"\x90\x01\n" +
+	"\rsource_system\x18\x05 \x01(\tR\fsourceSystem\"\x91\x01\n" +
 	"\x18UploadPermissionResponse\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\x12\x18\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12\x18\n" +
 	"\agranted\x18\x03 \x01(\bR\agranted\x12\x18\n" +
-	"\amessage\x18\x04 \x01(\tR\amessage\"\x83\x01\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\"\x84\x01\n" +
 	"\x1aGetLatestCredentialRequest\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\x12#\n" +
-	"\rwithout_files\x18\x03 \x01(\bR\fwithoutFiles\"f\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12#\n" +
+	"\rwithout_files\x18\x03 \x01(\bR\fwithoutFiles\"g\n" +
 	"\"CheckCandidateQualificationRequest\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\"\xa2\x01\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\"\xa2\x01\n" +
 	"#CheckCandidateQualificationResponse\x12\x1a\n" +
 	"\beligible\x18\x01 \x01(\bR\beligible\x12E\n" +
 	"\x11credential_status\x18\x02 \x01(\x0e2\x18.gcreds.CredentialStatusR\x10credentialStatus\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\x9e\x01\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\x9f\x01\n" +
 	"\x1bGetCredentialVersionRequest\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\x12\x18\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\rR\aversion\x12#\n" +
-	"\rwithout_files\x18\x04 \x01(\bR\fwithoutFiles\"\x8d\x01\n" +
+	"\rwithout_files\x18\x04 \x01(\bR\fwithoutFiles\"\x8e\x01\n" +
 	"\x12MarkExpiredRequest\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\x12\x1d\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12\x1d\n" +
 	"\n" +
 	"auditor_id\x18\x03 \x01(\tR\tauditorId\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason\"\x92\x01\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"\x93\x01\n" +
 	"\x17RevokeCredentialRequest\x12!\n" +
-	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x02 \x01(\tR\tcatalogId\x12\x1d\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12\x1d\n" +
 	"\n" +
 	"auditor_id\x18\x03 \x01(\tR\tauditorId\x12\x16\n" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\"\xe1\x01\n" +
@@ -2619,7 +2760,7 @@ const file_creds_proto_rawDesc = "" +
 	"templateId\"\x19\n" +
 	"\x17ListPdfTemplatesRequest\"M\n" +
 	"\x18ListPdfTemplatesResponse\x121\n" +
-	"\ttemplates\x18\x01 \x03(\v2\x13.gcreds.PdfTemplateR\ttemplates\"\x8e\x05\n" +
+	"\ttemplates\x18\x01 \x03(\v2\x13.gcreds.PdfTemplateR\ttemplates\"\x8f\x05\n" +
 	"\n" +
 	"PdfRequest\x12\x1d\n" +
 	"\n" +
@@ -2627,9 +2768,8 @@ const file_creds_proto_rawDesc = "" +
 	"\rbusiness_unit\x18\x02 \x01(\tR\fbusinessUnit\x12\x1c\n" +
 	"\n" +
 	"ext_ref_id\x18\x03 \x01(\tR\bextRefId\x12!\n" +
-	"\fcandidate_id\x18\x04 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x05 \x01(\tR\tcatalogId\x12\x1b\n" +
+	"\fcandidate_id\x18\x04 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x05 \x01(\tR\tcredDefId\x12\x1b\n" +
 	"\tdegree_no\x18\x06 \x01(\tR\bdegreeNo\x12\x1f\n" +
 	"\vtemplate_id\x18\a \x01(\tR\n" +
 	"templateId\x12'\n" +
@@ -2651,14 +2791,13 @@ const file_creds_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x12 \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x13 \x01(\tR\tupdatedAt\"\xe4\x02\n" +
+	"updated_at\x18\x13 \x01(\tR\tupdatedAt\"\xe5\x02\n" +
 	"\x17CreatePdfRequestRequest\x12\x1d\n" +
 	"\n" +
 	"request_id\x18\x01 \x01(\tR\trequestId\x12#\n" +
 	"\rbusiness_unit\x18\x02 \x01(\tR\fbusinessUnit\x12!\n" +
-	"\fcandidate_id\x18\x03 \x01(\tR\vcandidateId\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x04 \x01(\tR\tcatalogId\x12\x1b\n" +
+	"\fcandidate_id\x18\x03 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x04 \x01(\tR\tcredDefId\x12\x1b\n" +
 	"\tdegree_no\x18\x05 \x01(\tR\bdegreeNo\x12\x1f\n" +
 	"\vtemplate_id\x18\x06 \x01(\tR\n" +
 	"templateId\x12'\n" +
@@ -2692,7 +2831,17 @@ const file_creds_proto_rawDesc = "" +
 	"\x19GetPdfCertificateResponse\x12\x19\n" +
 	"\bpdf_data\x18\x01 \x01(\fR\apdfData\x12\x16\n" +
 	"\x06sha256\x18\x02 \x01(\tR\x06sha256\x12\x1b\n" +
-	"\tfile_name\x18\x03 \x01(\tR\bfileName*\x91\x01\n" +
+	"\tfile_name\x18\x03 \x01(\tR\bfileName\"\xb7\x01\n" +
+	"\x17RequestUploadUrlRequest\x12!\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12\x1b\n" +
+	"\tfile_hash\x18\x03 \x01(\tR\bfileHash\x12\x19\n" +
+	"\bfile_ext\x18\x04 \x01(\tR\afileExt\x12!\n" +
+	"\fcontent_type\x18\x05 \x01(\tR\vcontentType\"T\n" +
+	"\x18RequestUploadUrlResponse\x12\x1d\n" +
+	"\n" +
+	"upload_url\x18\x01 \x01(\tR\tuploadUrl\x12\x19\n" +
+	"\bfile_key\x18\x02 \x01(\tR\afileKey*\x91\x01\n" +
 	"\x10CredentialStatus\x12!\n" +
 	"\x1dCREDENTIAL_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18CREDENTIAL_STATUS_ACTIVE\x10\x01\x12\x1d\n" +
@@ -2709,15 +2858,16 @@ const file_creds_proto_rawDesc = "" +
 	"\x1aPDF_REQUEST_STATUS_PENDING\x10\x01\x12!\n" +
 	"\x1dPDF_REQUEST_STATUS_PROCESSING\x10\x02\x12 \n" +
 	"\x1cPDF_REQUEST_STATUS_COMPLETED\x10\x03\x12\x1d\n" +
-	"\x19PDF_REQUEST_STATUS_FAILED\x10\x042\xce\f\n" +
-	"\x11CredentialService\x12>\n" +
-	"\rCreateCatalog\x12\x1c.gcreds.CreateCatalogRequest\x1a\x0f.gcreds.Catalog\x12I\n" +
-	"\fListCatalogs\x12\x1b.gcreds.ListCatalogsRequest\x1a\x1c.gcreds.ListCatalogsResponse\x12J\n" +
+	"\x19PDF_REQUEST_STATUS_FAILED\x10\x042\xf3\r\n" +
+	"\x11CredentialService\x12e\n" +
+	"\x1aCreateCredentialDefinition\x12).gcreds.CreateCredentialDefinitionRequest\x1a\x1c.gcreds.CredentialDefinition\x12p\n" +
+	"\x19ListCredentialDefinitions\x12(.gcreds.ListCredentialDefinitionsRequest\x1a).gcreds.ListCredentialDefinitionsResponse\x12J\n" +
 	"\x11SubmitApplication\x12 .gcreds.SubmitApplicationRequest\x1a\x13.gcreds.Application\x12H\n" +
 	"\x10AuditApplication\x12\x1f.gcreds.AuditApplicationRequest\x1a\x13.gcreds.Application\x12P\n" +
 	"\x14GetLatestApplication\x12#.gcreds.GetLatestApplicationRequest\x1a\x13.gcreds.Application\x12_\n" +
 	"\x15GrantUploadPermission\x12$.gcreds.GrantUploadPermissionRequest\x1a .gcreds.UploadPermissionResponse\x12a\n" +
-	"\x16RevokeUploadPermission\x12%.gcreds.RevokeUploadPermissionRequest\x1a .gcreds.UploadPermissionResponse\x12M\n" +
+	"\x16RevokeUploadPermission\x12%.gcreds.RevokeUploadPermissionRequest\x1a .gcreds.UploadPermissionResponse\x12U\n" +
+	"\x10RequestUploadUrl\x12\x1f.gcreds.RequestUploadUrlRequest\x1a .gcreds.RequestUploadUrlResponse\x12M\n" +
 	"\x13GetLatestCredential\x12\".gcreds.GetLatestCredentialRequest\x1a\x12.gcreds.Credential\x12v\n" +
 	"\x1bCheckCandidateQualification\x12*.gcreds.CheckCandidateQualificationRequest\x1a+.gcreds.CheckCandidateQualificationResponse\x12O\n" +
 	"\x14GetCredentialVersion\x12#.gcreds.GetCredentialVersionRequest\x1a\x12.gcreds.Credential\x12=\n" +
@@ -2745,19 +2895,19 @@ func file_creds_proto_rawDescGZIP() []byte {
 }
 
 var file_creds_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_creds_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_creds_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_creds_proto_goTypes = []any{
 	(CredentialStatus)(0),                       // 0: gcreds.CredentialStatus
 	(CredentialFileType)(0),                     // 1: gcreds.CredentialFileType
 	(PdfRequestStatus)(0),                       // 2: gcreds.PdfRequestStatus
-	(*CatalogFileConstraint)(nil),               // 3: gcreds.CatalogFileConstraint
-	(*Catalog)(nil),                             // 4: gcreds.Catalog
+	(*CredentialFileConstraint)(nil),            // 3: gcreds.CredentialFileConstraint
+	(*CredentialDefinition)(nil),                // 4: gcreds.CredentialDefinition
 	(*Credential)(nil),                          // 5: gcreds.Credential
 	(*FileInfo)(nil),                            // 6: gcreds.FileInfo
 	(*Application)(nil),                         // 7: gcreds.Application
-	(*CreateCatalogRequest)(nil),                // 8: gcreds.CreateCatalogRequest
-	(*ListCatalogsRequest)(nil),                 // 9: gcreds.ListCatalogsRequest
-	(*ListCatalogsResponse)(nil),                // 10: gcreds.ListCatalogsResponse
+	(*CreateCredentialDefinitionRequest)(nil),   // 8: gcreds.CreateCredentialDefinitionRequest
+	(*ListCredentialDefinitionsRequest)(nil),    // 9: gcreds.ListCredentialDefinitionsRequest
+	(*ListCredentialDefinitionsResponse)(nil),   // 10: gcreds.ListCredentialDefinitionsResponse
 	(*SubmitApplicationRequest)(nil),            // 11: gcreds.SubmitApplicationRequest
 	(*AuditApplicationRequest)(nil),             // 12: gcreds.AuditApplicationRequest
 	(*GetLatestApplicationRequest)(nil),         // 13: gcreds.GetLatestApplicationRequest
@@ -2782,62 +2932,66 @@ var file_creds_proto_goTypes = []any{
 	(*GetPdfRequestRequest)(nil),                // 32: gcreds.GetPdfRequestRequest
 	(*GetPdfCertificateRequest)(nil),            // 33: gcreds.GetPdfCertificateRequest
 	(*GetPdfCertificateResponse)(nil),           // 34: gcreds.GetPdfCertificateResponse
+	(*RequestUploadUrlRequest)(nil),             // 35: gcreds.RequestUploadUrlRequest
+	(*RequestUploadUrlResponse)(nil),            // 36: gcreds.RequestUploadUrlResponse
 }
 var file_creds_proto_depIdxs = []int32{
-	1,  // 0: gcreds.CatalogFileConstraint.type:type_name -> gcreds.CredentialFileType
-	3,  // 1: gcreds.Catalog.file_constraints:type_name -> gcreds.CatalogFileConstraint
+	1,  // 0: gcreds.CredentialFileConstraint.type:type_name -> gcreds.CredentialFileType
+	3,  // 1: gcreds.CredentialDefinition.file_constraints:type_name -> gcreds.CredentialFileConstraint
 	0,  // 2: gcreds.Credential.status:type_name -> gcreds.CredentialStatus
 	6,  // 3: gcreds.Credential.files:type_name -> gcreds.FileInfo
 	1,  // 4: gcreds.FileInfo.file_type:type_name -> gcreds.CredentialFileType
 	6,  // 5: gcreds.Application.files:type_name -> gcreds.FileInfo
-	3,  // 6: gcreds.CreateCatalogRequest.file_constraints:type_name -> gcreds.CatalogFileConstraint
-	4,  // 7: gcreds.ListCatalogsResponse.catalogs:type_name -> gcreds.Catalog
+	3,  // 6: gcreds.CreateCredentialDefinitionRequest.file_constraints:type_name -> gcreds.CredentialFileConstraint
+	4,  // 7: gcreds.ListCredentialDefinitionsResponse.definitions:type_name -> gcreds.CredentialDefinition
 	6,  // 8: gcreds.SubmitApplicationRequest.files:type_name -> gcreds.FileInfo
 	0,  // 9: gcreds.CheckCandidateQualificationResponse.credential_status:type_name -> gcreds.CredentialStatus
 	23, // 10: gcreds.ListPdfTemplatesResponse.templates:type_name -> gcreds.PdfTemplate
 	2,  // 11: gcreds.PdfRequest.status:type_name -> gcreds.PdfRequestStatus
-	8,  // 12: gcreds.CredentialService.CreateCatalog:input_type -> gcreds.CreateCatalogRequest
-	9,  // 13: gcreds.CredentialService.ListCatalogs:input_type -> gcreds.ListCatalogsRequest
+	8,  // 12: gcreds.CredentialService.CreateCredentialDefinition:input_type -> gcreds.CreateCredentialDefinitionRequest
+	9,  // 13: gcreds.CredentialService.ListCredentialDefinitions:input_type -> gcreds.ListCredentialDefinitionsRequest
 	11, // 14: gcreds.CredentialService.SubmitApplication:input_type -> gcreds.SubmitApplicationRequest
 	12, // 15: gcreds.CredentialService.AuditApplication:input_type -> gcreds.AuditApplicationRequest
 	13, // 16: gcreds.CredentialService.GetLatestApplication:input_type -> gcreds.GetLatestApplicationRequest
 	14, // 17: gcreds.CredentialService.GrantUploadPermission:input_type -> gcreds.GrantUploadPermissionRequest
 	15, // 18: gcreds.CredentialService.RevokeUploadPermission:input_type -> gcreds.RevokeUploadPermissionRequest
-	17, // 19: gcreds.CredentialService.GetLatestCredential:input_type -> gcreds.GetLatestCredentialRequest
-	18, // 20: gcreds.CredentialService.CheckCandidateQualification:input_type -> gcreds.CheckCandidateQualificationRequest
-	20, // 21: gcreds.CredentialService.GetCredentialVersion:input_type -> gcreds.GetCredentialVersionRequest
-	21, // 22: gcreds.CredentialService.MarkExpired:input_type -> gcreds.MarkExpiredRequest
-	22, // 23: gcreds.CredentialService.RevokeCredential:input_type -> gcreds.RevokeCredentialRequest
-	24, // 24: gcreds.CredentialService.CreatePdfTemplate:input_type -> gcreds.CreatePdfTemplateRequest
-	25, // 25: gcreds.CredentialService.UpdatePdfTemplate:input_type -> gcreds.UpdatePdfTemplateRequest
-	26, // 26: gcreds.CredentialService.GetPdfTemplate:input_type -> gcreds.GetPdfTemplateRequest
-	27, // 27: gcreds.CredentialService.ListPdfTemplates:input_type -> gcreds.ListPdfTemplatesRequest
-	30, // 28: gcreds.CredentialService.CreatePdfRequest:input_type -> gcreds.CreatePdfRequestRequest
-	31, // 29: gcreds.CredentialService.UpdatePdfRequest:input_type -> gcreds.UpdatePdfRequestRequest
-	32, // 30: gcreds.CredentialService.GetPdfRequest:input_type -> gcreds.GetPdfRequestRequest
-	33, // 31: gcreds.CredentialService.GetPdfCertificate:input_type -> gcreds.GetPdfCertificateRequest
-	4,  // 32: gcreds.CredentialService.CreateCatalog:output_type -> gcreds.Catalog
-	10, // 33: gcreds.CredentialService.ListCatalogs:output_type -> gcreds.ListCatalogsResponse
-	7,  // 34: gcreds.CredentialService.SubmitApplication:output_type -> gcreds.Application
-	7,  // 35: gcreds.CredentialService.AuditApplication:output_type -> gcreds.Application
-	7,  // 36: gcreds.CredentialService.GetLatestApplication:output_type -> gcreds.Application
-	16, // 37: gcreds.CredentialService.GrantUploadPermission:output_type -> gcreds.UploadPermissionResponse
-	16, // 38: gcreds.CredentialService.RevokeUploadPermission:output_type -> gcreds.UploadPermissionResponse
-	5,  // 39: gcreds.CredentialService.GetLatestCredential:output_type -> gcreds.Credential
-	19, // 40: gcreds.CredentialService.CheckCandidateQualification:output_type -> gcreds.CheckCandidateQualificationResponse
-	5,  // 41: gcreds.CredentialService.GetCredentialVersion:output_type -> gcreds.Credential
-	5,  // 42: gcreds.CredentialService.MarkExpired:output_type -> gcreds.Credential
-	5,  // 43: gcreds.CredentialService.RevokeCredential:output_type -> gcreds.Credential
-	23, // 44: gcreds.CredentialService.CreatePdfTemplate:output_type -> gcreds.PdfTemplate
-	23, // 45: gcreds.CredentialService.UpdatePdfTemplate:output_type -> gcreds.PdfTemplate
-	23, // 46: gcreds.CredentialService.GetPdfTemplate:output_type -> gcreds.PdfTemplate
-	28, // 47: gcreds.CredentialService.ListPdfTemplates:output_type -> gcreds.ListPdfTemplatesResponse
-	29, // 48: gcreds.CredentialService.CreatePdfRequest:output_type -> gcreds.PdfRequest
-	29, // 49: gcreds.CredentialService.UpdatePdfRequest:output_type -> gcreds.PdfRequest
-	29, // 50: gcreds.CredentialService.GetPdfRequest:output_type -> gcreds.PdfRequest
-	34, // 51: gcreds.CredentialService.GetPdfCertificate:output_type -> gcreds.GetPdfCertificateResponse
-	32, // [32:52] is the sub-list for method output_type
-	12, // [12:32] is the sub-list for method input_type
+	35, // 19: gcreds.CredentialService.RequestUploadUrl:input_type -> gcreds.RequestUploadUrlRequest
+	17, // 20: gcreds.CredentialService.GetLatestCredential:input_type -> gcreds.GetLatestCredentialRequest
+	18, // 21: gcreds.CredentialService.CheckCandidateQualification:input_type -> gcreds.CheckCandidateQualificationRequest
+	20, // 22: gcreds.CredentialService.GetCredentialVersion:input_type -> gcreds.GetCredentialVersionRequest
+	21, // 23: gcreds.CredentialService.MarkExpired:input_type -> gcreds.MarkExpiredRequest
+	22, // 24: gcreds.CredentialService.RevokeCredential:input_type -> gcreds.RevokeCredentialRequest
+	24, // 25: gcreds.CredentialService.CreatePdfTemplate:input_type -> gcreds.CreatePdfTemplateRequest
+	25, // 26: gcreds.CredentialService.UpdatePdfTemplate:input_type -> gcreds.UpdatePdfTemplateRequest
+	26, // 27: gcreds.CredentialService.GetPdfTemplate:input_type -> gcreds.GetPdfTemplateRequest
+	27, // 28: gcreds.CredentialService.ListPdfTemplates:input_type -> gcreds.ListPdfTemplatesRequest
+	30, // 29: gcreds.CredentialService.CreatePdfRequest:input_type -> gcreds.CreatePdfRequestRequest
+	31, // 30: gcreds.CredentialService.UpdatePdfRequest:input_type -> gcreds.UpdatePdfRequestRequest
+	32, // 31: gcreds.CredentialService.GetPdfRequest:input_type -> gcreds.GetPdfRequestRequest
+	33, // 32: gcreds.CredentialService.GetPdfCertificate:input_type -> gcreds.GetPdfCertificateRequest
+	4,  // 33: gcreds.CredentialService.CreateCredentialDefinition:output_type -> gcreds.CredentialDefinition
+	10, // 34: gcreds.CredentialService.ListCredentialDefinitions:output_type -> gcreds.ListCredentialDefinitionsResponse
+	7,  // 35: gcreds.CredentialService.SubmitApplication:output_type -> gcreds.Application
+	7,  // 36: gcreds.CredentialService.AuditApplication:output_type -> gcreds.Application
+	7,  // 37: gcreds.CredentialService.GetLatestApplication:output_type -> gcreds.Application
+	16, // 38: gcreds.CredentialService.GrantUploadPermission:output_type -> gcreds.UploadPermissionResponse
+	16, // 39: gcreds.CredentialService.RevokeUploadPermission:output_type -> gcreds.UploadPermissionResponse
+	36, // 40: gcreds.CredentialService.RequestUploadUrl:output_type -> gcreds.RequestUploadUrlResponse
+	5,  // 41: gcreds.CredentialService.GetLatestCredential:output_type -> gcreds.Credential
+	19, // 42: gcreds.CredentialService.CheckCandidateQualification:output_type -> gcreds.CheckCandidateQualificationResponse
+	5,  // 43: gcreds.CredentialService.GetCredentialVersion:output_type -> gcreds.Credential
+	5,  // 44: gcreds.CredentialService.MarkExpired:output_type -> gcreds.Credential
+	5,  // 45: gcreds.CredentialService.RevokeCredential:output_type -> gcreds.Credential
+	23, // 46: gcreds.CredentialService.CreatePdfTemplate:output_type -> gcreds.PdfTemplate
+	23, // 47: gcreds.CredentialService.UpdatePdfTemplate:output_type -> gcreds.PdfTemplate
+	23, // 48: gcreds.CredentialService.GetPdfTemplate:output_type -> gcreds.PdfTemplate
+	28, // 49: gcreds.CredentialService.ListPdfTemplates:output_type -> gcreds.ListPdfTemplatesResponse
+	29, // 50: gcreds.CredentialService.CreatePdfRequest:output_type -> gcreds.PdfRequest
+	29, // 51: gcreds.CredentialService.UpdatePdfRequest:output_type -> gcreds.PdfRequest
+	29, // 52: gcreds.CredentialService.GetPdfRequest:output_type -> gcreds.PdfRequest
+	34, // 53: gcreds.CredentialService.GetPdfCertificate:output_type -> gcreds.GetPdfCertificateResponse
+	33, // [33:54] is the sub-list for method output_type
+	12, // [12:33] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
 	12, // [12:12] is the sub-list for extension extendee
 	0,  // [0:12] is the sub-list for field type_name
@@ -2854,7 +3008,7 @@ func file_creds_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_creds_proto_rawDesc), len(file_creds_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   32,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

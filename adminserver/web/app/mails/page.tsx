@@ -23,6 +23,10 @@ export default function AdminMailsPage() {
   // For listing
   const [sentMessages, setSentMessages] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(20)
+  const [statusFilter, setStatusFilter] = useState("")
+  const [totalCount, setTotalCount] = useState(0)
 
   // For templates
   const [templates, setTemplates] = useState<any[]>([])
@@ -43,7 +47,7 @@ export default function AdminMailsPage() {
     if (activeTab === "sent") {
       fetchSentMessages()
     }
-  }, [activeTab])
+  }, [activeTab, page, statusFilter])
 
   const fetchUsers = async () => {
     try {
@@ -147,9 +151,22 @@ export default function AdminMailsPage() {
   }
 
   const fetchSentMessages = async () => {
-    // Currently no API to list all sent emails in gmail, just a placeholder or mock
-    setLoading(false)
-    setSentMessages([])
+    setLoading(true)
+    try {
+      let query = `/api/mails/sent?page=${page}&page_size=${pageSize}`
+      if (statusFilter !== "") {
+        query += `&status=${statusFilter}`
+      }
+      const res = await apiClient(query)
+      if (res) {
+        setSentMessages(res.mails || [])
+        setTotalCount(res.total || 0)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSend = async () => {
@@ -378,7 +395,26 @@ export default function AdminMailsPage() {
 
           {activeTab === "sent" && (
             <div className="bg-card rounded-xl border p-6">
-              <h2 className="text-lg font-semibold mb-6">{t.mailsPage.sentHistory}</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold">{t.mailsPage.sentHistory}</h2>
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium text-muted-foreground">{t.mailsPage.statusFilter}</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => {
+                      setPage(1)
+                      setStatusFilter(e.target.value)
+                    }}
+                    className="rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    <option value="">{t.mailsPage.statusAll}</option>
+                    <option value="SCHEDULING">{t.mailsPage.statusScheduling}</option>
+                    <option value="SENT">{t.mailsPage.statusSent}</option>
+                    <option value="FAILED">{t.mailsPage.statusFailed}</option>
+                    <option value="CANCELLED">{t.mailsPage.statusCancelled}</option>
+                  </select>
+                </div>
+              </div>
 
               {loading ? (
                 <div className="text-muted-foreground py-4">{t.mailsPage.loading}</div>
@@ -386,10 +422,39 @@ export default function AdminMailsPage() {
                 <div className="space-y-4">
                   {sentMessages.map((msg, i) => (
                     <div key={i} className="border-b pb-4 last:border-0">
-                      <div className="font-medium">{msg.template_id}</div>
-                      <div className="text-sm text-muted-foreground mt-1">{msg.payload}</div>
+                      <div className="flex items-center justify-between">
+                        <div className="font-medium">To: {msg.to_email} - TPL: {msg.template_id || 'N/A'}</div>
+                        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Status: {msg.status}</div>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1 font-mono">
+                        Subj: {msg.subject}<br/>
+                        {msg.payload && `Payload: ${msg.payload}`}
+                      </div>
                     </div>
                   ))}
+                  
+                  <div className="flex items-center justify-between pt-4 border-t mt-6">
+                    <div className="text-sm text-muted-foreground">
+                      {t.mailsPage.totalItems.replace('{{total}}', String(totalCount))}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setPage(p => Math.max(1, p - 1))}
+                        disabled={page === 1}
+                        className="px-3 py-1 border rounded text-sm disabled:opacity-50 hover:bg-muted"
+                      >
+                        {t.mailsPage.prevPage}
+                      </button>
+                      <span className="px-3 py-1 text-sm">{page}</span>
+                      <button
+                        onClick={() => setPage(p => p + 1)}
+                        disabled={page * pageSize >= totalCount}
+                        className="px-3 py-1 border rounded text-sm disabled:opacity-50 hover:bg-muted"
+                      >
+                        {t.mailsPage.nextPage}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground">

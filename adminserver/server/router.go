@@ -79,6 +79,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		// ===== 邮件管理 (Mails) =====
 		r.Route("/mails", func(r chi.Router) {
 			r.Post("/send", h.SendMail)
+			r.Get("/sent", h.ListSentMails)
 			r.Get("/", h.GetMail)
 			r.Get("/status", h.GetMailStatus)
 			r.Post("/cancel", h.CancelMail)
