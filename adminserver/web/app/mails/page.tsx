@@ -308,8 +308,8 @@ export default function AdminMailsPage() {
                           const regex = /{{([^}]+)}}/g
                           const vars = new Set<string>()
                           let match
-                          while ((match = regex.exec(tpl.subject_template)) !== null) vars.add(match[1])
-                          while ((match = regex.exec(tpl.template_body)) !== null) vars.add(match[1])
+                          while ((match = regex.exec(tpl.subject_template)) !== null) vars.add(match[1].trim().replace(/^\./, ''))
+                          while ((match = regex.exec(tpl.template_body)) !== null) vars.add(match[1].trim().replace(/^\./, ''))
 
                           const obj: Record<string, string> = {}
                           vars.forEach(v => obj[v] = "")
