@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: candidateserver-ingress
+  namespace: cftp-test
+  annotations:
+    # 1. 指定使用 HTTPS (443) 入口
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    # 2. 开启 TLS 加密
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # 3. 自动向 Let's Encrypt 申请域名证书
+    traefik.ingress.kubernetes.io/router.tls.certresolver: myresolver
+spec:
+  tls:
+    - secretName: candidateserver-tls
+      hosts:
+        - cftpcand.llwan.top
+    - secretName: adminserver-tls
+      hosts:
+        - cftpadmin.llwan.top
+  rules:
+  - host: cftpcand.llwan.top
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: candidateserver
+            port:
+              number: 8080
+  - host: cftpadmin.llwan.top
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: adminserver
+            port:
+              number: 8080

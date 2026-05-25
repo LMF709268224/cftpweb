@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: candidateserver
+  namespace: cftp-test
+  labels:
+    app: candidateserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: candidateserver
+  template:
+    metadata:
+      labels:
+        app: candidateserver
+    spec:
+      containers:
+      - name: candidateserver
+        image: localhost/candidateserver:v1
+        imagePullPolicy: IfNotPresent
+        command: ["/app/candidateserver"]
+        ports:
+        - containerPort: 8080
+        env:
+        - name: TLS_DIR
+          value: "/etc/tls"
+        - name: HTTP_ADDRESS
+          value: "0.0.0.0:8080"
+        - name: CASDOOR_PUBLIC_ENDPOINT
+          value: "https://cftpcasdoor.llwan.top"
+        volumeMounts:
+        - name: all-certs
+          mountPath: "/etc/tls"
+          readOnly: true
+      volumes:
+        - name: all-certs
+          projected:
+            sources:
+            - secret:
+                name: cftp-server-tls
+                items:
+                  - key: tls.crt
+                    path: tls.crt
+                  - key: tls.key
+                    path: tls.key
+            - secret:
+                name: cftp-ca-tls
+                items:
+                  - key: ca.crt
+                    path: ca.crt
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: candidateserver
+  namespace: cftp-test
+spec:
+  selector:
+    app: candidateserver
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
