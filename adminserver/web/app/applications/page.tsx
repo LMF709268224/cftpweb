@@ -106,7 +106,8 @@ export default function ApplicationsPage() {
   }
 
   const getStatusDisplay = (status: string) => {
-    const s = statusMap[status as keyof typeof statusMap]
+    const upperStatus = String(status).toUpperCase()
+    const s = statusMap[upperStatus as keyof typeof statusMap]
     if (s) {
       return <Badge className={`hover:bg-transparent ${s.color}`} variant="outline">{s.label}</Badge>
     }
@@ -245,7 +246,7 @@ export default function ApplicationsPage() {
                 </ul>
               </div>
 
-              {(selectedApp.status === "APPLICATION_STATUS_PENDING" || selectedApp.status === "PENDING") && (
+              {(String(selectedApp.status).toUpperCase() === "APPLICATION_STATUS_PENDING" || String(selectedApp.status).toUpperCase() === "PENDING" || String(selectedApp.status) === "1") && (
                 <div className="grid gap-2 mt-4">
                   <Label>{t.applicationsPage.auditRemark}</Label>
                   <Input 

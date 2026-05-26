@@ -21,7 +21,7 @@ export default function CredentialsPage() {
   // Application flow state
   const [selectedDef, setSelectedDef] = useState<any>(null)
   const [isApplyOpen, setIsApplyOpen] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, {name: string, url: string, ext: string, hash: string, size: number}>>({})
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, { name: string, url: string, ext: string, hash: string, size: number }>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchData = async () => {
@@ -31,7 +31,7 @@ export default function CredentialsPage() {
         apiClient("/api/credentials/definitions"),
         apiClient("/api/credentials/applications")
       ])
-      
+
       setDefinitions(defsRes?.definitions || [])
       setApplications(appsRes?.applications || [])
     } catch (e) {
@@ -68,7 +68,7 @@ export default function CredentialsPage() {
           file_usage: constraintName
         })
       })
-      
+      /*
       // --- [BEGIN] 临时跨域中转代码 (如果 S3 跨域配置好了，请注释掉这段，解开下面的直传代码) ---
       const proxyUrl = `/api/credentials/upload-proxy?url=${encodeURIComponent(res.upload_url)}`
       const uploadRes = await fetch(proxyUrl, { 
@@ -77,26 +77,26 @@ export default function CredentialsPage() {
         body: file 
       })
       // --- [END] 临时跨域中转代码 ---
+      */
 
-      /*
       // --- [BEGIN] 生产环境直传代码 (解开注释即可恢复) ---
       // 2. Upload file directly to S3 using the presigned URL
-      const uploadRes = await fetch(res.upload_url, { 
-        method: "PUT", 
+      const uploadRes = await fetch(res.upload_url, {
+        method: "PUT",
         headers: { "Content-Type": file.type },
-        body: file 
+        body: file
       })
       // --- [END] 生产环境直传代码 ---
-      */
-      
+
+
       if (!uploadRes.ok) {
         throw new Error("S3 upload failed")
       }
-      
+
       setUploadedFiles(prev => ({
         ...prev,
-        [constraintName]: { 
-          name: file.name, 
+        [constraintName]: {
+          name: file.name,
           url: res.file_url,
           ext: fileExt,
           hash: fileHash,
@@ -110,7 +110,7 @@ export default function CredentialsPage() {
 
   const handleSubmitApplication = async () => {
     setIsSubmitting(true)
-    
+
     const evidenceFiles = Object.keys(uploadedFiles).map(k => ({
       file_name: uploadedFiles[k].name,
       file_url: uploadedFiles[k].url,
@@ -118,7 +118,7 @@ export default function CredentialsPage() {
       file_ext: uploadedFiles[k].ext,
       file_size: uploadedFiles[k].size,
       file_usage: k,
-      file_type: selectedDef.file_constraints.find((c:any) => c.name === k)?.type || 1
+      file_type: selectedDef.file_constraints.find((c: any) => c.name === k)?.type || 1
     }))
 
     try {
@@ -139,21 +139,41 @@ export default function CredentialsPage() {
   }
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "PENDING": return <Clock className="h-5 w-5 text-yellow-500" />
-      case "APPROVED": return <CheckCircle className="h-5 w-5 text-green-500" />
-      case "REJECTED": return <XCircle className="h-5 w-5 text-red-500" />
-      case "NEEDS_RESUBMIT": return <AlertCircle className="h-5 w-5 text-orange-500" />
+    const s = String(status).toUpperCase()
+    switch (s) {
+      case "PENDING":
+      case "APPLICATION_STATUS_PENDING":
+        return <Clock className="h-5 w-5 text-yellow-500" />
+      case "APPROVED":
+      case "APPLICATION_STATUS_APPROVED":
+        return <CheckCircle className="h-5 w-5 text-green-500" />
+      case "REJECTED":
+      case "APPLICATION_STATUS_REJECTED":
+        return <XCircle className="h-5 w-5 text-red-500" />
+      case "NEEDS_RESUBMIT":
+      case "RESUBMIT":
+      case "APPLICATION_STATUS_RESUBMIT":
+        return <AlertCircle className="h-5 w-5 text-orange-500" />
       default: return <FileText className="h-5 w-5" />
     }
   }
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case "PENDING": return t.credentialsPage.appStatusPending
-      case "APPROVED": return t.credentialsPage.appStatusApproved
-      case "REJECTED": return t.credentialsPage.appStatusRejected
-      case "NEEDS_RESUBMIT": return t.credentialsPage.appStatusResubmit
+    const s = String(status).toUpperCase()
+    switch (s) {
+      case "PENDING":
+      case "APPLICATION_STATUS_PENDING":
+        return t.credentialsPage.appStatusPending
+      case "APPROVED":
+      case "APPLICATION_STATUS_APPROVED":
+        return t.credentialsPage.appStatusApproved
+      case "REJECTED":
+      case "APPLICATION_STATUS_REJECTED":
+        return t.credentialsPage.appStatusRejected
+      case "NEEDS_RESUBMIT":
+      case "RESUBMIT":
+      case "APPLICATION_STATUS_RESUBMIT":
+        return t.credentialsPage.appStatusResubmit
       default: return t.credentialsPage.appStatusUnknown
     }
   }
@@ -247,15 +267,15 @@ export default function CredentialsPage() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <p className="text-sm text-muted-foreground">{t.credentialsPage.description}: {selectedDef?.description}</p>
-              
+
               <div className="space-y-4 border-t pt-4">
                 <h4 className="font-semibold text-sm">{t.credentialsPage.uploadMaterials}</h4>
                 {selectedDef?.file_constraints?.map((constraint: any) => (
                   <div key={constraint.name} className="space-y-2 p-3 bg-muted rounded-lg">
                     <div className="flex justify-between">
                       <Label className="font-medium">{constraint.name}</Label>
-                      {constraint.is_required ? 
-                        <Badge variant="destructive">{t.credentialsPage.required}</Badge> : 
+                      {constraint.is_required ?
+                        <Badge variant="destructive">{t.credentialsPage.required}</Badge> :
                         <Badge variant="secondary">{t.credentialsPage.optional}</Badge>}
                     </div>
                     <div className="flex items-center gap-2 mt-2">
