@@ -65,7 +65,7 @@ export default function CredentialsPage() {
           file_ext: fileExt,
           file_hash: fileHash,
           content_type: file.type,
-          file_usage: "credential_evidence"
+          file_usage: constraintName
         })
       })
       
@@ -96,7 +96,7 @@ export default function CredentialsPage() {
       file_hash: uploadedFiles[k].hash,
       file_ext: uploadedFiles[k].ext,
       file_size: uploadedFiles[k].size,
-      file_usage: "credential_evidence",
+      file_usage: k,
       file_type: selectedDef.file_constraints.find((c:any) => c.name === k)?.type || 1
     }))
 
