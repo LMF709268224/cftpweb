@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Sidebar } from "@/components/sidebar"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 
@@ -113,8 +114,10 @@ export default function ApplicationsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-background flex">
+      <Sidebar />
+      <main className="flex-1 ml-64 p-8">
+        <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">{t.applicationsPage.title}</h1>
           <p className="text-muted-foreground">{t.applicationsPage.subtitle}</p>
@@ -267,6 +270,7 @@ export default function ApplicationsPage() {
           )}
         </DialogContent>
       </Dialog>
+      </main>
     </div>
   )
 }

@@ -193,7 +193,7 @@ export default function AdminMailsPage() {
         return
       }
       if (!payload || payload.trim() === "{\n}" || payload.trim() === "{}") {
-        alert("请输入邮件正文或变量内容")
+        alert(t.mailsPage.alertNoPayload || t.common.error)
         return
       }
     }

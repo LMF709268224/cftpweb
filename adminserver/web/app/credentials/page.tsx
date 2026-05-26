@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { Sidebar } from "@/components/sidebar"
 import { Plus, Trash2 } from "lucide-react"
 
 interface FileConstraint {
@@ -112,8 +113,10 @@ export default function CredentialsPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-background flex">
+      <Sidebar />
+      <main className="flex-1 ml-64 p-8">
+        <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-foreground mb-2">{t.credentialsDefPage.title}</h1>
           <p className="text-muted-foreground">{t.credentialsDefPage.subtitle}</p>
@@ -237,6 +240,7 @@ export default function CredentialsPage() {
           </TableBody>
         </Table>
       </div>
+      </main>
     </div>
   )
 }

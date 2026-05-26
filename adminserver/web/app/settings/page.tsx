@@ -14,6 +14,7 @@ import { toast } from "sonner"
 import { Loader2 } from "lucide-react"
 import { useTranslation } from "@/lib/useLanguage"
 import { getMessage } from "@/lib/messages"
+import { Sidebar } from "@/components/sidebar"
 
 export default function SettingsPage() {
   const searchParams = useSearchParams()
@@ -123,7 +124,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
+    <div className="min-h-screen bg-background flex">
+      <Sidebar />
+      <main className="flex-1 ml-64 p-8 pt-6 space-y-4">
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">{t.settings.title}</h2>
       </div>
@@ -293,6 +296,7 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </main>
     </div>
   )
 }

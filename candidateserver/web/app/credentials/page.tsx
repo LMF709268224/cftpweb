@@ -57,6 +57,7 @@ export default function CredentialsPage() {
       const res = await apiClient("/api/credentials/upload-url", {
         method: "POST",
         body: JSON.stringify({
+          cred_def_id: selectedDef.cred_def_id,
           file_name: file.name,
           content_type: file.type,
           file_usage: "credential_evidence"
@@ -88,7 +89,7 @@ export default function CredentialsPage() {
       await apiClient("/api/credentials/applications", {
         method: "POST",
         body: JSON.stringify({
-          cred_def_id: selectedDef.id,
+          cred_def_id: selectedDef.cred_def_id,
           files: evidenceFiles
         })
       })
@@ -149,7 +150,7 @@ export default function CredentialsPage() {
               ) : (
                 <div className="grid gap-4 md:grid-cols-2">
                   {applications.map(app => (
-                    <Card key={app.id}>
+                    <Card key={app.app_id}>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg flex justify-between items-center">
                           <span>{app.credential_definition?.name || "Unknown"}</span>
@@ -160,7 +161,7 @@ export default function CredentialsPage() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-muted-foreground mb-2">ID: {app.id}</p>
+                        <p className="text-sm text-muted-foreground mb-2">ID: {app.app_id}</p>
                         {app.audit_remark && (
                           <div className="mt-4 p-3 bg-muted rounded-md text-sm border-l-4 border-primary">
                             <strong>{t.credentialsPage.auditRemark}: </strong> {app.audit_remark}
@@ -182,7 +183,7 @@ export default function CredentialsPage() {
               </h2>
               <div className="grid gap-6 md:grid-cols-3">
                 {definitions.map(def => (
-                  <Card key={def.id} className="flex flex-col">
+                  <Card key={def.cred_def_id} className="flex flex-col">
                     <CardHeader>
                       <CardTitle className="text-xl">{def.name}</CardTitle>
                       <Badge className="w-fit" variant="secondary">{def.category}</Badge>

@@ -263,6 +263,7 @@ export const zh = {
     subject: "邮件主题",
     payloadJson: "模板变量(JSON) 或 邮件正文",
     isHtml: "作为HTML发送",
+    alertNoPayload: "请输入邮件正文或变量内容",
     sending: "发送中...",
     sendMessageBtn: "发送邮件",
     sentHistory: "已发送记录",
