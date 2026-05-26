@@ -45,7 +45,8 @@ export function Sidebar() {
     { href: "/membership", icon: Crown, label: t.sidebar.membership },
     { href: "/exams", icon: FileText, label: t.sidebar.exams },
     { href: "/records", icon: GraduationCap, label: t.sidebar.records },
-    { href: "/certificates", icon: Award, label: t.sidebar.certificates },
+    { href: "/credentials", icon: Award, label: t.sidebar.credentials },
+    { href: "/certificates", icon: Crown, label: t.sidebar.certificates },
     { href: "/orders", icon: ShoppingCart, label: t.sidebar.orders },
     { href: "/messages", icon: MessageSquare, label: t.sidebar.messages, badge: unreadCount > 0 ? unreadCount : undefined },
   ]

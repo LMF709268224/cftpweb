@@ -25,6 +25,7 @@ export const en: AppTranslations = {
     membership: "Membership",
     exams: "Exams",
     records: "Records",
+    credentials: "Qualifications",
     certificates: "Certificates",
     orders: "Orders",
     messages: "Messages",

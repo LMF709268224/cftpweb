@@ -470,10 +470,11 @@ export default function AdminMailsPage() {
                                 <span className="font-semibold">From:</span> {msg.from_name} &lt;{msg.from_email}&gt;
                               </div>
                             )}
-                            <div>
-                              <span className="font-semibold">Payload:</span>
-                              <pre className="mt-2 text-xs overflow-x-auto bg-card p-2 rounded border">{msg.payload || "{}"}</pre>
-                            </div>
+                            {msg.error_message && (
+                              <div className="mt-2 text-red-500">
+                                <span className="font-semibold">Error:</span> {msg.error_message}
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

@@ -23,6 +23,7 @@ export const zh = {
     membership: "会员",
     exams: "考试",
     records: "档案",
+    credentials: "资格申请",
     certificates: "证书",
     orders: "订单",
     messages: "消息",

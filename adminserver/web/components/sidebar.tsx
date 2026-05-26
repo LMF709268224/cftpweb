@@ -45,6 +45,10 @@ export function Sidebar() {
     { href: "/catalogs", icon: Crown, label: t.sidebar.catalogs },
     { href: "/messages", icon: MessageSquare, label: t.sidebar.messages },
     { href: "/mails", icon: Mail, label: t.sidebar.mails },
+    { href: "/credentials", icon: Award, label: t.sidebar.credentials },
+    { href: "/applications", icon: FileText, label: t.sidebar.applications },
+    { href: "/pdf-templates", icon: BookOpen, label: t.sidebar.pdfTemplates },
+    { href: "/permissions", icon: User, label: t.sidebar.permissions },
   ]
 
   useEffect(() => {

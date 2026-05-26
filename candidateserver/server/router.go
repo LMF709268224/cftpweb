@@ -97,8 +97,10 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		// ===== 资格与证书 (Credentials & Certificates) =====
 		r.Route("/credentials", func(r chi.Router) {
-			r.Get("/", h.ListCredentials)                               // 我的资格列表
-			r.Post("/{catalogId}/apply", h.SubmitCredentialApplication) // 申请资格
+			r.Get("/definitions", h.ListCredentialDefinitions)
+			r.Get("/applications", h.ListCandidateApplications)
+			r.Post("/upload-url", h.RequestUploadUrl)
+			r.Post("/apply", h.SubmitApplication)
 		})
 
 		r.Route("/certificates", func(r chi.Router) {

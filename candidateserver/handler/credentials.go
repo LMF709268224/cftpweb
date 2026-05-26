@@ -1,122 +1,124 @@
 package handler
 
 import (
-	gcreds "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 )
 
-// ListCredentials GET /api/credentials
-func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
-	candidateID := CandidateID(r)
+// ListCredentialDefinitions GET /api/credentials/definitions
+func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Request) {
+	req := &gcredspb.ListCredentialDefinitionsRequest{}
 
-	catalogsResp, err := h.Creds.ListCatalogs(r.Context(), &gcreds.ListCatalogsRequest{})
+	res, err := h.Creds.ListCredentialDefinitions(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
-	out := ListCredentialsRsp{
-		Credentials: make([]CredentialsItem, len(catalogsResp.GetCatalogs())),
-	}
-
-	for i, catalog := range catalogsResp.GetCatalogs() {
-		item := CredentialsItem{
-			CatalogId:   catalog.GetCatalogId(),
-			Name:        catalog.GetName(),
-			Description: catalog.GetDescription(),
-		}
-
-		qualificationResp, err := h.Creds.CheckCandidateQualification(r.Context(), &gcreds.CheckCandidateQualificationRequest{
-			CandidateId: candidateID,
-			CatalogId:   catalog.GetCatalogId(),
-		})
-		if err == nil {
-			item.CredentialStatus = qualificationResp.GetCredentialStatus()
-			item.Message = qualificationResp.GetMessage()
-			item.Eligible = qualificationResp.GetEligible()
-		}
-
-		credResp, err := h.Creds.GetLatestCredential(r.Context(), &gcreds.GetLatestCredentialRequest{
-			CandidateId: candidateID,
-			CatalogId:   catalog.CatalogId,
-		})
-		if err == nil {
-			item.CredId = credResp.GetCredId()
-			item.CredGuid = credResp.GetCredGuid()
-			item.CandidateId = credResp.GetCandidateId()
-			item.Version = credResp.GetVersion()
-			item.Status = credResp.GetStatus()
-			item.Files = toFileInfos(credResp.GetFiles())
-			item.AuditorId = credResp.GetAuditorId()
-			item.AuditRemark = credResp.GetAuditRemark()
-			item.ValidUntil = credResp.GetValidUntil()
-			item.CreatedAt = credResp.GetCreatedAt()
-		}
-
-		out.Credentials[i] = item
-	}
-
-	WriteJSON(w, http.StatusOK, out)
+	WriteJSON(w, http.StatusOK, res)
 }
 
-func toFileInfos(files []*gcreds.FileInfo) []CertificateFileInfo {
-	if files == nil {
-		return nil
-	}
-
-	out := make([]CertificateFileInfo, 0, len(files))
-	for _, file := range files {
-		out = append(out, CertificateFileInfo{
-			FileHash:  file.GetFileHash(),
-			FileName:  file.GetFileName(),
-			FileType:  file.GetFileType(),
-			FileExt:   file.GetFileExt(),
-			FileSize:  file.GetFileSize(),
-			FileUsage: file.GetFileUsage(),
-		})
-	}
-	return out
-}
-
-// SubmitCredentialApplication POST /api/credentials/{catalogId}/apply
-func (h *Handler) SubmitCredentialApplication(w http.ResponseWriter, r *http.Request) {
+// ListCandidateApplications GET /api/credentials/applications
+func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
-	catalogID := chi.URLParam(r, "catalogId")
-	var input struct {
-		Files []CertificateFileInfo `json:"files"`
+
+	req := &gcredspb.ListApplicationsRequest{
+		CandidateId: candidateID,
+		Page:        1,
+		PageSize:    100, // For now, get all applications for candidate
 	}
-	if err := ReadJSON(r, &input); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body")
-		return
-	}
-	if len(input.Files) == 0 {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "at least one file is required")
+
+	res, err := h.Creds.ListApplications(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
 		return
 	}
 
-	pbFiles := make([]*gcreds.FileInfo, 0, len(input.Files))
-	for _, f := range input.Files {
-		pbFiles = append(pbFiles, &gcreds.FileInfo{
+	WriteJSON(w, http.StatusOK, res)
+}
+
+type RequestUploadUrlReq struct {
+	CredDefId   string `json:"cred_def_id"`
+	FileHash    string `json:"file_hash"`
+	FileExt     string `json:"file_ext"`
+	ContentType string `json:"content_type"`
+	FileUsage   string `json:"file_usage"`
+}
+
+// RequestUploadUrl POST /api/credentials/upload-url
+func (h *Handler) RequestUploadUrl(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+
+	var body RequestUploadUrlReq
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
+		return
+	}
+
+	req := &gcredspb.RequestUploadUrlRequest{
+		CandidateId: candidateID,
+		CredDefId:   body.CredDefId,
+		FileHash:    body.FileHash,
+		FileExt:     body.FileExt,
+		ContentType: body.ContentType,
+		FileUsage:   body.FileUsage,
+	}
+
+	res, err := h.Creds.RequestUploadUrl(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, res)
+}
+
+type SubmitApplicationReq struct {
+	CredDefId string `json:"cred_def_id"`
+	Files     []struct {
+		FileHash  string `json:"file_hash"`
+		FileName  string `json:"file_name"`
+		FileType  int32  `json:"file_type"`
+		FileExt   string `json:"file_ext"`
+		FileSize  uint64 `json:"file_size"`
+		FileUsage string `json:"file_usage"`
+	} `json:"files"`
+}
+
+// SubmitApplication POST /api/credentials/apply
+func (h *Handler) SubmitApplication(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+
+	var body SubmitApplicationReq
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
+		return
+	}
+
+	pbFiles := make([]*gcredspb.FileInfo, 0, len(body.Files))
+	for _, f := range body.Files {
+		pbFiles = append(pbFiles, &gcredspb.FileInfo{
 			FileHash:  f.FileHash,
 			FileName:  f.FileName,
-			FileType:  f.FileType,
+			FileType:  gcredspb.CredentialFileType(f.FileType),
 			FileExt:   f.FileExt,
 			FileSize:  f.FileSize,
 			FileUsage: f.FileUsage,
 		})
 	}
 
-	//TODO 返回值
-	resp, err := h.Creds.SubmitApplication(r.Context(), &gcreds.SubmitApplicationRequest{
+	req := &gcredspb.SubmitApplicationRequest{
 		CandidateId: candidateID,
-		CatalogId:   catalogID,
+		CredDefId:   body.CredDefId,
 		Files:       pbFiles,
-	})
+	}
+
+	res, err := h.Creds.SubmitApplication(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+
+	WriteJSON(w, http.StatusOK, res)
 }

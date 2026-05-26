@@ -92,6 +92,34 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Delete("/", h.DeleteMailTemplate)
 			})
 		})
+
+		// ===== 资格与证书管理 (Credentials) =====
+		r.Route("/credentials", func(r chi.Router) {
+			r.Get("/definitions", h.ListCredentialDefinitions)
+			r.Post("/definitions", h.CreateCredentialDefinition)
+		})
+
+		// ===== 资格审核中心 (Applications) =====
+		r.Route("/applications", func(r chi.Router) {
+			r.Get("/", h.ListApplications)
+			r.Post("/audit", h.AuditApplication)
+		})
+
+		// ===== PDF模板管理 (PDF Templates) =====
+		r.Route("/pdf-templates", func(r chi.Router) {
+			r.Get("/", h.ListPdfTemplates)
+			r.Post("/", h.CreatePdfTemplate)
+			r.Put("/", h.UpdatePdfTemplate)
+		})
+
+		// ===== 权限人工干预 (Permissions) =====
+		r.Route("/permissions", func(r chi.Router) {
+			r.Get("/check", h.CheckCandidateQualification)
+			r.Post("/grant", h.GrantUploadPermission)
+			r.Post("/revoke", h.RevokeUploadPermission)
+			r.Post("/mark-expired", h.MarkExpired)
+			r.Post("/revoke-credential", h.RevokeCredential)
+		})
 	}) // <-- 补回 /api 路由的结束大括号
 
 	// ---------- SPA 静态文件服务 ----------

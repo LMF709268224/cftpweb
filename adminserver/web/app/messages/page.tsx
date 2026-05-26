@@ -423,9 +423,9 @@ export default function AdminMessagesPage() {
                             <div className="mb-2 pb-2 border-b border-muted">
                               <span className="font-semibold">Sent At:</span> {msg.created_at}
                             </div>
-                            <div>
-                              <span className="font-semibold">Payload:</span>
-                              <pre className="mt-2 text-xs overflow-x-auto bg-card p-2 rounded border">{msg.payload}</pre>
+                            <div className="flex gap-4">
+                              <div><span className="font-semibold">Type:</span> {msg.msg_type}</div>
+                              <div><span className="font-semibold">Source:</span> {msg.msg_source}</div>
                             </div>
                           </div>
                         )}
