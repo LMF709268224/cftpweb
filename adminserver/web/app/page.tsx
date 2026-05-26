@@ -1,6 +1,5 @@
 "use client"
 
-import React from "react"
 import { useEffect, useState } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { Sidebar } from "@/components/sidebar"
@@ -15,14 +14,17 @@ export default function HomePage() {
 
 
   useEffect(() => {
-    // 尝试�?/api/user/me 获取最新用户信�?    const fetchUser = async () => {
+    // 尝试从 /api/user/me 获取最新用户信息
+    const fetchUser = async () => {
       try {
-        // 尝试�?/api/user/me 获取最新用户信�?        const payload = await apiClient("/api/user/me")
+        // 尝试从 /api/user/me 获取最新用户信息
+        const payload = await apiClient("/api/user/me")
         if (payload) {
           const nameToSet = payload.display_name || payload.name
           if (nameToSet) {
             setUserName(nameToSet)
-            localStorage.setItem("user_name", nameToSet) // 同步更新本地存储给侧边栏�?          }
+            localStorage.setItem("user_name", nameToSet) // 同步更新本地存储给侧边栏用
+          }
         }
       } catch (err) {
         const localName = localStorage.getItem("user_name")

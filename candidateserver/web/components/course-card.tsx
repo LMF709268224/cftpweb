@@ -1,6 +1,5 @@
 "use client"
 
-import React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
@@ -26,7 +25,7 @@ interface CourseCardProps {
 const categoryLabels = {
   course: "课程",
   column: "专栏",
-  short: "短课�?,
+  short: "短课程",
 }
 
 const categoryStyles = {
@@ -83,7 +82,8 @@ export function CourseCard({
         {isPurchased ? (
           <Badge className="absolute right-4 top-4 bg-emerald-500 text-white border-0 gap-1">
             <CheckCircle2 className="h-3 w-3" />
-            已购�?          </Badge>
+            已购买
+          </Badge>
         ) : (
           <Badge className="absolute right-4 top-4 bg-primary text-white border-0 gap-1">
             <ShoppingCart className="h-3 w-3" />

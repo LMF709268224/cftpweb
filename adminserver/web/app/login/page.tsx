@@ -1,5 +1,4 @@
-"use client"
-import React from "react"
+'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -14,7 +13,8 @@ export default function LoginPage() {
       setIsLoading(true)
       setError('')
 
-      // 获取 Casdoor 的登录跳转链�?      // 传�?callback 参数，让 Casdoor 登录完成后跳转到我们�?/callback 页面
+      // 获取 Casdoor 的登录跳转链接
+      // 传递 callback 参数，让 Casdoor 登录完成后跳转到我们的 /callback 页面
       const callbackUrl = encodeURIComponent(window.location.origin + '/callback')
       const response = await fetch(`/api/auth/login-url?callback=${callbackUrl}`)
 
@@ -25,7 +25,7 @@ export default function LoginPage() {
       const resData = await response.json()
 
       if (resData.data && resData.data.url) {
-        // 直接跳转�?Casdoor 统一登录中心
+        // 直接跳转到 Casdoor 统一登录中心
         window.location.href = resData.data.url
       } else {
         throw new Error('无效的登录地址')
@@ -38,7 +38,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex bg-slate-950 text-slate-50 selection:bg-indigo-500/30">
-      {/* 左侧装饰区域 (Glassmorphism + 动态光�? */}
+      {/* 左侧装饰区域 (Glassmorphism + 动态光效) */}
       <div className="hidden lg:flex flex-1 relative overflow-hidden bg-slate-900 items-center justify-center">
         {/* 背景光效 */}
         <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-indigo-600/20 blur-[120px]" />
@@ -51,20 +51,22 @@ export default function LoginPage() {
             企业级统一认证
           </div>
           <h1 className="text-5xl font-extrabold tracking-tight mb-6 bg-gradient-to-br from-white to-slate-400 bg-clip-text text-transparent">
-            安全、高效的<br />下一代通行�?          </h1>
+            安全、高效的<br />下一代通行证
+          </h1>
           <p className="text-lg text-slate-400 mb-12 max-w-xl leading-relaxed">
-            基于 Casdoor 强力驱动，为您提供金融级别的安全防护、无缝单点登录体验与全球边缘加速接入�?          </p>
+            基于 Casdoor 强力驱动，为您提供金融级别的安全防护、无缝单点登录体验与全球边缘加速接入。
+          </p>
 
           <div className="grid grid-cols-2 gap-6">
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
               <ShieldCheck className="h-8 w-8 text-indigo-400 mb-4" />
               <h3 className="font-semibold text-white mb-2">多端同调</h3>
-              <p className="text-sm text-slate-400">一次登录，畅享全生态微服务矩阵，告别重复认证�?/p>
+              <p className="text-sm text-slate-400">一次登录，畅享全生态微服务矩阵，告别重复认证。</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
               <Globe className="h-8 w-8 text-blue-400 mb-4" />
               <h3 className="font-semibold text-white mb-2">全球网络</h3>
-              <p className="text-sm text-slate-400">智能感知网络链路，为您分配最近的认证节点�?/p>
+              <p className="text-sm text-slate-400">智能感知网络链路，为您分配最近的认证节点。</p>
             </div>
           </div>
         </div>

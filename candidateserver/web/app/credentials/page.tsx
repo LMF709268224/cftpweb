@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { Sidebar } from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
@@ -67,7 +67,7 @@ export default function CredentialsPage() {
           file_usage: "credential_evidence"
         })
       })
-
+      
       // 2. Mocking S3 direct upload for now (in real world, PUT to res.upload_url)
       // await fetch(res.upload_url, { method: "PUT", body: file })
       

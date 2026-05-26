@@ -1,4 +1,3 @@
-import React from "react"
 import { cn } from "@/lib/utils"
 import { Crown, Check, RefreshCw, Calendar } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
