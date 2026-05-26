@@ -20,6 +20,7 @@ export default function CredentialsPage() {
 
   // Application flow state
   const [selectedDef, setSelectedDef] = useState<any>(null)
+  const [resubmitAppId, setResubmitAppId] = useState<string>("")
   const [isApplyOpen, setIsApplyOpen] = useState(false)
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, { name: string, url: string, ext: string, hash: string, size: number }>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -45,7 +46,8 @@ export default function CredentialsPage() {
     fetchData()
   }, [])
 
-  const handleApplyClick = (def: any) => {
+  const handleApplyClick = (def: any, appId?: string) => {
+    setResubmitAppId(appId || "")
     setSelectedDef(def)
     setUploadedFiles({})
     setIsApplyOpen(true)
@@ -109,13 +111,23 @@ export default function CredentialsPage() {
     }))
 
     try {
-      await apiClient("/api/credentials/apply", {
-        method: "POST",
-        body: JSON.stringify({
-          cred_def_id: selectedDef.cred_def_id,
-          files: evidenceFiles
+      if (resubmitAppId) {
+        await apiClient("/api/credentials/update", {
+          method: "PUT",
+          body: JSON.stringify({
+            app_id: resubmitAppId,
+            files: evidenceFiles
+          })
         })
-      })
+      } else {
+        await apiClient("/api/credentials/submit", {
+          method: "POST",
+          body: JSON.stringify({
+            cred_def_id: selectedDef.cred_def_id,
+            files: evidenceFiles
+          })
+        })
+      }
       setIsApplyOpen(false)
       fetchData() // refresh list
     } catch (e) {
@@ -212,7 +224,7 @@ export default function CredentialsPage() {
                                 variant="default"
                                 onClick={() => {
                                   const def = definitions.find(d => d.cred_def_id === app.cred_def_id)
-                                  if (def) handleApplyClick(def)
+                                  if (def) handleApplyClick(def, app.app_id)
                                 }}
                               >
                                 {t.credentialsPage.appStatusResubmit}

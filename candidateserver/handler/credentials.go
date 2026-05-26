@@ -122,3 +122,52 @@ func (h *Handler) SubmitApplication(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, http.StatusOK, res)
 }
+
+type UpdateApplicationReq struct {
+	AppId string `json:"app_id"`
+	Files []struct {
+		FileHash  string `json:"file_hash"`
+		FileName  string `json:"file_name"`
+		FileType  int32  `json:"file_type"`
+		FileExt   string `json:"file_ext"`
+		FileSize  uint64 `json:"file_size"`
+		FileUsage string `json:"file_usage"`
+	} `json:"files"`
+}
+
+// UpdateApplication PUT /api/credentials/apply
+func (h *Handler) UpdateApplication(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+
+	var body UpdateApplicationReq
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
+		return
+	}
+
+	pbFiles := make([]*gcredspb.FileInfo, 0, len(body.Files))
+	for _, f := range body.Files {
+		pbFiles = append(pbFiles, &gcredspb.FileInfo{
+			FileHash:  f.FileHash,
+			FileName:  f.FileName,
+			FileType:  gcredspb.CredentialFileType(f.FileType),
+			FileExt:   f.FileExt,
+			FileSize:  f.FileSize,
+			FileUsage: f.FileUsage,
+		})
+	}
+
+	req := &gcredspb.UpdateApplicationRequest{
+		AppId:       body.AppId,
+		CandidateId: candidateID,
+		Files:       pbFiles,
+	}
+
+	res, err := h.Creds.UpdateApplication(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, res)
+}
