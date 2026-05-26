@@ -54,7 +54,8 @@ export default function CredentialsPage() {
   const handleFileUpload = async (constraintName: string, file: File) => {
     // 1. Request presigned URL
     const fileExt = file.name.includes('.') ? '.' + file.name.split('.').pop() : ''
-    const fileHash = "hash-" + Date.now() // Mock hash for now
+    // Mock a 64-character SHA-256 hex string since backend requires exactly 64 chars
+    const fileHash = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('')
     try {
       const res = await apiClient("/api/credentials/upload-url", {
         method: "POST",

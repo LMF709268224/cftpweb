@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { Sidebar } from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
@@ -16,9 +16,24 @@ export default function PermissionsPage() {
   const [candidateId, setCandidateId] = useState("")
   const [credDefId, setCredDefId] = useState("")
   const [reason, setReason] = useState("")
+  const [definitions, setDefinitions] = useState<any[]>([])
   
   const [checkResult, setCheckResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    const fetchDefs = async () => {
+      try {
+        const res = await apiClient("/api/credentials/definitions")
+        if (res && res.definitions) {
+          setDefinitions(res.definitions)
+        }
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    fetchDefs()
+  }, [])
 
   const handleCheck = async () => {
     if (!candidateId || !credDefId) return alert(t.permissionsPage.alertProvideIds)
@@ -88,11 +103,18 @@ export default function PermissionsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>{t.permissionsPage.credDefId}</Label>
-                  <Input 
-                    placeholder="e.g. 01H..." 
+                  <select
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     value={credDefId}
                     onChange={(e) => setCredDefId(e.target.value)}
-                  />
+                  >
+                    <option value="" disabled>请选择资格定义</option>
+                    {definitions.map((def) => (
+                      <option key={def.cred_def_id} value={def.cred_def_id}>
+                        {def.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <Button className="w-full gap-2" onClick={handleCheck} disabled={loading}>
                   <Search className="h-4 w-4" />
@@ -120,28 +142,28 @@ export default function PermissionsPage() {
                   <div className="grid grid-cols-2 gap-3 pt-2">
                     <Button 
                       variant="outline" 
-                      className="gap-2 text-green-600 border-green-200 hover:bg-green-50"
+                      className="gap-2 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700"
                       onClick={() => handleAction("/api/permissions/grant")}
                     >
                       <ShieldCheck className="h-4 w-4" /> {t.permissionsPage.grantUpload}
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
+                      className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50 hover:text-orange-700"
                       onClick={() => handleAction("/api/permissions/revoke")}
                     >
                       <UserX className="h-4 w-4" /> {t.permissionsPage.revokeUpload}
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="gap-2 text-yellow-600 border-yellow-200 hover:bg-yellow-50"
+                      className="gap-2 text-yellow-600 border-yellow-200 hover:bg-yellow-50 hover:text-yellow-700"
                       onClick={() => handleAction("/api/permissions/mark-expired")}
                     >
                       <Clock className="h-4 w-4" /> {t.permissionsPage.markExpired}
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
+                      className="gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
                       onClick={() => handleAction("/api/permissions/revoke-credential")}
                     >
                       <AlertTriangle className="h-4 w-4" /> {t.permissionsPage.revokeCred}
@@ -169,6 +191,13 @@ export default function PermissionsPage() {
                         ) : (
                           <span className="text-red-500">{t.permissionsPage.no}</span>
                         )}
+                      </p>
+                    </div>
+                    <div className="h-10 w-px bg-border mx-4"></div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">是否有上传权限？</p>
+                      <p className="text-sm font-medium mt-2 text-orange-500 bg-orange-50 px-2 py-1 rounded inline-block">
+                        未知 (待后端扩展RPC)
                       </p>
                     </div>
                     <div className="h-10 w-px bg-border mx-4"></div>
