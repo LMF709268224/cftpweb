@@ -196,6 +196,7 @@ export default function CredentialsPage() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>ID</TableHead>
               <TableHead>{t.credentialsDefPage.name}</TableHead>
               <TableHead>{t.credentialsDefPage.category}</TableHead>
               <TableHead>{t.credentialsDefPage.description}</TableHead>
@@ -209,13 +210,14 @@ export default function CredentialsPage() {
               </TableRow>
             ) : definitions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   {t.credentialsDefPage.noDefinitions}
                 </TableCell>
               </TableRow>
             ) : (
               definitions.map((def) => (
                 <TableRow key={def.cred_def_id}>
+                  <TableCell className="font-mono text-xs text-muted-foreground">{def.cred_def_id}</TableCell>
                   <TableCell className="font-medium">{def.name}</TableCell>
                   <TableCell>{def.category}</TableCell>
                   <TableCell className="text-muted-foreground">{def.description || '-'}</TableCell>
