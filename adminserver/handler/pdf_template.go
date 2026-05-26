@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 )
@@ -81,8 +82,24 @@ func (h *Handler) UpdatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 
 // ListPdfRequests GET /api/pdf-requests
 func (h *Handler) ListPdfRequests(w http.ResponseWriter, r *http.Request) {
-	page := ParseQueryInt(r, "page", 1)
-	pageSize := ParseQueryInt(r, "page_size", 20)
+	// 默认参数
+	page := uint32(1)
+	pageSize := uint32(20)
+
+	// query params
+	qPageNumber := r.URL.Query().Get("page")
+	qPageSize := r.URL.Query().Get("page_size")
+
+	if qPageNumber != "" {
+		if val, err := strconv.Atoi(qPageNumber); err == nil {
+			page = uint32(val)
+		}
+	}
+	if qPageSize != "" {
+		if val, err := strconv.Atoi(qPageSize); err == nil {
+			pageSize = uint32(val)
+		}
+	}
 
 	req := &gcredspb.ListPdfRequestsRequest{
 		Page:     uint32(page),
