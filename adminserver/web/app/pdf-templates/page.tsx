@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { formatBackendDate } from "@/lib/utils"
+import { useTranslation } from "@/lib/useLanguage"
 import { FileCode2, Edit, Plus } from "lucide-react"
 
 export default function PdfTemplatesPage() {
+  const { t } = useTranslation()
   const [templates, setTemplates] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -83,7 +85,7 @@ export default function PdfTemplatesPage() {
       setIsOpen(false)
       fetchTemplates()
     } catch (e) {
-      alert("Save failed")
+      alert(t.common.error)
     }
   }
 
@@ -95,18 +97,18 @@ export default function PdfTemplatesPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
               <FileCode2 className="h-8 w-8 text-primary" />
-              PDF Templates
+              {t.pdfTemplatesPage.title}
             </h1>
-            <p className="text-muted-foreground mt-2">Manage HTML-to-PDF templates for certificate generation.</p>
+            <p className="text-muted-foreground mt-2">{t.pdfTemplatesPage.subtitle}</p>
           </div>
           <Button onClick={handleOpenCreate} className="gap-2">
             <Plus className="h-4 w-4" />
-            New Template
+            {t.pdfTemplatesPage.newTemplate}
           </Button>
         </div>
 
         {loading ? (
-          <div>Loading...</div>
+          <div>{t.common.loading}</div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {templates.map(tmpl => (
@@ -119,11 +121,11 @@ export default function PdfTemplatesPage() {
                   {tmpl.description}
                 </p>
                 <div className="text-xs text-muted-foreground mb-4">
-                  <p>ID: {tmpl.template_id}</p>
-                  <p>Created: {formatBackendDate(tmpl.created_at)}</p>
+                  <p>{t.pdfTemplatesPage.id}: {tmpl.template_id}</p>
+                  <p>{t.pdfTemplatesPage.created}: {formatBackendDate(tmpl.created_at)}</p>
                 </div>
                 <Button variant="outline" className="w-full gap-2" onClick={() => handleOpenEdit(tmpl)}>
-                  <Edit className="h-4 w-4" /> Edit Template
+                  <Edit className="h-4 w-4" /> {t.pdfTemplatesPage.editTemplate}
                 </Button>
               </div>
             ))}
@@ -133,38 +135,38 @@ export default function PdfTemplatesPage() {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
             <DialogHeader>
-              <DialogTitle>{isEditing ? "Edit Template" : "New Template"}</DialogTitle>
+              <DialogTitle>{isEditing ? t.pdfTemplatesPage.editTemplate : t.pdfTemplatesPage.newTemplate}</DialogTitle>
             </DialogHeader>
             <div className="py-4 flex-1 flex flex-col gap-4 overflow-y-auto">
               <div className="space-y-2">
-                <Label>Template Name</Label>
+                <Label>{t.pdfTemplatesPage.templateName}</Label>
                 <Input 
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
-                  placeholder="e.g. CFTA Certificate Template v1"
+                  placeholder={t.pdfTemplatesPage.namePlaceholder}
                 />
               </div>
               <div className="space-y-2">
-                <Label>Description</Label>
+                <Label>{t.pdfTemplatesPage.description}</Label>
                 <Input 
                   value={formData.description}
                   onChange={e => setFormData({...formData, description: e.target.value})}
-                  placeholder="Description of this template"
+                  placeholder={t.pdfTemplatesPage.descPlaceholder}
                 />
               </div>
               <div className="space-y-2 flex-1 flex flex-col">
-                <Label>HTML Source (Go html/template syntax)</Label>
+                <Label>{t.pdfTemplatesPage.htmlSource}</Label>
                 <Textarea 
                   className="flex-1 font-mono text-sm"
                   value={formData.html_template}
                   onChange={e => setFormData({...formData, html_template: e.target.value})}
-                  placeholder="<html><body><h1>{{.CandidateName}}</h1>...</body></html>"
+                  placeholder={t.pdfTemplatesPage.htmlPlaceholder}
                 />
               </div>
             </div>
             <div className="flex justify-end gap-3 border-t pt-4">
-              <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>Save Template</Button>
+              <Button variant="outline" onClick={() => setIsOpen(false)}>{t.common.cancel}</Button>
+              <Button onClick={handleSubmit}>{t.pdfTemplatesPage.saveTemplate}</Button>
             </div>
           </DialogContent>
         </Dialog>

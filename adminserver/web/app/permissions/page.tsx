@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { useTranslation } from "@/lib/useLanguage"
 import { ShieldAlert, Search, ShieldCheck, UserX, Clock, AlertTriangle } from "lucide-react"
 
 export default function PermissionsPage() {
+  const { t } = useTranslation()
   const [candidateId, setCandidateId] = useState("")
   const [credDefId, setCredDefId] = useState("")
   const [reason, setReason] = useState("")
@@ -19,21 +21,21 @@ export default function PermissionsPage() {
   const [loading, setLoading] = useState(false)
 
   const handleCheck = async () => {
-    if (!candidateId || !credDefId) return alert("Please provide both Candidate ID and Credential Def ID")
+    if (!candidateId || !credDefId) return alert(t.permissionsPage.alertProvideIds)
     
     setLoading(true)
     try {
       const res = await apiClient(`/api/permissions/check?candidate_id=${candidateId}&cred_def_id=${credDefId}`)
       setCheckResult(res)
     } catch (e) {
-      alert("Check failed")
+      alert(t.common.error)
     } finally {
       setLoading(false)
     }
   }
 
   const handleAction = async (endpoint: string) => {
-    if (!reason) return alert("Please provide a reason for this administrative action")
+    if (!reason) return alert(t.permissionsPage.alertProvideReason)
     
     setLoading(true)
     try {
@@ -45,11 +47,11 @@ export default function PermissionsPage() {
           reason: reason
         })
       })
-      alert("Action successful")
+      alert(t.common.success)
       setReason("")
       handleCheck() // Refresh status
     } catch (e) {
-      alert("Action failed")
+      alert(t.common.error)
     } finally {
       setLoading(false)
     }
@@ -62,9 +64,9 @@ export default function PermissionsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <ShieldAlert className="h-8 w-8 text-primary" />
-            Candidate Interventions
+            {t.permissionsPage.title}
           </h1>
-          <p className="text-muted-foreground mt-2">White-box manual intervention tools for candidate permissions and credential statuses.</p>
+          <p className="text-muted-foreground mt-2">{t.permissionsPage.subtitle}</p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-12">
@@ -72,12 +74,12 @@ export default function PermissionsPage() {
           <div className="md:col-span-5 space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Query Target</CardTitle>
-                <CardDescription>Enter candidate and qualification IDs to inspect current state.</CardDescription>
+                <CardTitle>{t.permissionsPage.queryTarget}</CardTitle>
+                <CardDescription>{t.permissionsPage.queryDesc}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Candidate ID (ULID)</Label>
+                  <Label>{t.permissionsPage.candidateId}</Label>
                   <Input 
                     placeholder="e.g. 01H..." 
                     value={candidateId}
@@ -85,7 +87,7 @@ export default function PermissionsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Credential Definition ID (ULID)</Label>
+                  <Label>{t.permissionsPage.credDefId}</Label>
                   <Input 
                     placeholder="e.g. 01H..." 
                     value={credDefId}
@@ -94,7 +96,7 @@ export default function PermissionsPage() {
                 </div>
                 <Button className="w-full gap-2" onClick={handleCheck} disabled={loading}>
                   <Search className="h-4 w-4" />
-                  {loading ? "Inspecting..." : "Inspect Status"}
+                  {loading ? t.permissionsPage.inspecting : t.permissionsPage.inspectStatus}
                 </Button>
               </CardContent>
             </Card>
@@ -102,13 +104,13 @@ export default function PermissionsPage() {
             {checkResult && (
               <Card>
                 <CardHeader className="bg-muted/50 pb-4 border-b">
-                  <CardTitle className="text-lg">Administrative Action</CardTitle>
+                  <CardTitle className="text-lg">{t.permissionsPage.adminAction}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 pt-6">
                   <div className="space-y-2">
-                    <Label className="text-red-500 font-semibold">Audit/Intervention Reason (Required)</Label>
+                    <Label className="text-red-500 font-semibold">{t.permissionsPage.reason}</Label>
                     <Input 
-                      placeholder="e.g. Manual verification approved by admin..." 
+                      placeholder={t.permissionsPage.reasonPlaceholder}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       className="border-red-200 focus-visible:ring-red-500"
@@ -121,28 +123,28 @@ export default function PermissionsPage() {
                       className="gap-2 text-green-600 border-green-200 hover:bg-green-50"
                       onClick={() => handleAction("/api/permissions/grant")}
                     >
-                      <ShieldCheck className="h-4 w-4" /> Grant Upload
+                      <ShieldCheck className="h-4 w-4" /> {t.permissionsPage.grantUpload}
                     </Button>
                     <Button 
                       variant="outline" 
                       className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50"
                       onClick={() => handleAction("/api/permissions/revoke")}
                     >
-                      <UserX className="h-4 w-4" /> Revoke Upload
+                      <UserX className="h-4 w-4" /> {t.permissionsPage.revokeUpload}
                     </Button>
                     <Button 
                       variant="outline" 
                       className="gap-2 text-yellow-600 border-yellow-200 hover:bg-yellow-50"
                       onClick={() => handleAction("/api/permissions/mark-expired")}
                     >
-                      <Clock className="h-4 w-4" /> Mark Expired
+                      <Clock className="h-4 w-4" /> {t.permissionsPage.markExpired}
                     </Button>
                     <Button 
                       variant="outline" 
                       className="gap-2 text-red-600 border-red-200 hover:bg-red-50"
                       onClick={() => handleAction("/api/permissions/revoke-credential")}
                     >
-                      <AlertTriangle className="h-4 w-4" /> Revoke Cred
+                      <AlertTriangle className="h-4 w-4" /> {t.permissionsPage.revokeCred}
                     </Button>
                   </div>
                 </CardContent>
@@ -155,39 +157,38 @@ export default function PermissionsPage() {
             {checkResult ? (
               <Card className="h-full">
                 <CardHeader>
-                  <CardTitle>Qualification State</CardTitle>
+                  <CardTitle>{t.permissionsPage.qualState}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="flex items-center gap-4 p-4 bg-muted rounded-lg border">
                     <div>
-                      <p className="text-sm text-muted-foreground">Is Eligible?</p>
+                      <p className="text-sm text-muted-foreground">{t.permissionsPage.isEligible}</p>
                       <p className="text-2xl font-bold mt-1">
                         {checkResult.eligible ? (
-                          <span className="text-green-500">YES</span>
+                          <span className="text-green-500">{t.permissionsPage.yes}</span>
                         ) : (
-                          <span className="text-red-500">NO</span>
+                          <span className="text-red-500">{t.permissionsPage.no}</span>
                         )}
                       </p>
                     </div>
                     <div className="h-10 w-px bg-border mx-4"></div>
                     <div>
-                      <p className="text-sm text-muted-foreground">Credential Status</p>
+                      <p className="text-sm text-muted-foreground">{t.permissionsPage.credStatus}</p>
                       <Badge className="mt-2" variant="outline">{checkResult.credential_status}</Badge>
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="font-semibold mb-2">System Message</h3>
+                    <h3 className="font-semibold mb-2">{t.permissionsPage.sysMessage}</h3>
                     <div className="p-3 bg-secondary rounded-md text-sm font-mono whitespace-pre-wrap">
-                      {checkResult.message || "No specific message returned by gcreds engine."}
+                      {checkResult.message || t.permissionsPage.noSysMessage}
                     </div>
                   </div>
 
                   <div>
-                    <h3 className="font-semibold mb-2 text-red-500">Danger Zone Information</h3>
+                    <h3 className="font-semibold mb-2 text-red-500">{t.permissionsPage.dangerZone}</h3>
                     <p className="text-sm text-muted-foreground">
-                      Manual interventions bypass standard automation (Casdoor enforcer, examination results). 
-                      Operations are permanently recorded in the audit logs of the `gcreds` service.
+                      {t.permissionsPage.dangerDesc}
                     </p>
                   </div>
                 </CardContent>
@@ -196,8 +197,8 @@ export default function PermissionsPage() {
               <div className="h-full rounded-xl border border-dashed flex items-center justify-center p-8 text-center bg-muted/20">
                 <div>
                   <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium">No Data Loaded</h3>
-                  <p className="text-muted-foreground mt-2 max-w-sm">Enter IDs on the left panel to inspect the exact status of a candidate's qualification lifecycle.</p>
+                  <h3 className="text-lg font-medium">{t.permissionsPage.noData}</h3>
+                  <p className="text-muted-foreground mt-2 max-w-sm">{t.permissionsPage.noDataDesc}</p>
                 </div>
               </div>
             )}

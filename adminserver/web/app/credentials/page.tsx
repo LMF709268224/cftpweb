@@ -24,12 +24,12 @@ interface CredentialDefinition {
   file_constraints: FileConstraint[]
 }
 
-const FILE_TYPES = [
-  { value: 0, label: "Unspecified" },
-  { value: 1, label: "Image" },
-  { value: 2, label: "PDF" },
-  { value: 4, label: "Video" },
-  { value: 8, label: "Text" },
+const getFileTypes = (t: any) => [
+  { value: 0, label: t.credentialsDefPage.fileTypes.unspecified },
+  { value: 1, label: t.credentialsDefPage.fileTypes.image },
+  { value: 2, label: t.credentialsDefPage.fileTypes.pdf },
+  { value: 4, label: t.credentialsDefPage.fileTypes.video },
+  { value: 8, label: t.credentialsDefPage.fileTypes.text },
 ]
 
 export default function CredentialsPage() {
@@ -43,6 +43,8 @@ export default function CredentialsPage() {
   const [description, setDescription] = useState("")
   const [category, setCategory] = useState("")
   const [constraints, setConstraints] = useState<FileConstraint[]>([])
+
+  const fileTypes = getFileTypes(t)
 
   const fetchDefinitions = async () => {
     try {
@@ -80,7 +82,7 @@ export default function CredentialsPage() {
 
   const handleSubmit = async () => {
     if (!name || !category) {
-      alert("Name and Category are required.")
+      alert(t.credentialsDefPage.alertNameCategory)
       return
     }
 
@@ -106,52 +108,52 @@ export default function CredentialsPage() {
   }
 
   const getFileTypeName = (type: number) => {
-    return FILE_TYPES.find(t => t.value === type)?.label || "Unknown"
+    return fileTypes.find(ft => ft.value === type)?.label || t.common.unknown
   }
 
   return (
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">{t.sidebar?.credentials || "Credentials"}</h1>
-          <p className="text-muted-foreground">Manage credential definitions and requirements.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t.credentialsDefPage.title}</h1>
+          <p className="text-muted-foreground">{t.credentialsDefPage.subtitle}</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              New Definition
+              {t.credentialsDefPage.newDefinition}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Create Credential Definition</DialogTitle>
+              <DialogTitle>{t.credentialsDefPage.createTitle}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
-                <Label>Name</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. CFTA Level 1" />
+                <Label>{t.credentialsDefPage.name}</Label>
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder={t.credentialsDefPage.namePlaceholder} />
               </div>
               <div className="grid gap-2">
-                <Label>Category</Label>
-                <Input value={category} onChange={e => setCategory(e.target.value)} placeholder="e.g. Certification" />
+                <Label>{t.credentialsDefPage.category}</Label>
+                <Input value={category} onChange={e => setCategory(e.target.value)} placeholder={t.credentialsDefPage.categoryPlaceholder} />
               </div>
               <div className="grid gap-2">
-                <Label>Description</Label>
-                <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional description..." />
+                <Label>{t.credentialsDefPage.description}</Label>
+                <Input value={description} onChange={e => setDescription(e.target.value)} placeholder={t.credentialsDefPage.descPlaceholder} />
               </div>
 
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <Label>Required Files (Constraints)</Label>
+                  <Label>{t.credentialsDefPage.requiredFiles}</Label>
                   <Button variant="outline" size="sm" onClick={handleAddConstraint}>
-                    <Plus className="h-4 w-4 mr-1" /> Add File
+                    <Plus className="h-4 w-4 mr-1" /> {t.credentialsDefPage.addFile}
                   </Button>
                 </div>
                 {constraints.map((c, i) => (
                   <div key={i} className="flex items-center gap-2 mb-2 p-2 border rounded-md">
                     <Input 
-                      placeholder="File Name (e.g. ID Card)" 
+                      placeholder={t.credentialsDefPage.fileNamePlaceholder} 
                       value={c.name} 
                       onChange={e => handleUpdateConstraint(i, 'name', e.target.value)} 
                     />
@@ -160,7 +162,7 @@ export default function CredentialsPage() {
                       value={c.type}
                       onChange={e => handleUpdateConstraint(i, 'type', parseInt(e.target.value))}
                     >
-                      {FILE_TYPES.map(ft => (
+                      {fileTypes.map(ft => (
                         <option key={ft.value} value={ft.value}>{ft.label}</option>
                       ))}
                     </select>
@@ -170,7 +172,7 @@ export default function CredentialsPage() {
                         checked={c.is_required} 
                         onChange={e => handleUpdateConstraint(i, 'is_required', e.target.checked)} 
                       />
-                      Required
+                      {t.credentialsDefPage.isRequired}
                     </label>
                     <Button variant="ghost" size="icon" onClick={() => handleRemoveConstraint(i)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -180,8 +182,8 @@ export default function CredentialsPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSubmit}>Create</Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t.common.cancel}</Button>
+              <Button onClick={handleSubmit}>{t.credentialsDefPage.createBtn}</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -191,21 +193,21 @@ export default function CredentialsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Constraints</TableHead>
+              <TableHead>{t.credentialsDefPage.name}</TableHead>
+              <TableHead>{t.credentialsDefPage.category}</TableHead>
+              <TableHead>{t.credentialsDefPage.description}</TableHead>
+              <TableHead>{t.credentialsDefPage.constraints}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={4} className="text-center py-8">{t.common.loading}</TableCell>
               </TableRow>
             ) : definitions.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                  No definitions found. Create one to get started.
+                  {t.credentialsDefPage.noDefinitions}
                 </TableCell>
               </TableRow>
             ) : (
@@ -226,7 +228,7 @@ export default function CredentialsPage() {
                         ))}
                       </ul>
                     ) : (
-                      <span className="text-muted-foreground text-xs">No files</span>
+                      <span className="text-muted-foreground text-xs">{t.credentialsDefPage.noFiles}</span>
                     )}
                   </TableCell>
                 </TableRow>

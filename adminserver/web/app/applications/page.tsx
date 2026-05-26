@@ -19,22 +19,22 @@ interface Application {
   app_id: string
   candidate_id: string
   cred_def_id: string
-  status: string // "PENDING", "APPROVED", "REJECTED", "RESUBMIT"
+  status: string
   files: FileInfo[]
   audit_remark: string
   created_at: string
 }
 
-const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  PENDING: { label: "Pending", color: "bg-yellow-500/10 text-yellow-500" },
-  APPROVED: { label: "Approved", color: "bg-green-500/10 text-green-500" },
-  REJECTED: { label: "Rejected", color: "bg-red-500/10 text-red-500" },
-  RESUBMIT: { label: "Resubmit", color: "bg-orange-500/10 text-orange-500" },
-  APPLICATION_STATUS_PENDING: { label: "Pending", color: "bg-yellow-500/10 text-yellow-500" },
-  APPLICATION_STATUS_APPROVED: { label: "Approved", color: "bg-green-500/10 text-green-500" },
-  APPLICATION_STATUS_REJECTED: { label: "Rejected", color: "bg-red-500/10 text-red-500" },
-  APPLICATION_STATUS_RESUBMIT: { label: "Resubmit", color: "bg-orange-500/10 text-orange-500" },
-}
+const getStatusMap = (t: any) => ({
+  PENDING: { label: t.applicationsPage.statusPending, color: "bg-yellow-500/10 text-yellow-500" },
+  APPROVED: { label: t.applicationsPage.statusApproved, color: "bg-green-500/10 text-green-500" },
+  REJECTED: { label: t.applicationsPage.statusRejected, color: "bg-red-500/10 text-red-500" },
+  RESUBMIT: { label: t.applicationsPage.statusResubmit, color: "bg-orange-500/10 text-orange-500" },
+  APPLICATION_STATUS_PENDING: { label: t.applicationsPage.statusPending, color: "bg-yellow-500/10 text-yellow-500" },
+  APPLICATION_STATUS_APPROVED: { label: t.applicationsPage.statusApproved, color: "bg-green-500/10 text-green-500" },
+  APPLICATION_STATUS_REJECTED: { label: t.applicationsPage.statusRejected, color: "bg-red-500/10 text-red-500" },
+  APPLICATION_STATUS_RESUBMIT: { label: t.applicationsPage.statusResubmit, color: "bg-orange-500/10 text-orange-500" },
+})
 
 export default function ApplicationsPage() {
   const { t } = useTranslation()
@@ -42,14 +42,14 @@ export default function ApplicationsPage() {
   const [total, setTotal] = useState(0)
   const [loading, setLoading] = useState(true)
 
-  // Filters
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState("0")
 
-  // Audit Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedApp, setSelectedApp] = useState<Application | null>(null)
   const [auditRemark, setAuditRemark] = useState("")
+
+  const statusMap = getStatusMap(t)
 
   const fetchApplications = async () => {
     try {
@@ -105,7 +105,7 @@ export default function ApplicationsPage() {
   }
 
   const getStatusDisplay = (status: string) => {
-    const s = STATUS_MAP[status]
+    const s = statusMap[status as keyof typeof statusMap]
     if (s) {
       return <Badge className={`hover:bg-transparent ${s.color}`} variant="outline">{s.label}</Badge>
     }
@@ -116,8 +116,8 @@ export default function ApplicationsPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">{t.sidebar?.applications || "Audit Center"}</h1>
-          <p className="text-muted-foreground">Review and audit candidate credential applications.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">{t.applicationsPage.title}</h1>
+          <p className="text-muted-foreground">{t.applicationsPage.subtitle}</p>
         </div>
       </div>
 
@@ -130,14 +130,14 @@ export default function ApplicationsPage() {
             setPage(1)
           }}
         >
-          <option value="0">All</option>
-          <option value="1">Pending</option>
-          <option value="2">Approved</option>
-          <option value="3">Rejected</option>
-          <option value="4">Resubmit Required</option>
+          <option value="0">{t.applicationsPage.statusAll}</option>
+          <option value="1">{t.applicationsPage.statusPending}</option>
+          <option value="2">{t.applicationsPage.statusApproved}</option>
+          <option value="3">{t.applicationsPage.statusRejected}</option>
+          <option value="4">{t.applicationsPage.statusResubmit}</option>
         </select>
         <div className="text-sm text-muted-foreground">
-          Total: {total}
+          {t.applicationsPage.total.replace('{{total}}', total.toString())}
         </div>
       </div>
 
@@ -145,23 +145,23 @@ export default function ApplicationsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>App ID</TableHead>
-              <TableHead>Candidate</TableHead>
-              <TableHead>Credential</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created At</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              <TableHead>{t.applicationsPage.appId}</TableHead>
+              <TableHead>{t.applicationsPage.candidate}</TableHead>
+              <TableHead>{t.applicationsPage.credential}</TableHead>
+              <TableHead>{t.applicationsPage.status}</TableHead>
+              <TableHead>{t.applicationsPage.createdAt}</TableHead>
+              <TableHead className="text-right">{t.applicationsPage.action}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8">Loading...</TableCell>
+                <TableCell colSpan={6} className="text-center py-8">{t.common.loading}</TableCell>
               </TableRow>
             ) : applications.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                  No applications found.
+                  {t.applicationsPage.noApplications}
                 </TableCell>
               </TableRow>
             ) : (
@@ -174,7 +174,7 @@ export default function ApplicationsPage() {
                   <TableCell className="text-xs">{app.created_at || '-'}</TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm" onClick={() => handleOpenAudit(app)}>
-                      Review
+                      {t.applicationsPage.review}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -192,16 +192,16 @@ export default function ApplicationsPage() {
           onClick={() => setPage(p => Math.max(1, p - 1))}
           disabled={page === 1}
         >
-          Previous
+          {t.applicationsPage.prevPage}
         </Button>
-        <div className="text-sm">Page {page}</div>
+        <div className="text-sm">{t.applicationsPage.page.replace('{{page}}', page.toString())}</div>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setPage(p => p + 1)}
           disabled={applications.length < 20}
         >
-          Next
+          {t.applicationsPage.nextPage}
         </Button>
       </div>
 
@@ -209,19 +209,19 @@ export default function ApplicationsPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Audit Application</DialogTitle>
+            <DialogTitle>{t.applicationsPage.auditTitle}</DialogTitle>
           </DialogHeader>
           {selectedApp && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-muted-foreground">App ID:</span> {selectedApp.app_id}</div>
-                <div><span className="text-muted-foreground">Status:</span> {getStatusDisplay(selectedApp.status)}</div>
-                <div><span className="text-muted-foreground">Candidate:</span> {selectedApp.candidate_id}</div>
-                <div><span className="text-muted-foreground">Credential:</span> {selectedApp.cred_def_id}</div>
+                <div><span className="text-muted-foreground">{t.applicationsPage.appId}:</span> {selectedApp.app_id}</div>
+                <div><span className="text-muted-foreground">{t.applicationsPage.status}:</span> {getStatusDisplay(selectedApp.status)}</div>
+                <div><span className="text-muted-foreground">{t.applicationsPage.candidate}:</span> {selectedApp.candidate_id}</div>
+                <div><span className="text-muted-foreground">{t.applicationsPage.credential}:</span> {selectedApp.cred_def_id}</div>
               </div>
 
               <div className="mt-4">
-                <Label className="mb-2 block">Uploaded Files:</Label>
+                <Label className="mb-2 block">{t.applicationsPage.uploadedFiles}</Label>
                 <ul className="space-y-2">
                   {selectedApp.files && selectedApp.files.length > 0 ? (
                     selectedApp.files.map((file, i) => (
@@ -229,36 +229,36 @@ export default function ApplicationsPage() {
                         <span className="text-sm">{file.file_name}</span>
                         {file.view_url ? (
                           <a href={file.view_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline text-sm">
-                            View File
+                            {t.applicationsPage.viewFile}
                           </a>
                         ) : (
-                          <span className="text-xs text-muted-foreground">No URL</span>
+                          <span className="text-xs text-muted-foreground">{t.applicationsPage.noUrl}</span>
                         )}
                       </li>
                     ))
                   ) : (
-                    <li className="text-sm text-muted-foreground">No files uploaded.</li>
+                    <li className="text-sm text-muted-foreground">{t.applicationsPage.noFiles}</li>
                   )}
                 </ul>
               </div>
 
               {(selectedApp.status === "APPLICATION_STATUS_PENDING" || selectedApp.status === "PENDING") && (
                 <div className="grid gap-2 mt-4">
-                  <Label>Audit Remark / Reject Reason</Label>
+                  <Label>{t.applicationsPage.auditRemark}</Label>
                   <Input 
-                    placeholder="Provide a reason if rejecting or requesting resubmission..." 
+                    placeholder={t.applicationsPage.remarkPlaceholder} 
                     value={auditRemark}
                     onChange={e => setAuditRemark(e.target.value)}
                   />
                   <div className="flex justify-end gap-2 mt-4">
                     <Button variant="outline" onClick={() => handleAudit("reject")} className="text-red-500 border-red-200 hover:bg-red-50">
-                      Reject
+                      {t.applicationsPage.reject}
                     </Button>
                     <Button variant="outline" onClick={() => handleAudit("resubmit")} className="text-orange-500 border-orange-200 hover:bg-orange-50">
-                      Require Resubmit
+                      {t.applicationsPage.requireResubmit}
                     </Button>
                     <Button onClick={() => handleAudit("approve")} className="bg-green-600 hover:bg-green-700">
-                      Approve
+                      {t.applicationsPage.approve}
                     </Button>
                   </div>
                 </div>
