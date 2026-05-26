@@ -100,7 +100,7 @@ export default function CredentialsPage() {
     }))
 
     try {
-      await apiClient("/api/credentials/applications", {
+      await apiClient("/api/credentials/apply", {
         method: "POST",
         body: JSON.stringify({
           cred_def_id: selectedDef.cred_def_id,

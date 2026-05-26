@@ -37,7 +37,12 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
   try {
     data = await res.json()
   } catch (e) {
-    // 如果不是 JSON，直接返回原始 response
+    if (!res.ok) {
+      const errorMsg = `请求异常 (${res.status})`
+      toast.error(errorMsg)
+      throw new Error(errorMsg)
+    }
+    // 如果不是 JSON，但状态正常，直接返回原始 response
     return res
   }
 
