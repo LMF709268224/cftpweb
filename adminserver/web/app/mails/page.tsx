@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useEffect, useState } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"
@@ -454,7 +455,7 @@ export default function AdminMailsPage() {
                             }`}>
                               Status: {getMailStatusText(msg.status)}
                             </div>
-                            <div className="text-muted-foreground text-xs">{isExpanded ? "â–²" : "â–¼"}</div>
+                            <div className="text-muted-foreground text-xs">{isExpanded ? "â–? : "â–?}</div>
                           </div>
                         </div>
                         {isExpanded && (

@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -30,7 +31,7 @@ const orders = [
     date: "2025-10-08",
     amount: "¥299.00",
     status: "completed",
-    paymentMethod: "支付宝",
+    paymentMethod: "支付�?,
   },
   {
     id: "ORD-2025-038",
@@ -38,25 +39,25 @@ const orders = [
     date: "2025-01-15",
     amount: "¥1,999.00",
     status: "completed",
-    paymentMethod: "银行卡",
+    paymentMethod: "银行�?,
   },
 ]
 
 const statusConfig = {
   completed: {
-    label: "已完成",
+    label: "已完�?,
     icon: CheckCircle2,
     color: "bg-emerald-500/10 text-emerald-700",
     iconColor: "text-emerald-500",
   },
   pending: {
-    label: "待支付",
+    label: "待支�?,
     icon: Clock,
     color: "bg-amber-500/10 text-amber-700",
     iconColor: "text-amber-500",
   },
   processing: {
-    label: "处理中",
+    label: "处理�?,
     icon: Package,
     color: "bg-blue-500/10 text-blue-700",
     iconColor: "text-blue-500",

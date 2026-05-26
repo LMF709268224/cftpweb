@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { Sidebar } from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,7 @@ export default function CredentialsPage() {
   // Application flow state
   const [selectedDef, setSelectedDef] = useState<any>(null)
   const [isApplyOpen, setIsApplyOpen] = useState(false)
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, {name: string, url: string}>>({})
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, {name: string, url: string, ext: string, hash: string, size: number}>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const fetchData = async () => {
@@ -53,23 +53,33 @@ export default function CredentialsPage() {
 
   const handleFileUpload = async (constraintName: string, file: File) => {
     // 1. Request presigned URL
+    const fileExt = file.name.includes('.') ? '.' + file.name.split('.').pop() : ''
+    const fileHash = "hash-" + Date.now() // Mock hash for now
     try {
       const res = await apiClient("/api/credentials/upload-url", {
         method: "POST",
         body: JSON.stringify({
           cred_def_id: selectedDef.cred_def_id,
           file_name: file.name,
+          file_ext: fileExt,
+          file_hash: fileHash,
           content_type: file.type,
           file_usage: "credential_evidence"
         })
       })
-      
+
       // 2. Mocking S3 direct upload for now (in real world, PUT to res.upload_url)
       // await fetch(res.upload_url, { method: "PUT", body: file })
       
       setUploadedFiles(prev => ({
         ...prev,
-        [constraintName]: { name: file.name, url: res.file_url }
+        [constraintName]: { 
+          name: file.name, 
+          url: res.file_url,
+          ext: fileExt,
+          hash: fileHash,
+          size: file.size
+        }
       }))
     } catch (e) {
       alert(t.credentialsPage.uploadFailed)
@@ -82,6 +92,10 @@ export default function CredentialsPage() {
     const evidenceFiles = Object.keys(uploadedFiles).map(k => ({
       file_name: uploadedFiles[k].name,
       file_url: uploadedFiles[k].url,
+      file_hash: uploadedFiles[k].hash,
+      file_ext: uploadedFiles[k].ext,
+      file_size: uploadedFiles[k].size,
+      file_usage: "credential_evidence",
       file_type: selectedDef.file_constraints.find((c:any) => c.name === k)?.type || 1
     }))
 

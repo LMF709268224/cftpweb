@@ -1,3 +1,4 @@
+import React from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
@@ -76,7 +77,7 @@ export function StatsCard({
               >
                 {trend.isPositive ? "+" : "-"}{trend.value}%
               </span>
-              <span className="text-muted-foreground">较上月</span>
+              <span className="text-muted-foreground">较上�?/span>
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -37,8 +38,7 @@ export function PurchaseDialog({
   const [loading, setLoading] = useState(false)
 
   const handleApplyCoupon = () => {
-    // 模拟优惠码验证
-    if (couponCode.toUpperCase() === "CFTP2026") {
+    // 模拟优惠码验�?    if (couponCode.toUpperCase() === "CFTP2026") {
       setDiscount(50)
       setCouponApplied(true)
     }
@@ -96,7 +96,7 @@ export function PurchaseDialog({
               <span className="text-sm font-medium text-foreground">{courseName}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-border/50">
-              <span className="text-sm text-muted-foreground">总费用</span>
+              <span className="text-sm text-muted-foreground">总费�?/span>
               <div className="text-right">
                 {discount > 0 && (
                   <span className="text-sm text-muted-foreground line-through mr-2">
@@ -177,12 +177,12 @@ export function PurchaseDialog({
 
           {/* Coupon Code */}
           <div className="space-y-3">
-            <label className="text-sm font-medium text-foreground">优惠券 / 折扣码</label>
+            <label className="text-sm font-medium text-foreground">优惠�?/ 折扣�?/label>
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="输入折扣码 (如 CFTP2026)"
+                  placeholder="输入折扣�?(�?CFTP2026)"
                   value={couponCode}
                   onChange={(e) => {
                     setCouponCode(e.target.value)
@@ -220,7 +220,7 @@ export function PurchaseDialog({
           </Button>
           <Button onClick={handlePayment} className="gap-2" disabled={loading}>
             <CreditCard className="h-4 w-4" />
-            {loading ? "处理中..." : paymentMethod === "stripe" ? "前往在线支付" : "提交订单"}
+            {loading ? "处理�?.." : paymentMethod === "stripe" ? "前往在线支付" : "提交订单"}
           </Button>
         </div>
       </DialogContent>

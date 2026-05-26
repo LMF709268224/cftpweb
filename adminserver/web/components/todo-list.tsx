@@ -1,3 +1,4 @@
+import React from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { ChevronRight, MessageSquare, FileCheck, XCircle, Clock } from "lucide-react"
@@ -53,7 +54,7 @@ export function TodoList({ items, className }: TodoListProps) {
           <h3 className="font-semibold text-card-foreground">{t.home.pendingTasks}</h3>
         </div>
         <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 hover:bg-amber-500/20">
-          {items.length} {lang === "zh" ? "é¡¹" : "Items"}
+          {items.length} {lang === "zh" ? "é¡? : "Items"}
         </Badge>
       </div>
       <div className="divide-y divide-border">

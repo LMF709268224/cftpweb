@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -44,19 +45,19 @@ const records = [
 
 const statusConfig = {
   verified: {
-    label: "已认证",
+    label: "已认�?,
     icon: CheckCircle2,
     color: "bg-emerald-500/10 text-emerald-700 border-emerald-200",
     iconColor: "text-emerald-500",
   },
   pending: {
-    label: "审核中",
+    label: "审核�?,
     icon: Clock,
     color: "bg-amber-500/10 text-amber-700 border-amber-200",
     iconColor: "text-amber-500",
   },
   rejected: {
-    label: "已驳回",
+    label: "已驳�?,
     icon: AlertCircle,
     color: "bg-red-500/10 text-red-600 border-red-200",
     iconColor: "text-red-500",
@@ -78,8 +79,7 @@ export default function RecordsPage() {
             </div>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              上传新档案
-            </Button>
+              上传新档�?            </Button>
           </div>
 
           {/* Stats */}

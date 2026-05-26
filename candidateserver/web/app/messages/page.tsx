@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState, useEffect } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { Sidebar } from "@/components/sidebar"
@@ -180,8 +181,7 @@ export default function MessagesPage() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground">消息中心</h1>
               <p className="mt-1 text-muted-foreground">
-                您有 {unreadCount} 条未读消息
-              </p>
+                您有 {unreadCount} 条未读消�?              </p>
             </div>
             {unreadCount > 0 && (
               <Button variant="outline" onClick={markAllAsRead} className="gap-2">

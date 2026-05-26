@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { apiClient } from "@/lib/apiClient"
@@ -291,7 +292,7 @@ export default function CoursesPage() {
                           </Badge>
                         </div>
 
-                        {/* 进度条 */}
+                        {/* 进度�?*/}
                         <div className="mt-4">
                           <div className="mb-2 flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">{t.courses.courseProgress}</span>

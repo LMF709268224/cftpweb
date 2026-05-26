@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -58,8 +59,7 @@ export default function SettingsPage() {
           setEducation(payload.education || "")
         }
       } catch (error) {
-        // apiClient 自动抛错，这里不需要做什么
-      }
+        // apiClient 自动抛错，这里不需要做什�?      }
     }
     fetchProfile()
   }, [])
@@ -83,15 +83,13 @@ export default function SettingsPage() {
           education: education,
         })
       })
-      // 走到这里说明 apiClient 没抛错
-      toast.success(getMessage("PROFILE_UPDATE_SUCCESS", lang))
+      // 走到这里说明 apiClient 没抛�?      toast.success(getMessage("PROFILE_UPDATE_SUCCESS", lang))
       if (displayName) {
         localStorage.setItem("user_name", displayName)
         window.dispatchEvent(new Event("storage"))
       }
     } catch (error) {
-      // 已经在 apiClient 里 toast 过了，直接 catch 住别让整个页面崩溃即可
-    } finally {
+      // 已经�?apiClient �?toast 过了，直�?catch 住别让整个页面崩溃即�?    } finally {
       setIsProfileLoading(false)
     }
   }
@@ -117,7 +115,7 @@ export default function SettingsPage() {
         window.location.href = "/login"
       }, 1500)
     } catch (error) {
-      // 已经在 apiClient 报过错了
+      // 已经�?apiClient 报过错了
     } finally {
       setIsPasswordLoading(false)
     }
