@@ -69,8 +69,16 @@ export default function CredentialsPage() {
         })
       })
       
-      // 2. Mocking S3 direct upload for now (in real world, PUT to res.upload_url)
-      // await fetch(res.upload_url, { method: "PUT", body: file })
+      // 2. Upload file directly to S3 using the presigned URL
+      const uploadRes = await fetch(res.upload_url, { 
+        method: "PUT", 
+        headers: { "Content-Type": file.type },
+        body: file 
+      })
+      
+      if (!uploadRes.ok) {
+        throw new Error("S3 upload failed")
+      }
       
       setUploadedFiles(prev => ({
         ...prev,

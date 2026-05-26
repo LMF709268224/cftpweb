@@ -20,8 +20,8 @@ func (h *Handler) GrantUploadPermission(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Mocking OperatorId from session
-	operatorID := "admin-user"
+	// Get actual OperatorId from session
+	operatorID := CandidateID(r)
 
 	req := &gcredspb.GrantUploadPermissionRequest{
 		CandidateId:  body.CandidateId,
@@ -48,7 +48,7 @@ func (h *Handler) RevokeUploadPermission(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	operatorID := "admin-user"
+	operatorID := CandidateID(r)
 
 	req := &gcredspb.RevokeUploadPermissionRequest{
 		CandidateId:  body.CandidateId,
@@ -105,7 +105,7 @@ func (h *Handler) MarkExpired(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auditorID := "admin-user"
+	auditorID := CandidateID(r)
 
 	req := &gcredspb.MarkExpiredRequest{
 		CandidateId: body.CandidateId,
@@ -131,7 +131,7 @@ func (h *Handler) RevokeCredential(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	auditorID := "admin-user"
+	auditorID := CandidateID(r)
 
 	req := &gcredspb.RevokeCredentialRequest{
 		CandidateId: body.CandidateId,
