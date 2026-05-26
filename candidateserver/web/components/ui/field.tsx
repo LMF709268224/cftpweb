@@ -1,5 +1,5 @@
+"use client"
 import React from "react"
-'use client'
 
 import { useMemo } from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'

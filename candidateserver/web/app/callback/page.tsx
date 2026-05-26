@@ -1,5 +1,5 @@
+"use client"
 import React from "react"
-'use client'
 
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -13,7 +13,7 @@ function CallbackContent() {
   const hasAttemptedLogin = useRef(false)
 
   useEffect(() => {
-    // 确保在严格模式下只执行一�?    if (hasAttemptedLogin.current) return
+    // 确保在严格模式下只执行一�?    if (hasAttemptedLogin.current) return
     hasAttemptedLogin.current = true
 
     const code = searchParams.get('code')
@@ -48,7 +48,7 @@ function CallbackContent() {
         
         setStatus('success')
         
-        // 可以在这里把用户的基本信息存�?localStorage 或全局状�?        if (payload.user) {
+        // 可以在这里把用户的基本信息存�?localStorage 或全局状�?        if (payload.user) {
           localStorage.setItem('user_name', payload.user.name)
         }
         localStorage.setItem('is_authenticated', 'true')
@@ -70,7 +70,7 @@ function CallbackContent() {
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-slate-50 relative overflow-hidden">
-      {/* 动态背景光�?*/}
+      {/* 动态背景光�?*/}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-indigo-600/10 blur-[150px] pointer-events-none" />
 
       <div className="relative z-10 flex flex-col items-center p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-xl shadow-2xl max-w-sm w-full mx-4">
@@ -83,7 +83,7 @@ function CallbackContent() {
             </div>
             <h2 className="mt-8 text-xl font-semibold tracking-tight text-white">正在验证身份</h2>
             <p className="mt-2 text-sm text-slate-400 text-center">
-              我们正在�?Casdoor 建立安全会话<br />请不要关闭此页面...
+              我们正在�?Casdoor 建立安全会话<br />请不要关闭此页面...
             </p>
           </>
         )}
@@ -110,7 +110,7 @@ function CallbackContent() {
               {errorMsg}
             </p>
             <p className="mt-4 text-xs text-slate-500">
-              3 秒后将返回登录页�?            </p>
+              3 秒后将返回登录页�?            </p>
           </>
         )}
       </div>
@@ -128,7 +128,7 @@ export default function CallbackPage() {
             <div className="absolute inset-0 rounded-full blur-xl bg-indigo-500/50 animate-pulse" />
             <Loader2 className="w-16 h-16 text-indigo-400 animate-spin relative z-10" />
           </div>
-          <h2 className="mt-8 text-xl font-semibold tracking-tight text-white">加载�?/h2>
+          <h2 className="mt-8 text-xl font-semibold tracking-tight text-white">加载�?/h2>
         </div>
       </div>
     }>

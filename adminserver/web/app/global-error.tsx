@@ -1,5 +1,5 @@
+"use client"
 import React from "react"
-'use client'
 
 export default function GlobalError({
   error,
@@ -132,7 +132,7 @@ export default function GlobalError({
             <div className="error-details-wrapper">
               <details className="error-details">
                 <summary>
-                  <span className="chevron">â–?/span>
+                  <span className="chevron">ï¿½?/span>
                   View full error trace
                 </summary>
               </details>
