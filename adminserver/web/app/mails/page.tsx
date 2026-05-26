@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"
 import { Sidebar } from "@/components/sidebar"
+import { Badge } from "@/components/ui/badge"
 import { Send, List, FileText } from "lucide-react"
 
 export default function AdminMailsPage() {
@@ -30,11 +31,20 @@ export default function AdminMailsPage() {
   const [expandedMailId, setExpandedMailId] = useState<string | null>(null)
 
   const getMailStatusText = (status: string) => {
-    switch (status) {
-      case "SCHEDULING": return t.mailsPage.statusScheduling;
-      case "SENT": return t.mailsPage.statusSent;
-      case "FAILED": return t.mailsPage.statusFailed;
-      case "CANCELLED": return t.mailsPage.statusCancelled;
+    const s = String(status).toUpperCase()
+    switch (s) {
+      case "SCHEDULING":
+      case "MAIL_STATUS_SCHEDULING": 
+        return t.mailsPage.statusScheduling;
+      case "SENT":
+      case "MAIL_STATUS_SENT": 
+        return t.mailsPage.statusSent;
+      case "FAILED":
+      case "MAIL_STATUS_FAILED": 
+        return t.mailsPage.statusFailed;
+      case "CANCELLED":
+      case "MAIL_STATUS_CANCELLED": 
+        return t.mailsPage.statusCancelled;
       default: return status || t.mailsPage.statusScheduling;
     }
   }
@@ -443,17 +453,18 @@ export default function AdminMailsPage() {
                           <div className="font-medium text-sm">
                             <span className="text-muted-foreground mr-2">{msg.created_at ? msg.created_at.split('T')[0] : ''}</span>
                             To: {msg.to_email} {msg.template_id ? `- TPL: ${msg.template_id}` : ''}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <div className={`text-xs px-2 py-1 rounded border ${
-                              msg.status === "SENT" 
-                              ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400' 
-                              : msg.status === "FAILED"
-                              ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400'
-                              : 'bg-muted text-muted-foreground'
-                            }`}>
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                String(msg.status).toUpperCase() === "SENT" || String(msg.status).toUpperCase() === "MAIL_STATUS_SENT"
+                                ? "border-green-200 text-green-600 bg-green-50" 
+                                : String(msg.status).toUpperCase() === "FAILED" || String(msg.status).toUpperCase() === "MAIL_STATUS_FAILED"
+                                ? "border-red-200 text-red-600 bg-red-50"
+                                : "border-yellow-200 text-yellow-600 bg-yellow-50"
+                              }
+                            >
                               Status: {getMailStatusText(msg.status)}
-                            </div>
+                            </Badge>
                             <div className="text-muted-foreground text-xs">{isExpanded ? "▲" : "▼"}</div>
                           </div>
                         </div>

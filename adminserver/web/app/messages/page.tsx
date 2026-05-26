@@ -29,10 +29,12 @@ export default function AdminMessagesPage() {
   const [expandedMsgId, setExpandedMsgId] = useState<string | null>(null)
 
   const getMessageStatusText = (status: any) => {
-    if (status === undefined || status === null || status === 0 || status === "0" || status === "MESSAGE_STATUS_UNREAD") return t.messagesPage.statusUnread;
-    if (status === 1 || status === "1" || status === "MESSAGE_STATUS_READ") return t.messagesPage.statusRead;
-    if (status === 2 || status === "2" || status === "MESSAGE_STATUS_DELETED") return t.messagesPage.statusDeleted;
-    if (status === 3 || status === "3" || status === "MESSAGE_STATUS_REVOKED") return t.messagesPage.statusRevoked;
+    if (status === undefined || status === null) return t.messagesPage.statusUnread;
+    const s = String(status).toUpperCase();
+    if (s === "0" || s === "MESSAGE_STATUS_UNREAD" || s === "UNREAD") return t.messagesPage.statusUnread;
+    if (s === "1" || s === "MESSAGE_STATUS_READ" || s === "READ") return t.messagesPage.statusRead;
+    if (s === "2" || s === "MESSAGE_STATUS_DELETED" || s === "DELETED") return t.messagesPage.statusDeleted;
+    if (s === "3" || s === "MESSAGE_STATUS_REVOKED" || s === "REVOKED") return t.messagesPage.statusRevoked;
     return String(status);
   }
 
@@ -406,7 +408,7 @@ export default function AdminMessagesPage() {
                           </div>
                           <div className="flex items-center gap-3">
                             <div className={`text-xs px-2 py-1 rounded border ${
-                              (msg.status === 1 || msg.status === "1" || msg.status === "MESSAGE_STATUS_READ") 
+                              (String(msg.status).toUpperCase() === "1" || String(msg.status).toUpperCase() === "MESSAGE_STATUS_READ" || String(msg.status).toUpperCase() === "READ") 
                               ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400' 
                               : 'bg-muted text-muted-foreground'
                             }`}>
