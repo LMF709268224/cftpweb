@@ -183,6 +183,9 @@ export const en: AppTranslations = {
     passwordMismatch: "Passwords do not match",
   },
   messagesPage: {
+    title: "Message Center",
+    unreadCount: "You have {{count}} unread messages",
+    markAllAsRead: "Mark all as read",
     markReadSuccess: "Marked as read",
     deleteSuccess: "Message deleted",
     noMessages: "No messages",
@@ -216,5 +219,7 @@ export const en: AppTranslations = {
     description: "Description",
     required: "Required",
     optional: "Optional",
+    chooseFile: "Choose File",
+    noFileChosen: "No file chosen",
   }
 }

@@ -178,15 +178,15 @@ export default function MessagesPage() {
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">消息中心</h1>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">{t.messagesPage.title}</h1>
               <p className="mt-1 text-muted-foreground">
-                您有 {unreadCount} 条未读消息
+                {t.messagesPage.unreadCount.replace("{{count}}", String(unreadCount))}
               </p>
             </div>
             {unreadCount > 0 && (
               <Button variant="outline" onClick={markAllAsRead} className="gap-2">
                 <CheckCheck className="h-4 w-4" />
-                全部标为已读
+                {t.messagesPage.markAllAsRead}
               </Button>
             )}
           </div>
@@ -202,7 +202,7 @@ export default function MessagesPage() {
                   : "bg-muted text-muted-foreground hover:text-foreground"
               )}
             >
-              全部
+              {t.messagesPage.all}
               <Badge variant="secondary" className="ml-2 h-5 px-1.5">
                 {messageList.length}
               </Badge>

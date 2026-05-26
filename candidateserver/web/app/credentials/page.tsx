@@ -69,12 +69,25 @@ export default function CredentialsPage() {
         })
       })
       
+      // --- [BEGIN] 临时跨域中转代码 (如果 S3 跨域配置好了，请注释掉这段，解开下面的直传代码) ---
+      const proxyUrl = `/api/credentials/upload-proxy?url=${encodeURIComponent(res.upload_url)}`
+      const uploadRes = await fetch(proxyUrl, { 
+        method: "POST", // BFF Proxy route uses POST
+        headers: { "Content-Type": file.type },
+        body: file 
+      })
+      // --- [END] 临时跨域中转代码 ---
+
+      /*
+      // --- [BEGIN] 生产环境直传代码 (解开注释即可恢复) ---
       // 2. Upload file directly to S3 using the presigned URL
       const uploadRes = await fetch(res.upload_url, { 
         method: "PUT", 
         headers: { "Content-Type": file.type },
         body: file 
       })
+      // --- [END] 生产环境直传代码 ---
+      */
       
       if (!uploadRes.ok) {
         throw new Error("S3 upload failed")
@@ -245,10 +258,27 @@ export default function CredentialsPage() {
                         <Badge variant="destructive">{t.credentialsPage.required}</Badge> : 
                         <Badge variant="secondary">{t.credentialsPage.optional}</Badge>}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        type="file" 
-                        onChange={(e) => e.target.files && handleFileUpload(constraint.name, e.target.files[0])}
+                    <div className="flex items-center gap-2 mt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => document.getElementById(`file-${constraint.name}`)?.click()}
+                      >
+                        {t.credentialsPage.chooseFile}
+                      </Button>
+                      <span className="text-sm text-muted-foreground truncate max-w-[200px]" title={uploadedFiles[constraint.name] ? uploadedFiles[constraint.name].name : t.credentialsPage.noFileChosen}>
+                        {uploadedFiles[constraint.name] ? uploadedFiles[constraint.name].name : t.credentialsPage.noFileChosen}
+                      </span>
+                      <Input
+                        id={`file-${constraint.name}`}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleFileUpload(constraint.name, e.target.files[0])
+                          }
+                        }}
                       />
                     </div>
                     {uploadedFiles[constraint.name] && (

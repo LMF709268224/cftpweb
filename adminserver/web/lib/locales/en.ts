@@ -328,6 +328,7 @@ export const en: AppTranslations = {
     queryDesc: "Enter candidate and qualification IDs to inspect current state.",
     candidateId: "Candidate ID (ULID)",
     credDefId: "Credential Definition ID (ULID)",
+    selectCredentialDef: "Please select a credential definition",
     inspectStatus: "Inspect Status",
     inspecting: "Inspecting...",
     adminAction: "Administrative Action",

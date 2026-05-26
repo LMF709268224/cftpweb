@@ -326,6 +326,7 @@ export const zh = {
     queryDesc: "输入考生和资格 ID 来检查当前状态。",
     candidateId: "考生 ID (ULID)",
     credDefId: "资格定义 ID (ULID)",
+    selectCredentialDef: "请选择资格定义",
     inspectStatus: "查询状态",
     inspecting: "查询中...",
     adminAction: "管理操作",

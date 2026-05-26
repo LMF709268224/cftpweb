@@ -108,7 +108,7 @@ export default function PermissionsPage() {
                     value={credDefId}
                     onChange={(e) => setCredDefId(e.target.value)}
                   >
-                    <option value="" disabled>请选择资格定义</option>
+                    <option value="" disabled>{t.permissionsPage.selectCredentialDef}</option>
                     {definitions.map((def) => (
                       <option key={def.cred_def_id} value={def.cred_def_id}>
                         {def.name}

@@ -181,6 +181,9 @@ export const zh = {
     passwordMismatch: "两次输入的新密码不一致",
   },
   messagesPage: {
+    title: "消息中心",
+    unreadCount: "您有 {{count}} 条未读消息",
+    markAllAsRead: "全部标为已读",
     markReadSuccess: "已标记为已读",
     deleteSuccess: "消息已删除",
     noMessages: "暂无消息",
@@ -214,6 +217,8 @@ export const zh = {
     description: "描述",
     required: "必填",
     optional: "选填",
+    chooseFile: "选择文件",
+    noFileChosen: "未选择任何文件",
   }
 }
 
