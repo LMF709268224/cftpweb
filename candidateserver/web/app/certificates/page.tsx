@@ -37,6 +37,7 @@ export default function CertificatesPage() {
             expiryDate: cert.valid_until ? formatBackendDate(cert.valid_until).split(" ")[0] : t.common.permanent,
             status: cert.status === 2 ? "active" : "inactive", // Example mapping
             credentialId: cert.cred_guid || cert.cred_id || t.common.na,
+            pdfUrl: cert.files?.find((f: any) => f.file_type === 3 || f.file_ext === ".pdf" || f.file_ext === "pdf" || f.file_name?.endsWith('.pdf'))?.view_url || "",
           })))
         }
       } catch (e) {
@@ -112,14 +113,31 @@ export default function CertificatesPage() {
 
                   {/* Actions */}
                   <div className="flex gap-3">
-                    <Button className="flex-1 gap-2">
+                    <Button 
+                      className="flex-1 gap-2"
+                      onClick={() => {
+                        if (cert.pdfUrl) {
+                          window.open(cert.pdfUrl, '_blank')
+                        }
+                      }}
+                      disabled={!cert.pdfUrl}
+                    >
                       <Download className="h-4 w-4" />
-                      下载证书
+                      {cert.pdfUrl ? "下载证书" : "证书生成中"}
                     </Button>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" disabled>
                       <Share2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="icon">
+                    <Button 
+                      variant="outline" 
+                      size="icon"
+                      onClick={() => {
+                        if (cert.pdfUrl) {
+                          window.open(cert.pdfUrl, '_blank')
+                        }
+                      }}
+                      disabled={!cert.pdfUrl}
+                    >
                       <Eye className="h-4 w-4" />
                     </Button>
                   </div>

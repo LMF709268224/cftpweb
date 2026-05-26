@@ -112,6 +112,11 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Put("/", h.UpdatePdfTemplate)
 		})
 
+		// ===== PDF 证书生成请求管理 (PDF Requests) =====
+		r.Route("/pdf-requests", func(r chi.Router) {
+			r.Get("/", h.ListPdfRequests)
+		})
+
 		// ===== 权限人工干预 (Permissions) =====
 		r.Route("/permissions", func(r chi.Router) {
 			r.Get("/check", h.CheckCandidateQualification)

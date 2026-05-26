@@ -454,6 +454,7 @@ type CertificateFileInfo struct {
 	FileExt   string                    `json:"file_ext,omitempty"`   // 文件扩展名 [required]
 	FileSize  uint64                    `json:"file_size,omitempty"`  // 文件大小 [required]
 	FileUsage string                    `json:"file_usage,omitempty"` // 文件用途, 如 "front_view" [optional]
+	ViewUrl   string                    `json:"view_url,omitempty"`   // 文件可访问链接 [optional]
 }
 
 type CertificateInfo struct {

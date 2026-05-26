@@ -50,7 +50,13 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
   if (!res.ok || data.code !== 200) {
     // 自动通过 errorCodes 字典获取本地化提示
     const currentLang = typeof window !== "undefined" ? (localStorage.getItem("app_lang") || "zh") : "zh";
-    const errorMsg = getErrorMessage(data.error_code, currentLang as "zh" | "en") || data.message || "请求失败"
+    const baseMsg = getErrorMessage(data.error_code, currentLang as "zh" | "en");
+    
+    // 如果是请求参数错误，且后端有提供具体的报错字段信息，则拼接起来
+    const errorMsg = (data.error_code === "INVALID_REQUEST" && data.message)
+      ? `${baseMsg}: ${data.message}`
+      : (baseMsg !== "发生未知错误，请联系客服" && baseMsg !== "An unknown error occurred. Please contact support." ? baseMsg : (data.message || "请求失败"));
+
     toast.error(errorMsg)
     throw new Error(errorMsg)
   }

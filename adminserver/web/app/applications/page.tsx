@@ -85,6 +85,11 @@ export default function ApplicationsPage() {
   const handleAudit = async (action: "approve" | "reject" | "resubmit") => {
     if (!selectedApp) return
 
+    if ((action === "reject" || action === "resubmit") && !auditRemark.trim()) {
+      toast.error(t.applicationsPage.auditRemark + " 不能为空 (Required)")
+      return
+    }
+
     let approved = false
     let requireResubmit = false
     if (action === "approve") approved = true

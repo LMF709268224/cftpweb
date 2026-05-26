@@ -78,3 +78,22 @@ func (h *Handler) UpdatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, http.StatusOK, res)
 }
+
+// ListPdfRequests GET /api/pdf-requests
+func (h *Handler) ListPdfRequests(w http.ResponseWriter, r *http.Request) {
+	page := ParseQueryInt(r, "page", 1)
+	pageSize := ParseQueryInt(r, "page_size", 20)
+
+	req := &gcredspb.ListPdfRequestsRequest{
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
+	}
+
+	res, err := h.Creds.ListPdfRequests(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, res)
+}

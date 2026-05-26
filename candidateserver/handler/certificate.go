@@ -70,6 +70,7 @@ func toCertificateFileInfos(files []*gcredspb.FileInfo) []CertificateFileInfo {
 			FileExt:   file.GetFileExt(),
 			FileSize:  file.GetFileSize(),
 			FileUsage: file.GetFileUsage(),
+			ViewUrl:   file.GetViewUrl(),
 		})
 	}
 	return out
