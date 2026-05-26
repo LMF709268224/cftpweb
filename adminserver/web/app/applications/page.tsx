@@ -31,10 +31,12 @@ const getStatusMap = (t: any) => ({
   APPROVED: { label: t.applicationsPage.statusApproved, color: "bg-green-500/10 text-green-500" },
   REJECTED: { label: t.applicationsPage.statusRejected, color: "bg-red-500/10 text-red-500" },
   RESUBMIT: { label: t.applicationsPage.statusResubmit, color: "bg-orange-500/10 text-orange-500" },
+  REUPLOAD: { label: t.applicationsPage.statusResubmit, color: "bg-orange-500/10 text-orange-500" },
   APPLICATION_STATUS_PENDING: { label: t.applicationsPage.statusPending, color: "bg-yellow-500/10 text-yellow-500" },
   APPLICATION_STATUS_APPROVED: { label: t.applicationsPage.statusApproved, color: "bg-green-500/10 text-green-500" },
   APPLICATION_STATUS_REJECTED: { label: t.applicationsPage.statusRejected, color: "bg-red-500/10 text-red-500" },
   APPLICATION_STATUS_RESUBMIT: { label: t.applicationsPage.statusResubmit, color: "bg-orange-500/10 text-orange-500" },
+  APPLICATION_STATUS_REUPLOAD: { label: t.applicationsPage.statusResubmit, color: "bg-orange-500/10 text-orange-500" },
 })
 
 export default function ApplicationsPage() {

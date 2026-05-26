@@ -68,26 +68,13 @@ export default function CredentialsPage() {
           file_usage: constraintName
         })
       })
-      /*
-      // --- [BEGIN] 临时跨域中转代码 (如果 S3 跨域配置好了，请注释掉这段，解开下面的直传代码) ---
-      const proxyUrl = `/api/credentials/upload-proxy?url=${encodeURIComponent(res.upload_url)}`
-      const uploadRes = await fetch(proxyUrl, { 
-        method: "POST", // BFF Proxy route uses POST
-        headers: { "Content-Type": file.type },
-        body: file 
-      })
-      // --- [END] 临时跨域中转代码 ---
-      */
 
-      // --- [BEGIN] 生产环境直传代码 (解开注释即可恢复) ---
       // 2. Upload file directly to S3 using the presigned URL
       const uploadRes = await fetch(res.upload_url, {
         method: "PUT",
         headers: { "Content-Type": file.type },
         body: file
       })
-      // --- [END] 生产环境直传代码 ---
-
 
       if (!uploadRes.ok) {
         throw new Error("S3 upload failed")
@@ -152,7 +139,9 @@ export default function CredentialsPage() {
         return <XCircle className="h-5 w-5 text-red-500" />
       case "NEEDS_RESUBMIT":
       case "RESUBMIT":
+      case "REUPLOAD":
       case "APPLICATION_STATUS_RESUBMIT":
+      case "APPLICATION_STATUS_REUPLOAD":
         return <AlertCircle className="h-5 w-5 text-orange-500" />
       default: return <FileText className="h-5 w-5" />
     }
@@ -172,7 +161,9 @@ export default function CredentialsPage() {
         return t.credentialsPage.appStatusRejected
       case "NEEDS_RESUBMIT":
       case "RESUBMIT":
+      case "REUPLOAD":
       case "APPLICATION_STATUS_RESUBMIT":
+      case "APPLICATION_STATUS_REUPLOAD":
         return t.credentialsPage.appStatusResubmit
       default: return t.credentialsPage.appStatusUnknown
     }
@@ -209,11 +200,25 @@ export default function CredentialsPage() {
                     <Card key={app.app_id}>
                       <CardHeader className="pb-2">
                         <CardTitle className="text-lg flex justify-between items-center">
-                          <span>{app.credential_definition?.name || "Unknown"}</span>
-                          <Badge variant="outline" className="flex items-center gap-1">
-                            {getStatusIcon(app.status)}
-                            <span className="ml-1">{getStatusText(app.status)}</span>
-                          </Badge>
+                          <span>{definitions.find(d => d.cred_def_id === app.cred_def_id)?.name || "Unknown"}</span>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              {getStatusIcon(app.status)}
+                              <span className="ml-1">{getStatusText(app.status)}</span>
+                            </Badge>
+                            {(String(app.status).toUpperCase() === "REUPLOAD" || String(app.status).toUpperCase() === "RESUBMIT" || String(app.status).toUpperCase() === "NEEDS_RESUBMIT" || String(app.status).toUpperCase() === "APPLICATION_STATUS_REUPLOAD" || String(app.status).toUpperCase() === "APPLICATION_STATUS_RESUBMIT") && (
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => {
+                                  const def = definitions.find(d => d.cred_def_id === app.cred_def_id)
+                                  if (def) handleApplyClick(def)
+                                }}
+                              >
+                                {t.credentialsPage.appStatusResubmit}
+                              </Button>
+                            )}
+                          </div>
                         </CardTitle>
                       </CardHeader>
                       <CardContent>

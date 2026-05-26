@@ -100,7 +100,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/definitions", h.ListCredentialDefinitions)
 			r.Get("/applications", h.ListCandidateApplications)
 			r.Post("/upload-url", h.RequestUploadUrl)
-			r.Post("/upload-proxy", h.UploadProxy) // TEMPORARY CORS BYPASS
 			r.Post("/apply", h.SubmitApplication)
 		})
 
