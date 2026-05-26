@@ -27,6 +27,18 @@ export default function AdminMailsPage() {
   const [pageSize, setPageSize] = useState(20)
   const [statusFilter, setStatusFilter] = useState("")
   const [totalCount, setTotalCount] = useState(0)
+  const [expandedMailId, setExpandedMailId] = useState<string | null>(null)
+
+  const getMailStatusText = (status: string) => {
+    switch (status) {
+      case "SCHEDULING": return t.mailsPage.statusScheduling;
+      case "SENT": return t.mailsPage.statusSent;
+      case "FAILED": return t.mailsPage.statusFailed;
+      case "CANCELLED": return t.mailsPage.statusCancelled;
+      default: return status || t.mailsPage.statusScheduling;
+    }
+  }
+
 
   // For templates
   const [templates, setTemplates] = useState<any[]>([])
@@ -420,18 +432,53 @@ export default function AdminMailsPage() {
                 <div className="text-muted-foreground py-4">{t.mailsPage.loading}</div>
               ) : sentMessages.length > 0 ? (
                 <div className="space-y-4">
-                  {sentMessages.map((msg, i) => (
-                    <div key={i} className="border-b pb-4 last:border-0">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium">To: {msg.to_email} - TPL: {msg.template_id || 'N/A'}</div>
-                        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Status: {msg.status}</div>
+                  {sentMessages.map((msg, i) => {
+                    const isExpanded = expandedMailId === msg.mail_id
+                    return (
+                      <div key={msg.mail_id || i} className="border-b pb-4 last:border-0">
+                        <div 
+                          className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2 transition-colors"
+                          onClick={() => setExpandedMailId(isExpanded ? null : msg.mail_id)}
+                        >
+                          <div className="font-medium text-sm">
+                            <span className="text-muted-foreground mr-2">{msg.created_at ? msg.created_at.split('T')[0] : ''}</span>
+                            To: {msg.to_email} {msg.template_id ? `- TPL: ${msg.template_id}` : ''}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className={`text-xs px-2 py-1 rounded border ${
+                              msg.status === "SENT" 
+                              ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400' 
+                              : msg.status === "FAILED"
+                              ? 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400'
+                              : 'bg-muted text-muted-foreground'
+                            }`}>
+                              Status: {getMailStatusText(msg.status)}
+                            </div>
+                            <div className="text-muted-foreground text-xs">{isExpanded ? "▲" : "▼"}</div>
+                          </div>
+                        </div>
+                        {isExpanded && (
+                          <div className="mt-3 bg-muted/30 p-3 rounded text-sm font-mono whitespace-pre-wrap break-words">
+                            <div className="mb-2 pb-2 border-b border-muted">
+                              <span className="font-semibold">Mail ID:</span> {msg.mail_id}
+                            </div>
+                            <div className="mb-2 pb-2 border-b border-muted">
+                              <span className="font-semibold">Subject:</span> {msg.subject}
+                            </div>
+                            {msg.from_email && (
+                              <div className="mb-2 pb-2 border-b border-muted">
+                                <span className="font-semibold">From:</span> {msg.from_name} &lt;{msg.from_email}&gt;
+                              </div>
+                            )}
+                            <div>
+                              <span className="font-semibold">Payload:</span>
+                              <pre className="mt-2 text-xs overflow-x-auto bg-card p-2 rounded border">{msg.payload || "{}"}</pre>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1 font-mono">
-                        Subj: {msg.subject}<br/>
-                        {msg.payload && `Payload: ${msg.payload}`}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                   
                   <div className="flex items-center justify-between pt-4 border-t mt-6">
                     <div className="text-sm text-muted-foreground">

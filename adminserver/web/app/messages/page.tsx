@@ -26,6 +26,16 @@ export default function AdminMessagesPage() {
   const [pageSize, setPageSize] = useState(20)
   const [statusFilter, setStatusFilter] = useState("")
   const [totalCount, setTotalCount] = useState(0)
+  const [expandedMsgId, setExpandedMsgId] = useState<string | null>(null)
+
+  const getMessageStatusText = (status: any) => {
+    if (status === undefined || status === null || status === 0 || status === "0" || status === "MESSAGE_STATUS_UNREAD") return t.messagesPage.statusUnread;
+    if (status === 1 || status === "1" || status === "MESSAGE_STATUS_READ") return t.messagesPage.statusRead;
+    if (status === 2 || status === "2" || status === "MESSAGE_STATUS_DELETED") return t.messagesPage.statusDeleted;
+    if (status === 3 || status === "3" || status === "MESSAGE_STATUS_REVOKED") return t.messagesPage.statusRevoked;
+    return String(status);
+  }
+
 
   // For templates
   const [templates, setTemplates] = useState<any[]>([])
@@ -382,15 +392,46 @@ export default function AdminMessagesPage() {
                 <div className="text-muted-foreground py-4">{t.messagesPage.loading}</div>
               ) : sentMessages.length > 0 ? (
                 <div className="space-y-4">
-                  {sentMessages.map((msg, i) => (
-                    <div key={i} className="border-b pb-4 last:border-0">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium">UID: {msg.user_id} - TPL: {msg.template_id}</div>
-                        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">Status: {msg.status}</div>
+                  {sentMessages.map((msg, i) => {
+                    const isExpanded = expandedMsgId === msg.message_id
+                    return (
+                      <div key={msg.message_id || i} className="border-b pb-4 last:border-0">
+                        <div 
+                          className="flex items-center justify-between cursor-pointer hover:bg-muted/50 p-2 rounded -mx-2 transition-colors"
+                          onClick={() => setExpandedMsgId(isExpanded ? null : msg.message_id)}
+                        >
+                          <div className="font-medium text-sm">
+                            <span className="text-muted-foreground mr-2">{msg.created_at ? msg.created_at.split('T')[0] : ''}</span>
+                            UID: {msg.user_id} - TPL: {msg.template_id}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className={`text-xs px-2 py-1 rounded border ${
+                              (msg.status === 1 || msg.status === "1" || msg.status === "MESSAGE_STATUS_READ") 
+                              ? 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400' 
+                              : 'bg-muted text-muted-foreground'
+                            }`}>
+                              Status: {getMessageStatusText(msg.status)}
+                            </div>
+                            <div className="text-muted-foreground text-xs">{isExpanded ? "▲" : "▼"}</div>
+                          </div>
+                        </div>
+                        {isExpanded && (
+                          <div className="mt-3 bg-muted/30 p-3 rounded text-sm font-mono whitespace-pre-wrap break-words">
+                            <div className="mb-2 pb-2 border-b border-muted">
+                              <span className="font-semibold">Message ID:</span> {msg.message_id}
+                            </div>
+                            <div className="mb-2 pb-2 border-b border-muted">
+                              <span className="font-semibold">Sent At:</span> {msg.created_at}
+                            </div>
+                            <div>
+                              <span className="font-semibold">Payload:</span>
+                              <pre className="mt-2 text-xs overflow-x-auto bg-card p-2 rounded border">{msg.payload}</pre>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1 font-mono">{msg.payload}</div>
-                    </div>
-                  ))}
+                    )
+                  })}
                   
                   <div className="flex items-center justify-between pt-4 border-t mt-6">
                     <div className="text-sm text-muted-foreground">
