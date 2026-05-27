@@ -10,18 +10,19 @@ type ErrorCode string
 
 const (
 	// 通用错误
-	ErrInternal        ErrorCode = "INTERNAL_ERROR"
-	ErrInvalidRequest  ErrorCode = "INVALID_REQUEST"
-	ErrUnauthorized    ErrorCode = "UNAUTHORIZED"
-	ErrForbidden       ErrorCode = "FORBIDDEN"
-	ErrNotFound        ErrorCode = "NOT_FOUND"
-	ErrNotImplemented  ErrorCode = "NOT_IMPLEMENTED"
+	ErrInternal       ErrorCode = "INTERNAL_ERROR"
+	ErrInvalidRequest ErrorCode = "INVALID_REQUEST"
+	ErrUnauthorized   ErrorCode = "UNAUTHORIZED"
+	ErrForbidden      ErrorCode = "FORBIDDEN"
+	ErrNotFound       ErrorCode = "NOT_FOUND"
+	ErrNotImplemented ErrorCode = "NOT_IMPLEMENTED"
+	ErrPrecondition   ErrorCode = "PRECONDITION_FAILED"
 
 	// 认证模块
-	ErrAuthFailed      ErrorCode = "AUTH_FAILED"
-	ErrTokenExpired    ErrorCode = "TOKEN_EXPIRED"
-	ErrInvalidToken    ErrorCode = "INVALID_TOKEN"
-	ErrPasswordIncorrect ErrorCode = "PASSWORD_INCORRECT"
+	ErrAuthFailed          ErrorCode = "AUTH_FAILED"
+	ErrTokenExpired        ErrorCode = "TOKEN_EXPIRED"
+	ErrInvalidToken        ErrorCode = "INVALID_TOKEN"
+	ErrPasswordIncorrect   ErrorCode = "PASSWORD_INCORRECT"
 	ErrProfileUpdateFailed ErrorCode = "PROFILE_UPDATE_FAILED"
 
 	// 课程/管线模块
@@ -30,15 +31,15 @@ const (
 	ErrInvalidPipeline  ErrorCode = "INVALID_PIPELINE"
 
 	// 考试模块
-	ErrExamNotFound    ErrorCode = "EXAM_NOT_FOUND"
-	ErrNotEligible     ErrorCode = "NOT_ELIGIBLE"
-	ErrSignupFailed    ErrorCode = "SIGNUP_FAILED"
-	ErrRetakeDenied    ErrorCode = "RETAKE_DENIED"
+	ErrExamNotFound ErrorCode = "EXAM_NOT_FOUND"
+	ErrNotEligible  ErrorCode = "NOT_ELIGIBLE"
+	ErrSignupFailed ErrorCode = "SIGNUP_FAILED"
+	ErrRetakeDenied ErrorCode = "RETAKE_DENIED"
 
 	// 支付/订单模块
-	ErrPaymentFailed   ErrorCode = "PAYMENT_FAILED"
-	ErrOrderNotFound   ErrorCode = "ORDER_NOT_FOUND"
-	ErrInvalidAmount   ErrorCode = "INVALID_AMOUNT"
+	ErrPaymentFailed ErrorCode = "PAYMENT_FAILED"
+	ErrOrderNotFound ErrorCode = "ORDER_NOT_FOUND"
+	ErrInvalidAmount ErrorCode = "INVALID_AMOUNT"
 
 	// 档案/会员模块
 	ErrMembershipExpired ErrorCode = "MEMBERSHIP_EXPIRED"

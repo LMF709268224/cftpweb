@@ -51,7 +51,9 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
   if (!res.ok || data.code !== 200) {
     // 自动通过 errorCodes 字典获取本地化提示
     const currentLang = typeof window !== "undefined" ? (localStorage.getItem("app_lang") || "zh") : "zh"
-    const errorMsg = getErrorMessage(data.error_code, currentLang as "zh" | "en")
+    const errorMsg = (data.error_code === "INVALID_REQUEST" || data.error_code === "PRECONDITION_FAILED") && data.message
+      ? data.message
+      : getErrorMessage(data.error_code, currentLang as "zh" | "en")
 
     toast.error(errorMsg)
     throw new Error(errorMsg)

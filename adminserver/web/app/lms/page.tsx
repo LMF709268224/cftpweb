@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertTriangle, BookOpen, CheckCircle2, Eye, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
+import { AlertTriangle, BookOpen, CheckCircle2, Eye, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
 import { toast } from "sonner"
 
 import { Sidebar } from "@/components/sidebar"
@@ -93,6 +93,28 @@ type BrokenAsset = {
   material_title?: string
 }
 
+type Chapter = {
+  chapter_id: string
+  course_id: string
+  title?: string
+  sort_order?: number
+  version?: number
+  created_at?: string
+  updated_at?: string
+}
+
+type Lesson = {
+  lesson_id: string
+  chapter_id: string
+  title?: string
+  sort_order?: number
+  lesson_type?: number
+  body?: string
+  version?: number
+  created_at?: string
+  updated_at?: string
+}
+
 const emptyForm: CourseForm = {
   category_id: "",
   title: "",
@@ -101,6 +123,17 @@ const emptyForm: CourseForm = {
   duration_min: "",
   certification_enabled: false,
   certification_def_id: "",
+}
+
+const emptyChapterForm = {
+  title: "",
+  sort_order: "",
+}
+
+const emptyLessonForm = {
+  title: "",
+  body: "",
+  sort_order: "",
 }
 
 function formFromCourse(course: LmsCourse | null): CourseForm {
@@ -153,11 +186,33 @@ export default function LmsCoursesPage() {
   const [brokenAssets, setBrokenAssets] = useState<BrokenAsset[]>([])
   const [brokenAssetsLoading, setBrokenAssetsLoading] = useState(false)
   const [brokenAssetsNextPageToken, setBrokenAssetsNextPageToken] = useState("")
+  const [chapters, setChapters] = useState<Chapter[]>([])
+  const [selectedChapterId, setSelectedChapterId] = useState("")
+  const [chapterForm, setChapterForm] = useState(emptyChapterForm)
+  const [chapterSaving, setChapterSaving] = useState(false)
+  const [chaptersLoading, setChaptersLoading] = useState(false)
+  const [lessons, setLessons] = useState<Lesson[]>([])
+  const [lessonForm, setLessonForm] = useState(emptyLessonForm)
+  const [lessonSaving, setLessonSaving] = useState(false)
+  const [lessonsLoading, setLessonsLoading] = useState(false)
 
   const selectedCourse = useMemo(
     () => courses.find((course) => course.course_id === selectedId) || null,
     [courses, selectedId]
   )
+
+  const selectedChapter = useMemo(
+    () => chapters.find((chapter) => chapter.chapter_id === selectedChapterId) || null,
+    [chapters, selectedChapterId]
+  )
+
+  const resetCourseContentState = () => {
+    setChapters([])
+    setSelectedChapterId("")
+    setChapterForm(emptyChapterForm)
+    setLessons([])
+    setLessonForm(emptyLessonForm)
+  }
 
   const loadCourses = useCallback(async () => {
     setLoading(true)
@@ -175,6 +230,7 @@ export default function LmsCoursesPage() {
         setPreview(null)
         setEnrollments([])
         setProgressDetail(null)
+        resetCourseContentState()
       }
     } finally {
       setLoading(false)
@@ -207,6 +263,7 @@ export default function LmsCoursesPage() {
     setPreview(null)
     setEnrollments([])
     setProgressDetail(null)
+    resetCourseContentState()
   }
 
   const startNewCourse = () => {
@@ -215,6 +272,7 @@ export default function LmsCoursesPage() {
     setPreview(null)
     setEnrollments([])
     setProgressDetail(null)
+    resetCourseContentState()
   }
 
   const saveCourse = async () => {
@@ -324,6 +382,7 @@ export default function LmsCoursesPage() {
     setPreview(null)
     setEnrollments([])
     setProgressDetail(null)
+    resetCourseContentState()
     await loadCourses()
   }
 
@@ -335,6 +394,95 @@ export default function LmsCoursesPage() {
       setPreview(res?.complete_course || res)
     } finally {
       setPreviewLoading(false)
+    }
+  }
+
+  const loadChapters = async (courseId = selectedCourse?.course_id) => {
+    if (!courseId) return
+    setChaptersLoading(true)
+    try {
+      const res = await apiClient(`/api/lms/courses/${courseId}/chapters`)
+      const nextChapters = res?.chapters || []
+      setChapters(nextChapters)
+      if (selectedChapterId && !nextChapters.some((chapter: Chapter) => chapter.chapter_id === selectedChapterId)) {
+        setSelectedChapterId("")
+        setLessons([])
+      }
+    } finally {
+      setChaptersLoading(false)
+    }
+  }
+
+  const createChapter = async () => {
+    if (!selectedCourse) return
+    if (!chapterForm.title.trim()) {
+      toast.error(page.fillChapterTitle)
+      return
+    }
+
+    setChapterSaving(true)
+    try {
+      await apiClient(`/api/lms/courses/${selectedCourse.course_id}/chapters`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: chapterForm.title.trim(),
+          sort_order: Number(chapterForm.sort_order || (chapters.length + 1) * 1000),
+        }),
+      })
+      toast.success(page.chapterCreateSuccess)
+      setChapterForm(emptyChapterForm)
+      await loadChapters(selectedCourse.course_id)
+    } finally {
+      setChapterSaving(false)
+    }
+  }
+
+  const selectChapter = async (chapter: Chapter) => {
+    setSelectedChapterId(chapter.chapter_id)
+    await loadLessons(chapter.chapter_id)
+  }
+
+  const loadLessons = async (chapterId = selectedChapterId) => {
+    if (!chapterId) return
+    setLessonsLoading(true)
+    try {
+      const res = await apiClient(`/api/lms/chapters/${chapterId}/lessons`)
+      setLessons(res?.lessons || [])
+    } finally {
+      setLessonsLoading(false)
+    }
+  }
+
+  const createTextLesson = async () => {
+    if (!selectedChapter) return
+    if (!lessonForm.title.trim()) {
+      toast.error(page.fillLessonTitle)
+      return
+    }
+    if (!lessonForm.body.trim()) {
+      toast.error(page.fillLessonBody)
+      return
+    }
+
+    setLessonSaving(true)
+    try {
+      await apiClient(`/api/lms/chapters/${selectedChapter.chapter_id}/lessons`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: lessonForm.title.trim(),
+          body: lessonForm.body.trim(),
+          sort_order: Number(lessonForm.sort_order || (lessons.length + 1) * 1000),
+          lesson_type: 2,
+          meta_json: "{}",
+        }),
+      })
+      toast.success(page.lessonCreateSuccess)
+      setLessonForm(emptyLessonForm)
+      await loadLessons(selectedChapter.chapter_id)
+    } finally {
+      setLessonSaving(false)
     }
   }
 
@@ -600,6 +748,148 @@ export default function LmsCoursesPage() {
                     {selectedCourse ? <Save className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
                     {selectedCourse ? page.saveCourse : page.createCourse}
                   </Button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border bg-card">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+                  <div>
+                    <h2 className="font-semibold">{page.courseContent}</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">{page.publishRequirements}</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => loadChapters()} disabled={!selectedCourse || chaptersLoading}>
+                    <RefreshCw className={cn("mr-2 h-4 w-4", chaptersLoading && "animate-spin")} />
+                    {page.loadChapters}
+                  </Button>
+                </div>
+                <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                  {!selectedCourse ? (
+                    <div className="xl:col-span-2 flex items-center gap-2 text-sm text-muted-foreground">
+                      <BookOpen className="h-4 w-4" />
+                      {page.selectCourseHint}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3">
+                        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
+                          <div className="space-y-2">
+                            <Label htmlFor="chapterTitle">{page.chapterTitle}</Label>
+                            <Input
+                              id="chapterTitle"
+                              value={chapterForm.title}
+                              disabled={selectedCourse.is_published}
+                              onChange={(event) => setChapterForm({ ...chapterForm, title: event.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="chapterSortOrder">{page.chapterSortOrder}</Label>
+                            <Input
+                              id="chapterSortOrder"
+                              type="number"
+                              min="0"
+                              value={chapterForm.sort_order}
+                              disabled={selectedCourse.is_published}
+                              onChange={(event) => setChapterForm({ ...chapterForm, sort_order: event.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={createChapter}
+                          disabled={chapterSaving || selectedCourse.is_published}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          {page.createChapter}
+                        </Button>
+                        {selectedCourse.is_published && <div className="text-xs text-muted-foreground">{page.publishedContentLocked}</div>}
+
+                        <div className="overflow-hidden rounded-md border">
+                          {chapters.length === 0 ? (
+                            <div className="px-3 py-6 text-center text-sm text-muted-foreground">{page.noChapters}</div>
+                          ) : (
+                            chapters.map((chapter) => (
+                              <button
+                                key={chapter.chapter_id}
+                                type="button"
+                                onClick={() => selectChapter(chapter)}
+                                className={cn(
+                                  "block w-full border-b px-3 py-3 text-left text-sm last:border-b-0 hover:bg-muted/60",
+                                  selectedChapterId === chapter.chapter_id && "bg-muted"
+                                )}
+                              >
+                                <div className="truncate font-medium">{chapter.title || chapter.chapter_id}</div>
+                                <div className="mt-1 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                                  <span className="truncate">{chapter.chapter_id}</span>
+                                  <span>{chapter.sort_order || 0}</span>
+                                </div>
+                              </button>
+                            ))
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
+                          <div className="space-y-2">
+                            <Label htmlFor="lessonTitle">{page.lessonTitle}</Label>
+                            <Input
+                              id="lessonTitle"
+                              value={lessonForm.title}
+                              disabled={!selectedChapter || selectedCourse.is_published}
+                              onChange={(event) => setLessonForm({ ...lessonForm, title: event.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="lessonSortOrder">{page.lessonSortOrder}</Label>
+                            <Input
+                              id="lessonSortOrder"
+                              type="number"
+                              min="0"
+                              value={lessonForm.sort_order}
+                              disabled={!selectedChapter || selectedCourse.is_published}
+                              onChange={(event) => setLessonForm({ ...lessonForm, sort_order: event.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lessonBody">{page.lessonBody}</Label>
+                          <Textarea
+                            id="lessonBody"
+                            rows={4}
+                            value={lessonForm.body}
+                            disabled={!selectedChapter || selectedCourse.is_published}
+                            onChange={(event) => setLessonForm({ ...lessonForm, body: event.target.value })}
+                          />
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={createTextLesson}
+                          disabled={!selectedChapter || lessonSaving || lessonsLoading || selectedCourse.is_published}
+                        >
+                          <FileText className="mr-2 h-4 w-4" />
+                          {page.createTextLesson}
+                        </Button>
+
+                        {!selectedChapter ? (
+                          <div className="rounded-md border px-3 py-6 text-center text-sm text-muted-foreground">{page.selectChapterHint}</div>
+                        ) : lessons.length === 0 ? (
+                          <div className="rounded-md border px-3 py-6 text-center text-sm text-muted-foreground">{page.noLessons}</div>
+                        ) : (
+                          <div className="overflow-hidden rounded-md border">
+                            {lessons.map((lesson) => (
+                              <div key={lesson.lesson_id} className="border-b px-3 py-3 text-sm last:border-b-0">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="truncate font-medium">{lesson.title || lesson.lesson_id}</div>
+                                  <Badge variant="outline">{page.textLesson}</Badge>
+                                </div>
+                                <div className="mt-1 truncate text-xs text-muted-foreground">{lesson.lesson_id}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

@@ -24,6 +24,10 @@ export const ErrorMessages: Record<string, { zh: string; en: string }> = {
     zh: "该功能暂未开放",
     en: "This feature is not available yet.",
   },
+  PRECONDITION_FAILED: {
+    zh: "当前操作条件不满足，请先补齐必要信息。",
+    en: "The operation requirements are not met. Please complete the required information first.",
+  },
   AUTH_FAILED: {
     zh: "认证失败，请重新登录",
     en: "Authentication failed. Please log in again.",

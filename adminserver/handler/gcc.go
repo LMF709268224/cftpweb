@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 
-	"github.com/go-chi/chi/v5"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -35,6 +35,9 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	if !requireRequestFields(w, req.CategoryId, "category_id", req.Name, "name") {
+		return
+	}
 
 	resp, err := h.Gcc.CreatePipelineDraft(r.Context(), &req)
 	if err != nil {
@@ -48,13 +51,38 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 
 // UpdatePipelineStructure PUT /api/pipelines/{pipeline_id}/structure
 func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "pipeline_id")
+	id, ok := requiredURLParam(w, r, "pipeline_id")
+	if !ok {
+		return
+	}
 	var req gccpb.UpdatePipelineStructureRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
 	req.PipelineId = id
+	if len(req.Stages) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "stages is required")
+		return
+	}
+	for i, stage := range req.Stages {
+		if !requireRequestField(w, stage.Name, "stages["+strconv.Itoa(i)+"].name") {
+			return
+		}
+		if len(stage.Units) == 0 {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "stages["+strconv.Itoa(i)+"].units is required")
+			return
+		}
+		for j, unit := range stage.Units {
+			if !requireRequestField(w, unit.Name, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"].name") {
+				return
+			}
+			if !unit.HasLearning && !unit.HasExam {
+				WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"] must enable learning or exam")
+				return
+			}
+		}
+	}
 
 	resp, err := h.Gcc.UpdatePipelineStructure(r.Context(), &req)
 	if err != nil {
@@ -68,7 +96,10 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 
 // PublishPipeline POST /api/pipelines/{pipeline_id}/publish
 func (h *Handler) PublishPipeline(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "pipeline_id")
+	id, ok := requiredURLParam(w, r, "pipeline_id")
+	if !ok {
+		return
+	}
 	var req gccpb.PublishPipelineRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
@@ -88,7 +119,10 @@ func (h *Handler) PublishPipeline(w http.ResponseWriter, r *http.Request) {
 
 // GetPipeline GET /api/pipelines/{pipeline_id}
 func (h *Handler) GetPipeline(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "pipeline_id")
+	id, ok := requiredURLParam(w, r, "pipeline_id")
+	if !ok {
+		return
+	}
 	var req gccpb.GetPipelineRequest
 	req.Query = &gccpb.GetPipelineRequest_PipelineId{PipelineId: id}
 
@@ -121,6 +155,9 @@ func (h *Handler) CreateCatalog(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	if !requireRequestField(w, req.Name, "name") {
+		return
+	}
 
 	resp, err := h.Gcc.CreateCatalog(r.Context(), &req)
 	if err != nil {
@@ -134,13 +171,19 @@ func (h *Handler) CreateCatalog(w http.ResponseWriter, r *http.Request) {
 
 // UpdateCatalog PUT /api/catalogs/{catalog_id}
 func (h *Handler) UpdateCatalog(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "catalog_id")
+	id, ok := requiredURLParam(w, r, "catalog_id")
+	if !ok {
+		return
+	}
 	var req gccpb.UpdateCatalogRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
 	req.CatalogId = id
+	if !requireRequestField(w, req.Name, "name") {
+		return
+	}
 
 	resp, err := h.Gcc.UpdateCatalog(r.Context(), &req)
 	if err != nil {

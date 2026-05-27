@@ -45,6 +45,9 @@ func WriteError(w http.ResponseWriter, httpStatus int, errorCode ErrorCode, mess
 	if publicMessage == "" {
 		publicMessage = "Error"
 	}
+	if (errorCode == ErrInvalidRequest || errorCode == ErrPrecondition) && message != "" {
+		publicMessage = message
+	}
 
 	resp := apiResponse{
 		Code:      httpStatus,
@@ -86,6 +89,9 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 	case codes.AlreadyExists:
 		httpStatus = http.StatusConflict
 		errorCode = ErrInvalidRequest // 或者定义具体的 ALREADY_EXISTS
+	case codes.FailedPrecondition:
+		httpStatus = http.StatusConflict
+		errorCode = ErrPrecondition
 	case codes.PermissionDenied:
 		httpStatus = http.StatusForbidden
 		errorCode = ErrForbidden
