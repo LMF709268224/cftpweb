@@ -21,7 +21,7 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.ListPipelines(r.Context(), &req)
 	if err != nil {
 		slog.Error("ListPipelines failed", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to list pipelines")
+		HandleGrpcError(w, err)
 		return
 	}
 
@@ -39,7 +39,7 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.CreatePipelineDraft(r.Context(), &req)
 	if err != nil {
 		slog.Error("CreatePipelineDraft failed", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to create pipeline draft")
+		HandleGrpcError(w, err)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 	resp, err := h.Gcc.UpdatePipelineStructure(r.Context(), &req)
 	if err != nil {
 		slog.Error("UpdatePipelineStructure failed", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to update structure")
+		HandleGrpcError(w, err)
 		return
 	}
 
@@ -79,7 +79,7 @@ func (h *Handler) PublishPipeline(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.PublishPipeline(r.Context(), &req)
 	if err != nil {
 		slog.Error("PublishPipeline failed", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to publish pipeline")
+		HandleGrpcError(w, err)
 		return
 	}
 
@@ -95,7 +95,7 @@ func (h *Handler) GetPipeline(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.GetPipeline(r.Context(), &req)
 	if err != nil {
 		slog.Error("GetPipeline failed", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to get pipeline")
+		HandleGrpcError(w, err)
 		return
 	}
 
@@ -107,7 +107,7 @@ func (h *Handler) ListCatalogs(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.ListCatalogs(r.Context(), &emptypb.Empty{})
 	if err != nil {
 		slog.Error("ListCatalogs failed", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to list catalogs")
+		HandleGrpcError(w, err)
 		return
 	}
 
@@ -125,7 +125,7 @@ func (h *Handler) CreateCatalog(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.CreateCatalog(r.Context(), &req)
 	if err != nil {
 		slog.Error("CreateCatalog failed", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to create catalog")
+		HandleGrpcError(w, err)
 		return
 	}
 
@@ -145,7 +145,7 @@ func (h *Handler) UpdateCatalog(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.UpdateCatalog(r.Context(), &req)
 	if err != nil {
 		slog.Error("UpdateCatalog failed", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to update catalog")
+		HandleGrpcError(w, err)
 		return
 	}
 
