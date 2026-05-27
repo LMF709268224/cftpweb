@@ -517,6 +517,7 @@ export const en: AppTranslations = {
     noUrl: "No URL",
     noFiles: "No files uploaded.",
     auditRemark: "Audit Remark / Reject Reason",
+    auditRemarkRequired: "Please enter an audit remark / reject reason",
     remarkPlaceholder: "Provide a reason if rejecting or requesting resubmission...",
     reject: "Reject",
     requireResubmit: "Require Resubmit",

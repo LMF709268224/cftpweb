@@ -103,10 +103,10 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 		errorCode = ErrInternal // 或定义具体的 RESOURCE_EXHAUSTED
 	case codes.Unavailable:
 		httpStatus = http.StatusServiceUnavailable
-		errorCode = ErrInternal
+		errorCode = ErrServiceUnavailable
 	case codes.DeadlineExceeded:
 		httpStatus = http.StatusGatewayTimeout
-		errorCode = ErrInternal
+		errorCode = ErrServiceUnavailable
 	default:
 		httpStatus = http.StatusInternalServerError
 		errorCode = ErrInternal

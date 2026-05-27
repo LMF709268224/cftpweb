@@ -515,6 +515,7 @@ export const zh = {
     noUrl: "无链接",
     noFiles: "未上传文件。",
     auditRemark: "审核备注 / 拒绝原因",
+    auditRemarkRequired: "请填写审核备注 / 拒绝原因",
     remarkPlaceholder: "如果拒绝或要求重新提交，请提供原因...",
     reject: "拒绝",
     requireResubmit: "打回重提",

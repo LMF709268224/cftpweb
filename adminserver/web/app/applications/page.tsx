@@ -89,7 +89,7 @@ export default function ApplicationsPage() {
     if (!selectedApp) return
 
     if ((action === "reject" || action === "resubmit") && !auditRemark.trim()) {
-      toast.error(t.applicationsPage.auditRemark + " 不能为空 (Required)")
+      toast.error(t.applicationsPage.auditRemarkRequired)
       return
     }
 

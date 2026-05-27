@@ -10,13 +10,14 @@ type ErrorCode string
 
 const (
 	// 通用错误
-	ErrInternal       ErrorCode = "INTERNAL_ERROR"
-	ErrInvalidRequest ErrorCode = "INVALID_REQUEST"
-	ErrUnauthorized   ErrorCode = "UNAUTHORIZED"
-	ErrForbidden      ErrorCode = "FORBIDDEN"
-	ErrNotFound       ErrorCode = "NOT_FOUND"
-	ErrNotImplemented ErrorCode = "NOT_IMPLEMENTED"
-	ErrPrecondition   ErrorCode = "PRECONDITION_FAILED"
+	ErrInternal           ErrorCode = "INTERNAL_ERROR"
+	ErrInvalidRequest     ErrorCode = "INVALID_REQUEST"
+	ErrUnauthorized       ErrorCode = "UNAUTHORIZED"
+	ErrForbidden          ErrorCode = "FORBIDDEN"
+	ErrNotFound           ErrorCode = "NOT_FOUND"
+	ErrNotImplemented     ErrorCode = "NOT_IMPLEMENTED"
+	ErrPrecondition       ErrorCode = "PRECONDITION_FAILED"
+	ErrServiceUnavailable ErrorCode = "SERVICE_UNAVAILABLE"
 
 	// 认证模块
 	ErrAuthFailed          ErrorCode = "AUTH_FAILED"
