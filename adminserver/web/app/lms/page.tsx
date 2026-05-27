@@ -456,15 +456,123 @@ export default function LmsCoursesPage() {
     }
   }
 
+  const showChapterContent = (chapter: Chapter, nextLessons: Lesson[], nextQuizzes: Quiz[]) => {
+    setSelectedChapterId(chapter.chapter_id)
+    setLessons(nextLessons)
+    setQuizzes(nextQuizzes)
+    setSelectedQuizId("")
+    setQuestions([])
+    setSelectedQuestionId("")
+    setOptions([])
+  }
+
+  const showQuizQuestions = (chapter: Chapter, nextLessons: Lesson[], nextQuizzes: Quiz[], quiz: Quiz, nextQuestions: QuizQuestion[]) => {
+    showChapterContent(chapter, nextLessons, nextQuizzes)
+    setSelectedQuizId(quiz.quiz_id)
+    setQuestions(nextQuestions)
+  }
+
+  const showQuestionOptions = (
+    chapter: Chapter,
+    nextLessons: Lesson[],
+    nextQuizzes: Quiz[],
+    quiz: Quiz,
+    nextQuestions: QuizQuestion[],
+    question: QuizQuestion,
+    nextOptions: QuizOption[]
+  ) => {
+    showQuizQuestions(chapter, nextLessons, nextQuizzes, quiz, nextQuestions)
+    setSelectedQuestionId(question.question_id)
+    setOptions(nextOptions)
+  }
+
+  const getChapterName = (chapter: Chapter) => chapter.title || chapter.chapter_id
+
+  const validatePublishReadiness = async (courseId: string) => {
+    const chapterRes = await apiClient(`/api/lms/courses/${courseId}/chapters`)
+    const nextChapters: Chapter[] = chapterRes?.chapters || []
+    setChapters(nextChapters)
+
+    if (nextChapters.length === 0) {
+      toast.error(page.courseMissingChapters)
+      return false
+    }
+
+    for (const chapter of nextChapters) {
+      const [lessonRes, quizRes] = await Promise.all([
+        apiClient(`/api/lms/chapters/${chapter.chapter_id}/lessons`),
+        apiClient(`/api/lms/quizzes?${new URLSearchParams({ quizzable_type: "2", quizzable_id: chapter.chapter_id }).toString()}`),
+      ])
+      const nextLessons: Lesson[] = lessonRes?.lessons || []
+      const nextQuizzes: Quiz[] = quizRes?.quizzes || []
+      const activeQuizzes = nextQuizzes.filter((quiz) => quiz.is_active !== false)
+
+      if (nextLessons.length === 0 && activeQuizzes.length === 0) {
+        showChapterContent(chapter, nextLessons, nextQuizzes)
+        toast.error(page.chapterMissingContent.replace("{{chapter}}", getChapterName(chapter)))
+        return false
+      }
+
+      for (const quiz of activeQuizzes) {
+        const questionRes = await apiClient(`/api/lms/quizzes/${quiz.quiz_id}/questions`)
+        const nextQuestions: QuizQuestion[] = questionRes?.questions || []
+        if (nextQuestions.length === 0) {
+          showQuizQuestions(chapter, nextLessons, nextQuizzes, quiz, nextQuestions)
+          toast.error(page.quizMissingQuestions.replace("{{quiz}}", quiz.title || quiz.quiz_id))
+          return false
+        }
+
+        for (const question of nextQuestions) {
+          const isChoiceQuestion = question.question_type === 1 || question.question_type === 2
+          if (!isChoiceQuestion) continue
+
+          const optionRes = await apiClient(`/api/lms/questions/${question.question_id}/options`)
+          const nextOptions: QuizOption[] = optionRes?.options || []
+          const correctCount = nextOptions.filter((option) => option.is_correct).length
+
+          if (nextOptions.length < 2) {
+            showQuestionOptions(chapter, nextLessons, nextQuizzes, quiz, nextQuestions, question, nextOptions)
+            toast.error(page.questionMissingOptions.replace("{{question}}", question.question_text || question.question_id))
+            return false
+          }
+          if (question.question_type === 1 && correctCount !== 1) {
+            showQuestionOptions(chapter, nextLessons, nextQuizzes, quiz, nextQuestions, question, nextOptions)
+            toast.error(page.singleChoiceCorrectOption.replace("{{question}}", question.question_text || question.question_id))
+            return false
+          }
+          if (question.question_type === 2 && correctCount < 1) {
+            showQuestionOptions(chapter, nextLessons, nextQuizzes, quiz, nextQuestions, question, nextOptions)
+            toast.error(page.multipleChoiceCorrectOption.replace("{{question}}", question.question_text || question.question_id))
+            return false
+          }
+        }
+      }
+    }
+
+    return true
+  }
+
   const publishCourse = async (publish: boolean) => {
     if (!selectedCourse) return
-    await apiClient(`/api/lms/courses/${selectedCourse.course_id}/${publish ? "publish" : "unpublish"}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ version: selectedCourse.version || 0 }),
-    })
-    toast.success(publish ? page.publishSuccess : page.unpublishSuccess)
-    await loadCourses()
+    if (publish) {
+      const ready = await validatePublishReadiness(selectedCourse.course_id)
+      if (!ready) return
+    }
+
+    try {
+      await apiClient(`/api/lms/courses/${selectedCourse.course_id}/${publish ? "publish" : "unpublish"}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ version: selectedCourse.version || 0 }),
+      })
+      toast.success(publish ? page.publishSuccess : page.unpublishSuccess)
+      await loadCourses()
+    } catch (error) {
+      if (publish) {
+        await loadChapters(selectedCourse.course_id)
+      }
+      throw error
+    }
   }
 
   const deleteCourse = async () => {
@@ -1087,6 +1195,10 @@ export default function LmsCoursesPage() {
                       </div>
 
                       <div className="space-y-3">
+                        <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
+                          <span className="text-muted-foreground">{page.currentChapter}: </span>
+                          <span className="font-medium">{selectedChapter ? getChapterName(selectedChapter) : page.selectChapterHint}</span>
+                        </div>
                         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
                           <div className="space-y-2">
                             <Label htmlFor="lessonTitle">{page.lessonTitle}</Label>
