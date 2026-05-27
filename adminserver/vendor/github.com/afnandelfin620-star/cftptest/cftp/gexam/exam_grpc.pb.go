@@ -26,6 +26,7 @@ const (
 	GExamService_TermUrlCallback_FullMethodName          = "/gexam.GExamService/TermUrlCallback"
 	GExamService_GetExamStatusTransitions_FullMethodName = "/gexam.GExamService/GetExamStatusTransitions"
 	GExamService_SyncExamResult_FullMethodName           = "/gexam.GExamService/SyncExamResult"
+	GExamService_ListExams_FullMethodName                = "/gexam.GExamService/ListExams"
 )
 
 // GExamServiceClient is the client API for GExamService service.
@@ -47,6 +48,8 @@ type GExamServiceClient interface {
 	GetExamStatusTransitions(ctx context.Context, in *GetExamRequest, opts ...grpc.CallOption) (*ExamStatusTransitionsResponse, error)
 	// 重新同步考试结果：仅当结果处于 FETCHED 状态时允许。重新拉取并解析，更新成绩字段，不变更状态机状态。
 	SyncExamResult(ctx context.Context, in *GetExamRequest, opts ...grpc.CallOption) (*ExamResultDetail, error)
+	// 管理端：分页列出考试
+	ListExams(ctx context.Context, in *ListExamsRequest, opts ...grpc.CallOption) (*ListExamsResponse, error)
 }
 
 type gExamServiceClient struct {
@@ -127,6 +130,16 @@ func (c *gExamServiceClient) SyncExamResult(ctx context.Context, in *GetExamRequ
 	return out, nil
 }
 
+func (c *gExamServiceClient) ListExams(ctx context.Context, in *ListExamsRequest, opts ...grpc.CallOption) (*ListExamsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListExamsResponse)
+	err := c.cc.Invoke(ctx, GExamService_ListExams_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GExamServiceServer is the server API for GExamService service.
 // All implementations must embed UnimplementedGExamServiceServer
 // for forward compatibility.
@@ -146,6 +159,8 @@ type GExamServiceServer interface {
 	GetExamStatusTransitions(context.Context, *GetExamRequest) (*ExamStatusTransitionsResponse, error)
 	// 重新同步考试结果：仅当结果处于 FETCHED 状态时允许。重新拉取并解析，更新成绩字段，不变更状态机状态。
 	SyncExamResult(context.Context, *GetExamRequest) (*ExamResultDetail, error)
+	// 管理端：分页列出考试
+	ListExams(context.Context, *ListExamsRequest) (*ListExamsResponse, error)
 	mustEmbedUnimplementedGExamServiceServer()
 }
 
@@ -176,6 +191,9 @@ func (UnimplementedGExamServiceServer) GetExamStatusTransitions(context.Context,
 }
 func (UnimplementedGExamServiceServer) SyncExamResult(context.Context, *GetExamRequest) (*ExamResultDetail, error) {
 	return nil, status.Error(codes.Unimplemented, "method SyncExamResult not implemented")
+}
+func (UnimplementedGExamServiceServer) ListExams(context.Context, *ListExamsRequest) (*ListExamsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListExams not implemented")
 }
 func (UnimplementedGExamServiceServer) mustEmbedUnimplementedGExamServiceServer() {}
 func (UnimplementedGExamServiceServer) testEmbeddedByValue()                      {}
@@ -324,6 +342,24 @@ func _GExamService_SyncExamResult_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GExamService_ListExams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListExamsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).ListExams(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_ListExams_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).ListExams(ctx, req.(*ListExamsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GExamService_ServiceDesc is the grpc.ServiceDesc for GExamService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -358,6 +394,10 @@ var GExamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SyncExamResult",
 			Handler:    _GExamService_SyncExamResult_Handler,
+		},
+		{
+			MethodName: "ListExams",
+			Handler:    _GExamService_ListExams_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

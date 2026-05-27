@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
@@ -82,6 +83,7 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 	// query params
 	qPageNumber := r.URL.Query().Get("page_number")
 	qPageSize := r.URL.Query().Get("page_size")
+	statusFilter := normalizeApplicationStatus(r.URL.Query().Get("status"))
 
 	if qPageNumber != "" {
 		if val, err := strconv.Atoi(qPageNumber); err == nil {
@@ -94,9 +96,11 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	req := &gcredspb.ListApplicationsRequest{
-		Page:     page,
-		PageSize: pageSize,
+	req := &gcredspb.ListApplicationsRequest{Page: page, PageSize: pageSize}
+	if statusFilter != "" {
+		// TODO: 待 gcreds ListApplicationsRequest 补充 Status 字段后改为下推筛选。
+		req.Page = 1
+		req.PageSize = 500
 	}
 
 	res, err := h.Creds.ListApplications(r.Context(), req)
@@ -105,7 +109,45 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if statusFilter != "" {
+		filtered := make([]*gcredspb.Application, 0, len(res.GetApplications()))
+		for _, app := range res.GetApplications() {
+			if normalizeApplicationStatus(app.GetStatus()) == statusFilter {
+				filtered = append(filtered, app)
+			}
+		}
+
+		start := int((page - 1) * pageSize)
+		end := start + int(pageSize)
+		if start > len(filtered) {
+			start = len(filtered)
+		}
+		if end > len(filtered) {
+			end = len(filtered)
+		}
+
+		res.Applications = filtered[start:end]
+		res.Total = uint32(len(filtered))
+	}
+
 	WriteJSON(w, http.StatusOK, res)
+}
+
+func normalizeApplicationStatus(status string) string {
+	switch strings.ToUpper(strings.TrimSpace(status)) {
+	case "", "0", "ALL", "APPLICATION_STATUS_UNSPECIFIED":
+		return ""
+	case "1", "PENDING", "APPLICATION_STATUS_PENDING":
+		return "PENDING"
+	case "2", "APPROVED", "APPLICATION_STATUS_APPROVED":
+		return "APPROVED"
+	case "3", "REJECTED", "APPLICATION_STATUS_REJECTED":
+		return "REJECTED"
+	case "4", "RESUBMIT", "REUPLOAD", "NEEDS_RESUBMIT", "APPLICATION_STATUS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD":
+		return "RESUBMIT"
+	default:
+		return strings.ToUpper(strings.TrimSpace(status))
+	}
 }
 
 type AuditApplicationReq struct {

@@ -1,4 +1,4 @@
-# github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260526014049-5d7ce090b61f
+# github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260527013315-cc3c8baad3da
 ## explicit; go 1.26.2
 github.com/afnandelfin620-star/cftptest/cftp/cfgserver
 github.com/afnandelfin620-star/cftptest/cftp/gcc

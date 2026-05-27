@@ -11,6 +11,7 @@ import {
   Crown,
   FileText,
   Award,
+  LibraryBig,
   ShoppingCart,
   MessageSquare,
   GraduationCap,
@@ -41,6 +42,7 @@ export function Sidebar() {
 
   const navItems = [
     { href: "/", icon: Home, label: t.sidebar.home },
+    { href: "/lms", icon: LibraryBig, label: t.sidebar.lmsCourses },
     { href: "/pipelines", icon: BookOpen, label: t.sidebar.pipelines },
     { href: "/catalogs", icon: Crown, label: t.sidebar.catalogs },
     { href: "/messages", icon: MessageSquare, label: t.sidebar.messages },

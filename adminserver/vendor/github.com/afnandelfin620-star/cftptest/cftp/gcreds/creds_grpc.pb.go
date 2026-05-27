@@ -28,6 +28,7 @@ const (
 	CredentialService_ListApplications_FullMethodName            = "/gcreds.CredentialService/ListApplications"
 	CredentialService_GrantUploadPermission_FullMethodName       = "/gcreds.CredentialService/GrantUploadPermission"
 	CredentialService_RevokeUploadPermission_FullMethodName      = "/gcreds.CredentialService/RevokeUploadPermission"
+	CredentialService_CheckUploadPermission_FullMethodName       = "/gcreds.CredentialService/CheckUploadPermission"
 	CredentialService_RequestUploadUrl_FullMethodName            = "/gcreds.CredentialService/RequestUploadUrl"
 	CredentialService_GetLatestCredential_FullMethodName         = "/gcreds.CredentialService/GetLatestCredential"
 	CredentialService_CheckCandidateQualification_FullMethodName = "/gcreds.CredentialService/CheckCandidateQualification"
@@ -69,6 +70,8 @@ type CredentialServiceClient interface {
 	GrantUploadPermission(ctx context.Context, in *GrantUploadPermissionRequest, opts ...grpc.CallOption) (*UploadPermissionResponse, error)
 	// 关闭考生某个资格类型的资料上传权限
 	RevokeUploadPermission(ctx context.Context, in *RevokeUploadPermissionRequest, opts ...grpc.CallOption) (*UploadPermissionResponse, error)
+	// 查询考生某个资格类型的资料上传权限
+	CheckUploadPermission(ctx context.Context, in *CheckUploadPermissionRequest, opts ...grpc.CallOption) (*UploadPermissionResponse, error)
 	// 考生请求上传资料的 presigned URL
 	RequestUploadUrl(ctx context.Context, in *RequestUploadUrlRequest, opts ...grpc.CallOption) (*RequestUploadUrlResponse, error)
 	// --- 档案管理 (Credential) ---
@@ -188,6 +191,16 @@ func (c *credentialServiceClient) RevokeUploadPermission(ctx context.Context, in
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UploadPermissionResponse)
 	err := c.cc.Invoke(ctx, CredentialService_RevokeUploadPermission_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) CheckUploadPermission(ctx context.Context, in *CheckUploadPermissionRequest, opts ...grpc.CallOption) (*UploadPermissionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UploadPermissionResponse)
+	err := c.cc.Invoke(ctx, CredentialService_CheckUploadPermission_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -368,6 +381,8 @@ type CredentialServiceServer interface {
 	GrantUploadPermission(context.Context, *GrantUploadPermissionRequest) (*UploadPermissionResponse, error)
 	// 关闭考生某个资格类型的资料上传权限
 	RevokeUploadPermission(context.Context, *RevokeUploadPermissionRequest) (*UploadPermissionResponse, error)
+	// 查询考生某个资格类型的资料上传权限
+	CheckUploadPermission(context.Context, *CheckUploadPermissionRequest) (*UploadPermissionResponse, error)
 	// 考生请求上传资料的 presigned URL
 	RequestUploadUrl(context.Context, *RequestUploadUrlRequest) (*RequestUploadUrlResponse, error)
 	// --- 档案管理 (Credential) ---
@@ -429,6 +444,9 @@ func (UnimplementedCredentialServiceServer) GrantUploadPermission(context.Contex
 }
 func (UnimplementedCredentialServiceServer) RevokeUploadPermission(context.Context, *RevokeUploadPermissionRequest) (*UploadPermissionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeUploadPermission not implemented")
+}
+func (UnimplementedCredentialServiceServer) CheckUploadPermission(context.Context, *CheckUploadPermissionRequest) (*UploadPermissionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckUploadPermission not implemented")
 }
 func (UnimplementedCredentialServiceServer) RequestUploadUrl(context.Context, *RequestUploadUrlRequest) (*RequestUploadUrlResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RequestUploadUrl not implemented")
@@ -654,6 +672,24 @@ func _CredentialService_RevokeUploadPermission_Handler(srv interface{}, ctx cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CredentialServiceServer).RevokeUploadPermission(ctx, req.(*RevokeUploadPermissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CredentialService_CheckUploadPermission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckUploadPermissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).CheckUploadPermission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_CheckUploadPermission_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).CheckUploadPermission(ctx, req.(*CheckUploadPermissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -970,6 +1006,10 @@ var CredentialService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeUploadPermission",
 			Handler:    _CredentialService_RevokeUploadPermission_Handler,
+		},
+		{
+			MethodName: "CheckUploadPermission",
+			Handler:    _CredentialService_CheckUploadPermission_Handler,
 		},
 		{
 			MethodName: "RequestUploadUrl",

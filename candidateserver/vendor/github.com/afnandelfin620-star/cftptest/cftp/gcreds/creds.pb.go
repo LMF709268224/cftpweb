@@ -1283,6 +1283,58 @@ func (x *RevokeUploadPermissionRequest) GetSourceSystem() string {
 	return ""
 }
 
+type CheckUploadPermissionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ULID [required]
+	CredDefId     string                 `protobuf:"bytes,2,opt,name=cred_def_id,json=credDefId,proto3" json:"cred_def_id,omitempty"`     // 资格定义ID ULID [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckUploadPermissionRequest) Reset() {
+	*x = CheckUploadPermissionRequest{}
+	mi := &file_creds_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckUploadPermissionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckUploadPermissionRequest) ProtoMessage() {}
+
+func (x *CheckUploadPermissionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_creds_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckUploadPermissionRequest.ProtoReflect.Descriptor instead.
+func (*CheckUploadPermissionRequest) Descriptor() ([]byte, []int) {
+	return file_creds_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CheckUploadPermissionRequest) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *CheckUploadPermissionRequest) GetCredDefId() string {
+	if x != nil {
+		return x.CredDefId
+	}
+	return ""
+}
+
 type UploadPermissionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ULID [required]
@@ -1295,7 +1347,7 @@ type UploadPermissionResponse struct {
 
 func (x *UploadPermissionResponse) Reset() {
 	*x = UploadPermissionResponse{}
-	mi := &file_creds_proto_msgTypes[15]
+	mi := &file_creds_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1307,7 +1359,7 @@ func (x *UploadPermissionResponse) String() string {
 func (*UploadPermissionResponse) ProtoMessage() {}
 
 func (x *UploadPermissionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[15]
+	mi := &file_creds_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1320,7 +1372,7 @@ func (x *UploadPermissionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadPermissionResponse.ProtoReflect.Descriptor instead.
 func (*UploadPermissionResponse) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{15}
+	return file_creds_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *UploadPermissionResponse) GetCandidateId() string {
@@ -1362,7 +1414,7 @@ type GetLatestCredentialRequest struct {
 
 func (x *GetLatestCredentialRequest) Reset() {
 	*x = GetLatestCredentialRequest{}
-	mi := &file_creds_proto_msgTypes[16]
+	mi := &file_creds_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1374,7 +1426,7 @@ func (x *GetLatestCredentialRequest) String() string {
 func (*GetLatestCredentialRequest) ProtoMessage() {}
 
 func (x *GetLatestCredentialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[16]
+	mi := &file_creds_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1387,7 +1439,7 @@ func (x *GetLatestCredentialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLatestCredentialRequest.ProtoReflect.Descriptor instead.
 func (*GetLatestCredentialRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{16}
+	return file_creds_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetLatestCredentialRequest) GetCandidateId() string {
@@ -1421,7 +1473,7 @@ type CheckCandidateQualificationRequest struct {
 
 func (x *CheckCandidateQualificationRequest) Reset() {
 	*x = CheckCandidateQualificationRequest{}
-	mi := &file_creds_proto_msgTypes[17]
+	mi := &file_creds_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1433,7 +1485,7 @@ func (x *CheckCandidateQualificationRequest) String() string {
 func (*CheckCandidateQualificationRequest) ProtoMessage() {}
 
 func (x *CheckCandidateQualificationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[17]
+	mi := &file_creds_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1446,7 +1498,7 @@ func (x *CheckCandidateQualificationRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use CheckCandidateQualificationRequest.ProtoReflect.Descriptor instead.
 func (*CheckCandidateQualificationRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{17}
+	return file_creds_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *CheckCandidateQualificationRequest) GetCandidateId() string {
@@ -1474,7 +1526,7 @@ type CheckCandidateQualificationResponse struct {
 
 func (x *CheckCandidateQualificationResponse) Reset() {
 	*x = CheckCandidateQualificationResponse{}
-	mi := &file_creds_proto_msgTypes[18]
+	mi := &file_creds_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1486,7 +1538,7 @@ func (x *CheckCandidateQualificationResponse) String() string {
 func (*CheckCandidateQualificationResponse) ProtoMessage() {}
 
 func (x *CheckCandidateQualificationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[18]
+	mi := &file_creds_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1499,7 +1551,7 @@ func (x *CheckCandidateQualificationResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use CheckCandidateQualificationResponse.ProtoReflect.Descriptor instead.
 func (*CheckCandidateQualificationResponse) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{18}
+	return file_creds_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *CheckCandidateQualificationResponse) GetEligible() bool {
@@ -1535,7 +1587,7 @@ type GetCredentialVersionRequest struct {
 
 func (x *GetCredentialVersionRequest) Reset() {
 	*x = GetCredentialVersionRequest{}
-	mi := &file_creds_proto_msgTypes[19]
+	mi := &file_creds_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1547,7 +1599,7 @@ func (x *GetCredentialVersionRequest) String() string {
 func (*GetCredentialVersionRequest) ProtoMessage() {}
 
 func (x *GetCredentialVersionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[19]
+	mi := &file_creds_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1560,7 +1612,7 @@ func (x *GetCredentialVersionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCredentialVersionRequest.ProtoReflect.Descriptor instead.
 func (*GetCredentialVersionRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{19}
+	return file_creds_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *GetCredentialVersionRequest) GetCandidateId() string {
@@ -1603,7 +1655,7 @@ type MarkExpiredRequest struct {
 
 func (x *MarkExpiredRequest) Reset() {
 	*x = MarkExpiredRequest{}
-	mi := &file_creds_proto_msgTypes[20]
+	mi := &file_creds_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1615,7 +1667,7 @@ func (x *MarkExpiredRequest) String() string {
 func (*MarkExpiredRequest) ProtoMessage() {}
 
 func (x *MarkExpiredRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[20]
+	mi := &file_creds_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1628,7 +1680,7 @@ func (x *MarkExpiredRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarkExpiredRequest.ProtoReflect.Descriptor instead.
 func (*MarkExpiredRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{20}
+	return file_creds_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *MarkExpiredRequest) GetCandidateId() string {
@@ -1671,7 +1723,7 @@ type RevokeCredentialRequest struct {
 
 func (x *RevokeCredentialRequest) Reset() {
 	*x = RevokeCredentialRequest{}
-	mi := &file_creds_proto_msgTypes[21]
+	mi := &file_creds_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1683,7 +1735,7 @@ func (x *RevokeCredentialRequest) String() string {
 func (*RevokeCredentialRequest) ProtoMessage() {}
 
 func (x *RevokeCredentialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[21]
+	mi := &file_creds_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1696,7 +1748,7 @@ func (x *RevokeCredentialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeCredentialRequest.ProtoReflect.Descriptor instead.
 func (*RevokeCredentialRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{21}
+	return file_creds_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *RevokeCredentialRequest) GetCandidateId() string {
@@ -1742,7 +1794,7 @@ type PdfTemplate struct {
 
 func (x *PdfTemplate) Reset() {
 	*x = PdfTemplate{}
-	mi := &file_creds_proto_msgTypes[22]
+	mi := &file_creds_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1754,7 +1806,7 @@ func (x *PdfTemplate) String() string {
 func (*PdfTemplate) ProtoMessage() {}
 
 func (x *PdfTemplate) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[22]
+	mi := &file_creds_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1767,7 +1819,7 @@ func (x *PdfTemplate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PdfTemplate.ProtoReflect.Descriptor instead.
 func (*PdfTemplate) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{22}
+	return file_creds_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *PdfTemplate) GetTemplateId() string {
@@ -1831,7 +1883,7 @@ type CreatePdfTemplateRequest struct {
 
 func (x *CreatePdfTemplateRequest) Reset() {
 	*x = CreatePdfTemplateRequest{}
-	mi := &file_creds_proto_msgTypes[23]
+	mi := &file_creds_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1843,7 +1895,7 @@ func (x *CreatePdfTemplateRequest) String() string {
 func (*CreatePdfTemplateRequest) ProtoMessage() {}
 
 func (x *CreatePdfTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[23]
+	mi := &file_creds_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1856,7 +1908,7 @@ func (x *CreatePdfTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePdfTemplateRequest.ProtoReflect.Descriptor instead.
 func (*CreatePdfTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{23}
+	return file_creds_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *CreatePdfTemplateRequest) GetTemplateId() string {
@@ -1899,7 +1951,7 @@ type UpdatePdfTemplateRequest struct {
 
 func (x *UpdatePdfTemplateRequest) Reset() {
 	*x = UpdatePdfTemplateRequest{}
-	mi := &file_creds_proto_msgTypes[24]
+	mi := &file_creds_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1911,7 +1963,7 @@ func (x *UpdatePdfTemplateRequest) String() string {
 func (*UpdatePdfTemplateRequest) ProtoMessage() {}
 
 func (x *UpdatePdfTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[24]
+	mi := &file_creds_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1924,7 +1976,7 @@ func (x *UpdatePdfTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePdfTemplateRequest.ProtoReflect.Descriptor instead.
 func (*UpdatePdfTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{24}
+	return file_creds_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *UpdatePdfTemplateRequest) GetTemplateId() string {
@@ -1964,7 +2016,7 @@ type GetPdfTemplateRequest struct {
 
 func (x *GetPdfTemplateRequest) Reset() {
 	*x = GetPdfTemplateRequest{}
-	mi := &file_creds_proto_msgTypes[25]
+	mi := &file_creds_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1976,7 +2028,7 @@ func (x *GetPdfTemplateRequest) String() string {
 func (*GetPdfTemplateRequest) ProtoMessage() {}
 
 func (x *GetPdfTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[25]
+	mi := &file_creds_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1989,7 +2041,7 @@ func (x *GetPdfTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPdfTemplateRequest.ProtoReflect.Descriptor instead.
 func (*GetPdfTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{25}
+	return file_creds_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *GetPdfTemplateRequest) GetTemplateId() string {
@@ -2007,7 +2059,7 @@ type ListPdfTemplatesRequest struct {
 
 func (x *ListPdfTemplatesRequest) Reset() {
 	*x = ListPdfTemplatesRequest{}
-	mi := &file_creds_proto_msgTypes[26]
+	mi := &file_creds_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2019,7 +2071,7 @@ func (x *ListPdfTemplatesRequest) String() string {
 func (*ListPdfTemplatesRequest) ProtoMessage() {}
 
 func (x *ListPdfTemplatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[26]
+	mi := &file_creds_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2032,7 +2084,7 @@ func (x *ListPdfTemplatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPdfTemplatesRequest.ProtoReflect.Descriptor instead.
 func (*ListPdfTemplatesRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{26}
+	return file_creds_proto_rawDescGZIP(), []int{27}
 }
 
 type ListPdfTemplatesResponse struct {
@@ -2044,7 +2096,7 @@ type ListPdfTemplatesResponse struct {
 
 func (x *ListPdfTemplatesResponse) Reset() {
 	*x = ListPdfTemplatesResponse{}
-	mi := &file_creds_proto_msgTypes[27]
+	mi := &file_creds_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2056,7 +2108,7 @@ func (x *ListPdfTemplatesResponse) String() string {
 func (*ListPdfTemplatesResponse) ProtoMessage() {}
 
 func (x *ListPdfTemplatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[27]
+	mi := &file_creds_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2069,7 +2121,7 @@ func (x *ListPdfTemplatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPdfTemplatesResponse.ProtoReflect.Descriptor instead.
 func (*ListPdfTemplatesResponse) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{27}
+	return file_creds_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *ListPdfTemplatesResponse) GetTemplates() []*PdfTemplate {
@@ -2106,7 +2158,7 @@ type PdfRequest struct {
 
 func (x *PdfRequest) Reset() {
 	*x = PdfRequest{}
-	mi := &file_creds_proto_msgTypes[28]
+	mi := &file_creds_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2118,7 +2170,7 @@ func (x *PdfRequest) String() string {
 func (*PdfRequest) ProtoMessage() {}
 
 func (x *PdfRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[28]
+	mi := &file_creds_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2131,7 +2183,7 @@ func (x *PdfRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PdfRequest.ProtoReflect.Descriptor instead.
 func (*PdfRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{28}
+	return file_creds_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *PdfRequest) GetRequestId() string {
@@ -2285,7 +2337,7 @@ type CreatePdfRequestRequest struct {
 
 func (x *CreatePdfRequestRequest) Reset() {
 	*x = CreatePdfRequestRequest{}
-	mi := &file_creds_proto_msgTypes[29]
+	mi := &file_creds_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2297,7 +2349,7 @@ func (x *CreatePdfRequestRequest) String() string {
 func (*CreatePdfRequestRequest) ProtoMessage() {}
 
 func (x *CreatePdfRequestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[29]
+	mi := &file_creds_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2310,7 +2362,7 @@ func (x *CreatePdfRequestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePdfRequestRequest.ProtoReflect.Descriptor instead.
 func (*CreatePdfRequestRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{29}
+	return file_creds_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *CreatePdfRequestRequest) GetRequestId() string {
@@ -2398,7 +2450,7 @@ type UpdatePdfRequestRequest struct {
 
 func (x *UpdatePdfRequestRequest) Reset() {
 	*x = UpdatePdfRequestRequest{}
-	mi := &file_creds_proto_msgTypes[30]
+	mi := &file_creds_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2410,7 +2462,7 @@ func (x *UpdatePdfRequestRequest) String() string {
 func (*UpdatePdfRequestRequest) ProtoMessage() {}
 
 func (x *UpdatePdfRequestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[30]
+	mi := &file_creds_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2423,7 +2475,7 @@ func (x *UpdatePdfRequestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePdfRequestRequest.ProtoReflect.Descriptor instead.
 func (*UpdatePdfRequestRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{30}
+	return file_creds_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *UpdatePdfRequestRequest) GetRequestId() string {
@@ -2484,7 +2536,7 @@ type GetPdfRequestRequest struct {
 
 func (x *GetPdfRequestRequest) Reset() {
 	*x = GetPdfRequestRequest{}
-	mi := &file_creds_proto_msgTypes[31]
+	mi := &file_creds_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2496,7 +2548,7 @@ func (x *GetPdfRequestRequest) String() string {
 func (*GetPdfRequestRequest) ProtoMessage() {}
 
 func (x *GetPdfRequestRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[31]
+	mi := &file_creds_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2509,7 +2561,7 @@ func (x *GetPdfRequestRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPdfRequestRequest.ProtoReflect.Descriptor instead.
 func (*GetPdfRequestRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{31}
+	return file_creds_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *GetPdfRequestRequest) GetRequestId() string {
@@ -2528,7 +2580,7 @@ type GetPdfCertificateRequest struct {
 
 func (x *GetPdfCertificateRequest) Reset() {
 	*x = GetPdfCertificateRequest{}
-	mi := &file_creds_proto_msgTypes[32]
+	mi := &file_creds_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2540,7 +2592,7 @@ func (x *GetPdfCertificateRequest) String() string {
 func (*GetPdfCertificateRequest) ProtoMessage() {}
 
 func (x *GetPdfCertificateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[32]
+	mi := &file_creds_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2553,7 +2605,7 @@ func (x *GetPdfCertificateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPdfCertificateRequest.ProtoReflect.Descriptor instead.
 func (*GetPdfCertificateRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{32}
+	return file_creds_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *GetPdfCertificateRequest) GetRequestId() string {
@@ -2574,7 +2626,7 @@ type GetPdfCertificateResponse struct {
 
 func (x *GetPdfCertificateResponse) Reset() {
 	*x = GetPdfCertificateResponse{}
-	mi := &file_creds_proto_msgTypes[33]
+	mi := &file_creds_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2586,7 +2638,7 @@ func (x *GetPdfCertificateResponse) String() string {
 func (*GetPdfCertificateResponse) ProtoMessage() {}
 
 func (x *GetPdfCertificateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[33]
+	mi := &file_creds_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2599,7 +2651,7 @@ func (x *GetPdfCertificateResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPdfCertificateResponse.ProtoReflect.Descriptor instead.
 func (*GetPdfCertificateResponse) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{33}
+	return file_creds_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *GetPdfCertificateResponse) GetPdfData() []byte {
@@ -2634,7 +2686,7 @@ type ListPdfRequestsRequest struct {
 
 func (x *ListPdfRequestsRequest) Reset() {
 	*x = ListPdfRequestsRequest{}
-	mi := &file_creds_proto_msgTypes[34]
+	mi := &file_creds_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2646,7 +2698,7 @@ func (x *ListPdfRequestsRequest) String() string {
 func (*ListPdfRequestsRequest) ProtoMessage() {}
 
 func (x *ListPdfRequestsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[34]
+	mi := &file_creds_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2659,7 +2711,7 @@ func (x *ListPdfRequestsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPdfRequestsRequest.ProtoReflect.Descriptor instead.
 func (*ListPdfRequestsRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{34}
+	return file_creds_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *ListPdfRequestsRequest) GetStatus() PdfRequestStatus {
@@ -2693,7 +2745,7 @@ type ListPdfRequestsResponse struct {
 
 func (x *ListPdfRequestsResponse) Reset() {
 	*x = ListPdfRequestsResponse{}
-	mi := &file_creds_proto_msgTypes[35]
+	mi := &file_creds_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2705,7 +2757,7 @@ func (x *ListPdfRequestsResponse) String() string {
 func (*ListPdfRequestsResponse) ProtoMessage() {}
 
 func (x *ListPdfRequestsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[35]
+	mi := &file_creds_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2718,7 +2770,7 @@ func (x *ListPdfRequestsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPdfRequestsResponse.ProtoReflect.Descriptor instead.
 func (*ListPdfRequestsResponse) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{35}
+	return file_creds_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *ListPdfRequestsResponse) GetRequests() []*PdfRequest {
@@ -2749,7 +2801,7 @@ type RequestUploadUrlRequest struct {
 
 func (x *RequestUploadUrlRequest) Reset() {
 	*x = RequestUploadUrlRequest{}
-	mi := &file_creds_proto_msgTypes[36]
+	mi := &file_creds_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2761,7 +2813,7 @@ func (x *RequestUploadUrlRequest) String() string {
 func (*RequestUploadUrlRequest) ProtoMessage() {}
 
 func (x *RequestUploadUrlRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[36]
+	mi := &file_creds_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2774,7 +2826,7 @@ func (x *RequestUploadUrlRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestUploadUrlRequest.ProtoReflect.Descriptor instead.
 func (*RequestUploadUrlRequest) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{36}
+	return file_creds_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *RequestUploadUrlRequest) GetCandidateId() string {
@@ -2829,7 +2881,7 @@ type RequestUploadUrlResponse struct {
 
 func (x *RequestUploadUrlResponse) Reset() {
 	*x = RequestUploadUrlResponse{}
-	mi := &file_creds_proto_msgTypes[37]
+	mi := &file_creds_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2841,7 +2893,7 @@ func (x *RequestUploadUrlResponse) String() string {
 func (*RequestUploadUrlResponse) ProtoMessage() {}
 
 func (x *RequestUploadUrlResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_creds_proto_msgTypes[37]
+	mi := &file_creds_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2854,7 +2906,7 @@ func (x *RequestUploadUrlResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RequestUploadUrlResponse.ProtoReflect.Descriptor instead.
 func (*RequestUploadUrlResponse) Descriptor() ([]byte, []int) {
-	return file_creds_proto_rawDescGZIP(), []int{37}
+	return file_creds_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *RequestUploadUrlResponse) GetUploadUrl() string {
@@ -2974,7 +3026,10 @@ const file_creds_proto_rawDesc = "" +
 	"\voperator_id\x18\x03 \x01(\tR\n" +
 	"operatorId\x12\x16\n" +
 	"\x06reason\x18\x04 \x01(\tR\x06reason\x12#\n" +
-	"\rsource_system\x18\x05 \x01(\tR\fsourceSystem\"\x91\x01\n" +
+	"\rsource_system\x18\x05 \x01(\tR\fsourceSystem\"a\n" +
+	"\x1cCheckUploadPermissionRequest\x12!\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
+	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\"\x91\x01\n" +
 	"\x18UploadPermissionResponse\x12!\n" +
 	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1e\n" +
 	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12\x18\n" +
@@ -3143,7 +3198,7 @@ const file_creds_proto_rawDesc = "" +
 	"\x1aPDF_REQUEST_STATUS_PENDING\x10\x01\x12!\n" +
 	"\x1dPDF_REQUEST_STATUS_PROCESSING\x10\x02\x12 \n" +
 	"\x1cPDF_REQUEST_STATUS_COMPLETED\x10\x03\x12\x1d\n" +
-	"\x19PDF_REQUEST_STATUS_FAILED\x10\x042\xf8\x0f\n" +
+	"\x19PDF_REQUEST_STATUS_FAILED\x10\x042\xd9\x10\n" +
 	"\x11CredentialService\x12e\n" +
 	"\x1aCreateCredentialDefinition\x12).gcreds.CreateCredentialDefinitionRequest\x1a\x1c.gcreds.CredentialDefinition\x12p\n" +
 	"\x19ListCredentialDefinitions\x12(.gcreds.ListCredentialDefinitionsRequest\x1a).gcreds.ListCredentialDefinitionsResponse\x12J\n" +
@@ -3153,7 +3208,8 @@ const file_creds_proto_rawDesc = "" +
 	"\x19ListCandidateApplications\x12\x1f.gcreds.ListApplicationsRequest\x1a .gcreds.ListApplicationsResponse\x12U\n" +
 	"\x10ListApplications\x12\x1f.gcreds.ListApplicationsRequest\x1a .gcreds.ListApplicationsResponse\x12_\n" +
 	"\x15GrantUploadPermission\x12$.gcreds.GrantUploadPermissionRequest\x1a .gcreds.UploadPermissionResponse\x12a\n" +
-	"\x16RevokeUploadPermission\x12%.gcreds.RevokeUploadPermissionRequest\x1a .gcreds.UploadPermissionResponse\x12U\n" +
+	"\x16RevokeUploadPermission\x12%.gcreds.RevokeUploadPermissionRequest\x1a .gcreds.UploadPermissionResponse\x12_\n" +
+	"\x15CheckUploadPermission\x12$.gcreds.CheckUploadPermissionRequest\x1a .gcreds.UploadPermissionResponse\x12U\n" +
 	"\x10RequestUploadUrl\x12\x1f.gcreds.RequestUploadUrlRequest\x1a .gcreds.RequestUploadUrlResponse\x12M\n" +
 	"\x13GetLatestCredential\x12\".gcreds.GetLatestCredentialRequest\x1a\x12.gcreds.Credential\x12v\n" +
 	"\x1bCheckCandidateQualification\x12*.gcreds.CheckCandidateQualificationRequest\x1a+.gcreds.CheckCandidateQualificationResponse\x12O\n" +
@@ -3183,7 +3239,7 @@ func file_creds_proto_rawDescGZIP() []byte {
 }
 
 var file_creds_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_creds_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
+var file_creds_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
 var file_creds_proto_goTypes = []any{
 	(CredentialStatus)(0),                       // 0: gcreds.CredentialStatus
 	(CredentialFileType)(0),                     // 1: gcreds.CredentialFileType
@@ -3203,29 +3259,30 @@ var file_creds_proto_goTypes = []any{
 	(*ListApplicationsResponse)(nil),            // 15: gcreds.ListApplicationsResponse
 	(*GrantUploadPermissionRequest)(nil),        // 16: gcreds.GrantUploadPermissionRequest
 	(*RevokeUploadPermissionRequest)(nil),       // 17: gcreds.RevokeUploadPermissionRequest
-	(*UploadPermissionResponse)(nil),            // 18: gcreds.UploadPermissionResponse
-	(*GetLatestCredentialRequest)(nil),          // 19: gcreds.GetLatestCredentialRequest
-	(*CheckCandidateQualificationRequest)(nil),  // 20: gcreds.CheckCandidateQualificationRequest
-	(*CheckCandidateQualificationResponse)(nil), // 21: gcreds.CheckCandidateQualificationResponse
-	(*GetCredentialVersionRequest)(nil),         // 22: gcreds.GetCredentialVersionRequest
-	(*MarkExpiredRequest)(nil),                  // 23: gcreds.MarkExpiredRequest
-	(*RevokeCredentialRequest)(nil),             // 24: gcreds.RevokeCredentialRequest
-	(*PdfTemplate)(nil),                         // 25: gcreds.PdfTemplate
-	(*CreatePdfTemplateRequest)(nil),            // 26: gcreds.CreatePdfTemplateRequest
-	(*UpdatePdfTemplateRequest)(nil),            // 27: gcreds.UpdatePdfTemplateRequest
-	(*GetPdfTemplateRequest)(nil),               // 28: gcreds.GetPdfTemplateRequest
-	(*ListPdfTemplatesRequest)(nil),             // 29: gcreds.ListPdfTemplatesRequest
-	(*ListPdfTemplatesResponse)(nil),            // 30: gcreds.ListPdfTemplatesResponse
-	(*PdfRequest)(nil),                          // 31: gcreds.PdfRequest
-	(*CreatePdfRequestRequest)(nil),             // 32: gcreds.CreatePdfRequestRequest
-	(*UpdatePdfRequestRequest)(nil),             // 33: gcreds.UpdatePdfRequestRequest
-	(*GetPdfRequestRequest)(nil),                // 34: gcreds.GetPdfRequestRequest
-	(*GetPdfCertificateRequest)(nil),            // 35: gcreds.GetPdfCertificateRequest
-	(*GetPdfCertificateResponse)(nil),           // 36: gcreds.GetPdfCertificateResponse
-	(*ListPdfRequestsRequest)(nil),              // 37: gcreds.ListPdfRequestsRequest
-	(*ListPdfRequestsResponse)(nil),             // 38: gcreds.ListPdfRequestsResponse
-	(*RequestUploadUrlRequest)(nil),             // 39: gcreds.RequestUploadUrlRequest
-	(*RequestUploadUrlResponse)(nil),            // 40: gcreds.RequestUploadUrlResponse
+	(*CheckUploadPermissionRequest)(nil),        // 18: gcreds.CheckUploadPermissionRequest
+	(*UploadPermissionResponse)(nil),            // 19: gcreds.UploadPermissionResponse
+	(*GetLatestCredentialRequest)(nil),          // 20: gcreds.GetLatestCredentialRequest
+	(*CheckCandidateQualificationRequest)(nil),  // 21: gcreds.CheckCandidateQualificationRequest
+	(*CheckCandidateQualificationResponse)(nil), // 22: gcreds.CheckCandidateQualificationResponse
+	(*GetCredentialVersionRequest)(nil),         // 23: gcreds.GetCredentialVersionRequest
+	(*MarkExpiredRequest)(nil),                  // 24: gcreds.MarkExpiredRequest
+	(*RevokeCredentialRequest)(nil),             // 25: gcreds.RevokeCredentialRequest
+	(*PdfTemplate)(nil),                         // 26: gcreds.PdfTemplate
+	(*CreatePdfTemplateRequest)(nil),            // 27: gcreds.CreatePdfTemplateRequest
+	(*UpdatePdfTemplateRequest)(nil),            // 28: gcreds.UpdatePdfTemplateRequest
+	(*GetPdfTemplateRequest)(nil),               // 29: gcreds.GetPdfTemplateRequest
+	(*ListPdfTemplatesRequest)(nil),             // 30: gcreds.ListPdfTemplatesRequest
+	(*ListPdfTemplatesResponse)(nil),            // 31: gcreds.ListPdfTemplatesResponse
+	(*PdfRequest)(nil),                          // 32: gcreds.PdfRequest
+	(*CreatePdfRequestRequest)(nil),             // 33: gcreds.CreatePdfRequestRequest
+	(*UpdatePdfRequestRequest)(nil),             // 34: gcreds.UpdatePdfRequestRequest
+	(*GetPdfRequestRequest)(nil),                // 35: gcreds.GetPdfRequestRequest
+	(*GetPdfCertificateRequest)(nil),            // 36: gcreds.GetPdfCertificateRequest
+	(*GetPdfCertificateResponse)(nil),           // 37: gcreds.GetPdfCertificateResponse
+	(*ListPdfRequestsRequest)(nil),              // 38: gcreds.ListPdfRequestsRequest
+	(*ListPdfRequestsResponse)(nil),             // 39: gcreds.ListPdfRequestsResponse
+	(*RequestUploadUrlRequest)(nil),             // 40: gcreds.RequestUploadUrlRequest
+	(*RequestUploadUrlResponse)(nil),            // 41: gcreds.RequestUploadUrlResponse
 }
 var file_creds_proto_depIdxs = []int32{
 	1,  // 0: gcreds.CredentialFileConstraint.type:type_name -> gcreds.CredentialFileType
@@ -3240,10 +3297,10 @@ var file_creds_proto_depIdxs = []int32{
 	6,  // 9: gcreds.UpdateApplicationRequest.files:type_name -> gcreds.FileInfo
 	7,  // 10: gcreds.ListApplicationsResponse.applications:type_name -> gcreds.Application
 	0,  // 11: gcreds.CheckCandidateQualificationResponse.credential_status:type_name -> gcreds.CredentialStatus
-	25, // 12: gcreds.ListPdfTemplatesResponse.templates:type_name -> gcreds.PdfTemplate
+	26, // 12: gcreds.ListPdfTemplatesResponse.templates:type_name -> gcreds.PdfTemplate
 	2,  // 13: gcreds.PdfRequest.status:type_name -> gcreds.PdfRequestStatus
 	2,  // 14: gcreds.ListPdfRequestsRequest.status:type_name -> gcreds.PdfRequestStatus
-	31, // 15: gcreds.ListPdfRequestsResponse.requests:type_name -> gcreds.PdfRequest
+	32, // 15: gcreds.ListPdfRequestsResponse.requests:type_name -> gcreds.PdfRequest
 	8,  // 16: gcreds.CredentialService.CreateCredentialDefinition:input_type -> gcreds.CreateCredentialDefinitionRequest
 	9,  // 17: gcreds.CredentialService.ListCredentialDefinitions:input_type -> gcreds.ListCredentialDefinitionsRequest
 	11, // 18: gcreds.CredentialService.SubmitApplication:input_type -> gcreds.SubmitApplicationRequest
@@ -3253,47 +3310,49 @@ var file_creds_proto_depIdxs = []int32{
 	14, // 22: gcreds.CredentialService.ListApplications:input_type -> gcreds.ListApplicationsRequest
 	16, // 23: gcreds.CredentialService.GrantUploadPermission:input_type -> gcreds.GrantUploadPermissionRequest
 	17, // 24: gcreds.CredentialService.RevokeUploadPermission:input_type -> gcreds.RevokeUploadPermissionRequest
-	39, // 25: gcreds.CredentialService.RequestUploadUrl:input_type -> gcreds.RequestUploadUrlRequest
-	19, // 26: gcreds.CredentialService.GetLatestCredential:input_type -> gcreds.GetLatestCredentialRequest
-	20, // 27: gcreds.CredentialService.CheckCandidateQualification:input_type -> gcreds.CheckCandidateQualificationRequest
-	22, // 28: gcreds.CredentialService.GetCredentialVersion:input_type -> gcreds.GetCredentialVersionRequest
-	23, // 29: gcreds.CredentialService.MarkExpired:input_type -> gcreds.MarkExpiredRequest
-	24, // 30: gcreds.CredentialService.RevokeCredential:input_type -> gcreds.RevokeCredentialRequest
-	26, // 31: gcreds.CredentialService.CreatePdfTemplate:input_type -> gcreds.CreatePdfTemplateRequest
-	27, // 32: gcreds.CredentialService.UpdatePdfTemplate:input_type -> gcreds.UpdatePdfTemplateRequest
-	28, // 33: gcreds.CredentialService.GetPdfTemplate:input_type -> gcreds.GetPdfTemplateRequest
-	29, // 34: gcreds.CredentialService.ListPdfTemplates:input_type -> gcreds.ListPdfTemplatesRequest
-	32, // 35: gcreds.CredentialService.CreatePdfRequest:input_type -> gcreds.CreatePdfRequestRequest
-	33, // 36: gcreds.CredentialService.UpdatePdfRequest:input_type -> gcreds.UpdatePdfRequestRequest
-	34, // 37: gcreds.CredentialService.GetPdfRequest:input_type -> gcreds.GetPdfRequestRequest
-	35, // 38: gcreds.CredentialService.GetPdfCertificate:input_type -> gcreds.GetPdfCertificateRequest
-	37, // 39: gcreds.CredentialService.ListPdfRequests:input_type -> gcreds.ListPdfRequestsRequest
-	4,  // 40: gcreds.CredentialService.CreateCredentialDefinition:output_type -> gcreds.CredentialDefinition
-	10, // 41: gcreds.CredentialService.ListCredentialDefinitions:output_type -> gcreds.ListCredentialDefinitionsResponse
-	7,  // 42: gcreds.CredentialService.SubmitApplication:output_type -> gcreds.Application
-	7,  // 43: gcreds.CredentialService.UpdateApplication:output_type -> gcreds.Application
-	7,  // 44: gcreds.CredentialService.AuditApplication:output_type -> gcreds.Application
-	15, // 45: gcreds.CredentialService.ListCandidateApplications:output_type -> gcreds.ListApplicationsResponse
-	15, // 46: gcreds.CredentialService.ListApplications:output_type -> gcreds.ListApplicationsResponse
-	18, // 47: gcreds.CredentialService.GrantUploadPermission:output_type -> gcreds.UploadPermissionResponse
-	18, // 48: gcreds.CredentialService.RevokeUploadPermission:output_type -> gcreds.UploadPermissionResponse
-	40, // 49: gcreds.CredentialService.RequestUploadUrl:output_type -> gcreds.RequestUploadUrlResponse
-	5,  // 50: gcreds.CredentialService.GetLatestCredential:output_type -> gcreds.Credential
-	21, // 51: gcreds.CredentialService.CheckCandidateQualification:output_type -> gcreds.CheckCandidateQualificationResponse
-	5,  // 52: gcreds.CredentialService.GetCredentialVersion:output_type -> gcreds.Credential
-	5,  // 53: gcreds.CredentialService.MarkExpired:output_type -> gcreds.Credential
-	5,  // 54: gcreds.CredentialService.RevokeCredential:output_type -> gcreds.Credential
-	25, // 55: gcreds.CredentialService.CreatePdfTemplate:output_type -> gcreds.PdfTemplate
-	25, // 56: gcreds.CredentialService.UpdatePdfTemplate:output_type -> gcreds.PdfTemplate
-	25, // 57: gcreds.CredentialService.GetPdfTemplate:output_type -> gcreds.PdfTemplate
-	30, // 58: gcreds.CredentialService.ListPdfTemplates:output_type -> gcreds.ListPdfTemplatesResponse
-	31, // 59: gcreds.CredentialService.CreatePdfRequest:output_type -> gcreds.PdfRequest
-	31, // 60: gcreds.CredentialService.UpdatePdfRequest:output_type -> gcreds.PdfRequest
-	31, // 61: gcreds.CredentialService.GetPdfRequest:output_type -> gcreds.PdfRequest
-	36, // 62: gcreds.CredentialService.GetPdfCertificate:output_type -> gcreds.GetPdfCertificateResponse
-	38, // 63: gcreds.CredentialService.ListPdfRequests:output_type -> gcreds.ListPdfRequestsResponse
-	40, // [40:64] is the sub-list for method output_type
-	16, // [16:40] is the sub-list for method input_type
+	18, // 25: gcreds.CredentialService.CheckUploadPermission:input_type -> gcreds.CheckUploadPermissionRequest
+	40, // 26: gcreds.CredentialService.RequestUploadUrl:input_type -> gcreds.RequestUploadUrlRequest
+	20, // 27: gcreds.CredentialService.GetLatestCredential:input_type -> gcreds.GetLatestCredentialRequest
+	21, // 28: gcreds.CredentialService.CheckCandidateQualification:input_type -> gcreds.CheckCandidateQualificationRequest
+	23, // 29: gcreds.CredentialService.GetCredentialVersion:input_type -> gcreds.GetCredentialVersionRequest
+	24, // 30: gcreds.CredentialService.MarkExpired:input_type -> gcreds.MarkExpiredRequest
+	25, // 31: gcreds.CredentialService.RevokeCredential:input_type -> gcreds.RevokeCredentialRequest
+	27, // 32: gcreds.CredentialService.CreatePdfTemplate:input_type -> gcreds.CreatePdfTemplateRequest
+	28, // 33: gcreds.CredentialService.UpdatePdfTemplate:input_type -> gcreds.UpdatePdfTemplateRequest
+	29, // 34: gcreds.CredentialService.GetPdfTemplate:input_type -> gcreds.GetPdfTemplateRequest
+	30, // 35: gcreds.CredentialService.ListPdfTemplates:input_type -> gcreds.ListPdfTemplatesRequest
+	33, // 36: gcreds.CredentialService.CreatePdfRequest:input_type -> gcreds.CreatePdfRequestRequest
+	34, // 37: gcreds.CredentialService.UpdatePdfRequest:input_type -> gcreds.UpdatePdfRequestRequest
+	35, // 38: gcreds.CredentialService.GetPdfRequest:input_type -> gcreds.GetPdfRequestRequest
+	36, // 39: gcreds.CredentialService.GetPdfCertificate:input_type -> gcreds.GetPdfCertificateRequest
+	38, // 40: gcreds.CredentialService.ListPdfRequests:input_type -> gcreds.ListPdfRequestsRequest
+	4,  // 41: gcreds.CredentialService.CreateCredentialDefinition:output_type -> gcreds.CredentialDefinition
+	10, // 42: gcreds.CredentialService.ListCredentialDefinitions:output_type -> gcreds.ListCredentialDefinitionsResponse
+	7,  // 43: gcreds.CredentialService.SubmitApplication:output_type -> gcreds.Application
+	7,  // 44: gcreds.CredentialService.UpdateApplication:output_type -> gcreds.Application
+	7,  // 45: gcreds.CredentialService.AuditApplication:output_type -> gcreds.Application
+	15, // 46: gcreds.CredentialService.ListCandidateApplications:output_type -> gcreds.ListApplicationsResponse
+	15, // 47: gcreds.CredentialService.ListApplications:output_type -> gcreds.ListApplicationsResponse
+	19, // 48: gcreds.CredentialService.GrantUploadPermission:output_type -> gcreds.UploadPermissionResponse
+	19, // 49: gcreds.CredentialService.RevokeUploadPermission:output_type -> gcreds.UploadPermissionResponse
+	19, // 50: gcreds.CredentialService.CheckUploadPermission:output_type -> gcreds.UploadPermissionResponse
+	41, // 51: gcreds.CredentialService.RequestUploadUrl:output_type -> gcreds.RequestUploadUrlResponse
+	5,  // 52: gcreds.CredentialService.GetLatestCredential:output_type -> gcreds.Credential
+	22, // 53: gcreds.CredentialService.CheckCandidateQualification:output_type -> gcreds.CheckCandidateQualificationResponse
+	5,  // 54: gcreds.CredentialService.GetCredentialVersion:output_type -> gcreds.Credential
+	5,  // 55: gcreds.CredentialService.MarkExpired:output_type -> gcreds.Credential
+	5,  // 56: gcreds.CredentialService.RevokeCredential:output_type -> gcreds.Credential
+	26, // 57: gcreds.CredentialService.CreatePdfTemplate:output_type -> gcreds.PdfTemplate
+	26, // 58: gcreds.CredentialService.UpdatePdfTemplate:output_type -> gcreds.PdfTemplate
+	26, // 59: gcreds.CredentialService.GetPdfTemplate:output_type -> gcreds.PdfTemplate
+	31, // 60: gcreds.CredentialService.ListPdfTemplates:output_type -> gcreds.ListPdfTemplatesResponse
+	32, // 61: gcreds.CredentialService.CreatePdfRequest:output_type -> gcreds.PdfRequest
+	32, // 62: gcreds.CredentialService.UpdatePdfRequest:output_type -> gcreds.PdfRequest
+	32, // 63: gcreds.CredentialService.GetPdfRequest:output_type -> gcreds.PdfRequest
+	37, // 64: gcreds.CredentialService.GetPdfCertificate:output_type -> gcreds.GetPdfCertificateResponse
+	39, // 65: gcreds.CredentialService.ListPdfRequests:output_type -> gcreds.ListPdfRequestsResponse
+	41, // [41:66] is the sub-list for method output_type
+	16, // [16:41] is the sub-list for method input_type
 	16, // [16:16] is the sub-list for extension type_name
 	16, // [16:16] is the sub-list for extension extendee
 	0,  // [0:16] is the sub-list for field type_name
@@ -3310,7 +3369,7 @@ func file_creds_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_creds_proto_rawDesc), len(file_creds_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   38,
+			NumMessages:   39,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

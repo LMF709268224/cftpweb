@@ -939,6 +939,118 @@ func (x *ExamStatusTransitionsResponse) GetTransitions() []*ExamStatusTransition
 	return nil
 }
 
+type ListExamsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        *string                `protobuf:"bytes,1,opt,name=status,proto3,oneof" json:"status,omitempty"`                // 状态筛选 ("OPEN", "SCHEDULED", "DONE") [optional]
+	Page          uint32                 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`                         // 页码, 1-based [optional]
+	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // 每页数量 [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListExamsRequest) Reset() {
+	*x = ListExamsRequest{}
+	mi := &file_exam_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListExamsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListExamsRequest) ProtoMessage() {}
+
+func (x *ListExamsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListExamsRequest.ProtoReflect.Descriptor instead.
+func (*ListExamsRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ListExamsRequest) GetStatus() string {
+	if x != nil && x.Status != nil {
+		return *x.Status
+	}
+	return ""
+}
+
+func (x *ListExamsRequest) GetPage() uint32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListExamsRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListExamsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Exams         []*ExamInfo            `protobuf:"bytes,1,rep,name=exams,proto3" json:"exams,omitempty"`  // 考试列表
+	Total         uint32                 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"` // 总条数
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListExamsResponse) Reset() {
+	*x = ListExamsResponse{}
+	mi := &file_exam_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListExamsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListExamsResponse) ProtoMessage() {}
+
+func (x *ListExamsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListExamsResponse.ProtoReflect.Descriptor instead.
+func (*ListExamsResponse) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ListExamsResponse) GetExams() []*ExamInfo {
+	if x != nil {
+		return x.Exams
+	}
+	return nil
+}
+
+func (x *ListExamsResponse) GetTotal() uint32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 var File_exam_proto protoreflect.FileDescriptor
 
 const file_exam_proto_rawDesc = "" +
@@ -1029,7 +1141,15 @@ const file_exam_proto_rawDesc = "" +
 	"created_at\x18\t \x01(\tR\tcreatedAt\"w\n" +
 	"\x1dExamStatusTransitionsResponse\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12=\n" +
-	"\vtransitions\x18\x02 \x03(\v2\x1b.gexam.ExamStatusTransitionR\vtransitions2\xf4\x03\n" +
+	"\vtransitions\x18\x02 \x03(\v2\x1b.gexam.ExamStatusTransitionR\vtransitions\"k\n" +
+	"\x10ListExamsRequest\x12\x1b\n" +
+	"\x06status\x18\x01 \x01(\tH\x00R\x06status\x88\x01\x01\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\rR\bpageSizeB\t\n" +
+	"\a_status\"P\n" +
+	"\x11ListExamsResponse\x12%\n" +
+	"\x05exams\x18\x01 \x03(\v2\x0f.gexam.ExamInfoR\x05exams\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total2\xb4\x04\n" +
 	"\fGExamService\x12A\n" +
 	"\n" +
 	"CreateExam\x12\x18.gexam.CreateExamRequest\x1a\x19.gexam.CreateExamResponse\x121\n" +
@@ -1038,7 +1158,8 @@ const file_exam_proto_rawDesc = "" +
 	"\x0eGetScheduleURL\x12\x14.gexam.GetURLRequest\x1a\x12.gexam.URLResponse\x12P\n" +
 	"\x0fTermUrlCallback\x12\x1d.gexam.TermUrlCallbackRequest\x1a\x1e.gexam.TermUrlCallbackResponse\x12W\n" +
 	"\x18GetExamStatusTransitions\x12\x15.gexam.GetExamRequest\x1a$.gexam.ExamStatusTransitionsResponse\x12@\n" +
-	"\x0eSyncExamResult\x12\x15.gexam.GetExamRequest\x1a\x17.gexam.ExamResultDetailB\fZ\n" +
+	"\x0eSyncExamResult\x12\x15.gexam.GetExamRequest\x1a\x17.gexam.ExamResultDetail\x12>\n" +
+	"\tListExams\x12\x17.gexam.ListExamsRequest\x1a\x18.gexam.ListExamsResponseB\fZ\n" +
 	"cftp/gexamb\x06proto3"
 
 var (
@@ -1053,7 +1174,7 @@ func file_exam_proto_rawDescGZIP() []byte {
 	return file_exam_proto_rawDescData
 }
 
-var file_exam_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_exam_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_exam_proto_goTypes = []any{
 	(*CreateExamRequest)(nil),             // 0: gexam.CreateExamRequest
 	(*GetExamRequest)(nil),                // 1: gexam.GetExamRequest
@@ -1066,28 +1187,33 @@ var file_exam_proto_goTypes = []any{
 	(*URLResponse)(nil),                   // 8: gexam.URLResponse
 	(*ExamStatusTransition)(nil),          // 9: gexam.ExamStatusTransition
 	(*ExamStatusTransitionsResponse)(nil), // 10: gexam.ExamStatusTransitionsResponse
+	(*ListExamsRequest)(nil),              // 11: gexam.ListExamsRequest
+	(*ListExamsResponse)(nil),             // 12: gexam.ListExamsResponse
 }
 var file_exam_proto_depIdxs = []int32{
 	9,  // 0: gexam.ExamStatusTransitionsResponse.transitions:type_name -> gexam.ExamStatusTransition
-	0,  // 1: gexam.GExamService.CreateExam:input_type -> gexam.CreateExamRequest
-	1,  // 2: gexam.GExamService.GetExam:input_type -> gexam.GetExamRequest
-	1,  // 3: gexam.GExamService.GetExamResultDetail:input_type -> gexam.GetExamRequest
-	2,  // 4: gexam.GExamService.GetScheduleURL:input_type -> gexam.GetURLRequest
-	3,  // 5: gexam.GExamService.TermUrlCallback:input_type -> gexam.TermUrlCallbackRequest
-	1,  // 6: gexam.GExamService.GetExamStatusTransitions:input_type -> gexam.GetExamRequest
-	1,  // 7: gexam.GExamService.SyncExamResult:input_type -> gexam.GetExamRequest
-	5,  // 8: gexam.GExamService.CreateExam:output_type -> gexam.CreateExamResponse
-	6,  // 9: gexam.GExamService.GetExam:output_type -> gexam.ExamInfo
-	7,  // 10: gexam.GExamService.GetExamResultDetail:output_type -> gexam.ExamResultDetail
-	8,  // 11: gexam.GExamService.GetScheduleURL:output_type -> gexam.URLResponse
-	4,  // 12: gexam.GExamService.TermUrlCallback:output_type -> gexam.TermUrlCallbackResponse
-	10, // 13: gexam.GExamService.GetExamStatusTransitions:output_type -> gexam.ExamStatusTransitionsResponse
-	7,  // 14: gexam.GExamService.SyncExamResult:output_type -> gexam.ExamResultDetail
-	8,  // [8:15] is the sub-list for method output_type
-	1,  // [1:8] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	6,  // 1: gexam.ListExamsResponse.exams:type_name -> gexam.ExamInfo
+	0,  // 2: gexam.GExamService.CreateExam:input_type -> gexam.CreateExamRequest
+	1,  // 3: gexam.GExamService.GetExam:input_type -> gexam.GetExamRequest
+	1,  // 4: gexam.GExamService.GetExamResultDetail:input_type -> gexam.GetExamRequest
+	2,  // 5: gexam.GExamService.GetScheduleURL:input_type -> gexam.GetURLRequest
+	3,  // 6: gexam.GExamService.TermUrlCallback:input_type -> gexam.TermUrlCallbackRequest
+	1,  // 7: gexam.GExamService.GetExamStatusTransitions:input_type -> gexam.GetExamRequest
+	1,  // 8: gexam.GExamService.SyncExamResult:input_type -> gexam.GetExamRequest
+	11, // 9: gexam.GExamService.ListExams:input_type -> gexam.ListExamsRequest
+	5,  // 10: gexam.GExamService.CreateExam:output_type -> gexam.CreateExamResponse
+	6,  // 11: gexam.GExamService.GetExam:output_type -> gexam.ExamInfo
+	7,  // 12: gexam.GExamService.GetExamResultDetail:output_type -> gexam.ExamResultDetail
+	8,  // 13: gexam.GExamService.GetScheduleURL:output_type -> gexam.URLResponse
+	4,  // 14: gexam.GExamService.TermUrlCallback:output_type -> gexam.TermUrlCallbackResponse
+	10, // 15: gexam.GExamService.GetExamStatusTransitions:output_type -> gexam.ExamStatusTransitionsResponse
+	7,  // 16: gexam.GExamService.SyncExamResult:output_type -> gexam.ExamResultDetail
+	12, // 17: gexam.GExamService.ListExams:output_type -> gexam.ListExamsResponse
+	10, // [10:18] is the sub-list for method output_type
+	2,  // [2:10] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_exam_proto_init() }
@@ -1095,13 +1221,14 @@ func file_exam_proto_init() {
 	if File_exam_proto != nil {
 		return
 	}
+	file_exam_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_exam_proto_rawDesc), len(file_exam_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

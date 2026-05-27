@@ -19,56 +19,65 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LmsService_CreateCourse_FullMethodName           = "/glms.LmsService/CreateCourse"
-	LmsService_UpdateCourse_FullMethodName           = "/glms.LmsService/UpdateCourse"
-	LmsService_DeleteCourse_FullMethodName           = "/glms.LmsService/DeleteCourse"
-	LmsService_GetCourse_FullMethodName              = "/glms.LmsService/GetCourse"
-	LmsService_ListCourses_FullMethodName            = "/glms.LmsService/ListCourses"
-	LmsService_PublishCourse_FullMethodName          = "/glms.LmsService/PublishCourse"
-	LmsService_UnpublishCourse_FullMethodName        = "/glms.LmsService/UnpublishCourse"
-	LmsService_CreateCourseMaterial_FullMethodName   = "/glms.LmsService/CreateCourseMaterial"
-	LmsService_UpdateCourseMaterial_FullMethodName   = "/glms.LmsService/UpdateCourseMaterial"
-	LmsService_DeleteCourseMaterial_FullMethodName   = "/glms.LmsService/DeleteCourseMaterial"
-	LmsService_GetCourseMaterial_FullMethodName      = "/glms.LmsService/GetCourseMaterial"
-	LmsService_ListCourseMaterials_FullMethodName    = "/glms.LmsService/ListCourseMaterials"
-	LmsService_ReorderCourseMaterials_FullMethodName = "/glms.LmsService/ReorderCourseMaterials"
-	LmsService_CreateChapter_FullMethodName          = "/glms.LmsService/CreateChapter"
-	LmsService_UpdateChapter_FullMethodName          = "/glms.LmsService/UpdateChapter"
-	LmsService_DeleteChapter_FullMethodName          = "/glms.LmsService/DeleteChapter"
-	LmsService_GetChapter_FullMethodName             = "/glms.LmsService/GetChapter"
-	LmsService_ListChapters_FullMethodName           = "/glms.LmsService/ListChapters"
-	LmsService_ReorderChapters_FullMethodName        = "/glms.LmsService/ReorderChapters"
-	LmsService_CreateLesson_FullMethodName           = "/glms.LmsService/CreateLesson"
-	LmsService_UpdateLesson_FullMethodName           = "/glms.LmsService/UpdateLesson"
-	LmsService_DeleteLesson_FullMethodName           = "/glms.LmsService/DeleteLesson"
-	LmsService_GetLesson_FullMethodName              = "/glms.LmsService/GetLesson"
-	LmsService_ListLessons_FullMethodName            = "/glms.LmsService/ListLessons"
-	LmsService_ReorderLessons_FullMethodName         = "/glms.LmsService/ReorderLessons"
-	LmsService_CreatePrerequisite_FullMethodName     = "/glms.LmsService/CreatePrerequisite"
-	LmsService_UpdatePrerequisite_FullMethodName     = "/glms.LmsService/UpdatePrerequisite"
-	LmsService_DeletePrerequisite_FullMethodName     = "/glms.LmsService/DeletePrerequisite"
-	LmsService_GetPrerequisite_FullMethodName        = "/glms.LmsService/GetPrerequisite"
-	LmsService_ListPrerequisites_FullMethodName      = "/glms.LmsService/ListPrerequisites"
-	LmsService_CreateQuiz_FullMethodName             = "/glms.LmsService/CreateQuiz"
-	LmsService_UpdateQuiz_FullMethodName             = "/glms.LmsService/UpdateQuiz"
-	LmsService_DeleteQuiz_FullMethodName             = "/glms.LmsService/DeleteQuiz"
-	LmsService_GetQuiz_FullMethodName                = "/glms.LmsService/GetQuiz"
-	LmsService_ListQuizzes_FullMethodName            = "/glms.LmsService/ListQuizzes"
-	LmsService_CreateQuizQuestion_FullMethodName     = "/glms.LmsService/CreateQuizQuestion"
-	LmsService_UpdateQuizQuestion_FullMethodName     = "/glms.LmsService/UpdateQuizQuestion"
-	LmsService_DeleteQuizQuestion_FullMethodName     = "/glms.LmsService/DeleteQuizQuestion"
-	LmsService_GetQuizQuestion_FullMethodName        = "/glms.LmsService/GetQuizQuestion"
-	LmsService_ListQuizQuestions_FullMethodName      = "/glms.LmsService/ListQuizQuestions"
-	LmsService_ReorderQuizQuestions_FullMethodName   = "/glms.LmsService/ReorderQuizQuestions"
-	LmsService_CreateQuizOption_FullMethodName       = "/glms.LmsService/CreateQuizOption"
-	LmsService_UpdateQuizOption_FullMethodName       = "/glms.LmsService/UpdateQuizOption"
-	LmsService_DeleteQuizOption_FullMethodName       = "/glms.LmsService/DeleteQuizOption"
-	LmsService_GetQuizOption_FullMethodName          = "/glms.LmsService/GetQuizOption"
-	LmsService_ListQuizOptions_FullMethodName        = "/glms.LmsService/ListQuizOptions"
-	LmsService_ReorderQuizOptions_FullMethodName     = "/glms.LmsService/ReorderQuizOptions"
-	LmsService_ListObjects_FullMethodName            = "/glms.LmsService/ListObjects"
-	LmsService_CreateUploadURL_FullMethodName        = "/glms.LmsService/CreateUploadURL"
-	LmsService_CreateViewURL_FullMethodName          = "/glms.LmsService/CreateViewURL"
+	LmsService_CreateCourse_FullMethodName                  = "/glms.LmsService/CreateCourse"
+	LmsService_UpdateCourse_FullMethodName                  = "/glms.LmsService/UpdateCourse"
+	LmsService_DeleteCourse_FullMethodName                  = "/glms.LmsService/DeleteCourse"
+	LmsService_GetCourse_FullMethodName                     = "/glms.LmsService/GetCourse"
+	LmsService_ListCourses_FullMethodName                   = "/glms.LmsService/ListCourses"
+	LmsService_PublishCourse_FullMethodName                 = "/glms.LmsService/PublishCourse"
+	LmsService_UnpublishCourse_FullMethodName               = "/glms.LmsService/UnpublishCourse"
+	LmsService_CreateCourseMaterial_FullMethodName          = "/glms.LmsService/CreateCourseMaterial"
+	LmsService_UpdateCourseMaterial_FullMethodName          = "/glms.LmsService/UpdateCourseMaterial"
+	LmsService_DeleteCourseMaterial_FullMethodName          = "/glms.LmsService/DeleteCourseMaterial"
+	LmsService_GetCourseMaterial_FullMethodName             = "/glms.LmsService/GetCourseMaterial"
+	LmsService_ListCourseMaterials_FullMethodName           = "/glms.LmsService/ListCourseMaterials"
+	LmsService_ReorderCourseMaterials_FullMethodName        = "/glms.LmsService/ReorderCourseMaterials"
+	LmsService_CreateChapter_FullMethodName                 = "/glms.LmsService/CreateChapter"
+	LmsService_UpdateChapter_FullMethodName                 = "/glms.LmsService/UpdateChapter"
+	LmsService_DeleteChapter_FullMethodName                 = "/glms.LmsService/DeleteChapter"
+	LmsService_GetChapter_FullMethodName                    = "/glms.LmsService/GetChapter"
+	LmsService_ListChapters_FullMethodName                  = "/glms.LmsService/ListChapters"
+	LmsService_ReorderChapters_FullMethodName               = "/glms.LmsService/ReorderChapters"
+	LmsService_CreateLesson_FullMethodName                  = "/glms.LmsService/CreateLesson"
+	LmsService_UpdateLesson_FullMethodName                  = "/glms.LmsService/UpdateLesson"
+	LmsService_DeleteLesson_FullMethodName                  = "/glms.LmsService/DeleteLesson"
+	LmsService_GetLesson_FullMethodName                     = "/glms.LmsService/GetLesson"
+	LmsService_ListLessons_FullMethodName                   = "/glms.LmsService/ListLessons"
+	LmsService_ReorderLessons_FullMethodName                = "/glms.LmsService/ReorderLessons"
+	LmsService_CreatePrerequisite_FullMethodName            = "/glms.LmsService/CreatePrerequisite"
+	LmsService_UpdatePrerequisite_FullMethodName            = "/glms.LmsService/UpdatePrerequisite"
+	LmsService_DeletePrerequisite_FullMethodName            = "/glms.LmsService/DeletePrerequisite"
+	LmsService_GetPrerequisite_FullMethodName               = "/glms.LmsService/GetPrerequisite"
+	LmsService_ListPrerequisites_FullMethodName             = "/glms.LmsService/ListPrerequisites"
+	LmsService_CreateQuiz_FullMethodName                    = "/glms.LmsService/CreateQuiz"
+	LmsService_UpdateQuiz_FullMethodName                    = "/glms.LmsService/UpdateQuiz"
+	LmsService_DeleteQuiz_FullMethodName                    = "/glms.LmsService/DeleteQuiz"
+	LmsService_GetQuiz_FullMethodName                       = "/glms.LmsService/GetQuiz"
+	LmsService_ListQuizzes_FullMethodName                   = "/glms.LmsService/ListQuizzes"
+	LmsService_CreateQuizQuestion_FullMethodName            = "/glms.LmsService/CreateQuizQuestion"
+	LmsService_UpdateQuizQuestion_FullMethodName            = "/glms.LmsService/UpdateQuizQuestion"
+	LmsService_DeleteQuizQuestion_FullMethodName            = "/glms.LmsService/DeleteQuizQuestion"
+	LmsService_GetQuizQuestion_FullMethodName               = "/glms.LmsService/GetQuizQuestion"
+	LmsService_ListQuizQuestions_FullMethodName             = "/glms.LmsService/ListQuizQuestions"
+	LmsService_ReorderQuizQuestions_FullMethodName          = "/glms.LmsService/ReorderQuizQuestions"
+	LmsService_CreateQuizOption_FullMethodName              = "/glms.LmsService/CreateQuizOption"
+	LmsService_UpdateQuizOption_FullMethodName              = "/glms.LmsService/UpdateQuizOption"
+	LmsService_DeleteQuizOption_FullMethodName              = "/glms.LmsService/DeleteQuizOption"
+	LmsService_GetQuizOption_FullMethodName                 = "/glms.LmsService/GetQuizOption"
+	LmsService_ListQuizOptions_FullMethodName               = "/glms.LmsService/ListQuizOptions"
+	LmsService_ReorderQuizOptions_FullMethodName            = "/glms.LmsService/ReorderQuizOptions"
+	LmsService_ListObjects_FullMethodName                   = "/glms.LmsService/ListObjects"
+	LmsService_CreateUploadURL_FullMethodName               = "/glms.LmsService/CreateUploadURL"
+	LmsService_CreateViewURL_FullMethodName                 = "/glms.LmsService/CreateViewURL"
+	LmsService_EnrollCandidateCourse_FullMethodName         = "/glms.LmsService/EnrollCandidateCourse"
+	LmsService_CompleteLesson_FullMethodName                = "/glms.LmsService/CompleteLesson"
+	LmsService_ListCandidateEnrollments_FullMethodName      = "/glms.LmsService/ListCandidateEnrollments"
+	LmsService_GetCandidateEnrollmentDetail_FullMethodName  = "/glms.LmsService/GetCandidateEnrollmentDetail"
+	LmsService_ListCourseEnrollmentsForAdmin_FullMethodName = "/glms.LmsService/ListCourseEnrollmentsForAdmin"
+	LmsService_GetCandidateProgressForAdmin_FullMethodName  = "/glms.LmsService/GetCandidateProgressForAdmin"
+	LmsService_GetCompleteCourse_FullMethodName             = "/glms.LmsService/GetCompleteCourse"
+	LmsService_BindCourseAssociation_FullMethodName         = "/glms.LmsService/BindCourseAssociation"
+	LmsService_UnbindCourseAssociation_FullMethodName       = "/glms.LmsService/UnbindCourseAssociation"
 )
 
 // LmsServiceClient is the client API for LmsService service.
@@ -125,6 +134,18 @@ type LmsServiceClient interface {
 	ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error)
 	CreateUploadURL(ctx context.Context, in *CreateUploadURLRequest, opts ...grpc.CallOption) (*CreateUploadURLResponse, error)
 	CreateViewURL(ctx context.Context, in *CreateViewURLRequest, opts ...grpc.CallOption) (*CreateViewURLResponse, error)
+	// 选课与进度类接口 (考生端一期)
+	EnrollCandidateCourse(ctx context.Context, in *EnrollCandidateCourseRequest, opts ...grpc.CallOption) (*EnrollCandidateCourseResponse, error)
+	CompleteLesson(ctx context.Context, in *CompleteLessonRequest, opts ...grpc.CallOption) (*CompleteLessonResponse, error)
+	ListCandidateEnrollments(ctx context.Context, in *ListCandidateEnrollmentsRequest, opts ...grpc.CallOption) (*ListCandidateEnrollmentsResponse, error)
+	GetCandidateEnrollmentDetail(ctx context.Context, in *GetCandidateEnrollmentDetailRequest, opts ...grpc.CallOption) (*GetCandidateEnrollmentDetailResponse, error)
+	ListCourseEnrollmentsForAdmin(ctx context.Context, in *ListCourseEnrollmentsForAdminRequest, opts ...grpc.CallOption) (*ListCourseEnrollmentsForAdminResponse, error)
+	GetCandidateProgressForAdmin(ctx context.Context, in *GetCandidateProgressForAdminRequest, opts ...grpc.CallOption) (*GetCandidateProgressForAdminResponse, error)
+	// 获取课程的详细信息，包括章节、课件、测验等，用于向考生展示
+	GetCompleteCourse(ctx context.Context, in *GetCompleteCourseRequest, opts ...grpc.CallOption) (*GetCompleteCourseResponse, error)
+	// 外部业务系统需要引用课程时，通过这两个接口绑定和解除绑定，避免课程被管理员下架导致业务方引用失效
+	BindCourseAssociation(ctx context.Context, in *BindCourseAssociationRequest, opts ...grpc.CallOption) (*BindCourseAssociationResponse, error)
+	UnbindCourseAssociation(ctx context.Context, in *UnbindCourseAssociationRequest, opts ...grpc.CallOption) (*UnbindCourseAssociationResponse, error)
 }
 
 type lmsServiceClient struct {
@@ -635,6 +656,96 @@ func (c *lmsServiceClient) CreateViewURL(ctx context.Context, in *CreateViewURLR
 	return out, nil
 }
 
+func (c *lmsServiceClient) EnrollCandidateCourse(ctx context.Context, in *EnrollCandidateCourseRequest, opts ...grpc.CallOption) (*EnrollCandidateCourseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnrollCandidateCourseResponse)
+	err := c.cc.Invoke(ctx, LmsService_EnrollCandidateCourse_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) CompleteLesson(ctx context.Context, in *CompleteLessonRequest, opts ...grpc.CallOption) (*CompleteLessonResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CompleteLessonResponse)
+	err := c.cc.Invoke(ctx, LmsService_CompleteLesson_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) ListCandidateEnrollments(ctx context.Context, in *ListCandidateEnrollmentsRequest, opts ...grpc.CallOption) (*ListCandidateEnrollmentsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCandidateEnrollmentsResponse)
+	err := c.cc.Invoke(ctx, LmsService_ListCandidateEnrollments_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) GetCandidateEnrollmentDetail(ctx context.Context, in *GetCandidateEnrollmentDetailRequest, opts ...grpc.CallOption) (*GetCandidateEnrollmentDetailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCandidateEnrollmentDetailResponse)
+	err := c.cc.Invoke(ctx, LmsService_GetCandidateEnrollmentDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) ListCourseEnrollmentsForAdmin(ctx context.Context, in *ListCourseEnrollmentsForAdminRequest, opts ...grpc.CallOption) (*ListCourseEnrollmentsForAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCourseEnrollmentsForAdminResponse)
+	err := c.cc.Invoke(ctx, LmsService_ListCourseEnrollmentsForAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) GetCandidateProgressForAdmin(ctx context.Context, in *GetCandidateProgressForAdminRequest, opts ...grpc.CallOption) (*GetCandidateProgressForAdminResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCandidateProgressForAdminResponse)
+	err := c.cc.Invoke(ctx, LmsService_GetCandidateProgressForAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) GetCompleteCourse(ctx context.Context, in *GetCompleteCourseRequest, opts ...grpc.CallOption) (*GetCompleteCourseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCompleteCourseResponse)
+	err := c.cc.Invoke(ctx, LmsService_GetCompleteCourse_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) BindCourseAssociation(ctx context.Context, in *BindCourseAssociationRequest, opts ...grpc.CallOption) (*BindCourseAssociationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BindCourseAssociationResponse)
+	err := c.cc.Invoke(ctx, LmsService_BindCourseAssociation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) UnbindCourseAssociation(ctx context.Context, in *UnbindCourseAssociationRequest, opts ...grpc.CallOption) (*UnbindCourseAssociationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnbindCourseAssociationResponse)
+	err := c.cc.Invoke(ctx, LmsService_UnbindCourseAssociation_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LmsServiceServer is the server API for LmsService service.
 // All implementations must embed UnimplementedLmsServiceServer
 // for forward compatibility.
@@ -689,6 +800,18 @@ type LmsServiceServer interface {
 	ListObjects(context.Context, *ListObjectsRequest) (*ListObjectsResponse, error)
 	CreateUploadURL(context.Context, *CreateUploadURLRequest) (*CreateUploadURLResponse, error)
 	CreateViewURL(context.Context, *CreateViewURLRequest) (*CreateViewURLResponse, error)
+	// 选课与进度类接口 (考生端一期)
+	EnrollCandidateCourse(context.Context, *EnrollCandidateCourseRequest) (*EnrollCandidateCourseResponse, error)
+	CompleteLesson(context.Context, *CompleteLessonRequest) (*CompleteLessonResponse, error)
+	ListCandidateEnrollments(context.Context, *ListCandidateEnrollmentsRequest) (*ListCandidateEnrollmentsResponse, error)
+	GetCandidateEnrollmentDetail(context.Context, *GetCandidateEnrollmentDetailRequest) (*GetCandidateEnrollmentDetailResponse, error)
+	ListCourseEnrollmentsForAdmin(context.Context, *ListCourseEnrollmentsForAdminRequest) (*ListCourseEnrollmentsForAdminResponse, error)
+	GetCandidateProgressForAdmin(context.Context, *GetCandidateProgressForAdminRequest) (*GetCandidateProgressForAdminResponse, error)
+	// 获取课程的详细信息，包括章节、课件、测验等，用于向考生展示
+	GetCompleteCourse(context.Context, *GetCompleteCourseRequest) (*GetCompleteCourseResponse, error)
+	// 外部业务系统需要引用课程时，通过这两个接口绑定和解除绑定，避免课程被管理员下架导致业务方引用失效
+	BindCourseAssociation(context.Context, *BindCourseAssociationRequest) (*BindCourseAssociationResponse, error)
+	UnbindCourseAssociation(context.Context, *UnbindCourseAssociationRequest) (*UnbindCourseAssociationResponse, error)
 	mustEmbedUnimplementedLmsServiceServer()
 }
 
@@ -848,6 +971,33 @@ func (UnimplementedLmsServiceServer) CreateUploadURL(context.Context, *CreateUpl
 }
 func (UnimplementedLmsServiceServer) CreateViewURL(context.Context, *CreateViewURLRequest) (*CreateViewURLResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateViewURL not implemented")
+}
+func (UnimplementedLmsServiceServer) EnrollCandidateCourse(context.Context, *EnrollCandidateCourseRequest) (*EnrollCandidateCourseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method EnrollCandidateCourse not implemented")
+}
+func (UnimplementedLmsServiceServer) CompleteLesson(context.Context, *CompleteLessonRequest) (*CompleteLessonResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CompleteLesson not implemented")
+}
+func (UnimplementedLmsServiceServer) ListCandidateEnrollments(context.Context, *ListCandidateEnrollmentsRequest) (*ListCandidateEnrollmentsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCandidateEnrollments not implemented")
+}
+func (UnimplementedLmsServiceServer) GetCandidateEnrollmentDetail(context.Context, *GetCandidateEnrollmentDetailRequest) (*GetCandidateEnrollmentDetailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCandidateEnrollmentDetail not implemented")
+}
+func (UnimplementedLmsServiceServer) ListCourseEnrollmentsForAdmin(context.Context, *ListCourseEnrollmentsForAdminRequest) (*ListCourseEnrollmentsForAdminResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCourseEnrollmentsForAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) GetCandidateProgressForAdmin(context.Context, *GetCandidateProgressForAdminRequest) (*GetCandidateProgressForAdminResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCandidateProgressForAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) GetCompleteCourse(context.Context, *GetCompleteCourseRequest) (*GetCompleteCourseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCompleteCourse not implemented")
+}
+func (UnimplementedLmsServiceServer) BindCourseAssociation(context.Context, *BindCourseAssociationRequest) (*BindCourseAssociationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method BindCourseAssociation not implemented")
+}
+func (UnimplementedLmsServiceServer) UnbindCourseAssociation(context.Context, *UnbindCourseAssociationRequest) (*UnbindCourseAssociationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnbindCourseAssociation not implemented")
 }
 func (UnimplementedLmsServiceServer) mustEmbedUnimplementedLmsServiceServer() {}
 func (UnimplementedLmsServiceServer) testEmbeddedByValue()                    {}
@@ -1770,6 +1920,168 @@ func _LmsService_CreateViewURL_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LmsService_EnrollCandidateCourse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EnrollCandidateCourseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).EnrollCandidateCourse(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_EnrollCandidateCourse_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).EnrollCandidateCourse(ctx, req.(*EnrollCandidateCourseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_CompleteLesson_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteLessonRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).CompleteLesson(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_CompleteLesson_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).CompleteLesson(ctx, req.(*CompleteLessonRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_ListCandidateEnrollments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCandidateEnrollmentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).ListCandidateEnrollments(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_ListCandidateEnrollments_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).ListCandidateEnrollments(ctx, req.(*ListCandidateEnrollmentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_GetCandidateEnrollmentDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCandidateEnrollmentDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).GetCandidateEnrollmentDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_GetCandidateEnrollmentDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).GetCandidateEnrollmentDetail(ctx, req.(*GetCandidateEnrollmentDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_ListCourseEnrollmentsForAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCourseEnrollmentsForAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).ListCourseEnrollmentsForAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_ListCourseEnrollmentsForAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).ListCourseEnrollmentsForAdmin(ctx, req.(*ListCourseEnrollmentsForAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_GetCandidateProgressForAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCandidateProgressForAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).GetCandidateProgressForAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_GetCandidateProgressForAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).GetCandidateProgressForAdmin(ctx, req.(*GetCandidateProgressForAdminRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_GetCompleteCourse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCompleteCourseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).GetCompleteCourse(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_GetCompleteCourse_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).GetCompleteCourse(ctx, req.(*GetCompleteCourseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_BindCourseAssociation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BindCourseAssociationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).BindCourseAssociation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_BindCourseAssociation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).BindCourseAssociation(ctx, req.(*BindCourseAssociationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_UnbindCourseAssociation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnbindCourseAssociationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).UnbindCourseAssociation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_UnbindCourseAssociation_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).UnbindCourseAssociation(ctx, req.(*UnbindCourseAssociationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LmsService_ServiceDesc is the grpc.ServiceDesc for LmsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1976,6 +2288,42 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateViewURL",
 			Handler:    _LmsService_CreateViewURL_Handler,
+		},
+		{
+			MethodName: "EnrollCandidateCourse",
+			Handler:    _LmsService_EnrollCandidateCourse_Handler,
+		},
+		{
+			MethodName: "CompleteLesson",
+			Handler:    _LmsService_CompleteLesson_Handler,
+		},
+		{
+			MethodName: "ListCandidateEnrollments",
+			Handler:    _LmsService_ListCandidateEnrollments_Handler,
+		},
+		{
+			MethodName: "GetCandidateEnrollmentDetail",
+			Handler:    _LmsService_GetCandidateEnrollmentDetail_Handler,
+		},
+		{
+			MethodName: "ListCourseEnrollmentsForAdmin",
+			Handler:    _LmsService_ListCourseEnrollmentsForAdmin_Handler,
+		},
+		{
+			MethodName: "GetCandidateProgressForAdmin",
+			Handler:    _LmsService_GetCandidateProgressForAdmin_Handler,
+		},
+		{
+			MethodName: "GetCompleteCourse",
+			Handler:    _LmsService_GetCompleteCourse_Handler,
+		},
+		{
+			MethodName: "BindCourseAssociation",
+			Handler:    _LmsService_BindCourseAssociation_Handler,
+		},
+		{
+			MethodName: "UnbindCourseAssociation",
+			Handler:    _LmsService_UnbindCourseAssociation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
