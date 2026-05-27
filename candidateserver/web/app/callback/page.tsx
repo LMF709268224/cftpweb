@@ -1,8 +1,11 @@
 'use client'
 
+import React from "react"
+
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Loader2, ShieldAlert, CheckCircle2 } from 'lucide-react'
+import { getErrorMessage } from "@/lib/errorCodes"
 
 function CallbackContent() {
   const router = useRouter()
@@ -18,10 +21,11 @@ function CallbackContent() {
 
     const code = searchParams.get('code')
     const state = searchParams.get('state')
+    const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
 
     if (!code || !state) {
       setStatus('error')
-      setErrorMsg('认证失败：缺少必要的认证参数')
+      setErrorMsg(getErrorMessage("INVALID_REQUEST", currentLang))
       setTimeout(() => router.push('/login'), 3000)
       return
     }
@@ -38,7 +42,7 @@ function CallbackContent() {
 
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}))
-          throw new Error(errData.message || errData.error || '认证服务器拒绝了请求')
+          throw new Error(errData.error_code || 'AUTH_FAILED')
         }
 
         const resData = await res.json()
@@ -61,7 +65,7 @@ function CallbackContent() {
 
       } catch (err: any) {
         setStatus('error')
-        setErrorMsg(err.message || '网络连接异常，请重试')
+        setErrorMsg(getErrorMessage(err.message, currentLang))
         setTimeout(() => router.push('/login'), 3000)
       }
     }

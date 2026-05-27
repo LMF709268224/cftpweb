@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"candidateserver/handler"
@@ -166,7 +167,11 @@ func serveSPA(r *chi.Mux, publicDir string) {
 		}
 
 		// 2. 尝试寻找静态文件，比如 /static/css/main.css 或者 /favicon.ico
-		fullPath := filepath.Join(filesDir, filepath.Clean(r.URL.Path))
+		fullPath, ok := safeJoin(filesDir, r.URL.Path)
+		if !ok {
+			handler.WriteError(w, http.StatusBadRequest, handler.ErrInvalidRequest, "invalid file path")
+			return
+		}
 
 		// 检查该文件在磁盘上是否存在且不是目录
 		if stat, err := os.Stat(fullPath); err == nil && !stat.IsDir() {
@@ -195,4 +200,16 @@ func serveSPA(r *chi.Mux, publicDir string) {
 		// 不过为了兜底还是保留）
 		http.ServeFile(w, r, filepath.Join(filesDir, "index.html"))
 	})
+}
+
+func safeJoin(baseDir, requestPath string) (string, bool) {
+	cleanPath := filepath.Clean("/" + requestPath)
+	cleanPath = strings.TrimPrefix(cleanPath, string(filepath.Separator))
+	fullPath := filepath.Join(baseDir, cleanPath)
+
+	rel, err := filepath.Rel(baseDir, fullPath)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) || filepath.IsAbs(rel) {
+		return "", false
+	}
+	return fullPath, true
 }

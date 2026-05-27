@@ -1,12 +1,12 @@
 package config
 
 import (
-	cfgservepb "github.com/afnandelfin620-star/cftptest/cftp/cfgserver"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	cfgservepb "github.com/afnandelfin620-star/cftptest/cftp/cfgserver"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -90,12 +90,7 @@ func LoadConfig() (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal secret config: %v", err)
 	}
 
-	slog.Info("LoadConfig: successfully ")
-	slog.Info("ClientID", c.SecretConfig.Casdoor.ClientID)
-	slog.Info("ClientSecret", c.SecretConfig.Casdoor.ClientSecret)
-	slog.Info("OrgName", c.SecretConfig.Casdoor.OrgName)
-	slog.Info("AppName", c.SecretConfig.Casdoor.AppName)
-	slog.Info("Certificate", c.SecretConfig.Casdoor.Certificate)
+	slog.Info("LoadConfig: config loaded", "system", "adminserver", "org", c.SecretConfig.Casdoor.OrgName, "app", c.SecretConfig.Casdoor.AppName)
 
 	return c, nil
 }

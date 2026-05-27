@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { apiClient } from "@/lib/apiClient"
@@ -49,15 +50,13 @@ export default function CertificatesPage() {
     fetchCertificates()
   }, [])
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
       <Sidebar />
-      
-      <main className="pl-64 transition-all duration-300">
-        <div className="px-8 py-8">
+      <main className="flex-1 ml-64 p-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">证书中心</h1>
-            <p className="mt-1 text-muted-foreground">查看和管理您获得的所有专业认证证书</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">{t.certificatesPage.title}</h1>
+            <p className="mt-1 text-muted-foreground">{t.certificatesPage.subtitle}</p>
           </div>
 
           {/* Certificate Cards */}
@@ -76,7 +75,7 @@ export default function CertificatesPage() {
                     <div>
                       <Badge className="mb-3 bg-white/20 text-white border-0">
                         <CheckCircle2 className="mr-1 h-3 w-3" />
-                        有效
+                        {t.certificatesPage.active}
                       </Badge>
                       <h3 className="text-xl font-bold mb-1">{cert.name}</h3>
                       <p className="text-sm text-white/80">{cert.description}</p>
@@ -91,14 +90,14 @@ export default function CertificatesPage() {
                 <div className="p-6">
                   <div className="mb-6 grid grid-cols-2 gap-4">
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">颁发日期</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t.certificatesPage.issueDate}</p>
                       <p className="font-medium text-card-foreground flex items-center gap-1.5">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         {cert.issueDate}
                       </p>
                     </div>
                     <div>
-                      <p className="text-xs text-muted-foreground mb-1">有效期至</p>
+                      <p className="text-xs text-muted-foreground mb-1">{t.certificatesPage.expiryDate}</p>
                       <p className="font-medium text-card-foreground flex items-center gap-1.5">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         {cert.expiryDate}
@@ -107,7 +106,7 @@ export default function CertificatesPage() {
                   </div>
 
                   <div className="mb-6 rounded-lg bg-muted/50 p-3">
-                    <p className="text-xs text-muted-foreground mb-1">证书编号</p>
+                    <p className="text-xs text-muted-foreground mb-1">{t.certificatesPage.certificateId}</p>
                     <p className="font-mono text-sm text-card-foreground">{cert.credentialId}</p>
                   </div>
 
@@ -123,7 +122,7 @@ export default function CertificatesPage() {
                       disabled={!cert.pdfUrl}
                     >
                       <Download className="h-4 w-4" />
-                      {cert.pdfUrl ? "下载证书" : "证书生成中"}
+                      {cert.pdfUrl ? t.certificatesPage.downloadCertificate : t.certificatesPage.certificateGenerating}
                     </Button>
                     <Button variant="outline" size="icon" disabled>
                       <Share2 className="h-4 w-4" />
@@ -150,19 +149,18 @@ export default function CertificatesPage() {
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
                 <Award className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">继续学习，获得更多认证</h3>
+              <h3 className="text-lg font-semibold text-foreground mb-2">{t.certificatesPage.keepLearningTitle}</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                完成更多课程模块以获得额外的专业认证
+                {t.certificatesPage.keepLearningDesc}
               </p>
               <Button variant="outline" className="gap-2" asChild>
                 <Link href="/courses">
-                  浏览课程
+                  {t.certificatesPage.browseCourses}
                   <ExternalLink className="h-4 w-4" />
                 </Link>
               </Button>
             </div>
           </div>
-        </div>
       </main>
     </div>
   )

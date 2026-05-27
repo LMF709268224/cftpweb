@@ -1,8 +1,10 @@
 'use client'
 
+import React from "react"
+
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { LogIn, ArrowRight, ShieldCheck, Zap, Globe } from 'lucide-react'
+import { getErrorMessage } from "@/lib/errorCodes"
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -19,7 +21,7 @@ export default function LoginPage() {
       const response = await fetch(`/api/auth/login-url?callback=${callbackUrl}`)
 
       if (!response.ok) {
-        throw new Error('无法获取登录地址，请稍后重试')
+        throw new Error('AUTH_FAILED')
       }
 
       const resData = await response.json()
@@ -28,10 +30,11 @@ export default function LoginPage() {
         // 直接跳转到 Casdoor 统一登录中心
         window.location.href = resData.data.url
       } else {
-        throw new Error('无效的登录地址')
+        throw new Error('AUTH_FAILED')
       }
     } catch (err: any) {
-      setError(err.message || '发生未知错误')
+      const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
+      setError(getErrorMessage(err.message, currentLang))
       setIsLoading(false)
     }
   }

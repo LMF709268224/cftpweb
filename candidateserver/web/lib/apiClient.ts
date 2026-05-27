@@ -4,7 +4,14 @@ import { toast } from "sonner"
 // 统一封装的 API 请求工具，自动处理 401 拦截和业务错误弹窗
 export async function apiClient(endpoint: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers)
-  
+
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("access_token")
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`)
+    }
+  }
+
   const res = await fetch(endpoint, {
     credentials: "include",
     ...options,
@@ -26,12 +33,13 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
   }
 
   // 2. 尝试解析 JSON
-  let data;
+  let data
   try {
     data = await res.json()
-  } catch (e) {
+  } catch {
     if (!res.ok) {
-      const errorMsg = `请求异常 (${res.status})`
+      const currentLang = typeof window !== "undefined" ? (localStorage.getItem("app_lang") || "zh") : "zh"
+      const errorMsg = getErrorMessage("UNKNOWN_ERROR", currentLang as "zh" | "en")
       toast.error(errorMsg)
       throw new Error(errorMsg)
     }
@@ -42,8 +50,8 @@ export async function apiClient(endpoint: string, options: RequestInit = {}) {
   // 3. 统一拦截业务错误 (状态码非 200，或者业务 code 非 200)
   if (!res.ok || data.code !== 200) {
     // 自动通过 errorCodes 字典获取本地化提示
-    const currentLang = typeof window !== "undefined" ? (localStorage.getItem("app_lang") || "zh") : "zh";
-    const errorMsg = getErrorMessage(data.error_code, currentLang as "zh" | "en") || data.message || "请求失败"
+    const currentLang = typeof window !== "undefined" ? (localStorage.getItem("app_lang") || "zh") : "zh"
+    const errorMsg = getErrorMessage(data.error_code, currentLang as "zh" | "en")
     toast.error(errorMsg)
     throw new Error(errorMsg)
   }

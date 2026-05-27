@@ -219,6 +219,19 @@ export const zh = {
     optional: "选填",
     chooseFile: "选择文件",
     noFileChosen: "未选择任何文件",
+  },
+  certificatesPage: {
+    title: "证书中心",
+    subtitle: "查看和管理您获得的所有专业认证证书",
+    active: "有效",
+    issueDate: "颁发日期",
+    expiryDate: "有效期至",
+    certificateId: "证书编号",
+    downloadCertificate: "下载证书",
+    certificateGenerating: "证书生成中",
+    keepLearningTitle: "继续学习，获得更多认证",
+    keepLearningDesc: "完成更多课程模块以获得额外的专业认证",
+    browseCourses: "浏览课程",
   }
 }
 

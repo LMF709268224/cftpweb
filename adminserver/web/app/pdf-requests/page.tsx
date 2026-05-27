@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { useState, useEffect } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { Sidebar } from "@/components/sidebar"
@@ -38,15 +39,15 @@ export default function PdfRequestsPage() {
     // 0: UNSPECIFIED, 1: PENDING, 2: GENERATING, 3: SUCCESS, 4: FAILED
     switch (status) {
       case 1:
-        return <Badge variant="outline" className="text-yellow-600 bg-yellow-50 border-yellow-200">排队中 (Pending)</Badge>
+        return <Badge variant="outline" className="text-yellow-600 bg-yellow-50 border-yellow-200">{t.pdfRequestsPage.statusPending}</Badge>
       case 2:
-        return <Badge variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">生成中 (Generating)</Badge>
+        return <Badge variant="outline" className="text-blue-600 bg-blue-50 border-blue-200">{t.pdfRequestsPage.statusGenerating}</Badge>
       case 3:
-        return <Badge className="bg-green-600 hover:bg-green-700">成功 (Success)</Badge>
+        return <Badge className="bg-green-600 hover:bg-green-700">{t.pdfRequestsPage.statusSuccess}</Badge>
       case 4:
-        return <Badge variant="destructive">失败 (Failed)</Badge>
+        return <Badge variant="destructive">{t.pdfRequestsPage.statusFailed}</Badge>
       default:
-        return <Badge variant="secondary">未知 (Unknown)</Badge>
+        return <Badge variant="secondary">{t.pdfRequestsPage.statusUnknown}</Badge>
     }
   }
 
@@ -58,13 +59,13 @@ export default function PdfRequestsPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
               <FileText className="h-8 w-8 text-primary" />
-              {t.sidebar?.pdfRequests || "证书流水记录"}
+              {t.pdfRequestsPage.title}
             </h1>
-            <p className="text-muted-foreground mt-2">查看后台自动或手动触发的 PDF 证书生成情况</p>
+            <p className="text-muted-foreground mt-2">{t.pdfRequestsPage.subtitle}</p>
           </div>
           <Button onClick={fetchRequests} variant="outline" className="gap-2">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            刷新
+            {t.pdfRequestsPage.refresh}
           </Button>
         </div>
 
@@ -76,13 +77,13 @@ export default function PdfRequestsPage() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50 text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">请求ID</th>
-                    <th className="px-4 py-3 font-medium">考生ID</th>
-                    <th className="px-4 py-3 font-medium">业务编号(DegreeNo)</th>
-                    <th className="px-4 py-3 font-medium">证书哈希(SHA256)</th>
-                    <th className="px-4 py-3 font-medium">状态</th>
-                    <th className="px-4 py-3 font-medium">错误信息</th>
-                    <th className="px-4 py-3 font-medium">创建时间</th>
+                    <th className="px-4 py-3 font-medium">{t.pdfRequestsPage.requestId}</th>
+                    <th className="px-4 py-3 font-medium">{t.pdfRequestsPage.candidateId}</th>
+                    <th className="px-4 py-3 font-medium">{t.pdfRequestsPage.degreeNo}</th>
+                    <th className="px-4 py-3 font-medium">{t.pdfRequestsPage.pdfHash}</th>
+                    <th className="px-4 py-3 font-medium">{t.pdfRequestsPage.status}</th>
+                    <th className="px-4 py-3 font-medium">{t.pdfRequestsPage.errorMessage}</th>
+                    <th className="px-4 py-3 font-medium">{t.pdfRequestsPage.createdAt}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -105,7 +106,7 @@ export default function PdfRequestsPage() {
                   ) : (
                     <tr>
                       <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                        暂无生成请求记录
+                        {t.pdfRequestsPage.noRequests}
                       </td>
                     </tr>
                   )}

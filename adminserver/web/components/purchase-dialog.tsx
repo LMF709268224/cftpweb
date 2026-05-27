@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { apiClient } from "@/lib/apiClient"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { CreditCard, Building2, Tag, CheckCircle2, X } from "lucide-react"
+import { CreditCard, Building2, Tag, CheckCircle2 } from "lucide-react"
 
 interface PurchaseDialogProps {
   open: boolean
@@ -49,7 +50,7 @@ export function PurchaseDialog({
   const handlePayment = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/mall/pipelines/${pipelineId}/purchase`, {
+      const data = await apiClient(`/api/mall/pipelines/${pipelineId}/purchase`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -58,13 +59,6 @@ export function PurchaseDialog({
         }),
       })
 
-      if (!res.ok) {
-        const err = await res.text()
-        throw new Error(err)
-      }
-
-      const data = await res.json()
-      
       if (paymentMethod === "stripe" && data.payment_url) {
         window.location.href = data.payment_url
       } else {

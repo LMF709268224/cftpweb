@@ -1,5 +1,7 @@
 "use client"
 
+import React from "react"
+
 import { useEffect, useState } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"

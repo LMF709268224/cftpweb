@@ -221,5 +221,18 @@ export const en: AppTranslations = {
     optional: "Optional",
     chooseFile: "Choose File",
     noFileChosen: "No file chosen",
+  },
+  certificatesPage: {
+    title: "Certificate Center",
+    subtitle: "View and manage all professional certificates you have earned.",
+    active: "Active",
+    issueDate: "Issue Date",
+    expiryDate: "Valid Until",
+    certificateId: "Certificate ID",
+    downloadCertificate: "Download Certificate",
+    certificateGenerating: "Generating",
+    keepLearningTitle: "Keep learning to earn more certificates",
+    keepLearningDesc: "Complete more course modules to earn additional professional certifications.",
+    browseCourses: "Browse Courses",
   }
 }

@@ -16,6 +16,26 @@ export const ErrorMessages: Record<string, { zh: string; en: string }> = {
     zh: "您没有权限执行此操作",
     en: "You do not have permission to perform this action.",
   },
+  NOT_FOUND: {
+    zh: "请求的资源不存在",
+    en: "The requested resource was not found.",
+  },
+  NOT_IMPLEMENTED: {
+    zh: "该功能暂未开放",
+    en: "This feature is not available yet.",
+  },
+  AUTH_FAILED: {
+    zh: "认证失败，请重新登录",
+    en: "Authentication failed. Please log in again.",
+  },
+  TOKEN_EXPIRED: {
+    zh: "登录已过期，请重新登录",
+    en: "Session expired, please log in again.",
+  },
+  INVALID_TOKEN: {
+    zh: "登录状态无效，请重新登录",
+    en: "Invalid session. Please log in again.",
+  },
 
   // 用户与设置相关
   PASSWORD_INCORRECT: {
@@ -25,6 +45,54 @@ export const ErrorMessages: Record<string, { zh: string; en: string }> = {
   PROFILE_UPDATE_FAILED: {
     zh: "个人资料更新失败，请检查输入",
     en: "Failed to update profile. Please check your input.",
+  },
+  PIPELINE_NOT_FOUND: {
+    zh: "未找到对应管线",
+    en: "Pipeline not found.",
+  },
+  ALREADY_PURCHASED: {
+    zh: "您已购买该项目",
+    en: "You have already purchased this item.",
+  },
+  INVALID_PIPELINE: {
+    zh: "管线信息无效",
+    en: "Invalid pipeline.",
+  },
+  EXAM_NOT_FOUND: {
+    zh: "未找到对应考试",
+    en: "Exam not found.",
+  },
+  NOT_ELIGIBLE: {
+    zh: "当前不满足操作条件",
+    en: "You are not eligible for this action.",
+  },
+  SIGNUP_FAILED: {
+    zh: "报名失败，请稍后再试",
+    en: "Signup failed. Please try again later.",
+  },
+  RETAKE_DENIED: {
+    zh: "暂不满足补考条件",
+    en: "Retake request was denied.",
+  },
+  PAYMENT_FAILED: {
+    zh: "支付失败，请稍后再试",
+    en: "Payment failed. Please try again later.",
+  },
+  ORDER_NOT_FOUND: {
+    zh: "未找到对应订单",
+    en: "Order not found.",
+  },
+  INVALID_AMOUNT: {
+    zh: "金额信息无效",
+    en: "Invalid amount.",
+  },
+  MEMBERSHIP_EXPIRED: {
+    zh: "会员资格已过期",
+    en: "Membership has expired.",
+  },
+  RECORD_REJECTED: {
+    zh: "档案已被驳回",
+    en: "Record was rejected.",
   },
 
   // 兜底未知错误

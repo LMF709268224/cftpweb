@@ -37,10 +37,19 @@ func WriteError(w http.ResponseWriter, httpStatus int, errorCode ErrorCode, mess
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(httpStatus)
 
+	if message != "" {
+		slog.Warn("API error", "status", httpStatus, "error_code", errorCode, "detail", message)
+	}
+
+	publicMessage := http.StatusText(httpStatus)
+	if publicMessage == "" {
+		publicMessage = "Error"
+	}
+
 	resp := apiResponse{
 		Code:      httpStatus,
 		ErrorCode: errorCode,
-		Message:   message,
+		Message:   publicMessage,
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {

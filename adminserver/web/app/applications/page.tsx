@@ -1,5 +1,7 @@
 "use client"
 
+import React from "react"
+
 import { useState, useEffect } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"
@@ -10,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sidebar } from "@/components/sidebar"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 
 interface FileInfo {
   file_name: string

@@ -1,5 +1,7 @@
 "use client"
 
+import React from "react"
+
 import { useState } from "react"
 import { Sidebar } from "@/components/sidebar"
 import { cn } from "@/lib/utils"
