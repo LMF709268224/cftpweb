@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertTriangle, BookOpen, CheckCircle2, Eye, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
+import { AlertTriangle, BookOpen, CheckCircle2, ClipboardList, Eye, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
 import { toast } from "sonner"
 
 import { Sidebar } from "@/components/sidebar"
@@ -115,6 +115,47 @@ type Lesson = {
   updated_at?: string
 }
 
+type Quiz = {
+  quiz_id: string
+  quizzable_type?: number
+  quizzable_id?: string
+  title?: string
+  description?: string
+  passing_score?: number
+  time_limit?: number
+  max_attempts?: number
+  allow_retake?: boolean
+  randomize_questions?: boolean
+  is_active?: boolean
+  version?: number
+  created_at?: string
+  updated_at?: string
+}
+
+type QuizQuestion = {
+  question_id: string
+  quiz_id: string
+  question_text?: string
+  question_type?: number
+  points?: number
+  sort_order?: number
+  is_required?: boolean
+  version?: number
+  created_at?: string
+  updated_at?: string
+}
+
+type QuizOption = {
+  option_id: string
+  question_id: string
+  option_text?: string
+  is_correct?: boolean
+  sort_order?: number
+  version?: number
+  created_at?: string
+  updated_at?: string
+}
+
 const emptyForm: CourseForm = {
   category_id: "",
   title: "",
@@ -134,6 +175,31 @@ const emptyLessonForm = {
   title: "",
   body: "",
   sort_order: "",
+}
+
+const emptyQuizForm = {
+  title: "",
+  description: "",
+  passing_score: "60",
+  time_limit: "",
+  max_attempts: "1",
+  allow_retake: true,
+  randomize_questions: false,
+  is_active: true,
+}
+
+const emptyQuestionForm = {
+  question_text: "",
+  question_type: "1",
+  points: "1",
+  sort_order: "",
+  is_required: true,
+}
+
+const emptyOptionForm = {
+  option_text: "",
+  sort_order: "",
+  is_correct: false,
 }
 
 function formFromCourse(course: LmsCourse | null): CourseForm {
@@ -195,6 +261,20 @@ export default function LmsCoursesPage() {
   const [lessonForm, setLessonForm] = useState(emptyLessonForm)
   const [lessonSaving, setLessonSaving] = useState(false)
   const [lessonsLoading, setLessonsLoading] = useState(false)
+  const [quizzes, setQuizzes] = useState<Quiz[]>([])
+  const [selectedQuizId, setSelectedQuizId] = useState("")
+  const [quizForm, setQuizForm] = useState(emptyQuizForm)
+  const [quizSaving, setQuizSaving] = useState(false)
+  const [quizzesLoading, setQuizzesLoading] = useState(false)
+  const [questions, setQuestions] = useState<QuizQuestion[]>([])
+  const [selectedQuestionId, setSelectedQuestionId] = useState("")
+  const [questionForm, setQuestionForm] = useState(emptyQuestionForm)
+  const [questionSaving, setQuestionSaving] = useState(false)
+  const [questionsLoading, setQuestionsLoading] = useState(false)
+  const [options, setOptions] = useState<QuizOption[]>([])
+  const [optionForm, setOptionForm] = useState(emptyOptionForm)
+  const [optionSaving, setOptionSaving] = useState(false)
+  const [optionsLoading, setOptionsLoading] = useState(false)
 
   const selectedCourse = useMemo(
     () => courses.find((course) => course.course_id === selectedId) || null,
@@ -206,12 +286,30 @@ export default function LmsCoursesPage() {
     [chapters, selectedChapterId]
   )
 
+  const selectedQuiz = useMemo(
+    () => quizzes.find((quiz) => quiz.quiz_id === selectedQuizId) || null,
+    [quizzes, selectedQuizId]
+  )
+
+  const selectedQuestion = useMemo(
+    () => questions.find((question) => question.question_id === selectedQuestionId) || null,
+    [questions, selectedQuestionId]
+  )
+
   const resetCourseContentState = () => {
     setChapters([])
     setSelectedChapterId("")
     setChapterForm(emptyChapterForm)
     setLessons([])
     setLessonForm(emptyLessonForm)
+    setQuizzes([])
+    setSelectedQuizId("")
+    setQuizForm(emptyQuizForm)
+    setQuestions([])
+    setSelectedQuestionId("")
+    setQuestionForm(emptyQuestionForm)
+    setOptions([])
+    setOptionForm(emptyOptionForm)
   }
 
   const loadCourses = useCallback(async () => {
@@ -407,6 +505,11 @@ export default function LmsCoursesPage() {
       if (selectedChapterId && !nextChapters.some((chapter: Chapter) => chapter.chapter_id === selectedChapterId)) {
         setSelectedChapterId("")
         setLessons([])
+        setQuizzes([])
+        setSelectedQuizId("")
+        setQuestions([])
+        setSelectedQuestionId("")
+        setOptions([])
       }
     } finally {
       setChaptersLoading(false)
@@ -440,7 +543,11 @@ export default function LmsCoursesPage() {
 
   const selectChapter = async (chapter: Chapter) => {
     setSelectedChapterId(chapter.chapter_id)
-    await loadLessons(chapter.chapter_id)
+    setSelectedQuizId("")
+    setQuestions([])
+    setSelectedQuestionId("")
+    setOptions([])
+    await Promise.all([loadLessons(chapter.chapter_id), loadQuizzes(chapter.chapter_id)])
   }
 
   const loadLessons = async (chapterId = selectedChapterId) => {
@@ -483,6 +590,157 @@ export default function LmsCoursesPage() {
       await loadLessons(selectedChapter.chapter_id)
     } finally {
       setLessonSaving(false)
+    }
+  }
+
+  const loadQuizzes = async (chapterId = selectedChapterId) => {
+    if (!chapterId) return
+    setQuizzesLoading(true)
+    try {
+      const params = new URLSearchParams({
+        quizzable_type: "2",
+        quizzable_id: chapterId,
+      })
+      const res = await apiClient(`/api/lms/quizzes?${params.toString()}`)
+      const nextQuizzes = res?.quizzes || []
+      setQuizzes(nextQuizzes)
+      if (selectedQuizId && !nextQuizzes.some((quiz: Quiz) => quiz.quiz_id === selectedQuizId)) {
+        setSelectedQuizId("")
+        setQuestions([])
+        setSelectedQuestionId("")
+        setOptions([])
+      }
+    } finally {
+      setQuizzesLoading(false)
+    }
+  }
+
+  const createQuiz = async () => {
+    if (!selectedChapter) return
+    if (!quizForm.title.trim()) {
+      toast.error(page.fillQuizTitle)
+      return
+    }
+
+    setQuizSaving(true)
+    try {
+      const res = await apiClient("/api/lms/quizzes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: quizForm.title.trim(),
+          description: quizForm.description.trim(),
+          passing_score: Number(quizForm.passing_score || 0),
+          time_limit: Number(quizForm.time_limit || 0),
+          max_attempts: Number(quizForm.max_attempts || 0),
+          allow_retake: quizForm.allow_retake,
+          randomize_questions: quizForm.randomize_questions,
+          is_active: quizForm.is_active,
+          quizzable_type: 2,
+          quizzable_id: selectedChapter.chapter_id,
+        }),
+      })
+      toast.success(page.quizCreateSuccess)
+      setQuizForm(emptyQuizForm)
+      setSelectedQuizId(res?.quiz_id || "")
+      await loadQuizzes(selectedChapter.chapter_id)
+    } finally {
+      setQuizSaving(false)
+    }
+  }
+
+  const selectQuiz = async (quiz: Quiz) => {
+    setSelectedQuizId(quiz.quiz_id)
+    setSelectedQuestionId("")
+    setOptions([])
+    await loadQuestions(quiz.quiz_id)
+  }
+
+  const loadQuestions = async (quizId = selectedQuizId) => {
+    if (!quizId) return
+    setQuestionsLoading(true)
+    try {
+      const res = await apiClient(`/api/lms/quizzes/${quizId}/questions`)
+      const nextQuestions = res?.questions || []
+      setQuestions(nextQuestions)
+      if (selectedQuestionId && !nextQuestions.some((question: QuizQuestion) => question.question_id === selectedQuestionId)) {
+        setSelectedQuestionId("")
+        setOptions([])
+      }
+    } finally {
+      setQuestionsLoading(false)
+    }
+  }
+
+  const createQuestion = async () => {
+    if (!selectedQuiz) return
+    if (!questionForm.question_text.trim()) {
+      toast.error(page.fillQuestionText)
+      return
+    }
+
+    setQuestionSaving(true)
+    try {
+      const res = await apiClient(`/api/lms/quizzes/${selectedQuiz.quiz_id}/questions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question_text: questionForm.question_text.trim(),
+          question_type: Number(questionForm.question_type),
+          points: Number(questionForm.points || 1),
+          sort_order: Number(questionForm.sort_order || (questions.length + 1) * 1000),
+          is_required: questionForm.is_required,
+          media_items_json: "[]",
+        }),
+      })
+      toast.success(page.questionCreateSuccess)
+      setQuestionForm(emptyQuestionForm)
+      setSelectedQuestionId(res?.question_id || "")
+      await loadQuestions(selectedQuiz.quiz_id)
+    } finally {
+      setQuestionSaving(false)
+    }
+  }
+
+  const selectQuestion = async (question: QuizQuestion) => {
+    setSelectedQuestionId(question.question_id)
+    await loadOptions(question.question_id)
+  }
+
+  const loadOptions = async (questionId = selectedQuestionId) => {
+    if (!questionId) return
+    setOptionsLoading(true)
+    try {
+      const res = await apiClient(`/api/lms/questions/${questionId}/options`)
+      setOptions(res?.options || [])
+    } finally {
+      setOptionsLoading(false)
+    }
+  }
+
+  const createOption = async () => {
+    if (!selectedQuestion) return
+    if (!optionForm.option_text.trim()) {
+      toast.error(page.fillOptionText)
+      return
+    }
+
+    setOptionSaving(true)
+    try {
+      await apiClient(`/api/lms/questions/${selectedQuestion.question_id}/options`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          option_text: optionForm.option_text.trim(),
+          sort_order: Number(optionForm.sort_order || (options.length + 1) * 1000),
+          is_correct: optionForm.is_correct,
+        }),
+      })
+      toast.success(page.optionCreateSuccess)
+      setOptionForm(emptyOptionForm)
+      await loadOptions(selectedQuestion.question_id)
+    } finally {
+      setOptionSaving(false)
     }
   }
 
@@ -887,6 +1145,292 @@ export default function LmsCoursesPage() {
                             ))}
                           </div>
                         )}
+
+                        <div className="border-t pt-4">
+                          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <h3 className="text-sm font-semibold">{page.chapterQuizzes}</h3>
+                              <p className="mt-1 text-xs text-muted-foreground">{page.quizHint}</p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => loadQuizzes()}
+                              disabled={!selectedChapter || quizzesLoading}
+                            >
+                              <RefreshCw className={cn("mr-2 h-4 w-4", quizzesLoading && "animate-spin")} />
+                              {page.loadQuizzes}
+                            </Button>
+                          </div>
+
+                          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px_120px]">
+                            <div className="space-y-2">
+                              <Label htmlFor="quizTitle">{page.quizTitle}</Label>
+                              <Input
+                                id="quizTitle"
+                                value={quizForm.title}
+                                disabled={!selectedChapter || selectedCourse.is_published}
+                                onChange={(event) => setQuizForm({ ...quizForm, title: event.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="quizPassingScore">{page.passingScore}</Label>
+                              <Input
+                                id="quizPassingScore"
+                                type="number"
+                                min="0"
+                                value={quizForm.passing_score}
+                                disabled={!selectedChapter || selectedCourse.is_published}
+                                onChange={(event) => setQuizForm({ ...quizForm, passing_score: event.target.value })}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="quizMaxAttempts">{page.maxAttempts}</Label>
+                              <Input
+                                id="quizMaxAttempts"
+                                type="number"
+                                min="0"
+                                value={quizForm.max_attempts}
+                                disabled={!selectedChapter || selectedCourse.is_published}
+                                onChange={(event) => setQuizForm({ ...quizForm, max_attempts: event.target.value })}
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-3 space-y-2">
+                            <Label htmlFor="quizDescription">{page.quizDescription}</Label>
+                            <Textarea
+                              id="quizDescription"
+                              rows={2}
+                              value={quizForm.description}
+                              disabled={!selectedChapter || selectedCourse.is_published}
+                              onChange={(event) => setQuizForm({ ...quizForm, description: event.target.value })}
+                            />
+                          </div>
+                          <div className="mt-3 flex flex-wrap gap-3">
+                            <label className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm">
+                              <Checkbox
+                                checked={quizForm.allow_retake}
+                                disabled={!selectedChapter || selectedCourse.is_published}
+                                onCheckedChange={(checked) => setQuizForm({ ...quizForm, allow_retake: Boolean(checked) })}
+                              />
+                              {page.allowRetake}
+                            </label>
+                            <label className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm">
+                              <Checkbox
+                                checked={quizForm.randomize_questions}
+                                disabled={!selectedChapter || selectedCourse.is_published}
+                                onCheckedChange={(checked) => setQuizForm({ ...quizForm, randomize_questions: Boolean(checked) })}
+                              />
+                              {page.randomizeQuestions}
+                            </label>
+                            <Button
+                              size="sm"
+                              onClick={createQuiz}
+                              disabled={!selectedChapter || quizSaving || selectedCourse.is_published}
+                            >
+                              <ClipboardList className="mr-2 h-4 w-4" />
+                              {page.createQuiz}
+                            </Button>
+                          </div>
+
+                          <div className="mt-3 overflow-hidden rounded-md border">
+                            {quizzes.length === 0 ? (
+                              <div className="px-3 py-6 text-center text-sm text-muted-foreground">{page.noQuizzes}</div>
+                            ) : (
+                              quizzes.map((quiz) => (
+                                <button
+                                  key={quiz.quiz_id}
+                                  type="button"
+                                  onClick={() => selectQuiz(quiz)}
+                                  className={cn(
+                                    "block w-full border-b px-3 py-3 text-left text-sm last:border-b-0 hover:bg-muted/60",
+                                    selectedQuizId === quiz.quiz_id && "bg-muted"
+                                  )}
+                                >
+                                  <div className="flex items-center justify-between gap-3">
+                                    <span className="truncate font-medium">{quiz.title || quiz.quiz_id}</span>
+                                    <Badge variant={quiz.is_active ? "default" : "outline"}>{quiz.is_active ? page.active : page.inactive}</Badge>
+                                  </div>
+                                  <div className="mt-1 truncate text-xs text-muted-foreground">{quiz.quiz_id}</div>
+                                </button>
+                              ))
+                            )}
+                          </div>
+
+                          <div className="mt-4 rounded-md border p-3">
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <h4 className="text-sm font-semibold">{page.quizQuestions}</h4>
+                                <p className="mt-1 text-xs text-muted-foreground">{selectedQuiz ? selectedQuiz.title || selectedQuiz.quiz_id : page.selectQuizHint}</p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => loadQuestions()}
+                                disabled={!selectedQuiz || questionsLoading}
+                              >
+                                <RefreshCw className={cn("mr-2 h-4 w-4", questionsLoading && "animate-spin")} />
+                                {page.loadQuestions}
+                              </Button>
+                            </div>
+                            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_100px]">
+                              <div className="space-y-2">
+                                <Label htmlFor="questionText">{page.questionText}</Label>
+                                <Input
+                                  id="questionText"
+                                  value={questionForm.question_text}
+                                  disabled={!selectedQuiz || selectedCourse.is_published}
+                                  onChange={(event) => setQuestionForm({ ...questionForm, question_text: event.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="questionType">{page.questionType}</Label>
+                                <Select
+                                  value={questionForm.question_type}
+                                  disabled={!selectedQuiz || selectedCourse.is_published}
+                                  onValueChange={(value) => setQuestionForm({ ...questionForm, question_type: value })}
+                                >
+                                  <SelectTrigger id="questionType">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="1">{page.singleChoice}</SelectItem>
+                                    <SelectItem value="2">{page.multipleChoice}</SelectItem>
+                                    <SelectItem value="3">{page.trueFalse}</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="questionPoints">{page.points}</Label>
+                                <Input
+                                  id="questionPoints"
+                                  type="number"
+                                  min="1"
+                                  value={questionForm.points}
+                                  disabled={!selectedQuiz || selectedCourse.is_published}
+                                  onChange={(event) => setQuestionForm({ ...questionForm, points: event.target.value })}
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-3">
+                              <Input
+                                type="number"
+                                min="0"
+                                className="w-32"
+                                placeholder={page.questionSortOrder}
+                                value={questionForm.sort_order}
+                                disabled={!selectedQuiz || selectedCourse.is_published}
+                                onChange={(event) => setQuestionForm({ ...questionForm, sort_order: event.target.value })}
+                              />
+                              <label className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm">
+                                <Checkbox
+                                  checked={questionForm.is_required}
+                                  disabled={!selectedQuiz || selectedCourse.is_published}
+                                  onCheckedChange={(checked) => setQuestionForm({ ...questionForm, is_required: Boolean(checked) })}
+                                />
+                                {page.requiredQuestion}
+                              </label>
+                              <Button size="sm" onClick={createQuestion} disabled={!selectedQuiz || questionSaving || selectedCourse.is_published}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                {page.createQuestion}
+                              </Button>
+                            </div>
+
+                            <div className="mt-3 overflow-hidden rounded-md border">
+                              {questions.length === 0 ? (
+                                <div className="px-3 py-6 text-center text-sm text-muted-foreground">{page.noQuestions}</div>
+                              ) : (
+                                questions.map((question) => (
+                                  <button
+                                    key={question.question_id}
+                                    type="button"
+                                    onClick={() => selectQuestion(question)}
+                                    className={cn(
+                                      "block w-full border-b px-3 py-3 text-left text-sm last:border-b-0 hover:bg-muted/60",
+                                      selectedQuestionId === question.question_id && "bg-muted"
+                                    )}
+                                  >
+                                    <div className="flex items-center justify-between gap-3">
+                                      <span className="truncate font-medium">{question.question_text || question.question_id}</span>
+                                      <Badge variant="outline">{question.points || 0}</Badge>
+                                    </div>
+                                    <div className="mt-1 truncate text-xs text-muted-foreground">{question.question_id}</div>
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-4 rounded-md border p-3">
+                            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <h4 className="text-sm font-semibold">{page.questionOptions}</h4>
+                                <p className="mt-1 text-xs text-muted-foreground">{selectedQuestion ? selectedQuestion.question_text || selectedQuestion.question_id : page.selectQuestionHint}</p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => loadOptions()}
+                                disabled={!selectedQuestion || optionsLoading}
+                              >
+                                <RefreshCw className={cn("mr-2 h-4 w-4", optionsLoading && "animate-spin")} />
+                                {page.loadOptions}
+                              </Button>
+                            </div>
+                            <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
+                              <div className="space-y-2">
+                                <Label htmlFor="optionText">{page.optionText}</Label>
+                                <Input
+                                  id="optionText"
+                                  value={optionForm.option_text}
+                                  disabled={!selectedQuestion || selectedCourse.is_published}
+                                  onChange={(event) => setOptionForm({ ...optionForm, option_text: event.target.value })}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="optionSortOrder">{page.optionSortOrder}</Label>
+                                <Input
+                                  id="optionSortOrder"
+                                  type="number"
+                                  min="0"
+                                  value={optionForm.sort_order}
+                                  disabled={!selectedQuestion || selectedCourse.is_published}
+                                  onChange={(event) => setOptionForm({ ...optionForm, sort_order: event.target.value })}
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-3 flex flex-wrap gap-3">
+                              <label className="flex h-9 items-center gap-2 rounded-md border px-3 text-sm">
+                                <Checkbox
+                                  checked={optionForm.is_correct}
+                                  disabled={!selectedQuestion || selectedCourse.is_published}
+                                  onCheckedChange={(checked) => setOptionForm({ ...optionForm, is_correct: Boolean(checked) })}
+                                />
+                                {page.correctOption}
+                              </label>
+                              <Button size="sm" onClick={createOption} disabled={!selectedQuestion || optionSaving || selectedCourse.is_published}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                {page.createOption}
+                              </Button>
+                            </div>
+
+                            <div className="mt-3 overflow-hidden rounded-md border">
+                              {options.length === 0 ? (
+                                <div className="px-3 py-6 text-center text-sm text-muted-foreground">{page.noOptions}</div>
+                              ) : (
+                                options.map((option) => (
+                                  <div key={option.option_id} className="flex items-center justify-between gap-3 border-b px-3 py-3 text-sm last:border-b-0">
+                                    <div className="min-w-0">
+                                      <div className="truncate font-medium">{option.option_text || option.option_id}</div>
+                                      <div className="truncate text-xs text-muted-foreground">{option.option_id}</div>
+                                    </div>
+                                    <Badge variant={option.is_correct ? "default" : "outline"}>{option.is_correct ? page.correct : page.incorrect}</Badge>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </>
                   )}
