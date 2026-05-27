@@ -70,7 +70,10 @@ const (
 	LmsService_CreateUploadURL_FullMethodName               = "/glms.LmsService/CreateUploadURL"
 	LmsService_CreateViewURL_FullMethodName                 = "/glms.LmsService/CreateViewURL"
 	LmsService_EnrollCandidateCourse_FullMethodName         = "/glms.LmsService/EnrollCandidateCourse"
-	LmsService_CompleteLesson_FullMethodName                = "/glms.LmsService/CompleteLesson"
+	LmsService_CompleteLessonLearning_FullMethodName        = "/glms.LmsService/CompleteLessonLearning"
+	LmsService_TakeQuiz_FullMethodName                      = "/glms.LmsService/TakeQuiz"
+	LmsService_GetCandidateQuizPaper_FullMethodName         = "/glms.LmsService/GetCandidateQuizPaper"
+	LmsService_SubmitQuiz_FullMethodName                    = "/glms.LmsService/SubmitQuiz"
 	LmsService_ListCandidateEnrollments_FullMethodName      = "/glms.LmsService/ListCandidateEnrollments"
 	LmsService_GetCandidateEnrollmentDetail_FullMethodName  = "/glms.LmsService/GetCandidateEnrollmentDetail"
 	LmsService_ListCourseEnrollmentsForAdmin_FullMethodName = "/glms.LmsService/ListCourseEnrollmentsForAdmin"
@@ -78,6 +81,7 @@ const (
 	LmsService_GetCompleteCourse_FullMethodName             = "/glms.LmsService/GetCompleteCourse"
 	LmsService_BindCourseAssociation_FullMethodName         = "/glms.LmsService/BindCourseAssociation"
 	LmsService_UnbindCourseAssociation_FullMethodName       = "/glms.LmsService/UnbindCourseAssociation"
+	LmsService_ListBrokenAssets_FullMethodName              = "/glms.LmsService/ListBrokenAssets"
 )
 
 // LmsServiceClient is the client API for LmsService service.
@@ -136,7 +140,10 @@ type LmsServiceClient interface {
 	CreateViewURL(ctx context.Context, in *CreateViewURLRequest, opts ...grpc.CallOption) (*CreateViewURLResponse, error)
 	// 选课与进度类接口 (考生端一期)
 	EnrollCandidateCourse(ctx context.Context, in *EnrollCandidateCourseRequest, opts ...grpc.CallOption) (*EnrollCandidateCourseResponse, error)
-	CompleteLesson(ctx context.Context, in *CompleteLessonRequest, opts ...grpc.CallOption) (*CompleteLessonResponse, error)
+	CompleteLessonLearning(ctx context.Context, in *CompleteLessonLearningRequest, opts ...grpc.CallOption) (*CompleteLessonLearningResponse, error)
+	TakeQuiz(ctx context.Context, in *TakeQuizRequest, opts ...grpc.CallOption) (*TakeQuizResponse, error)
+	GetCandidateQuizPaper(ctx context.Context, in *GetCandidateQuizPaperRequest, opts ...grpc.CallOption) (*GetCandidateQuizPaperResponse, error)
+	SubmitQuiz(ctx context.Context, in *SubmitQuizRequest, opts ...grpc.CallOption) (*SubmitQuizResponse, error)
 	ListCandidateEnrollments(ctx context.Context, in *ListCandidateEnrollmentsRequest, opts ...grpc.CallOption) (*ListCandidateEnrollmentsResponse, error)
 	GetCandidateEnrollmentDetail(ctx context.Context, in *GetCandidateEnrollmentDetailRequest, opts ...grpc.CallOption) (*GetCandidateEnrollmentDetailResponse, error)
 	ListCourseEnrollmentsForAdmin(ctx context.Context, in *ListCourseEnrollmentsForAdminRequest, opts ...grpc.CallOption) (*ListCourseEnrollmentsForAdminResponse, error)
@@ -146,6 +153,7 @@ type LmsServiceClient interface {
 	// 外部业务系统需要引用课程时，通过这两个接口绑定和解除绑定，避免课程被管理员下架导致业务方引用失效
 	BindCourseAssociation(ctx context.Context, in *BindCourseAssociationRequest, opts ...grpc.CallOption) (*BindCourseAssociationResponse, error)
 	UnbindCourseAssociation(ctx context.Context, in *UnbindCourseAssociationRequest, opts ...grpc.CallOption) (*UnbindCourseAssociationResponse, error)
+	ListBrokenAssets(ctx context.Context, in *ListBrokenAssetsRequest, opts ...grpc.CallOption) (*ListBrokenAssetsResponse, error)
 }
 
 type lmsServiceClient struct {
@@ -666,10 +674,40 @@ func (c *lmsServiceClient) EnrollCandidateCourse(ctx context.Context, in *Enroll
 	return out, nil
 }
 
-func (c *lmsServiceClient) CompleteLesson(ctx context.Context, in *CompleteLessonRequest, opts ...grpc.CallOption) (*CompleteLessonResponse, error) {
+func (c *lmsServiceClient) CompleteLessonLearning(ctx context.Context, in *CompleteLessonLearningRequest, opts ...grpc.CallOption) (*CompleteLessonLearningResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CompleteLessonResponse)
-	err := c.cc.Invoke(ctx, LmsService_CompleteLesson_FullMethodName, in, out, cOpts...)
+	out := new(CompleteLessonLearningResponse)
+	err := c.cc.Invoke(ctx, LmsService_CompleteLessonLearning_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) TakeQuiz(ctx context.Context, in *TakeQuizRequest, opts ...grpc.CallOption) (*TakeQuizResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TakeQuizResponse)
+	err := c.cc.Invoke(ctx, LmsService_TakeQuiz_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) GetCandidateQuizPaper(ctx context.Context, in *GetCandidateQuizPaperRequest, opts ...grpc.CallOption) (*GetCandidateQuizPaperResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCandidateQuizPaperResponse)
+	err := c.cc.Invoke(ctx, LmsService_GetCandidateQuizPaper_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) SubmitQuiz(ctx context.Context, in *SubmitQuizRequest, opts ...grpc.CallOption) (*SubmitQuizResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitQuizResponse)
+	err := c.cc.Invoke(ctx, LmsService_SubmitQuiz_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -746,6 +784,16 @@ func (c *lmsServiceClient) UnbindCourseAssociation(ctx context.Context, in *Unbi
 	return out, nil
 }
 
+func (c *lmsServiceClient) ListBrokenAssets(ctx context.Context, in *ListBrokenAssetsRequest, opts ...grpc.CallOption) (*ListBrokenAssetsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListBrokenAssetsResponse)
+	err := c.cc.Invoke(ctx, LmsService_ListBrokenAssets_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LmsServiceServer is the server API for LmsService service.
 // All implementations must embed UnimplementedLmsServiceServer
 // for forward compatibility.
@@ -802,7 +850,10 @@ type LmsServiceServer interface {
 	CreateViewURL(context.Context, *CreateViewURLRequest) (*CreateViewURLResponse, error)
 	// 选课与进度类接口 (考生端一期)
 	EnrollCandidateCourse(context.Context, *EnrollCandidateCourseRequest) (*EnrollCandidateCourseResponse, error)
-	CompleteLesson(context.Context, *CompleteLessonRequest) (*CompleteLessonResponse, error)
+	CompleteLessonLearning(context.Context, *CompleteLessonLearningRequest) (*CompleteLessonLearningResponse, error)
+	TakeQuiz(context.Context, *TakeQuizRequest) (*TakeQuizResponse, error)
+	GetCandidateQuizPaper(context.Context, *GetCandidateQuizPaperRequest) (*GetCandidateQuizPaperResponse, error)
+	SubmitQuiz(context.Context, *SubmitQuizRequest) (*SubmitQuizResponse, error)
 	ListCandidateEnrollments(context.Context, *ListCandidateEnrollmentsRequest) (*ListCandidateEnrollmentsResponse, error)
 	GetCandidateEnrollmentDetail(context.Context, *GetCandidateEnrollmentDetailRequest) (*GetCandidateEnrollmentDetailResponse, error)
 	ListCourseEnrollmentsForAdmin(context.Context, *ListCourseEnrollmentsForAdminRequest) (*ListCourseEnrollmentsForAdminResponse, error)
@@ -812,6 +863,7 @@ type LmsServiceServer interface {
 	// 外部业务系统需要引用课程时，通过这两个接口绑定和解除绑定，避免课程被管理员下架导致业务方引用失效
 	BindCourseAssociation(context.Context, *BindCourseAssociationRequest) (*BindCourseAssociationResponse, error)
 	UnbindCourseAssociation(context.Context, *UnbindCourseAssociationRequest) (*UnbindCourseAssociationResponse, error)
+	ListBrokenAssets(context.Context, *ListBrokenAssetsRequest) (*ListBrokenAssetsResponse, error)
 	mustEmbedUnimplementedLmsServiceServer()
 }
 
@@ -975,8 +1027,17 @@ func (UnimplementedLmsServiceServer) CreateViewURL(context.Context, *CreateViewU
 func (UnimplementedLmsServiceServer) EnrollCandidateCourse(context.Context, *EnrollCandidateCourseRequest) (*EnrollCandidateCourseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method EnrollCandidateCourse not implemented")
 }
-func (UnimplementedLmsServiceServer) CompleteLesson(context.Context, *CompleteLessonRequest) (*CompleteLessonResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CompleteLesson not implemented")
+func (UnimplementedLmsServiceServer) CompleteLessonLearning(context.Context, *CompleteLessonLearningRequest) (*CompleteLessonLearningResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CompleteLessonLearning not implemented")
+}
+func (UnimplementedLmsServiceServer) TakeQuiz(context.Context, *TakeQuizRequest) (*TakeQuizResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TakeQuiz not implemented")
+}
+func (UnimplementedLmsServiceServer) GetCandidateQuizPaper(context.Context, *GetCandidateQuizPaperRequest) (*GetCandidateQuizPaperResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCandidateQuizPaper not implemented")
+}
+func (UnimplementedLmsServiceServer) SubmitQuiz(context.Context, *SubmitQuizRequest) (*SubmitQuizResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method SubmitQuiz not implemented")
 }
 func (UnimplementedLmsServiceServer) ListCandidateEnrollments(context.Context, *ListCandidateEnrollmentsRequest) (*ListCandidateEnrollmentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCandidateEnrollments not implemented")
@@ -998,6 +1059,9 @@ func (UnimplementedLmsServiceServer) BindCourseAssociation(context.Context, *Bin
 }
 func (UnimplementedLmsServiceServer) UnbindCourseAssociation(context.Context, *UnbindCourseAssociationRequest) (*UnbindCourseAssociationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UnbindCourseAssociation not implemented")
+}
+func (UnimplementedLmsServiceServer) ListBrokenAssets(context.Context, *ListBrokenAssetsRequest) (*ListBrokenAssetsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListBrokenAssets not implemented")
 }
 func (UnimplementedLmsServiceServer) mustEmbedUnimplementedLmsServiceServer() {}
 func (UnimplementedLmsServiceServer) testEmbeddedByValue()                    {}
@@ -1938,20 +2002,74 @@ func _LmsService_EnrollCandidateCourse_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LmsService_CompleteLesson_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CompleteLessonRequest)
+func _LmsService_CompleteLessonLearning_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CompleteLessonLearningRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LmsServiceServer).CompleteLesson(ctx, in)
+		return srv.(LmsServiceServer).CompleteLessonLearning(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: LmsService_CompleteLesson_FullMethodName,
+		FullMethod: LmsService_CompleteLessonLearning_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LmsServiceServer).CompleteLesson(ctx, req.(*CompleteLessonRequest))
+		return srv.(LmsServiceServer).CompleteLessonLearning(ctx, req.(*CompleteLessonLearningRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_TakeQuiz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TakeQuizRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).TakeQuiz(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_TakeQuiz_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).TakeQuiz(ctx, req.(*TakeQuizRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_GetCandidateQuizPaper_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCandidateQuizPaperRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).GetCandidateQuizPaper(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_GetCandidateQuizPaper_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).GetCandidateQuizPaper(ctx, req.(*GetCandidateQuizPaperRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_SubmitQuiz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubmitQuizRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).SubmitQuiz(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_SubmitQuiz_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).SubmitQuiz(ctx, req.(*SubmitQuizRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2078,6 +2196,24 @@ func _LmsService_UnbindCourseAssociation_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LmsServiceServer).UnbindCourseAssociation(ctx, req.(*UnbindCourseAssociationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_ListBrokenAssets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBrokenAssetsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).ListBrokenAssets(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_ListBrokenAssets_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).ListBrokenAssets(ctx, req.(*ListBrokenAssetsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -2294,8 +2430,20 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _LmsService_EnrollCandidateCourse_Handler,
 		},
 		{
-			MethodName: "CompleteLesson",
-			Handler:    _LmsService_CompleteLesson_Handler,
+			MethodName: "CompleteLessonLearning",
+			Handler:    _LmsService_CompleteLessonLearning_Handler,
+		},
+		{
+			MethodName: "TakeQuiz",
+			Handler:    _LmsService_TakeQuiz_Handler,
+		},
+		{
+			MethodName: "GetCandidateQuizPaper",
+			Handler:    _LmsService_GetCandidateQuizPaper_Handler,
+		},
+		{
+			MethodName: "SubmitQuiz",
+			Handler:    _LmsService_SubmitQuiz_Handler,
 		},
 		{
 			MethodName: "ListCandidateEnrollments",
@@ -2324,6 +2472,10 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnbindCourseAssociation",
 			Handler:    _LmsService_UnbindCourseAssociation_Handler,
+		},
+		{
+			MethodName: "ListBrokenAssets",
+			Handler:    _LmsService_ListBrokenAssets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

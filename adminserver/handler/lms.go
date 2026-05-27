@@ -203,6 +203,68 @@ func (h *Handler) UnpublishLmsCourse(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+// ListLmsCourseEnrollmentsForAdmin GET /api/lms/courses/{course_id}/enrollments
+func (h *Handler) ListLmsCourseEnrollmentsForAdmin(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Lms.ListCourseEnrollmentsForAdmin(r.Context(), &lmspb.ListCourseEnrollmentsForAdminRequest{
+		CourseId:  chi.URLParam(r, "course_id"),
+		Status:    r.URL.Query().Get("status"),
+		PageSize:  parseUint32Query(r, "page_size"),
+		PageToken: r.URL.Query().Get("page_token"),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetLmsCandidateProgressForAdmin GET /api/lms/courses/{course_id}/candidates/{candidate_id}/progress
+func (h *Handler) GetLmsCandidateProgressForAdmin(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Lms.GetCandidateProgressForAdmin(r.Context(), &lmspb.GetCandidateProgressForAdminRequest{
+		CandidateId: chi.URLParam(r, "candidate_id"),
+		CourseId:    chi.URLParam(r, "course_id"),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// BindLmsCourseAssociation POST /api/lms/courses/{course_id}/associations
+func (h *Handler) BindLmsCourseAssociation(w http.ResponseWriter, r *http.Request) {
+	var req lmspb.BindCourseAssociationRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	req.CourseId = chi.URLParam(r, "course_id")
+
+	resp, err := h.Lms.BindCourseAssociation(r.Context(), &req)
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// UnbindLmsCourseAssociation DELETE /api/lms/courses/{course_id}/associations
+func (h *Handler) UnbindLmsCourseAssociation(w http.ResponseWriter, r *http.Request) {
+	var req lmspb.UnbindCourseAssociationRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	req.CourseId = chi.URLParam(r, "course_id")
+
+	resp, err := h.Lms.UnbindCourseAssociation(r.Context(), &req)
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 // ListLmsCourseMaterials GET /api/lms/courses/{course_id}/materials
 func (h *Handler) ListLmsCourseMaterials(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Lms.ListCourseMaterials(r.Context(), &lmspb.ListCourseMaterialsRequest{
@@ -888,6 +950,20 @@ func (h *Handler) CreateLmsViewURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.CreateViewURL(r.Context(), &req)
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// ListLmsBrokenAssets GET /api/lms/broken-assets
+func (h *Handler) ListLmsBrokenAssets(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Lms.ListBrokenAssets(r.Context(), &lmspb.ListBrokenAssetsRequest{
+		PageSize:  parseUint32Query(r, "page_size"),
+		PageToken: r.URL.Query().Get("page_token"),
+		AssetType: r.URL.Query().Get("asset_type"),
+	})
 	if err != nil {
 		writeLmsError(w, err)
 		return

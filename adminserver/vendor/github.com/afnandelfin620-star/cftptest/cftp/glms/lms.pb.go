@@ -7195,7 +7195,7 @@ func (x *EnrollCandidateCourseResponse) GetJoinedAt() string {
 	return ""
 }
 
-type CompleteLessonRequest struct {
+type CompleteLessonLearningRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
 	LessonId      string                 `protobuf:"bytes,2,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
@@ -7203,20 +7203,20 @@ type CompleteLessonRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CompleteLessonRequest) Reset() {
-	*x = CompleteLessonRequest{}
+func (x *CompleteLessonLearningRequest) Reset() {
+	*x = CompleteLessonLearningRequest{}
 	mi := &file_lms_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CompleteLessonRequest) String() string {
+func (x *CompleteLessonLearningRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CompleteLessonRequest) ProtoMessage() {}
+func (*CompleteLessonLearningRequest) ProtoMessage() {}
 
-func (x *CompleteLessonRequest) ProtoReflect() protoreflect.Message {
+func (x *CompleteLessonLearningRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_lms_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -7228,48 +7228,49 @@ func (x *CompleteLessonRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CompleteLessonRequest.ProtoReflect.Descriptor instead.
-func (*CompleteLessonRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CompleteLessonLearningRequest.ProtoReflect.Descriptor instead.
+func (*CompleteLessonLearningRequest) Descriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{112}
 }
 
-func (x *CompleteLessonRequest) GetCandidateId() string {
+func (x *CompleteLessonLearningRequest) GetCandidateId() string {
 	if x != nil {
 		return x.CandidateId
 	}
 	return ""
 }
 
-func (x *CompleteLessonRequest) GetLessonId() string {
+func (x *CompleteLessonLearningRequest) GetLessonId() string {
 	if x != nil {
 		return x.LessonId
 	}
 	return ""
 }
 
-type CompleteLessonResponse struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	CourseCompleted bool                   `protobuf:"varint,1,opt,name=course_completed,json=courseCompleted,proto3" json:"course_completed,omitempty"` // 本次课时完成是否触发课程总结业
-	Status          string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`                                           // learning, completed
-	CompletedAt     string                 `protobuf:"bytes,3,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+type CompleteLessonLearningResponse struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	LessonStatus         string                 `protobuf:"bytes,1,opt,name=lesson_status,json=lessonStatus,proto3" json:"lesson_status,omitempty"`                           // learning, testing, completed
+	CourseCompleted      bool                   `protobuf:"varint,2,opt,name=course_completed,json=courseCompleted,proto3" json:"course_completed,omitempty"`                 // 本次课时完成是否触发课程总结业
+	CourseProgressStatus string                 `protobuf:"bytes,3,opt,name=course_progress_status,json=courseProgressStatus,proto3" json:"course_progress_status,omitempty"` // course status: learning, completed
+	CompletedAt          string                 `protobuf:"bytes,4,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
-func (x *CompleteLessonResponse) Reset() {
-	*x = CompleteLessonResponse{}
+func (x *CompleteLessonLearningResponse) Reset() {
+	*x = CompleteLessonLearningResponse{}
 	mi := &file_lms_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CompleteLessonResponse) String() string {
+func (x *CompleteLessonLearningResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CompleteLessonResponse) ProtoMessage() {}
+func (*CompleteLessonLearningResponse) ProtoMessage() {}
 
-func (x *CompleteLessonResponse) ProtoReflect() protoreflect.Message {
+func (x *CompleteLessonLearningResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_lms_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -7281,26 +7282,33 @@ func (x *CompleteLessonResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CompleteLessonResponse.ProtoReflect.Descriptor instead.
-func (*CompleteLessonResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use CompleteLessonLearningResponse.ProtoReflect.Descriptor instead.
+func (*CompleteLessonLearningResponse) Descriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{113}
 }
 
-func (x *CompleteLessonResponse) GetCourseCompleted() bool {
+func (x *CompleteLessonLearningResponse) GetLessonStatus() string {
+	if x != nil {
+		return x.LessonStatus
+	}
+	return ""
+}
+
+func (x *CompleteLessonLearningResponse) GetCourseCompleted() bool {
 	if x != nil {
 		return x.CourseCompleted
 	}
 	return false
 }
 
-func (x *CompleteLessonResponse) GetStatus() string {
+func (x *CompleteLessonLearningResponse) GetCourseProgressStatus() string {
 	if x != nil {
-		return x.Status
+		return x.CourseProgressStatus
 	}
 	return ""
 }
 
-func (x *CompleteLessonResponse) GetCompletedAt() string {
+func (x *CompleteLessonLearningResponse) GetCompletedAt() string {
 	if x != nil {
 		return x.CompletedAt
 	}
@@ -8691,6 +8699,871 @@ func (x *UnbindCourseAssociationResponse) GetSuccess() bool {
 	return false
 }
 
+type TakeQuizRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
+	QuizId        string                 `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TakeQuizRequest) Reset() {
+	*x = TakeQuizRequest{}
+	mi := &file_lms_proto_msgTypes[136]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TakeQuizRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TakeQuizRequest) ProtoMessage() {}
+
+func (x *TakeQuizRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[136]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TakeQuizRequest.ProtoReflect.Descriptor instead.
+func (*TakeQuizRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{136}
+}
+
+func (x *TakeQuizRequest) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *TakeQuizRequest) GetQuizId() string {
+	if x != nil {
+		return x.QuizId
+	}
+	return ""
+}
+
+type TakeQuizResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AttemptId     string                 `protobuf:"bytes,1,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // "in_progress"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TakeQuizResponse) Reset() {
+	*x = TakeQuizResponse{}
+	mi := &file_lms_proto_msgTypes[137]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TakeQuizResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TakeQuizResponse) ProtoMessage() {}
+
+func (x *TakeQuizResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[137]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TakeQuizResponse.ProtoReflect.Descriptor instead.
+func (*TakeQuizResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{137}
+}
+
+func (x *TakeQuizResponse) GetAttemptId() string {
+	if x != nil {
+		return x.AttemptId
+	}
+	return ""
+}
+
+func (x *TakeQuizResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type QuizOptionForCandidate struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`
+	OptionText    string                 `protobuf:"bytes,2,opt,name=option_text,json=optionText,proto3" json:"option_text,omitempty"`
+	SortOrder     uint32                 `protobuf:"varint,3,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuizOptionForCandidate) Reset() {
+	*x = QuizOptionForCandidate{}
+	mi := &file_lms_proto_msgTypes[138]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuizOptionForCandidate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuizOptionForCandidate) ProtoMessage() {}
+
+func (x *QuizOptionForCandidate) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[138]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuizOptionForCandidate.ProtoReflect.Descriptor instead.
+func (*QuizOptionForCandidate) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{138}
+}
+
+func (x *QuizOptionForCandidate) GetOptionId() string {
+	if x != nil {
+		return x.OptionId
+	}
+	return ""
+}
+
+func (x *QuizOptionForCandidate) GetOptionText() string {
+	if x != nil {
+		return x.OptionText
+	}
+	return ""
+}
+
+func (x *QuizOptionForCandidate) GetSortOrder() uint32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+type QuizQuestionForCandidate struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	QuestionId    string                    `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionText  string                    `protobuf:"bytes,2,opt,name=question_text,json=questionText,proto3" json:"question_text,omitempty"`
+	QuestionType  QuizQuestionType          `protobuf:"varint,3,opt,name=question_type,json=questionType,proto3,enum=glms.QuizQuestionType" json:"question_type,omitempty"`
+	Points        uint32                    `protobuf:"varint,4,opt,name=points,proto3" json:"points,omitempty"`
+	SortOrder     uint32                    `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	Options       []*QuizOptionForCandidate `protobuf:"bytes,6,rep,name=options,proto3" json:"options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *QuizQuestionForCandidate) Reset() {
+	*x = QuizQuestionForCandidate{}
+	mi := &file_lms_proto_msgTypes[139]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuizQuestionForCandidate) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuizQuestionForCandidate) ProtoMessage() {}
+
+func (x *QuizQuestionForCandidate) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[139]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuizQuestionForCandidate.ProtoReflect.Descriptor instead.
+func (*QuizQuestionForCandidate) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{139}
+}
+
+func (x *QuizQuestionForCandidate) GetQuestionId() string {
+	if x != nil {
+		return x.QuestionId
+	}
+	return ""
+}
+
+func (x *QuizQuestionForCandidate) GetQuestionText() string {
+	if x != nil {
+		return x.QuestionText
+	}
+	return ""
+}
+
+func (x *QuizQuestionForCandidate) GetQuestionType() QuizQuestionType {
+	if x != nil {
+		return x.QuestionType
+	}
+	return QuizQuestionType_QUIZ_QUESTION_TYPE_UNSPECIFIED
+}
+
+func (x *QuizQuestionForCandidate) GetPoints() uint32 {
+	if x != nil {
+		return x.Points
+	}
+	return 0
+}
+
+func (x *QuizQuestionForCandidate) GetSortOrder() uint32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *QuizQuestionForCandidate) GetOptions() []*QuizOptionForCandidate {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+type GetCandidateQuizPaperRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
+	AttemptId     string                 `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCandidateQuizPaperRequest) Reset() {
+	*x = GetCandidateQuizPaperRequest{}
+	mi := &file_lms_proto_msgTypes[140]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCandidateQuizPaperRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCandidateQuizPaperRequest) ProtoMessage() {}
+
+func (x *GetCandidateQuizPaperRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[140]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCandidateQuizPaperRequest.ProtoReflect.Descriptor instead.
+func (*GetCandidateQuizPaperRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{140}
+}
+
+func (x *GetCandidateQuizPaperRequest) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *GetCandidateQuizPaperRequest) GetAttemptId() string {
+	if x != nil {
+		return x.AttemptId
+	}
+	return ""
+}
+
+type GetCandidateQuizPaperResponse struct {
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	AttemptId     string                      `protobuf:"bytes,1,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
+	QuizId        string                      `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
+	Title         string                      `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Description   string                      `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	TimeLimit     uint32                      `protobuf:"varint,5,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`
+	Questions     []*QuizQuestionForCandidate `protobuf:"bytes,6,rep,name=questions,proto3" json:"questions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCandidateQuizPaperResponse) Reset() {
+	*x = GetCandidateQuizPaperResponse{}
+	mi := &file_lms_proto_msgTypes[141]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCandidateQuizPaperResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCandidateQuizPaperResponse) ProtoMessage() {}
+
+func (x *GetCandidateQuizPaperResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[141]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCandidateQuizPaperResponse.ProtoReflect.Descriptor instead.
+func (*GetCandidateQuizPaperResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{141}
+}
+
+func (x *GetCandidateQuizPaperResponse) GetAttemptId() string {
+	if x != nil {
+		return x.AttemptId
+	}
+	return ""
+}
+
+func (x *GetCandidateQuizPaperResponse) GetQuizId() string {
+	if x != nil {
+		return x.QuizId
+	}
+	return ""
+}
+
+func (x *GetCandidateQuizPaperResponse) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *GetCandidateQuizPaperResponse) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *GetCandidateQuizPaperResponse) GetTimeLimit() uint32 {
+	if x != nil {
+		return x.TimeLimit
+	}
+	return 0
+}
+
+func (x *GetCandidateQuizPaperResponse) GetQuestions() []*QuizQuestionForCandidate {
+	if x != nil {
+		return x.Questions
+	}
+	return nil
+}
+
+type QuizAnswerSubmission struct {
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	QuestionId        string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	SelectedOptionIds []string               `protobuf:"bytes,2,rep,name=selected_option_ids,json=selectedOptionIds,proto3" json:"selected_option_ids,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *QuizAnswerSubmission) Reset() {
+	*x = QuizAnswerSubmission{}
+	mi := &file_lms_proto_msgTypes[142]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *QuizAnswerSubmission) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*QuizAnswerSubmission) ProtoMessage() {}
+
+func (x *QuizAnswerSubmission) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[142]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use QuizAnswerSubmission.ProtoReflect.Descriptor instead.
+func (*QuizAnswerSubmission) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{142}
+}
+
+func (x *QuizAnswerSubmission) GetQuestionId() string {
+	if x != nil {
+		return x.QuestionId
+	}
+	return ""
+}
+
+func (x *QuizAnswerSubmission) GetSelectedOptionIds() []string {
+	if x != nil {
+		return x.SelectedOptionIds
+	}
+	return nil
+}
+
+type SubmitQuizRequest struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	CandidateId   string                  `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
+	AttemptId     string                  `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
+	Submissions   []*QuizAnswerSubmission `protobuf:"bytes,3,rep,name=submissions,proto3" json:"submissions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubmitQuizRequest) Reset() {
+	*x = SubmitQuizRequest{}
+	mi := &file_lms_proto_msgTypes[143]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitQuizRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitQuizRequest) ProtoMessage() {}
+
+func (x *SubmitQuizRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[143]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitQuizRequest.ProtoReflect.Descriptor instead.
+func (*SubmitQuizRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{143}
+}
+
+func (x *SubmitQuizRequest) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *SubmitQuizRequest) GetAttemptId() string {
+	if x != nil {
+		return x.AttemptId
+	}
+	return ""
+}
+
+func (x *SubmitQuizRequest) GetSubmissions() []*QuizAnswerSubmission {
+	if x != nil {
+		return x.Submissions
+	}
+	return nil
+}
+
+type SubmitQuizResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	AttemptId       string                 `protobuf:"bytes,1,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
+	Status          string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // "completed"
+	Score           uint32                 `protobuf:"varint,3,opt,name=score,proto3" json:"score,omitempty"`
+	MaxScore        uint32                 `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
+	IsPassed        bool                   `protobuf:"varint,5,opt,name=is_passed,json=isPassed,proto3" json:"is_passed,omitempty"`
+	CompletedAt     string                 `protobuf:"bytes,6,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"` // RFC3339
+	CourseCompleted bool                   `protobuf:"varint,7,opt,name=course_completed,json=courseCompleted,proto3" json:"course_completed,omitempty"`
+	CourseStatus    string                 `protobuf:"bytes,8,opt,name=course_status,json=courseStatus,proto3" json:"course_status,omitempty"` // learning, completed
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *SubmitQuizResponse) Reset() {
+	*x = SubmitQuizResponse{}
+	mi := &file_lms_proto_msgTypes[144]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubmitQuizResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubmitQuizResponse) ProtoMessage() {}
+
+func (x *SubmitQuizResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[144]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubmitQuizResponse.ProtoReflect.Descriptor instead.
+func (*SubmitQuizResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{144}
+}
+
+func (x *SubmitQuizResponse) GetAttemptId() string {
+	if x != nil {
+		return x.AttemptId
+	}
+	return ""
+}
+
+func (x *SubmitQuizResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *SubmitQuizResponse) GetScore() uint32 {
+	if x != nil {
+		return x.Score
+	}
+	return 0
+}
+
+func (x *SubmitQuizResponse) GetMaxScore() uint32 {
+	if x != nil {
+		return x.MaxScore
+	}
+	return 0
+}
+
+func (x *SubmitQuizResponse) GetIsPassed() bool {
+	if x != nil {
+		return x.IsPassed
+	}
+	return false
+}
+
+func (x *SubmitQuizResponse) GetCompletedAt() string {
+	if x != nil {
+		return x.CompletedAt
+	}
+	return ""
+}
+
+func (x *SubmitQuizResponse) GetCourseCompleted() bool {
+	if x != nil {
+		return x.CourseCompleted
+	}
+	return false
+}
+
+func (x *SubmitQuizResponse) GetCourseStatus() string {
+	if x != nil {
+		return x.CourseStatus
+	}
+	return ""
+}
+
+type BrokenAssetDetail struct {
+	state        protoimpl.MessageState `protogen:"open.v1"`
+	ObjectKey    string                 `protobuf:"bytes,1,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
+	AssetType    string                 `protobuf:"bytes,2,opt,name=asset_type,json=assetType,proto3" json:"asset_type,omitempty"` // "thumbnail", "material", "lesson"
+	Status       string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	ErrorMessage string                 `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	ReconciledAt string                 `protobuf:"bytes,5,opt,name=reconciled_at,json=reconciledAt,proto3" json:"reconciled_at,omitempty"`
+	CreatedAt    string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt    string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	// Rich context details
+	CourseId      string `protobuf:"bytes,8,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	CourseTitle   string `protobuf:"bytes,9,opt,name=course_title,json=courseTitle,proto3" json:"course_title,omitempty"`
+	ChapterId     string `protobuf:"bytes,10,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
+	ChapterTitle  string `protobuf:"bytes,11,opt,name=chapter_title,json=chapterTitle,proto3" json:"chapter_title,omitempty"`
+	LessonId      string `protobuf:"bytes,12,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
+	LessonTitle   string `protobuf:"bytes,13,opt,name=lesson_title,json=lessonTitle,proto3" json:"lesson_title,omitempty"`
+	MaterialId    string `protobuf:"bytes,14,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`
+	MaterialTitle string `protobuf:"bytes,15,opt,name=material_title,json=materialTitle,proto3" json:"material_title,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *BrokenAssetDetail) Reset() {
+	*x = BrokenAssetDetail{}
+	mi := &file_lms_proto_msgTypes[145]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *BrokenAssetDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BrokenAssetDetail) ProtoMessage() {}
+
+func (x *BrokenAssetDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[145]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BrokenAssetDetail.ProtoReflect.Descriptor instead.
+func (*BrokenAssetDetail) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{145}
+}
+
+func (x *BrokenAssetDetail) GetObjectKey() string {
+	if x != nil {
+		return x.ObjectKey
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetAssetType() string {
+	if x != nil {
+		return x.AssetType
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetReconciledAt() string {
+	if x != nil {
+		return x.ReconciledAt
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetCourseId() string {
+	if x != nil {
+		return x.CourseId
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetCourseTitle() string {
+	if x != nil {
+		return x.CourseTitle
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetChapterId() string {
+	if x != nil {
+		return x.ChapterId
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetChapterTitle() string {
+	if x != nil {
+		return x.ChapterTitle
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetLessonId() string {
+	if x != nil {
+		return x.LessonId
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetLessonTitle() string {
+	if x != nil {
+		return x.LessonTitle
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetMaterialId() string {
+	if x != nil {
+		return x.MaterialId
+	}
+	return ""
+}
+
+func (x *BrokenAssetDetail) GetMaterialTitle() string {
+	if x != nil {
+		return x.MaterialTitle
+	}
+	return ""
+}
+
+type ListBrokenAssetsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PageSize      uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	AssetType     string                 `protobuf:"bytes,3,opt,name=asset_type,json=assetType,proto3" json:"asset_type,omitempty"` // Optional filter: "thumbnail", "material", "lesson"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBrokenAssetsRequest) Reset() {
+	*x = ListBrokenAssetsRequest{}
+	mi := &file_lms_proto_msgTypes[146]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBrokenAssetsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBrokenAssetsRequest) ProtoMessage() {}
+
+func (x *ListBrokenAssetsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[146]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBrokenAssetsRequest.ProtoReflect.Descriptor instead.
+func (*ListBrokenAssetsRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{146}
+}
+
+func (x *ListBrokenAssetsRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListBrokenAssetsRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *ListBrokenAssetsRequest) GetAssetType() string {
+	if x != nil {
+		return x.AssetType
+	}
+	return ""
+}
+
+type ListBrokenAssetsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Assets        []*BrokenAssetDetail   `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBrokenAssetsResponse) Reset() {
+	*x = ListBrokenAssetsResponse{}
+	mi := &file_lms_proto_msgTypes[147]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBrokenAssetsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBrokenAssetsResponse) ProtoMessage() {}
+
+func (x *ListBrokenAssetsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[147]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBrokenAssetsResponse.ProtoReflect.Descriptor instead.
+func (*ListBrokenAssetsResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{147}
+}
+
+func (x *ListBrokenAssetsResponse) GetAssets() []*BrokenAssetDetail {
+	if x != nil {
+		return x.Assets
+	}
+	return nil
+}
+
+func (x *ListBrokenAssetsResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
 var File_lms_proto protoreflect.FileDescriptor
 
 const file_lms_proto_rawDesc = "" +
@@ -9256,14 +10129,15 @@ const file_lms_proto_rawDesc = "" +
 	"\x1dEnrollCandidateCourseResponse\x12#\n" +
 	"\renrollment_id\x18\x01 \x01(\tR\fenrollmentId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1b\n" +
-	"\tjoined_at\x18\x03 \x01(\tR\bjoinedAt\"W\n" +
-	"\x15CompleteLessonRequest\x12!\n" +
+	"\tjoined_at\x18\x03 \x01(\tR\bjoinedAt\"_\n" +
+	"\x1dCompleteLessonLearningRequest\x12!\n" +
 	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1b\n" +
-	"\tlesson_id\x18\x02 \x01(\tR\blessonId\"~\n" +
-	"\x16CompleteLessonResponse\x12)\n" +
-	"\x10course_completed\x18\x01 \x01(\bR\x0fcourseCompleted\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\tR\x06status\x12!\n" +
-	"\fcompleted_at\x18\x03 \x01(\tR\vcompletedAt\"\x98\x01\n" +
+	"\tlesson_id\x18\x02 \x01(\tR\blessonId\"\xc9\x01\n" +
+	"\x1eCompleteLessonLearningResponse\x12#\n" +
+	"\rlesson_status\x18\x01 \x01(\tR\flessonStatus\x12)\n" +
+	"\x10course_completed\x18\x02 \x01(\bR\x0fcourseCompleted\x124\n" +
+	"\x16course_progress_status\x18\x03 \x01(\tR\x14courseProgressStatus\x12!\n" +
+	"\fcompleted_at\x18\x04 \x01(\tR\vcompletedAt\"\x98\x01\n" +
 	"\x1fListCandidateEnrollmentsRequest\x12!\n" +
 	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1b\n" +
@@ -9366,7 +10240,93 @@ const file_lms_proto_rawDesc = "" +
 	"entityType\x12\x1b\n" +
 	"\tentity_id\x18\x03 \x01(\tR\bentityId\";\n" +
 	"\x1fUnbindCourseAssociationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*\x99\x01\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"M\n" +
+	"\x0fTakeQuizRequest\x12!\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x17\n" +
+	"\aquiz_id\x18\x02 \x01(\tR\x06quizId\"I\n" +
+	"\x10TakeQuizResponse\x12\x1d\n" +
+	"\n" +
+	"attempt_id\x18\x01 \x01(\tR\tattemptId\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\"u\n" +
+	"\x16QuizOptionForCandidate\x12\x1b\n" +
+	"\toption_id\x18\x01 \x01(\tR\boptionId\x12\x1f\n" +
+	"\voption_text\x18\x02 \x01(\tR\n" +
+	"optionText\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\x03 \x01(\rR\tsortOrder\"\x8c\x02\n" +
+	"\x18QuizQuestionForCandidate\x12\x1f\n" +
+	"\vquestion_id\x18\x01 \x01(\tR\n" +
+	"questionId\x12#\n" +
+	"\rquestion_text\x18\x02 \x01(\tR\fquestionText\x12;\n" +
+	"\rquestion_type\x18\x03 \x01(\x0e2\x16.glms.QuizQuestionTypeR\fquestionType\x12\x16\n" +
+	"\x06points\x18\x04 \x01(\rR\x06points\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\x05 \x01(\rR\tsortOrder\x126\n" +
+	"\aoptions\x18\x06 \x03(\v2\x1c.glms.QuizOptionForCandidateR\aoptions\"`\n" +
+	"\x1cGetCandidateQuizPaperRequest\x12!\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
+	"\n" +
+	"attempt_id\x18\x02 \x01(\tR\tattemptId\"\xec\x01\n" +
+	"\x1dGetCandidateQuizPaperResponse\x12\x1d\n" +
+	"\n" +
+	"attempt_id\x18\x01 \x01(\tR\tattemptId\x12\x17\n" +
+	"\aquiz_id\x18\x02 \x01(\tR\x06quizId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12\x1d\n" +
+	"\n" +
+	"time_limit\x18\x05 \x01(\rR\ttimeLimit\x12<\n" +
+	"\tquestions\x18\x06 \x03(\v2\x1e.glms.QuizQuestionForCandidateR\tquestions\"g\n" +
+	"\x14QuizAnswerSubmission\x12\x1f\n" +
+	"\vquestion_id\x18\x01 \x01(\tR\n" +
+	"questionId\x12.\n" +
+	"\x13selected_option_ids\x18\x02 \x03(\tR\x11selectedOptionIds\"\x93\x01\n" +
+	"\x11SubmitQuizRequest\x12!\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
+	"\n" +
+	"attempt_id\x18\x02 \x01(\tR\tattemptId\x12<\n" +
+	"\vsubmissions\x18\x03 \x03(\v2\x1a.glms.QuizAnswerSubmissionR\vsubmissions\"\x8e\x02\n" +
+	"\x12SubmitQuizResponse\x12\x1d\n" +
+	"\n" +
+	"attempt_id\x18\x01 \x01(\tR\tattemptId\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x14\n" +
+	"\x05score\x18\x03 \x01(\rR\x05score\x12\x1b\n" +
+	"\tmax_score\x18\x04 \x01(\rR\bmaxScore\x12\x1b\n" +
+	"\tis_passed\x18\x05 \x01(\bR\bisPassed\x12!\n" +
+	"\fcompleted_at\x18\x06 \x01(\tR\vcompletedAt\x12)\n" +
+	"\x10course_completed\x18\a \x01(\bR\x0fcourseCompleted\x12#\n" +
+	"\rcourse_status\x18\b \x01(\tR\fcourseStatus\"\xfd\x03\n" +
+	"\x11BrokenAssetDetail\x12\x1d\n" +
+	"\n" +
+	"object_key\x18\x01 \x01(\tR\tobjectKey\x12\x1d\n" +
+	"\n" +
+	"asset_type\x18\x02 \x01(\tR\tassetType\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\x12#\n" +
+	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\x12#\n" +
+	"\rreconciled_at\x18\x05 \x01(\tR\freconciledAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\tR\tupdatedAt\x12\x1b\n" +
+	"\tcourse_id\x18\b \x01(\tR\bcourseId\x12!\n" +
+	"\fcourse_title\x18\t \x01(\tR\vcourseTitle\x12\x1d\n" +
+	"\n" +
+	"chapter_id\x18\n" +
+	" \x01(\tR\tchapterId\x12#\n" +
+	"\rchapter_title\x18\v \x01(\tR\fchapterTitle\x12\x1b\n" +
+	"\tlesson_id\x18\f \x01(\tR\blessonId\x12!\n" +
+	"\flesson_title\x18\r \x01(\tR\vlessonTitle\x12\x1f\n" +
+	"\vmaterial_id\x18\x0e \x01(\tR\n" +
+	"materialId\x12%\n" +
+	"\x0ematerial_title\x18\x0f \x01(\tR\rmaterialTitle\"t\n" +
+	"\x17ListBrokenAssetsRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\x12\x1d\n" +
+	"\n" +
+	"asset_type\x18\x03 \x01(\tR\tassetType\"s\n" +
+	"\x18ListBrokenAssetsResponse\x12/\n" +
+	"\x06assets\x18\x01 \x03(\v2\x17.glms.BrokenAssetDetailR\x06assets\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\x99\x01\n" +
 	"\fMaterialType\x12\x1d\n" +
 	"\x19MATERIAL_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16MATERIAL_TYPE_TEXTBOOK\x10\x01\x12\x18\n" +
@@ -9410,7 +10370,7 @@ const file_lms_proto_rawDesc = "" +
 	"\x1cUPLOAD_TYPE_COURSE_THUMBNAIL\x10\x01\x12\x1f\n" +
 	"\x1bUPLOAD_TYPE_COURSE_MATERIAL\x10\x02\x12\x1c\n" +
 	"\x18UPLOAD_TYPE_LESSON_ASSET\x10\x03\x12\x1a\n" +
-	"\x16UPLOAD_TYPE_QUIZ_ASSET\x10\x042\xf7%\n" +
+	"\x16UPLOAD_TYPE_QUIZ_ASSET\x10\x042\xc0(\n" +
 	"\n" +
 	"LmsService\x12E\n" +
 	"\fCreateCourse\x12\x19.glms.CreateCourseRequest\x1a\x1a.glms.CreateCourseResponse\x12E\n" +
@@ -9467,15 +10427,20 @@ const file_lms_proto_rawDesc = "" +
 	"\vListObjects\x12\x18.glms.ListObjectsRequest\x1a\x19.glms.ListObjectsResponse\x12N\n" +
 	"\x0fCreateUploadURL\x12\x1c.glms.CreateUploadURLRequest\x1a\x1d.glms.CreateUploadURLResponse\x12H\n" +
 	"\rCreateViewURL\x12\x1a.glms.CreateViewURLRequest\x1a\x1b.glms.CreateViewURLResponse\x12`\n" +
-	"\x15EnrollCandidateCourse\x12\".glms.EnrollCandidateCourseRequest\x1a#.glms.EnrollCandidateCourseResponse\x12K\n" +
-	"\x0eCompleteLesson\x12\x1b.glms.CompleteLessonRequest\x1a\x1c.glms.CompleteLessonResponse\x12i\n" +
+	"\x15EnrollCandidateCourse\x12\".glms.EnrollCandidateCourseRequest\x1a#.glms.EnrollCandidateCourseResponse\x12c\n" +
+	"\x16CompleteLessonLearning\x12#.glms.CompleteLessonLearningRequest\x1a$.glms.CompleteLessonLearningResponse\x129\n" +
+	"\bTakeQuiz\x12\x15.glms.TakeQuizRequest\x1a\x16.glms.TakeQuizResponse\x12`\n" +
+	"\x15GetCandidateQuizPaper\x12\".glms.GetCandidateQuizPaperRequest\x1a#.glms.GetCandidateQuizPaperResponse\x12?\n" +
+	"\n" +
+	"SubmitQuiz\x12\x17.glms.SubmitQuizRequest\x1a\x18.glms.SubmitQuizResponse\x12i\n" +
 	"\x18ListCandidateEnrollments\x12%.glms.ListCandidateEnrollmentsRequest\x1a&.glms.ListCandidateEnrollmentsResponse\x12u\n" +
 	"\x1cGetCandidateEnrollmentDetail\x12).glms.GetCandidateEnrollmentDetailRequest\x1a*.glms.GetCandidateEnrollmentDetailResponse\x12x\n" +
 	"\x1dListCourseEnrollmentsForAdmin\x12*.glms.ListCourseEnrollmentsForAdminRequest\x1a+.glms.ListCourseEnrollmentsForAdminResponse\x12u\n" +
 	"\x1cGetCandidateProgressForAdmin\x12).glms.GetCandidateProgressForAdminRequest\x1a*.glms.GetCandidateProgressForAdminResponse\x12T\n" +
 	"\x11GetCompleteCourse\x12\x1e.glms.GetCompleteCourseRequest\x1a\x1f.glms.GetCompleteCourseResponse\x12`\n" +
 	"\x15BindCourseAssociation\x12\".glms.BindCourseAssociationRequest\x1a#.glms.BindCourseAssociationResponse\x12f\n" +
-	"\x17UnbindCourseAssociation\x12$.glms.UnbindCourseAssociationRequest\x1a%.glms.UnbindCourseAssociationResponseB\vZ\tcftp/glmsb\x06proto3"
+	"\x17UnbindCourseAssociation\x12$.glms.UnbindCourseAssociationRequest\x1a%.glms.UnbindCourseAssociationResponse\x12Q\n" +
+	"\x10ListBrokenAssets\x12\x1d.glms.ListBrokenAssetsRequest\x1a\x1e.glms.ListBrokenAssetsResponseB\vZ\tcftp/glmsb\x06proto3"
 
 var (
 	file_lms_proto_rawDescOnce sync.Once
@@ -9490,7 +10455,7 @@ func file_lms_proto_rawDescGZIP() []byte {
 }
 
 var file_lms_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_lms_proto_msgTypes = make([]protoimpl.MessageInfo, 136)
+var file_lms_proto_msgTypes = make([]protoimpl.MessageInfo, 148)
 var file_lms_proto_goTypes = []any{
 	(MaterialType)(0),                             // 0: glms.MaterialType
 	(LessonType)(0),                               // 1: glms.LessonType
@@ -9611,8 +10576,8 @@ var file_lms_proto_goTypes = []any{
 	(*CreateViewURLResponse)(nil),                 // 116: glms.CreateViewURLResponse
 	(*EnrollCandidateCourseRequest)(nil),          // 117: glms.EnrollCandidateCourseRequest
 	(*EnrollCandidateCourseResponse)(nil),         // 118: glms.EnrollCandidateCourseResponse
-	(*CompleteLessonRequest)(nil),                 // 119: glms.CompleteLessonRequest
-	(*CompleteLessonResponse)(nil),                // 120: glms.CompleteLessonResponse
+	(*CompleteLessonLearningRequest)(nil),         // 119: glms.CompleteLessonLearningRequest
+	(*CompleteLessonLearningResponse)(nil),        // 120: glms.CompleteLessonLearningResponse
 	(*ListCandidateEnrollmentsRequest)(nil),       // 121: glms.ListCandidateEnrollmentsRequest
 	(*CandidateEnrollmentSummary)(nil),            // 122: glms.CandidateEnrollmentSummary
 	(*ListCandidateEnrollmentsResponse)(nil),      // 123: glms.ListCandidateEnrollmentsResponse
@@ -9635,6 +10600,18 @@ var file_lms_proto_goTypes = []any{
 	(*BindCourseAssociationResponse)(nil),         // 140: glms.BindCourseAssociationResponse
 	(*UnbindCourseAssociationRequest)(nil),        // 141: glms.UnbindCourseAssociationRequest
 	(*UnbindCourseAssociationResponse)(nil),       // 142: glms.UnbindCourseAssociationResponse
+	(*TakeQuizRequest)(nil),                       // 143: glms.TakeQuizRequest
+	(*TakeQuizResponse)(nil),                      // 144: glms.TakeQuizResponse
+	(*QuizOptionForCandidate)(nil),                // 145: glms.QuizOptionForCandidate
+	(*QuizQuestionForCandidate)(nil),              // 146: glms.QuizQuestionForCandidate
+	(*GetCandidateQuizPaperRequest)(nil),          // 147: glms.GetCandidateQuizPaperRequest
+	(*GetCandidateQuizPaperResponse)(nil),         // 148: glms.GetCandidateQuizPaperResponse
+	(*QuizAnswerSubmission)(nil),                  // 149: glms.QuizAnswerSubmission
+	(*SubmitQuizRequest)(nil),                     // 150: glms.SubmitQuizRequest
+	(*SubmitQuizResponse)(nil),                    // 151: glms.SubmitQuizResponse
+	(*BrokenAssetDetail)(nil),                     // 152: glms.BrokenAssetDetail
+	(*ListBrokenAssetsRequest)(nil),               // 153: glms.ListBrokenAssetsRequest
+	(*ListBrokenAssetsResponse)(nil),              // 154: glms.ListBrokenAssetsResponse
 }
 var file_lms_proto_depIdxs = []int32{
 	0,   // 0: glms.CourseMaterial.material_type:type_name -> glms.MaterialType
@@ -9699,129 +10676,142 @@ var file_lms_proto_depIdxs = []int32{
 	135, // 59: glms.CompleteCourse.chapters:type_name -> glms.ChapterDetail
 	133, // 60: glms.CompleteCourse.quizzes:type_name -> glms.QuizDetail
 	136, // 61: glms.GetCompleteCourseResponse.complete_course:type_name -> glms.CompleteCourse
-	17,  // 62: glms.LmsService.CreateCourse:input_type -> glms.CreateCourseRequest
-	19,  // 63: glms.LmsService.UpdateCourse:input_type -> glms.UpdateCourseRequest
-	21,  // 64: glms.LmsService.DeleteCourse:input_type -> glms.DeleteCourseRequest
-	23,  // 65: glms.LmsService.GetCourse:input_type -> glms.GetCourseRequest
-	25,  // 66: glms.LmsService.ListCourses:input_type -> glms.ListCoursesRequest
-	27,  // 67: glms.LmsService.PublishCourse:input_type -> glms.PublishCourseRequest
-	29,  // 68: glms.LmsService.UnpublishCourse:input_type -> glms.UnpublishCourseRequest
-	31,  // 69: glms.LmsService.CreateCourseMaterial:input_type -> glms.CreateCourseMaterialRequest
-	33,  // 70: glms.LmsService.UpdateCourseMaterial:input_type -> glms.UpdateCourseMaterialRequest
-	35,  // 71: glms.LmsService.DeleteCourseMaterial:input_type -> glms.DeleteCourseMaterialRequest
-	37,  // 72: glms.LmsService.GetCourseMaterial:input_type -> glms.GetCourseMaterialRequest
-	39,  // 73: glms.LmsService.ListCourseMaterials:input_type -> glms.ListCourseMaterialsRequest
-	41,  // 74: glms.LmsService.ReorderCourseMaterials:input_type -> glms.ReorderCourseMaterialsRequest
-	43,  // 75: glms.LmsService.CreateChapter:input_type -> glms.CreateChapterRequest
-	45,  // 76: glms.LmsService.UpdateChapter:input_type -> glms.UpdateChapterRequest
-	47,  // 77: glms.LmsService.DeleteChapter:input_type -> glms.DeleteChapterRequest
-	49,  // 78: glms.LmsService.GetChapter:input_type -> glms.GetChapterRequest
-	51,  // 79: glms.LmsService.ListChapters:input_type -> glms.ListChaptersRequest
-	53,  // 80: glms.LmsService.ReorderChapters:input_type -> glms.ReorderChaptersRequest
-	55,  // 81: glms.LmsService.CreateLesson:input_type -> glms.CreateLessonRequest
-	57,  // 82: glms.LmsService.UpdateLesson:input_type -> glms.UpdateLessonRequest
-	59,  // 83: glms.LmsService.DeleteLesson:input_type -> glms.DeleteLessonRequest
-	61,  // 84: glms.LmsService.GetLesson:input_type -> glms.GetLessonRequest
-	63,  // 85: glms.LmsService.ListLessons:input_type -> glms.ListLessonsRequest
-	65,  // 86: glms.LmsService.ReorderLessons:input_type -> glms.ReorderLessonsRequest
-	67,  // 87: glms.LmsService.CreatePrerequisite:input_type -> glms.CreatePrerequisiteRequest
-	69,  // 88: glms.LmsService.UpdatePrerequisite:input_type -> glms.UpdatePrerequisiteRequest
-	71,  // 89: glms.LmsService.DeletePrerequisite:input_type -> glms.DeletePrerequisiteRequest
-	73,  // 90: glms.LmsService.GetPrerequisite:input_type -> glms.GetPrerequisiteRequest
-	75,  // 91: glms.LmsService.ListPrerequisites:input_type -> glms.ListPrerequisitesRequest
-	77,  // 92: glms.LmsService.CreateQuiz:input_type -> glms.CreateQuizRequest
-	79,  // 93: glms.LmsService.UpdateQuiz:input_type -> glms.UpdateQuizRequest
-	81,  // 94: glms.LmsService.DeleteQuiz:input_type -> glms.DeleteQuizRequest
-	83,  // 95: glms.LmsService.GetQuiz:input_type -> glms.GetQuizRequest
-	85,  // 96: glms.LmsService.ListQuizzes:input_type -> glms.ListQuizzesRequest
-	87,  // 97: glms.LmsService.CreateQuizQuestion:input_type -> glms.CreateQuizQuestionRequest
-	89,  // 98: glms.LmsService.UpdateQuizQuestion:input_type -> glms.UpdateQuizQuestionRequest
-	91,  // 99: glms.LmsService.DeleteQuizQuestion:input_type -> glms.DeleteQuizQuestionRequest
-	93,  // 100: glms.LmsService.GetQuizQuestion:input_type -> glms.GetQuizQuestionRequest
-	95,  // 101: glms.LmsService.ListQuizQuestions:input_type -> glms.ListQuizQuestionsRequest
-	97,  // 102: glms.LmsService.ReorderQuizQuestions:input_type -> glms.ReorderQuizQuestionsRequest
-	99,  // 103: glms.LmsService.CreateQuizOption:input_type -> glms.CreateQuizOptionRequest
-	101, // 104: glms.LmsService.UpdateQuizOption:input_type -> glms.UpdateQuizOptionRequest
-	103, // 105: glms.LmsService.DeleteQuizOption:input_type -> glms.DeleteQuizOptionRequest
-	105, // 106: glms.LmsService.GetQuizOption:input_type -> glms.GetQuizOptionRequest
-	107, // 107: glms.LmsService.ListQuizOptions:input_type -> glms.ListQuizOptionsRequest
-	109, // 108: glms.LmsService.ReorderQuizOptions:input_type -> glms.ReorderQuizOptionsRequest
-	111, // 109: glms.LmsService.ListObjects:input_type -> glms.ListObjectsRequest
-	113, // 110: glms.LmsService.CreateUploadURL:input_type -> glms.CreateUploadURLRequest
-	115, // 111: glms.LmsService.CreateViewURL:input_type -> glms.CreateViewURLRequest
-	117, // 112: glms.LmsService.EnrollCandidateCourse:input_type -> glms.EnrollCandidateCourseRequest
-	119, // 113: glms.LmsService.CompleteLesson:input_type -> glms.CompleteLessonRequest
-	121, // 114: glms.LmsService.ListCandidateEnrollments:input_type -> glms.ListCandidateEnrollmentsRequest
-	124, // 115: glms.LmsService.GetCandidateEnrollmentDetail:input_type -> glms.GetCandidateEnrollmentDetailRequest
-	126, // 116: glms.LmsService.ListCourseEnrollmentsForAdmin:input_type -> glms.ListCourseEnrollmentsForAdminRequest
-	129, // 117: glms.LmsService.GetCandidateProgressForAdmin:input_type -> glms.GetCandidateProgressForAdminRequest
-	137, // 118: glms.LmsService.GetCompleteCourse:input_type -> glms.GetCompleteCourseRequest
-	139, // 119: glms.LmsService.BindCourseAssociation:input_type -> glms.BindCourseAssociationRequest
-	141, // 120: glms.LmsService.UnbindCourseAssociation:input_type -> glms.UnbindCourseAssociationRequest
-	18,  // 121: glms.LmsService.CreateCourse:output_type -> glms.CreateCourseResponse
-	20,  // 122: glms.LmsService.UpdateCourse:output_type -> glms.UpdateCourseResponse
-	22,  // 123: glms.LmsService.DeleteCourse:output_type -> glms.DeleteCourseResponse
-	24,  // 124: glms.LmsService.GetCourse:output_type -> glms.GetCourseResponse
-	26,  // 125: glms.LmsService.ListCourses:output_type -> glms.ListCoursesResponse
-	28,  // 126: glms.LmsService.PublishCourse:output_type -> glms.PublishCourseResponse
-	30,  // 127: glms.LmsService.UnpublishCourse:output_type -> glms.UnpublishCourseResponse
-	32,  // 128: glms.LmsService.CreateCourseMaterial:output_type -> glms.CreateCourseMaterialResponse
-	34,  // 129: glms.LmsService.UpdateCourseMaterial:output_type -> glms.UpdateCourseMaterialResponse
-	36,  // 130: glms.LmsService.DeleteCourseMaterial:output_type -> glms.DeleteCourseMaterialResponse
-	38,  // 131: glms.LmsService.GetCourseMaterial:output_type -> glms.GetCourseMaterialResponse
-	40,  // 132: glms.LmsService.ListCourseMaterials:output_type -> glms.ListCourseMaterialsResponse
-	42,  // 133: glms.LmsService.ReorderCourseMaterials:output_type -> glms.ReorderCourseMaterialsResponse
-	44,  // 134: glms.LmsService.CreateChapter:output_type -> glms.CreateChapterResponse
-	46,  // 135: glms.LmsService.UpdateChapter:output_type -> glms.UpdateChapterResponse
-	48,  // 136: glms.LmsService.DeleteChapter:output_type -> glms.DeleteChapterResponse
-	50,  // 137: glms.LmsService.GetChapter:output_type -> glms.GetChapterResponse
-	52,  // 138: glms.LmsService.ListChapters:output_type -> glms.ListChaptersResponse
-	54,  // 139: glms.LmsService.ReorderChapters:output_type -> glms.ReorderChaptersResponse
-	56,  // 140: glms.LmsService.CreateLesson:output_type -> glms.CreateLessonResponse
-	58,  // 141: glms.LmsService.UpdateLesson:output_type -> glms.UpdateLessonResponse
-	60,  // 142: glms.LmsService.DeleteLesson:output_type -> glms.DeleteLessonResponse
-	62,  // 143: glms.LmsService.GetLesson:output_type -> glms.GetLessonResponse
-	64,  // 144: glms.LmsService.ListLessons:output_type -> glms.ListLessonsResponse
-	66,  // 145: glms.LmsService.ReorderLessons:output_type -> glms.ReorderLessonsResponse
-	68,  // 146: glms.LmsService.CreatePrerequisite:output_type -> glms.CreatePrerequisiteResponse
-	70,  // 147: glms.LmsService.UpdatePrerequisite:output_type -> glms.UpdatePrerequisiteResponse
-	72,  // 148: glms.LmsService.DeletePrerequisite:output_type -> glms.DeletePrerequisiteResponse
-	74,  // 149: glms.LmsService.GetPrerequisite:output_type -> glms.GetPrerequisiteResponse
-	76,  // 150: glms.LmsService.ListPrerequisites:output_type -> glms.ListPrerequisitesResponse
-	78,  // 151: glms.LmsService.CreateQuiz:output_type -> glms.CreateQuizResponse
-	80,  // 152: glms.LmsService.UpdateQuiz:output_type -> glms.UpdateQuizResponse
-	82,  // 153: glms.LmsService.DeleteQuiz:output_type -> glms.DeleteQuizResponse
-	84,  // 154: glms.LmsService.GetQuiz:output_type -> glms.GetQuizResponse
-	86,  // 155: glms.LmsService.ListQuizzes:output_type -> glms.ListQuizzesResponse
-	88,  // 156: glms.LmsService.CreateQuizQuestion:output_type -> glms.CreateQuizQuestionResponse
-	90,  // 157: glms.LmsService.UpdateQuizQuestion:output_type -> glms.UpdateQuizQuestionResponse
-	92,  // 158: glms.LmsService.DeleteQuizQuestion:output_type -> glms.DeleteQuizQuestionResponse
-	94,  // 159: glms.LmsService.GetQuizQuestion:output_type -> glms.GetQuizQuestionResponse
-	96,  // 160: glms.LmsService.ListQuizQuestions:output_type -> glms.ListQuizQuestionsResponse
-	98,  // 161: glms.LmsService.ReorderQuizQuestions:output_type -> glms.ReorderQuizQuestionsResponse
-	100, // 162: glms.LmsService.CreateQuizOption:output_type -> glms.CreateQuizOptionResponse
-	102, // 163: glms.LmsService.UpdateQuizOption:output_type -> glms.UpdateQuizOptionResponse
-	104, // 164: glms.LmsService.DeleteQuizOption:output_type -> glms.DeleteQuizOptionResponse
-	106, // 165: glms.LmsService.GetQuizOption:output_type -> glms.GetQuizOptionResponse
-	108, // 166: glms.LmsService.ListQuizOptions:output_type -> glms.ListQuizOptionsResponse
-	110, // 167: glms.LmsService.ReorderQuizOptions:output_type -> glms.ReorderQuizOptionsResponse
-	112, // 168: glms.LmsService.ListObjects:output_type -> glms.ListObjectsResponse
-	114, // 169: glms.LmsService.CreateUploadURL:output_type -> glms.CreateUploadURLResponse
-	116, // 170: glms.LmsService.CreateViewURL:output_type -> glms.CreateViewURLResponse
-	118, // 171: glms.LmsService.EnrollCandidateCourse:output_type -> glms.EnrollCandidateCourseResponse
-	120, // 172: glms.LmsService.CompleteLesson:output_type -> glms.CompleteLessonResponse
-	123, // 173: glms.LmsService.ListCandidateEnrollments:output_type -> glms.ListCandidateEnrollmentsResponse
-	125, // 174: glms.LmsService.GetCandidateEnrollmentDetail:output_type -> glms.GetCandidateEnrollmentDetailResponse
-	128, // 175: glms.LmsService.ListCourseEnrollmentsForAdmin:output_type -> glms.ListCourseEnrollmentsForAdminResponse
-	130, // 176: glms.LmsService.GetCandidateProgressForAdmin:output_type -> glms.GetCandidateProgressForAdminResponse
-	138, // 177: glms.LmsService.GetCompleteCourse:output_type -> glms.GetCompleteCourseResponse
-	140, // 178: glms.LmsService.BindCourseAssociation:output_type -> glms.BindCourseAssociationResponse
-	142, // 179: glms.LmsService.UnbindCourseAssociation:output_type -> glms.UnbindCourseAssociationResponse
-	121, // [121:180] is the sub-list for method output_type
-	62,  // [62:121] is the sub-list for method input_type
-	62,  // [62:62] is the sub-list for extension type_name
-	62,  // [62:62] is the sub-list for extension extendee
-	0,   // [0:62] is the sub-list for field type_name
+	5,   // 62: glms.QuizQuestionForCandidate.question_type:type_name -> glms.QuizQuestionType
+	145, // 63: glms.QuizQuestionForCandidate.options:type_name -> glms.QuizOptionForCandidate
+	146, // 64: glms.GetCandidateQuizPaperResponse.questions:type_name -> glms.QuizQuestionForCandidate
+	149, // 65: glms.SubmitQuizRequest.submissions:type_name -> glms.QuizAnswerSubmission
+	152, // 66: glms.ListBrokenAssetsResponse.assets:type_name -> glms.BrokenAssetDetail
+	17,  // 67: glms.LmsService.CreateCourse:input_type -> glms.CreateCourseRequest
+	19,  // 68: glms.LmsService.UpdateCourse:input_type -> glms.UpdateCourseRequest
+	21,  // 69: glms.LmsService.DeleteCourse:input_type -> glms.DeleteCourseRequest
+	23,  // 70: glms.LmsService.GetCourse:input_type -> glms.GetCourseRequest
+	25,  // 71: glms.LmsService.ListCourses:input_type -> glms.ListCoursesRequest
+	27,  // 72: glms.LmsService.PublishCourse:input_type -> glms.PublishCourseRequest
+	29,  // 73: glms.LmsService.UnpublishCourse:input_type -> glms.UnpublishCourseRequest
+	31,  // 74: glms.LmsService.CreateCourseMaterial:input_type -> glms.CreateCourseMaterialRequest
+	33,  // 75: glms.LmsService.UpdateCourseMaterial:input_type -> glms.UpdateCourseMaterialRequest
+	35,  // 76: glms.LmsService.DeleteCourseMaterial:input_type -> glms.DeleteCourseMaterialRequest
+	37,  // 77: glms.LmsService.GetCourseMaterial:input_type -> glms.GetCourseMaterialRequest
+	39,  // 78: glms.LmsService.ListCourseMaterials:input_type -> glms.ListCourseMaterialsRequest
+	41,  // 79: glms.LmsService.ReorderCourseMaterials:input_type -> glms.ReorderCourseMaterialsRequest
+	43,  // 80: glms.LmsService.CreateChapter:input_type -> glms.CreateChapterRequest
+	45,  // 81: glms.LmsService.UpdateChapter:input_type -> glms.UpdateChapterRequest
+	47,  // 82: glms.LmsService.DeleteChapter:input_type -> glms.DeleteChapterRequest
+	49,  // 83: glms.LmsService.GetChapter:input_type -> glms.GetChapterRequest
+	51,  // 84: glms.LmsService.ListChapters:input_type -> glms.ListChaptersRequest
+	53,  // 85: glms.LmsService.ReorderChapters:input_type -> glms.ReorderChaptersRequest
+	55,  // 86: glms.LmsService.CreateLesson:input_type -> glms.CreateLessonRequest
+	57,  // 87: glms.LmsService.UpdateLesson:input_type -> glms.UpdateLessonRequest
+	59,  // 88: glms.LmsService.DeleteLesson:input_type -> glms.DeleteLessonRequest
+	61,  // 89: glms.LmsService.GetLesson:input_type -> glms.GetLessonRequest
+	63,  // 90: glms.LmsService.ListLessons:input_type -> glms.ListLessonsRequest
+	65,  // 91: glms.LmsService.ReorderLessons:input_type -> glms.ReorderLessonsRequest
+	67,  // 92: glms.LmsService.CreatePrerequisite:input_type -> glms.CreatePrerequisiteRequest
+	69,  // 93: glms.LmsService.UpdatePrerequisite:input_type -> glms.UpdatePrerequisiteRequest
+	71,  // 94: glms.LmsService.DeletePrerequisite:input_type -> glms.DeletePrerequisiteRequest
+	73,  // 95: glms.LmsService.GetPrerequisite:input_type -> glms.GetPrerequisiteRequest
+	75,  // 96: glms.LmsService.ListPrerequisites:input_type -> glms.ListPrerequisitesRequest
+	77,  // 97: glms.LmsService.CreateQuiz:input_type -> glms.CreateQuizRequest
+	79,  // 98: glms.LmsService.UpdateQuiz:input_type -> glms.UpdateQuizRequest
+	81,  // 99: glms.LmsService.DeleteQuiz:input_type -> glms.DeleteQuizRequest
+	83,  // 100: glms.LmsService.GetQuiz:input_type -> glms.GetQuizRequest
+	85,  // 101: glms.LmsService.ListQuizzes:input_type -> glms.ListQuizzesRequest
+	87,  // 102: glms.LmsService.CreateQuizQuestion:input_type -> glms.CreateQuizQuestionRequest
+	89,  // 103: glms.LmsService.UpdateQuizQuestion:input_type -> glms.UpdateQuizQuestionRequest
+	91,  // 104: glms.LmsService.DeleteQuizQuestion:input_type -> glms.DeleteQuizQuestionRequest
+	93,  // 105: glms.LmsService.GetQuizQuestion:input_type -> glms.GetQuizQuestionRequest
+	95,  // 106: glms.LmsService.ListQuizQuestions:input_type -> glms.ListQuizQuestionsRequest
+	97,  // 107: glms.LmsService.ReorderQuizQuestions:input_type -> glms.ReorderQuizQuestionsRequest
+	99,  // 108: glms.LmsService.CreateQuizOption:input_type -> glms.CreateQuizOptionRequest
+	101, // 109: glms.LmsService.UpdateQuizOption:input_type -> glms.UpdateQuizOptionRequest
+	103, // 110: glms.LmsService.DeleteQuizOption:input_type -> glms.DeleteQuizOptionRequest
+	105, // 111: glms.LmsService.GetQuizOption:input_type -> glms.GetQuizOptionRequest
+	107, // 112: glms.LmsService.ListQuizOptions:input_type -> glms.ListQuizOptionsRequest
+	109, // 113: glms.LmsService.ReorderQuizOptions:input_type -> glms.ReorderQuizOptionsRequest
+	111, // 114: glms.LmsService.ListObjects:input_type -> glms.ListObjectsRequest
+	113, // 115: glms.LmsService.CreateUploadURL:input_type -> glms.CreateUploadURLRequest
+	115, // 116: glms.LmsService.CreateViewURL:input_type -> glms.CreateViewURLRequest
+	117, // 117: glms.LmsService.EnrollCandidateCourse:input_type -> glms.EnrollCandidateCourseRequest
+	119, // 118: glms.LmsService.CompleteLessonLearning:input_type -> glms.CompleteLessonLearningRequest
+	143, // 119: glms.LmsService.TakeQuiz:input_type -> glms.TakeQuizRequest
+	147, // 120: glms.LmsService.GetCandidateQuizPaper:input_type -> glms.GetCandidateQuizPaperRequest
+	150, // 121: glms.LmsService.SubmitQuiz:input_type -> glms.SubmitQuizRequest
+	121, // 122: glms.LmsService.ListCandidateEnrollments:input_type -> glms.ListCandidateEnrollmentsRequest
+	124, // 123: glms.LmsService.GetCandidateEnrollmentDetail:input_type -> glms.GetCandidateEnrollmentDetailRequest
+	126, // 124: glms.LmsService.ListCourseEnrollmentsForAdmin:input_type -> glms.ListCourseEnrollmentsForAdminRequest
+	129, // 125: glms.LmsService.GetCandidateProgressForAdmin:input_type -> glms.GetCandidateProgressForAdminRequest
+	137, // 126: glms.LmsService.GetCompleteCourse:input_type -> glms.GetCompleteCourseRequest
+	139, // 127: glms.LmsService.BindCourseAssociation:input_type -> glms.BindCourseAssociationRequest
+	141, // 128: glms.LmsService.UnbindCourseAssociation:input_type -> glms.UnbindCourseAssociationRequest
+	153, // 129: glms.LmsService.ListBrokenAssets:input_type -> glms.ListBrokenAssetsRequest
+	18,  // 130: glms.LmsService.CreateCourse:output_type -> glms.CreateCourseResponse
+	20,  // 131: glms.LmsService.UpdateCourse:output_type -> glms.UpdateCourseResponse
+	22,  // 132: glms.LmsService.DeleteCourse:output_type -> glms.DeleteCourseResponse
+	24,  // 133: glms.LmsService.GetCourse:output_type -> glms.GetCourseResponse
+	26,  // 134: glms.LmsService.ListCourses:output_type -> glms.ListCoursesResponse
+	28,  // 135: glms.LmsService.PublishCourse:output_type -> glms.PublishCourseResponse
+	30,  // 136: glms.LmsService.UnpublishCourse:output_type -> glms.UnpublishCourseResponse
+	32,  // 137: glms.LmsService.CreateCourseMaterial:output_type -> glms.CreateCourseMaterialResponse
+	34,  // 138: glms.LmsService.UpdateCourseMaterial:output_type -> glms.UpdateCourseMaterialResponse
+	36,  // 139: glms.LmsService.DeleteCourseMaterial:output_type -> glms.DeleteCourseMaterialResponse
+	38,  // 140: glms.LmsService.GetCourseMaterial:output_type -> glms.GetCourseMaterialResponse
+	40,  // 141: glms.LmsService.ListCourseMaterials:output_type -> glms.ListCourseMaterialsResponse
+	42,  // 142: glms.LmsService.ReorderCourseMaterials:output_type -> glms.ReorderCourseMaterialsResponse
+	44,  // 143: glms.LmsService.CreateChapter:output_type -> glms.CreateChapterResponse
+	46,  // 144: glms.LmsService.UpdateChapter:output_type -> glms.UpdateChapterResponse
+	48,  // 145: glms.LmsService.DeleteChapter:output_type -> glms.DeleteChapterResponse
+	50,  // 146: glms.LmsService.GetChapter:output_type -> glms.GetChapterResponse
+	52,  // 147: glms.LmsService.ListChapters:output_type -> glms.ListChaptersResponse
+	54,  // 148: glms.LmsService.ReorderChapters:output_type -> glms.ReorderChaptersResponse
+	56,  // 149: glms.LmsService.CreateLesson:output_type -> glms.CreateLessonResponse
+	58,  // 150: glms.LmsService.UpdateLesson:output_type -> glms.UpdateLessonResponse
+	60,  // 151: glms.LmsService.DeleteLesson:output_type -> glms.DeleteLessonResponse
+	62,  // 152: glms.LmsService.GetLesson:output_type -> glms.GetLessonResponse
+	64,  // 153: glms.LmsService.ListLessons:output_type -> glms.ListLessonsResponse
+	66,  // 154: glms.LmsService.ReorderLessons:output_type -> glms.ReorderLessonsResponse
+	68,  // 155: glms.LmsService.CreatePrerequisite:output_type -> glms.CreatePrerequisiteResponse
+	70,  // 156: glms.LmsService.UpdatePrerequisite:output_type -> glms.UpdatePrerequisiteResponse
+	72,  // 157: glms.LmsService.DeletePrerequisite:output_type -> glms.DeletePrerequisiteResponse
+	74,  // 158: glms.LmsService.GetPrerequisite:output_type -> glms.GetPrerequisiteResponse
+	76,  // 159: glms.LmsService.ListPrerequisites:output_type -> glms.ListPrerequisitesResponse
+	78,  // 160: glms.LmsService.CreateQuiz:output_type -> glms.CreateQuizResponse
+	80,  // 161: glms.LmsService.UpdateQuiz:output_type -> glms.UpdateQuizResponse
+	82,  // 162: glms.LmsService.DeleteQuiz:output_type -> glms.DeleteQuizResponse
+	84,  // 163: glms.LmsService.GetQuiz:output_type -> glms.GetQuizResponse
+	86,  // 164: glms.LmsService.ListQuizzes:output_type -> glms.ListQuizzesResponse
+	88,  // 165: glms.LmsService.CreateQuizQuestion:output_type -> glms.CreateQuizQuestionResponse
+	90,  // 166: glms.LmsService.UpdateQuizQuestion:output_type -> glms.UpdateQuizQuestionResponse
+	92,  // 167: glms.LmsService.DeleteQuizQuestion:output_type -> glms.DeleteQuizQuestionResponse
+	94,  // 168: glms.LmsService.GetQuizQuestion:output_type -> glms.GetQuizQuestionResponse
+	96,  // 169: glms.LmsService.ListQuizQuestions:output_type -> glms.ListQuizQuestionsResponse
+	98,  // 170: glms.LmsService.ReorderQuizQuestions:output_type -> glms.ReorderQuizQuestionsResponse
+	100, // 171: glms.LmsService.CreateQuizOption:output_type -> glms.CreateQuizOptionResponse
+	102, // 172: glms.LmsService.UpdateQuizOption:output_type -> glms.UpdateQuizOptionResponse
+	104, // 173: glms.LmsService.DeleteQuizOption:output_type -> glms.DeleteQuizOptionResponse
+	106, // 174: glms.LmsService.GetQuizOption:output_type -> glms.GetQuizOptionResponse
+	108, // 175: glms.LmsService.ListQuizOptions:output_type -> glms.ListQuizOptionsResponse
+	110, // 176: glms.LmsService.ReorderQuizOptions:output_type -> glms.ReorderQuizOptionsResponse
+	112, // 177: glms.LmsService.ListObjects:output_type -> glms.ListObjectsResponse
+	114, // 178: glms.LmsService.CreateUploadURL:output_type -> glms.CreateUploadURLResponse
+	116, // 179: glms.LmsService.CreateViewURL:output_type -> glms.CreateViewURLResponse
+	118, // 180: glms.LmsService.EnrollCandidateCourse:output_type -> glms.EnrollCandidateCourseResponse
+	120, // 181: glms.LmsService.CompleteLessonLearning:output_type -> glms.CompleteLessonLearningResponse
+	144, // 182: glms.LmsService.TakeQuiz:output_type -> glms.TakeQuizResponse
+	148, // 183: glms.LmsService.GetCandidateQuizPaper:output_type -> glms.GetCandidateQuizPaperResponse
+	151, // 184: glms.LmsService.SubmitQuiz:output_type -> glms.SubmitQuizResponse
+	123, // 185: glms.LmsService.ListCandidateEnrollments:output_type -> glms.ListCandidateEnrollmentsResponse
+	125, // 186: glms.LmsService.GetCandidateEnrollmentDetail:output_type -> glms.GetCandidateEnrollmentDetailResponse
+	128, // 187: glms.LmsService.ListCourseEnrollmentsForAdmin:output_type -> glms.ListCourseEnrollmentsForAdminResponse
+	130, // 188: glms.LmsService.GetCandidateProgressForAdmin:output_type -> glms.GetCandidateProgressForAdminResponse
+	138, // 189: glms.LmsService.GetCompleteCourse:output_type -> glms.GetCompleteCourseResponse
+	140, // 190: glms.LmsService.BindCourseAssociation:output_type -> glms.BindCourseAssociationResponse
+	142, // 191: glms.LmsService.UnbindCourseAssociation:output_type -> glms.UnbindCourseAssociationResponse
+	154, // 192: glms.LmsService.ListBrokenAssets:output_type -> glms.ListBrokenAssetsResponse
+	130, // [130:193] is the sub-list for method output_type
+	67,  // [67:130] is the sub-list for method input_type
+	67,  // [67:67] is the sub-list for extension type_name
+	67,  // [67:67] is the sub-list for extension extendee
+	0,   // [0:67] is the sub-list for field type_name
 }
 
 func init() { file_lms_proto_init() }
@@ -9835,7 +10825,7 @@ func file_lms_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lms_proto_rawDesc), len(file_lms_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   136,
+			NumMessages:   148,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
