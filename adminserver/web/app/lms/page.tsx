@@ -1046,11 +1046,11 @@ export default function LmsCoursesPage() {
           </div>
 
           <Dialog open={importOpen} onOpenChange={setImportOpen}>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
+            <DialogContent className="flex max-h-[90vh] max-w-4xl grid-rows-none flex-col gap-0 overflow-hidden p-0">
+              <DialogHeader className="border-b px-6 py-4">
                 <DialogTitle>{page.importJson}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6 py-4">
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -1076,7 +1076,7 @@ export default function LmsCoursesPage() {
                   <Input
                     type="file"
                     accept="application/json,.json"
-                    className="max-w-xs"
+                    className="min-w-0 max-w-full shrink sm:max-w-xs"
                     onChange={(event) => {
                       loadImportFile(event.target.files?.[0] || null)
                       event.currentTarget.value = ""
@@ -1099,15 +1099,15 @@ export default function LmsCoursesPage() {
                   className="min-h-[460px] font-mono text-xs"
                   spellCheck={false}
                 />
-                <div className="flex justify-end gap-2">
-                  <Button variant="outline" onClick={() => setImportOpen(false)} disabled={importing}>
-                    {t.common.cancel}
-                  </Button>
-                  <Button onClick={importLmsJson} disabled={importing}>
-                    <UploadCloud className={cn("mr-2 h-4 w-4", importing && "animate-spin")} />
-                    {importScope === "course" ? page.importCourse : page.importQuiz}
-                  </Button>
-                </div>
+              </div>
+              <div className="flex shrink-0 justify-end gap-2 border-t bg-background px-6 py-4">
+                <Button variant="outline" onClick={() => setImportOpen(false)} disabled={importing}>
+                  {t.common.cancel}
+                </Button>
+                <Button onClick={importLmsJson} disabled={importing}>
+                  <UploadCloud className={cn("mr-2 h-4 w-4", importing && "animate-spin")} />
+                  {importScope === "course" ? page.importCourse : page.importQuiz}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>

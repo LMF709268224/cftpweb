@@ -97,9 +97,13 @@ func (h *Handler) importLmsQuiz(w http.ResponseWriter, r *http.Request, req impo
 }
 
 func requireValidJSONString(w http.ResponseWriter, value string, name string) bool {
-	var parsed any
+	var parsed map[string]any
 	if err := json.Unmarshal([]byte(value), &parsed); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, name+" is invalid")
+		return false
+	}
+	if len(parsed) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, name+" must be a non-empty JSON object")
 		return false
 	}
 	return true
