@@ -178,6 +178,17 @@ function getFieldLabel(field: string, lang: "zh" | "en"): string {
   return FieldLabels[field]?.[lang] || FieldLabels[normalized]?.[lang] || field
 }
 
+function localizeFieldPath(field: string, lang: "zh" | "en"): string {
+  if (lang === "en") return field
+  return field
+    .replace(/^course_json/, "课程 JSON")
+    .replace(/\.chapters\[(\d+)\]/g, (_, index) => `第 ${Number(index) + 1} 个章节`)
+    .replace(/\.lessons\[(\d+)\]/g, (_, index) => `第 ${Number(index) + 1} 个课时`)
+    .replace(/\.questions\[(\d+)\]/g, (_, index) => `第 ${Number(index) + 1} 道题`)
+    .replace(/\.options\[(\d+)\]/g, (_, index) => `第 ${Number(index) + 1} 个选项`)
+    .replace(/\.([a-z_]+)$/g, (_, key) => `的${getFieldLabel(key, lang)}`)
+}
+
 export function localizeApiErrorMessage(
   errorCode: string | undefined | null,
   message: string | undefined | null,
@@ -185,6 +196,28 @@ export function localizeApiErrorMessage(
 ): string {
   if (!message) return getErrorMessage(errorCode, lang)
   if (lang === "en") return message
+
+  {
+    let match = message.match(/^(.+) is required$/)
+    if (match) {
+      return `请填写${localizeFieldPath(match[1], lang)}`
+    }
+
+    match = message.match(/^(.+) are required$/)
+    if (match) {
+      return `请填写${match[1].split(/\s+and\s+/).map((field) => localizeFieldPath(field, lang)).join("和")}`
+    }
+
+    match = message.match(/^(.+) must be greater than 0$/)
+    if (match) {
+      return `${localizeFieldPath(match[1], lang)}必须大于 0`
+    }
+
+    match = message.match(/^(.+) is invalid$/)
+    if (match) {
+      return `${localizeFieldPath(match[1], lang)}无效`
+    }
+  }
 
   let match = message.match(/^(.+) is required$/)
   if (match) {
