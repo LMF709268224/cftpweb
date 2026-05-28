@@ -147,7 +147,7 @@ func validateLmsUploadURLPayload(w http.ResponseWriter, req *lmspb.CreateUploadU
 // ListLmsCourses GET /api/lms/courses
 func (h *Handler) ListLmsCourses(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Lms.ListCourses(r.Context(), &lmspb.ListCoursesRequest{
-		CategoryId:    r.URL.Query().Get("category_id"),
+		CategoryTips:  r.URL.Query().Get("category_tips"),
 		PublishedOnly: parseBoolQuery(r, "published_only"),
 	})
 	if err != nil {
@@ -159,17 +159,20 @@ func (h *Handler) ListLmsCourses(w http.ResponseWriter, r *http.Request) {
 
 // CreateLmsCourse POST /api/lms/courses
 func (h *Handler) CreateLmsCourse(w http.ResponseWriter, r *http.Request) {
-	var req lmspb.CreateCourseRequest
+	var req lmspb.CreateCourseDraftRequest
 	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
 	req.CourseId = newLmsID()
+	if strings.TrimSpace(req.FromCourseGuid) == "" && strings.TrimSpace(req.CourseGuid) == "" {
+		req.CourseGuid = newLmsID()
+	}
 	if !requireRequestField(w, req.Title, "title") {
 		return
 	}
 
-	resp, err := h.Lms.CreateCourse(r.Context(), &req)
+	resp, err := h.Lms.CreateCourseDraft(r.Context(), &req)
 	if err != nil {
 		writeLmsError(w, err)
 		return
@@ -285,32 +288,6 @@ func (h *Handler) PublishLmsCourse(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
-// UnpublishLmsCourse POST /api/lms/courses/{course_id}/unpublish
-func (h *Handler) UnpublishLmsCourse(w http.ResponseWriter, r *http.Request) {
-	courseID, ok := requiredURLParam(w, r, "course_id")
-	if !ok {
-		return
-	}
-	var body versionOnlyReq
-	if err := ReadJSON(r, &body); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
-		return
-	}
-	if !requirePositiveVersion(w, body.Version) {
-		return
-	}
-
-	resp, err := h.Lms.UnpublishCourse(r.Context(), &lmspb.UnpublishCourseRequest{
-		CourseId: courseID,
-		Version:  body.Version,
-	})
-	if err != nil {
-		writeLmsError(w, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, resp)
-}
-
 // ListLmsCourseEnrollmentsForAdmin GET /api/lms/courses/{course_id}/enrollments
 func (h *Handler) ListLmsCourseEnrollmentsForAdmin(w http.ResponseWriter, r *http.Request) {
 	courseID, ok := requiredURLParam(w, r, "course_id")
@@ -344,54 +321,6 @@ func (h *Handler) GetLmsCandidateProgressForAdmin(w http.ResponseWriter, r *http
 		CandidateId: candidateID,
 		CourseId:    courseID,
 	})
-	if err != nil {
-		writeLmsError(w, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, resp)
-}
-
-// BindLmsCourseAssociation POST /api/lms/courses/{course_id}/associations
-func (h *Handler) BindLmsCourseAssociation(w http.ResponseWriter, r *http.Request) {
-	courseID, ok := requiredURLParam(w, r, "course_id")
-	if !ok {
-		return
-	}
-	var req lmspb.BindCourseAssociationRequest
-	if err := ReadJSON(r, &req); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
-		return
-	}
-	req.CourseId = courseID
-	if !requireRequestFields(w, req.EntityType, "entity_type", req.EntityId, "entity_id") {
-		return
-	}
-
-	resp, err := h.Lms.BindCourseAssociation(r.Context(), &req)
-	if err != nil {
-		writeLmsError(w, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, resp)
-}
-
-// UnbindLmsCourseAssociation DELETE /api/lms/courses/{course_id}/associations
-func (h *Handler) UnbindLmsCourseAssociation(w http.ResponseWriter, r *http.Request) {
-	courseID, ok := requiredURLParam(w, r, "course_id")
-	if !ok {
-		return
-	}
-	var req lmspb.UnbindCourseAssociationRequest
-	if err := ReadJSON(r, &req); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
-		return
-	}
-	req.CourseId = courseID
-	if !requireRequestFields(w, req.EntityType, "entity_type", req.EntityId, "entity_id") {
-		return
-	}
-
-	resp, err := h.Lms.UnbindCourseAssociation(r.Context(), &req)
 	if err != nil {
 		writeLmsError(w, err)
 		return

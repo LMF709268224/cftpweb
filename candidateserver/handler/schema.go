@@ -76,19 +76,23 @@ type PipelineDetailRsp struct {
 }
 
 type PipelineConfig struct {
-	PipelineId      string          `json:"pipeline_id,omitempty"`      // ULID (版本唯一ID) [required]
-	PipelineGuid    string          `json:"pipeline_guid,omitempty"`    // ULID (业务唯一ID) [required]
-	Version         uint32          `json:"version,omitempty"`          // 版本号 [required]
-	Name            string          `json:"name,omitempty"`             // 管线名称 [required]
-	UnlockFee       int64           `json:"unlock_fee,omitempty"`       // 解锁费用，单位：分 [required]
-	PackageDiscount int32           `json:"package_discount,omitempty"` // 套餐折扣，单位：基点（9500 = 95%）[required]
-	UnlockQuals     []Qualification `json:"unlock_quals,omitempty"`     // 解锁条件 [required]
-	CertQuals       []Qualification `json:"cert_quals,omitempty"`       // 证书要求 [required]
-	Stages          []StageConfig   `json:"stages,omitempty"`           // 阶段配置 [required]
-	Status          string          `json:"status,omitempty"`           // 状态 [required]
-	IsCurrent       bool            `json:"is_current,omitempty"`       // 是否为当前版本 [required]
-	CreatedAt       string          `json:"created_at,omitempty"`       // 创建时间 [required]
-	FinalQuals      []Qualification `json:"final_quals,omitempty"`      // 结业资格 [required]
+	UnlockStripeProductId  string          `json:"unlock_stripe_product_id,omitempty"`
+	UnlockStripePriceId    string          `json:"unlock_stripe_price_id,omitempty"`
+	PackageStripeProductId string          `json:"package_stripe_product_id,omitempty"`
+	PackageStripePriceId   string          `json:"package_stripe_price_id,omitempty"`
+	PipelineId             string          `json:"pipeline_id,omitempty"`      // ULID (版本唯一ID) [required]
+	PipelineGuid           string          `json:"pipeline_guid,omitempty"`    // ULID (业务唯一ID) [required]
+	Version                uint32          `json:"version,omitempty"`          // 版本号 [required]
+	Name                   string          `json:"name,omitempty"`             // 管线名称 [required]
+	UnlockFee              int64           `json:"unlock_fee,omitempty"`       // 解锁费用，单位：分 [required]
+	PackageDiscount        int32           `json:"package_discount,omitempty"` // 套餐折扣，单位：基点（9500 = 95%）[required]
+	UnlockQuals            []Qualification `json:"unlock_quals,omitempty"`     // 解锁条件 [required]
+	CertQuals              []Qualification `json:"cert_quals,omitempty"`       // 证书要求 [required]
+	Stages                 []StageConfig   `json:"stages,omitempty"`           // 阶段配置 [required]
+	Status                 string          `json:"status,omitempty"`           // 状态 [required]
+	IsCurrent              bool            `json:"is_current,omitempty"`       // 是否为当前版本 [required]
+	CreatedAt              string          `json:"created_at,omitempty"`       // 创建时间 [required]
+	FinalQuals             []Qualification `json:"final_quals,omitempty"`      // 结业资格 [required]
 }
 
 type Qualification struct {
@@ -104,11 +108,18 @@ type StageConfig struct {
 }
 
 type UnitConfig struct {
-	UnitId          string `json:"unit_id,omitempty"`          // 阶段单元(课程) ULID & GLMS ID [required]
-	Name            string `json:"name,omitempty"`             // 阶段单元名称 [required]
-	HasLearning     bool   `json:"has_learning,omitempty"`     // 是否有学习 [required]
-	HasExam         bool   `json:"has_exam,omitempty"`         // 是否有考试 [required]
-	LearningMinutes int32  `json:"learning_minutes,omitempty"` // 课时要求，以分钟为单位 [required]
+	StripeProductId          string `json:"stripe_product_id,omitempty"`
+	StripePriceId            string `json:"stripe_price_id,omitempty"`
+	ExemptionStripeProductId string `json:"exemption_stripe_product_id,omitempty"`
+	ExemptionStripePriceId   string `json:"exemption_stripe_price_id,omitempty"`
+	RetakeStripeProductId    string `json:"retake_stripe_product_id,omitempty"`
+	RetakeStripePriceId      string `json:"retake_stripe_price_id,omitempty"`
+	GlmsCourseId             string `json:"glms_course_id,omitempty"`
+	UnitId                   string `json:"unit_id,omitempty"`          // 阶段单元(课程) ULID & GLMS ID [required]
+	Name                     string `json:"name,omitempty"`             // 阶段单元名称 [required]
+	HasLearning              bool   `json:"has_learning,omitempty"`     // 是否有学习 [required]
+	HasExam                  bool   `json:"has_exam,omitempty"`         // 是否有考试 [required]
+	LearningMinutes          int32  `json:"learning_minutes,omitempty"` // 课时要求，以分钟为单位 [required]
 	// 考试扁平化参数
 	ProgramCode       string   `json:"program_code,omitempty"`        // 考试参数：课程代号 [required]
 	ExamCode          string   `json:"exam_code,omitempty"`           // 考试参数：考试代号 [required]
@@ -254,12 +265,12 @@ type GetProgressRsp struct {
 }
 
 type ProgressRecord struct {
-	CandidateId     string             `json:"candidate_id,omitempty"`      // 考生ID [required]
-	MaterialId      string             `json:"material_id,omitempty"`       // 资料ID [required]
-	CoursePackageId string             `json:"course_package_id,omitempty"` // 资料包ID [required]
-	ProgressType    string             `json:"progress_type,omitempty"`     // 进度类型 [required]
-	ProgressValue   float64            `json:"progress_value,omitempty"`    // 进度值：视频为秒数，文档为百分比 [required]
-	RecordedAt      string             `json:"recorded_at,omitempty"`       // 记录时间 RFC3339 [required]
+	CandidateId     string  `json:"candidate_id,omitempty"`      // 考生ID [required]
+	MaterialId      string  `json:"material_id,omitempty"`       // 资料ID [required]
+	CoursePackageId string  `json:"course_package_id,omitempty"` // 资料包ID [required]
+	ProgressType    string  `json:"progress_type,omitempty"`     // 进度类型 [required]
+	ProgressValue   float64 `json:"progress_value,omitempty"`    // 进度值：视频为秒数，文档为百分比 [required]
+	RecordedAt      string  `json:"recorded_at,omitempty"`       // 记录时间 RFC3339 [required]
 }
 
 // ===================== 考试 (Exams) =====================

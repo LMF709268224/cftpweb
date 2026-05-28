@@ -88,7 +88,8 @@ export default function CoursesPage() {
               duration: "100+",
               students: 0,
               isPurchased: false,
-              price: p.unlock_fee || 0,
+              price: 0,
+              priceLabel: p.unlock_stripe_price_id ? t.courses.viewDetails : t.common.na,
             })))
           }
         } else if (activeTab === "my") {

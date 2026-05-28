@@ -19,13 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	LmsService_CreateCourse_FullMethodName                  = "/glms.LmsService/CreateCourse"
+	LmsService_CreateCourseDraft_FullMethodName             = "/glms.LmsService/CreateCourseDraft"
 	LmsService_UpdateCourse_FullMethodName                  = "/glms.LmsService/UpdateCourse"
 	LmsService_DeleteCourse_FullMethodName                  = "/glms.LmsService/DeleteCourse"
 	LmsService_GetCourse_FullMethodName                     = "/glms.LmsService/GetCourse"
 	LmsService_ListCourses_FullMethodName                   = "/glms.LmsService/ListCourses"
 	LmsService_PublishCourse_FullMethodName                 = "/glms.LmsService/PublishCourse"
-	LmsService_UnpublishCourse_FullMethodName               = "/glms.LmsService/UnpublishCourse"
 	LmsService_CreateCourseMaterial_FullMethodName          = "/glms.LmsService/CreateCourseMaterial"
 	LmsService_UpdateCourseMaterial_FullMethodName          = "/glms.LmsService/UpdateCourseMaterial"
 	LmsService_DeleteCourseMaterial_FullMethodName          = "/glms.LmsService/DeleteCourseMaterial"
@@ -66,6 +65,8 @@ const (
 	LmsService_GetQuizOption_FullMethodName                 = "/glms.LmsService/GetQuizOption"
 	LmsService_ListQuizOptions_FullMethodName               = "/glms.LmsService/ListQuizOptions"
 	LmsService_ReorderQuizOptions_FullMethodName            = "/glms.LmsService/ReorderQuizOptions"
+	LmsService_ImportQuiz_FullMethodName                    = "/glms.LmsService/ImportQuiz"
+	LmsService_ImportCourse_FullMethodName                  = "/glms.LmsService/ImportCourse"
 	LmsService_ListObjects_FullMethodName                   = "/glms.LmsService/ListObjects"
 	LmsService_CreateUploadURL_FullMethodName               = "/glms.LmsService/CreateUploadURL"
 	LmsService_CreateViewURL_FullMethodName                 = "/glms.LmsService/CreateViewURL"
@@ -79,8 +80,6 @@ const (
 	LmsService_ListCourseEnrollmentsForAdmin_FullMethodName = "/glms.LmsService/ListCourseEnrollmentsForAdmin"
 	LmsService_GetCandidateProgressForAdmin_FullMethodName  = "/glms.LmsService/GetCandidateProgressForAdmin"
 	LmsService_GetCompleteCourse_FullMethodName             = "/glms.LmsService/GetCompleteCourse"
-	LmsService_BindCourseAssociation_FullMethodName         = "/glms.LmsService/BindCourseAssociation"
-	LmsService_UnbindCourseAssociation_FullMethodName       = "/glms.LmsService/UnbindCourseAssociation"
 	LmsService_ListBrokenAssets_FullMethodName              = "/glms.LmsService/ListBrokenAssets"
 )
 
@@ -88,13 +87,12 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LmsServiceClient interface {
-	CreateCourse(ctx context.Context, in *CreateCourseRequest, opts ...grpc.CallOption) (*CreateCourseResponse, error)
+	CreateCourseDraft(ctx context.Context, in *CreateCourseDraftRequest, opts ...grpc.CallOption) (*Course, error)
 	UpdateCourse(ctx context.Context, in *UpdateCourseRequest, opts ...grpc.CallOption) (*UpdateCourseResponse, error)
 	DeleteCourse(ctx context.Context, in *DeleteCourseRequest, opts ...grpc.CallOption) (*DeleteCourseResponse, error)
 	GetCourse(ctx context.Context, in *GetCourseRequest, opts ...grpc.CallOption) (*GetCourseResponse, error)
 	ListCourses(ctx context.Context, in *ListCoursesRequest, opts ...grpc.CallOption) (*ListCoursesResponse, error)
 	PublishCourse(ctx context.Context, in *PublishCourseRequest, opts ...grpc.CallOption) (*PublishCourseResponse, error)
-	UnpublishCourse(ctx context.Context, in *UnpublishCourseRequest, opts ...grpc.CallOption) (*UnpublishCourseResponse, error)
 	CreateCourseMaterial(ctx context.Context, in *CreateCourseMaterialRequest, opts ...grpc.CallOption) (*CreateCourseMaterialResponse, error)
 	UpdateCourseMaterial(ctx context.Context, in *UpdateCourseMaterialRequest, opts ...grpc.CallOption) (*UpdateCourseMaterialResponse, error)
 	DeleteCourseMaterial(ctx context.Context, in *DeleteCourseMaterialRequest, opts ...grpc.CallOption) (*DeleteCourseMaterialResponse, error)
@@ -135,6 +133,10 @@ type LmsServiceClient interface {
 	GetQuizOption(ctx context.Context, in *GetQuizOptionRequest, opts ...grpc.CallOption) (*GetQuizOptionResponse, error)
 	ListQuizOptions(ctx context.Context, in *ListQuizOptionsRequest, opts ...grpc.CallOption) (*ListQuizOptionsResponse, error)
 	ReorderQuizOptions(ctx context.Context, in *ReorderQuizOptionsRequest, opts ...grpc.CallOption) (*ReorderQuizOptionsResponse, error)
+	// 批量导入测验（含所有题目和选项），服务端生成全部 ULID
+	ImportQuiz(ctx context.Context, in *ImportQuizRequest, opts ...grpc.CallOption) (*ImportQuizResponse, error)
+	// 批量导入课程（含章节、课时、资料），服务端生成全部 ULID。不含测验
+	ImportCourse(ctx context.Context, in *ImportCourseRequest, opts ...grpc.CallOption) (*ImportCourseResponse, error)
 	ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error)
 	CreateUploadURL(ctx context.Context, in *CreateUploadURLRequest, opts ...grpc.CallOption) (*CreateUploadURLResponse, error)
 	CreateViewURL(ctx context.Context, in *CreateViewURLRequest, opts ...grpc.CallOption) (*CreateViewURLResponse, error)
@@ -148,11 +150,9 @@ type LmsServiceClient interface {
 	GetCandidateEnrollmentDetail(ctx context.Context, in *GetCandidateEnrollmentDetailRequest, opts ...grpc.CallOption) (*GetCandidateEnrollmentDetailResponse, error)
 	ListCourseEnrollmentsForAdmin(ctx context.Context, in *ListCourseEnrollmentsForAdminRequest, opts ...grpc.CallOption) (*ListCourseEnrollmentsForAdminResponse, error)
 	GetCandidateProgressForAdmin(ctx context.Context, in *GetCandidateProgressForAdminRequest, opts ...grpc.CallOption) (*GetCandidateProgressForAdminResponse, error)
-	// 获取课程的详细信息，包括章节、课件、测验等，用于向考生展示
+	// 获取课程的完整树形结构（课程→章节→课时→测验→题目→选项），用于向考生展示
 	GetCompleteCourse(ctx context.Context, in *GetCompleteCourseRequest, opts ...grpc.CallOption) (*GetCompleteCourseResponse, error)
-	// 外部业务系统需要引用课程时，通过这两个接口绑定和解除绑定，避免课程被管理员下架导致业务方引用失效
-	BindCourseAssociation(ctx context.Context, in *BindCourseAssociationRequest, opts ...grpc.CallOption) (*BindCourseAssociationResponse, error)
-	UnbindCourseAssociation(ctx context.Context, in *UnbindCourseAssociationRequest, opts ...grpc.CallOption) (*UnbindCourseAssociationResponse, error)
+	// 列出已损坏的资产（S3对象缺失），供管理员排查
 	ListBrokenAssets(ctx context.Context, in *ListBrokenAssetsRequest, opts ...grpc.CallOption) (*ListBrokenAssetsResponse, error)
 }
 
@@ -164,10 +164,10 @@ func NewLmsServiceClient(cc grpc.ClientConnInterface) LmsServiceClient {
 	return &lmsServiceClient{cc}
 }
 
-func (c *lmsServiceClient) CreateCourse(ctx context.Context, in *CreateCourseRequest, opts ...grpc.CallOption) (*CreateCourseResponse, error) {
+func (c *lmsServiceClient) CreateCourseDraft(ctx context.Context, in *CreateCourseDraftRequest, opts ...grpc.CallOption) (*Course, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateCourseResponse)
-	err := c.cc.Invoke(ctx, LmsService_CreateCourse_FullMethodName, in, out, cOpts...)
+	out := new(Course)
+	err := c.cc.Invoke(ctx, LmsService_CreateCourseDraft_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -218,16 +218,6 @@ func (c *lmsServiceClient) PublishCourse(ctx context.Context, in *PublishCourseR
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PublishCourseResponse)
 	err := c.cc.Invoke(ctx, LmsService_PublishCourse_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *lmsServiceClient) UnpublishCourse(ctx context.Context, in *UnpublishCourseRequest, opts ...grpc.CallOption) (*UnpublishCourseResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UnpublishCourseResponse)
-	err := c.cc.Invoke(ctx, LmsService_UnpublishCourse_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -634,6 +624,26 @@ func (c *lmsServiceClient) ReorderQuizOptions(ctx context.Context, in *ReorderQu
 	return out, nil
 }
 
+func (c *lmsServiceClient) ImportQuiz(ctx context.Context, in *ImportQuizRequest, opts ...grpc.CallOption) (*ImportQuizResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportQuizResponse)
+	err := c.cc.Invoke(ctx, LmsService_ImportQuiz_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) ImportCourse(ctx context.Context, in *ImportCourseRequest, opts ...grpc.CallOption) (*ImportCourseResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ImportCourseResponse)
+	err := c.cc.Invoke(ctx, LmsService_ImportCourse_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *lmsServiceClient) ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListObjectsResponse)
@@ -764,26 +774,6 @@ func (c *lmsServiceClient) GetCompleteCourse(ctx context.Context, in *GetComplet
 	return out, nil
 }
 
-func (c *lmsServiceClient) BindCourseAssociation(ctx context.Context, in *BindCourseAssociationRequest, opts ...grpc.CallOption) (*BindCourseAssociationResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(BindCourseAssociationResponse)
-	err := c.cc.Invoke(ctx, LmsService_BindCourseAssociation_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *lmsServiceClient) UnbindCourseAssociation(ctx context.Context, in *UnbindCourseAssociationRequest, opts ...grpc.CallOption) (*UnbindCourseAssociationResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UnbindCourseAssociationResponse)
-	err := c.cc.Invoke(ctx, LmsService_UnbindCourseAssociation_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *lmsServiceClient) ListBrokenAssets(ctx context.Context, in *ListBrokenAssetsRequest, opts ...grpc.CallOption) (*ListBrokenAssetsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListBrokenAssetsResponse)
@@ -798,13 +788,12 @@ func (c *lmsServiceClient) ListBrokenAssets(ctx context.Context, in *ListBrokenA
 // All implementations must embed UnimplementedLmsServiceServer
 // for forward compatibility.
 type LmsServiceServer interface {
-	CreateCourse(context.Context, *CreateCourseRequest) (*CreateCourseResponse, error)
+	CreateCourseDraft(context.Context, *CreateCourseDraftRequest) (*Course, error)
 	UpdateCourse(context.Context, *UpdateCourseRequest) (*UpdateCourseResponse, error)
 	DeleteCourse(context.Context, *DeleteCourseRequest) (*DeleteCourseResponse, error)
 	GetCourse(context.Context, *GetCourseRequest) (*GetCourseResponse, error)
 	ListCourses(context.Context, *ListCoursesRequest) (*ListCoursesResponse, error)
 	PublishCourse(context.Context, *PublishCourseRequest) (*PublishCourseResponse, error)
-	UnpublishCourse(context.Context, *UnpublishCourseRequest) (*UnpublishCourseResponse, error)
 	CreateCourseMaterial(context.Context, *CreateCourseMaterialRequest) (*CreateCourseMaterialResponse, error)
 	UpdateCourseMaterial(context.Context, *UpdateCourseMaterialRequest) (*UpdateCourseMaterialResponse, error)
 	DeleteCourseMaterial(context.Context, *DeleteCourseMaterialRequest) (*DeleteCourseMaterialResponse, error)
@@ -845,6 +834,10 @@ type LmsServiceServer interface {
 	GetQuizOption(context.Context, *GetQuizOptionRequest) (*GetQuizOptionResponse, error)
 	ListQuizOptions(context.Context, *ListQuizOptionsRequest) (*ListQuizOptionsResponse, error)
 	ReorderQuizOptions(context.Context, *ReorderQuizOptionsRequest) (*ReorderQuizOptionsResponse, error)
+	// 批量导入测验（含所有题目和选项），服务端生成全部 ULID
+	ImportQuiz(context.Context, *ImportQuizRequest) (*ImportQuizResponse, error)
+	// 批量导入课程（含章节、课时、资料），服务端生成全部 ULID。不含测验
+	ImportCourse(context.Context, *ImportCourseRequest) (*ImportCourseResponse, error)
 	ListObjects(context.Context, *ListObjectsRequest) (*ListObjectsResponse, error)
 	CreateUploadURL(context.Context, *CreateUploadURLRequest) (*CreateUploadURLResponse, error)
 	CreateViewURL(context.Context, *CreateViewURLRequest) (*CreateViewURLResponse, error)
@@ -858,11 +851,9 @@ type LmsServiceServer interface {
 	GetCandidateEnrollmentDetail(context.Context, *GetCandidateEnrollmentDetailRequest) (*GetCandidateEnrollmentDetailResponse, error)
 	ListCourseEnrollmentsForAdmin(context.Context, *ListCourseEnrollmentsForAdminRequest) (*ListCourseEnrollmentsForAdminResponse, error)
 	GetCandidateProgressForAdmin(context.Context, *GetCandidateProgressForAdminRequest) (*GetCandidateProgressForAdminResponse, error)
-	// 获取课程的详细信息，包括章节、课件、测验等，用于向考生展示
+	// 获取课程的完整树形结构（课程→章节→课时→测验→题目→选项），用于向考生展示
 	GetCompleteCourse(context.Context, *GetCompleteCourseRequest) (*GetCompleteCourseResponse, error)
-	// 外部业务系统需要引用课程时，通过这两个接口绑定和解除绑定，避免课程被管理员下架导致业务方引用失效
-	BindCourseAssociation(context.Context, *BindCourseAssociationRequest) (*BindCourseAssociationResponse, error)
-	UnbindCourseAssociation(context.Context, *UnbindCourseAssociationRequest) (*UnbindCourseAssociationResponse, error)
+	// 列出已损坏的资产（S3对象缺失），供管理员排查
 	ListBrokenAssets(context.Context, *ListBrokenAssetsRequest) (*ListBrokenAssetsResponse, error)
 	mustEmbedUnimplementedLmsServiceServer()
 }
@@ -874,8 +865,8 @@ type LmsServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedLmsServiceServer struct{}
 
-func (UnimplementedLmsServiceServer) CreateCourse(context.Context, *CreateCourseRequest) (*CreateCourseResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateCourse not implemented")
+func (UnimplementedLmsServiceServer) CreateCourseDraft(context.Context, *CreateCourseDraftRequest) (*Course, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateCourseDraft not implemented")
 }
 func (UnimplementedLmsServiceServer) UpdateCourse(context.Context, *UpdateCourseRequest) (*UpdateCourseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateCourse not implemented")
@@ -891,9 +882,6 @@ func (UnimplementedLmsServiceServer) ListCourses(context.Context, *ListCoursesRe
 }
 func (UnimplementedLmsServiceServer) PublishCourse(context.Context, *PublishCourseRequest) (*PublishCourseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PublishCourse not implemented")
-}
-func (UnimplementedLmsServiceServer) UnpublishCourse(context.Context, *UnpublishCourseRequest) (*UnpublishCourseResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UnpublishCourse not implemented")
 }
 func (UnimplementedLmsServiceServer) CreateCourseMaterial(context.Context, *CreateCourseMaterialRequest) (*CreateCourseMaterialResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateCourseMaterial not implemented")
@@ -1015,6 +1003,12 @@ func (UnimplementedLmsServiceServer) ListQuizOptions(context.Context, *ListQuizO
 func (UnimplementedLmsServiceServer) ReorderQuizOptions(context.Context, *ReorderQuizOptionsRequest) (*ReorderQuizOptionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReorderQuizOptions not implemented")
 }
+func (UnimplementedLmsServiceServer) ImportQuiz(context.Context, *ImportQuizRequest) (*ImportQuizResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImportQuiz not implemented")
+}
+func (UnimplementedLmsServiceServer) ImportCourse(context.Context, *ImportCourseRequest) (*ImportCourseResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ImportCourse not implemented")
+}
 func (UnimplementedLmsServiceServer) ListObjects(context.Context, *ListObjectsRequest) (*ListObjectsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListObjects not implemented")
 }
@@ -1054,12 +1048,6 @@ func (UnimplementedLmsServiceServer) GetCandidateProgressForAdmin(context.Contex
 func (UnimplementedLmsServiceServer) GetCompleteCourse(context.Context, *GetCompleteCourseRequest) (*GetCompleteCourseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCompleteCourse not implemented")
 }
-func (UnimplementedLmsServiceServer) BindCourseAssociation(context.Context, *BindCourseAssociationRequest) (*BindCourseAssociationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method BindCourseAssociation not implemented")
-}
-func (UnimplementedLmsServiceServer) UnbindCourseAssociation(context.Context, *UnbindCourseAssociationRequest) (*UnbindCourseAssociationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method UnbindCourseAssociation not implemented")
-}
 func (UnimplementedLmsServiceServer) ListBrokenAssets(context.Context, *ListBrokenAssetsRequest) (*ListBrokenAssetsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListBrokenAssets not implemented")
 }
@@ -1084,20 +1072,20 @@ func RegisterLmsServiceServer(s grpc.ServiceRegistrar, srv LmsServiceServer) {
 	s.RegisterService(&LmsService_ServiceDesc, srv)
 }
 
-func _LmsService_CreateCourse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateCourseRequest)
+func _LmsService_CreateCourseDraft_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCourseDraftRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LmsServiceServer).CreateCourse(ctx, in)
+		return srv.(LmsServiceServer).CreateCourseDraft(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: LmsService_CreateCourse_FullMethodName,
+		FullMethod: LmsService_CreateCourseDraft_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LmsServiceServer).CreateCourse(ctx, req.(*CreateCourseRequest))
+		return srv.(LmsServiceServer).CreateCourseDraft(ctx, req.(*CreateCourseDraftRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1188,24 +1176,6 @@ func _LmsService_PublishCourse_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LmsServiceServer).PublishCourse(ctx, req.(*PublishCourseRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _LmsService_UnpublishCourse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnpublishCourseRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(LmsServiceServer).UnpublishCourse(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: LmsService_UnpublishCourse_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LmsServiceServer).UnpublishCourse(ctx, req.(*UnpublishCourseRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1930,6 +1900,42 @@ func _LmsService_ReorderQuizOptions_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LmsService_ImportQuiz_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportQuizRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).ImportQuiz(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_ImportQuiz_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).ImportQuiz(ctx, req.(*ImportQuizRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_ImportCourse_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ImportCourseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).ImportCourse(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_ImportCourse_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).ImportCourse(ctx, req.(*ImportCourseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _LmsService_ListObjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListObjectsRequest)
 	if err := dec(in); err != nil {
@@ -2164,42 +2170,6 @@ func _LmsService_GetCompleteCourse_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LmsService_BindCourseAssociation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BindCourseAssociationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(LmsServiceServer).BindCourseAssociation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: LmsService_BindCourseAssociation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LmsServiceServer).BindCourseAssociation(ctx, req.(*BindCourseAssociationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _LmsService_UnbindCourseAssociation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UnbindCourseAssociationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(LmsServiceServer).UnbindCourseAssociation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: LmsService_UnbindCourseAssociation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LmsServiceServer).UnbindCourseAssociation(ctx, req.(*UnbindCourseAssociationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _LmsService_ListBrokenAssets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListBrokenAssetsRequest)
 	if err := dec(in); err != nil {
@@ -2226,8 +2196,8 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*LmsServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateCourse",
-			Handler:    _LmsService_CreateCourse_Handler,
+			MethodName: "CreateCourseDraft",
+			Handler:    _LmsService_CreateCourseDraft_Handler,
 		},
 		{
 			MethodName: "UpdateCourse",
@@ -2248,10 +2218,6 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PublishCourse",
 			Handler:    _LmsService_PublishCourse_Handler,
-		},
-		{
-			MethodName: "UnpublishCourse",
-			Handler:    _LmsService_UnpublishCourse_Handler,
 		},
 		{
 			MethodName: "CreateCourseMaterial",
@@ -2414,6 +2380,14 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _LmsService_ReorderQuizOptions_Handler,
 		},
 		{
+			MethodName: "ImportQuiz",
+			Handler:    _LmsService_ImportQuiz_Handler,
+		},
+		{
+			MethodName: "ImportCourse",
+			Handler:    _LmsService_ImportCourse_Handler,
+		},
+		{
 			MethodName: "ListObjects",
 			Handler:    _LmsService_ListObjects_Handler,
 		},
@@ -2464,14 +2438,6 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCompleteCourse",
 			Handler:    _LmsService_GetCompleteCourse_Handler,
-		},
-		{
-			MethodName: "BindCourseAssociation",
-			Handler:    _LmsService_BindCourseAssociation_Handler,
-		},
-		{
-			MethodName: "UnbindCourseAssociation",
-			Handler:    _LmsService_UnbindCourseAssociation_Handler,
 		},
 		{
 			MethodName: "ListBrokenAssets",

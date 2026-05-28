@@ -20,6 +20,7 @@ interface CourseCardProps {
   isPurchased?: boolean
   progress?: number
   price?: number
+  priceLabel?: string
 }
 
 const categoryLabels = {
@@ -46,6 +47,7 @@ export function CourseCard({
   isPurchased = false,
   progress,
   price = 500,
+  priceLabel,
 }: CourseCardProps) {
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false)
 
@@ -87,7 +89,7 @@ export function CourseCard({
         ) : (
           <Badge className="absolute right-4 top-4 bg-primary text-white border-0 gap-1">
             <ShoppingCart className="h-3 w-3" />
-            ${price}
+            {priceLabel || `$${price}`}
           </Badge>
         )}
 

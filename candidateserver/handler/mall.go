@@ -136,19 +136,21 @@ func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification)
 	}
 
 	return PipelineConfig{
-		PipelineId:      p.GetPipelineId(),
-		PipelineGuid:    p.GetPipelineGuid(),
-		Version:         p.GetVersion(),
-		Name:            p.GetName(),
-		UnlockFee:       p.GetUnlockFee(),
-		PackageDiscount: p.GetPackageDiscount(),
-		UnlockQuals:     toUnlockQuals(p.GetUnlockQuals()),
-		CertQuals:       toUnlockQuals(p.GetCertQuals()),
-		Stages:          toStages(p.GetStages()),
-		Status:          p.GetStatus(),
-		IsCurrent:       p.GetIsCurrent(),
-		CreatedAt:       p.GetCreatedAt(),
-		FinalQuals:      toUnlockQuals(certQuals),
+		PipelineId:             p.GetPipelineId(),
+		PipelineGuid:           p.GetPipelineGuid(),
+		Version:                p.GetVersion(),
+		Name:                   p.GetName(),
+		UnlockStripeProductId:  p.GetUnlockStripeProductId(),
+		UnlockStripePriceId:    p.GetUnlockStripePriceId(),
+		PackageStripeProductId: p.GetPackageStripeProductId(),
+		PackageStripePriceId:   p.GetPackageStripePriceId(),
+		UnlockQuals:            toUnlockQuals(p.GetUnlockQuals()),
+		CertQuals:              toUnlockQuals(p.GetCertQuals()),
+		Stages:                 toStages(p.GetStages()),
+		Status:                 p.GetStatus(),
+		IsCurrent:              p.GetIsCurrent(),
+		CreatedAt:              p.GetCreatedAt(),
+		FinalQuals:             toUnlockQuals(certQuals),
 	}
 }
 
@@ -192,19 +194,16 @@ func toUnits(units []*gccpb.UnitConfig) []UnitConfig {
 	out := make([]UnitConfig, 0, len(units))
 	for _, unit := range units {
 		out = append(out, UnitConfig{
-			UnitId:            unit.GetUnitId(),
-			Name:              unit.GetName(),
-			HasLearning:       unit.GetHasLearning(),
-			HasExam:           unit.GetHasExam(),
-			// LearningMinutes: unit.GetLearningMinutes(),
-			ProgramCode:       unit.GetProgramCode(),
-			ExamCode:          unit.GetExamCode(),
-			ExamForm:          unit.GetExamForm(),
-			BaseFee:           unit.GetBaseFee(),
-			ExemptionQuals:    unit.GetExemptionQuals(),
-			ExemptionAuditFee: unit.GetExemptionAuditFee(),
-			AllowRetake:       unit.GetAllowRetake(),
-			RetakeFee:         unit.GetRetakeFee(),
+			UnitId:                   unit.GetUnitId(),
+			ExemptionQuals:           unit.GetExemptionQuals(),
+			AllowRetake:              unit.GetAllowRetake(),
+			StripeProductId:          unit.GetStripeProductId(),
+			StripePriceId:            unit.GetStripePriceId(),
+			ExemptionStripeProductId: unit.GetExemptionStripeProductId(),
+			ExemptionStripePriceId:   unit.GetExemptionStripePriceId(),
+			RetakeStripeProductId:    unit.GetRetakeStripeProductId(),
+			RetakeStripePriceId:      unit.GetRetakeStripePriceId(),
+			GlmsCourseId:             unit.GetGlmsCourseId(),
 		})
 	}
 	return out

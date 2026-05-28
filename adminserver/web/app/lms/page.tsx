@@ -1,13 +1,14 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
-import { AlertTriangle, BookOpen, CheckCircle2, ClipboardList, Eye, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
+import { AlertTriangle, BookOpen, CheckCircle2, ClipboardList, Eye, FileJson, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
 import { toast } from "sonner"
 
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -18,7 +19,8 @@ import { cn, formatBackendDate } from "@/lib/utils"
 
 type LmsCourse = {
   course_id: string
-  category_id?: string
+  course_guid?: string
+  category_tips?: string
   title?: string
   description?: string
   thumbnail_object_key?: string
@@ -28,12 +30,14 @@ type LmsCourse = {
   is_published?: boolean
   published_at?: string
   version?: number
+  status?: string
+  is_current?: boolean
   created_at?: string
   updated_at?: string
 }
 
 type CourseForm = {
-  category_id: string
+  category_tips: string
   title: string
   description: string
   thumbnail_object_key: string
@@ -157,7 +161,7 @@ type QuizOption = {
 }
 
 const emptyForm: CourseForm = {
-  category_id: "",
+  category_tips: "",
   title: "",
   description: "",
   thumbnail_object_key: "",
@@ -202,10 +206,47 @@ const emptyOptionForm = {
   is_correct: false,
 }
 
+const sampleCourseImportJson = `{
+  "title": "高等数学",
+  "description": "这是高等数学课程",
+  "duration_min": 50,
+  "chapters": [
+    {
+      "title": "第一章",
+      "sort_order": 1,
+      "lessons": [
+        {
+          "title": "第一课",
+          "sort_order": 1,
+          "lesson_type": "text",
+          "body": "这里是课时文本内容"
+        }
+      ]
+    }
+  ]
+}`
+
+const sampleQuizImportJson = `{
+  "title": "第一章课检",
+  "passing_score": 60,
+  "max_attempts": 1,
+  "questions": [
+    {
+      "question_text": "1 + 1 = ?",
+      "question_type": "single_choice",
+      "points": 1,
+      "options": [
+        { "option_text": "1", "is_correct": false },
+        { "option_text": "2", "is_correct": true }
+      ]
+    }
+  ]
+}`
+
 function formFromCourse(course: LmsCourse | null): CourseForm {
   if (!course) return emptyForm
   return {
-    category_id: course.category_id || "",
+    category_tips: course.category_tips || "",
     title: course.title || "",
     description: course.description || "",
     thumbnail_object_key: course.thumbnail_object_key || "",
@@ -217,7 +258,7 @@ function formFromCourse(course: LmsCourse | null): CourseForm {
 
 function formToPayload(form: CourseForm, version?: number) {
   return {
-    category_id: form.category_id.trim(),
+    category_tips: form.category_tips.trim(),
     title: form.title.trim(),
     description: form.description.trim(),
     thumbnail_object_key: form.thumbnail_object_key.trim(),
@@ -275,6 +316,11 @@ export default function LmsCoursesPage() {
   const [optionForm, setOptionForm] = useState(emptyOptionForm)
   const [optionSaving, setOptionSaving] = useState(false)
   const [optionsLoading, setOptionsLoading] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  const [importScope, setImportScope] = useState<"course" | "quiz">("course")
+  const [importCategoryTips, setImportCategoryTips] = useState("")
+  const [importJson, setImportJson] = useState(sampleCourseImportJson)
+  const [importing, setImporting] = useState(false)
 
   const selectedCourse = useMemo(
     () => courses.find((course) => course.course_id === selectedId) || null,
@@ -316,7 +362,7 @@ export default function LmsCoursesPage() {
     setLoading(true)
     try {
       const params = new URLSearchParams()
-      if (categoryFilter.trim()) params.set("category_id", categoryFilter.trim())
+      if (categoryFilter.trim()) params.set("category_tips", categoryFilter.trim())
       if (publishedOnly) params.set("published_only", "true")
       const query = params.toString()
       const res = await apiClient(`/api/lms/courses${query ? `?${query}` : ""}`)
@@ -371,6 +417,79 @@ export default function LmsCoursesPage() {
     setEnrollments([])
     setProgressDetail(null)
     resetCourseContentState()
+  }
+
+  const switchImportScope = (scope: "course" | "quiz") => {
+    setImportScope(scope)
+    setImportJson(scope === "course" ? sampleCourseImportJson : sampleQuizImportJson)
+  }
+
+  const importLmsJson = async () => {
+    try {
+      JSON.parse(importJson)
+    } catch {
+      toast.error(page.importInvalidJson)
+      return
+    }
+    if (importScope === "quiz" && !selectedChapter) {
+      toast.error(page.importSelectChapter)
+      return
+    }
+
+    setImporting(true)
+    try {
+      const res = await apiClient("/api/lms/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          importScope === "course"
+            ? {
+                scope: "course",
+                category_tips: importCategoryTips.trim(),
+                course_json: importJson,
+              }
+            : {
+                scope: "quiz",
+                quizzable_type: 2,
+                quizzable_id: selectedChapter?.chapter_id || "",
+                quiz_json: importJson,
+              }
+        ),
+      })
+      if (importScope === "course") {
+        toast.success(
+          page.importCourseSuccess
+            .replace("{{chapters}}", String(res?.chapter_count || 0))
+            .replace("{{lessons}}", String(res?.lesson_count || 0))
+            .replace("{{materials}}", String(res?.material_count || 0))
+        )
+      } else {
+        toast.success(
+          page.importQuizSuccess
+            .replace("{{questions}}", String(res?.question_count || 0))
+            .replace("{{options}}", String(res?.option_count || 0))
+        )
+      }
+      setImportOpen(false)
+      if (res?.course_id) {
+        setSelectedId(res.course_id)
+      }
+      await loadCourses()
+      if (importScope === "quiz" && selectedChapter) {
+        await loadQuizzes(selectedChapter.chapter_id)
+      }
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const loadImportFile = async (file: File | null) => {
+    if (!file) return
+    try {
+      setImportJson(await file.text())
+    } catch {
+      toast.error(page.importReadFileFailed)
+    }
   }
 
   const saveCourse = async () => {
@@ -552,25 +671,21 @@ export default function LmsCoursesPage() {
     return true
   }
 
-  const publishCourse = async (publish: boolean) => {
+  const publishCourse = async () => {
     if (!selectedCourse) return
-    if (publish) {
-      const ready = await validatePublishReadiness(selectedCourse.course_id)
-      if (!ready) return
-    }
+    const ready = await validatePublishReadiness(selectedCourse.course_id)
+    if (!ready) return
 
     try {
-      await apiClient(`/api/lms/courses/${selectedCourse.course_id}/${publish ? "publish" : "unpublish"}`, {
+      await apiClient(`/api/lms/courses/${selectedCourse.course_id}/publish`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ version: selectedCourse.version || 0 }),
       })
-      toast.success(publish ? page.publishSuccess : page.unpublishSuccess)
+      toast.success(page.publishSuccess)
       await loadCourses()
     } catch (error) {
-      if (publish) {
-        await loadChapters(selectedCourse.course_id)
-      }
+      await loadChapters(selectedCourse.course_id)
       throw error
     }
   }
@@ -919,12 +1034,83 @@ export default function LmsCoursesPage() {
                 <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
                 {page.refresh}
               </Button>
+              <Button variant="outline" onClick={() => setImportOpen(true)}>
+                <FileJson className="mr-2 h-4 w-4" />
+                {page.importJson}
+              </Button>
               <Button onClick={startNewCourse}>
                 <Plus className="mr-2 h-4 w-4" />
                 {page.newCourse}
               </Button>
             </div>
           </div>
+
+          <Dialog open={importOpen} onOpenChange={setImportOpen}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>{page.importJson}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={importScope === "course" ? "default" : "outline"}
+                    onClick={() => switchImportScope("course")}
+                  >
+                    {page.importCourse}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={importScope === "quiz" ? "default" : "outline"}
+                    onClick={() => switchImportScope("quiz")}
+                  >
+                    {page.importQuiz}
+                  </Button>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-muted-foreground">
+                    {importScope === "course"
+                      ? page.importCourseHint
+                      : page.importQuizHint.replace("{{chapter}}", selectedChapter ? getChapterName(selectedChapter) : page.selectChapterHint)}
+                  </p>
+                  <Input
+                    type="file"
+                    accept="application/json,.json"
+                    className="max-w-xs"
+                    onChange={(event) => {
+                      loadImportFile(event.target.files?.[0] || null)
+                      event.currentTarget.value = ""
+                    }}
+                  />
+                </div>
+                {importScope === "course" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="importCategoryTips">{page.importCategoryTips}</Label>
+                    <Input
+                      id="importCategoryTips"
+                      value={importCategoryTips}
+                      onChange={(event) => setImportCategoryTips(event.target.value)}
+                    />
+                  </div>
+                )}
+                <Textarea
+                  value={importJson}
+                  onChange={(event) => setImportJson(event.target.value)}
+                  className="min-h-[460px] font-mono text-xs"
+                  spellCheck={false}
+                />
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setImportOpen(false)} disabled={importing}>
+                    {t.common.cancel}
+                  </Button>
+                  <Button onClick={importLmsJson} disabled={importing}>
+                    <UploadCloud className={cn("mr-2 h-4 w-4", importing && "animate-spin")} />
+                    {importScope === "course" ? page.importCourse : page.importQuiz}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <div className="mb-4 flex flex-wrap items-end gap-3">
             <div className="w-72 space-y-2">
@@ -976,9 +1162,10 @@ export default function LmsCoursesPage() {
                           {course.is_published ? page.published : page.draft}
                         </Badge>
                       </div>
+                      <div className="truncate text-xs text-muted-foreground">{course.course_guid || course.course_id}</div>
                       <div className="truncate text-xs text-muted-foreground">{course.course_id}</div>
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{course.category_id || t.common.na}</span>
+                        <span>{course.status || (course.is_published ? "Active" : "Draft")}</span>
                         <span>
                           {page.version} {course.version || 0}
                         </span>
@@ -995,10 +1182,17 @@ export default function LmsCoursesPage() {
                   <h2 className="font-semibold">{page.courseEditor}</h2>
                   {selectedCourse && (
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => publishCourse(!selectedCourse.is_published)}>
-                        <UploadCloud className="mr-2 h-4 w-4" />
-                        {selectedCourse.is_published ? page.unpublish : page.publish}
-                      </Button>
+                      {selectedCourse.is_published ? (
+                        <Button variant="outline" size="sm" disabled>
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                          {page.published}
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={publishCourse}>
+                          <UploadCloud className="mr-2 h-4 w-4" />
+                          {page.publish}
+                        </Button>
+                      )}
                       <Button variant="destructive" size="sm" onClick={deleteCourse}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         {page.delete}
@@ -1009,14 +1203,29 @@ export default function LmsCoursesPage() {
 
                 <div className="border-b bg-muted/40 px-4 py-3 text-sm text-muted-foreground">{page.courseFlowHint}</div>
 
-                <div className="grid gap-4 p-4 lg:grid-cols-2">
+                <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_220px]">
                   <div className="space-y-2">
                     <Label htmlFor="title">{page.titleLabel}</Label>
                     <Input id="title" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="duration">{page.durationMin}</Label>
+                    <Input
+                      id="duration"
+                      type="number"
+                      min="0"
+                      value={form.duration_min}
+                      onChange={(event) => setForm({ ...form, duration_min: event.target.value })}
+                    />
+                  </div>
+                  <details className="rounded-md border bg-muted/20 p-3 lg:col-span-2">
+                    <summary className="cursor-pointer select-none text-sm font-medium text-foreground">
+                      {page.optionalSettings || "可选设置"}
+                    </summary>
+                    <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  <div className="space-y-2">
                     <Label htmlFor="categoryId">{page.categorySelect}</Label>
-                    <Select value={form.category_id || "none"} onValueChange={(value) => setForm({ ...form, category_id: value === "none" ? "" : value })}>
+                    <Select value={form.category_tips || "none"} onValueChange={(value) => setForm({ ...form, category_tips: value === "none" ? "" : value })}>
                       <SelectTrigger id="categoryId" className="w-full">
                         <SelectValue placeholder={page.noCategory} />
                       </SelectTrigger>
@@ -1029,16 +1238,6 @@ export default function LmsCoursesPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="duration">{page.durationMin}</Label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      min="0"
-                      value={form.duration_min}
-                      onChange={(event) => setForm({ ...form, duration_min: event.target.value })}
-                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="thumbnail">{page.thumbnailUpload}</Label>
@@ -1097,14 +1296,19 @@ export default function LmsCoursesPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                    </div>
+                  </details>
                 </div>
 
                 {selectedCourse && (
                   <div className="border-t px-4 py-3 text-xs text-muted-foreground">
+                    <span className="mr-4">GUID: {selectedCourse.course_guid || t.common.na}</span>
                     <span className="mr-4">ID: {selectedCourse.course_id}</span>
                     <span className="mr-4">
                       {page.version}: {selectedCourse.version || 0}
                     </span>
+                    <span className="mr-4">{selectedCourse.status || (selectedCourse.is_published ? "Active" : "Draft")}</span>
+                    <span className="mr-4">{selectedCourse.is_current ? "Current" : "Historical"}</span>
                     <span>{formatBackendDate(selectedCourse.updated_at || selectedCourse.created_at)}</span>
                   </div>
                 )}

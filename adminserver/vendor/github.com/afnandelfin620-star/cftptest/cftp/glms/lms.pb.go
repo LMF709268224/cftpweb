@@ -21,14 +21,15 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// 课程资料类型
 type MaterialType int32
 
 const (
-	MaterialType_MATERIAL_TYPE_UNSPECIFIED MaterialType = 0
-	MaterialType_MATERIAL_TYPE_TEXTBOOK    MaterialType = 1
-	MaterialType_MATERIAL_TYPE_SLIDES      MaterialType = 2
-	MaterialType_MATERIAL_TYPE_REFERENCE   MaterialType = 3
-	MaterialType_MATERIAL_TYPE_OTHER       MaterialType = 4
+	MaterialType_MATERIAL_TYPE_UNSPECIFIED MaterialType = 0 // 未指定
+	MaterialType_MATERIAL_TYPE_TEXTBOOK    MaterialType = 1 // 教材/课本
+	MaterialType_MATERIAL_TYPE_SLIDES      MaterialType = 2 // 幻灯片/课件
+	MaterialType_MATERIAL_TYPE_REFERENCE   MaterialType = 3 // 参考资料
+	MaterialType_MATERIAL_TYPE_OTHER       MaterialType = 4 // 其他
 )
 
 // Enum value maps for MaterialType.
@@ -76,17 +77,18 @@ func (MaterialType) EnumDescriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{0}
 }
 
+// 课时内容类型
 type LessonType int32
 
 const (
-	LessonType_LESSON_TYPE_UNSPECIFIED LessonType = 0
-	LessonType_LESSON_TYPE_VIDEO       LessonType = 1
-	LessonType_LESSON_TYPE_TEXT        LessonType = 2
-	LessonType_LESSON_TYPE_PDF         LessonType = 3
-	LessonType_LESSON_TYPE_IMAGE       LessonType = 4
-	LessonType_LESSON_TYPE_AUDIO       LessonType = 5
-	LessonType_LESSON_TYPE_FILE        LessonType = 6
-	LessonType_LESSON_TYPE_LINK        LessonType = 7
+	LessonType_LESSON_TYPE_UNSPECIFIED LessonType = 0 // 未指定
+	LessonType_LESSON_TYPE_VIDEO       LessonType = 1 // 视频
+	LessonType_LESSON_TYPE_TEXT        LessonType = 2 // 文本
+	LessonType_LESSON_TYPE_PDF         LessonType = 3 // PDF文档
+	LessonType_LESSON_TYPE_IMAGE       LessonType = 4 // 图片
+	LessonType_LESSON_TYPE_AUDIO       LessonType = 5 // 音频
+	LessonType_LESSON_TYPE_FILE        LessonType = 6 // 文件
+	LessonType_LESSON_TYPE_LINK        LessonType = 7 // 外部链接
 )
 
 // Enum value maps for LessonType.
@@ -140,14 +142,15 @@ func (LessonType) EnumDescriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{1}
 }
 
+// 学习实体类型（用于前置条件系统）
 type EntityType int32
 
 const (
-	EntityType_ENTITY_TYPE_UNSPECIFIED EntityType = 0
-	EntityType_ENTITY_TYPE_LESSON      EntityType = 1
-	EntityType_ENTITY_TYPE_QUIZ        EntityType = 2
-	EntityType_ENTITY_TYPE_CHAPTER     EntityType = 3
-	EntityType_ENTITY_TYPE_COURSE      EntityType = 4
+	EntityType_ENTITY_TYPE_UNSPECIFIED EntityType = 0 // 未指定
+	EntityType_ENTITY_TYPE_LESSON      EntityType = 1 // 课时
+	EntityType_ENTITY_TYPE_QUIZ        EntityType = 2 // 测验
+	EntityType_ENTITY_TYPE_CHAPTER     EntityType = 3 // 章节
+	EntityType_ENTITY_TYPE_COURSE      EntityType = 4 // 课程
 )
 
 // Enum value maps for EntityType.
@@ -195,12 +198,13 @@ func (EntityType) EnumDescriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{2}
 }
 
+// 前置条件满足结果
 type PrerequisiteResult int32
 
 const (
-	PrerequisiteResult_PREREQUISITE_RESULT_UNSPECIFIED PrerequisiteResult = 0
-	PrerequisiteResult_PREREQUISITE_RESULT_COMPLETED   PrerequisiteResult = 1
-	PrerequisiteResult_PREREQUISITE_RESULT_PASSED      PrerequisiteResult = 2
+	PrerequisiteResult_PREREQUISITE_RESULT_UNSPECIFIED PrerequisiteResult = 0 // 未指定
+	PrerequisiteResult_PREREQUISITE_RESULT_COMPLETED   PrerequisiteResult = 1 // 已完成（适用于课时/章节/课程）
+	PrerequisiteResult_PREREQUISITE_RESULT_PASSED      PrerequisiteResult = 2 // 已通过（适用于测验）
 )
 
 // Enum value maps for PrerequisiteResult.
@@ -244,13 +248,14 @@ func (PrerequisiteResult) EnumDescriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{3}
 }
 
+// 测验所属实体类型
 type QuizzableType int32
 
 const (
-	QuizzableType_QUIZZABLE_TYPE_UNSPECIFIED QuizzableType = 0
-	QuizzableType_QUIZZABLE_TYPE_LESSON      QuizzableType = 1
-	QuizzableType_QUIZZABLE_TYPE_CHAPTER     QuizzableType = 2
-	QuizzableType_QUIZZABLE_TYPE_COURSE      QuizzableType = 3
+	QuizzableType_QUIZZABLE_TYPE_UNSPECIFIED QuizzableType = 0 // 未指定
+	QuizzableType_QUIZZABLE_TYPE_LESSON      QuizzableType = 1 // 课时级测验
+	QuizzableType_QUIZZABLE_TYPE_CHAPTER     QuizzableType = 2 // 章节级测验（章末测试）
+	QuizzableType_QUIZZABLE_TYPE_COURSE      QuizzableType = 3 // 课程级测验（期末考试）
 )
 
 // Enum value maps for QuizzableType.
@@ -296,13 +301,14 @@ func (QuizzableType) EnumDescriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{4}
 }
 
+// 测验题目类型
 type QuizQuestionType int32
 
 const (
-	QuizQuestionType_QUIZ_QUESTION_TYPE_UNSPECIFIED     QuizQuestionType = 0
-	QuizQuestionType_QUIZ_QUESTION_TYPE_SINGLE_CHOICE   QuizQuestionType = 1
-	QuizQuestionType_QUIZ_QUESTION_TYPE_MULTIPLE_CHOICE QuizQuestionType = 2
-	QuizQuestionType_QUIZ_QUESTION_TYPE_TRUE_FALSE      QuizQuestionType = 3
+	QuizQuestionType_QUIZ_QUESTION_TYPE_UNSPECIFIED     QuizQuestionType = 0 // 未指定
+	QuizQuestionType_QUIZ_QUESTION_TYPE_SINGLE_CHOICE   QuizQuestionType = 1 // 单选题
+	QuizQuestionType_QUIZ_QUESTION_TYPE_MULTIPLE_CHOICE QuizQuestionType = 2 // 多选题
+	QuizQuestionType_QUIZ_QUESTION_TYPE_TRUE_FALSE      QuizQuestionType = 3 // 判断题
 )
 
 // Enum value maps for QuizQuestionType.
@@ -348,14 +354,15 @@ func (QuizQuestionType) EnumDescriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{5}
 }
 
+// 上传类型（决定S3存储路径和校验规则）
 type UploadType int32
 
 const (
-	UploadType_UPLOAD_TYPE_UNSPECIFIED      UploadType = 0
-	UploadType_UPLOAD_TYPE_COURSE_THUMBNAIL UploadType = 1
-	UploadType_UPLOAD_TYPE_COURSE_MATERIAL  UploadType = 2
-	UploadType_UPLOAD_TYPE_LESSON_ASSET     UploadType = 3
-	UploadType_UPLOAD_TYPE_QUIZ_ASSET       UploadType = 4
+	UploadType_UPLOAD_TYPE_UNSPECIFIED      UploadType = 0 // 未指定
+	UploadType_UPLOAD_TYPE_COURSE_THUMBNAIL UploadType = 1 // 课程封面图
+	UploadType_UPLOAD_TYPE_COURSE_MATERIAL  UploadType = 2 // 课程资料文件
+	UploadType_UPLOAD_TYPE_LESSON_ASSET     UploadType = 3 // 课时素材文件
+	UploadType_UPLOAD_TYPE_QUIZ_ASSET       UploadType = 4 // 测验素材文件
 )
 
 // Enum value maps for UploadType.
@@ -403,21 +410,25 @@ func (UploadType) EnumDescriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{6}
 }
 
+// 课程实体（支持版本化：每次编辑生成新版本，发布后旧版本标记为Deprecated）
 type Course struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
-	CourseId             string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	CategoryId           string                 `protobuf:"bytes,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Title                string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description          string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	ThumbnailObjectKey   string                 `protobuf:"bytes,5,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
-	DurationMin          uint32                 `protobuf:"varint,6,opt,name=duration_min,json=durationMin,proto3" json:"duration_min,omitempty"`
-	CertificationEnabled bool                   `protobuf:"varint,7,opt,name=certification_enabled,json=certificationEnabled,proto3" json:"certification_enabled,omitempty"`
-	CertificationDefId   string                 `protobuf:"bytes,8,opt,name=certification_def_id,json=certificationDefId,proto3" json:"certification_def_id,omitempty"`
-	IsPublished          bool                   `protobuf:"varint,9,opt,name=is_published,json=isPublished,proto3" json:"is_published,omitempty"`
-	PublishedAt          string                 `protobuf:"bytes,10,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`
-	Version              uint32                 `protobuf:"varint,11,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt            string                 `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt            string                 `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	CourseId             string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                      // 课程版本唯一ID (ULID)，每次编辑生成新ID
+	CategoryTips         string                 `protobuf:"bytes,2,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`                          // 分类提示，客户端按相同值分组展示，最长64字符
+	Title                string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                                                            // 课程标题
+	Description          string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                                                // 课程简介
+	ThumbnailObjectKey   string                 `protobuf:"bytes,5,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`      // 课程封面图S3对象key
+	DurationMin          uint32                 `protobuf:"varint,6,opt,name=duration_min,json=durationMin,proto3" json:"duration_min,omitempty"`                            // 课程总时长（分钟），仅用于展示
+	CertificationEnabled bool                   `protobuf:"varint,7,opt,name=certification_enabled,json=certificationEnabled,proto3" json:"certification_enabled,omitempty"` // 是否启用结课认证
+	CertificationDefId   string                 `protobuf:"bytes,8,opt,name=certification_def_id,json=certificationDefId,proto3" json:"certification_def_id,omitempty"`      // 资格定义ID，关联外部认证系统
+	IsPublished          bool                   `protobuf:"varint,9,opt,name=is_published,json=isPublished,proto3" json:"is_published,omitempty"`                            // 是否已发布（status=Active时为true，派生字段）
+	PublishedAt          string                 `protobuf:"bytes,10,opt,name=published_at,json=publishedAt,proto3" json:"published_at,omitempty"`                            // 发布时间 (UTC, RFC3339)
+	Version              uint32                 `protobuf:"varint,11,opt,name=version,proto3" json:"version,omitempty"`                                                      // 乐观锁版本号，每次更新递增
+	CreatedAt            string                 `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                                  // 创建时间 (UTC, RFC3339)
+	UpdatedAt            string                 `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                                  // 更新时间 (UTC, RFC3339)
+	CourseGuid           string                 `protobuf:"bytes,14,opt,name=course_guid,json=courseGuid,proto3" json:"course_guid,omitempty"`                               // 业务唯一ID，跨版本保持不变，同一课程的所有版本共享
+	Status               string                 `protobuf:"bytes,15,opt,name=status,proto3" json:"status,omitempty"`                                                         // 版本状态：Draft(草稿)/Active(已激活)/Deprecated(已废弃)
+	IsCurrent            bool                   `protobuf:"varint,16,opt,name=is_current,json=isCurrent,proto3" json:"is_current,omitempty"`                                 // 是否为当前生效版本（同一course_guid下仅一个为true）
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -459,9 +470,9 @@ func (x *Course) GetCourseId() string {
 	return ""
 }
 
-func (x *Course) GetCategoryId() string {
+func (x *Course) GetCategoryTips() string {
 	if x != nil {
-		return x.CategoryId
+		return x.CategoryTips
 	}
 	return ""
 }
@@ -543,19 +554,41 @@ func (x *Course) GetUpdatedAt() string {
 	return ""
 }
 
+func (x *Course) GetCourseGuid() string {
+	if x != nil {
+		return x.CourseGuid
+	}
+	return ""
+}
+
+func (x *Course) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *Course) GetIsCurrent() bool {
+	if x != nil {
+		return x.IsCurrent
+	}
+	return false
+}
+
+// 课程资料（附加于课程级别的教学资料，如教材、课件、参考文档等）
 type CourseMaterial struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`
-	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	MaterialType  MaterialType           `protobuf:"varint,4,opt,name=material_type,json=materialType,proto3,enum=glms.MaterialType" json:"material_type,omitempty"`
-	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	FileObjectKey string                 `protobuf:"bytes,6,opt,name=file_object_key,json=fileObjectKey,proto3" json:"file_object_key,omitempty"`
-	FileSize      uint64                 `protobuf:"varint,7,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,8,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	Version       uint32                 `protobuf:"varint,9,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     string                 `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`                               // 资料唯一ID (ULID)
+	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                     // 所属课程ID
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                                                           // 资料标题
+	MaterialType  MaterialType           `protobuf:"varint,4,opt,name=material_type,json=materialType,proto3,enum=glms.MaterialType" json:"material_type,omitempty"` // 资料类型
+	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`                                               // 资料描述
+	FileObjectKey string                 `protobuf:"bytes,6,opt,name=file_object_key,json=fileObjectKey,proto3" json:"file_object_key,omitempty"`                    // 文件S3对象key
+	FileSize      uint64                 `protobuf:"varint,7,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`                                    // 文件大小（字节）
+	SortOrder     uint32                 `protobuf:"varint,8,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                                 // 排序序号，决定展示顺序
+	Version       uint32                 `protobuf:"varint,9,opt,name=version,proto3" json:"version,omitempty"`                                                      // 乐观锁版本号
+	CreatedAt     string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                                 // 创建时间 (UTC, RFC3339)
+	UpdatedAt     string                 `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                                 // 更新时间 (UTC, RFC3339)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -667,15 +700,16 @@ func (x *CourseMaterial) GetUpdatedAt() string {
 	return ""
 }
 
+// 章节（课程的结构化分组，一个课程至少含一个章节才能发布）
 type Chapter struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
-	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	Version       uint32                 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`  // 章节唯一ID (ULID)
+	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`     // 所属课程ID
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                           // 章节标题
+	SortOrder     uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"` // 排序序号，决定章节在课程内的展示顺序
+	Version       uint32                 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`                      // 乐观锁版本号
+	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`  // 创建时间 (UTC, RFC3339)
+	UpdatedAt     string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`  // 更新时间 (UTC, RFC3339)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -759,23 +793,24 @@ func (x *Chapter) GetUpdatedAt() string {
 	return ""
 }
 
+// 课时（章节内的最小学习单元，支持视频、文本、PDF、图片、音频、文件、链接等多种类型）
 type Lesson struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	LessonId       string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
-	ChapterId      string                 `protobuf:"bytes,2,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
-	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	SortOrder      uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	LessonType     LessonType             `protobuf:"varint,5,opt,name=lesson_type,json=lessonType,proto3,enum=glms.LessonType" json:"lesson_type,omitempty"`
-	Body           string                 `protobuf:"bytes,6,opt,name=body,proto3" json:"body,omitempty"`
-	MediaObjectKey string                 `protobuf:"bytes,7,opt,name=media_object_key,json=mediaObjectKey,proto3" json:"media_object_key,omitempty"`
-	ExternalUrl    string                 `protobuf:"bytes,8,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`
-	VideoProvider  string                 `protobuf:"bytes,9,opt,name=video_provider,json=videoProvider,proto3" json:"video_provider,omitempty"`
-	VideoStreamUid string                 `protobuf:"bytes,10,opt,name=video_stream_uid,json=videoStreamUid,proto3" json:"video_stream_uid,omitempty"`
-	VideoEmbedCode string                 `protobuf:"bytes,11,opt,name=video_embed_code,json=videoEmbedCode,proto3" json:"video_embed_code,omitempty"`
-	MetaJson       string                 `protobuf:"bytes,12,opt,name=meta_json,json=metaJson,proto3" json:"meta_json,omitempty"`
-	Version        uint32                 `protobuf:"varint,13,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt      string                 `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt      string                 `protobuf:"bytes,15,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	LessonId       string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`                             // 课时唯一ID (ULID)
+	ChapterId      string                 `protobuf:"bytes,2,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`                          // 所属章节ID
+	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                                                   // 课时标题
+	SortOrder      uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                         // 排序序号，决定课时在章节内的展示顺序
+	LessonType     LessonType             `protobuf:"varint,5,opt,name=lesson_type,json=lessonType,proto3,enum=glms.LessonType" json:"lesson_type,omitempty"` // 课时类型，决定哪些内容字段生效
+	Body           string                 `protobuf:"bytes,6,opt,name=body,proto3" json:"body,omitempty"`                                                     // 文本内容（lesson_type=text时使用，可含富文本/HTML）
+	MediaObjectKey string                 `protobuf:"bytes,7,opt,name=media_object_key,json=mediaObjectKey,proto3" json:"media_object_key,omitempty"`         // 媒体文件S3对象key（video/pdf/image/audio/file类型时使用）
+	ExternalUrl    string                 `protobuf:"bytes,8,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`                    // 外部链接URL（lesson_type=link时使用）
+	VideoProvider  string                 `protobuf:"bytes,9,opt,name=video_provider,json=videoProvider,proto3" json:"video_provider,omitempty"`              // 视频提供商：cloudflare/youtube/other
+	VideoStreamUid string                 `protobuf:"bytes,10,opt,name=video_stream_uid,json=videoStreamUid,proto3" json:"video_stream_uid,omitempty"`        // 视频流在提供商平台的唯一标识
+	VideoEmbedCode string                 `protobuf:"bytes,11,opt,name=video_embed_code,json=videoEmbedCode,proto3" json:"video_embed_code,omitempty"`        // 视频嵌入代码（与provider+uid二选一）
+	MetaJson       string                 `protobuf:"bytes,12,opt,name=meta_json,json=metaJson,proto3" json:"meta_json,omitempty"`                            // 扩展元数据JSON，用于自定义扩展字段
+	Version        uint32                 `protobuf:"varint,13,opt,name=version,proto3" json:"version,omitempty"`                                             // 乐观锁版本号
+	CreatedAt      string                 `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                         // 创建时间 (UTC, RFC3339)
+	UpdatedAt      string                 `protobuf:"bytes,15,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                         // 更新时间 (UTC, RFC3339)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -915,17 +950,18 @@ func (x *Lesson) GetUpdatedAt() string {
 	return ""
 }
 
+// 前置条件（定义学习顺序约束：实体A必须完成/通过后，实体B才可访问）
 type Prerequisite struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	PrerequisiteId     string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"`
-	RequiredEntityType EntityType             `protobuf:"varint,2,opt,name=required_entity_type,json=requiredEntityType,proto3,enum=glms.EntityType" json:"required_entity_type,omitempty"`
-	RequiredEntityId   string                 `protobuf:"bytes,3,opt,name=required_entity_id,json=requiredEntityId,proto3" json:"required_entity_id,omitempty"`
-	RequiredResult     PrerequisiteResult     `protobuf:"varint,4,opt,name=required_result,json=requiredResult,proto3,enum=glms.PrerequisiteResult" json:"required_result,omitempty"`
-	TargetEntityType   EntityType             `protobuf:"varint,5,opt,name=target_entity_type,json=targetEntityType,proto3,enum=glms.EntityType" json:"target_entity_type,omitempty"`
-	TargetEntityId     string                 `protobuf:"bytes,6,opt,name=target_entity_id,json=targetEntityId,proto3" json:"target_entity_id,omitempty"`
-	Version            uint32                 `protobuf:"varint,7,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt          string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt          string                 `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	PrerequisiteId     string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"`                                     // 前置条件唯一ID (ULID)
+	RequiredEntityType EntityType             `protobuf:"varint,2,opt,name=required_entity_type,json=requiredEntityType,proto3,enum=glms.EntityType" json:"required_entity_type,omitempty"` // 前置实体类型（必须完成/通过的实体）
+	RequiredEntityId   string                 `protobuf:"bytes,3,opt,name=required_entity_id,json=requiredEntityId,proto3" json:"required_entity_id,omitempty"`                             // 前置实体ID
+	RequiredResult     PrerequisiteResult     `protobuf:"varint,4,opt,name=required_result,json=requiredResult,proto3,enum=glms.PrerequisiteResult" json:"required_result,omitempty"`       // 前置要求结果：completed(已完成)/passed(已通过)
+	TargetEntityType   EntityType             `protobuf:"varint,5,opt,name=target_entity_type,json=targetEntityType,proto3,enum=glms.EntityType" json:"target_entity_type,omitempty"`       // 目标实体类型（被约束的实体）
+	TargetEntityId     string                 `protobuf:"bytes,6,opt,name=target_entity_id,json=targetEntityId,proto3" json:"target_entity_id,omitempty"`                                   // 目标实体ID
+	Version            uint32                 `protobuf:"varint,7,opt,name=version,proto3" json:"version,omitempty"`                                                                        // 乐观锁版本号
+	CreatedAt          string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                                                    // 创建时间 (UTC, RFC3339)
+	UpdatedAt          string                 `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                                                    // 更新时间 (UTC, RFC3339)
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1023,22 +1059,23 @@ func (x *Prerequisite) GetUpdatedAt() string {
 	return ""
 }
 
+// 测验/考试（可附加到课程、章节或课时，由quizzable_type决定挂载位置）
 type Quiz struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	QuizId             string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
-	QuizzableType      QuizzableType          `protobuf:"varint,2,opt,name=quizzable_type,json=quizzableType,proto3,enum=glms.QuizzableType" json:"quizzable_type,omitempty"`
-	QuizzableId        string                 `protobuf:"bytes,3,opt,name=quizzable_id,json=quizzableId,proto3" json:"quizzable_id,omitempty"`
-	Title              string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	Description        string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	PassingScore       uint32                 `protobuf:"varint,6,opt,name=passing_score,json=passingScore,proto3" json:"passing_score,omitempty"`
-	TimeLimit          uint32                 `protobuf:"varint,7,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`
-	MaxAttempts        uint32                 `protobuf:"varint,8,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`
-	AllowRetake        bool                   `protobuf:"varint,9,opt,name=allow_retake,json=allowRetake,proto3" json:"allow_retake,omitempty"`
-	RandomizeQuestions bool                   `protobuf:"varint,10,opt,name=randomize_questions,json=randomizeQuestions,proto3" json:"randomize_questions,omitempty"`
-	IsActive           bool                   `protobuf:"varint,11,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
-	Version            uint32                 `protobuf:"varint,12,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt          string                 `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt          string                 `protobuf:"bytes,14,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	QuizId             string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                                               // 测验唯一ID (ULID)
+	QuizzableType      QuizzableType          `protobuf:"varint,2,opt,name=quizzable_type,json=quizzableType,proto3,enum=glms.QuizzableType" json:"quizzable_type,omitempty"` // 所属实体类型：lesson/chapter/course
+	QuizzableId        string                 `protobuf:"bytes,3,opt,name=quizzable_id,json=quizzableId,proto3" json:"quizzable_id,omitempty"`                                // 所属实体ID（课时ID/章节ID/课程ID）
+	Title              string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`                                                               // 测验标题
+	Description        string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`                                                   // 测验说明/答题指引
+	PassingScore       uint32                 `protobuf:"varint,6,opt,name=passing_score,json=passingScore,proto3" json:"passing_score,omitempty"`                            // 及格分数（百分比 0-100，默认70）
+	TimeLimit          uint32                 `protobuf:"varint,7,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`                                     // 时间限制（分钟，0表示不限时）
+	MaxAttempts        uint32                 `protobuf:"varint,8,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`                               // 最大尝试次数（0表示不限次）
+	AllowRetake        bool                   `protobuf:"varint,9,opt,name=allow_retake,json=allowRetake,proto3" json:"allow_retake,omitempty"`                               // 是否允许通过后重考（默认true）
+	RandomizeQuestions bool                   `protobuf:"varint,10,opt,name=randomize_questions,json=randomizeQuestions,proto3" json:"randomize_questions,omitempty"`         // 是否随机排列题目顺序
+	IsActive           bool                   `protobuf:"varint,11,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`                                       // 是否启用（默认true）
+	Version            uint32                 `protobuf:"varint,12,opt,name=version,proto3" json:"version,omitempty"`                                                         // 乐观锁版本号
+	CreatedAt          string                 `protobuf:"bytes,13,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                                     // 创建时间 (UTC, RFC3339)
+	UpdatedAt          string                 `protobuf:"bytes,14,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                                     // 更新时间 (UTC, RFC3339)
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1171,19 +1208,20 @@ func (x *Quiz) GetUpdatedAt() string {
 	return ""
 }
 
+// 测验题目
 type QuizQuestion struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId     string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	QuizId         string                 `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
-	QuestionText   string                 `protobuf:"bytes,3,opt,name=question_text,json=questionText,proto3" json:"question_text,omitempty"`
-	QuestionType   QuizQuestionType       `protobuf:"varint,4,opt,name=question_type,json=questionType,proto3,enum=glms.QuizQuestionType" json:"question_type,omitempty"`
-	Points         uint32                 `protobuf:"varint,5,opt,name=points,proto3" json:"points,omitempty"`
-	SortOrder      uint32                 `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	IsRequired     bool                   `protobuf:"varint,7,opt,name=is_required,json=isRequired,proto3" json:"is_required,omitempty"`
-	MediaItemsJson string                 `protobuf:"bytes,8,opt,name=media_items_json,json=mediaItemsJson,proto3" json:"media_items_json,omitempty"`
-	Version        uint32                 `protobuf:"varint,9,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt      string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt      string                 `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	QuestionId     string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`                                   // 题目唯一ID (ULID)
+	QuizId         string                 `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                                               // 所属测验ID
+	QuestionText   string                 `protobuf:"bytes,3,opt,name=question_text,json=questionText,proto3" json:"question_text,omitempty"`                             // 题目内容/题干
+	QuestionType   QuizQuestionType       `protobuf:"varint,4,opt,name=question_type,json=questionType,proto3,enum=glms.QuizQuestionType" json:"question_type,omitempty"` // 题目类型：single_choice(单选)/multiple_choice(多选)/true_false(判断)
+	Points         uint32                 `protobuf:"varint,5,opt,name=points,proto3" json:"points,omitempty"`                                                            // 分值（默认1）
+	SortOrder      uint32                 `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                                     // 排序序号，决定题目在测验内的展示顺序
+	IsRequired     bool                   `protobuf:"varint,7,opt,name=is_required,json=isRequired,proto3" json:"is_required,omitempty"`                                  // 是否必答（默认true）
+	MediaItemsJson string                 `protobuf:"bytes,8,opt,name=media_items_json,json=mediaItemsJson,proto3" json:"media_items_json,omitempty"`                     // 媒体附件JSON数组（图片等）
+	Version        uint32                 `protobuf:"varint,9,opt,name=version,proto3" json:"version,omitempty"`                                                          // 乐观锁版本号
+	CreatedAt      string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                                     // 创建时间 (UTC, RFC3339)
+	UpdatedAt      string                 `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                                     // 更新时间 (UTC, RFC3339)
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -1295,16 +1333,17 @@ func (x *QuizQuestion) GetUpdatedAt() string {
 	return ""
 }
 
+// 测验选项（题目的可选答案）
 type QuizOption struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`
-	QuestionId    string                 `protobuf:"bytes,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	OptionText    string                 `protobuf:"bytes,3,opt,name=option_text,json=optionText,proto3" json:"option_text,omitempty"`
-	IsCorrect     bool                   `protobuf:"varint,4,opt,name=is_correct,json=isCorrect,proto3" json:"is_correct,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	Version       uint32                 `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     string                 `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`       // 选项唯一ID (ULID)
+	QuestionId    string                 `protobuf:"bytes,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"` // 所属题目ID
+	OptionText    string                 `protobuf:"bytes,3,opt,name=option_text,json=optionText,proto3" json:"option_text,omitempty"` // 选项内容
+	IsCorrect     bool                   `protobuf:"varint,4,opt,name=is_correct,json=isCorrect,proto3" json:"is_correct,omitempty"`   // 是否为正确答案（单选仅一个correct，多选可多个）
+	SortOrder     uint32                 `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`   // 排序序号，决定选项展示顺序
+	Version       uint32                 `protobuf:"varint,6,opt,name=version,proto3" json:"version,omitempty"`                        // 乐观锁版本号
+	CreatedAt     string                 `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`    // 创建时间 (UTC, RFC3339)
+	UpdatedAt     string                 `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`    // 更新时间 (UTC, RFC3339)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1395,11 +1434,12 @@ func (x *QuizOption) GetUpdatedAt() string {
 	return ""
 }
 
+// 排序项（用于批量重排序请求）
 type ReorderItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EntityId      string                 `protobuf:"bytes,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,2,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	Version       uint32                 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	EntityId      string                 `protobuf:"bytes,1,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`     // 被排序的实体ID
+	SortOrder     uint32                 `protobuf:"varint,2,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"` // 新的排序序号
+	Version       uint32                 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`                      // 乐观锁版本号
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1455,12 +1495,13 @@ func (x *ReorderItem) GetVersion() uint32 {
 	return 0
 }
 
+// S3存储桶对象
 type BucketObject struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BucketName    string                 `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`
-	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
-	FileSize      uint64                 `protobuf:"varint,3,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
-	LastModified  string                 `protobuf:"bytes,4,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"`
+	BucketName    string                 `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`       // 存储桶名称
+	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`          // 对象key
+	FileSize      uint64                 `protobuf:"varint,3,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`            // 文件大小（字节）
+	LastModified  string                 `protobuf:"bytes,4,opt,name=last_modified,json=lastModified,proto3" json:"last_modified,omitempty"` // 最后修改时间 (UTC, RFC3339)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1523,34 +1564,36 @@ func (x *BucketObject) GetLastModified() string {
 	return ""
 }
 
-type CreateCourseRequest struct {
+type CreateCourseDraftRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
-	CourseId             string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	CategoryId           string                 `protobuf:"bytes,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Title                string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description          string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	ThumbnailObjectKey   string                 `protobuf:"bytes,5,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
-	DurationMin          uint32                 `protobuf:"varint,6,opt,name=duration_min,json=durationMin,proto3" json:"duration_min,omitempty"`
-	CertificationEnabled bool                   `protobuf:"varint,7,opt,name=certification_enabled,json=certificationEnabled,proto3" json:"certification_enabled,omitempty"`
-	CertificationDefId   string                 `protobuf:"bytes,8,opt,name=certification_def_id,json=certificationDefId,proto3" json:"certification_def_id,omitempty"`
+	CategoryTips         string                 `protobuf:"bytes,1,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`                          // 分类提示，客户端按相同值分组展示，最长64字符
+	Title                string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                                                            // 课程标题 ([required])
+	Description          string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                                                // 课程简介
+	ThumbnailObjectKey   string                 `protobuf:"bytes,4,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`      // 课程封面图S3对象key
+	DurationMin          uint32                 `protobuf:"varint,5,opt,name=duration_min,json=durationMin,proto3" json:"duration_min,omitempty"`                            // 课程总时长（分钟）
+	CertificationEnabled bool                   `protobuf:"varint,6,opt,name=certification_enabled,json=certificationEnabled,proto3" json:"certification_enabled,omitempty"` // 是否启用结课认证
+	CertificationDefId   string                 `protobuf:"bytes,7,opt,name=certification_def_id,json=certificationDefId,proto3" json:"certification_def_id,omitempty"`      // 资格定义ID
+	FromCourseGuid       string                 `protobuf:"bytes,8,opt,name=from_course_guid,json=fromCourseGuid,proto3" json:"from_course_guid,omitempty"`                  // 从指定已发布版本深拷贝创建（可选，与手动创建二选一）
+	CourseId             string                 `protobuf:"bytes,9,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                      // 外部指定的课程版本ID ULID ([required])
+	CourseGuid           string                 `protobuf:"bytes,10,opt,name=course_guid,json=courseGuid,proto3" json:"course_guid,omitempty"`                               // 外部指定的课程业务唯一ID ULID ([required])
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
 
-func (x *CreateCourseRequest) Reset() {
-	*x = CreateCourseRequest{}
+func (x *CreateCourseDraftRequest) Reset() {
+	*x = CreateCourseDraftRequest{}
 	mi := &file_lms_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateCourseRequest) String() string {
+func (x *CreateCourseDraftRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateCourseRequest) ProtoMessage() {}
+func (*CreateCourseDraftRequest) ProtoMessage() {}
 
-func (x *CreateCourseRequest) ProtoReflect() protoreflect.Message {
+func (x *CreateCourseDraftRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_lms_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -1562,129 +1605,99 @@ func (x *CreateCourseRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateCourseRequest.ProtoReflect.Descriptor instead.
-func (*CreateCourseRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateCourseDraftRequest.ProtoReflect.Descriptor instead.
+func (*CreateCourseDraftRequest) Descriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *CreateCourseRequest) GetCourseId() string {
+func (x *CreateCourseDraftRequest) GetCategoryTips() string {
 	if x != nil {
-		return x.CourseId
+		return x.CategoryTips
 	}
 	return ""
 }
 
-func (x *CreateCourseRequest) GetCategoryId() string {
-	if x != nil {
-		return x.CategoryId
-	}
-	return ""
-}
-
-func (x *CreateCourseRequest) GetTitle() string {
+func (x *CreateCourseDraftRequest) GetTitle() string {
 	if x != nil {
 		return x.Title
 	}
 	return ""
 }
 
-func (x *CreateCourseRequest) GetDescription() string {
+func (x *CreateCourseDraftRequest) GetDescription() string {
 	if x != nil {
 		return x.Description
 	}
 	return ""
 }
 
-func (x *CreateCourseRequest) GetThumbnailObjectKey() string {
+func (x *CreateCourseDraftRequest) GetThumbnailObjectKey() string {
 	if x != nil {
 		return x.ThumbnailObjectKey
 	}
 	return ""
 }
 
-func (x *CreateCourseRequest) GetDurationMin() uint32 {
+func (x *CreateCourseDraftRequest) GetDurationMin() uint32 {
 	if x != nil {
 		return x.DurationMin
 	}
 	return 0
 }
 
-func (x *CreateCourseRequest) GetCertificationEnabled() bool {
+func (x *CreateCourseDraftRequest) GetCertificationEnabled() bool {
 	if x != nil {
 		return x.CertificationEnabled
 	}
 	return false
 }
 
-func (x *CreateCourseRequest) GetCertificationDefId() string {
+func (x *CreateCourseDraftRequest) GetCertificationDefId() string {
 	if x != nil {
 		return x.CertificationDefId
 	}
 	return ""
 }
 
-type CreateCourseResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateCourseResponse) Reset() {
-	*x = CreateCourseResponse{}
-	mi := &file_lms_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateCourseResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateCourseResponse) ProtoMessage() {}
-
-func (x *CreateCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[11]
+func (x *CreateCourseDraftRequest) GetFromCourseGuid() string {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
+		return x.FromCourseGuid
 	}
-	return mi.MessageOf(x)
+	return ""
 }
 
-// Deprecated: Use CreateCourseResponse.ProtoReflect.Descriptor instead.
-func (*CreateCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *CreateCourseResponse) GetCourseId() string {
+func (x *CreateCourseDraftRequest) GetCourseId() string {
 	if x != nil {
 		return x.CourseId
 	}
 	return ""
 }
 
+func (x *CreateCourseDraftRequest) GetCourseGuid() string {
+	if x != nil {
+		return x.CourseGuid
+	}
+	return ""
+}
+
 type UpdateCourseRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
-	CourseId             string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	CategoryId           string                 `protobuf:"bytes,2,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	Title                string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description          string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	ThumbnailObjectKey   string                 `protobuf:"bytes,5,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
-	DurationMin          uint32                 `protobuf:"varint,6,opt,name=duration_min,json=durationMin,proto3" json:"duration_min,omitempty"`
-	CertificationEnabled bool                   `protobuf:"varint,7,opt,name=certification_enabled,json=certificationEnabled,proto3" json:"certification_enabled,omitempty"`
-	CertificationDefId   string                 `protobuf:"bytes,8,opt,name=certification_def_id,json=certificationDefId,proto3" json:"certification_def_id,omitempty"`
-	Version              uint32                 `protobuf:"varint,9,opt,name=version,proto3" json:"version,omitempty"`
+	CourseId             string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                      // 课程版本ID ([required])
+	CategoryTips         string                 `protobuf:"bytes,2,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`                          // 分类提示，客户端按相同值分组展示，最长64字符
+	Title                string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                                                            // 课程标题 ([required])
+	Description          string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                                                // 课程简介
+	ThumbnailObjectKey   string                 `protobuf:"bytes,5,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`      // 课程封面图S3对象key
+	DurationMin          uint32                 `protobuf:"varint,6,opt,name=duration_min,json=durationMin,proto3" json:"duration_min,omitempty"`                            // 课程总时长（分钟）
+	CertificationEnabled bool                   `protobuf:"varint,7,opt,name=certification_enabled,json=certificationEnabled,proto3" json:"certification_enabled,omitempty"` // 是否启用结课认证（已发布课程不可修改）
+	CertificationDefId   string                 `protobuf:"bytes,8,opt,name=certification_def_id,json=certificationDefId,proto3" json:"certification_def_id,omitempty"`      // 资格定义ID（已发布课程不可修改）
+	Version              uint32                 `protobuf:"varint,9,opt,name=version,proto3" json:"version,omitempty"`                                                       // 乐观锁版本号 ([required])
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
 
 func (x *UpdateCourseRequest) Reset() {
 	*x = UpdateCourseRequest{}
-	mi := &file_lms_proto_msgTypes[12]
+	mi := &file_lms_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1696,7 +1709,7 @@ func (x *UpdateCourseRequest) String() string {
 func (*UpdateCourseRequest) ProtoMessage() {}
 
 func (x *UpdateCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[12]
+	mi := &file_lms_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1709,7 +1722,7 @@ func (x *UpdateCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCourseRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{12}
+	return file_lms_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *UpdateCourseRequest) GetCourseId() string {
@@ -1719,9 +1732,9 @@ func (x *UpdateCourseRequest) GetCourseId() string {
 	return ""
 }
 
-func (x *UpdateCourseRequest) GetCategoryId() string {
+func (x *UpdateCourseRequest) GetCategoryTips() string {
 	if x != nil {
-		return x.CategoryId
+		return x.CategoryTips
 	}
 	return ""
 }
@@ -1777,14 +1790,14 @@ func (x *UpdateCourseRequest) GetVersion() uint32 {
 
 type UpdateCourseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateCourseResponse) Reset() {
 	*x = UpdateCourseResponse{}
-	mi := &file_lms_proto_msgTypes[13]
+	mi := &file_lms_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1796,7 +1809,7 @@ func (x *UpdateCourseResponse) String() string {
 func (*UpdateCourseResponse) ProtoMessage() {}
 
 func (x *UpdateCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[13]
+	mi := &file_lms_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1809,7 +1822,7 @@ func (x *UpdateCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCourseResponse.ProtoReflect.Descriptor instead.
 func (*UpdateCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{13}
+	return file_lms_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UpdateCourseResponse) GetSuccess() bool {
@@ -1821,15 +1834,15 @@ func (x *UpdateCourseResponse) GetSuccess() bool {
 
 type DeleteCourseRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"` // 课程版本ID ([required])
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`                  // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteCourseRequest) Reset() {
 	*x = DeleteCourseRequest{}
-	mi := &file_lms_proto_msgTypes[14]
+	mi := &file_lms_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1841,7 +1854,7 @@ func (x *DeleteCourseRequest) String() string {
 func (*DeleteCourseRequest) ProtoMessage() {}
 
 func (x *DeleteCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[14]
+	mi := &file_lms_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1854,7 +1867,7 @@ func (x *DeleteCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCourseRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{14}
+	return file_lms_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *DeleteCourseRequest) GetCourseId() string {
@@ -1873,14 +1886,14 @@ func (x *DeleteCourseRequest) GetVersion() uint32 {
 
 type DeleteCourseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteCourseResponse) Reset() {
 	*x = DeleteCourseResponse{}
-	mi := &file_lms_proto_msgTypes[15]
+	mi := &file_lms_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1892,7 +1905,7 @@ func (x *DeleteCourseResponse) String() string {
 func (*DeleteCourseResponse) ProtoMessage() {}
 
 func (x *DeleteCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[15]
+	mi := &file_lms_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1905,7 +1918,7 @@ func (x *DeleteCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCourseResponse.ProtoReflect.Descriptor instead.
 func (*DeleteCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{15}
+	return file_lms_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *DeleteCourseResponse) GetSuccess() bool {
@@ -1917,14 +1930,14 @@ func (x *DeleteCourseResponse) GetSuccess() bool {
 
 type GetCourseRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"` // 课程版本ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCourseRequest) Reset() {
 	*x = GetCourseRequest{}
-	mi := &file_lms_proto_msgTypes[16]
+	mi := &file_lms_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1936,7 +1949,7 @@ func (x *GetCourseRequest) String() string {
 func (*GetCourseRequest) ProtoMessage() {}
 
 func (x *GetCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[16]
+	mi := &file_lms_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1949,7 +1962,7 @@ func (x *GetCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{16}
+	return file_lms_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *GetCourseRequest) GetCourseId() string {
@@ -1961,14 +1974,14 @@ func (x *GetCourseRequest) GetCourseId() string {
 
 type GetCourseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Course        *Course                `protobuf:"bytes,1,opt,name=course,proto3" json:"course,omitempty"`
+	Course        *Course                `protobuf:"bytes,1,opt,name=course,proto3" json:"course,omitempty"` // 课程详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCourseResponse) Reset() {
 	*x = GetCourseResponse{}
-	mi := &file_lms_proto_msgTypes[17]
+	mi := &file_lms_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1980,7 +1993,7 @@ func (x *GetCourseResponse) String() string {
 func (*GetCourseResponse) ProtoMessage() {}
 
 func (x *GetCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[17]
+	mi := &file_lms_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1993,7 +2006,7 @@ func (x *GetCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{17}
+	return file_lms_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetCourseResponse) GetCourse() *Course {
@@ -2005,15 +2018,15 @@ func (x *GetCourseResponse) GetCourse() *Course {
 
 type ListCoursesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CategoryId    string                 `protobuf:"bytes,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`
-	PublishedOnly bool                   `protobuf:"varint,2,opt,name=published_only,json=publishedOnly,proto3" json:"published_only,omitempty"`
+	CategoryTips  string                 `protobuf:"bytes,1,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`     // 分类提示过滤（可选），相同category_tips的课程可归入同一表格
+	PublishedOnly bool                   `protobuf:"varint,2,opt,name=published_only,json=publishedOnly,proto3" json:"published_only,omitempty"` // 是否仅返回已发布课程 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCoursesRequest) Reset() {
 	*x = ListCoursesRequest{}
-	mi := &file_lms_proto_msgTypes[18]
+	mi := &file_lms_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2025,7 +2038,7 @@ func (x *ListCoursesRequest) String() string {
 func (*ListCoursesRequest) ProtoMessage() {}
 
 func (x *ListCoursesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[18]
+	mi := &file_lms_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2038,12 +2051,12 @@ func (x *ListCoursesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCoursesRequest.ProtoReflect.Descriptor instead.
 func (*ListCoursesRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{18}
+	return file_lms_proto_rawDescGZIP(), []int{17}
 }
 
-func (x *ListCoursesRequest) GetCategoryId() string {
+func (x *ListCoursesRequest) GetCategoryTips() string {
 	if x != nil {
-		return x.CategoryId
+		return x.CategoryTips
 	}
 	return ""
 }
@@ -2057,14 +2070,14 @@ func (x *ListCoursesRequest) GetPublishedOnly() bool {
 
 type ListCoursesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Courses       []*Course              `protobuf:"bytes,1,rep,name=courses,proto3" json:"courses,omitempty"`
+	Courses       []*Course              `protobuf:"bytes,1,rep,name=courses,proto3" json:"courses,omitempty"` // 课程列表
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCoursesResponse) Reset() {
 	*x = ListCoursesResponse{}
-	mi := &file_lms_proto_msgTypes[19]
+	mi := &file_lms_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2076,7 +2089,7 @@ func (x *ListCoursesResponse) String() string {
 func (*ListCoursesResponse) ProtoMessage() {}
 
 func (x *ListCoursesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[19]
+	mi := &file_lms_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2089,7 +2102,7 @@ func (x *ListCoursesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCoursesResponse.ProtoReflect.Descriptor instead.
 func (*ListCoursesResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{19}
+	return file_lms_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ListCoursesResponse) GetCourses() []*Course {
@@ -2101,15 +2114,15 @@ func (x *ListCoursesResponse) GetCourses() []*Course {
 
 type PublishCourseRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"` // 待发布的课程版本ID ([required])
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`                  // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PublishCourseRequest) Reset() {
 	*x = PublishCourseRequest{}
-	mi := &file_lms_proto_msgTypes[20]
+	mi := &file_lms_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2121,7 +2134,7 @@ func (x *PublishCourseRequest) String() string {
 func (*PublishCourseRequest) ProtoMessage() {}
 
 func (x *PublishCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[20]
+	mi := &file_lms_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2134,7 +2147,7 @@ func (x *PublishCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishCourseRequest.ProtoReflect.Descriptor instead.
 func (*PublishCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{20}
+	return file_lms_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *PublishCourseRequest) GetCourseId() string {
@@ -2153,14 +2166,14 @@ func (x *PublishCourseRequest) GetVersion() uint32 {
 
 type PublishCourseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PublishCourseResponse) Reset() {
 	*x = PublishCourseResponse{}
-	mi := &file_lms_proto_msgTypes[21]
+	mi := &file_lms_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2172,7 +2185,7 @@ func (x *PublishCourseResponse) String() string {
 func (*PublishCourseResponse) ProtoMessage() {}
 
 func (x *PublishCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[21]
+	mi := &file_lms_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2185,7 +2198,7 @@ func (x *PublishCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishCourseResponse.ProtoReflect.Descriptor instead.
 func (*PublishCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{21}
+	return file_lms_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *PublishCourseResponse) GetSuccess() bool {
@@ -2195,119 +2208,23 @@ func (x *PublishCourseResponse) GetSuccess() bool {
 	return false
 }
 
-type UnpublishCourseRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UnpublishCourseRequest) Reset() {
-	*x = UnpublishCourseRequest{}
-	mi := &file_lms_proto_msgTypes[22]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UnpublishCourseRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UnpublishCourseRequest) ProtoMessage() {}
-
-func (x *UnpublishCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[22]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UnpublishCourseRequest.ProtoReflect.Descriptor instead.
-func (*UnpublishCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{22}
-}
-
-func (x *UnpublishCourseRequest) GetCourseId() string {
-	if x != nil {
-		return x.CourseId
-	}
-	return ""
-}
-
-func (x *UnpublishCourseRequest) GetVersion() uint32 {
-	if x != nil {
-		return x.Version
-	}
-	return 0
-}
-
-type UnpublishCourseResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UnpublishCourseResponse) Reset() {
-	*x = UnpublishCourseResponse{}
-	mi := &file_lms_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UnpublishCourseResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UnpublishCourseResponse) ProtoMessage() {}
-
-func (x *UnpublishCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[23]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UnpublishCourseResponse.ProtoReflect.Descriptor instead.
-func (*UnpublishCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{23}
-}
-
-func (x *UnpublishCourseResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
 type CreateCourseMaterialRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`
-	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	MaterialType  MaterialType           `protobuf:"varint,4,opt,name=material_type,json=materialType,proto3,enum=glms.MaterialType" json:"material_type,omitempty"`
-	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	FileObjectKey string                 `protobuf:"bytes,6,opt,name=file_object_key,json=fileObjectKey,proto3" json:"file_object_key,omitempty"`
-	FileSize      uint64                 `protobuf:"varint,7,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,8,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`                               // 资料ID ULID (必填，外部指定)
+	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                     // 所属课程ID ([required])
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                                                           // 资料标题 ([required])
+	MaterialType  MaterialType           `protobuf:"varint,4,opt,name=material_type,json=materialType,proto3,enum=glms.MaterialType" json:"material_type,omitempty"` // 资料类型 ([required])
+	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`                                               // 资料描述
+	FileObjectKey string                 `protobuf:"bytes,6,opt,name=file_object_key,json=fileObjectKey,proto3" json:"file_object_key,omitempty"`                    // 文件S3对象key
+	FileSize      uint64                 `protobuf:"varint,7,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`                                    // 文件大小（字节）
+	SortOrder     uint32                 `protobuf:"varint,8,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                                 // 排序序号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateCourseMaterialRequest) Reset() {
 	*x = CreateCourseMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[24]
+	mi := &file_lms_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2319,7 +2236,7 @@ func (x *CreateCourseMaterialRequest) String() string {
 func (*CreateCourseMaterialRequest) ProtoMessage() {}
 
 func (x *CreateCourseMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[24]
+	mi := &file_lms_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2332,7 +2249,7 @@ func (x *CreateCourseMaterialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCourseMaterialRequest.ProtoReflect.Descriptor instead.
 func (*CreateCourseMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{24}
+	return file_lms_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CreateCourseMaterialRequest) GetMaterialId() string {
@@ -2393,14 +2310,14 @@ func (x *CreateCourseMaterialRequest) GetSortOrder() uint32 {
 
 type CreateCourseMaterialResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`
+	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"` // 创建的资料ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateCourseMaterialResponse) Reset() {
 	*x = CreateCourseMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[25]
+	mi := &file_lms_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2412,7 +2329,7 @@ func (x *CreateCourseMaterialResponse) String() string {
 func (*CreateCourseMaterialResponse) ProtoMessage() {}
 
 func (x *CreateCourseMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[25]
+	mi := &file_lms_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2425,7 +2342,7 @@ func (x *CreateCourseMaterialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCourseMaterialResponse.ProtoReflect.Descriptor instead.
 func (*CreateCourseMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{25}
+	return file_lms_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CreateCourseMaterialResponse) GetMaterialId() string {
@@ -2437,21 +2354,21 @@ func (x *CreateCourseMaterialResponse) GetMaterialId() string {
 
 type UpdateCourseMaterialRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	MaterialType  MaterialType           `protobuf:"varint,3,opt,name=material_type,json=materialType,proto3,enum=glms.MaterialType" json:"material_type,omitempty"`
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	FileObjectKey string                 `protobuf:"bytes,5,opt,name=file_object_key,json=fileObjectKey,proto3" json:"file_object_key,omitempty"`
-	FileSize      uint64                 `protobuf:"varint,6,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,7,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	Version       uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`
+	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`                               // 资料ID ([required])
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                                                           // 资料标题 ([required])
+	MaterialType  MaterialType           `protobuf:"varint,3,opt,name=material_type,json=materialType,proto3,enum=glms.MaterialType" json:"material_type,omitempty"` // 资料类型 (必填，已发布课程不可修改)
+	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                                               // 资料描述
+	FileObjectKey string                 `protobuf:"bytes,5,opt,name=file_object_key,json=fileObjectKey,proto3" json:"file_object_key,omitempty"`                    // 文件S3对象key
+	FileSize      uint64                 `protobuf:"varint,6,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`                                    // 文件大小（字节）
+	SortOrder     uint32                 `protobuf:"varint,7,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                                 // 排序序号 (必填，已发布课程不可修改)
+	Version       uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`                                                      // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateCourseMaterialRequest) Reset() {
 	*x = UpdateCourseMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[26]
+	mi := &file_lms_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2463,7 +2380,7 @@ func (x *UpdateCourseMaterialRequest) String() string {
 func (*UpdateCourseMaterialRequest) ProtoMessage() {}
 
 func (x *UpdateCourseMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[26]
+	mi := &file_lms_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2476,7 +2393,7 @@ func (x *UpdateCourseMaterialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCourseMaterialRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCourseMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{26}
+	return file_lms_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *UpdateCourseMaterialRequest) GetMaterialId() string {
@@ -2537,14 +2454,14 @@ func (x *UpdateCourseMaterialRequest) GetVersion() uint32 {
 
 type UpdateCourseMaterialResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateCourseMaterialResponse) Reset() {
 	*x = UpdateCourseMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[27]
+	mi := &file_lms_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2556,7 +2473,7 @@ func (x *UpdateCourseMaterialResponse) String() string {
 func (*UpdateCourseMaterialResponse) ProtoMessage() {}
 
 func (x *UpdateCourseMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[27]
+	mi := &file_lms_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2569,7 +2486,7 @@ func (x *UpdateCourseMaterialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCourseMaterialResponse.ProtoReflect.Descriptor instead.
 func (*UpdateCourseMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{27}
+	return file_lms_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *UpdateCourseMaterialResponse) GetSuccess() bool {
@@ -2581,15 +2498,15 @@ func (x *UpdateCourseMaterialResponse) GetSuccess() bool {
 
 type DeleteCourseMaterialRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`
-	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"` // 资料ID ([required])
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`                        // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteCourseMaterialRequest) Reset() {
 	*x = DeleteCourseMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[28]
+	mi := &file_lms_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2601,7 +2518,7 @@ func (x *DeleteCourseMaterialRequest) String() string {
 func (*DeleteCourseMaterialRequest) ProtoMessage() {}
 
 func (x *DeleteCourseMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[28]
+	mi := &file_lms_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2614,7 +2531,7 @@ func (x *DeleteCourseMaterialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCourseMaterialRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCourseMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{28}
+	return file_lms_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *DeleteCourseMaterialRequest) GetMaterialId() string {
@@ -2633,14 +2550,14 @@ func (x *DeleteCourseMaterialRequest) GetVersion() uint32 {
 
 type DeleteCourseMaterialResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteCourseMaterialResponse) Reset() {
 	*x = DeleteCourseMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[29]
+	mi := &file_lms_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2652,7 +2569,7 @@ func (x *DeleteCourseMaterialResponse) String() string {
 func (*DeleteCourseMaterialResponse) ProtoMessage() {}
 
 func (x *DeleteCourseMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[29]
+	mi := &file_lms_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2665,7 +2582,7 @@ func (x *DeleteCourseMaterialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCourseMaterialResponse.ProtoReflect.Descriptor instead.
 func (*DeleteCourseMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{29}
+	return file_lms_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *DeleteCourseMaterialResponse) GetSuccess() bool {
@@ -2677,14 +2594,14 @@ func (x *DeleteCourseMaterialResponse) GetSuccess() bool {
 
 type GetCourseMaterialRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`
+	MaterialId    string                 `protobuf:"bytes,1,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"` // 资料ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCourseMaterialRequest) Reset() {
 	*x = GetCourseMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[30]
+	mi := &file_lms_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2696,7 +2613,7 @@ func (x *GetCourseMaterialRequest) String() string {
 func (*GetCourseMaterialRequest) ProtoMessage() {}
 
 func (x *GetCourseMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[30]
+	mi := &file_lms_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2709,7 +2626,7 @@ func (x *GetCourseMaterialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseMaterialRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{30}
+	return file_lms_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetCourseMaterialRequest) GetMaterialId() string {
@@ -2721,14 +2638,14 @@ func (x *GetCourseMaterialRequest) GetMaterialId() string {
 
 type GetCourseMaterialResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Material      *CourseMaterial        `protobuf:"bytes,1,opt,name=material,proto3" json:"material,omitempty"`
+	Material      *CourseMaterial        `protobuf:"bytes,1,opt,name=material,proto3" json:"material,omitempty"` // 资料详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCourseMaterialResponse) Reset() {
 	*x = GetCourseMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[31]
+	mi := &file_lms_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2740,7 +2657,7 @@ func (x *GetCourseMaterialResponse) String() string {
 func (*GetCourseMaterialResponse) ProtoMessage() {}
 
 func (x *GetCourseMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[31]
+	mi := &file_lms_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2753,7 +2670,7 @@ func (x *GetCourseMaterialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseMaterialResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{31}
+	return file_lms_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetCourseMaterialResponse) GetMaterial() *CourseMaterial {
@@ -2765,14 +2682,14 @@ func (x *GetCourseMaterialResponse) GetMaterial() *CourseMaterial {
 
 type ListCourseMaterialsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"` // 课程ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCourseMaterialsRequest) Reset() {
 	*x = ListCourseMaterialsRequest{}
-	mi := &file_lms_proto_msgTypes[32]
+	mi := &file_lms_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2784,7 +2701,7 @@ func (x *ListCourseMaterialsRequest) String() string {
 func (*ListCourseMaterialsRequest) ProtoMessage() {}
 
 func (x *ListCourseMaterialsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[32]
+	mi := &file_lms_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2797,7 +2714,7 @@ func (x *ListCourseMaterialsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseMaterialsRequest.ProtoReflect.Descriptor instead.
 func (*ListCourseMaterialsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{32}
+	return file_lms_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *ListCourseMaterialsRequest) GetCourseId() string {
@@ -2809,14 +2726,14 @@ func (x *ListCourseMaterialsRequest) GetCourseId() string {
 
 type ListCourseMaterialsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Materials     []*CourseMaterial      `protobuf:"bytes,1,rep,name=materials,proto3" json:"materials,omitempty"`
+	Materials     []*CourseMaterial      `protobuf:"bytes,1,rep,name=materials,proto3" json:"materials,omitempty"` // 资料列表
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCourseMaterialsResponse) Reset() {
 	*x = ListCourseMaterialsResponse{}
-	mi := &file_lms_proto_msgTypes[33]
+	mi := &file_lms_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2828,7 +2745,7 @@ func (x *ListCourseMaterialsResponse) String() string {
 func (*ListCourseMaterialsResponse) ProtoMessage() {}
 
 func (x *ListCourseMaterialsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[33]
+	mi := &file_lms_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2841,7 +2758,7 @@ func (x *ListCourseMaterialsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseMaterialsResponse.ProtoReflect.Descriptor instead.
 func (*ListCourseMaterialsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{33}
+	return file_lms_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ListCourseMaterialsResponse) GetMaterials() []*CourseMaterial {
@@ -2853,15 +2770,15 @@ func (x *ListCourseMaterialsResponse) GetMaterials() []*CourseMaterial {
 
 type ReorderCourseMaterialsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"` // 课程ID ([required])
+	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`                       // 重排序项列表 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderCourseMaterialsRequest) Reset() {
 	*x = ReorderCourseMaterialsRequest{}
-	mi := &file_lms_proto_msgTypes[34]
+	mi := &file_lms_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2873,7 +2790,7 @@ func (x *ReorderCourseMaterialsRequest) String() string {
 func (*ReorderCourseMaterialsRequest) ProtoMessage() {}
 
 func (x *ReorderCourseMaterialsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[34]
+	mi := &file_lms_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2886,7 +2803,7 @@ func (x *ReorderCourseMaterialsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderCourseMaterialsRequest.ProtoReflect.Descriptor instead.
 func (*ReorderCourseMaterialsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{34}
+	return file_lms_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ReorderCourseMaterialsRequest) GetCourseId() string {
@@ -2905,14 +2822,14 @@ func (x *ReorderCourseMaterialsRequest) GetItems() []*ReorderItem {
 
 type ReorderCourseMaterialsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderCourseMaterialsResponse) Reset() {
 	*x = ReorderCourseMaterialsResponse{}
-	mi := &file_lms_proto_msgTypes[35]
+	mi := &file_lms_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2924,7 +2841,7 @@ func (x *ReorderCourseMaterialsResponse) String() string {
 func (*ReorderCourseMaterialsResponse) ProtoMessage() {}
 
 func (x *ReorderCourseMaterialsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[35]
+	mi := &file_lms_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2937,7 +2854,7 @@ func (x *ReorderCourseMaterialsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderCourseMaterialsResponse.ProtoReflect.Descriptor instead.
 func (*ReorderCourseMaterialsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{35}
+	return file_lms_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ReorderCourseMaterialsResponse) GetSuccess() bool {
@@ -2949,17 +2866,17 @@ func (x *ReorderCourseMaterialsResponse) GetSuccess() bool {
 
 type CreateChapterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
-	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`  // 章节ID ULID (必填，外部指定)
+	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`     // 所属课程ID ([required])
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                           // 章节标题 ([required])
+	SortOrder     uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"` // 排序序号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateChapterRequest) Reset() {
 	*x = CreateChapterRequest{}
-	mi := &file_lms_proto_msgTypes[36]
+	mi := &file_lms_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2971,7 +2888,7 @@ func (x *CreateChapterRequest) String() string {
 func (*CreateChapterRequest) ProtoMessage() {}
 
 func (x *CreateChapterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[36]
+	mi := &file_lms_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2984,7 +2901,7 @@ func (x *CreateChapterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateChapterRequest.ProtoReflect.Descriptor instead.
 func (*CreateChapterRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{36}
+	return file_lms_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *CreateChapterRequest) GetChapterId() string {
@@ -3017,14 +2934,14 @@ func (x *CreateChapterRequest) GetSortOrder() uint32 {
 
 type CreateChapterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
+	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"` // 创建的章节ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateChapterResponse) Reset() {
 	*x = CreateChapterResponse{}
-	mi := &file_lms_proto_msgTypes[37]
+	mi := &file_lms_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3036,7 +2953,7 @@ func (x *CreateChapterResponse) String() string {
 func (*CreateChapterResponse) ProtoMessage() {}
 
 func (x *CreateChapterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[37]
+	mi := &file_lms_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3049,7 +2966,7 @@ func (x *CreateChapterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateChapterResponse.ProtoReflect.Descriptor instead.
 func (*CreateChapterResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{37}
+	return file_lms_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *CreateChapterResponse) GetChapterId() string {
@@ -3061,17 +2978,17 @@ func (x *CreateChapterResponse) GetChapterId() string {
 
 type UpdateChapterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
-	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,3,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	Version       uint32                 `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
+	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`  // 章节ID ([required])
+	Title         string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                           // 章节标题 ([required])
+	SortOrder     uint32                 `protobuf:"varint,3,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"` // 排序序号 (必填，已发布课程不可修改)
+	Version       uint32                 `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`                      // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateChapterRequest) Reset() {
 	*x = UpdateChapterRequest{}
-	mi := &file_lms_proto_msgTypes[38]
+	mi := &file_lms_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3083,7 +3000,7 @@ func (x *UpdateChapterRequest) String() string {
 func (*UpdateChapterRequest) ProtoMessage() {}
 
 func (x *UpdateChapterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[38]
+	mi := &file_lms_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3096,7 +3013,7 @@ func (x *UpdateChapterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateChapterRequest.ProtoReflect.Descriptor instead.
 func (*UpdateChapterRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{38}
+	return file_lms_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *UpdateChapterRequest) GetChapterId() string {
@@ -3129,14 +3046,14 @@ func (x *UpdateChapterRequest) GetVersion() uint32 {
 
 type UpdateChapterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateChapterResponse) Reset() {
 	*x = UpdateChapterResponse{}
-	mi := &file_lms_proto_msgTypes[39]
+	mi := &file_lms_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3148,7 +3065,7 @@ func (x *UpdateChapterResponse) String() string {
 func (*UpdateChapterResponse) ProtoMessage() {}
 
 func (x *UpdateChapterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[39]
+	mi := &file_lms_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3161,7 +3078,7 @@ func (x *UpdateChapterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateChapterResponse.ProtoReflect.Descriptor instead.
 func (*UpdateChapterResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{39}
+	return file_lms_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *UpdateChapterResponse) GetSuccess() bool {
@@ -3173,15 +3090,15 @@ func (x *UpdateChapterResponse) GetSuccess() bool {
 
 type DeleteChapterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
-	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"` // 章节ID ([required])
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`                     // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteChapterRequest) Reset() {
 	*x = DeleteChapterRequest{}
-	mi := &file_lms_proto_msgTypes[40]
+	mi := &file_lms_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3193,7 +3110,7 @@ func (x *DeleteChapterRequest) String() string {
 func (*DeleteChapterRequest) ProtoMessage() {}
 
 func (x *DeleteChapterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[40]
+	mi := &file_lms_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3206,7 +3123,7 @@ func (x *DeleteChapterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteChapterRequest.ProtoReflect.Descriptor instead.
 func (*DeleteChapterRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{40}
+	return file_lms_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *DeleteChapterRequest) GetChapterId() string {
@@ -3225,14 +3142,14 @@ func (x *DeleteChapterRequest) GetVersion() uint32 {
 
 type DeleteChapterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteChapterResponse) Reset() {
 	*x = DeleteChapterResponse{}
-	mi := &file_lms_proto_msgTypes[41]
+	mi := &file_lms_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3244,7 +3161,7 @@ func (x *DeleteChapterResponse) String() string {
 func (*DeleteChapterResponse) ProtoMessage() {}
 
 func (x *DeleteChapterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[41]
+	mi := &file_lms_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3257,7 +3174,7 @@ func (x *DeleteChapterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteChapterResponse.ProtoReflect.Descriptor instead.
 func (*DeleteChapterResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{41}
+	return file_lms_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *DeleteChapterResponse) GetSuccess() bool {
@@ -3269,14 +3186,14 @@ func (x *DeleteChapterResponse) GetSuccess() bool {
 
 type GetChapterRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
+	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"` // 章节ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetChapterRequest) Reset() {
 	*x = GetChapterRequest{}
-	mi := &file_lms_proto_msgTypes[42]
+	mi := &file_lms_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3288,7 +3205,7 @@ func (x *GetChapterRequest) String() string {
 func (*GetChapterRequest) ProtoMessage() {}
 
 func (x *GetChapterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[42]
+	mi := &file_lms_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3301,7 +3218,7 @@ func (x *GetChapterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChapterRequest.ProtoReflect.Descriptor instead.
 func (*GetChapterRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{42}
+	return file_lms_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *GetChapterRequest) GetChapterId() string {
@@ -3313,14 +3230,14 @@ func (x *GetChapterRequest) GetChapterId() string {
 
 type GetChapterResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Chapter       *Chapter               `protobuf:"bytes,1,opt,name=chapter,proto3" json:"chapter,omitempty"`
+	Chapter       *Chapter               `protobuf:"bytes,1,opt,name=chapter,proto3" json:"chapter,omitempty"` // 章节详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetChapterResponse) Reset() {
 	*x = GetChapterResponse{}
-	mi := &file_lms_proto_msgTypes[43]
+	mi := &file_lms_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3332,7 +3249,7 @@ func (x *GetChapterResponse) String() string {
 func (*GetChapterResponse) ProtoMessage() {}
 
 func (x *GetChapterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[43]
+	mi := &file_lms_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3345,7 +3262,7 @@ func (x *GetChapterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChapterResponse.ProtoReflect.Descriptor instead.
 func (*GetChapterResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{43}
+	return file_lms_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *GetChapterResponse) GetChapter() *Chapter {
@@ -3357,14 +3274,14 @@ func (x *GetChapterResponse) GetChapter() *Chapter {
 
 type ListChaptersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"` // 课程ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListChaptersRequest) Reset() {
 	*x = ListChaptersRequest{}
-	mi := &file_lms_proto_msgTypes[44]
+	mi := &file_lms_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3376,7 +3293,7 @@ func (x *ListChaptersRequest) String() string {
 func (*ListChaptersRequest) ProtoMessage() {}
 
 func (x *ListChaptersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[44]
+	mi := &file_lms_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3389,7 +3306,7 @@ func (x *ListChaptersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChaptersRequest.ProtoReflect.Descriptor instead.
 func (*ListChaptersRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{44}
+	return file_lms_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *ListChaptersRequest) GetCourseId() string {
@@ -3401,14 +3318,14 @@ func (x *ListChaptersRequest) GetCourseId() string {
 
 type ListChaptersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Chapters      []*Chapter             `protobuf:"bytes,1,rep,name=chapters,proto3" json:"chapters,omitempty"`
+	Chapters      []*Chapter             `protobuf:"bytes,1,rep,name=chapters,proto3" json:"chapters,omitempty"` // 章节列表（按sort_order排序）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListChaptersResponse) Reset() {
 	*x = ListChaptersResponse{}
-	mi := &file_lms_proto_msgTypes[45]
+	mi := &file_lms_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3420,7 +3337,7 @@ func (x *ListChaptersResponse) String() string {
 func (*ListChaptersResponse) ProtoMessage() {}
 
 func (x *ListChaptersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[45]
+	mi := &file_lms_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3433,7 +3350,7 @@ func (x *ListChaptersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChaptersResponse.ProtoReflect.Descriptor instead.
 func (*ListChaptersResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{45}
+	return file_lms_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ListChaptersResponse) GetChapters() []*Chapter {
@@ -3445,15 +3362,15 @@ func (x *ListChaptersResponse) GetChapters() []*Chapter {
 
 type ReorderChaptersRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"` // 课程ID ([required])
+	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`                       // 重排序项列表 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderChaptersRequest) Reset() {
 	*x = ReorderChaptersRequest{}
-	mi := &file_lms_proto_msgTypes[46]
+	mi := &file_lms_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3465,7 +3382,7 @@ func (x *ReorderChaptersRequest) String() string {
 func (*ReorderChaptersRequest) ProtoMessage() {}
 
 func (x *ReorderChaptersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[46]
+	mi := &file_lms_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3478,7 +3395,7 @@ func (x *ReorderChaptersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderChaptersRequest.ProtoReflect.Descriptor instead.
 func (*ReorderChaptersRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{46}
+	return file_lms_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ReorderChaptersRequest) GetCourseId() string {
@@ -3497,14 +3414,14 @@ func (x *ReorderChaptersRequest) GetItems() []*ReorderItem {
 
 type ReorderChaptersResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderChaptersResponse) Reset() {
 	*x = ReorderChaptersResponse{}
-	mi := &file_lms_proto_msgTypes[47]
+	mi := &file_lms_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3516,7 +3433,7 @@ func (x *ReorderChaptersResponse) String() string {
 func (*ReorderChaptersResponse) ProtoMessage() {}
 
 func (x *ReorderChaptersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[47]
+	mi := &file_lms_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3529,7 +3446,7 @@ func (x *ReorderChaptersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderChaptersResponse.ProtoReflect.Descriptor instead.
 func (*ReorderChaptersResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{47}
+	return file_lms_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ReorderChaptersResponse) GetSuccess() bool {
@@ -3541,25 +3458,25 @@ func (x *ReorderChaptersResponse) GetSuccess() bool {
 
 type CreateLessonRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	LessonId       string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
-	ChapterId      string                 `protobuf:"bytes,2,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
-	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	SortOrder      uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	LessonType     LessonType             `protobuf:"varint,5,opt,name=lesson_type,json=lessonType,proto3,enum=glms.LessonType" json:"lesson_type,omitempty"`
-	Body           string                 `protobuf:"bytes,6,opt,name=body,proto3" json:"body,omitempty"`
-	MediaObjectKey string                 `protobuf:"bytes,7,opt,name=media_object_key,json=mediaObjectKey,proto3" json:"media_object_key,omitempty"`
-	ExternalUrl    string                 `protobuf:"bytes,8,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`
-	VideoProvider  string                 `protobuf:"bytes,9,opt,name=video_provider,json=videoProvider,proto3" json:"video_provider,omitempty"`
-	VideoStreamUid string                 `protobuf:"bytes,10,opt,name=video_stream_uid,json=videoStreamUid,proto3" json:"video_stream_uid,omitempty"`
-	VideoEmbedCode string                 `protobuf:"bytes,11,opt,name=video_embed_code,json=videoEmbedCode,proto3" json:"video_embed_code,omitempty"`
-	MetaJson       string                 `protobuf:"bytes,12,opt,name=meta_json,json=metaJson,proto3" json:"meta_json,omitempty"`
+	LessonId       string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`                             // 课时ID ULID (必填，外部指定)
+	ChapterId      string                 `protobuf:"bytes,2,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`                          // 所属章节ID ([required])
+	Title          string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                                                   // 课时标题 ([required])
+	SortOrder      uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                         // 排序序号 ([required])
+	LessonType     LessonType             `protobuf:"varint,5,opt,name=lesson_type,json=lessonType,proto3,enum=glms.LessonType" json:"lesson_type,omitempty"` // 课时类型 ([required])
+	Body           string                 `protobuf:"bytes,6,opt,name=body,proto3" json:"body,omitempty"`                                                     // 文本内容（lesson_type=text时必填）
+	MediaObjectKey string                 `protobuf:"bytes,7,opt,name=media_object_key,json=mediaObjectKey,proto3" json:"media_object_key,omitempty"`         // 媒体文件S3对象key（video/pdf/image/audio/file类型时必填）
+	ExternalUrl    string                 `protobuf:"bytes,8,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`                    // 外部链接URL（lesson_type=link时必填）
+	VideoProvider  string                 `protobuf:"bytes,9,opt,name=video_provider,json=videoProvider,proto3" json:"video_provider,omitempty"`              // 视频提供商
+	VideoStreamUid string                 `protobuf:"bytes,10,opt,name=video_stream_uid,json=videoStreamUid,proto3" json:"video_stream_uid,omitempty"`        // 视频流唯一标识
+	VideoEmbedCode string                 `protobuf:"bytes,11,opt,name=video_embed_code,json=videoEmbedCode,proto3" json:"video_embed_code,omitempty"`        // 视频嵌入代码
+	MetaJson       string                 `protobuf:"bytes,12,opt,name=meta_json,json=metaJson,proto3" json:"meta_json,omitempty"`                            // 扩展元数据JSON
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreateLessonRequest) Reset() {
 	*x = CreateLessonRequest{}
-	mi := &file_lms_proto_msgTypes[48]
+	mi := &file_lms_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3571,7 +3488,7 @@ func (x *CreateLessonRequest) String() string {
 func (*CreateLessonRequest) ProtoMessage() {}
 
 func (x *CreateLessonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[48]
+	mi := &file_lms_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3584,7 +3501,7 @@ func (x *CreateLessonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateLessonRequest.ProtoReflect.Descriptor instead.
 func (*CreateLessonRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{48}
+	return file_lms_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *CreateLessonRequest) GetLessonId() string {
@@ -3673,14 +3590,14 @@ func (x *CreateLessonRequest) GetMetaJson() string {
 
 type CreateLessonResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
+	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"` // 创建的课时ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateLessonResponse) Reset() {
 	*x = CreateLessonResponse{}
-	mi := &file_lms_proto_msgTypes[49]
+	mi := &file_lms_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3692,7 +3609,7 @@ func (x *CreateLessonResponse) String() string {
 func (*CreateLessonResponse) ProtoMessage() {}
 
 func (x *CreateLessonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[49]
+	mi := &file_lms_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3705,7 +3622,7 @@ func (x *CreateLessonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateLessonResponse.ProtoReflect.Descriptor instead.
 func (*CreateLessonResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{49}
+	return file_lms_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *CreateLessonResponse) GetLessonId() string {
@@ -3717,25 +3634,25 @@ func (x *CreateLessonResponse) GetLessonId() string {
 
 type UpdateLessonRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	LessonId       string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
-	Title          string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	SortOrder      uint32                 `protobuf:"varint,3,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	LessonType     LessonType             `protobuf:"varint,4,opt,name=lesson_type,json=lessonType,proto3,enum=glms.LessonType" json:"lesson_type,omitempty"`
-	Body           string                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`
-	MediaObjectKey string                 `protobuf:"bytes,6,opt,name=media_object_key,json=mediaObjectKey,proto3" json:"media_object_key,omitempty"`
-	ExternalUrl    string                 `protobuf:"bytes,7,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`
-	VideoProvider  string                 `protobuf:"bytes,8,opt,name=video_provider,json=videoProvider,proto3" json:"video_provider,omitempty"`
-	VideoStreamUid string                 `protobuf:"bytes,9,opt,name=video_stream_uid,json=videoStreamUid,proto3" json:"video_stream_uid,omitempty"`
-	VideoEmbedCode string                 `protobuf:"bytes,10,opt,name=video_embed_code,json=videoEmbedCode,proto3" json:"video_embed_code,omitempty"`
-	MetaJson       string                 `protobuf:"bytes,11,opt,name=meta_json,json=metaJson,proto3" json:"meta_json,omitempty"`
-	Version        uint32                 `protobuf:"varint,12,opt,name=version,proto3" json:"version,omitempty"`
+	LessonId       string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`                             // 课时ID ([required])
+	Title          string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                                                   // 课时标题 ([required])
+	SortOrder      uint32                 `protobuf:"varint,3,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                         // 排序序号 (必填，已发布课程不可修改)
+	LessonType     LessonType             `protobuf:"varint,4,opt,name=lesson_type,json=lessonType,proto3,enum=glms.LessonType" json:"lesson_type,omitempty"` // 课时类型 (必填，已发布课程不可修改)
+	Body           string                 `protobuf:"bytes,5,opt,name=body,proto3" json:"body,omitempty"`                                                     // 文本内容
+	MediaObjectKey string                 `protobuf:"bytes,6,opt,name=media_object_key,json=mediaObjectKey,proto3" json:"media_object_key,omitempty"`         // 媒体文件S3对象key
+	ExternalUrl    string                 `protobuf:"bytes,7,opt,name=external_url,json=externalUrl,proto3" json:"external_url,omitempty"`                    // 外部链接URL
+	VideoProvider  string                 `protobuf:"bytes,8,opt,name=video_provider,json=videoProvider,proto3" json:"video_provider,omitempty"`              // 视频提供商
+	VideoStreamUid string                 `protobuf:"bytes,9,opt,name=video_stream_uid,json=videoStreamUid,proto3" json:"video_stream_uid,omitempty"`         // 视频流唯一标识
+	VideoEmbedCode string                 `protobuf:"bytes,10,opt,name=video_embed_code,json=videoEmbedCode,proto3" json:"video_embed_code,omitempty"`        // 视频嵌入代码
+	MetaJson       string                 `protobuf:"bytes,11,opt,name=meta_json,json=metaJson,proto3" json:"meta_json,omitempty"`                            // 扩展元数据JSON
+	Version        uint32                 `protobuf:"varint,12,opt,name=version,proto3" json:"version,omitempty"`                                             // 乐观锁版本号 ([required])
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UpdateLessonRequest) Reset() {
 	*x = UpdateLessonRequest{}
-	mi := &file_lms_proto_msgTypes[50]
+	mi := &file_lms_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3747,7 +3664,7 @@ func (x *UpdateLessonRequest) String() string {
 func (*UpdateLessonRequest) ProtoMessage() {}
 
 func (x *UpdateLessonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[50]
+	mi := &file_lms_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3760,7 +3677,7 @@ func (x *UpdateLessonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLessonRequest.ProtoReflect.Descriptor instead.
 func (*UpdateLessonRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{50}
+	return file_lms_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *UpdateLessonRequest) GetLessonId() string {
@@ -3849,14 +3766,14 @@ func (x *UpdateLessonRequest) GetVersion() uint32 {
 
 type UpdateLessonResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateLessonResponse) Reset() {
 	*x = UpdateLessonResponse{}
-	mi := &file_lms_proto_msgTypes[51]
+	mi := &file_lms_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3868,7 +3785,7 @@ func (x *UpdateLessonResponse) String() string {
 func (*UpdateLessonResponse) ProtoMessage() {}
 
 func (x *UpdateLessonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[51]
+	mi := &file_lms_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3881,7 +3798,7 @@ func (x *UpdateLessonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLessonResponse.ProtoReflect.Descriptor instead.
 func (*UpdateLessonResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{51}
+	return file_lms_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *UpdateLessonResponse) GetSuccess() bool {
@@ -3893,15 +3810,15 @@ func (x *UpdateLessonResponse) GetSuccess() bool {
 
 type DeleteLessonRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
-	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"` // 课时ID ([required])
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`                  // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteLessonRequest) Reset() {
 	*x = DeleteLessonRequest{}
-	mi := &file_lms_proto_msgTypes[52]
+	mi := &file_lms_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3913,7 +3830,7 @@ func (x *DeleteLessonRequest) String() string {
 func (*DeleteLessonRequest) ProtoMessage() {}
 
 func (x *DeleteLessonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[52]
+	mi := &file_lms_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3926,7 +3843,7 @@ func (x *DeleteLessonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLessonRequest.ProtoReflect.Descriptor instead.
 func (*DeleteLessonRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{52}
+	return file_lms_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *DeleteLessonRequest) GetLessonId() string {
@@ -3945,14 +3862,14 @@ func (x *DeleteLessonRequest) GetVersion() uint32 {
 
 type DeleteLessonResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteLessonResponse) Reset() {
 	*x = DeleteLessonResponse{}
-	mi := &file_lms_proto_msgTypes[53]
+	mi := &file_lms_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3964,7 +3881,7 @@ func (x *DeleteLessonResponse) String() string {
 func (*DeleteLessonResponse) ProtoMessage() {}
 
 func (x *DeleteLessonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[53]
+	mi := &file_lms_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3977,7 +3894,7 @@ func (x *DeleteLessonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLessonResponse.ProtoReflect.Descriptor instead.
 func (*DeleteLessonResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{53}
+	return file_lms_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *DeleteLessonResponse) GetSuccess() bool {
@@ -3989,14 +3906,14 @@ func (x *DeleteLessonResponse) GetSuccess() bool {
 
 type GetLessonRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
+	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"` // 课时ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetLessonRequest) Reset() {
 	*x = GetLessonRequest{}
-	mi := &file_lms_proto_msgTypes[54]
+	mi := &file_lms_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4008,7 +3925,7 @@ func (x *GetLessonRequest) String() string {
 func (*GetLessonRequest) ProtoMessage() {}
 
 func (x *GetLessonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[54]
+	mi := &file_lms_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4021,7 +3938,7 @@ func (x *GetLessonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonRequest.ProtoReflect.Descriptor instead.
 func (*GetLessonRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{54}
+	return file_lms_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *GetLessonRequest) GetLessonId() string {
@@ -4033,14 +3950,14 @@ func (x *GetLessonRequest) GetLessonId() string {
 
 type GetLessonResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Lesson        *Lesson                `protobuf:"bytes,1,opt,name=lesson,proto3" json:"lesson,omitempty"`
+	Lesson        *Lesson                `protobuf:"bytes,1,opt,name=lesson,proto3" json:"lesson,omitempty"` // 课时详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetLessonResponse) Reset() {
 	*x = GetLessonResponse{}
-	mi := &file_lms_proto_msgTypes[55]
+	mi := &file_lms_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4052,7 +3969,7 @@ func (x *GetLessonResponse) String() string {
 func (*GetLessonResponse) ProtoMessage() {}
 
 func (x *GetLessonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[55]
+	mi := &file_lms_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4065,7 +3982,7 @@ func (x *GetLessonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonResponse.ProtoReflect.Descriptor instead.
 func (*GetLessonResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{55}
+	return file_lms_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *GetLessonResponse) GetLesson() *Lesson {
@@ -4077,14 +3994,14 @@ func (x *GetLessonResponse) GetLesson() *Lesson {
 
 type ListLessonsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
+	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"` // 章节ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListLessonsRequest) Reset() {
 	*x = ListLessonsRequest{}
-	mi := &file_lms_proto_msgTypes[56]
+	mi := &file_lms_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4096,7 +4013,7 @@ func (x *ListLessonsRequest) String() string {
 func (*ListLessonsRequest) ProtoMessage() {}
 
 func (x *ListLessonsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[56]
+	mi := &file_lms_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4109,7 +4026,7 @@ func (x *ListLessonsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLessonsRequest.ProtoReflect.Descriptor instead.
 func (*ListLessonsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{56}
+	return file_lms_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *ListLessonsRequest) GetChapterId() string {
@@ -4121,14 +4038,14 @@ func (x *ListLessonsRequest) GetChapterId() string {
 
 type ListLessonsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Lessons       []*Lesson              `protobuf:"bytes,1,rep,name=lessons,proto3" json:"lessons,omitempty"`
+	Lessons       []*Lesson              `protobuf:"bytes,1,rep,name=lessons,proto3" json:"lessons,omitempty"` // 课时列表（按sort_order排序）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListLessonsResponse) Reset() {
 	*x = ListLessonsResponse{}
-	mi := &file_lms_proto_msgTypes[57]
+	mi := &file_lms_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4140,7 +4057,7 @@ func (x *ListLessonsResponse) String() string {
 func (*ListLessonsResponse) ProtoMessage() {}
 
 func (x *ListLessonsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[57]
+	mi := &file_lms_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4153,7 +4070,7 @@ func (x *ListLessonsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLessonsResponse.ProtoReflect.Descriptor instead.
 func (*ListLessonsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{57}
+	return file_lms_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *ListLessonsResponse) GetLessons() []*Lesson {
@@ -4165,15 +4082,15 @@ func (x *ListLessonsResponse) GetLessons() []*Lesson {
 
 type ReorderLessonsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
-	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
+	ChapterId     string                 `protobuf:"bytes,1,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"` // 章节ID ([required])
+	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`                          // 重排序项列表 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderLessonsRequest) Reset() {
 	*x = ReorderLessonsRequest{}
-	mi := &file_lms_proto_msgTypes[58]
+	mi := &file_lms_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4185,7 +4102,7 @@ func (x *ReorderLessonsRequest) String() string {
 func (*ReorderLessonsRequest) ProtoMessage() {}
 
 func (x *ReorderLessonsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[58]
+	mi := &file_lms_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4198,7 +4115,7 @@ func (x *ReorderLessonsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderLessonsRequest.ProtoReflect.Descriptor instead.
 func (*ReorderLessonsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{58}
+	return file_lms_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ReorderLessonsRequest) GetChapterId() string {
@@ -4217,14 +4134,14 @@ func (x *ReorderLessonsRequest) GetItems() []*ReorderItem {
 
 type ReorderLessonsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderLessonsResponse) Reset() {
 	*x = ReorderLessonsResponse{}
-	mi := &file_lms_proto_msgTypes[59]
+	mi := &file_lms_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4236,7 +4153,7 @@ func (x *ReorderLessonsResponse) String() string {
 func (*ReorderLessonsResponse) ProtoMessage() {}
 
 func (x *ReorderLessonsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[59]
+	mi := &file_lms_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4249,7 +4166,7 @@ func (x *ReorderLessonsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderLessonsResponse.ProtoReflect.Descriptor instead.
 func (*ReorderLessonsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{59}
+	return file_lms_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ReorderLessonsResponse) GetSuccess() bool {
@@ -4261,19 +4178,19 @@ func (x *ReorderLessonsResponse) GetSuccess() bool {
 
 type CreatePrerequisiteRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	PrerequisiteId     string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"`
-	RequiredEntityType EntityType             `protobuf:"varint,2,opt,name=required_entity_type,json=requiredEntityType,proto3,enum=glms.EntityType" json:"required_entity_type,omitempty"`
-	RequiredEntityId   string                 `protobuf:"bytes,3,opt,name=required_entity_id,json=requiredEntityId,proto3" json:"required_entity_id,omitempty"`
-	RequiredResult     PrerequisiteResult     `protobuf:"varint,4,opt,name=required_result,json=requiredResult,proto3,enum=glms.PrerequisiteResult" json:"required_result,omitempty"`
-	TargetEntityType   EntityType             `protobuf:"varint,5,opt,name=target_entity_type,json=targetEntityType,proto3,enum=glms.EntityType" json:"target_entity_type,omitempty"`
-	TargetEntityId     string                 `protobuf:"bytes,6,opt,name=target_entity_id,json=targetEntityId,proto3" json:"target_entity_id,omitempty"`
+	PrerequisiteId     string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"`                                     // 前置条件ID ULID (必填，外部指定)
+	RequiredEntityType EntityType             `protobuf:"varint,2,opt,name=required_entity_type,json=requiredEntityType,proto3,enum=glms.EntityType" json:"required_entity_type,omitempty"` // 前置实体类型 ([required])
+	RequiredEntityId   string                 `protobuf:"bytes,3,opt,name=required_entity_id,json=requiredEntityId,proto3" json:"required_entity_id,omitempty"`                             // 前置实体ID ([required])
+	RequiredResult     PrerequisiteResult     `protobuf:"varint,4,opt,name=required_result,json=requiredResult,proto3,enum=glms.PrerequisiteResult" json:"required_result,omitempty"`       // 前置要求结果 ([required])
+	TargetEntityType   EntityType             `protobuf:"varint,5,opt,name=target_entity_type,json=targetEntityType,proto3,enum=glms.EntityType" json:"target_entity_type,omitempty"`       // 目标实体类型 ([required])
+	TargetEntityId     string                 `protobuf:"bytes,6,opt,name=target_entity_id,json=targetEntityId,proto3" json:"target_entity_id,omitempty"`                                   // 目标实体ID ([required])
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreatePrerequisiteRequest) Reset() {
 	*x = CreatePrerequisiteRequest{}
-	mi := &file_lms_proto_msgTypes[60]
+	mi := &file_lms_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4285,7 +4202,7 @@ func (x *CreatePrerequisiteRequest) String() string {
 func (*CreatePrerequisiteRequest) ProtoMessage() {}
 
 func (x *CreatePrerequisiteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[60]
+	mi := &file_lms_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4298,7 +4215,7 @@ func (x *CreatePrerequisiteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePrerequisiteRequest.ProtoReflect.Descriptor instead.
 func (*CreatePrerequisiteRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{60}
+	return file_lms_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *CreatePrerequisiteRequest) GetPrerequisiteId() string {
@@ -4345,14 +4262,14 @@ func (x *CreatePrerequisiteRequest) GetTargetEntityId() string {
 
 type CreatePrerequisiteResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	PrerequisiteId string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"`
+	PrerequisiteId string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"` // 创建的前置条件ID
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreatePrerequisiteResponse) Reset() {
 	*x = CreatePrerequisiteResponse{}
-	mi := &file_lms_proto_msgTypes[61]
+	mi := &file_lms_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4364,7 +4281,7 @@ func (x *CreatePrerequisiteResponse) String() string {
 func (*CreatePrerequisiteResponse) ProtoMessage() {}
 
 func (x *CreatePrerequisiteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[61]
+	mi := &file_lms_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4377,7 +4294,7 @@ func (x *CreatePrerequisiteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePrerequisiteResponse.ProtoReflect.Descriptor instead.
 func (*CreatePrerequisiteResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{61}
+	return file_lms_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *CreatePrerequisiteResponse) GetPrerequisiteId() string {
@@ -4389,20 +4306,20 @@ func (x *CreatePrerequisiteResponse) GetPrerequisiteId() string {
 
 type UpdatePrerequisiteRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	PrerequisiteId     string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"`
-	RequiredEntityType EntityType             `protobuf:"varint,2,opt,name=required_entity_type,json=requiredEntityType,proto3,enum=glms.EntityType" json:"required_entity_type,omitempty"`
-	RequiredEntityId   string                 `protobuf:"bytes,3,opt,name=required_entity_id,json=requiredEntityId,proto3" json:"required_entity_id,omitempty"`
-	RequiredResult     PrerequisiteResult     `protobuf:"varint,4,opt,name=required_result,json=requiredResult,proto3,enum=glms.PrerequisiteResult" json:"required_result,omitempty"`
-	TargetEntityType   EntityType             `protobuf:"varint,5,opt,name=target_entity_type,json=targetEntityType,proto3,enum=glms.EntityType" json:"target_entity_type,omitempty"`
-	TargetEntityId     string                 `protobuf:"bytes,6,opt,name=target_entity_id,json=targetEntityId,proto3" json:"target_entity_id,omitempty"`
-	Version            uint32                 `protobuf:"varint,7,opt,name=version,proto3" json:"version,omitempty"`
+	PrerequisiteId     string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"`                                     // 前置条件ID ([required])
+	RequiredEntityType EntityType             `protobuf:"varint,2,opt,name=required_entity_type,json=requiredEntityType,proto3,enum=glms.EntityType" json:"required_entity_type,omitempty"` // 前置实体类型 ([required])
+	RequiredEntityId   string                 `protobuf:"bytes,3,opt,name=required_entity_id,json=requiredEntityId,proto3" json:"required_entity_id,omitempty"`                             // 前置实体ID ([required])
+	RequiredResult     PrerequisiteResult     `protobuf:"varint,4,opt,name=required_result,json=requiredResult,proto3,enum=glms.PrerequisiteResult" json:"required_result,omitempty"`       // 前置要求结果 ([required])
+	TargetEntityType   EntityType             `protobuf:"varint,5,opt,name=target_entity_type,json=targetEntityType,proto3,enum=glms.EntityType" json:"target_entity_type,omitempty"`       // 目标实体类型 ([required])
+	TargetEntityId     string                 `protobuf:"bytes,6,opt,name=target_entity_id,json=targetEntityId,proto3" json:"target_entity_id,omitempty"`                                   // 目标实体ID ([required])
+	Version            uint32                 `protobuf:"varint,7,opt,name=version,proto3" json:"version,omitempty"`                                                                        // 乐观锁版本号 ([required])
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *UpdatePrerequisiteRequest) Reset() {
 	*x = UpdatePrerequisiteRequest{}
-	mi := &file_lms_proto_msgTypes[62]
+	mi := &file_lms_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4414,7 +4331,7 @@ func (x *UpdatePrerequisiteRequest) String() string {
 func (*UpdatePrerequisiteRequest) ProtoMessage() {}
 
 func (x *UpdatePrerequisiteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[62]
+	mi := &file_lms_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4427,7 +4344,7 @@ func (x *UpdatePrerequisiteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePrerequisiteRequest.ProtoReflect.Descriptor instead.
 func (*UpdatePrerequisiteRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{62}
+	return file_lms_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *UpdatePrerequisiteRequest) GetPrerequisiteId() string {
@@ -4481,14 +4398,14 @@ func (x *UpdatePrerequisiteRequest) GetVersion() uint32 {
 
 type UpdatePrerequisiteResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdatePrerequisiteResponse) Reset() {
 	*x = UpdatePrerequisiteResponse{}
-	mi := &file_lms_proto_msgTypes[63]
+	mi := &file_lms_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4500,7 +4417,7 @@ func (x *UpdatePrerequisiteResponse) String() string {
 func (*UpdatePrerequisiteResponse) ProtoMessage() {}
 
 func (x *UpdatePrerequisiteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[63]
+	mi := &file_lms_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4513,7 +4430,7 @@ func (x *UpdatePrerequisiteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePrerequisiteResponse.ProtoReflect.Descriptor instead.
 func (*UpdatePrerequisiteResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{63}
+	return file_lms_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *UpdatePrerequisiteResponse) GetSuccess() bool {
@@ -4525,15 +4442,15 @@ func (x *UpdatePrerequisiteResponse) GetSuccess() bool {
 
 type DeletePrerequisiteRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	PrerequisiteId string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"`
-	Version        uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	PrerequisiteId string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"` // 前置条件ID ([required])
+	Version        uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`                                    // 乐观锁版本号 ([required])
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *DeletePrerequisiteRequest) Reset() {
 	*x = DeletePrerequisiteRequest{}
-	mi := &file_lms_proto_msgTypes[64]
+	mi := &file_lms_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4545,7 +4462,7 @@ func (x *DeletePrerequisiteRequest) String() string {
 func (*DeletePrerequisiteRequest) ProtoMessage() {}
 
 func (x *DeletePrerequisiteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[64]
+	mi := &file_lms_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4558,7 +4475,7 @@ func (x *DeletePrerequisiteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePrerequisiteRequest.ProtoReflect.Descriptor instead.
 func (*DeletePrerequisiteRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{64}
+	return file_lms_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *DeletePrerequisiteRequest) GetPrerequisiteId() string {
@@ -4577,14 +4494,14 @@ func (x *DeletePrerequisiteRequest) GetVersion() uint32 {
 
 type DeletePrerequisiteResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeletePrerequisiteResponse) Reset() {
 	*x = DeletePrerequisiteResponse{}
-	mi := &file_lms_proto_msgTypes[65]
+	mi := &file_lms_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4596,7 +4513,7 @@ func (x *DeletePrerequisiteResponse) String() string {
 func (*DeletePrerequisiteResponse) ProtoMessage() {}
 
 func (x *DeletePrerequisiteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[65]
+	mi := &file_lms_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4609,7 +4526,7 @@ func (x *DeletePrerequisiteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePrerequisiteResponse.ProtoReflect.Descriptor instead.
 func (*DeletePrerequisiteResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{65}
+	return file_lms_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *DeletePrerequisiteResponse) GetSuccess() bool {
@@ -4621,14 +4538,14 @@ func (x *DeletePrerequisiteResponse) GetSuccess() bool {
 
 type GetPrerequisiteRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	PrerequisiteId string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"`
+	PrerequisiteId string                 `protobuf:"bytes,1,opt,name=prerequisite_id,json=prerequisiteId,proto3" json:"prerequisite_id,omitempty"` // 前置条件ID ([required])
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetPrerequisiteRequest) Reset() {
 	*x = GetPrerequisiteRequest{}
-	mi := &file_lms_proto_msgTypes[66]
+	mi := &file_lms_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4640,7 +4557,7 @@ func (x *GetPrerequisiteRequest) String() string {
 func (*GetPrerequisiteRequest) ProtoMessage() {}
 
 func (x *GetPrerequisiteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[66]
+	mi := &file_lms_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4653,7 +4570,7 @@ func (x *GetPrerequisiteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPrerequisiteRequest.ProtoReflect.Descriptor instead.
 func (*GetPrerequisiteRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{66}
+	return file_lms_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *GetPrerequisiteRequest) GetPrerequisiteId() string {
@@ -4665,14 +4582,14 @@ func (x *GetPrerequisiteRequest) GetPrerequisiteId() string {
 
 type GetPrerequisiteResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Prerequisite  *Prerequisite          `protobuf:"bytes,1,opt,name=prerequisite,proto3" json:"prerequisite,omitempty"`
+	Prerequisite  *Prerequisite          `protobuf:"bytes,1,opt,name=prerequisite,proto3" json:"prerequisite,omitempty"` // 前置条件详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetPrerequisiteResponse) Reset() {
 	*x = GetPrerequisiteResponse{}
-	mi := &file_lms_proto_msgTypes[67]
+	mi := &file_lms_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4684,7 +4601,7 @@ func (x *GetPrerequisiteResponse) String() string {
 func (*GetPrerequisiteResponse) ProtoMessage() {}
 
 func (x *GetPrerequisiteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[67]
+	mi := &file_lms_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4697,7 +4614,7 @@ func (x *GetPrerequisiteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPrerequisiteResponse.ProtoReflect.Descriptor instead.
 func (*GetPrerequisiteResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{67}
+	return file_lms_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *GetPrerequisiteResponse) GetPrerequisite() *Prerequisite {
@@ -4709,15 +4626,15 @@ func (x *GetPrerequisiteResponse) GetPrerequisite() *Prerequisite {
 
 type ListPrerequisitesRequest struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	TargetEntityType EntityType             `protobuf:"varint,1,opt,name=target_entity_type,json=targetEntityType,proto3,enum=glms.EntityType" json:"target_entity_type,omitempty"`
-	TargetEntityId   string                 `protobuf:"bytes,2,opt,name=target_entity_id,json=targetEntityId,proto3" json:"target_entity_id,omitempty"`
+	TargetEntityType EntityType             `protobuf:"varint,1,opt,name=target_entity_type,json=targetEntityType,proto3,enum=glms.EntityType" json:"target_entity_type,omitempty"` // 目标实体类型 ([required])
+	TargetEntityId   string                 `protobuf:"bytes,2,opt,name=target_entity_id,json=targetEntityId,proto3" json:"target_entity_id,omitempty"`                             // 目标实体ID ([required])
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ListPrerequisitesRequest) Reset() {
 	*x = ListPrerequisitesRequest{}
-	mi := &file_lms_proto_msgTypes[68]
+	mi := &file_lms_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4729,7 +4646,7 @@ func (x *ListPrerequisitesRequest) String() string {
 func (*ListPrerequisitesRequest) ProtoMessage() {}
 
 func (x *ListPrerequisitesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[68]
+	mi := &file_lms_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4742,7 +4659,7 @@ func (x *ListPrerequisitesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPrerequisitesRequest.ProtoReflect.Descriptor instead.
 func (*ListPrerequisitesRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{68}
+	return file_lms_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *ListPrerequisitesRequest) GetTargetEntityType() EntityType {
@@ -4761,14 +4678,14 @@ func (x *ListPrerequisitesRequest) GetTargetEntityId() string {
 
 type ListPrerequisitesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Prerequisites []*Prerequisite        `protobuf:"bytes,1,rep,name=prerequisites,proto3" json:"prerequisites,omitempty"`
+	Prerequisites []*Prerequisite        `protobuf:"bytes,1,rep,name=prerequisites,proto3" json:"prerequisites,omitempty"` // 前置条件列表
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListPrerequisitesResponse) Reset() {
 	*x = ListPrerequisitesResponse{}
-	mi := &file_lms_proto_msgTypes[69]
+	mi := &file_lms_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4780,7 +4697,7 @@ func (x *ListPrerequisitesResponse) String() string {
 func (*ListPrerequisitesResponse) ProtoMessage() {}
 
 func (x *ListPrerequisitesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[69]
+	mi := &file_lms_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4793,7 +4710,7 @@ func (x *ListPrerequisitesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPrerequisitesResponse.ProtoReflect.Descriptor instead.
 func (*ListPrerequisitesResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{69}
+	return file_lms_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *ListPrerequisitesResponse) GetPrerequisites() []*Prerequisite {
@@ -4805,24 +4722,24 @@ func (x *ListPrerequisitesResponse) GetPrerequisites() []*Prerequisite {
 
 type CreateQuizRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	QuizId             string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
-	QuizzableType      QuizzableType          `protobuf:"varint,2,opt,name=quizzable_type,json=quizzableType,proto3,enum=glms.QuizzableType" json:"quizzable_type,omitempty"`
-	QuizzableId        string                 `protobuf:"bytes,3,opt,name=quizzable_id,json=quizzableId,proto3" json:"quizzable_id,omitempty"`
-	Title              string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
-	Description        string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	PassingScore       uint32                 `protobuf:"varint,6,opt,name=passing_score,json=passingScore,proto3" json:"passing_score,omitempty"`
-	TimeLimit          uint32                 `protobuf:"varint,7,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`
-	MaxAttempts        uint32                 `protobuf:"varint,8,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`
-	AllowRetake        bool                   `protobuf:"varint,9,opt,name=allow_retake,json=allowRetake,proto3" json:"allow_retake,omitempty"`
-	RandomizeQuestions bool                   `protobuf:"varint,10,opt,name=randomize_questions,json=randomizeQuestions,proto3" json:"randomize_questions,omitempty"`
-	IsActive           bool                   `protobuf:"varint,11,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
+	QuizId             string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                                               // 测验ID ULID (必填，外部指定)
+	QuizzableType      QuizzableType          `protobuf:"varint,2,opt,name=quizzable_type,json=quizzableType,proto3,enum=glms.QuizzableType" json:"quizzable_type,omitempty"` // 所属实体类型 ([required])
+	QuizzableId        string                 `protobuf:"bytes,3,opt,name=quizzable_id,json=quizzableId,proto3" json:"quizzable_id,omitempty"`                                // 所属实体ID ([required])
+	Title              string                 `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`                                                               // 测验标题 ([required])
+	Description        string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`                                                   // 测验说明
+	PassingScore       uint32                 `protobuf:"varint,6,opt,name=passing_score,json=passingScore,proto3" json:"passing_score,omitempty"`                            // 及格分数（百分比 0-100，默认70） ([required])
+	TimeLimit          uint32                 `protobuf:"varint,7,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`                                     // 时间限制（分钟，0表示不限时） ([required])
+	MaxAttempts        uint32                 `protobuf:"varint,8,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`                               // 最大尝试次数（0表示不限次） ([required])
+	AllowRetake        bool                   `protobuf:"varint,9,opt,name=allow_retake,json=allowRetake,proto3" json:"allow_retake,omitempty"`                               // 是否允许通过后重考
+	RandomizeQuestions bool                   `protobuf:"varint,10,opt,name=randomize_questions,json=randomizeQuestions,proto3" json:"randomize_questions,omitempty"`         // 是否随机排列题目
+	IsActive           bool                   `protobuf:"varint,11,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`                                       // 是否启用
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateQuizRequest) Reset() {
 	*x = CreateQuizRequest{}
-	mi := &file_lms_proto_msgTypes[70]
+	mi := &file_lms_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4834,7 +4751,7 @@ func (x *CreateQuizRequest) String() string {
 func (*CreateQuizRequest) ProtoMessage() {}
 
 func (x *CreateQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[70]
+	mi := &file_lms_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4847,7 +4764,7 @@ func (x *CreateQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizRequest.ProtoReflect.Descriptor instead.
 func (*CreateQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{70}
+	return file_lms_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *CreateQuizRequest) GetQuizId() string {
@@ -4929,14 +4846,14 @@ func (x *CreateQuizRequest) GetIsActive() bool {
 
 type CreateQuizResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
+	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"` // 创建的测验ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateQuizResponse) Reset() {
 	*x = CreateQuizResponse{}
-	mi := &file_lms_proto_msgTypes[71]
+	mi := &file_lms_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4948,7 +4865,7 @@ func (x *CreateQuizResponse) String() string {
 func (*CreateQuizResponse) ProtoMessage() {}
 
 func (x *CreateQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[71]
+	mi := &file_lms_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4961,7 +4878,7 @@ func (x *CreateQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizResponse.ProtoReflect.Descriptor instead.
 func (*CreateQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{71}
+	return file_lms_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *CreateQuizResponse) GetQuizId() string {
@@ -4973,23 +4890,23 @@ func (x *CreateQuizResponse) GetQuizId() string {
 
 type UpdateQuizRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	QuizId             string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
-	Title              string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
-	Description        string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	PassingScore       uint32                 `protobuf:"varint,4,opt,name=passing_score,json=passingScore,proto3" json:"passing_score,omitempty"`
-	TimeLimit          uint32                 `protobuf:"varint,5,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`
-	MaxAttempts        uint32                 `protobuf:"varint,6,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`
-	AllowRetake        bool                   `protobuf:"varint,7,opt,name=allow_retake,json=allowRetake,proto3" json:"allow_retake,omitempty"`
-	RandomizeQuestions bool                   `protobuf:"varint,8,opt,name=randomize_questions,json=randomizeQuestions,proto3" json:"randomize_questions,omitempty"`
-	IsActive           bool                   `protobuf:"varint,9,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`
-	Version            uint32                 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`
+	QuizId             string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                                      // 测验ID ([required])
+	Title              string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`                                                      // 测验标题 ([required])
+	Description        string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                                          // 测验说明
+	PassingScore       uint32                 `protobuf:"varint,4,opt,name=passing_score,json=passingScore,proto3" json:"passing_score,omitempty"`                   // 及格分数 (必填，已发布课程不可修改)
+	TimeLimit          uint32                 `protobuf:"varint,5,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`                            // 时间限制 (必填，已发布课程不可修改)
+	MaxAttempts        uint32                 `protobuf:"varint,6,opt,name=max_attempts,json=maxAttempts,proto3" json:"max_attempts,omitempty"`                      // 最大尝试次数 (必填，已发布课程不可修改)
+	AllowRetake        bool                   `protobuf:"varint,7,opt,name=allow_retake,json=allowRetake,proto3" json:"allow_retake,omitempty"`                      // 是否允许通过后重考（已发布课程不可修改）
+	RandomizeQuestions bool                   `protobuf:"varint,8,opt,name=randomize_questions,json=randomizeQuestions,proto3" json:"randomize_questions,omitempty"` // 是否随机排列题目（已发布课程不可修改）
+	IsActive           bool                   `protobuf:"varint,9,opt,name=is_active,json=isActive,proto3" json:"is_active,omitempty"`                               // 是否启用（已发布课程不可修改）
+	Version            uint32                 `protobuf:"varint,10,opt,name=version,proto3" json:"version,omitempty"`                                                // 乐观锁版本号 ([required])
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *UpdateQuizRequest) Reset() {
 	*x = UpdateQuizRequest{}
-	mi := &file_lms_proto_msgTypes[72]
+	mi := &file_lms_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5001,7 +4918,7 @@ func (x *UpdateQuizRequest) String() string {
 func (*UpdateQuizRequest) ProtoMessage() {}
 
 func (x *UpdateQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[72]
+	mi := &file_lms_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5014,7 +4931,7 @@ func (x *UpdateQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizRequest.ProtoReflect.Descriptor instead.
 func (*UpdateQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{72}
+	return file_lms_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *UpdateQuizRequest) GetQuizId() string {
@@ -5089,14 +5006,14 @@ func (x *UpdateQuizRequest) GetVersion() uint32 {
 
 type UpdateQuizResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateQuizResponse) Reset() {
 	*x = UpdateQuizResponse{}
-	mi := &file_lms_proto_msgTypes[73]
+	mi := &file_lms_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5108,7 +5025,7 @@ func (x *UpdateQuizResponse) String() string {
 func (*UpdateQuizResponse) ProtoMessage() {}
 
 func (x *UpdateQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[73]
+	mi := &file_lms_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5121,7 +5038,7 @@ func (x *UpdateQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizResponse.ProtoReflect.Descriptor instead.
 func (*UpdateQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{73}
+	return file_lms_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *UpdateQuizResponse) GetSuccess() bool {
@@ -5133,15 +5050,15 @@ func (x *UpdateQuizResponse) GetSuccess() bool {
 
 type DeleteQuizRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
-	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"` // 测验ID ([required])
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`            // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteQuizRequest) Reset() {
 	*x = DeleteQuizRequest{}
-	mi := &file_lms_proto_msgTypes[74]
+	mi := &file_lms_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5153,7 +5070,7 @@ func (x *DeleteQuizRequest) String() string {
 func (*DeleteQuizRequest) ProtoMessage() {}
 
 func (x *DeleteQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[74]
+	mi := &file_lms_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5166,7 +5083,7 @@ func (x *DeleteQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizRequest.ProtoReflect.Descriptor instead.
 func (*DeleteQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{74}
+	return file_lms_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *DeleteQuizRequest) GetQuizId() string {
@@ -5185,14 +5102,14 @@ func (x *DeleteQuizRequest) GetVersion() uint32 {
 
 type DeleteQuizResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteQuizResponse) Reset() {
 	*x = DeleteQuizResponse{}
-	mi := &file_lms_proto_msgTypes[75]
+	mi := &file_lms_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5204,7 +5121,7 @@ func (x *DeleteQuizResponse) String() string {
 func (*DeleteQuizResponse) ProtoMessage() {}
 
 func (x *DeleteQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[75]
+	mi := &file_lms_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5217,7 +5134,7 @@ func (x *DeleteQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizResponse.ProtoReflect.Descriptor instead.
 func (*DeleteQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{75}
+	return file_lms_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *DeleteQuizResponse) GetSuccess() bool {
@@ -5229,14 +5146,14 @@ func (x *DeleteQuizResponse) GetSuccess() bool {
 
 type GetQuizRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
+	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"` // 测验ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetQuizRequest) Reset() {
 	*x = GetQuizRequest{}
-	mi := &file_lms_proto_msgTypes[76]
+	mi := &file_lms_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5248,7 +5165,7 @@ func (x *GetQuizRequest) String() string {
 func (*GetQuizRequest) ProtoMessage() {}
 
 func (x *GetQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[76]
+	mi := &file_lms_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5261,7 +5178,7 @@ func (x *GetQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizRequest.ProtoReflect.Descriptor instead.
 func (*GetQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{76}
+	return file_lms_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *GetQuizRequest) GetQuizId() string {
@@ -5273,14 +5190,14 @@ func (x *GetQuizRequest) GetQuizId() string {
 
 type GetQuizResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Quiz          *Quiz                  `protobuf:"bytes,1,opt,name=quiz,proto3" json:"quiz,omitempty"`
+	Quiz          *Quiz                  `protobuf:"bytes,1,opt,name=quiz,proto3" json:"quiz,omitempty"` // 测验详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetQuizResponse) Reset() {
 	*x = GetQuizResponse{}
-	mi := &file_lms_proto_msgTypes[77]
+	mi := &file_lms_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5292,7 +5209,7 @@ func (x *GetQuizResponse) String() string {
 func (*GetQuizResponse) ProtoMessage() {}
 
 func (x *GetQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[77]
+	mi := &file_lms_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5305,7 +5222,7 @@ func (x *GetQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{77}
+	return file_lms_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *GetQuizResponse) GetQuiz() *Quiz {
@@ -5317,15 +5234,15 @@ func (x *GetQuizResponse) GetQuiz() *Quiz {
 
 type ListQuizzesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuizzableType QuizzableType          `protobuf:"varint,1,opt,name=quizzable_type,json=quizzableType,proto3,enum=glms.QuizzableType" json:"quizzable_type,omitempty"`
-	QuizzableId   string                 `protobuf:"bytes,2,opt,name=quizzable_id,json=quizzableId,proto3" json:"quizzable_id,omitempty"`
+	QuizzableType QuizzableType          `protobuf:"varint,1,opt,name=quizzable_type,json=quizzableType,proto3,enum=glms.QuizzableType" json:"quizzable_type,omitempty"` // 所属实体类型 ([required])
+	QuizzableId   string                 `protobuf:"bytes,2,opt,name=quizzable_id,json=quizzableId,proto3" json:"quizzable_id,omitempty"`                                // 所属实体ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListQuizzesRequest) Reset() {
 	*x = ListQuizzesRequest{}
-	mi := &file_lms_proto_msgTypes[78]
+	mi := &file_lms_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5337,7 +5254,7 @@ func (x *ListQuizzesRequest) String() string {
 func (*ListQuizzesRequest) ProtoMessage() {}
 
 func (x *ListQuizzesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[78]
+	mi := &file_lms_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5350,7 +5267,7 @@ func (x *ListQuizzesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizzesRequest.ProtoReflect.Descriptor instead.
 func (*ListQuizzesRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{78}
+	return file_lms_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *ListQuizzesRequest) GetQuizzableType() QuizzableType {
@@ -5369,14 +5286,14 @@ func (x *ListQuizzesRequest) GetQuizzableId() string {
 
 type ListQuizzesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Quizzes       []*Quiz                `protobuf:"bytes,1,rep,name=quizzes,proto3" json:"quizzes,omitempty"`
+	Quizzes       []*Quiz                `protobuf:"bytes,1,rep,name=quizzes,proto3" json:"quizzes,omitempty"` // 测验列表
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListQuizzesResponse) Reset() {
 	*x = ListQuizzesResponse{}
-	mi := &file_lms_proto_msgTypes[79]
+	mi := &file_lms_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5388,7 +5305,7 @@ func (x *ListQuizzesResponse) String() string {
 func (*ListQuizzesResponse) ProtoMessage() {}
 
 func (x *ListQuizzesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[79]
+	mi := &file_lms_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5401,7 +5318,7 @@ func (x *ListQuizzesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizzesResponse.ProtoReflect.Descriptor instead.
 func (*ListQuizzesResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{79}
+	return file_lms_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *ListQuizzesResponse) GetQuizzes() []*Quiz {
@@ -5413,21 +5330,21 @@ func (x *ListQuizzesResponse) GetQuizzes() []*Quiz {
 
 type CreateQuizQuestionRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId     string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	QuizId         string                 `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
-	QuestionText   string                 `protobuf:"bytes,3,opt,name=question_text,json=questionText,proto3" json:"question_text,omitempty"`
-	QuestionType   QuizQuestionType       `protobuf:"varint,4,opt,name=question_type,json=questionType,proto3,enum=glms.QuizQuestionType" json:"question_type,omitempty"`
-	Points         uint32                 `protobuf:"varint,5,opt,name=points,proto3" json:"points,omitempty"`
-	SortOrder      uint32                 `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	IsRequired     bool                   `protobuf:"varint,7,opt,name=is_required,json=isRequired,proto3" json:"is_required,omitempty"`
-	MediaItemsJson string                 `protobuf:"bytes,8,opt,name=media_items_json,json=mediaItemsJson,proto3" json:"media_items_json,omitempty"`
+	QuestionId     string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`                                   // 题目ID ULID (必填，外部指定)
+	QuizId         string                 `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                                               // 所属测验ID ([required])
+	QuestionText   string                 `protobuf:"bytes,3,opt,name=question_text,json=questionText,proto3" json:"question_text,omitempty"`                             // 题目内容 ([required])
+	QuestionType   QuizQuestionType       `protobuf:"varint,4,opt,name=question_type,json=questionType,proto3,enum=glms.QuizQuestionType" json:"question_type,omitempty"` // 题目类型 ([required])
+	Points         uint32                 `protobuf:"varint,5,opt,name=points,proto3" json:"points,omitempty"`                                                            // 分值 ([required])
+	SortOrder      uint32                 `protobuf:"varint,6,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                                     // 排序序号 ([required])
+	IsRequired     bool                   `protobuf:"varint,7,opt,name=is_required,json=isRequired,proto3" json:"is_required,omitempty"`                                  // 是否必答
+	MediaItemsJson string                 `protobuf:"bytes,8,opt,name=media_items_json,json=mediaItemsJson,proto3" json:"media_items_json,omitempty"`                     // 媒体附件JSON数组 ([required])
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreateQuizQuestionRequest) Reset() {
 	*x = CreateQuizQuestionRequest{}
-	mi := &file_lms_proto_msgTypes[80]
+	mi := &file_lms_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5439,7 +5356,7 @@ func (x *CreateQuizQuestionRequest) String() string {
 func (*CreateQuizQuestionRequest) ProtoMessage() {}
 
 func (x *CreateQuizQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[80]
+	mi := &file_lms_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5452,7 +5369,7 @@ func (x *CreateQuizQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizQuestionRequest.ProtoReflect.Descriptor instead.
 func (*CreateQuizQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{80}
+	return file_lms_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *CreateQuizQuestionRequest) GetQuestionId() string {
@@ -5513,14 +5430,14 @@ func (x *CreateQuizQuestionRequest) GetMediaItemsJson() string {
 
 type CreateQuizQuestionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"` // 创建的题目ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateQuizQuestionResponse) Reset() {
 	*x = CreateQuizQuestionResponse{}
-	mi := &file_lms_proto_msgTypes[81]
+	mi := &file_lms_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5532,7 +5449,7 @@ func (x *CreateQuizQuestionResponse) String() string {
 func (*CreateQuizQuestionResponse) ProtoMessage() {}
 
 func (x *CreateQuizQuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[81]
+	mi := &file_lms_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5545,7 +5462,7 @@ func (x *CreateQuizQuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizQuestionResponse.ProtoReflect.Descriptor instead.
 func (*CreateQuizQuestionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{81}
+	return file_lms_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *CreateQuizQuestionResponse) GetQuestionId() string {
@@ -5557,21 +5474,21 @@ func (x *CreateQuizQuestionResponse) GetQuestionId() string {
 
 type UpdateQuizQuestionRequest struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId     string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	QuestionText   string                 `protobuf:"bytes,2,opt,name=question_text,json=questionText,proto3" json:"question_text,omitempty"`
-	QuestionType   QuizQuestionType       `protobuf:"varint,3,opt,name=question_type,json=questionType,proto3,enum=glms.QuizQuestionType" json:"question_type,omitempty"`
-	Points         uint32                 `protobuf:"varint,4,opt,name=points,proto3" json:"points,omitempty"`
-	SortOrder      uint32                 `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	IsRequired     bool                   `protobuf:"varint,6,opt,name=is_required,json=isRequired,proto3" json:"is_required,omitempty"`
-	MediaItemsJson string                 `protobuf:"bytes,7,opt,name=media_items_json,json=mediaItemsJson,proto3" json:"media_items_json,omitempty"`
-	Version        uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`
+	QuestionId     string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`                                   // 题目ID ([required])
+	QuestionText   string                 `protobuf:"bytes,2,opt,name=question_text,json=questionText,proto3" json:"question_text,omitempty"`                             // 题目内容 ([required])
+	QuestionType   QuizQuestionType       `protobuf:"varint,3,opt,name=question_type,json=questionType,proto3,enum=glms.QuizQuestionType" json:"question_type,omitempty"` // 题目类型 (必填，已发布课程不可修改)
+	Points         uint32                 `protobuf:"varint,4,opt,name=points,proto3" json:"points,omitempty"`                                                            // 分值 (必填，已发布课程不可修改)
+	SortOrder      uint32                 `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                                     // 排序序号 (必填，已发布课程不可修改)
+	IsRequired     bool                   `protobuf:"varint,6,opt,name=is_required,json=isRequired,proto3" json:"is_required,omitempty"`                                  // 是否必答（已发布课程不可修改）
+	MediaItemsJson string                 `protobuf:"bytes,7,opt,name=media_items_json,json=mediaItemsJson,proto3" json:"media_items_json,omitempty"`                     // 媒体附件JSON数组 ([required])
+	Version        uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`                                                          // 乐观锁版本号 ([required])
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UpdateQuizQuestionRequest) Reset() {
 	*x = UpdateQuizQuestionRequest{}
-	mi := &file_lms_proto_msgTypes[82]
+	mi := &file_lms_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5583,7 +5500,7 @@ func (x *UpdateQuizQuestionRequest) String() string {
 func (*UpdateQuizQuestionRequest) ProtoMessage() {}
 
 func (x *UpdateQuizQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[82]
+	mi := &file_lms_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5596,7 +5513,7 @@ func (x *UpdateQuizQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizQuestionRequest.ProtoReflect.Descriptor instead.
 func (*UpdateQuizQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{82}
+	return file_lms_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *UpdateQuizQuestionRequest) GetQuestionId() string {
@@ -5657,14 +5574,14 @@ func (x *UpdateQuizQuestionRequest) GetVersion() uint32 {
 
 type UpdateQuizQuestionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateQuizQuestionResponse) Reset() {
 	*x = UpdateQuizQuestionResponse{}
-	mi := &file_lms_proto_msgTypes[83]
+	mi := &file_lms_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5676,7 +5593,7 @@ func (x *UpdateQuizQuestionResponse) String() string {
 func (*UpdateQuizQuestionResponse) ProtoMessage() {}
 
 func (x *UpdateQuizQuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[83]
+	mi := &file_lms_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5689,7 +5606,7 @@ func (x *UpdateQuizQuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizQuestionResponse.ProtoReflect.Descriptor instead.
 func (*UpdateQuizQuestionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{83}
+	return file_lms_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *UpdateQuizQuestionResponse) GetSuccess() bool {
@@ -5701,15 +5618,15 @@ func (x *UpdateQuizQuestionResponse) GetSuccess() bool {
 
 type DeleteQuizQuestionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"` // 题目ID ([required])
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`                        // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteQuizQuestionRequest) Reset() {
 	*x = DeleteQuizQuestionRequest{}
-	mi := &file_lms_proto_msgTypes[84]
+	mi := &file_lms_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5721,7 +5638,7 @@ func (x *DeleteQuizQuestionRequest) String() string {
 func (*DeleteQuizQuestionRequest) ProtoMessage() {}
 
 func (x *DeleteQuizQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[84]
+	mi := &file_lms_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5734,7 +5651,7 @@ func (x *DeleteQuizQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizQuestionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteQuizQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{84}
+	return file_lms_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *DeleteQuizQuestionRequest) GetQuestionId() string {
@@ -5753,14 +5670,14 @@ func (x *DeleteQuizQuestionRequest) GetVersion() uint32 {
 
 type DeleteQuizQuestionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteQuizQuestionResponse) Reset() {
 	*x = DeleteQuizQuestionResponse{}
-	mi := &file_lms_proto_msgTypes[85]
+	mi := &file_lms_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5772,7 +5689,7 @@ func (x *DeleteQuizQuestionResponse) String() string {
 func (*DeleteQuizQuestionResponse) ProtoMessage() {}
 
 func (x *DeleteQuizQuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[85]
+	mi := &file_lms_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5785,7 +5702,7 @@ func (x *DeleteQuizQuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizQuestionResponse.ProtoReflect.Descriptor instead.
 func (*DeleteQuizQuestionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{85}
+	return file_lms_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *DeleteQuizQuestionResponse) GetSuccess() bool {
@@ -5797,14 +5714,14 @@ func (x *DeleteQuizQuestionResponse) GetSuccess() bool {
 
 type GetQuizQuestionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"` // 题目ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetQuizQuestionRequest) Reset() {
 	*x = GetQuizQuestionRequest{}
-	mi := &file_lms_proto_msgTypes[86]
+	mi := &file_lms_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5816,7 +5733,7 @@ func (x *GetQuizQuestionRequest) String() string {
 func (*GetQuizQuestionRequest) ProtoMessage() {}
 
 func (x *GetQuizQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[86]
+	mi := &file_lms_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5829,7 +5746,7 @@ func (x *GetQuizQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizQuestionRequest.ProtoReflect.Descriptor instead.
 func (*GetQuizQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{86}
+	return file_lms_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *GetQuizQuestionRequest) GetQuestionId() string {
@@ -5841,14 +5758,14 @@ func (x *GetQuizQuestionRequest) GetQuestionId() string {
 
 type GetQuizQuestionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Question      *QuizQuestion          `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
+	Question      *QuizQuestion          `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"` // 题目详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetQuizQuestionResponse) Reset() {
 	*x = GetQuizQuestionResponse{}
-	mi := &file_lms_proto_msgTypes[87]
+	mi := &file_lms_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5860,7 +5777,7 @@ func (x *GetQuizQuestionResponse) String() string {
 func (*GetQuizQuestionResponse) ProtoMessage() {}
 
 func (x *GetQuizQuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[87]
+	mi := &file_lms_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5873,7 +5790,7 @@ func (x *GetQuizQuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizQuestionResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizQuestionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{87}
+	return file_lms_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *GetQuizQuestionResponse) GetQuestion() *QuizQuestion {
@@ -5885,14 +5802,14 @@ func (x *GetQuizQuestionResponse) GetQuestion() *QuizQuestion {
 
 type ListQuizQuestionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
+	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"` // 测验ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListQuizQuestionsRequest) Reset() {
 	*x = ListQuizQuestionsRequest{}
-	mi := &file_lms_proto_msgTypes[88]
+	mi := &file_lms_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5904,7 +5821,7 @@ func (x *ListQuizQuestionsRequest) String() string {
 func (*ListQuizQuestionsRequest) ProtoMessage() {}
 
 func (x *ListQuizQuestionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[88]
+	mi := &file_lms_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5917,7 +5834,7 @@ func (x *ListQuizQuestionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizQuestionsRequest.ProtoReflect.Descriptor instead.
 func (*ListQuizQuestionsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{88}
+	return file_lms_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *ListQuizQuestionsRequest) GetQuizId() string {
@@ -5929,14 +5846,14 @@ func (x *ListQuizQuestionsRequest) GetQuizId() string {
 
 type ListQuizQuestionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Questions     []*QuizQuestion        `protobuf:"bytes,1,rep,name=questions,proto3" json:"questions,omitempty"`
+	Questions     []*QuizQuestion        `protobuf:"bytes,1,rep,name=questions,proto3" json:"questions,omitempty"` // 题目列表（若randomize_questions=true则随机排列）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListQuizQuestionsResponse) Reset() {
 	*x = ListQuizQuestionsResponse{}
-	mi := &file_lms_proto_msgTypes[89]
+	mi := &file_lms_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5948,7 +5865,7 @@ func (x *ListQuizQuestionsResponse) String() string {
 func (*ListQuizQuestionsResponse) ProtoMessage() {}
 
 func (x *ListQuizQuestionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[89]
+	mi := &file_lms_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5961,7 +5878,7 @@ func (x *ListQuizQuestionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizQuestionsResponse.ProtoReflect.Descriptor instead.
 func (*ListQuizQuestionsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{89}
+	return file_lms_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *ListQuizQuestionsResponse) GetQuestions() []*QuizQuestion {
@@ -5973,15 +5890,15 @@ func (x *ListQuizQuestionsResponse) GetQuestions() []*QuizQuestion {
 
 type ReorderQuizQuestionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
-	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
+	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"` // 测验ID ([required])
+	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`                 // 重排序项列表 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderQuizQuestionsRequest) Reset() {
 	*x = ReorderQuizQuestionsRequest{}
-	mi := &file_lms_proto_msgTypes[90]
+	mi := &file_lms_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5993,7 +5910,7 @@ func (x *ReorderQuizQuestionsRequest) String() string {
 func (*ReorderQuizQuestionsRequest) ProtoMessage() {}
 
 func (x *ReorderQuizQuestionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[90]
+	mi := &file_lms_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6006,7 +5923,7 @@ func (x *ReorderQuizQuestionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderQuizQuestionsRequest.ProtoReflect.Descriptor instead.
 func (*ReorderQuizQuestionsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{90}
+	return file_lms_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *ReorderQuizQuestionsRequest) GetQuizId() string {
@@ -6025,14 +5942,14 @@ func (x *ReorderQuizQuestionsRequest) GetItems() []*ReorderItem {
 
 type ReorderQuizQuestionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderQuizQuestionsResponse) Reset() {
 	*x = ReorderQuizQuestionsResponse{}
-	mi := &file_lms_proto_msgTypes[91]
+	mi := &file_lms_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6044,7 +5961,7 @@ func (x *ReorderQuizQuestionsResponse) String() string {
 func (*ReorderQuizQuestionsResponse) ProtoMessage() {}
 
 func (x *ReorderQuizQuestionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[91]
+	mi := &file_lms_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6057,7 +5974,7 @@ func (x *ReorderQuizQuestionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderQuizQuestionsResponse.ProtoReflect.Descriptor instead.
 func (*ReorderQuizQuestionsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{91}
+	return file_lms_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *ReorderQuizQuestionsResponse) GetSuccess() bool {
@@ -6069,18 +5986,18 @@ func (x *ReorderQuizQuestionsResponse) GetSuccess() bool {
 
 type CreateQuizOptionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`
-	QuestionId    string                 `protobuf:"bytes,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	OptionText    string                 `protobuf:"bytes,3,opt,name=option_text,json=optionText,proto3" json:"option_text,omitempty"`
-	IsCorrect     bool                   `protobuf:"varint,4,opt,name=is_correct,json=isCorrect,proto3" json:"is_correct,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`       // 选项ID ULID (必填，外部指定)
+	QuestionId    string                 `protobuf:"bytes,2,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"` // 所属题目ID ([required])
+	OptionText    string                 `protobuf:"bytes,3,opt,name=option_text,json=optionText,proto3" json:"option_text,omitempty"` // 选项内容 ([required])
+	IsCorrect     bool                   `protobuf:"varint,4,opt,name=is_correct,json=isCorrect,proto3" json:"is_correct,omitempty"`   // 是否为正确答案 ([required])
+	SortOrder     uint32                 `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`   // 排序序号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateQuizOptionRequest) Reset() {
 	*x = CreateQuizOptionRequest{}
-	mi := &file_lms_proto_msgTypes[92]
+	mi := &file_lms_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6092,7 +6009,7 @@ func (x *CreateQuizOptionRequest) String() string {
 func (*CreateQuizOptionRequest) ProtoMessage() {}
 
 func (x *CreateQuizOptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[92]
+	mi := &file_lms_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6105,7 +6022,7 @@ func (x *CreateQuizOptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizOptionRequest.ProtoReflect.Descriptor instead.
 func (*CreateQuizOptionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{92}
+	return file_lms_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *CreateQuizOptionRequest) GetOptionId() string {
@@ -6145,14 +6062,14 @@ func (x *CreateQuizOptionRequest) GetSortOrder() uint32 {
 
 type CreateQuizOptionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`
+	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"` // 创建的选项ID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateQuizOptionResponse) Reset() {
 	*x = CreateQuizOptionResponse{}
-	mi := &file_lms_proto_msgTypes[93]
+	mi := &file_lms_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6164,7 +6081,7 @@ func (x *CreateQuizOptionResponse) String() string {
 func (*CreateQuizOptionResponse) ProtoMessage() {}
 
 func (x *CreateQuizOptionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[93]
+	mi := &file_lms_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6177,7 +6094,7 @@ func (x *CreateQuizOptionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizOptionResponse.ProtoReflect.Descriptor instead.
 func (*CreateQuizOptionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{93}
+	return file_lms_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *CreateQuizOptionResponse) GetOptionId() string {
@@ -6189,18 +6106,18 @@ func (x *CreateQuizOptionResponse) GetOptionId() string {
 
 type UpdateQuizOptionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`
-	OptionText    string                 `protobuf:"bytes,2,opt,name=option_text,json=optionText,proto3" json:"option_text,omitempty"`
-	IsCorrect     bool                   `protobuf:"varint,3,opt,name=is_correct,json=isCorrect,proto3" json:"is_correct,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	Version       uint32                 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`       // 选项ID ([required])
+	OptionText    string                 `protobuf:"bytes,2,opt,name=option_text,json=optionText,proto3" json:"option_text,omitempty"` // 选项内容 ([required])
+	IsCorrect     bool                   `protobuf:"varint,3,opt,name=is_correct,json=isCorrect,proto3" json:"is_correct,omitempty"`   // 是否为正确答案 (必填，已发布课程不可修改)
+	SortOrder     uint32                 `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`   // 排序序号 (必填，已发布课程不可修改)
+	Version       uint32                 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`                        // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateQuizOptionRequest) Reset() {
 	*x = UpdateQuizOptionRequest{}
-	mi := &file_lms_proto_msgTypes[94]
+	mi := &file_lms_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6212,7 +6129,7 @@ func (x *UpdateQuizOptionRequest) String() string {
 func (*UpdateQuizOptionRequest) ProtoMessage() {}
 
 func (x *UpdateQuizOptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[94]
+	mi := &file_lms_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6225,7 +6142,7 @@ func (x *UpdateQuizOptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizOptionRequest.ProtoReflect.Descriptor instead.
 func (*UpdateQuizOptionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{94}
+	return file_lms_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *UpdateQuizOptionRequest) GetOptionId() string {
@@ -6265,14 +6182,14 @@ func (x *UpdateQuizOptionRequest) GetVersion() uint32 {
 
 type UpdateQuizOptionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateQuizOptionResponse) Reset() {
 	*x = UpdateQuizOptionResponse{}
-	mi := &file_lms_proto_msgTypes[95]
+	mi := &file_lms_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6284,7 +6201,7 @@ func (x *UpdateQuizOptionResponse) String() string {
 func (*UpdateQuizOptionResponse) ProtoMessage() {}
 
 func (x *UpdateQuizOptionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[95]
+	mi := &file_lms_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6297,7 +6214,7 @@ func (x *UpdateQuizOptionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizOptionResponse.ProtoReflect.Descriptor instead.
 func (*UpdateQuizOptionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{95}
+	return file_lms_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *UpdateQuizOptionResponse) GetSuccess() bool {
@@ -6309,15 +6226,15 @@ func (x *UpdateQuizOptionResponse) GetSuccess() bool {
 
 type DeleteQuizOptionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`
-	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"` // 选项ID ([required])
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`                  // 乐观锁版本号 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteQuizOptionRequest) Reset() {
 	*x = DeleteQuizOptionRequest{}
-	mi := &file_lms_proto_msgTypes[96]
+	mi := &file_lms_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6329,7 +6246,7 @@ func (x *DeleteQuizOptionRequest) String() string {
 func (*DeleteQuizOptionRequest) ProtoMessage() {}
 
 func (x *DeleteQuizOptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[96]
+	mi := &file_lms_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6342,7 +6259,7 @@ func (x *DeleteQuizOptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizOptionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteQuizOptionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{96}
+	return file_lms_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *DeleteQuizOptionRequest) GetOptionId() string {
@@ -6361,14 +6278,14 @@ func (x *DeleteQuizOptionRequest) GetVersion() uint32 {
 
 type DeleteQuizOptionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *DeleteQuizOptionResponse) Reset() {
 	*x = DeleteQuizOptionResponse{}
-	mi := &file_lms_proto_msgTypes[97]
+	mi := &file_lms_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6380,7 +6297,7 @@ func (x *DeleteQuizOptionResponse) String() string {
 func (*DeleteQuizOptionResponse) ProtoMessage() {}
 
 func (x *DeleteQuizOptionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[97]
+	mi := &file_lms_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6393,7 +6310,7 @@ func (x *DeleteQuizOptionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizOptionResponse.ProtoReflect.Descriptor instead.
 func (*DeleteQuizOptionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{97}
+	return file_lms_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *DeleteQuizOptionResponse) GetSuccess() bool {
@@ -6405,14 +6322,14 @@ func (x *DeleteQuizOptionResponse) GetSuccess() bool {
 
 type GetQuizOptionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`
+	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"` // 选项ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetQuizOptionRequest) Reset() {
 	*x = GetQuizOptionRequest{}
-	mi := &file_lms_proto_msgTypes[98]
+	mi := &file_lms_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6424,7 +6341,7 @@ func (x *GetQuizOptionRequest) String() string {
 func (*GetQuizOptionRequest) ProtoMessage() {}
 
 func (x *GetQuizOptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[98]
+	mi := &file_lms_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6437,7 +6354,7 @@ func (x *GetQuizOptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizOptionRequest.ProtoReflect.Descriptor instead.
 func (*GetQuizOptionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{98}
+	return file_lms_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *GetQuizOptionRequest) GetOptionId() string {
@@ -6449,14 +6366,14 @@ func (x *GetQuizOptionRequest) GetOptionId() string {
 
 type GetQuizOptionResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Option        *QuizOption            `protobuf:"bytes,1,opt,name=option,proto3" json:"option,omitempty"`
+	Option        *QuizOption            `protobuf:"bytes,1,opt,name=option,proto3" json:"option,omitempty"` // 选项详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetQuizOptionResponse) Reset() {
 	*x = GetQuizOptionResponse{}
-	mi := &file_lms_proto_msgTypes[99]
+	mi := &file_lms_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6468,7 +6385,7 @@ func (x *GetQuizOptionResponse) String() string {
 func (*GetQuizOptionResponse) ProtoMessage() {}
 
 func (x *GetQuizOptionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[99]
+	mi := &file_lms_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6481,7 +6398,7 @@ func (x *GetQuizOptionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizOptionResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizOptionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{99}
+	return file_lms_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *GetQuizOptionResponse) GetOption() *QuizOption {
@@ -6493,14 +6410,14 @@ func (x *GetQuizOptionResponse) GetOption() *QuizOption {
 
 type ListQuizOptionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
+	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"` // 题目ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListQuizOptionsRequest) Reset() {
 	*x = ListQuizOptionsRequest{}
-	mi := &file_lms_proto_msgTypes[100]
+	mi := &file_lms_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6512,7 +6429,7 @@ func (x *ListQuizOptionsRequest) String() string {
 func (*ListQuizOptionsRequest) ProtoMessage() {}
 
 func (x *ListQuizOptionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[100]
+	mi := &file_lms_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6525,7 +6442,7 @@ func (x *ListQuizOptionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizOptionsRequest.ProtoReflect.Descriptor instead.
 func (*ListQuizOptionsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{100}
+	return file_lms_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *ListQuizOptionsRequest) GetQuestionId() string {
@@ -6537,14 +6454,14 @@ func (x *ListQuizOptionsRequest) GetQuestionId() string {
 
 type ListQuizOptionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Options       []*QuizOption          `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"`
+	Options       []*QuizOption          `protobuf:"bytes,1,rep,name=options,proto3" json:"options,omitempty"` // 选项列表（按sort_order排序）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListQuizOptionsResponse) Reset() {
 	*x = ListQuizOptionsResponse{}
-	mi := &file_lms_proto_msgTypes[101]
+	mi := &file_lms_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6556,7 +6473,7 @@ func (x *ListQuizOptionsResponse) String() string {
 func (*ListQuizOptionsResponse) ProtoMessage() {}
 
 func (x *ListQuizOptionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[101]
+	mi := &file_lms_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6569,7 +6486,7 @@ func (x *ListQuizOptionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizOptionsResponse.ProtoReflect.Descriptor instead.
 func (*ListQuizOptionsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{101}
+	return file_lms_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *ListQuizOptionsResponse) GetOptions() []*QuizOption {
@@ -6581,15 +6498,15 @@ func (x *ListQuizOptionsResponse) GetOptions() []*QuizOption {
 
 type ReorderQuizOptionsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
+	QuestionId    string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"` // 题目ID ([required])
+	Items         []*ReorderItem         `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`                             // 重排序项列表 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderQuizOptionsRequest) Reset() {
 	*x = ReorderQuizOptionsRequest{}
-	mi := &file_lms_proto_msgTypes[102]
+	mi := &file_lms_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6601,7 +6518,7 @@ func (x *ReorderQuizOptionsRequest) String() string {
 func (*ReorderQuizOptionsRequest) ProtoMessage() {}
 
 func (x *ReorderQuizOptionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[102]
+	mi := &file_lms_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6614,7 +6531,7 @@ func (x *ReorderQuizOptionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderQuizOptionsRequest.ProtoReflect.Descriptor instead.
 func (*ReorderQuizOptionsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{102}
+	return file_lms_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *ReorderQuizOptionsRequest) GetQuestionId() string {
@@ -6633,14 +6550,14 @@ func (x *ReorderQuizOptionsRequest) GetItems() []*ReorderItem {
 
 type ReorderQuizOptionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // 是否成功
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReorderQuizOptionsResponse) Reset() {
 	*x = ReorderQuizOptionsResponse{}
-	mi := &file_lms_proto_msgTypes[103]
+	mi := &file_lms_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6652,7 +6569,7 @@ func (x *ReorderQuizOptionsResponse) String() string {
 func (*ReorderQuizOptionsResponse) ProtoMessage() {}
 
 func (x *ReorderQuizOptionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[103]
+	mi := &file_lms_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6665,7 +6582,7 @@ func (x *ReorderQuizOptionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderQuizOptionsResponse.ProtoReflect.Descriptor instead.
 func (*ReorderQuizOptionsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{103}
+	return file_lms_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *ReorderQuizOptionsResponse) GetSuccess() bool {
@@ -6677,16 +6594,16 @@ func (x *ReorderQuizOptionsResponse) GetSuccess() bool {
 
 type ListObjectsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Prefix        string                 `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`
-	PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	PageToken     string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Prefix        string                 `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`                        // S3对象key前缀过滤
+	PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`   // 每页数量
+	PageToken     string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"` // 分页游标
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListObjectsRequest) Reset() {
 	*x = ListObjectsRequest{}
-	mi := &file_lms_proto_msgTypes[104]
+	mi := &file_lms_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6698,7 +6615,7 @@ func (x *ListObjectsRequest) String() string {
 func (*ListObjectsRequest) ProtoMessage() {}
 
 func (x *ListObjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[104]
+	mi := &file_lms_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6711,7 +6628,7 @@ func (x *ListObjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListObjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListObjectsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{104}
+	return file_lms_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *ListObjectsRequest) GetPrefix() string {
@@ -6737,16 +6654,16 @@ func (x *ListObjectsRequest) GetPageToken() string {
 
 type ListObjectsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BucketName    string                 `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`
-	Objects       []*BucketObject        `protobuf:"bytes,2,rep,name=objects,proto3" json:"objects,omitempty"`
-	NextPageToken string                 `protobuf:"bytes,3,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	BucketName    string                 `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`            // 存储桶名称
+	Objects       []*BucketObject        `protobuf:"bytes,2,rep,name=objects,proto3" json:"objects,omitempty"`                                    // 对象列表
+	NextPageToken string                 `protobuf:"bytes,3,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"` // 下一页游标
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListObjectsResponse) Reset() {
 	*x = ListObjectsResponse{}
-	mi := &file_lms_proto_msgTypes[105]
+	mi := &file_lms_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6758,7 +6675,7 @@ func (x *ListObjectsResponse) String() string {
 func (*ListObjectsResponse) ProtoMessage() {}
 
 func (x *ListObjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[105]
+	mi := &file_lms_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6771,7 +6688,7 @@ func (x *ListObjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListObjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListObjectsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{105}
+	return file_lms_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *ListObjectsResponse) GetBucketName() string {
@@ -6797,21 +6714,21 @@ func (x *ListObjectsResponse) GetNextPageToken() string {
 
 type CreateUploadURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UploadType    UploadType             `protobuf:"varint,1,opt,name=upload_type,json=uploadType,proto3,enum=glms.UploadType" json:"upload_type,omitempty"`
-	FileName      string                 `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
-	ContentType   string                 `protobuf:"bytes,3,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
-	CourseId      string                 `protobuf:"bytes,4,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	ChapterId     string                 `protobuf:"bytes,5,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
-	MaterialId    string                 `protobuf:"bytes,6,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`
-	LessonId      string                 `protobuf:"bytes,7,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
-	QuizId        string                 `protobuf:"bytes,8,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
+	UploadType    UploadType             `protobuf:"varint,1,opt,name=upload_type,json=uploadType,proto3,enum=glms.UploadType" json:"upload_type,omitempty"` // 上传类型，决定S3路径和校验规则 ([required])
+	FileName      string                 `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`                             // 文件名 ([required])
+	ContentType   string                 `protobuf:"bytes,3,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`                    // 文件MIME类型 ([required])
+	CourseId      string                 `protobuf:"bytes,4,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                             // 课程ID ([required])
+	ChapterId     string                 `protobuf:"bytes,5,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`                          // 章节ID（上传课时素材时必填）
+	MaterialId    string                 `protobuf:"bytes,6,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`                       // 资料ID（上传课程资料时必填）
+	LessonId      string                 `protobuf:"bytes,7,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`                             // 课时ID（上传课时素材时必填）
+	QuizId        string                 `protobuf:"bytes,8,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                                   // 测验ID（上传测验素材时必填）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateUploadURLRequest) Reset() {
 	*x = CreateUploadURLRequest{}
-	mi := &file_lms_proto_msgTypes[106]
+	mi := &file_lms_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6823,7 +6740,7 @@ func (x *CreateUploadURLRequest) String() string {
 func (*CreateUploadURLRequest) ProtoMessage() {}
 
 func (x *CreateUploadURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[106]
+	mi := &file_lms_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6836,7 +6753,7 @@ func (x *CreateUploadURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUploadURLRequest.ProtoReflect.Descriptor instead.
 func (*CreateUploadURLRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{106}
+	return file_lms_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *CreateUploadURLRequest) GetUploadType() UploadType {
@@ -6897,17 +6814,17 @@ func (x *CreateUploadURLRequest) GetQuizId() string {
 
 type CreateUploadURLResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BucketName    string                 `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`
-	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
-	UploadUrl     string                 `protobuf:"bytes,3,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`
-	ExpiresAt     string                 `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	BucketName    string                 `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"` // 存储桶名称
+	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`    // 对象key（上传时需使用此key）
+	UploadUrl     string                 `protobuf:"bytes,3,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`    // 预签名上传URL（15分钟有效）
+	ExpiresAt     string                 `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`    // URL过期时间 (UTC, RFC3339)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateUploadURLResponse) Reset() {
 	*x = CreateUploadURLResponse{}
-	mi := &file_lms_proto_msgTypes[107]
+	mi := &file_lms_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6919,7 +6836,7 @@ func (x *CreateUploadURLResponse) String() string {
 func (*CreateUploadURLResponse) ProtoMessage() {}
 
 func (x *CreateUploadURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[107]
+	mi := &file_lms_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6932,7 +6849,7 @@ func (x *CreateUploadURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUploadURLResponse.ProtoReflect.Descriptor instead.
 func (*CreateUploadURLResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{107}
+	return file_lms_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *CreateUploadURLResponse) GetBucketName() string {
@@ -6965,14 +6882,14 @@ func (x *CreateUploadURLResponse) GetExpiresAt() string {
 
 type CreateViewURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ObjectKey     string                 `protobuf:"bytes,1,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
+	ObjectKey     string                 `protobuf:"bytes,1,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"` // S3对象key ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateViewURLRequest) Reset() {
 	*x = CreateViewURLRequest{}
-	mi := &file_lms_proto_msgTypes[108]
+	mi := &file_lms_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6984,7 +6901,7 @@ func (x *CreateViewURLRequest) String() string {
 func (*CreateViewURLRequest) ProtoMessage() {}
 
 func (x *CreateViewURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[108]
+	mi := &file_lms_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6997,7 +6914,7 @@ func (x *CreateViewURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateViewURLRequest.ProtoReflect.Descriptor instead.
 func (*CreateViewURLRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{108}
+	return file_lms_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *CreateViewURLRequest) GetObjectKey() string {
@@ -7009,17 +6926,17 @@ func (x *CreateViewURLRequest) GetObjectKey() string {
 
 type CreateViewURLResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BucketName    string                 `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"`
-	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
-	ViewUrl       string                 `protobuf:"bytes,3,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`
-	ExpiresAt     string                 `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	BucketName    string                 `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"` // 存储桶名称
+	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`    // 对象key
+	ViewUrl       string                 `protobuf:"bytes,3,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`          // 预签名查看/下载URL（15分钟有效）
+	ExpiresAt     string                 `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`    // URL过期时间 (UTC, RFC3339)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CreateViewURLResponse) Reset() {
 	*x = CreateViewURLResponse{}
-	mi := &file_lms_proto_msgTypes[109]
+	mi := &file_lms_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7031,7 +6948,7 @@ func (x *CreateViewURLResponse) String() string {
 func (*CreateViewURLResponse) ProtoMessage() {}
 
 func (x *CreateViewURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[109]
+	mi := &file_lms_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7044,7 +6961,7 @@ func (x *CreateViewURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateViewURLResponse.ProtoReflect.Descriptor instead.
 func (*CreateViewURLResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{109}
+	return file_lms_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *CreateViewURLResponse) GetBucketName() string {
@@ -7077,16 +6994,16 @@ func (x *CreateViewURLResponse) GetExpiresAt() string {
 
 type EnrollCandidateCourseRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	BizUnit       string                 `protobuf:"bytes,3,opt,name=biz_unit,json=bizUnit,proto3" json:"biz_unit,omitempty"` // 触发此报名的业务单元 (gmall, gexam等)
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ([required])
+	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`          // 课程版本ID (必填，课程必须为Active状态)
+	BizUnit       string                 `protobuf:"bytes,3,opt,name=biz_unit,json=bizUnit,proto3" json:"biz_unit,omitempty"`             // 触发报名的业务单元：gmall(商城)/gexam(考试)等 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnrollCandidateCourseRequest) Reset() {
 	*x = EnrollCandidateCourseRequest{}
-	mi := &file_lms_proto_msgTypes[110]
+	mi := &file_lms_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7098,7 +7015,7 @@ func (x *EnrollCandidateCourseRequest) String() string {
 func (*EnrollCandidateCourseRequest) ProtoMessage() {}
 
 func (x *EnrollCandidateCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[110]
+	mi := &file_lms_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7111,7 +7028,7 @@ func (x *EnrollCandidateCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnrollCandidateCourseRequest.ProtoReflect.Descriptor instead.
 func (*EnrollCandidateCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{110}
+	return file_lms_proto_rawDescGZIP(), []int{107}
 }
 
 func (x *EnrollCandidateCourseRequest) GetCandidateId() string {
@@ -7137,16 +7054,16 @@ func (x *EnrollCandidateCourseRequest) GetBizUnit() string {
 
 type EnrollCandidateCourseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EnrollmentId  string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
-	JoinedAt      string                 `protobuf:"bytes,3,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
+	EnrollmentId  string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"` // 选课记录ID
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`                                 // 选课状态：learning(学习中)/completed(已完成)
+	JoinedAt      string                 `protobuf:"bytes,3,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`             // 加入时间 (UTC, RFC3339)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnrollCandidateCourseResponse) Reset() {
 	*x = EnrollCandidateCourseResponse{}
-	mi := &file_lms_proto_msgTypes[111]
+	mi := &file_lms_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7158,7 +7075,7 @@ func (x *EnrollCandidateCourseResponse) String() string {
 func (*EnrollCandidateCourseResponse) ProtoMessage() {}
 
 func (x *EnrollCandidateCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[111]
+	mi := &file_lms_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7171,7 +7088,7 @@ func (x *EnrollCandidateCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnrollCandidateCourseResponse.ProtoReflect.Descriptor instead.
 func (*EnrollCandidateCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{111}
+	return file_lms_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *EnrollCandidateCourseResponse) GetEnrollmentId() string {
@@ -7197,15 +7114,15 @@ func (x *EnrollCandidateCourseResponse) GetJoinedAt() string {
 
 type CompleteLessonLearningRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	LessonId      string                 `protobuf:"bytes,2,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ([required])
+	LessonId      string                 `protobuf:"bytes,2,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`          // 课时ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CompleteLessonLearningRequest) Reset() {
 	*x = CompleteLessonLearningRequest{}
-	mi := &file_lms_proto_msgTypes[112]
+	mi := &file_lms_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7217,7 +7134,7 @@ func (x *CompleteLessonLearningRequest) String() string {
 func (*CompleteLessonLearningRequest) ProtoMessage() {}
 
 func (x *CompleteLessonLearningRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[112]
+	mi := &file_lms_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7230,7 +7147,7 @@ func (x *CompleteLessonLearningRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteLessonLearningRequest.ProtoReflect.Descriptor instead.
 func (*CompleteLessonLearningRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{112}
+	return file_lms_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *CompleteLessonLearningRequest) GetCandidateId() string {
@@ -7249,17 +7166,17 @@ func (x *CompleteLessonLearningRequest) GetLessonId() string {
 
 type CompleteLessonLearningResponse struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
-	LessonStatus         string                 `protobuf:"bytes,1,opt,name=lesson_status,json=lessonStatus,proto3" json:"lesson_status,omitempty"`                           // learning, testing, completed
-	CourseCompleted      bool                   `protobuf:"varint,2,opt,name=course_completed,json=courseCompleted,proto3" json:"course_completed,omitempty"`                 // 本次课时完成是否触发课程总结业
-	CourseProgressStatus string                 `protobuf:"bytes,3,opt,name=course_progress_status,json=courseProgressStatus,proto3" json:"course_progress_status,omitempty"` // course status: learning, completed
-	CompletedAt          string                 `protobuf:"bytes,4,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	LessonStatus         string                 `protobuf:"bytes,1,opt,name=lesson_status,json=lessonStatus,proto3" json:"lesson_status,omitempty"`                           // 课时状态：learning(学习中)/testing(待测验)/completed(已完成)
+	CourseCompleted      bool                   `protobuf:"varint,2,opt,name=course_completed,json=courseCompleted,proto3" json:"course_completed,omitempty"`                 // 本次课时完成是否触发了课程结业
+	CourseProgressStatus string                 `protobuf:"bytes,3,opt,name=course_progress_status,json=courseProgressStatus,proto3" json:"course_progress_status,omitempty"` // 课程状态：learning(学习中)/completed(已完成)
+	CompletedAt          string                 `protobuf:"bytes,4,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`                              // 完成时间 (UTC, RFC3339)
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CompleteLessonLearningResponse) Reset() {
 	*x = CompleteLessonLearningResponse{}
-	mi := &file_lms_proto_msgTypes[113]
+	mi := &file_lms_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7271,7 +7188,7 @@ func (x *CompleteLessonLearningResponse) String() string {
 func (*CompleteLessonLearningResponse) ProtoMessage() {}
 
 func (x *CompleteLessonLearningResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[113]
+	mi := &file_lms_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7284,7 +7201,7 @@ func (x *CompleteLessonLearningResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteLessonLearningResponse.ProtoReflect.Descriptor instead.
 func (*CompleteLessonLearningResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{113}
+	return file_lms_proto_rawDescGZIP(), []int{110}
 }
 
 func (x *CompleteLessonLearningResponse) GetLessonStatus() string {
@@ -7317,17 +7234,17 @@ func (x *CompleteLessonLearningResponse) GetCompletedAt() string {
 
 type ListCandidateEnrollmentsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // 状态过滤 (learning / completed / 留空表示全部)
-	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	PageToken     string                 `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ([required])
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`                              // 状态过滤：learning(学习中)/completed(已完成)/空(全部) ([required])
+	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`         // 每页数量
+	PageToken     string                 `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`       // 分页游标
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCandidateEnrollmentsRequest) Reset() {
 	*x = ListCandidateEnrollmentsRequest{}
-	mi := &file_lms_proto_msgTypes[114]
+	mi := &file_lms_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7339,7 +7256,7 @@ func (x *ListCandidateEnrollmentsRequest) String() string {
 func (*ListCandidateEnrollmentsRequest) ProtoMessage() {}
 
 func (x *ListCandidateEnrollmentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[114]
+	mi := &file_lms_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7352,7 +7269,7 @@ func (x *ListCandidateEnrollmentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCandidateEnrollmentsRequest.ProtoReflect.Descriptor instead.
 func (*ListCandidateEnrollmentsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{114}
+	return file_lms_proto_rawDescGZIP(), []int{111}
 }
 
 func (x *ListCandidateEnrollmentsRequest) GetCandidateId() string {
@@ -7385,20 +7302,20 @@ func (x *ListCandidateEnrollmentsRequest) GetPageToken() string {
 
 type CandidateEnrollmentSummary struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	EnrollmentId       string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"`
-	CourseId           string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	CourseTitle        string                 `protobuf:"bytes,3,opt,name=course_title,json=courseTitle,proto3" json:"course_title,omitempty"` // 辅助前端呈现
-	Status             string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
-	ProgressPercentage uint32                 `protobuf:"varint,5,opt,name=progress_percentage,json=progressPercentage,proto3" json:"progress_percentage,omitempty"` // 动态计算
-	JoinedAt           string                 `protobuf:"bytes,6,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
-	CompletedAt        string                 `protobuf:"bytes,7,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	EnrollmentId       string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"`                    // 选课记录ID
+	CourseId           string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                // 课程版本ID
+	CourseTitle        string                 `protobuf:"bytes,3,opt,name=course_title,json=courseTitle,proto3" json:"course_title,omitempty"`                       // 课程标题（辅助前端呈现）
+	Status             string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`                                                    // 学习状态：learning/completed
+	ProgressPercentage uint32                 `protobuf:"varint,5,opt,name=progress_percentage,json=progressPercentage,proto3" json:"progress_percentage,omitempty"` // 学习进度百分比（动态计算）
+	JoinedAt           string                 `protobuf:"bytes,6,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`                                // 加入时间 (UTC, RFC3339)
+	CompletedAt        string                 `protobuf:"bytes,7,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`                       // 完成时间 (UTC, RFC3339)
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CandidateEnrollmentSummary) Reset() {
 	*x = CandidateEnrollmentSummary{}
-	mi := &file_lms_proto_msgTypes[115]
+	mi := &file_lms_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7410,7 +7327,7 @@ func (x *CandidateEnrollmentSummary) String() string {
 func (*CandidateEnrollmentSummary) ProtoMessage() {}
 
 func (x *CandidateEnrollmentSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[115]
+	mi := &file_lms_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7423,7 +7340,7 @@ func (x *CandidateEnrollmentSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CandidateEnrollmentSummary.ProtoReflect.Descriptor instead.
 func (*CandidateEnrollmentSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{115}
+	return file_lms_proto_rawDescGZIP(), []int{112}
 }
 
 func (x *CandidateEnrollmentSummary) GetEnrollmentId() string {
@@ -7477,15 +7394,15 @@ func (x *CandidateEnrollmentSummary) GetCompletedAt() string {
 
 type ListCandidateEnrollmentsResponse struct {
 	state         protoimpl.MessageState        `protogen:"open.v1"`
-	Enrollments   []*CandidateEnrollmentSummary `protobuf:"bytes,1,rep,name=enrollments,proto3" json:"enrollments,omitempty"`
-	NextPageToken string                        `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	Enrollments   []*CandidateEnrollmentSummary `protobuf:"bytes,1,rep,name=enrollments,proto3" json:"enrollments,omitempty"`                            // 选课记录列表
+	NextPageToken string                        `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"` // 下一页游标
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCandidateEnrollmentsResponse) Reset() {
 	*x = ListCandidateEnrollmentsResponse{}
-	mi := &file_lms_proto_msgTypes[116]
+	mi := &file_lms_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7497,7 +7414,7 @@ func (x *ListCandidateEnrollmentsResponse) String() string {
 func (*ListCandidateEnrollmentsResponse) ProtoMessage() {}
 
 func (x *ListCandidateEnrollmentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[116]
+	mi := &file_lms_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7510,7 +7427,7 @@ func (x *ListCandidateEnrollmentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCandidateEnrollmentsResponse.ProtoReflect.Descriptor instead.
 func (*ListCandidateEnrollmentsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{116}
+	return file_lms_proto_rawDescGZIP(), []int{113}
 }
 
 func (x *ListCandidateEnrollmentsResponse) GetEnrollments() []*CandidateEnrollmentSummary {
@@ -7529,14 +7446,14 @@ func (x *ListCandidateEnrollmentsResponse) GetNextPageToken() string {
 
 type GetCandidateEnrollmentDetailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	EnrollmentId  string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"` // 或传入 candidate_id + course_id
+	EnrollmentId  string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"` // 选课记录ID（或传入 candidate_id + course_id）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCandidateEnrollmentDetailRequest) Reset() {
 	*x = GetCandidateEnrollmentDetailRequest{}
-	mi := &file_lms_proto_msgTypes[117]
+	mi := &file_lms_proto_msgTypes[114]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7548,7 +7465,7 @@ func (x *GetCandidateEnrollmentDetailRequest) String() string {
 func (*GetCandidateEnrollmentDetailRequest) ProtoMessage() {}
 
 func (x *GetCandidateEnrollmentDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[117]
+	mi := &file_lms_proto_msgTypes[114]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7561,7 +7478,7 @@ func (x *GetCandidateEnrollmentDetailRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetCandidateEnrollmentDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetCandidateEnrollmentDetailRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{117}
+	return file_lms_proto_rawDescGZIP(), []int{114}
 }
 
 func (x *GetCandidateEnrollmentDetailRequest) GetEnrollmentId() string {
@@ -7573,26 +7490,26 @@ func (x *GetCandidateEnrollmentDetailRequest) GetEnrollmentId() string {
 
 type GetCandidateEnrollmentDetailResponse struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	EnrollmentId       string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"`
-	CandidateId        string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	CourseId           string                 `protobuf:"bytes,3,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Status             string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
-	ProgressPercentage uint32                 `protobuf:"varint,5,opt,name=progress_percentage,json=progressPercentage,proto3" json:"progress_percentage,omitempty"`
-	TotalLessons       uint32                 `protobuf:"varint,6,opt,name=total_lessons,json=totalLessons,proto3" json:"total_lessons,omitempty"`
-	CompletedLessons   uint32                 `protobuf:"varint,7,opt,name=completed_lessons,json=completedLessons,proto3" json:"completed_lessons,omitempty"`
-	CompletedLessonIds []string               `protobuf:"bytes,8,rep,name=completed_lesson_ids,json=completedLessonIds,proto3" json:"completed_lesson_ids,omitempty"`
-	TotalQuizzes       uint32                 `protobuf:"varint,9,opt,name=total_quizzes,json=totalQuizzes,proto3" json:"total_quizzes,omitempty"`
-	PassedQuizzes      uint32                 `protobuf:"varint,10,opt,name=passed_quizzes,json=passedQuizzes,proto3" json:"passed_quizzes,omitempty"`
-	PassedQuizIds      []string               `protobuf:"bytes,11,rep,name=passed_quiz_ids,json=passedQuizIds,proto3" json:"passed_quiz_ids,omitempty"`
-	JoinedAt           string                 `protobuf:"bytes,12,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
-	CompletedAt        string                 `protobuf:"bytes,13,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	EnrollmentId       string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"`                     // 选课记录ID
+	CandidateId        string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`                        // 考生ID
+	CourseId           string                 `protobuf:"bytes,3,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                 // 课程版本ID
+	Status             string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`                                                     // 学习状态
+	ProgressPercentage uint32                 `protobuf:"varint,5,opt,name=progress_percentage,json=progressPercentage,proto3" json:"progress_percentage,omitempty"`  // 学习进度百分比
+	TotalLessons       uint32                 `protobuf:"varint,6,opt,name=total_lessons,json=totalLessons,proto3" json:"total_lessons,omitempty"`                    // 课程总课时数
+	CompletedLessons   uint32                 `protobuf:"varint,7,opt,name=completed_lessons,json=completedLessons,proto3" json:"completed_lessons,omitempty"`        // 已完成课时数
+	CompletedLessonIds []string               `protobuf:"bytes,8,rep,name=completed_lesson_ids,json=completedLessonIds,proto3" json:"completed_lesson_ids,omitempty"` // 已完成课时ID列表
+	TotalQuizzes       uint32                 `protobuf:"varint,9,opt,name=total_quizzes,json=totalQuizzes,proto3" json:"total_quizzes,omitempty"`                    // 课程总测验数
+	PassedQuizzes      uint32                 `protobuf:"varint,10,opt,name=passed_quizzes,json=passedQuizzes,proto3" json:"passed_quizzes,omitempty"`                // 已通过测验数
+	PassedQuizIds      []string               `protobuf:"bytes,11,rep,name=passed_quiz_ids,json=passedQuizIds,proto3" json:"passed_quiz_ids,omitempty"`               // 已通过测验ID列表
+	JoinedAt           string                 `protobuf:"bytes,12,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`                                // 加入时间 (UTC, RFC3339)
+	CompletedAt        string                 `protobuf:"bytes,13,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`                       // 完成时间 (UTC, RFC3339)
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetCandidateEnrollmentDetailResponse) Reset() {
 	*x = GetCandidateEnrollmentDetailResponse{}
-	mi := &file_lms_proto_msgTypes[118]
+	mi := &file_lms_proto_msgTypes[115]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7604,7 +7521,7 @@ func (x *GetCandidateEnrollmentDetailResponse) String() string {
 func (*GetCandidateEnrollmentDetailResponse) ProtoMessage() {}
 
 func (x *GetCandidateEnrollmentDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[118]
+	mi := &file_lms_proto_msgTypes[115]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7617,7 +7534,7 @@ func (x *GetCandidateEnrollmentDetailResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use GetCandidateEnrollmentDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetCandidateEnrollmentDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{118}
+	return file_lms_proto_rawDescGZIP(), []int{115}
 }
 
 func (x *GetCandidateEnrollmentDetailResponse) GetEnrollmentId() string {
@@ -7713,17 +7630,17 @@ func (x *GetCandidateEnrollmentDetailResponse) GetCompletedAt() string {
 
 type ListCourseEnrollmentsForAdminRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // 状态过滤
-	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	PageToken     string                 `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`    // 课程版本ID ([required])
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`                        // 状态过滤 ([required])
+	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`   // 每页数量
+	PageToken     string                 `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"` // 分页游标
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCourseEnrollmentsForAdminRequest) Reset() {
 	*x = ListCourseEnrollmentsForAdminRequest{}
-	mi := &file_lms_proto_msgTypes[119]
+	mi := &file_lms_proto_msgTypes[116]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7735,7 +7652,7 @@ func (x *ListCourseEnrollmentsForAdminRequest) String() string {
 func (*ListCourseEnrollmentsForAdminRequest) ProtoMessage() {}
 
 func (x *ListCourseEnrollmentsForAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[119]
+	mi := &file_lms_proto_msgTypes[116]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7748,7 +7665,7 @@ func (x *ListCourseEnrollmentsForAdminRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use ListCourseEnrollmentsForAdminRequest.ProtoReflect.Descriptor instead.
 func (*ListCourseEnrollmentsForAdminRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{119}
+	return file_lms_proto_rawDescGZIP(), []int{116}
 }
 
 func (x *ListCourseEnrollmentsForAdminRequest) GetCourseId() string {
@@ -7781,19 +7698,19 @@ func (x *ListCourseEnrollmentsForAdminRequest) GetPageToken() string {
 
 type CourseEnrollmentSummaryForAdmin struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	EnrollmentId       string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"`
-	CandidateId        string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	Status             string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
-	ProgressPercentage uint32                 `protobuf:"varint,4,opt,name=progress_percentage,json=progressPercentage,proto3" json:"progress_percentage,omitempty"` // 动态计算
-	JoinedAt           string                 `protobuf:"bytes,5,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
-	CompletedAt        string                 `protobuf:"bytes,6,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	EnrollmentId       string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"`                    // 选课记录ID
+	CandidateId        string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`                       // 考生ID
+	Status             string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`                                                    // 学习状态
+	ProgressPercentage uint32                 `protobuf:"varint,4,opt,name=progress_percentage,json=progressPercentage,proto3" json:"progress_percentage,omitempty"` // 学习进度百分比（动态计算）
+	JoinedAt           string                 `protobuf:"bytes,5,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`                                // 加入时间 (UTC, RFC3339)
+	CompletedAt        string                 `protobuf:"bytes,6,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`                       // 完成时间 (UTC, RFC3339)
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CourseEnrollmentSummaryForAdmin) Reset() {
 	*x = CourseEnrollmentSummaryForAdmin{}
-	mi := &file_lms_proto_msgTypes[120]
+	mi := &file_lms_proto_msgTypes[117]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7805,7 +7722,7 @@ func (x *CourseEnrollmentSummaryForAdmin) String() string {
 func (*CourseEnrollmentSummaryForAdmin) ProtoMessage() {}
 
 func (x *CourseEnrollmentSummaryForAdmin) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[120]
+	mi := &file_lms_proto_msgTypes[117]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7818,7 +7735,7 @@ func (x *CourseEnrollmentSummaryForAdmin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseEnrollmentSummaryForAdmin.ProtoReflect.Descriptor instead.
 func (*CourseEnrollmentSummaryForAdmin) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{120}
+	return file_lms_proto_rawDescGZIP(), []int{117}
 }
 
 func (x *CourseEnrollmentSummaryForAdmin) GetEnrollmentId() string {
@@ -7865,15 +7782,15 @@ func (x *CourseEnrollmentSummaryForAdmin) GetCompletedAt() string {
 
 type ListCourseEnrollmentsForAdminResponse struct {
 	state         protoimpl.MessageState             `protogen:"open.v1"`
-	Enrollments   []*CourseEnrollmentSummaryForAdmin `protobuf:"bytes,1,rep,name=enrollments,proto3" json:"enrollments,omitempty"`
-	NextPageToken string                             `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	Enrollments   []*CourseEnrollmentSummaryForAdmin `protobuf:"bytes,1,rep,name=enrollments,proto3" json:"enrollments,omitempty"`                            // 选课记录列表
+	NextPageToken string                             `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"` // 下一页游标
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListCourseEnrollmentsForAdminResponse) Reset() {
 	*x = ListCourseEnrollmentsForAdminResponse{}
-	mi := &file_lms_proto_msgTypes[121]
+	mi := &file_lms_proto_msgTypes[118]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7885,7 +7802,7 @@ func (x *ListCourseEnrollmentsForAdminResponse) String() string {
 func (*ListCourseEnrollmentsForAdminResponse) ProtoMessage() {}
 
 func (x *ListCourseEnrollmentsForAdminResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[121]
+	mi := &file_lms_proto_msgTypes[118]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7898,7 +7815,7 @@ func (x *ListCourseEnrollmentsForAdminResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ListCourseEnrollmentsForAdminResponse.ProtoReflect.Descriptor instead.
 func (*ListCourseEnrollmentsForAdminResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{121}
+	return file_lms_proto_rawDescGZIP(), []int{118}
 }
 
 func (x *ListCourseEnrollmentsForAdminResponse) GetEnrollments() []*CourseEnrollmentSummaryForAdmin {
@@ -7917,15 +7834,15 @@ func (x *ListCourseEnrollmentsForAdminResponse) GetNextPageToken() string {
 
 type GetCandidateProgressForAdminRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ([required])
+	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`          // 课程版本ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCandidateProgressForAdminRequest) Reset() {
 	*x = GetCandidateProgressForAdminRequest{}
-	mi := &file_lms_proto_msgTypes[122]
+	mi := &file_lms_proto_msgTypes[119]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7937,7 +7854,7 @@ func (x *GetCandidateProgressForAdminRequest) String() string {
 func (*GetCandidateProgressForAdminRequest) ProtoMessage() {}
 
 func (x *GetCandidateProgressForAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[122]
+	mi := &file_lms_proto_msgTypes[119]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7950,7 +7867,7 @@ func (x *GetCandidateProgressForAdminRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetCandidateProgressForAdminRequest.ProtoReflect.Descriptor instead.
 func (*GetCandidateProgressForAdminRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{122}
+	return file_lms_proto_rawDescGZIP(), []int{119}
 }
 
 func (x *GetCandidateProgressForAdminRequest) GetCandidateId() string {
@@ -7969,22 +7886,22 @@ func (x *GetCandidateProgressForAdminRequest) GetCourseId() string {
 
 type GetCandidateProgressForAdminResponse struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
-	EnrollmentId       string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"`
-	CandidateId        string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	CourseId           string                 `protobuf:"bytes,3,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	Status             string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`
-	ProgressPercentage uint32                 `protobuf:"varint,5,opt,name=progress_percentage,json=progressPercentage,proto3" json:"progress_percentage,omitempty"`
-	CompletedLessonIds []string               `protobuf:"bytes,6,rep,name=completed_lesson_ids,json=completedLessonIds,proto3" json:"completed_lesson_ids,omitempty"`
-	PassedQuizIds      []string               `protobuf:"bytes,7,rep,name=passed_quiz_ids,json=passedQuizIds,proto3" json:"passed_quiz_ids,omitempty"`
-	JoinedAt           string                 `protobuf:"bytes,8,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`
-	CompletedAt        string                 `protobuf:"bytes,9,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	EnrollmentId       string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"`                     // 选课记录ID
+	CandidateId        string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`                        // 考生ID
+	CourseId           string                 `protobuf:"bytes,3,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                 // 课程版本ID
+	Status             string                 `protobuf:"bytes,4,opt,name=status,proto3" json:"status,omitempty"`                                                     // 学习状态
+	ProgressPercentage uint32                 `protobuf:"varint,5,opt,name=progress_percentage,json=progressPercentage,proto3" json:"progress_percentage,omitempty"`  // 学习进度百分比
+	CompletedLessonIds []string               `protobuf:"bytes,6,rep,name=completed_lesson_ids,json=completedLessonIds,proto3" json:"completed_lesson_ids,omitempty"` // 已完成课时ID列表
+	PassedQuizIds      []string               `protobuf:"bytes,7,rep,name=passed_quiz_ids,json=passedQuizIds,proto3" json:"passed_quiz_ids,omitempty"`                // 已通过测验ID列表
+	JoinedAt           string                 `protobuf:"bytes,8,opt,name=joined_at,json=joinedAt,proto3" json:"joined_at,omitempty"`                                 // 加入时间 (UTC, RFC3339)
+	CompletedAt        string                 `protobuf:"bytes,9,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`                        // 完成时间 (UTC, RFC3339)
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetCandidateProgressForAdminResponse) Reset() {
 	*x = GetCandidateProgressForAdminResponse{}
-	mi := &file_lms_proto_msgTypes[123]
+	mi := &file_lms_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7996,7 +7913,7 @@ func (x *GetCandidateProgressForAdminResponse) String() string {
 func (*GetCandidateProgressForAdminResponse) ProtoMessage() {}
 
 func (x *GetCandidateProgressForAdminResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[123]
+	mi := &file_lms_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8009,7 +7926,7 @@ func (x *GetCandidateProgressForAdminResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use GetCandidateProgressForAdminResponse.ProtoReflect.Descriptor instead.
 func (*GetCandidateProgressForAdminResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{123}
+	return file_lms_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *GetCandidateProgressForAdminResponse) GetEnrollmentId() string {
@@ -8077,14 +7994,14 @@ func (x *GetCandidateProgressForAdminResponse) GetCompletedAt() string {
 
 type QuizOptionDetail struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Option        *QuizOption            `protobuf:"bytes,1,opt,name=option,proto3" json:"option,omitempty"`
+	Option        *QuizOption            `protobuf:"bytes,1,opt,name=option,proto3" json:"option,omitempty"` // 选项详情
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QuizOptionDetail) Reset() {
 	*x = QuizOptionDetail{}
-	mi := &file_lms_proto_msgTypes[124]
+	mi := &file_lms_proto_msgTypes[121]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8096,7 +8013,7 @@ func (x *QuizOptionDetail) String() string {
 func (*QuizOptionDetail) ProtoMessage() {}
 
 func (x *QuizOptionDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[124]
+	mi := &file_lms_proto_msgTypes[121]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8109,7 +8026,7 @@ func (x *QuizOptionDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizOptionDetail.ProtoReflect.Descriptor instead.
 func (*QuizOptionDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{124}
+	return file_lms_proto_rawDescGZIP(), []int{121}
 }
 
 func (x *QuizOptionDetail) GetOption() *QuizOption {
@@ -8121,15 +8038,15 @@ func (x *QuizOptionDetail) GetOption() *QuizOption {
 
 type QuizQuestionDetail struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Question      *QuizQuestion          `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"`
-	Options       []*QuizOption          `protobuf:"bytes,2,rep,name=options,proto3" json:"options,omitempty"`
+	Question      *QuizQuestion          `protobuf:"bytes,1,opt,name=question,proto3" json:"question,omitempty"` // 题目详情
+	Options       []*QuizOption          `protobuf:"bytes,2,rep,name=options,proto3" json:"options,omitempty"`   // 题目下的所有选项
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QuizQuestionDetail) Reset() {
 	*x = QuizQuestionDetail{}
-	mi := &file_lms_proto_msgTypes[125]
+	mi := &file_lms_proto_msgTypes[122]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8141,7 +8058,7 @@ func (x *QuizQuestionDetail) String() string {
 func (*QuizQuestionDetail) ProtoMessage() {}
 
 func (x *QuizQuestionDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[125]
+	mi := &file_lms_proto_msgTypes[122]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8154,7 +8071,7 @@ func (x *QuizQuestionDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizQuestionDetail.ProtoReflect.Descriptor instead.
 func (*QuizQuestionDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{125}
+	return file_lms_proto_rawDescGZIP(), []int{122}
 }
 
 func (x *QuizQuestionDetail) GetQuestion() *QuizQuestion {
@@ -8173,15 +8090,15 @@ func (x *QuizQuestionDetail) GetOptions() []*QuizOption {
 
 type QuizDetail struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Quiz          *Quiz                  `protobuf:"bytes,1,opt,name=quiz,proto3" json:"quiz,omitempty"`
-	Questions     []*QuizQuestionDetail  `protobuf:"bytes,2,rep,name=questions,proto3" json:"questions,omitempty"`
+	Quiz          *Quiz                  `protobuf:"bytes,1,opt,name=quiz,proto3" json:"quiz,omitempty"`           // 测验详情
+	Questions     []*QuizQuestionDetail  `protobuf:"bytes,2,rep,name=questions,proto3" json:"questions,omitempty"` // 测验下的所有题目（含选项）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QuizDetail) Reset() {
 	*x = QuizDetail{}
-	mi := &file_lms_proto_msgTypes[126]
+	mi := &file_lms_proto_msgTypes[123]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8193,7 +8110,7 @@ func (x *QuizDetail) String() string {
 func (*QuizDetail) ProtoMessage() {}
 
 func (x *QuizDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[126]
+	mi := &file_lms_proto_msgTypes[123]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8206,7 +8123,7 @@ func (x *QuizDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizDetail.ProtoReflect.Descriptor instead.
 func (*QuizDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{126}
+	return file_lms_proto_rawDescGZIP(), []int{123}
 }
 
 func (x *QuizDetail) GetQuiz() *Quiz {
@@ -8225,15 +8142,15 @@ func (x *QuizDetail) GetQuestions() []*QuizQuestionDetail {
 
 type LessonDetail struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Lesson        *Lesson                `protobuf:"bytes,1,opt,name=lesson,proto3" json:"lesson,omitempty"`
-	Quizzes       []*QuizDetail          `protobuf:"bytes,2,rep,name=quizzes,proto3" json:"quizzes,omitempty"`
+	Lesson        *Lesson                `protobuf:"bytes,1,opt,name=lesson,proto3" json:"lesson,omitempty"`   // 课时详情
+	Quizzes       []*QuizDetail          `protobuf:"bytes,2,rep,name=quizzes,proto3" json:"quizzes,omitempty"` // 课时下的所有测验
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *LessonDetail) Reset() {
 	*x = LessonDetail{}
-	mi := &file_lms_proto_msgTypes[127]
+	mi := &file_lms_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8245,7 +8162,7 @@ func (x *LessonDetail) String() string {
 func (*LessonDetail) ProtoMessage() {}
 
 func (x *LessonDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[127]
+	mi := &file_lms_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8258,7 +8175,7 @@ func (x *LessonDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LessonDetail.ProtoReflect.Descriptor instead.
 func (*LessonDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{127}
+	return file_lms_proto_rawDescGZIP(), []int{124}
 }
 
 func (x *LessonDetail) GetLesson() *Lesson {
@@ -8277,16 +8194,16 @@ func (x *LessonDetail) GetQuizzes() []*QuizDetail {
 
 type ChapterDetail struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Chapter       *Chapter               `protobuf:"bytes,1,opt,name=chapter,proto3" json:"chapter,omitempty"`
-	Lessons       []*LessonDetail        `protobuf:"bytes,2,rep,name=lessons,proto3" json:"lessons,omitempty"`
-	Quizzes       []*QuizDetail          `protobuf:"bytes,3,rep,name=quizzes,proto3" json:"quizzes,omitempty"`
+	Chapter       *Chapter               `protobuf:"bytes,1,opt,name=chapter,proto3" json:"chapter,omitempty"` // 章节详情
+	Lessons       []*LessonDetail        `protobuf:"bytes,2,rep,name=lessons,proto3" json:"lessons,omitempty"` // 章节下的所有课时（含测验）
+	Quizzes       []*QuizDetail          `protobuf:"bytes,3,rep,name=quizzes,proto3" json:"quizzes,omitempty"` // 章节下的所有测验（章末测试）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ChapterDetail) Reset() {
 	*x = ChapterDetail{}
-	mi := &file_lms_proto_msgTypes[128]
+	mi := &file_lms_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8298,7 +8215,7 @@ func (x *ChapterDetail) String() string {
 func (*ChapterDetail) ProtoMessage() {}
 
 func (x *ChapterDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[128]
+	mi := &file_lms_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8311,7 +8228,7 @@ func (x *ChapterDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChapterDetail.ProtoReflect.Descriptor instead.
 func (*ChapterDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{128}
+	return file_lms_proto_rawDescGZIP(), []int{125}
 }
 
 func (x *ChapterDetail) GetChapter() *Chapter {
@@ -8337,17 +8254,17 @@ func (x *ChapterDetail) GetQuizzes() []*QuizDetail {
 
 type CompleteCourse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Course        *Course                `protobuf:"bytes,1,opt,name=course,proto3" json:"course,omitempty"`
-	Materials     []*CourseMaterial      `protobuf:"bytes,2,rep,name=materials,proto3" json:"materials,omitempty"`
-	Chapters      []*ChapterDetail       `protobuf:"bytes,3,rep,name=chapters,proto3" json:"chapters,omitempty"`
-	Quizzes       []*QuizDetail          `protobuf:"bytes,4,rep,name=quizzes,proto3" json:"quizzes,omitempty"` // Course-level quizzes
+	Course        *Course                `protobuf:"bytes,1,opt,name=course,proto3" json:"course,omitempty"`       // 课程详情
+	Materials     []*CourseMaterial      `protobuf:"bytes,2,rep,name=materials,proto3" json:"materials,omitempty"` // 课程资料列表
+	Chapters      []*ChapterDetail       `protobuf:"bytes,3,rep,name=chapters,proto3" json:"chapters,omitempty"`   // 章节列表（含课时、测验的完整树）
+	Quizzes       []*QuizDetail          `protobuf:"bytes,4,rep,name=quizzes,proto3" json:"quizzes,omitempty"`     // 课程级测验列表（期末考试）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CompleteCourse) Reset() {
 	*x = CompleteCourse{}
-	mi := &file_lms_proto_msgTypes[129]
+	mi := &file_lms_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8359,7 +8276,7 @@ func (x *CompleteCourse) String() string {
 func (*CompleteCourse) ProtoMessage() {}
 
 func (x *CompleteCourse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[129]
+	mi := &file_lms_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8372,7 +8289,7 @@ func (x *CompleteCourse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteCourse.ProtoReflect.Descriptor instead.
 func (*CompleteCourse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{129}
+	return file_lms_proto_rawDescGZIP(), []int{126}
 }
 
 func (x *CompleteCourse) GetCourse() *Course {
@@ -8405,14 +8322,14 @@ func (x *CompleteCourse) GetQuizzes() []*QuizDetail {
 
 type GetCompleteCourseRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"` // 课程版本ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCompleteCourseRequest) Reset() {
 	*x = GetCompleteCourseRequest{}
-	mi := &file_lms_proto_msgTypes[130]
+	mi := &file_lms_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8424,7 +8341,7 @@ func (x *GetCompleteCourseRequest) String() string {
 func (*GetCompleteCourseRequest) ProtoMessage() {}
 
 func (x *GetCompleteCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[130]
+	mi := &file_lms_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8437,7 +8354,7 @@ func (x *GetCompleteCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompleteCourseRequest.ProtoReflect.Descriptor instead.
 func (*GetCompleteCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{130}
+	return file_lms_proto_rawDescGZIP(), []int{127}
 }
 
 func (x *GetCompleteCourseRequest) GetCourseId() string {
@@ -8449,14 +8366,14 @@ func (x *GetCompleteCourseRequest) GetCourseId() string {
 
 type GetCompleteCourseResponse struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
-	CompleteCourse *CompleteCourse        `protobuf:"bytes,1,opt,name=complete_course,json=completeCourse,proto3" json:"complete_course,omitempty"`
+	CompleteCourse *CompleteCourse        `protobuf:"bytes,1,opt,name=complete_course,json=completeCourse,proto3" json:"complete_course,omitempty"` // 完整课程树形结构
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
 
 func (x *GetCompleteCourseResponse) Reset() {
 	*x = GetCompleteCourseResponse{}
-	mi := &file_lms_proto_msgTypes[131]
+	mi := &file_lms_proto_msgTypes[128]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8468,7 +8385,7 @@ func (x *GetCompleteCourseResponse) String() string {
 func (*GetCompleteCourseResponse) ProtoMessage() {}
 
 func (x *GetCompleteCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[131]
+	mi := &file_lms_proto_msgTypes[128]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8481,7 +8398,7 @@ func (x *GetCompleteCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompleteCourseResponse.ProtoReflect.Descriptor instead.
 func (*GetCompleteCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{131}
+	return file_lms_proto_rawDescGZIP(), []int{128}
 }
 
 func (x *GetCompleteCourseResponse) GetCompleteCourse() *CompleteCourse {
@@ -8491,225 +8408,17 @@ func (x *GetCompleteCourseResponse) GetCompleteCourse() *CompleteCourse {
 	return nil
 }
 
-type BindCourseAssociationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	EntityType    string                 `protobuf:"bytes,2,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`
-	EntityId      string                 `protobuf:"bytes,3,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *BindCourseAssociationRequest) Reset() {
-	*x = BindCourseAssociationRequest{}
-	mi := &file_lms_proto_msgTypes[132]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *BindCourseAssociationRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BindCourseAssociationRequest) ProtoMessage() {}
-
-func (x *BindCourseAssociationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[132]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BindCourseAssociationRequest.ProtoReflect.Descriptor instead.
-func (*BindCourseAssociationRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{132}
-}
-
-func (x *BindCourseAssociationRequest) GetCourseId() string {
-	if x != nil {
-		return x.CourseId
-	}
-	return ""
-}
-
-func (x *BindCourseAssociationRequest) GetEntityType() string {
-	if x != nil {
-		return x.EntityType
-	}
-	return ""
-}
-
-func (x *BindCourseAssociationRequest) GetEntityId() string {
-	if x != nil {
-		return x.EntityId
-	}
-	return ""
-}
-
-type BindCourseAssociationResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *BindCourseAssociationResponse) Reset() {
-	*x = BindCourseAssociationResponse{}
-	mi := &file_lms_proto_msgTypes[133]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *BindCourseAssociationResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*BindCourseAssociationResponse) ProtoMessage() {}
-
-func (x *BindCourseAssociationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[133]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use BindCourseAssociationResponse.ProtoReflect.Descriptor instead.
-func (*BindCourseAssociationResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{133}
-}
-
-func (x *BindCourseAssociationResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
-type UnbindCourseAssociationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	EntityType    string                 `protobuf:"bytes,2,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`
-	EntityId      string                 `protobuf:"bytes,3,opt,name=entity_id,json=entityId,proto3" json:"entity_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UnbindCourseAssociationRequest) Reset() {
-	*x = UnbindCourseAssociationRequest{}
-	mi := &file_lms_proto_msgTypes[134]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UnbindCourseAssociationRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UnbindCourseAssociationRequest) ProtoMessage() {}
-
-func (x *UnbindCourseAssociationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[134]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UnbindCourseAssociationRequest.ProtoReflect.Descriptor instead.
-func (*UnbindCourseAssociationRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{134}
-}
-
-func (x *UnbindCourseAssociationRequest) GetCourseId() string {
-	if x != nil {
-		return x.CourseId
-	}
-	return ""
-}
-
-func (x *UnbindCourseAssociationRequest) GetEntityType() string {
-	if x != nil {
-		return x.EntityType
-	}
-	return ""
-}
-
-func (x *UnbindCourseAssociationRequest) GetEntityId() string {
-	if x != nil {
-		return x.EntityId
-	}
-	return ""
-}
-
-type UnbindCourseAssociationResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UnbindCourseAssociationResponse) Reset() {
-	*x = UnbindCourseAssociationResponse{}
-	mi := &file_lms_proto_msgTypes[135]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UnbindCourseAssociationResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UnbindCourseAssociationResponse) ProtoMessage() {}
-
-func (x *UnbindCourseAssociationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[135]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UnbindCourseAssociationResponse.ProtoReflect.Descriptor instead.
-func (*UnbindCourseAssociationResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{135}
-}
-
-func (x *UnbindCourseAssociationResponse) GetSuccess() bool {
-	if x != nil {
-		return x.Success
-	}
-	return false
-}
-
 type TakeQuizRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	QuizId        string                 `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ([required])
+	QuizId        string                 `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                // 测验ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TakeQuizRequest) Reset() {
 	*x = TakeQuizRequest{}
-	mi := &file_lms_proto_msgTypes[136]
+	mi := &file_lms_proto_msgTypes[129]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8721,7 +8430,7 @@ func (x *TakeQuizRequest) String() string {
 func (*TakeQuizRequest) ProtoMessage() {}
 
 func (x *TakeQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[136]
+	mi := &file_lms_proto_msgTypes[129]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8734,7 +8443,7 @@ func (x *TakeQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TakeQuizRequest.ProtoReflect.Descriptor instead.
 func (*TakeQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{136}
+	return file_lms_proto_rawDescGZIP(), []int{129}
 }
 
 func (x *TakeQuizRequest) GetCandidateId() string {
@@ -8753,15 +8462,15 @@ func (x *TakeQuizRequest) GetQuizId() string {
 
 type TakeQuizResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	AttemptId     string                 `protobuf:"bytes,1,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // "in_progress"
+	AttemptId     string                 `protobuf:"bytes,1,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"` // 答题记录ID
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`                        // 答题状态：in_progress(进行中)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TakeQuizResponse) Reset() {
 	*x = TakeQuizResponse{}
-	mi := &file_lms_proto_msgTypes[137]
+	mi := &file_lms_proto_msgTypes[130]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8773,7 +8482,7 @@ func (x *TakeQuizResponse) String() string {
 func (*TakeQuizResponse) ProtoMessage() {}
 
 func (x *TakeQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[137]
+	mi := &file_lms_proto_msgTypes[130]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8786,7 +8495,7 @@ func (x *TakeQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TakeQuizResponse.ProtoReflect.Descriptor instead.
 func (*TakeQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{137}
+	return file_lms_proto_rawDescGZIP(), []int{130}
 }
 
 func (x *TakeQuizResponse) GetAttemptId() string {
@@ -8805,16 +8514,16 @@ func (x *TakeQuizResponse) GetStatus() string {
 
 type QuizOptionForCandidate struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`
-	OptionText    string                 `protobuf:"bytes,2,opt,name=option_text,json=optionText,proto3" json:"option_text,omitempty"`
-	SortOrder     uint32                 `protobuf:"varint,3,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	OptionId      string                 `protobuf:"bytes,1,opt,name=option_id,json=optionId,proto3" json:"option_id,omitempty"`       // 选项ID
+	OptionText    string                 `protobuf:"bytes,2,opt,name=option_text,json=optionText,proto3" json:"option_text,omitempty"` // 选项内容（不包含is_correct，考生不可见正确答案）
+	SortOrder     uint32                 `protobuf:"varint,3,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`   // 排序序号
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QuizOptionForCandidate) Reset() {
 	*x = QuizOptionForCandidate{}
-	mi := &file_lms_proto_msgTypes[138]
+	mi := &file_lms_proto_msgTypes[131]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8826,7 +8535,7 @@ func (x *QuizOptionForCandidate) String() string {
 func (*QuizOptionForCandidate) ProtoMessage() {}
 
 func (x *QuizOptionForCandidate) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[138]
+	mi := &file_lms_proto_msgTypes[131]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8839,7 +8548,7 @@ func (x *QuizOptionForCandidate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizOptionForCandidate.ProtoReflect.Descriptor instead.
 func (*QuizOptionForCandidate) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{138}
+	return file_lms_proto_rawDescGZIP(), []int{131}
 }
 
 func (x *QuizOptionForCandidate) GetOptionId() string {
@@ -8865,19 +8574,19 @@ func (x *QuizOptionForCandidate) GetSortOrder() uint32 {
 
 type QuizQuestionForCandidate struct {
 	state         protoimpl.MessageState    `protogen:"open.v1"`
-	QuestionId    string                    `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	QuestionText  string                    `protobuf:"bytes,2,opt,name=question_text,json=questionText,proto3" json:"question_text,omitempty"`
-	QuestionType  QuizQuestionType          `protobuf:"varint,3,opt,name=question_type,json=questionType,proto3,enum=glms.QuizQuestionType" json:"question_type,omitempty"`
-	Points        uint32                    `protobuf:"varint,4,opt,name=points,proto3" json:"points,omitempty"`
-	SortOrder     uint32                    `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
-	Options       []*QuizOptionForCandidate `protobuf:"bytes,6,rep,name=options,proto3" json:"options,omitempty"`
+	QuestionId    string                    `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`                                   // 题目ID
+	QuestionText  string                    `protobuf:"bytes,2,opt,name=question_text,json=questionText,proto3" json:"question_text,omitempty"`                             // 题目内容
+	QuestionType  QuizQuestionType          `protobuf:"varint,3,opt,name=question_type,json=questionType,proto3,enum=glms.QuizQuestionType" json:"question_type,omitempty"` // 题目类型
+	Points        uint32                    `protobuf:"varint,4,opt,name=points,proto3" json:"points,omitempty"`                                                            // 分值
+	SortOrder     uint32                    `protobuf:"varint,5,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`                                     // 排序序号
+	Options       []*QuizOptionForCandidate `protobuf:"bytes,6,rep,name=options,proto3" json:"options,omitempty"`                                                           // 选项列表（不含正确答案标记）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *QuizQuestionForCandidate) Reset() {
 	*x = QuizQuestionForCandidate{}
-	mi := &file_lms_proto_msgTypes[139]
+	mi := &file_lms_proto_msgTypes[132]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8889,7 +8598,7 @@ func (x *QuizQuestionForCandidate) String() string {
 func (*QuizQuestionForCandidate) ProtoMessage() {}
 
 func (x *QuizQuestionForCandidate) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[139]
+	mi := &file_lms_proto_msgTypes[132]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8902,7 +8611,7 @@ func (x *QuizQuestionForCandidate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizQuestionForCandidate.ProtoReflect.Descriptor instead.
 func (*QuizQuestionForCandidate) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{139}
+	return file_lms_proto_rawDescGZIP(), []int{132}
 }
 
 func (x *QuizQuestionForCandidate) GetQuestionId() string {
@@ -8949,15 +8658,15 @@ func (x *QuizQuestionForCandidate) GetOptions() []*QuizOptionForCandidate {
 
 type GetCandidateQuizPaperRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	AttemptId     string                 `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ([required])
+	AttemptId     string                 `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`       // 答题记录ID ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCandidateQuizPaperRequest) Reset() {
 	*x = GetCandidateQuizPaperRequest{}
-	mi := &file_lms_proto_msgTypes[140]
+	mi := &file_lms_proto_msgTypes[133]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8969,7 +8678,7 @@ func (x *GetCandidateQuizPaperRequest) String() string {
 func (*GetCandidateQuizPaperRequest) ProtoMessage() {}
 
 func (x *GetCandidateQuizPaperRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[140]
+	mi := &file_lms_proto_msgTypes[133]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8982,7 +8691,7 @@ func (x *GetCandidateQuizPaperRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCandidateQuizPaperRequest.ProtoReflect.Descriptor instead.
 func (*GetCandidateQuizPaperRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{140}
+	return file_lms_proto_rawDescGZIP(), []int{133}
 }
 
 func (x *GetCandidateQuizPaperRequest) GetCandidateId() string {
@@ -9001,19 +8710,19 @@ func (x *GetCandidateQuizPaperRequest) GetAttemptId() string {
 
 type GetCandidateQuizPaperResponse struct {
 	state         protoimpl.MessageState      `protogen:"open.v1"`
-	AttemptId     string                      `protobuf:"bytes,1,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
-	QuizId        string                      `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`
-	Title         string                      `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
-	Description   string                      `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	TimeLimit     uint32                      `protobuf:"varint,5,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"`
-	Questions     []*QuizQuestionForCandidate `protobuf:"bytes,6,rep,name=questions,proto3" json:"questions,omitempty"`
+	AttemptId     string                      `protobuf:"bytes,1,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`  // 答题记录ID
+	QuizId        string                      `protobuf:"bytes,2,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`           // 测验ID
+	Title         string                      `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                           // 测验标题
+	Description   string                      `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`               // 测验说明
+	TimeLimit     uint32                      `protobuf:"varint,5,opt,name=time_limit,json=timeLimit,proto3" json:"time_limit,omitempty"` // 时间限制（分钟）
+	Questions     []*QuizQuestionForCandidate `protobuf:"bytes,6,rep,name=questions,proto3" json:"questions,omitempty"`                   // 题目列表（不含正确答案）
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetCandidateQuizPaperResponse) Reset() {
 	*x = GetCandidateQuizPaperResponse{}
-	mi := &file_lms_proto_msgTypes[141]
+	mi := &file_lms_proto_msgTypes[134]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9025,7 +8734,7 @@ func (x *GetCandidateQuizPaperResponse) String() string {
 func (*GetCandidateQuizPaperResponse) ProtoMessage() {}
 
 func (x *GetCandidateQuizPaperResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[141]
+	mi := &file_lms_proto_msgTypes[134]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9038,7 +8747,7 @@ func (x *GetCandidateQuizPaperResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCandidateQuizPaperResponse.ProtoReflect.Descriptor instead.
 func (*GetCandidateQuizPaperResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{141}
+	return file_lms_proto_rawDescGZIP(), []int{134}
 }
 
 func (x *GetCandidateQuizPaperResponse) GetAttemptId() string {
@@ -9085,15 +8794,15 @@ func (x *GetCandidateQuizPaperResponse) GetQuestions() []*QuizQuestionForCandida
 
 type QuizAnswerSubmission struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
-	QuestionId        string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`
-	SelectedOptionIds []string               `protobuf:"bytes,2,rep,name=selected_option_ids,json=selectedOptionIds,proto3" json:"selected_option_ids,omitempty"`
+	QuestionId        string                 `protobuf:"bytes,1,opt,name=question_id,json=questionId,proto3" json:"question_id,omitempty"`                        // 题目ID ([required])
+	SelectedOptionIds []string               `protobuf:"bytes,2,rep,name=selected_option_ids,json=selectedOptionIds,proto3" json:"selected_option_ids,omitempty"` // 考生选择的选项ID列表（单选为1个，多选可多个）
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
 
 func (x *QuizAnswerSubmission) Reset() {
 	*x = QuizAnswerSubmission{}
-	mi := &file_lms_proto_msgTypes[142]
+	mi := &file_lms_proto_msgTypes[135]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9105,7 +8814,7 @@ func (x *QuizAnswerSubmission) String() string {
 func (*QuizAnswerSubmission) ProtoMessage() {}
 
 func (x *QuizAnswerSubmission) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[142]
+	mi := &file_lms_proto_msgTypes[135]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9118,7 +8827,7 @@ func (x *QuizAnswerSubmission) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizAnswerSubmission.ProtoReflect.Descriptor instead.
 func (*QuizAnswerSubmission) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{142}
+	return file_lms_proto_rawDescGZIP(), []int{135}
 }
 
 func (x *QuizAnswerSubmission) GetQuestionId() string {
@@ -9137,16 +8846,16 @@ func (x *QuizAnswerSubmission) GetSelectedOptionIds() []string {
 
 type SubmitQuizRequest struct {
 	state         protoimpl.MessageState  `protogen:"open.v1"`
-	CandidateId   string                  `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
-	AttemptId     string                  `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
-	Submissions   []*QuizAnswerSubmission `protobuf:"bytes,3,rep,name=submissions,proto3" json:"submissions,omitempty"`
+	CandidateId   string                  `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ([required])
+	AttemptId     string                  `protobuf:"bytes,2,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`       // 答题记录ID ([required])
+	Submissions   []*QuizAnswerSubmission `protobuf:"bytes,3,rep,name=submissions,proto3" json:"submissions,omitempty"`                    // 考生作答提交列表 ([required])
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SubmitQuizRequest) Reset() {
 	*x = SubmitQuizRequest{}
-	mi := &file_lms_proto_msgTypes[143]
+	mi := &file_lms_proto_msgTypes[136]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9158,7 +8867,7 @@ func (x *SubmitQuizRequest) String() string {
 func (*SubmitQuizRequest) ProtoMessage() {}
 
 func (x *SubmitQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[143]
+	mi := &file_lms_proto_msgTypes[136]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9171,7 +8880,7 @@ func (x *SubmitQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitQuizRequest.ProtoReflect.Descriptor instead.
 func (*SubmitQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{143}
+	return file_lms_proto_rawDescGZIP(), []int{136}
 }
 
 func (x *SubmitQuizRequest) GetCandidateId() string {
@@ -9197,21 +8906,21 @@ func (x *SubmitQuizRequest) GetSubmissions() []*QuizAnswerSubmission {
 
 type SubmitQuizResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	AttemptId       string                 `protobuf:"bytes,1,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`
-	Status          string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"` // "completed"
-	Score           uint32                 `protobuf:"varint,3,opt,name=score,proto3" json:"score,omitempty"`
-	MaxScore        uint32                 `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`
-	IsPassed        bool                   `protobuf:"varint,5,opt,name=is_passed,json=isPassed,proto3" json:"is_passed,omitempty"`
-	CompletedAt     string                 `protobuf:"bytes,6,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"` // RFC3339
-	CourseCompleted bool                   `protobuf:"varint,7,opt,name=course_completed,json=courseCompleted,proto3" json:"course_completed,omitempty"`
-	CourseStatus    string                 `protobuf:"bytes,8,opt,name=course_status,json=courseStatus,proto3" json:"course_status,omitempty"` // learning, completed
+	AttemptId       string                 `protobuf:"bytes,1,opt,name=attempt_id,json=attemptId,proto3" json:"attempt_id,omitempty"`                    // 答题记录ID
+	Status          string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`                                           // 答题状态：completed(已完成)
+	Score           uint32                 `protobuf:"varint,3,opt,name=score,proto3" json:"score,omitempty"`                                            // 实际得分
+	MaxScore        uint32                 `protobuf:"varint,4,opt,name=max_score,json=maxScore,proto3" json:"max_score,omitempty"`                      // 满分
+	IsPassed        bool                   `protobuf:"varint,5,opt,name=is_passed,json=isPassed,proto3" json:"is_passed,omitempty"`                      // 是否及格（score/max_score >= passing_score%）
+	CompletedAt     string                 `protobuf:"bytes,6,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`              // 完成时间 (UTC, RFC3339)
+	CourseCompleted bool                   `protobuf:"varint,7,opt,name=course_completed,json=courseCompleted,proto3" json:"course_completed,omitempty"` // 是否触发了课程结业
+	CourseStatus    string                 `protobuf:"bytes,8,opt,name=course_status,json=courseStatus,proto3" json:"course_status,omitempty"`           // 课程状态：learning(学习中)/completed(已完成)
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *SubmitQuizResponse) Reset() {
 	*x = SubmitQuizResponse{}
-	mi := &file_lms_proto_msgTypes[144]
+	mi := &file_lms_proto_msgTypes[137]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9223,7 +8932,7 @@ func (x *SubmitQuizResponse) String() string {
 func (*SubmitQuizResponse) ProtoMessage() {}
 
 func (x *SubmitQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[144]
+	mi := &file_lms_proto_msgTypes[137]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9236,7 +8945,7 @@ func (x *SubmitQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitQuizResponse.ProtoReflect.Descriptor instead.
 func (*SubmitQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{144}
+	return file_lms_proto_rawDescGZIP(), []int{137}
 }
 
 func (x *SubmitQuizResponse) GetAttemptId() string {
@@ -9297,29 +9006,29 @@ func (x *SubmitQuizResponse) GetCourseStatus() string {
 
 type BrokenAssetDetail struct {
 	state        protoimpl.MessageState `protogen:"open.v1"`
-	ObjectKey    string                 `protobuf:"bytes,1,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
-	AssetType    string                 `protobuf:"bytes,2,opt,name=asset_type,json=assetType,proto3" json:"asset_type,omitempty"` // "thumbnail", "material", "lesson"
-	Status       string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
-	ErrorMessage string                 `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
-	ReconciledAt string                 `protobuf:"bytes,5,opt,name=reconciled_at,json=reconciledAt,proto3" json:"reconciled_at,omitempty"`
-	CreatedAt    string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt    string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	// Rich context details
-	CourseId      string `protobuf:"bytes,8,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
-	CourseTitle   string `protobuf:"bytes,9,opt,name=course_title,json=courseTitle,proto3" json:"course_title,omitempty"`
-	ChapterId     string `protobuf:"bytes,10,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`
-	ChapterTitle  string `protobuf:"bytes,11,opt,name=chapter_title,json=chapterTitle,proto3" json:"chapter_title,omitempty"`
-	LessonId      string `protobuf:"bytes,12,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`
-	LessonTitle   string `protobuf:"bytes,13,opt,name=lesson_title,json=lessonTitle,proto3" json:"lesson_title,omitempty"`
-	MaterialId    string `protobuf:"bytes,14,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`
-	MaterialTitle string `protobuf:"bytes,15,opt,name=material_title,json=materialTitle,proto3" json:"material_title,omitempty"`
+	ObjectKey    string                 `protobuf:"bytes,1,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`          // S3对象key
+	AssetType    string                 `protobuf:"bytes,2,opt,name=asset_type,json=assetType,proto3" json:"asset_type,omitempty"`          // 资产类型：thumbnail(封面)/material(资料)/lesson(课时素材)
+	Status       string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`                                 // 资产状态：pending(待检查)/active(正常)/broken(已损坏)
+	ErrorMessage string                 `protobuf:"bytes,4,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"` // 错误详情（status=broken时）
+	ReconciledAt string                 `protobuf:"bytes,5,opt,name=reconciled_at,json=reconciledAt,proto3" json:"reconciled_at,omitempty"` // 最后对账时间 (UTC, RFC3339)
+	CreatedAt    string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`          // 创建时间 (UTC, RFC3339)
+	UpdatedAt    string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`          // 更新时间 (UTC, RFC3339)
+	// 关联上下文信息（方便快速定位问题）
+	CourseId      string `protobuf:"bytes,8,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                 // 所属课程ID
+	CourseTitle   string `protobuf:"bytes,9,opt,name=course_title,json=courseTitle,proto3" json:"course_title,omitempty"`        // 所属课程标题
+	ChapterId     string `protobuf:"bytes,10,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`             // 所属章节ID
+	ChapterTitle  string `protobuf:"bytes,11,opt,name=chapter_title,json=chapterTitle,proto3" json:"chapter_title,omitempty"`    // 所属章节标题
+	LessonId      string `protobuf:"bytes,12,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`                // 所属课时ID
+	LessonTitle   string `protobuf:"bytes,13,opt,name=lesson_title,json=lessonTitle,proto3" json:"lesson_title,omitempty"`       // 所属课时标题
+	MaterialId    string `protobuf:"bytes,14,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`          // 所属资料ID
+	MaterialTitle string `protobuf:"bytes,15,opt,name=material_title,json=materialTitle,proto3" json:"material_title,omitempty"` // 所属资料标题
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BrokenAssetDetail) Reset() {
 	*x = BrokenAssetDetail{}
-	mi := &file_lms_proto_msgTypes[145]
+	mi := &file_lms_proto_msgTypes[138]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9331,7 +9040,7 @@ func (x *BrokenAssetDetail) String() string {
 func (*BrokenAssetDetail) ProtoMessage() {}
 
 func (x *BrokenAssetDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[145]
+	mi := &file_lms_proto_msgTypes[138]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9344,7 +9053,7 @@ func (x *BrokenAssetDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BrokenAssetDetail.ProtoReflect.Descriptor instead.
 func (*BrokenAssetDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{145}
+	return file_lms_proto_rawDescGZIP(), []int{138}
 }
 
 func (x *BrokenAssetDetail) GetObjectKey() string {
@@ -9454,16 +9163,16 @@ func (x *BrokenAssetDetail) GetMaterialTitle() string {
 
 type ListBrokenAssetsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	PageSize      uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
-	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
-	AssetType     string                 `protobuf:"bytes,3,opt,name=asset_type,json=assetType,proto3" json:"asset_type,omitempty"` // Optional filter: "thumbnail", "material", "lesson"
+	PageSize      uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`   // 每页数量
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"` // 分页游标
+	AssetType     string                 `protobuf:"bytes,3,opt,name=asset_type,json=assetType,proto3" json:"asset_type,omitempty"` // 资产类型过滤：thumbnail/material/lesson
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListBrokenAssetsRequest) Reset() {
 	*x = ListBrokenAssetsRequest{}
-	mi := &file_lms_proto_msgTypes[146]
+	mi := &file_lms_proto_msgTypes[139]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9475,7 +9184,7 @@ func (x *ListBrokenAssetsRequest) String() string {
 func (*ListBrokenAssetsRequest) ProtoMessage() {}
 
 func (x *ListBrokenAssetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[146]
+	mi := &file_lms_proto_msgTypes[139]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9488,7 +9197,7 @@ func (x *ListBrokenAssetsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBrokenAssetsRequest.ProtoReflect.Descriptor instead.
 func (*ListBrokenAssetsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{146}
+	return file_lms_proto_rawDescGZIP(), []int{139}
 }
 
 func (x *ListBrokenAssetsRequest) GetPageSize() uint32 {
@@ -9514,15 +9223,15 @@ func (x *ListBrokenAssetsRequest) GetAssetType() string {
 
 type ListBrokenAssetsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Assets        []*BrokenAssetDetail   `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`
-	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	Assets        []*BrokenAssetDetail   `protobuf:"bytes,1,rep,name=assets,proto3" json:"assets,omitempty"`                                      // 已损坏资产列表
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"` // 下一页游标
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListBrokenAssetsResponse) Reset() {
 	*x = ListBrokenAssetsResponse{}
-	mi := &file_lms_proto_msgTypes[147]
+	mi := &file_lms_proto_msgTypes[140]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9534,7 +9243,7 @@ func (x *ListBrokenAssetsResponse) String() string {
 func (*ListBrokenAssetsResponse) ProtoMessage() {}
 
 func (x *ListBrokenAssetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[147]
+	mi := &file_lms_proto_msgTypes[140]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9547,7 +9256,7 @@ func (x *ListBrokenAssetsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBrokenAssetsResponse.ProtoReflect.Descriptor instead.
 func (*ListBrokenAssetsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{147}
+	return file_lms_proto_rawDescGZIP(), []int{140}
 }
 
 func (x *ListBrokenAssetsResponse) GetAssets() []*BrokenAssetDetail {
@@ -9564,15 +9273,264 @@ func (x *ListBrokenAssetsResponse) GetNextPageToken() string {
 	return ""
 }
 
+// 批量导入测验请求，quiz_json 包含完整的测验、题目和选项
+type ImportQuizRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QuizzableType QuizzableType          `protobuf:"varint,1,opt,name=quizzable_type,json=quizzableType,proto3,enum=glms.QuizzableType" json:"quizzable_type,omitempty"` // 挂载到 course / chapter / lesson [required]
+	QuizzableId   string                 `protobuf:"bytes,2,opt,name=quizzable_id,json=quizzableId,proto3" json:"quizzable_id,omitempty"`                                // 目标实体 ID [required]
+	QuizJson      string                 `protobuf:"bytes,3,opt,name=quiz_json,json=quizJson,proto3" json:"quiz_json,omitempty"`                                         // 完整测验 JSON 字符串 [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportQuizRequest) Reset() {
+	*x = ImportQuizRequest{}
+	mi := &file_lms_proto_msgTypes[141]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportQuizRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportQuizRequest) ProtoMessage() {}
+
+func (x *ImportQuizRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[141]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportQuizRequest.ProtoReflect.Descriptor instead.
+func (*ImportQuizRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{141}
+}
+
+func (x *ImportQuizRequest) GetQuizzableType() QuizzableType {
+	if x != nil {
+		return x.QuizzableType
+	}
+	return QuizzableType_QUIZZABLE_TYPE_UNSPECIFIED
+}
+
+func (x *ImportQuizRequest) GetQuizzableId() string {
+	if x != nil {
+		return x.QuizzableId
+	}
+	return ""
+}
+
+func (x *ImportQuizRequest) GetQuizJson() string {
+	if x != nil {
+		return x.QuizJson
+	}
+	return ""
+}
+
+type ImportQuizResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	QuizId        string                 `protobuf:"bytes,1,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                       // 生成的测验 ID (ULID)
+	QuestionCount int32                  `protobuf:"varint,2,opt,name=question_count,json=questionCount,proto3" json:"question_count,omitempty"` // 创建的题目数量
+	OptionCount   int32                  `protobuf:"varint,3,opt,name=option_count,json=optionCount,proto3" json:"option_count,omitempty"`       // 创建的选项数量
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportQuizResponse) Reset() {
+	*x = ImportQuizResponse{}
+	mi := &file_lms_proto_msgTypes[142]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportQuizResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportQuizResponse) ProtoMessage() {}
+
+func (x *ImportQuizResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[142]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportQuizResponse.ProtoReflect.Descriptor instead.
+func (*ImportQuizResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{142}
+}
+
+func (x *ImportQuizResponse) GetQuizId() string {
+	if x != nil {
+		return x.QuizId
+	}
+	return ""
+}
+
+func (x *ImportQuizResponse) GetQuestionCount() int32 {
+	if x != nil {
+		return x.QuestionCount
+	}
+	return 0
+}
+
+func (x *ImportQuizResponse) GetOptionCount() int32 {
+	if x != nil {
+		return x.OptionCount
+	}
+	return 0
+}
+
+// 批量导入课程请求，course_json 包含章节、课时、资料（不含测验）
+type ImportCourseRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CategoryTips  string                 `protobuf:"bytes,1,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"` // 分类提示，客户端按相同值分组展示，最长64字符 [optional]
+	CourseJson    string                 `protobuf:"bytes,2,opt,name=course_json,json=courseJson,proto3" json:"course_json,omitempty"`       // 完整课程 JSON 字符串 [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportCourseRequest) Reset() {
+	*x = ImportCourseRequest{}
+	mi := &file_lms_proto_msgTypes[143]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportCourseRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportCourseRequest) ProtoMessage() {}
+
+func (x *ImportCourseRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[143]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportCourseRequest.ProtoReflect.Descriptor instead.
+func (*ImportCourseRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{143}
+}
+
+func (x *ImportCourseRequest) GetCategoryTips() string {
+	if x != nil {
+		return x.CategoryTips
+	}
+	return ""
+}
+
+func (x *ImportCourseRequest) GetCourseJson() string {
+	if x != nil {
+		return x.CourseJson
+	}
+	return ""
+}
+
+type ImportCourseResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                 // 生成的课程 ID (ULID)
+	CourseGuid    string                 `protobuf:"bytes,2,opt,name=course_guid,json=courseGuid,proto3" json:"course_guid,omitempty"`           // 生成的课程业务 ID (ULID)
+	ChapterCount  int32                  `protobuf:"varint,3,opt,name=chapter_count,json=chapterCount,proto3" json:"chapter_count,omitempty"`    // 创建的章节数量
+	LessonCount   int32                  `protobuf:"varint,4,opt,name=lesson_count,json=lessonCount,proto3" json:"lesson_count,omitempty"`       // 创建的课时数量
+	MaterialCount int32                  `protobuf:"varint,5,opt,name=material_count,json=materialCount,proto3" json:"material_count,omitempty"` // 创建的资料数量
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportCourseResponse) Reset() {
+	*x = ImportCourseResponse{}
+	mi := &file_lms_proto_msgTypes[144]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportCourseResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportCourseResponse) ProtoMessage() {}
+
+func (x *ImportCourseResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[144]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportCourseResponse.ProtoReflect.Descriptor instead.
+func (*ImportCourseResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{144}
+}
+
+func (x *ImportCourseResponse) GetCourseId() string {
+	if x != nil {
+		return x.CourseId
+	}
+	return ""
+}
+
+func (x *ImportCourseResponse) GetCourseGuid() string {
+	if x != nil {
+		return x.CourseGuid
+	}
+	return ""
+}
+
+func (x *ImportCourseResponse) GetChapterCount() int32 {
+	if x != nil {
+		return x.ChapterCount
+	}
+	return 0
+}
+
+func (x *ImportCourseResponse) GetLessonCount() int32 {
+	if x != nil {
+		return x.LessonCount
+	}
+	return 0
+}
+
+func (x *ImportCourseResponse) GetMaterialCount() int32 {
+	if x != nil {
+		return x.MaterialCount
+	}
+	return 0
+}
+
 var File_lms_proto protoreflect.FileDescriptor
 
 const file_lms_proto_rawDesc = "" +
 	"\n" +
-	"\tlms.proto\x12\x04glms\"\xd8\x03\n" +
+	"\tlms.proto\x12\x04glms\"\xb4\x04\n" +
 	"\x06Course\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12\x1f\n" +
-	"\vcategory_id\x18\x02 \x01(\tR\n" +
-	"categoryId\x12\x14\n" +
+	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12#\n" +
+	"\rcategory_tips\x18\x02 \x01(\tR\fcategoryTips\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x120\n" +
 	"\x14thumbnail_object_key\x18\x05 \x01(\tR\x12thumbnailObjectKey\x12!\n" +
@@ -9586,7 +9544,12 @@ const file_lms_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\f \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\r \x01(\tR\tupdatedAt\"\xfb\x02\n" +
+	"updated_at\x18\r \x01(\tR\tupdatedAt\x12\x1f\n" +
+	"\vcourse_guid\x18\x0e \x01(\tR\n" +
+	"courseGuid\x12\x16\n" +
+	"\x06status\x18\x0f \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"is_current\x18\x10 \x01(\bR\tisCurrent\"\xfb\x02\n" +
 	"\x0eCourseMaterial\x12\x1f\n" +
 	"\vmaterial_id\x18\x01 \x01(\tR\n" +
 	"materialId\x12\x1b\n" +
@@ -9714,23 +9677,23 @@ const file_lms_proto_rawDesc = "" +
 	"\n" +
 	"object_key\x18\x02 \x01(\tR\tobjectKey\x12\x1b\n" +
 	"\tfile_size\x18\x03 \x01(\x04R\bfileSize\x12#\n" +
-	"\rlast_modified\x18\x04 \x01(\tR\flastModified\"\xc7\x02\n" +
-	"\x13CreateCourseRequest\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12\x1f\n" +
-	"\vcategory_id\x18\x02 \x01(\tR\n" +
-	"categoryId\x12\x14\n" +
-	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\x120\n" +
-	"\x14thumbnail_object_key\x18\x05 \x01(\tR\x12thumbnailObjectKey\x12!\n" +
-	"\fduration_min\x18\x06 \x01(\rR\vdurationMin\x123\n" +
-	"\x15certification_enabled\x18\a \x01(\bR\x14certificationEnabled\x120\n" +
-	"\x14certification_def_id\x18\b \x01(\tR\x12certificationDefId\"3\n" +
-	"\x14CreateCourseResponse\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\"\xe1\x02\n" +
+	"\rlast_modified\x18\x04 \x01(\tR\flastModified\"\x9b\x03\n" +
+	"\x18CreateCourseDraftRequest\x12#\n" +
+	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x120\n" +
+	"\x14thumbnail_object_key\x18\x04 \x01(\tR\x12thumbnailObjectKey\x12!\n" +
+	"\fduration_min\x18\x05 \x01(\rR\vdurationMin\x123\n" +
+	"\x15certification_enabled\x18\x06 \x01(\bR\x14certificationEnabled\x120\n" +
+	"\x14certification_def_id\x18\a \x01(\tR\x12certificationDefId\x12(\n" +
+	"\x10from_course_guid\x18\b \x01(\tR\x0efromCourseGuid\x12\x1b\n" +
+	"\tcourse_id\x18\t \x01(\tR\bcourseId\x12\x1f\n" +
+	"\vcourse_guid\x18\n" +
+	" \x01(\tR\n" +
+	"courseGuid\"\xe5\x02\n" +
 	"\x13UpdateCourseRequest\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12\x1f\n" +
-	"\vcategory_id\x18\x02 \x01(\tR\n" +
-	"categoryId\x12\x14\n" +
+	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12#\n" +
+	"\rcategory_tips\x18\x02 \x01(\tR\fcategoryTips\x12\x14\n" +
 	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x120\n" +
 	"\x14thumbnail_object_key\x18\x05 \x01(\tR\x12thumbnailObjectKey\x12!\n" +
@@ -9748,10 +9711,9 @@ const file_lms_proto_rawDesc = "" +
 	"\x10GetCourseRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\"9\n" +
 	"\x11GetCourseResponse\x12$\n" +
-	"\x06course\x18\x01 \x01(\v2\f.glms.CourseR\x06course\"\\\n" +
-	"\x12ListCoursesRequest\x12\x1f\n" +
-	"\vcategory_id\x18\x01 \x01(\tR\n" +
-	"categoryId\x12%\n" +
+	"\x06course\x18\x01 \x01(\v2\f.glms.CourseR\x06course\"`\n" +
+	"\x12ListCoursesRequest\x12#\n" +
+	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12%\n" +
 	"\x0epublished_only\x18\x02 \x01(\bR\rpublishedOnly\"=\n" +
 	"\x13ListCoursesResponse\x12&\n" +
 	"\acourses\x18\x01 \x03(\v2\f.glms.CourseR\acourses\"M\n" +
@@ -9759,11 +9721,6 @@ const file_lms_proto_rawDesc = "" +
 	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\rR\aversion\"1\n" +
 	"\x15PublishCourseResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"O\n" +
-	"\x16UnpublishCourseRequest\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12\x18\n" +
-	"\aversion\x18\x02 \x01(\rR\aversion\"3\n" +
-	"\x17UnpublishCourseResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xb0\x02\n" +
 	"\x1bCreateCourseMaterialRequest\x12\x1f\n" +
 	"\vmaterial_id\x18\x01 \x01(\tR\n" +
@@ -10226,21 +10183,7 @@ const file_lms_proto_rawDesc = "" +
 	"\x18GetCompleteCourseRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\"Z\n" +
 	"\x19GetCompleteCourseResponse\x12=\n" +
-	"\x0fcomplete_course\x18\x01 \x01(\v2\x14.glms.CompleteCourseR\x0ecompleteCourse\"y\n" +
-	"\x1cBindCourseAssociationRequest\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12\x1f\n" +
-	"\ventity_type\x18\x02 \x01(\tR\n" +
-	"entityType\x12\x1b\n" +
-	"\tentity_id\x18\x03 \x01(\tR\bentityId\"9\n" +
-	"\x1dBindCourseAssociationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"{\n" +
-	"\x1eUnbindCourseAssociationRequest\x12\x1b\n" +
-	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12\x1f\n" +
-	"\ventity_type\x18\x02 \x01(\tR\n" +
-	"entityType\x12\x1b\n" +
-	"\tentity_id\x18\x03 \x01(\tR\bentityId\";\n" +
-	"\x1fUnbindCourseAssociationResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"M\n" +
+	"\x0fcomplete_course\x18\x01 \x01(\v2\x14.glms.CompleteCourseR\x0ecompleteCourse\"M\n" +
 	"\x0fTakeQuizRequest\x12!\n" +
 	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x17\n" +
 	"\aquiz_id\x18\x02 \x01(\tR\x06quizId\"I\n" +
@@ -10326,7 +10269,26 @@ const file_lms_proto_rawDesc = "" +
 	"asset_type\x18\x03 \x01(\tR\tassetType\"s\n" +
 	"\x18ListBrokenAssetsResponse\x12/\n" +
 	"\x06assets\x18\x01 \x03(\v2\x17.glms.BrokenAssetDetailR\x06assets\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*\x99\x01\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\x8f\x01\n" +
+	"\x11ImportQuizRequest\x12:\n" +
+	"\x0equizzable_type\x18\x01 \x01(\x0e2\x13.glms.QuizzableTypeR\rquizzableType\x12!\n" +
+	"\fquizzable_id\x18\x02 \x01(\tR\vquizzableId\x12\x1b\n" +
+	"\tquiz_json\x18\x03 \x01(\tR\bquizJson\"w\n" +
+	"\x12ImportQuizResponse\x12\x17\n" +
+	"\aquiz_id\x18\x01 \x01(\tR\x06quizId\x12%\n" +
+	"\x0equestion_count\x18\x02 \x01(\x05R\rquestionCount\x12!\n" +
+	"\foption_count\x18\x03 \x01(\x05R\voptionCount\"[\n" +
+	"\x13ImportCourseRequest\x12#\n" +
+	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12\x1f\n" +
+	"\vcourse_json\x18\x02 \x01(\tR\n" +
+	"courseJson\"\xc3\x01\n" +
+	"\x14ImportCourseResponse\x12\x1b\n" +
+	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12\x1f\n" +
+	"\vcourse_guid\x18\x02 \x01(\tR\n" +
+	"courseGuid\x12#\n" +
+	"\rchapter_count\x18\x03 \x01(\x05R\fchapterCount\x12!\n" +
+	"\flesson_count\x18\x04 \x01(\x05R\vlessonCount\x12%\n" +
+	"\x0ematerial_count\x18\x05 \x01(\x05R\rmaterialCount*\x99\x01\n" +
 	"\fMaterialType\x12\x1d\n" +
 	"\x19MATERIAL_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16MATERIAL_TYPE_TEXTBOOK\x10\x01\x12\x18\n" +
@@ -10370,16 +10332,15 @@ const file_lms_proto_rawDesc = "" +
 	"\x1cUPLOAD_TYPE_COURSE_THUMBNAIL\x10\x01\x12\x1f\n" +
 	"\x1bUPLOAD_TYPE_COURSE_MATERIAL\x10\x02\x12\x1c\n" +
 	"\x18UPLOAD_TYPE_LESSON_ASSET\x10\x03\x12\x1a\n" +
-	"\x16UPLOAD_TYPE_QUIZ_ASSET\x10\x042\xc0(\n" +
+	"\x16UPLOAD_TYPE_QUIZ_ASSET\x10\x042\xaa'\n" +
 	"\n" +
-	"LmsService\x12E\n" +
-	"\fCreateCourse\x12\x19.glms.CreateCourseRequest\x1a\x1a.glms.CreateCourseResponse\x12E\n" +
+	"LmsService\x12A\n" +
+	"\x11CreateCourseDraft\x12\x1e.glms.CreateCourseDraftRequest\x1a\f.glms.Course\x12E\n" +
 	"\fUpdateCourse\x12\x19.glms.UpdateCourseRequest\x1a\x1a.glms.UpdateCourseResponse\x12E\n" +
 	"\fDeleteCourse\x12\x19.glms.DeleteCourseRequest\x1a\x1a.glms.DeleteCourseResponse\x12<\n" +
 	"\tGetCourse\x12\x16.glms.GetCourseRequest\x1a\x17.glms.GetCourseResponse\x12B\n" +
 	"\vListCourses\x12\x18.glms.ListCoursesRequest\x1a\x19.glms.ListCoursesResponse\x12H\n" +
-	"\rPublishCourse\x12\x1a.glms.PublishCourseRequest\x1a\x1b.glms.PublishCourseResponse\x12N\n" +
-	"\x0fUnpublishCourse\x12\x1c.glms.UnpublishCourseRequest\x1a\x1d.glms.UnpublishCourseResponse\x12]\n" +
+	"\rPublishCourse\x12\x1a.glms.PublishCourseRequest\x1a\x1b.glms.PublishCourseResponse\x12]\n" +
 	"\x14CreateCourseMaterial\x12!.glms.CreateCourseMaterialRequest\x1a\".glms.CreateCourseMaterialResponse\x12]\n" +
 	"\x14UpdateCourseMaterial\x12!.glms.UpdateCourseMaterialRequest\x1a\".glms.UpdateCourseMaterialResponse\x12]\n" +
 	"\x14DeleteCourseMaterial\x12!.glms.DeleteCourseMaterialRequest\x1a\".glms.DeleteCourseMaterialResponse\x12T\n" +
@@ -10423,7 +10384,10 @@ const file_lms_proto_rawDesc = "" +
 	"\x10DeleteQuizOption\x12\x1d.glms.DeleteQuizOptionRequest\x1a\x1e.glms.DeleteQuizOptionResponse\x12H\n" +
 	"\rGetQuizOption\x12\x1a.glms.GetQuizOptionRequest\x1a\x1b.glms.GetQuizOptionResponse\x12N\n" +
 	"\x0fListQuizOptions\x12\x1c.glms.ListQuizOptionsRequest\x1a\x1d.glms.ListQuizOptionsResponse\x12W\n" +
-	"\x12ReorderQuizOptions\x12\x1f.glms.ReorderQuizOptionsRequest\x1a .glms.ReorderQuizOptionsResponse\x12B\n" +
+	"\x12ReorderQuizOptions\x12\x1f.glms.ReorderQuizOptionsRequest\x1a .glms.ReorderQuizOptionsResponse\x12?\n" +
+	"\n" +
+	"ImportQuiz\x12\x17.glms.ImportQuizRequest\x1a\x18.glms.ImportQuizResponse\x12E\n" +
+	"\fImportCourse\x12\x19.glms.ImportCourseRequest\x1a\x1a.glms.ImportCourseResponse\x12B\n" +
 	"\vListObjects\x12\x18.glms.ListObjectsRequest\x1a\x19.glms.ListObjectsResponse\x12N\n" +
 	"\x0fCreateUploadURL\x12\x1c.glms.CreateUploadURLRequest\x1a\x1d.glms.CreateUploadURLResponse\x12H\n" +
 	"\rCreateViewURL\x12\x1a.glms.CreateViewURLRequest\x1a\x1b.glms.CreateViewURLResponse\x12`\n" +
@@ -10437,9 +10401,7 @@ const file_lms_proto_rawDesc = "" +
 	"\x1cGetCandidateEnrollmentDetail\x12).glms.GetCandidateEnrollmentDetailRequest\x1a*.glms.GetCandidateEnrollmentDetailResponse\x12x\n" +
 	"\x1dListCourseEnrollmentsForAdmin\x12*.glms.ListCourseEnrollmentsForAdminRequest\x1a+.glms.ListCourseEnrollmentsForAdminResponse\x12u\n" +
 	"\x1cGetCandidateProgressForAdmin\x12).glms.GetCandidateProgressForAdminRequest\x1a*.glms.GetCandidateProgressForAdminResponse\x12T\n" +
-	"\x11GetCompleteCourse\x12\x1e.glms.GetCompleteCourseRequest\x1a\x1f.glms.GetCompleteCourseResponse\x12`\n" +
-	"\x15BindCourseAssociation\x12\".glms.BindCourseAssociationRequest\x1a#.glms.BindCourseAssociationResponse\x12f\n" +
-	"\x17UnbindCourseAssociation\x12$.glms.UnbindCourseAssociationRequest\x1a%.glms.UnbindCourseAssociationResponse\x12Q\n" +
+	"\x11GetCompleteCourse\x12\x1e.glms.GetCompleteCourseRequest\x1a\x1f.glms.GetCompleteCourseResponse\x12Q\n" +
 	"\x10ListBrokenAssets\x12\x1d.glms.ListBrokenAssetsRequest\x1a\x1e.glms.ListBrokenAssetsResponseB\vZ\tcftp/glmsb\x06proto3"
 
 var (
@@ -10455,7 +10417,7 @@ func file_lms_proto_rawDescGZIP() []byte {
 }
 
 var file_lms_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_lms_proto_msgTypes = make([]protoimpl.MessageInfo, 148)
+var file_lms_proto_msgTypes = make([]protoimpl.MessageInfo, 145)
 var file_lms_proto_goTypes = []any{
 	(MaterialType)(0),                             // 0: glms.MaterialType
 	(LessonType)(0),                               // 1: glms.LessonType
@@ -10474,144 +10436,141 @@ var file_lms_proto_goTypes = []any{
 	(*QuizOption)(nil),                            // 14: glms.QuizOption
 	(*ReorderItem)(nil),                           // 15: glms.ReorderItem
 	(*BucketObject)(nil),                          // 16: glms.BucketObject
-	(*CreateCourseRequest)(nil),                   // 17: glms.CreateCourseRequest
-	(*CreateCourseResponse)(nil),                  // 18: glms.CreateCourseResponse
-	(*UpdateCourseRequest)(nil),                   // 19: glms.UpdateCourseRequest
-	(*UpdateCourseResponse)(nil),                  // 20: glms.UpdateCourseResponse
-	(*DeleteCourseRequest)(nil),                   // 21: glms.DeleteCourseRequest
-	(*DeleteCourseResponse)(nil),                  // 22: glms.DeleteCourseResponse
-	(*GetCourseRequest)(nil),                      // 23: glms.GetCourseRequest
-	(*GetCourseResponse)(nil),                     // 24: glms.GetCourseResponse
-	(*ListCoursesRequest)(nil),                    // 25: glms.ListCoursesRequest
-	(*ListCoursesResponse)(nil),                   // 26: glms.ListCoursesResponse
-	(*PublishCourseRequest)(nil),                  // 27: glms.PublishCourseRequest
-	(*PublishCourseResponse)(nil),                 // 28: glms.PublishCourseResponse
-	(*UnpublishCourseRequest)(nil),                // 29: glms.UnpublishCourseRequest
-	(*UnpublishCourseResponse)(nil),               // 30: glms.UnpublishCourseResponse
-	(*CreateCourseMaterialRequest)(nil),           // 31: glms.CreateCourseMaterialRequest
-	(*CreateCourseMaterialResponse)(nil),          // 32: glms.CreateCourseMaterialResponse
-	(*UpdateCourseMaterialRequest)(nil),           // 33: glms.UpdateCourseMaterialRequest
-	(*UpdateCourseMaterialResponse)(nil),          // 34: glms.UpdateCourseMaterialResponse
-	(*DeleteCourseMaterialRequest)(nil),           // 35: glms.DeleteCourseMaterialRequest
-	(*DeleteCourseMaterialResponse)(nil),          // 36: glms.DeleteCourseMaterialResponse
-	(*GetCourseMaterialRequest)(nil),              // 37: glms.GetCourseMaterialRequest
-	(*GetCourseMaterialResponse)(nil),             // 38: glms.GetCourseMaterialResponse
-	(*ListCourseMaterialsRequest)(nil),            // 39: glms.ListCourseMaterialsRequest
-	(*ListCourseMaterialsResponse)(nil),           // 40: glms.ListCourseMaterialsResponse
-	(*ReorderCourseMaterialsRequest)(nil),         // 41: glms.ReorderCourseMaterialsRequest
-	(*ReorderCourseMaterialsResponse)(nil),        // 42: glms.ReorderCourseMaterialsResponse
-	(*CreateChapterRequest)(nil),                  // 43: glms.CreateChapterRequest
-	(*CreateChapterResponse)(nil),                 // 44: glms.CreateChapterResponse
-	(*UpdateChapterRequest)(nil),                  // 45: glms.UpdateChapterRequest
-	(*UpdateChapterResponse)(nil),                 // 46: glms.UpdateChapterResponse
-	(*DeleteChapterRequest)(nil),                  // 47: glms.DeleteChapterRequest
-	(*DeleteChapterResponse)(nil),                 // 48: glms.DeleteChapterResponse
-	(*GetChapterRequest)(nil),                     // 49: glms.GetChapterRequest
-	(*GetChapterResponse)(nil),                    // 50: glms.GetChapterResponse
-	(*ListChaptersRequest)(nil),                   // 51: glms.ListChaptersRequest
-	(*ListChaptersResponse)(nil),                  // 52: glms.ListChaptersResponse
-	(*ReorderChaptersRequest)(nil),                // 53: glms.ReorderChaptersRequest
-	(*ReorderChaptersResponse)(nil),               // 54: glms.ReorderChaptersResponse
-	(*CreateLessonRequest)(nil),                   // 55: glms.CreateLessonRequest
-	(*CreateLessonResponse)(nil),                  // 56: glms.CreateLessonResponse
-	(*UpdateLessonRequest)(nil),                   // 57: glms.UpdateLessonRequest
-	(*UpdateLessonResponse)(nil),                  // 58: glms.UpdateLessonResponse
-	(*DeleteLessonRequest)(nil),                   // 59: glms.DeleteLessonRequest
-	(*DeleteLessonResponse)(nil),                  // 60: glms.DeleteLessonResponse
-	(*GetLessonRequest)(nil),                      // 61: glms.GetLessonRequest
-	(*GetLessonResponse)(nil),                     // 62: glms.GetLessonResponse
-	(*ListLessonsRequest)(nil),                    // 63: glms.ListLessonsRequest
-	(*ListLessonsResponse)(nil),                   // 64: glms.ListLessonsResponse
-	(*ReorderLessonsRequest)(nil),                 // 65: glms.ReorderLessonsRequest
-	(*ReorderLessonsResponse)(nil),                // 66: glms.ReorderLessonsResponse
-	(*CreatePrerequisiteRequest)(nil),             // 67: glms.CreatePrerequisiteRequest
-	(*CreatePrerequisiteResponse)(nil),            // 68: glms.CreatePrerequisiteResponse
-	(*UpdatePrerequisiteRequest)(nil),             // 69: glms.UpdatePrerequisiteRequest
-	(*UpdatePrerequisiteResponse)(nil),            // 70: glms.UpdatePrerequisiteResponse
-	(*DeletePrerequisiteRequest)(nil),             // 71: glms.DeletePrerequisiteRequest
-	(*DeletePrerequisiteResponse)(nil),            // 72: glms.DeletePrerequisiteResponse
-	(*GetPrerequisiteRequest)(nil),                // 73: glms.GetPrerequisiteRequest
-	(*GetPrerequisiteResponse)(nil),               // 74: glms.GetPrerequisiteResponse
-	(*ListPrerequisitesRequest)(nil),              // 75: glms.ListPrerequisitesRequest
-	(*ListPrerequisitesResponse)(nil),             // 76: glms.ListPrerequisitesResponse
-	(*CreateQuizRequest)(nil),                     // 77: glms.CreateQuizRequest
-	(*CreateQuizResponse)(nil),                    // 78: glms.CreateQuizResponse
-	(*UpdateQuizRequest)(nil),                     // 79: glms.UpdateQuizRequest
-	(*UpdateQuizResponse)(nil),                    // 80: glms.UpdateQuizResponse
-	(*DeleteQuizRequest)(nil),                     // 81: glms.DeleteQuizRequest
-	(*DeleteQuizResponse)(nil),                    // 82: glms.DeleteQuizResponse
-	(*GetQuizRequest)(nil),                        // 83: glms.GetQuizRequest
-	(*GetQuizResponse)(nil),                       // 84: glms.GetQuizResponse
-	(*ListQuizzesRequest)(nil),                    // 85: glms.ListQuizzesRequest
-	(*ListQuizzesResponse)(nil),                   // 86: glms.ListQuizzesResponse
-	(*CreateQuizQuestionRequest)(nil),             // 87: glms.CreateQuizQuestionRequest
-	(*CreateQuizQuestionResponse)(nil),            // 88: glms.CreateQuizQuestionResponse
-	(*UpdateQuizQuestionRequest)(nil),             // 89: glms.UpdateQuizQuestionRequest
-	(*UpdateQuizQuestionResponse)(nil),            // 90: glms.UpdateQuizQuestionResponse
-	(*DeleteQuizQuestionRequest)(nil),             // 91: glms.DeleteQuizQuestionRequest
-	(*DeleteQuizQuestionResponse)(nil),            // 92: glms.DeleteQuizQuestionResponse
-	(*GetQuizQuestionRequest)(nil),                // 93: glms.GetQuizQuestionRequest
-	(*GetQuizQuestionResponse)(nil),               // 94: glms.GetQuizQuestionResponse
-	(*ListQuizQuestionsRequest)(nil),              // 95: glms.ListQuizQuestionsRequest
-	(*ListQuizQuestionsResponse)(nil),             // 96: glms.ListQuizQuestionsResponse
-	(*ReorderQuizQuestionsRequest)(nil),           // 97: glms.ReorderQuizQuestionsRequest
-	(*ReorderQuizQuestionsResponse)(nil),          // 98: glms.ReorderQuizQuestionsResponse
-	(*CreateQuizOptionRequest)(nil),               // 99: glms.CreateQuizOptionRequest
-	(*CreateQuizOptionResponse)(nil),              // 100: glms.CreateQuizOptionResponse
-	(*UpdateQuizOptionRequest)(nil),               // 101: glms.UpdateQuizOptionRequest
-	(*UpdateQuizOptionResponse)(nil),              // 102: glms.UpdateQuizOptionResponse
-	(*DeleteQuizOptionRequest)(nil),               // 103: glms.DeleteQuizOptionRequest
-	(*DeleteQuizOptionResponse)(nil),              // 104: glms.DeleteQuizOptionResponse
-	(*GetQuizOptionRequest)(nil),                  // 105: glms.GetQuizOptionRequest
-	(*GetQuizOptionResponse)(nil),                 // 106: glms.GetQuizOptionResponse
-	(*ListQuizOptionsRequest)(nil),                // 107: glms.ListQuizOptionsRequest
-	(*ListQuizOptionsResponse)(nil),               // 108: glms.ListQuizOptionsResponse
-	(*ReorderQuizOptionsRequest)(nil),             // 109: glms.ReorderQuizOptionsRequest
-	(*ReorderQuizOptionsResponse)(nil),            // 110: glms.ReorderQuizOptionsResponse
-	(*ListObjectsRequest)(nil),                    // 111: glms.ListObjectsRequest
-	(*ListObjectsResponse)(nil),                   // 112: glms.ListObjectsResponse
-	(*CreateUploadURLRequest)(nil),                // 113: glms.CreateUploadURLRequest
-	(*CreateUploadURLResponse)(nil),               // 114: glms.CreateUploadURLResponse
-	(*CreateViewURLRequest)(nil),                  // 115: glms.CreateViewURLRequest
-	(*CreateViewURLResponse)(nil),                 // 116: glms.CreateViewURLResponse
-	(*EnrollCandidateCourseRequest)(nil),          // 117: glms.EnrollCandidateCourseRequest
-	(*EnrollCandidateCourseResponse)(nil),         // 118: glms.EnrollCandidateCourseResponse
-	(*CompleteLessonLearningRequest)(nil),         // 119: glms.CompleteLessonLearningRequest
-	(*CompleteLessonLearningResponse)(nil),        // 120: glms.CompleteLessonLearningResponse
-	(*ListCandidateEnrollmentsRequest)(nil),       // 121: glms.ListCandidateEnrollmentsRequest
-	(*CandidateEnrollmentSummary)(nil),            // 122: glms.CandidateEnrollmentSummary
-	(*ListCandidateEnrollmentsResponse)(nil),      // 123: glms.ListCandidateEnrollmentsResponse
-	(*GetCandidateEnrollmentDetailRequest)(nil),   // 124: glms.GetCandidateEnrollmentDetailRequest
-	(*GetCandidateEnrollmentDetailResponse)(nil),  // 125: glms.GetCandidateEnrollmentDetailResponse
-	(*ListCourseEnrollmentsForAdminRequest)(nil),  // 126: glms.ListCourseEnrollmentsForAdminRequest
-	(*CourseEnrollmentSummaryForAdmin)(nil),       // 127: glms.CourseEnrollmentSummaryForAdmin
-	(*ListCourseEnrollmentsForAdminResponse)(nil), // 128: glms.ListCourseEnrollmentsForAdminResponse
-	(*GetCandidateProgressForAdminRequest)(nil),   // 129: glms.GetCandidateProgressForAdminRequest
-	(*GetCandidateProgressForAdminResponse)(nil),  // 130: glms.GetCandidateProgressForAdminResponse
-	(*QuizOptionDetail)(nil),                      // 131: glms.QuizOptionDetail
-	(*QuizQuestionDetail)(nil),                    // 132: glms.QuizQuestionDetail
-	(*QuizDetail)(nil),                            // 133: glms.QuizDetail
-	(*LessonDetail)(nil),                          // 134: glms.LessonDetail
-	(*ChapterDetail)(nil),                         // 135: glms.ChapterDetail
-	(*CompleteCourse)(nil),                        // 136: glms.CompleteCourse
-	(*GetCompleteCourseRequest)(nil),              // 137: glms.GetCompleteCourseRequest
-	(*GetCompleteCourseResponse)(nil),             // 138: glms.GetCompleteCourseResponse
-	(*BindCourseAssociationRequest)(nil),          // 139: glms.BindCourseAssociationRequest
-	(*BindCourseAssociationResponse)(nil),         // 140: glms.BindCourseAssociationResponse
-	(*UnbindCourseAssociationRequest)(nil),        // 141: glms.UnbindCourseAssociationRequest
-	(*UnbindCourseAssociationResponse)(nil),       // 142: glms.UnbindCourseAssociationResponse
-	(*TakeQuizRequest)(nil),                       // 143: glms.TakeQuizRequest
-	(*TakeQuizResponse)(nil),                      // 144: glms.TakeQuizResponse
-	(*QuizOptionForCandidate)(nil),                // 145: glms.QuizOptionForCandidate
-	(*QuizQuestionForCandidate)(nil),              // 146: glms.QuizQuestionForCandidate
-	(*GetCandidateQuizPaperRequest)(nil),          // 147: glms.GetCandidateQuizPaperRequest
-	(*GetCandidateQuizPaperResponse)(nil),         // 148: glms.GetCandidateQuizPaperResponse
-	(*QuizAnswerSubmission)(nil),                  // 149: glms.QuizAnswerSubmission
-	(*SubmitQuizRequest)(nil),                     // 150: glms.SubmitQuizRequest
-	(*SubmitQuizResponse)(nil),                    // 151: glms.SubmitQuizResponse
-	(*BrokenAssetDetail)(nil),                     // 152: glms.BrokenAssetDetail
-	(*ListBrokenAssetsRequest)(nil),               // 153: glms.ListBrokenAssetsRequest
-	(*ListBrokenAssetsResponse)(nil),              // 154: glms.ListBrokenAssetsResponse
+	(*CreateCourseDraftRequest)(nil),              // 17: glms.CreateCourseDraftRequest
+	(*UpdateCourseRequest)(nil),                   // 18: glms.UpdateCourseRequest
+	(*UpdateCourseResponse)(nil),                  // 19: glms.UpdateCourseResponse
+	(*DeleteCourseRequest)(nil),                   // 20: glms.DeleteCourseRequest
+	(*DeleteCourseResponse)(nil),                  // 21: glms.DeleteCourseResponse
+	(*GetCourseRequest)(nil),                      // 22: glms.GetCourseRequest
+	(*GetCourseResponse)(nil),                     // 23: glms.GetCourseResponse
+	(*ListCoursesRequest)(nil),                    // 24: glms.ListCoursesRequest
+	(*ListCoursesResponse)(nil),                   // 25: glms.ListCoursesResponse
+	(*PublishCourseRequest)(nil),                  // 26: glms.PublishCourseRequest
+	(*PublishCourseResponse)(nil),                 // 27: glms.PublishCourseResponse
+	(*CreateCourseMaterialRequest)(nil),           // 28: glms.CreateCourseMaterialRequest
+	(*CreateCourseMaterialResponse)(nil),          // 29: glms.CreateCourseMaterialResponse
+	(*UpdateCourseMaterialRequest)(nil),           // 30: glms.UpdateCourseMaterialRequest
+	(*UpdateCourseMaterialResponse)(nil),          // 31: glms.UpdateCourseMaterialResponse
+	(*DeleteCourseMaterialRequest)(nil),           // 32: glms.DeleteCourseMaterialRequest
+	(*DeleteCourseMaterialResponse)(nil),          // 33: glms.DeleteCourseMaterialResponse
+	(*GetCourseMaterialRequest)(nil),              // 34: glms.GetCourseMaterialRequest
+	(*GetCourseMaterialResponse)(nil),             // 35: glms.GetCourseMaterialResponse
+	(*ListCourseMaterialsRequest)(nil),            // 36: glms.ListCourseMaterialsRequest
+	(*ListCourseMaterialsResponse)(nil),           // 37: glms.ListCourseMaterialsResponse
+	(*ReorderCourseMaterialsRequest)(nil),         // 38: glms.ReorderCourseMaterialsRequest
+	(*ReorderCourseMaterialsResponse)(nil),        // 39: glms.ReorderCourseMaterialsResponse
+	(*CreateChapterRequest)(nil),                  // 40: glms.CreateChapterRequest
+	(*CreateChapterResponse)(nil),                 // 41: glms.CreateChapterResponse
+	(*UpdateChapterRequest)(nil),                  // 42: glms.UpdateChapterRequest
+	(*UpdateChapterResponse)(nil),                 // 43: glms.UpdateChapterResponse
+	(*DeleteChapterRequest)(nil),                  // 44: glms.DeleteChapterRequest
+	(*DeleteChapterResponse)(nil),                 // 45: glms.DeleteChapterResponse
+	(*GetChapterRequest)(nil),                     // 46: glms.GetChapterRequest
+	(*GetChapterResponse)(nil),                    // 47: glms.GetChapterResponse
+	(*ListChaptersRequest)(nil),                   // 48: glms.ListChaptersRequest
+	(*ListChaptersResponse)(nil),                  // 49: glms.ListChaptersResponse
+	(*ReorderChaptersRequest)(nil),                // 50: glms.ReorderChaptersRequest
+	(*ReorderChaptersResponse)(nil),               // 51: glms.ReorderChaptersResponse
+	(*CreateLessonRequest)(nil),                   // 52: glms.CreateLessonRequest
+	(*CreateLessonResponse)(nil),                  // 53: glms.CreateLessonResponse
+	(*UpdateLessonRequest)(nil),                   // 54: glms.UpdateLessonRequest
+	(*UpdateLessonResponse)(nil),                  // 55: glms.UpdateLessonResponse
+	(*DeleteLessonRequest)(nil),                   // 56: glms.DeleteLessonRequest
+	(*DeleteLessonResponse)(nil),                  // 57: glms.DeleteLessonResponse
+	(*GetLessonRequest)(nil),                      // 58: glms.GetLessonRequest
+	(*GetLessonResponse)(nil),                     // 59: glms.GetLessonResponse
+	(*ListLessonsRequest)(nil),                    // 60: glms.ListLessonsRequest
+	(*ListLessonsResponse)(nil),                   // 61: glms.ListLessonsResponse
+	(*ReorderLessonsRequest)(nil),                 // 62: glms.ReorderLessonsRequest
+	(*ReorderLessonsResponse)(nil),                // 63: glms.ReorderLessonsResponse
+	(*CreatePrerequisiteRequest)(nil),             // 64: glms.CreatePrerequisiteRequest
+	(*CreatePrerequisiteResponse)(nil),            // 65: glms.CreatePrerequisiteResponse
+	(*UpdatePrerequisiteRequest)(nil),             // 66: glms.UpdatePrerequisiteRequest
+	(*UpdatePrerequisiteResponse)(nil),            // 67: glms.UpdatePrerequisiteResponse
+	(*DeletePrerequisiteRequest)(nil),             // 68: glms.DeletePrerequisiteRequest
+	(*DeletePrerequisiteResponse)(nil),            // 69: glms.DeletePrerequisiteResponse
+	(*GetPrerequisiteRequest)(nil),                // 70: glms.GetPrerequisiteRequest
+	(*GetPrerequisiteResponse)(nil),               // 71: glms.GetPrerequisiteResponse
+	(*ListPrerequisitesRequest)(nil),              // 72: glms.ListPrerequisitesRequest
+	(*ListPrerequisitesResponse)(nil),             // 73: glms.ListPrerequisitesResponse
+	(*CreateQuizRequest)(nil),                     // 74: glms.CreateQuizRequest
+	(*CreateQuizResponse)(nil),                    // 75: glms.CreateQuizResponse
+	(*UpdateQuizRequest)(nil),                     // 76: glms.UpdateQuizRequest
+	(*UpdateQuizResponse)(nil),                    // 77: glms.UpdateQuizResponse
+	(*DeleteQuizRequest)(nil),                     // 78: glms.DeleteQuizRequest
+	(*DeleteQuizResponse)(nil),                    // 79: glms.DeleteQuizResponse
+	(*GetQuizRequest)(nil),                        // 80: glms.GetQuizRequest
+	(*GetQuizResponse)(nil),                       // 81: glms.GetQuizResponse
+	(*ListQuizzesRequest)(nil),                    // 82: glms.ListQuizzesRequest
+	(*ListQuizzesResponse)(nil),                   // 83: glms.ListQuizzesResponse
+	(*CreateQuizQuestionRequest)(nil),             // 84: glms.CreateQuizQuestionRequest
+	(*CreateQuizQuestionResponse)(nil),            // 85: glms.CreateQuizQuestionResponse
+	(*UpdateQuizQuestionRequest)(nil),             // 86: glms.UpdateQuizQuestionRequest
+	(*UpdateQuizQuestionResponse)(nil),            // 87: glms.UpdateQuizQuestionResponse
+	(*DeleteQuizQuestionRequest)(nil),             // 88: glms.DeleteQuizQuestionRequest
+	(*DeleteQuizQuestionResponse)(nil),            // 89: glms.DeleteQuizQuestionResponse
+	(*GetQuizQuestionRequest)(nil),                // 90: glms.GetQuizQuestionRequest
+	(*GetQuizQuestionResponse)(nil),               // 91: glms.GetQuizQuestionResponse
+	(*ListQuizQuestionsRequest)(nil),              // 92: glms.ListQuizQuestionsRequest
+	(*ListQuizQuestionsResponse)(nil),             // 93: glms.ListQuizQuestionsResponse
+	(*ReorderQuizQuestionsRequest)(nil),           // 94: glms.ReorderQuizQuestionsRequest
+	(*ReorderQuizQuestionsResponse)(nil),          // 95: glms.ReorderQuizQuestionsResponse
+	(*CreateQuizOptionRequest)(nil),               // 96: glms.CreateQuizOptionRequest
+	(*CreateQuizOptionResponse)(nil),              // 97: glms.CreateQuizOptionResponse
+	(*UpdateQuizOptionRequest)(nil),               // 98: glms.UpdateQuizOptionRequest
+	(*UpdateQuizOptionResponse)(nil),              // 99: glms.UpdateQuizOptionResponse
+	(*DeleteQuizOptionRequest)(nil),               // 100: glms.DeleteQuizOptionRequest
+	(*DeleteQuizOptionResponse)(nil),              // 101: glms.DeleteQuizOptionResponse
+	(*GetQuizOptionRequest)(nil),                  // 102: glms.GetQuizOptionRequest
+	(*GetQuizOptionResponse)(nil),                 // 103: glms.GetQuizOptionResponse
+	(*ListQuizOptionsRequest)(nil),                // 104: glms.ListQuizOptionsRequest
+	(*ListQuizOptionsResponse)(nil),               // 105: glms.ListQuizOptionsResponse
+	(*ReorderQuizOptionsRequest)(nil),             // 106: glms.ReorderQuizOptionsRequest
+	(*ReorderQuizOptionsResponse)(nil),            // 107: glms.ReorderQuizOptionsResponse
+	(*ListObjectsRequest)(nil),                    // 108: glms.ListObjectsRequest
+	(*ListObjectsResponse)(nil),                   // 109: glms.ListObjectsResponse
+	(*CreateUploadURLRequest)(nil),                // 110: glms.CreateUploadURLRequest
+	(*CreateUploadURLResponse)(nil),               // 111: glms.CreateUploadURLResponse
+	(*CreateViewURLRequest)(nil),                  // 112: glms.CreateViewURLRequest
+	(*CreateViewURLResponse)(nil),                 // 113: glms.CreateViewURLResponse
+	(*EnrollCandidateCourseRequest)(nil),          // 114: glms.EnrollCandidateCourseRequest
+	(*EnrollCandidateCourseResponse)(nil),         // 115: glms.EnrollCandidateCourseResponse
+	(*CompleteLessonLearningRequest)(nil),         // 116: glms.CompleteLessonLearningRequest
+	(*CompleteLessonLearningResponse)(nil),        // 117: glms.CompleteLessonLearningResponse
+	(*ListCandidateEnrollmentsRequest)(nil),       // 118: glms.ListCandidateEnrollmentsRequest
+	(*CandidateEnrollmentSummary)(nil),            // 119: glms.CandidateEnrollmentSummary
+	(*ListCandidateEnrollmentsResponse)(nil),      // 120: glms.ListCandidateEnrollmentsResponse
+	(*GetCandidateEnrollmentDetailRequest)(nil),   // 121: glms.GetCandidateEnrollmentDetailRequest
+	(*GetCandidateEnrollmentDetailResponse)(nil),  // 122: glms.GetCandidateEnrollmentDetailResponse
+	(*ListCourseEnrollmentsForAdminRequest)(nil),  // 123: glms.ListCourseEnrollmentsForAdminRequest
+	(*CourseEnrollmentSummaryForAdmin)(nil),       // 124: glms.CourseEnrollmentSummaryForAdmin
+	(*ListCourseEnrollmentsForAdminResponse)(nil), // 125: glms.ListCourseEnrollmentsForAdminResponse
+	(*GetCandidateProgressForAdminRequest)(nil),   // 126: glms.GetCandidateProgressForAdminRequest
+	(*GetCandidateProgressForAdminResponse)(nil),  // 127: glms.GetCandidateProgressForAdminResponse
+	(*QuizOptionDetail)(nil),                      // 128: glms.QuizOptionDetail
+	(*QuizQuestionDetail)(nil),                    // 129: glms.QuizQuestionDetail
+	(*QuizDetail)(nil),                            // 130: glms.QuizDetail
+	(*LessonDetail)(nil),                          // 131: glms.LessonDetail
+	(*ChapterDetail)(nil),                         // 132: glms.ChapterDetail
+	(*CompleteCourse)(nil),                        // 133: glms.CompleteCourse
+	(*GetCompleteCourseRequest)(nil),              // 134: glms.GetCompleteCourseRequest
+	(*GetCompleteCourseResponse)(nil),             // 135: glms.GetCompleteCourseResponse
+	(*TakeQuizRequest)(nil),                       // 136: glms.TakeQuizRequest
+	(*TakeQuizResponse)(nil),                      // 137: glms.TakeQuizResponse
+	(*QuizOptionForCandidate)(nil),                // 138: glms.QuizOptionForCandidate
+	(*QuizQuestionForCandidate)(nil),              // 139: glms.QuizQuestionForCandidate
+	(*GetCandidateQuizPaperRequest)(nil),          // 140: glms.GetCandidateQuizPaperRequest
+	(*GetCandidateQuizPaperResponse)(nil),         // 141: glms.GetCandidateQuizPaperResponse
+	(*QuizAnswerSubmission)(nil),                  // 142: glms.QuizAnswerSubmission
+	(*SubmitQuizRequest)(nil),                     // 143: glms.SubmitQuizRequest
+	(*SubmitQuizResponse)(nil),                    // 144: glms.SubmitQuizResponse
+	(*BrokenAssetDetail)(nil),                     // 145: glms.BrokenAssetDetail
+	(*ListBrokenAssetsRequest)(nil),               // 146: glms.ListBrokenAssetsRequest
+	(*ListBrokenAssetsResponse)(nil),              // 147: glms.ListBrokenAssetsResponse
+	(*ImportQuizRequest)(nil),                     // 148: glms.ImportQuizRequest
+	(*ImportQuizResponse)(nil),                    // 149: glms.ImportQuizResponse
+	(*ImportCourseRequest)(nil),                   // 150: glms.ImportCourseRequest
+	(*ImportCourseResponse)(nil),                  // 151: glms.ImportCourseResponse
 }
 var file_lms_proto_depIdxs = []int32{
 	0,   // 0: glms.CourseMaterial.material_type:type_name -> glms.MaterialType
@@ -10659,159 +10618,158 @@ var file_lms_proto_depIdxs = []int32{
 	15,  // 42: glms.ReorderQuizOptionsRequest.items:type_name -> glms.ReorderItem
 	16,  // 43: glms.ListObjectsResponse.objects:type_name -> glms.BucketObject
 	6,   // 44: glms.CreateUploadURLRequest.upload_type:type_name -> glms.UploadType
-	122, // 45: glms.ListCandidateEnrollmentsResponse.enrollments:type_name -> glms.CandidateEnrollmentSummary
-	127, // 46: glms.ListCourseEnrollmentsForAdminResponse.enrollments:type_name -> glms.CourseEnrollmentSummaryForAdmin
+	119, // 45: glms.ListCandidateEnrollmentsResponse.enrollments:type_name -> glms.CandidateEnrollmentSummary
+	124, // 46: glms.ListCourseEnrollmentsForAdminResponse.enrollments:type_name -> glms.CourseEnrollmentSummaryForAdmin
 	14,  // 47: glms.QuizOptionDetail.option:type_name -> glms.QuizOption
 	13,  // 48: glms.QuizQuestionDetail.question:type_name -> glms.QuizQuestion
 	14,  // 49: glms.QuizQuestionDetail.options:type_name -> glms.QuizOption
 	12,  // 50: glms.QuizDetail.quiz:type_name -> glms.Quiz
-	132, // 51: glms.QuizDetail.questions:type_name -> glms.QuizQuestionDetail
+	129, // 51: glms.QuizDetail.questions:type_name -> glms.QuizQuestionDetail
 	10,  // 52: glms.LessonDetail.lesson:type_name -> glms.Lesson
-	133, // 53: glms.LessonDetail.quizzes:type_name -> glms.QuizDetail
+	130, // 53: glms.LessonDetail.quizzes:type_name -> glms.QuizDetail
 	9,   // 54: glms.ChapterDetail.chapter:type_name -> glms.Chapter
-	134, // 55: glms.ChapterDetail.lessons:type_name -> glms.LessonDetail
-	133, // 56: glms.ChapterDetail.quizzes:type_name -> glms.QuizDetail
+	131, // 55: glms.ChapterDetail.lessons:type_name -> glms.LessonDetail
+	130, // 56: glms.ChapterDetail.quizzes:type_name -> glms.QuizDetail
 	7,   // 57: glms.CompleteCourse.course:type_name -> glms.Course
 	8,   // 58: glms.CompleteCourse.materials:type_name -> glms.CourseMaterial
-	135, // 59: glms.CompleteCourse.chapters:type_name -> glms.ChapterDetail
-	133, // 60: glms.CompleteCourse.quizzes:type_name -> glms.QuizDetail
-	136, // 61: glms.GetCompleteCourseResponse.complete_course:type_name -> glms.CompleteCourse
+	132, // 59: glms.CompleteCourse.chapters:type_name -> glms.ChapterDetail
+	130, // 60: glms.CompleteCourse.quizzes:type_name -> glms.QuizDetail
+	133, // 61: glms.GetCompleteCourseResponse.complete_course:type_name -> glms.CompleteCourse
 	5,   // 62: glms.QuizQuestionForCandidate.question_type:type_name -> glms.QuizQuestionType
-	145, // 63: glms.QuizQuestionForCandidate.options:type_name -> glms.QuizOptionForCandidate
-	146, // 64: glms.GetCandidateQuizPaperResponse.questions:type_name -> glms.QuizQuestionForCandidate
-	149, // 65: glms.SubmitQuizRequest.submissions:type_name -> glms.QuizAnswerSubmission
-	152, // 66: glms.ListBrokenAssetsResponse.assets:type_name -> glms.BrokenAssetDetail
-	17,  // 67: glms.LmsService.CreateCourse:input_type -> glms.CreateCourseRequest
-	19,  // 68: glms.LmsService.UpdateCourse:input_type -> glms.UpdateCourseRequest
-	21,  // 69: glms.LmsService.DeleteCourse:input_type -> glms.DeleteCourseRequest
-	23,  // 70: glms.LmsService.GetCourse:input_type -> glms.GetCourseRequest
-	25,  // 71: glms.LmsService.ListCourses:input_type -> glms.ListCoursesRequest
-	27,  // 72: glms.LmsService.PublishCourse:input_type -> glms.PublishCourseRequest
-	29,  // 73: glms.LmsService.UnpublishCourse:input_type -> glms.UnpublishCourseRequest
-	31,  // 74: glms.LmsService.CreateCourseMaterial:input_type -> glms.CreateCourseMaterialRequest
-	33,  // 75: glms.LmsService.UpdateCourseMaterial:input_type -> glms.UpdateCourseMaterialRequest
-	35,  // 76: glms.LmsService.DeleteCourseMaterial:input_type -> glms.DeleteCourseMaterialRequest
-	37,  // 77: glms.LmsService.GetCourseMaterial:input_type -> glms.GetCourseMaterialRequest
-	39,  // 78: glms.LmsService.ListCourseMaterials:input_type -> glms.ListCourseMaterialsRequest
-	41,  // 79: glms.LmsService.ReorderCourseMaterials:input_type -> glms.ReorderCourseMaterialsRequest
-	43,  // 80: glms.LmsService.CreateChapter:input_type -> glms.CreateChapterRequest
-	45,  // 81: glms.LmsService.UpdateChapter:input_type -> glms.UpdateChapterRequest
-	47,  // 82: glms.LmsService.DeleteChapter:input_type -> glms.DeleteChapterRequest
-	49,  // 83: glms.LmsService.GetChapter:input_type -> glms.GetChapterRequest
-	51,  // 84: glms.LmsService.ListChapters:input_type -> glms.ListChaptersRequest
-	53,  // 85: glms.LmsService.ReorderChapters:input_type -> glms.ReorderChaptersRequest
-	55,  // 86: glms.LmsService.CreateLesson:input_type -> glms.CreateLessonRequest
-	57,  // 87: glms.LmsService.UpdateLesson:input_type -> glms.UpdateLessonRequest
-	59,  // 88: glms.LmsService.DeleteLesson:input_type -> glms.DeleteLessonRequest
-	61,  // 89: glms.LmsService.GetLesson:input_type -> glms.GetLessonRequest
-	63,  // 90: glms.LmsService.ListLessons:input_type -> glms.ListLessonsRequest
-	65,  // 91: glms.LmsService.ReorderLessons:input_type -> glms.ReorderLessonsRequest
-	67,  // 92: glms.LmsService.CreatePrerequisite:input_type -> glms.CreatePrerequisiteRequest
-	69,  // 93: glms.LmsService.UpdatePrerequisite:input_type -> glms.UpdatePrerequisiteRequest
-	71,  // 94: glms.LmsService.DeletePrerequisite:input_type -> glms.DeletePrerequisiteRequest
-	73,  // 95: glms.LmsService.GetPrerequisite:input_type -> glms.GetPrerequisiteRequest
-	75,  // 96: glms.LmsService.ListPrerequisites:input_type -> glms.ListPrerequisitesRequest
-	77,  // 97: glms.LmsService.CreateQuiz:input_type -> glms.CreateQuizRequest
-	79,  // 98: glms.LmsService.UpdateQuiz:input_type -> glms.UpdateQuizRequest
-	81,  // 99: glms.LmsService.DeleteQuiz:input_type -> glms.DeleteQuizRequest
-	83,  // 100: glms.LmsService.GetQuiz:input_type -> glms.GetQuizRequest
-	85,  // 101: glms.LmsService.ListQuizzes:input_type -> glms.ListQuizzesRequest
-	87,  // 102: glms.LmsService.CreateQuizQuestion:input_type -> glms.CreateQuizQuestionRequest
-	89,  // 103: glms.LmsService.UpdateQuizQuestion:input_type -> glms.UpdateQuizQuestionRequest
-	91,  // 104: glms.LmsService.DeleteQuizQuestion:input_type -> glms.DeleteQuizQuestionRequest
-	93,  // 105: glms.LmsService.GetQuizQuestion:input_type -> glms.GetQuizQuestionRequest
-	95,  // 106: glms.LmsService.ListQuizQuestions:input_type -> glms.ListQuizQuestionsRequest
-	97,  // 107: glms.LmsService.ReorderQuizQuestions:input_type -> glms.ReorderQuizQuestionsRequest
-	99,  // 108: glms.LmsService.CreateQuizOption:input_type -> glms.CreateQuizOptionRequest
-	101, // 109: glms.LmsService.UpdateQuizOption:input_type -> glms.UpdateQuizOptionRequest
-	103, // 110: glms.LmsService.DeleteQuizOption:input_type -> glms.DeleteQuizOptionRequest
-	105, // 111: glms.LmsService.GetQuizOption:input_type -> glms.GetQuizOptionRequest
-	107, // 112: glms.LmsService.ListQuizOptions:input_type -> glms.ListQuizOptionsRequest
-	109, // 113: glms.LmsService.ReorderQuizOptions:input_type -> glms.ReorderQuizOptionsRequest
-	111, // 114: glms.LmsService.ListObjects:input_type -> glms.ListObjectsRequest
-	113, // 115: glms.LmsService.CreateUploadURL:input_type -> glms.CreateUploadURLRequest
-	115, // 116: glms.LmsService.CreateViewURL:input_type -> glms.CreateViewURLRequest
-	117, // 117: glms.LmsService.EnrollCandidateCourse:input_type -> glms.EnrollCandidateCourseRequest
-	119, // 118: glms.LmsService.CompleteLessonLearning:input_type -> glms.CompleteLessonLearningRequest
-	143, // 119: glms.LmsService.TakeQuiz:input_type -> glms.TakeQuizRequest
-	147, // 120: glms.LmsService.GetCandidateQuizPaper:input_type -> glms.GetCandidateQuizPaperRequest
-	150, // 121: glms.LmsService.SubmitQuiz:input_type -> glms.SubmitQuizRequest
-	121, // 122: glms.LmsService.ListCandidateEnrollments:input_type -> glms.ListCandidateEnrollmentsRequest
-	124, // 123: glms.LmsService.GetCandidateEnrollmentDetail:input_type -> glms.GetCandidateEnrollmentDetailRequest
-	126, // 124: glms.LmsService.ListCourseEnrollmentsForAdmin:input_type -> glms.ListCourseEnrollmentsForAdminRequest
-	129, // 125: glms.LmsService.GetCandidateProgressForAdmin:input_type -> glms.GetCandidateProgressForAdminRequest
-	137, // 126: glms.LmsService.GetCompleteCourse:input_type -> glms.GetCompleteCourseRequest
-	139, // 127: glms.LmsService.BindCourseAssociation:input_type -> glms.BindCourseAssociationRequest
-	141, // 128: glms.LmsService.UnbindCourseAssociation:input_type -> glms.UnbindCourseAssociationRequest
-	153, // 129: glms.LmsService.ListBrokenAssets:input_type -> glms.ListBrokenAssetsRequest
-	18,  // 130: glms.LmsService.CreateCourse:output_type -> glms.CreateCourseResponse
-	20,  // 131: glms.LmsService.UpdateCourse:output_type -> glms.UpdateCourseResponse
-	22,  // 132: glms.LmsService.DeleteCourse:output_type -> glms.DeleteCourseResponse
-	24,  // 133: glms.LmsService.GetCourse:output_type -> glms.GetCourseResponse
-	26,  // 134: glms.LmsService.ListCourses:output_type -> glms.ListCoursesResponse
-	28,  // 135: glms.LmsService.PublishCourse:output_type -> glms.PublishCourseResponse
-	30,  // 136: glms.LmsService.UnpublishCourse:output_type -> glms.UnpublishCourseResponse
-	32,  // 137: glms.LmsService.CreateCourseMaterial:output_type -> glms.CreateCourseMaterialResponse
-	34,  // 138: glms.LmsService.UpdateCourseMaterial:output_type -> glms.UpdateCourseMaterialResponse
-	36,  // 139: glms.LmsService.DeleteCourseMaterial:output_type -> glms.DeleteCourseMaterialResponse
-	38,  // 140: glms.LmsService.GetCourseMaterial:output_type -> glms.GetCourseMaterialResponse
-	40,  // 141: glms.LmsService.ListCourseMaterials:output_type -> glms.ListCourseMaterialsResponse
-	42,  // 142: glms.LmsService.ReorderCourseMaterials:output_type -> glms.ReorderCourseMaterialsResponse
-	44,  // 143: glms.LmsService.CreateChapter:output_type -> glms.CreateChapterResponse
-	46,  // 144: glms.LmsService.UpdateChapter:output_type -> glms.UpdateChapterResponse
-	48,  // 145: glms.LmsService.DeleteChapter:output_type -> glms.DeleteChapterResponse
-	50,  // 146: glms.LmsService.GetChapter:output_type -> glms.GetChapterResponse
-	52,  // 147: glms.LmsService.ListChapters:output_type -> glms.ListChaptersResponse
-	54,  // 148: glms.LmsService.ReorderChapters:output_type -> glms.ReorderChaptersResponse
-	56,  // 149: glms.LmsService.CreateLesson:output_type -> glms.CreateLessonResponse
-	58,  // 150: glms.LmsService.UpdateLesson:output_type -> glms.UpdateLessonResponse
-	60,  // 151: glms.LmsService.DeleteLesson:output_type -> glms.DeleteLessonResponse
-	62,  // 152: glms.LmsService.GetLesson:output_type -> glms.GetLessonResponse
-	64,  // 153: glms.LmsService.ListLessons:output_type -> glms.ListLessonsResponse
-	66,  // 154: glms.LmsService.ReorderLessons:output_type -> glms.ReorderLessonsResponse
-	68,  // 155: glms.LmsService.CreatePrerequisite:output_type -> glms.CreatePrerequisiteResponse
-	70,  // 156: glms.LmsService.UpdatePrerequisite:output_type -> glms.UpdatePrerequisiteResponse
-	72,  // 157: glms.LmsService.DeletePrerequisite:output_type -> glms.DeletePrerequisiteResponse
-	74,  // 158: glms.LmsService.GetPrerequisite:output_type -> glms.GetPrerequisiteResponse
-	76,  // 159: glms.LmsService.ListPrerequisites:output_type -> glms.ListPrerequisitesResponse
-	78,  // 160: glms.LmsService.CreateQuiz:output_type -> glms.CreateQuizResponse
-	80,  // 161: glms.LmsService.UpdateQuiz:output_type -> glms.UpdateQuizResponse
-	82,  // 162: glms.LmsService.DeleteQuiz:output_type -> glms.DeleteQuizResponse
-	84,  // 163: glms.LmsService.GetQuiz:output_type -> glms.GetQuizResponse
-	86,  // 164: glms.LmsService.ListQuizzes:output_type -> glms.ListQuizzesResponse
-	88,  // 165: glms.LmsService.CreateQuizQuestion:output_type -> glms.CreateQuizQuestionResponse
-	90,  // 166: glms.LmsService.UpdateQuizQuestion:output_type -> glms.UpdateQuizQuestionResponse
-	92,  // 167: glms.LmsService.DeleteQuizQuestion:output_type -> glms.DeleteQuizQuestionResponse
-	94,  // 168: glms.LmsService.GetQuizQuestion:output_type -> glms.GetQuizQuestionResponse
-	96,  // 169: glms.LmsService.ListQuizQuestions:output_type -> glms.ListQuizQuestionsResponse
-	98,  // 170: glms.LmsService.ReorderQuizQuestions:output_type -> glms.ReorderQuizQuestionsResponse
-	100, // 171: glms.LmsService.CreateQuizOption:output_type -> glms.CreateQuizOptionResponse
-	102, // 172: glms.LmsService.UpdateQuizOption:output_type -> glms.UpdateQuizOptionResponse
-	104, // 173: glms.LmsService.DeleteQuizOption:output_type -> glms.DeleteQuizOptionResponse
-	106, // 174: glms.LmsService.GetQuizOption:output_type -> glms.GetQuizOptionResponse
-	108, // 175: glms.LmsService.ListQuizOptions:output_type -> glms.ListQuizOptionsResponse
-	110, // 176: glms.LmsService.ReorderQuizOptions:output_type -> glms.ReorderQuizOptionsResponse
-	112, // 177: glms.LmsService.ListObjects:output_type -> glms.ListObjectsResponse
-	114, // 178: glms.LmsService.CreateUploadURL:output_type -> glms.CreateUploadURLResponse
-	116, // 179: glms.LmsService.CreateViewURL:output_type -> glms.CreateViewURLResponse
-	118, // 180: glms.LmsService.EnrollCandidateCourse:output_type -> glms.EnrollCandidateCourseResponse
-	120, // 181: glms.LmsService.CompleteLessonLearning:output_type -> glms.CompleteLessonLearningResponse
-	144, // 182: glms.LmsService.TakeQuiz:output_type -> glms.TakeQuizResponse
-	148, // 183: glms.LmsService.GetCandidateQuizPaper:output_type -> glms.GetCandidateQuizPaperResponse
-	151, // 184: glms.LmsService.SubmitQuiz:output_type -> glms.SubmitQuizResponse
-	123, // 185: glms.LmsService.ListCandidateEnrollments:output_type -> glms.ListCandidateEnrollmentsResponse
-	125, // 186: glms.LmsService.GetCandidateEnrollmentDetail:output_type -> glms.GetCandidateEnrollmentDetailResponse
-	128, // 187: glms.LmsService.ListCourseEnrollmentsForAdmin:output_type -> glms.ListCourseEnrollmentsForAdminResponse
-	130, // 188: glms.LmsService.GetCandidateProgressForAdmin:output_type -> glms.GetCandidateProgressForAdminResponse
-	138, // 189: glms.LmsService.GetCompleteCourse:output_type -> glms.GetCompleteCourseResponse
-	140, // 190: glms.LmsService.BindCourseAssociation:output_type -> glms.BindCourseAssociationResponse
-	142, // 191: glms.LmsService.UnbindCourseAssociation:output_type -> glms.UnbindCourseAssociationResponse
-	154, // 192: glms.LmsService.ListBrokenAssets:output_type -> glms.ListBrokenAssetsResponse
-	130, // [130:193] is the sub-list for method output_type
-	67,  // [67:130] is the sub-list for method input_type
-	67,  // [67:67] is the sub-list for extension type_name
-	67,  // [67:67] is the sub-list for extension extendee
-	0,   // [0:67] is the sub-list for field type_name
+	138, // 63: glms.QuizQuestionForCandidate.options:type_name -> glms.QuizOptionForCandidate
+	139, // 64: glms.GetCandidateQuizPaperResponse.questions:type_name -> glms.QuizQuestionForCandidate
+	142, // 65: glms.SubmitQuizRequest.submissions:type_name -> glms.QuizAnswerSubmission
+	145, // 66: glms.ListBrokenAssetsResponse.assets:type_name -> glms.BrokenAssetDetail
+	4,   // 67: glms.ImportQuizRequest.quizzable_type:type_name -> glms.QuizzableType
+	17,  // 68: glms.LmsService.CreateCourseDraft:input_type -> glms.CreateCourseDraftRequest
+	18,  // 69: glms.LmsService.UpdateCourse:input_type -> glms.UpdateCourseRequest
+	20,  // 70: glms.LmsService.DeleteCourse:input_type -> glms.DeleteCourseRequest
+	22,  // 71: glms.LmsService.GetCourse:input_type -> glms.GetCourseRequest
+	24,  // 72: glms.LmsService.ListCourses:input_type -> glms.ListCoursesRequest
+	26,  // 73: glms.LmsService.PublishCourse:input_type -> glms.PublishCourseRequest
+	28,  // 74: glms.LmsService.CreateCourseMaterial:input_type -> glms.CreateCourseMaterialRequest
+	30,  // 75: glms.LmsService.UpdateCourseMaterial:input_type -> glms.UpdateCourseMaterialRequest
+	32,  // 76: glms.LmsService.DeleteCourseMaterial:input_type -> glms.DeleteCourseMaterialRequest
+	34,  // 77: glms.LmsService.GetCourseMaterial:input_type -> glms.GetCourseMaterialRequest
+	36,  // 78: glms.LmsService.ListCourseMaterials:input_type -> glms.ListCourseMaterialsRequest
+	38,  // 79: glms.LmsService.ReorderCourseMaterials:input_type -> glms.ReorderCourseMaterialsRequest
+	40,  // 80: glms.LmsService.CreateChapter:input_type -> glms.CreateChapterRequest
+	42,  // 81: glms.LmsService.UpdateChapter:input_type -> glms.UpdateChapterRequest
+	44,  // 82: glms.LmsService.DeleteChapter:input_type -> glms.DeleteChapterRequest
+	46,  // 83: glms.LmsService.GetChapter:input_type -> glms.GetChapterRequest
+	48,  // 84: glms.LmsService.ListChapters:input_type -> glms.ListChaptersRequest
+	50,  // 85: glms.LmsService.ReorderChapters:input_type -> glms.ReorderChaptersRequest
+	52,  // 86: glms.LmsService.CreateLesson:input_type -> glms.CreateLessonRequest
+	54,  // 87: glms.LmsService.UpdateLesson:input_type -> glms.UpdateLessonRequest
+	56,  // 88: glms.LmsService.DeleteLesson:input_type -> glms.DeleteLessonRequest
+	58,  // 89: glms.LmsService.GetLesson:input_type -> glms.GetLessonRequest
+	60,  // 90: glms.LmsService.ListLessons:input_type -> glms.ListLessonsRequest
+	62,  // 91: glms.LmsService.ReorderLessons:input_type -> glms.ReorderLessonsRequest
+	64,  // 92: glms.LmsService.CreatePrerequisite:input_type -> glms.CreatePrerequisiteRequest
+	66,  // 93: glms.LmsService.UpdatePrerequisite:input_type -> glms.UpdatePrerequisiteRequest
+	68,  // 94: glms.LmsService.DeletePrerequisite:input_type -> glms.DeletePrerequisiteRequest
+	70,  // 95: glms.LmsService.GetPrerequisite:input_type -> glms.GetPrerequisiteRequest
+	72,  // 96: glms.LmsService.ListPrerequisites:input_type -> glms.ListPrerequisitesRequest
+	74,  // 97: glms.LmsService.CreateQuiz:input_type -> glms.CreateQuizRequest
+	76,  // 98: glms.LmsService.UpdateQuiz:input_type -> glms.UpdateQuizRequest
+	78,  // 99: glms.LmsService.DeleteQuiz:input_type -> glms.DeleteQuizRequest
+	80,  // 100: glms.LmsService.GetQuiz:input_type -> glms.GetQuizRequest
+	82,  // 101: glms.LmsService.ListQuizzes:input_type -> glms.ListQuizzesRequest
+	84,  // 102: glms.LmsService.CreateQuizQuestion:input_type -> glms.CreateQuizQuestionRequest
+	86,  // 103: glms.LmsService.UpdateQuizQuestion:input_type -> glms.UpdateQuizQuestionRequest
+	88,  // 104: glms.LmsService.DeleteQuizQuestion:input_type -> glms.DeleteQuizQuestionRequest
+	90,  // 105: glms.LmsService.GetQuizQuestion:input_type -> glms.GetQuizQuestionRequest
+	92,  // 106: glms.LmsService.ListQuizQuestions:input_type -> glms.ListQuizQuestionsRequest
+	94,  // 107: glms.LmsService.ReorderQuizQuestions:input_type -> glms.ReorderQuizQuestionsRequest
+	96,  // 108: glms.LmsService.CreateQuizOption:input_type -> glms.CreateQuizOptionRequest
+	98,  // 109: glms.LmsService.UpdateQuizOption:input_type -> glms.UpdateQuizOptionRequest
+	100, // 110: glms.LmsService.DeleteQuizOption:input_type -> glms.DeleteQuizOptionRequest
+	102, // 111: glms.LmsService.GetQuizOption:input_type -> glms.GetQuizOptionRequest
+	104, // 112: glms.LmsService.ListQuizOptions:input_type -> glms.ListQuizOptionsRequest
+	106, // 113: glms.LmsService.ReorderQuizOptions:input_type -> glms.ReorderQuizOptionsRequest
+	148, // 114: glms.LmsService.ImportQuiz:input_type -> glms.ImportQuizRequest
+	150, // 115: glms.LmsService.ImportCourse:input_type -> glms.ImportCourseRequest
+	108, // 116: glms.LmsService.ListObjects:input_type -> glms.ListObjectsRequest
+	110, // 117: glms.LmsService.CreateUploadURL:input_type -> glms.CreateUploadURLRequest
+	112, // 118: glms.LmsService.CreateViewURL:input_type -> glms.CreateViewURLRequest
+	114, // 119: glms.LmsService.EnrollCandidateCourse:input_type -> glms.EnrollCandidateCourseRequest
+	116, // 120: glms.LmsService.CompleteLessonLearning:input_type -> glms.CompleteLessonLearningRequest
+	136, // 121: glms.LmsService.TakeQuiz:input_type -> glms.TakeQuizRequest
+	140, // 122: glms.LmsService.GetCandidateQuizPaper:input_type -> glms.GetCandidateQuizPaperRequest
+	143, // 123: glms.LmsService.SubmitQuiz:input_type -> glms.SubmitQuizRequest
+	118, // 124: glms.LmsService.ListCandidateEnrollments:input_type -> glms.ListCandidateEnrollmentsRequest
+	121, // 125: glms.LmsService.GetCandidateEnrollmentDetail:input_type -> glms.GetCandidateEnrollmentDetailRequest
+	123, // 126: glms.LmsService.ListCourseEnrollmentsForAdmin:input_type -> glms.ListCourseEnrollmentsForAdminRequest
+	126, // 127: glms.LmsService.GetCandidateProgressForAdmin:input_type -> glms.GetCandidateProgressForAdminRequest
+	134, // 128: glms.LmsService.GetCompleteCourse:input_type -> glms.GetCompleteCourseRequest
+	146, // 129: glms.LmsService.ListBrokenAssets:input_type -> glms.ListBrokenAssetsRequest
+	7,   // 130: glms.LmsService.CreateCourseDraft:output_type -> glms.Course
+	19,  // 131: glms.LmsService.UpdateCourse:output_type -> glms.UpdateCourseResponse
+	21,  // 132: glms.LmsService.DeleteCourse:output_type -> glms.DeleteCourseResponse
+	23,  // 133: glms.LmsService.GetCourse:output_type -> glms.GetCourseResponse
+	25,  // 134: glms.LmsService.ListCourses:output_type -> glms.ListCoursesResponse
+	27,  // 135: glms.LmsService.PublishCourse:output_type -> glms.PublishCourseResponse
+	29,  // 136: glms.LmsService.CreateCourseMaterial:output_type -> glms.CreateCourseMaterialResponse
+	31,  // 137: glms.LmsService.UpdateCourseMaterial:output_type -> glms.UpdateCourseMaterialResponse
+	33,  // 138: glms.LmsService.DeleteCourseMaterial:output_type -> glms.DeleteCourseMaterialResponse
+	35,  // 139: glms.LmsService.GetCourseMaterial:output_type -> glms.GetCourseMaterialResponse
+	37,  // 140: glms.LmsService.ListCourseMaterials:output_type -> glms.ListCourseMaterialsResponse
+	39,  // 141: glms.LmsService.ReorderCourseMaterials:output_type -> glms.ReorderCourseMaterialsResponse
+	41,  // 142: glms.LmsService.CreateChapter:output_type -> glms.CreateChapterResponse
+	43,  // 143: glms.LmsService.UpdateChapter:output_type -> glms.UpdateChapterResponse
+	45,  // 144: glms.LmsService.DeleteChapter:output_type -> glms.DeleteChapterResponse
+	47,  // 145: glms.LmsService.GetChapter:output_type -> glms.GetChapterResponse
+	49,  // 146: glms.LmsService.ListChapters:output_type -> glms.ListChaptersResponse
+	51,  // 147: glms.LmsService.ReorderChapters:output_type -> glms.ReorderChaptersResponse
+	53,  // 148: glms.LmsService.CreateLesson:output_type -> glms.CreateLessonResponse
+	55,  // 149: glms.LmsService.UpdateLesson:output_type -> glms.UpdateLessonResponse
+	57,  // 150: glms.LmsService.DeleteLesson:output_type -> glms.DeleteLessonResponse
+	59,  // 151: glms.LmsService.GetLesson:output_type -> glms.GetLessonResponse
+	61,  // 152: glms.LmsService.ListLessons:output_type -> glms.ListLessonsResponse
+	63,  // 153: glms.LmsService.ReorderLessons:output_type -> glms.ReorderLessonsResponse
+	65,  // 154: glms.LmsService.CreatePrerequisite:output_type -> glms.CreatePrerequisiteResponse
+	67,  // 155: glms.LmsService.UpdatePrerequisite:output_type -> glms.UpdatePrerequisiteResponse
+	69,  // 156: glms.LmsService.DeletePrerequisite:output_type -> glms.DeletePrerequisiteResponse
+	71,  // 157: glms.LmsService.GetPrerequisite:output_type -> glms.GetPrerequisiteResponse
+	73,  // 158: glms.LmsService.ListPrerequisites:output_type -> glms.ListPrerequisitesResponse
+	75,  // 159: glms.LmsService.CreateQuiz:output_type -> glms.CreateQuizResponse
+	77,  // 160: glms.LmsService.UpdateQuiz:output_type -> glms.UpdateQuizResponse
+	79,  // 161: glms.LmsService.DeleteQuiz:output_type -> glms.DeleteQuizResponse
+	81,  // 162: glms.LmsService.GetQuiz:output_type -> glms.GetQuizResponse
+	83,  // 163: glms.LmsService.ListQuizzes:output_type -> glms.ListQuizzesResponse
+	85,  // 164: glms.LmsService.CreateQuizQuestion:output_type -> glms.CreateQuizQuestionResponse
+	87,  // 165: glms.LmsService.UpdateQuizQuestion:output_type -> glms.UpdateQuizQuestionResponse
+	89,  // 166: glms.LmsService.DeleteQuizQuestion:output_type -> glms.DeleteQuizQuestionResponse
+	91,  // 167: glms.LmsService.GetQuizQuestion:output_type -> glms.GetQuizQuestionResponse
+	93,  // 168: glms.LmsService.ListQuizQuestions:output_type -> glms.ListQuizQuestionsResponse
+	95,  // 169: glms.LmsService.ReorderQuizQuestions:output_type -> glms.ReorderQuizQuestionsResponse
+	97,  // 170: glms.LmsService.CreateQuizOption:output_type -> glms.CreateQuizOptionResponse
+	99,  // 171: glms.LmsService.UpdateQuizOption:output_type -> glms.UpdateQuizOptionResponse
+	101, // 172: glms.LmsService.DeleteQuizOption:output_type -> glms.DeleteQuizOptionResponse
+	103, // 173: glms.LmsService.GetQuizOption:output_type -> glms.GetQuizOptionResponse
+	105, // 174: glms.LmsService.ListQuizOptions:output_type -> glms.ListQuizOptionsResponse
+	107, // 175: glms.LmsService.ReorderQuizOptions:output_type -> glms.ReorderQuizOptionsResponse
+	149, // 176: glms.LmsService.ImportQuiz:output_type -> glms.ImportQuizResponse
+	151, // 177: glms.LmsService.ImportCourse:output_type -> glms.ImportCourseResponse
+	109, // 178: glms.LmsService.ListObjects:output_type -> glms.ListObjectsResponse
+	111, // 179: glms.LmsService.CreateUploadURL:output_type -> glms.CreateUploadURLResponse
+	113, // 180: glms.LmsService.CreateViewURL:output_type -> glms.CreateViewURLResponse
+	115, // 181: glms.LmsService.EnrollCandidateCourse:output_type -> glms.EnrollCandidateCourseResponse
+	117, // 182: glms.LmsService.CompleteLessonLearning:output_type -> glms.CompleteLessonLearningResponse
+	137, // 183: glms.LmsService.TakeQuiz:output_type -> glms.TakeQuizResponse
+	141, // 184: glms.LmsService.GetCandidateQuizPaper:output_type -> glms.GetCandidateQuizPaperResponse
+	144, // 185: glms.LmsService.SubmitQuiz:output_type -> glms.SubmitQuizResponse
+	120, // 186: glms.LmsService.ListCandidateEnrollments:output_type -> glms.ListCandidateEnrollmentsResponse
+	122, // 187: glms.LmsService.GetCandidateEnrollmentDetail:output_type -> glms.GetCandidateEnrollmentDetailResponse
+	125, // 188: glms.LmsService.ListCourseEnrollmentsForAdmin:output_type -> glms.ListCourseEnrollmentsForAdminResponse
+	127, // 189: glms.LmsService.GetCandidateProgressForAdmin:output_type -> glms.GetCandidateProgressForAdminResponse
+	135, // 190: glms.LmsService.GetCompleteCourse:output_type -> glms.GetCompleteCourseResponse
+	147, // 191: glms.LmsService.ListBrokenAssets:output_type -> glms.ListBrokenAssetsResponse
+	130, // [130:192] is the sub-list for method output_type
+	68,  // [68:130] is the sub-list for method input_type
+	68,  // [68:68] is the sub-list for extension type_name
+	68,  // [68:68] is the sub-list for extension extendee
+	0,   // [0:68] is the sub-list for field type_name
 }
 
 func init() { file_lms_proto_init() }
@@ -10825,7 +10783,7 @@ func file_lms_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lms_proto_rawDesc), len(file_lms_proto_rawDesc)),
 			NumEnums:      7,
-			NumMessages:   148,
+			NumMessages:   145,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

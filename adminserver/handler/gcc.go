@@ -35,6 +35,10 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	req.PipelineId = newLmsID()
+	if req.FromPipelineGuid == "" && req.PipelineGuid == "" {
+		req.PipelineGuid = newLmsID()
+	}
 	if !requireRequestFields(w, req.CategoryId, "category_id", req.Name, "name") {
 		return
 	}
@@ -74,11 +78,10 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 			return
 		}
 		for j, unit := range stage.Units {
-			if !requireRequestField(w, unit.Name, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"].name") {
-				return
+			if unit.UnitId == "" {
+				unit.UnitId = newLmsID()
 			}
-			if !unit.HasLearning && !unit.HasExam {
-				WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"] must enable learning or exam")
+			if !requireRequestField(w, unit.GlmsCourseId, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"].glms_course_id") {
 				return
 			}
 		}

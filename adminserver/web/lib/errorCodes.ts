@@ -122,10 +122,12 @@ export function getErrorMessage(errorCode: string | undefined | null, lang: "zh"
 const FieldLabels: Record<string, { zh: string; en: string }> = {
   body: { zh: "文本内容", en: "body" },
   category_id: { zh: "分类 ID", en: "category ID" },
+  category_tips: { zh: "分类提示", en: "category tips" },
   candidate_id: { zh: "考生 ID", en: "candidate ID" },
   chapter_id: { zh: "章节 ID", en: "chapter ID" },
   code: { zh: "授权码", en: "authorization code" },
   course_id: { zh: "课程 ID", en: "course ID" },
+  course_guid: { zh: "课程业务 ID", en: "course GUID" },
   cred_def_id: { zh: "资格定义 ID", en: "credential definition ID" },
   entity_id: { zh: "关联实体 ID", en: "entity ID" },
   entity_type: { zh: "关联实体类型", en: "entity type" },
@@ -143,6 +145,7 @@ const FieldLabels: Record<string, { zh: string; en: string }> = {
   option_id: { zh: "选项 ID", en: "option ID" },
   option_text: { zh: "选项内容", en: "option text" },
   pipeline_id: { zh: "管线 ID", en: "pipeline ID" },
+  pipeline_guid: { zh: "管线业务 ID", en: "pipeline GUID" },
   question_id: { zh: "题目 ID", en: "question ID" },
   question_text: { zh: "题目内容", en: "question text" },
   question_type: { zh: "题目类型", en: "question type" },
@@ -159,6 +162,15 @@ const FieldLabels: Record<string, { zh: string; en: string }> = {
   title: { zh: "标题", en: "title" },
   upload_type: { zh: "上传类型", en: "upload type" },
   version: { zh: "版本号", en: "version" },
+  from_course_guid: { zh: "来源课程业务 ID", en: "source course GUID" },
+  from_pipeline_guid: { zh: "来源管线业务 ID", en: "source pipeline GUID" },
+  glms_course_id: { zh: "关联课程", en: "linked GLMS course" },
+  stripe_product_id: { zh: "Stripe 产品 ID", en: "Stripe product ID" },
+  stripe_price_id: { zh: "Stripe 价格 ID", en: "Stripe price ID" },
+  unlock_stripe_product_id: { zh: "解锁 Stripe 产品 ID", en: "unlock Stripe product ID" },
+  unlock_stripe_price_id: { zh: "解锁 Stripe 价格 ID", en: "unlock Stripe price ID" },
+  package_stripe_product_id: { zh: "套餐 Stripe 产品 ID", en: "package Stripe product ID" },
+  package_stripe_price_id: { zh: "套餐 Stripe 价格 ID", en: "package Stripe price ID" },
 }
 
 function getFieldLabel(field: string, lang: "zh" | "en"): string {

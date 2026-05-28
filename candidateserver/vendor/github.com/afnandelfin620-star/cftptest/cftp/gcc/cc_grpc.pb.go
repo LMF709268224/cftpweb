@@ -23,8 +23,8 @@ const (
 	CCService_CreatePipelineDraft_FullMethodName         = "/gcc.CCService/CreatePipelineDraft"
 	CCService_UpdatePipelineStructure_FullMethodName     = "/gcc.CCService/UpdatePipelineStructure"
 	CCService_PublishPipeline_FullMethodName             = "/gcc.CCService/PublishPipeline"
+	CCService_DeletePipeline_FullMethodName              = "/gcc.CCService/DeletePipeline"
 	CCService_UpdatePipelineMetadata_FullMethodName      = "/gcc.CCService/UpdatePipelineMetadata"
-	CCService_UpdateUnitMetadata_FullMethodName          = "/gcc.CCService/UpdateUnitMetadata"
 	CCService_GetPipeline_FullMethodName                 = "/gcc.CCService/GetPipeline"
 	CCService_GetPipelineFinalEligibility_FullMethodName = "/gcc.CCService/GetPipelineFinalEligibility"
 	CCService_ListPipelines_FullMethodName               = "/gcc.CCService/ListPipelines"
@@ -39,13 +39,14 @@ const (
 type CCServiceClient interface {
 	// 创建管线草稿 (从现有版本复制或全新创建)
 	CreatePipelineDraft(ctx context.Context, in *CreatePipelineDraftRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
-	// 更新管线结构 (仅限草稿态，增加/删除/排序 Stage 或 Unit，修改费用/资格)
+	// 更新管线结构 (仅限草稿态，增加/删除/排序 Stage 或 Unit，修改 Stripe 支付配置与资格要求)
 	UpdatePipelineStructure(ctx context.Context, in *UpdatePipelineStructureRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
 	// 发布新版本 (全量锁定快照，is_current 置为 1，版本号 +1)
 	PublishPipeline(ctx context.Context, in *PublishPipelineRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
+	// 删除管线草稿 (仅限草稿态)
+	DeletePipeline(ctx context.Context, in *DeletePipelineRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 更新描述性信息 (实时生效，不产生新版本)
 	UpdatePipelineMetadata(ctx context.Context, in *UpdateMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	UpdateUnitMetadata(ctx context.Context, in *UpdateMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetPipeline(ctx context.Context, in *GetPipelineRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
 	GetPipelineFinalEligibility(ctx context.Context, in *GetPipelineFinalEligibilityRequest, opts ...grpc.CallOption) (*GetPipelineFinalEligibilityResponse, error)
 	ListPipelines(ctx context.Context, in *ListPipelinesRequest, opts ...grpc.CallOption) (*ListPipelinesResponse, error)
@@ -92,20 +93,20 @@ func (c *cCServiceClient) PublishPipeline(ctx context.Context, in *PublishPipeli
 	return out, nil
 }
 
-func (c *cCServiceClient) UpdatePipelineMetadata(ctx context.Context, in *UpdateMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *cCServiceClient) DeletePipeline(ctx context.Context, in *DeletePipelineRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, CCService_UpdatePipelineMetadata_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CCService_DeletePipeline_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *cCServiceClient) UpdateUnitMetadata(ctx context.Context, in *UpdateMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *cCServiceClient) UpdatePipelineMetadata(ctx context.Context, in *UpdateMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, CCService_UpdateUnitMetadata_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CCService_UpdatePipelineMetadata_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -178,13 +179,14 @@ func (c *cCServiceClient) ListCatalogs(ctx context.Context, in *emptypb.Empty, o
 type CCServiceServer interface {
 	// 创建管线草稿 (从现有版本复制或全新创建)
 	CreatePipelineDraft(context.Context, *CreatePipelineDraftRequest) (*PipelineConfig, error)
-	// 更新管线结构 (仅限草稿态，增加/删除/排序 Stage 或 Unit，修改费用/资格)
+	// 更新管线结构 (仅限草稿态，增加/删除/排序 Stage 或 Unit，修改 Stripe 支付配置与资格要求)
 	UpdatePipelineStructure(context.Context, *UpdatePipelineStructureRequest) (*PipelineConfig, error)
 	// 发布新版本 (全量锁定快照，is_current 置为 1，版本号 +1)
 	PublishPipeline(context.Context, *PublishPipelineRequest) (*PipelineConfig, error)
+	// 删除管线草稿 (仅限草稿态)
+	DeletePipeline(context.Context, *DeletePipelineRequest) (*emptypb.Empty, error)
 	// 更新描述性信息 (实时生效，不产生新版本)
 	UpdatePipelineMetadata(context.Context, *UpdateMetadataRequest) (*emptypb.Empty, error)
-	UpdateUnitMetadata(context.Context, *UpdateMetadataRequest) (*emptypb.Empty, error)
 	GetPipeline(context.Context, *GetPipelineRequest) (*PipelineConfig, error)
 	GetPipelineFinalEligibility(context.Context, *GetPipelineFinalEligibilityRequest) (*GetPipelineFinalEligibilityResponse, error)
 	ListPipelines(context.Context, *ListPipelinesRequest) (*ListPipelinesResponse, error)
@@ -210,11 +212,11 @@ func (UnimplementedCCServiceServer) UpdatePipelineStructure(context.Context, *Up
 func (UnimplementedCCServiceServer) PublishPipeline(context.Context, *PublishPipelineRequest) (*PipelineConfig, error) {
 	return nil, status.Error(codes.Unimplemented, "method PublishPipeline not implemented")
 }
+func (UnimplementedCCServiceServer) DeletePipeline(context.Context, *DeletePipelineRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeletePipeline not implemented")
+}
 func (UnimplementedCCServiceServer) UpdatePipelineMetadata(context.Context, *UpdateMetadataRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdatePipelineMetadata not implemented")
-}
-func (UnimplementedCCServiceServer) UpdateUnitMetadata(context.Context, *UpdateMetadataRequest) (*emptypb.Empty, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateUnitMetadata not implemented")
 }
 func (UnimplementedCCServiceServer) GetPipeline(context.Context, *GetPipelineRequest) (*PipelineConfig, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPipeline not implemented")
@@ -309,6 +311,24 @@ func _CCService_PublishPipeline_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CCService_DeletePipeline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeletePipelineRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCServiceServer).DeletePipeline(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCService_DeletePipeline_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCServiceServer).DeletePipeline(ctx, req.(*DeletePipelineRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CCService_UpdatePipelineMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateMetadataRequest)
 	if err := dec(in); err != nil {
@@ -323,24 +343,6 @@ func _CCService_UpdatePipelineMetadata_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CCServiceServer).UpdatePipelineMetadata(ctx, req.(*UpdateMetadataRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CCService_UpdateUnitMetadata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateMetadataRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CCServiceServer).UpdateUnitMetadata(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CCService_UpdateUnitMetadata_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCServiceServer).UpdateUnitMetadata(ctx, req.(*UpdateMetadataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -473,12 +475,12 @@ var CCService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CCService_PublishPipeline_Handler,
 		},
 		{
-			MethodName: "UpdatePipelineMetadata",
-			Handler:    _CCService_UpdatePipelineMetadata_Handler,
+			MethodName: "DeletePipeline",
+			Handler:    _CCService_DeletePipeline_Handler,
 		},
 		{
-			MethodName: "UpdateUnitMetadata",
-			Handler:    _CCService_UpdateUnitMetadata_Handler,
+			MethodName: "UpdatePipelineMetadata",
+			Handler:    _CCService_UpdatePipelineMetadata_Handler,
 		},
 		{
 			MethodName: "GetPipeline",
