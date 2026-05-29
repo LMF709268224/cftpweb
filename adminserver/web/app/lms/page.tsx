@@ -206,6 +206,8 @@ const emptyOptionForm = {
   is_correct: false,
 }
 
+const courseListPageSize = 20
+
 const sampleCourseImportJson = `{
   "title": "高等数学",
   "description": "这是高等数学课程",
@@ -280,6 +282,8 @@ export default function LmsCoursesPage() {
   const [categoryFilter, setCategoryFilter] = useState("")
   const [publishedOnly, setPublishedOnly] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [courseListLoadingMore, setCourseListLoadingMore] = useState(false)
+  const [courseListNextPageToken, setCourseListNextPageToken] = useState("")
   const [saving, setSaving] = useState(false)
   const [thumbnailUploading, setThumbnailUploading] = useState(false)
   const [preview, setPreview] = useState<any>(null)
@@ -326,6 +330,9 @@ export default function LmsCoursesPage() {
     () => courses.find((course) => course.course_id === selectedId) || null,
     [courses, selectedId]
   )
+  const selectedCoursePublished = Boolean(
+    selectedCourse?.is_published || selectedCourse?.status?.toLowerCase() === "active"
+  )
 
   const selectedChapter = useMemo(
     () => chapters.find((chapter) => chapter.chapter_id === selectedChapterId) || null,
@@ -358,26 +365,37 @@ export default function LmsCoursesPage() {
     setOptionForm(emptyOptionForm)
   }
 
-  const loadCourses = useCallback(async () => {
-    setLoading(true)
+  const loadCourses = useCallback(async (pageToken = "") => {
+    if (pageToken) {
+      setCourseListLoadingMore(true)
+    } else {
+      setLoading(true)
+    }
     try {
       const params = new URLSearchParams()
       if (categoryFilter.trim()) params.set("category_tips", categoryFilter.trim())
       if (publishedOnly) params.set("published_only", "true")
+      params.set("page_size", String(courseListPageSize))
+      if (pageToken) params.set("page_token", pageToken)
       const query = params.toString()
       const res = await apiClient(`/api/lms/courses${query ? `?${query}` : ""}`)
       const nextCourses = res?.courses || []
-      setCourses(nextCourses)
-      if (selectedId && !nextCourses.some((course: LmsCourse) => course.course_id === selectedId)) {
-        setSelectedId("")
-        setForm(emptyForm)
-        setPreview(null)
-        setEnrollments([])
-        setProgressDetail(null)
-        resetCourseContentState()
-      }
+      setCourseListNextPageToken(res?.next_page_token || "")
+      setCourses((prevCourses) => {
+        const mergedCourses = pageToken ? [...prevCourses, ...nextCourses] : nextCourses
+        if (selectedId && !mergedCourses.some((course: LmsCourse) => course.course_id === selectedId)) {
+          setSelectedId("")
+          setForm(emptyForm)
+          setPreview(null)
+          setEnrollments([])
+          setProgressDetail(null)
+          resetCourseContentState()
+        }
+        return mergedCourses
+      })
     } finally {
       setLoading(false)
+      setCourseListLoadingMore(false)
     }
   }, [categoryFilter, publishedOnly, selectedId])
 
@@ -691,7 +709,12 @@ export default function LmsCoursesPage() {
   }
 
   const deleteCourse = async () => {
-    if (!selectedCourse || !window.confirm(page.confirmDelete)) return
+    if (!selectedCourse) return
+    if (selectedCoursePublished) {
+      toast.error(page.deletePublishedBlocked)
+      return
+    }
+    if (!window.confirm(page.confirmDelete)) return
     await apiClient(`/api/lms/courses/${selectedCourse.course_id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -1030,7 +1053,7 @@ export default function LmsCoursesPage() {
               <p className="mt-2 text-muted-foreground">{page.subtitle}</p>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={loadCourses} disabled={loading}>
+              <Button variant="outline" onClick={() => loadCourses()} disabled={loading}>
                 <RefreshCw className={cn("mr-2 h-4 w-4", loading && "animate-spin")} />
                 {page.refresh}
               </Button>
@@ -1135,6 +1158,7 @@ export default function LmsCoursesPage() {
             </label>
           </div>
 
+          {/* TODO: 待 GLMS 提供 UnpublishCourse 接口后，接入真正的课程下架按钮。 */}
           <div className="grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
             <section className="rounded-lg border bg-card">
               <div className="flex items-center justify-between border-b px-4 py-3">
@@ -1174,6 +1198,14 @@ export default function LmsCoursesPage() {
                   ))
                 )}
               </div>
+              {courseListNextPageToken && (
+                <div className="border-t p-3">
+                  <Button variant="outline" size="sm" className="w-full" onClick={() => loadCourses(courseListNextPageToken)} disabled={courseListLoadingMore}>
+                    <RefreshCw className={cn("mr-2 h-4 w-4", courseListLoadingMore && "animate-spin")} />
+                    {page.loadMoreCourses}
+                  </Button>
+                </div>
+              )}
             </section>
 
             <section className="space-y-4">
@@ -1182,7 +1214,7 @@ export default function LmsCoursesPage() {
                   <h2 className="font-semibold">{page.courseEditor}</h2>
                   {selectedCourse && (
                     <div className="flex gap-2">
-                      {selectedCourse.is_published ? (
+                      {selectedCoursePublished ? (
                         <Button variant="outline" size="sm" disabled>
                           <CheckCircle2 className="mr-2 h-4 w-4" />
                           {page.published}
@@ -1193,7 +1225,12 @@ export default function LmsCoursesPage() {
                           {page.publish}
                         </Button>
                       )}
-                      <Button variant="destructive" size="sm" onClick={deleteCourse}>
+                      {selectedCoursePublished && (
+                        <Button variant="outline" size="sm" disabled title={page.unpublishUnavailable}>
+                          {page.unpublish}
+                        </Button>
+                      )}
+                      <Button variant="destructive" size="sm" onClick={deleteCourse} disabled={selectedCoursePublished}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         {page.delete}
                       </Button>

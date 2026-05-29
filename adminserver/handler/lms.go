@@ -149,6 +149,8 @@ func (h *Handler) ListLmsCourses(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Lms.ListCourses(r.Context(), &lmspb.ListCoursesRequest{
 		CategoryTips:  r.URL.Query().Get("category_tips"),
 		PublishedOnly: parseBoolQuery(r, "published_only"),
+		PageSize:      parseUint32Query(r, "page_size"),
+		PageToken:     r.URL.Query().Get("page_token"),
 	})
 	if err != nil {
 		writeLmsError(w, err)

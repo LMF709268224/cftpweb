@@ -2020,6 +2020,8 @@ type ListCoursesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CategoryTips  string                 `protobuf:"bytes,1,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`     // 分类提示过滤（可选），相同category_tips的课程可归入同一表格
 	PublishedOnly bool                   `protobuf:"varint,2,opt,name=published_only,json=publishedOnly,proto3" json:"published_only,omitempty"` // 是否仅返回已发布课程 ([required])
+	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`                // 每页数量
+	PageToken     string                 `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`              // 分页游标
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2068,9 +2070,24 @@ func (x *ListCoursesRequest) GetPublishedOnly() bool {
 	return false
 }
 
+func (x *ListCoursesRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListCoursesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
 type ListCoursesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Courses       []*Course              `protobuf:"bytes,1,rep,name=courses,proto3" json:"courses,omitempty"` // 课程列表
+	Courses       []*Course              `protobuf:"bytes,1,rep,name=courses,proto3" json:"courses,omitempty"`                                    // 课程列表
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"` // 下一页游标
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2110,6 +2127,13 @@ func (x *ListCoursesResponse) GetCourses() []*Course {
 		return x.Courses
 	}
 	return nil
+}
+
+func (x *ListCoursesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
 }
 
 type PublishCourseRequest struct {
@@ -9711,12 +9735,16 @@ const file_lms_proto_rawDesc = "" +
 	"\x10GetCourseRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\"9\n" +
 	"\x11GetCourseResponse\x12$\n" +
-	"\x06course\x18\x01 \x01(\v2\f.glms.CourseR\x06course\"`\n" +
+	"\x06course\x18\x01 \x01(\v2\f.glms.CourseR\x06course\"\x9c\x01\n" +
 	"\x12ListCoursesRequest\x12#\n" +
 	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12%\n" +
-	"\x0epublished_only\x18\x02 \x01(\bR\rpublishedOnly\"=\n" +
+	"\x0epublished_only\x18\x02 \x01(\bR\rpublishedOnly\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken\"e\n" +
 	"\x13ListCoursesResponse\x12&\n" +
-	"\acourses\x18\x01 \x03(\v2\f.glms.CourseR\acourses\"M\n" +
+	"\acourses\x18\x01 \x03(\v2\f.glms.CourseR\acourses\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"M\n" +
 	"\x14PublishCourseRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\rR\aversion\"1\n" +

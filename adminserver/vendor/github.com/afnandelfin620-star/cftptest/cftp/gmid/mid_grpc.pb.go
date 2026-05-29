@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MidService_GetUlidByUUID_FullMethodName = "/gmid.MidService/GetUlidByUUID"
-	MidService_GetUUIDByUlid_FullMethodName = "/gmid.MidService/GetUUIDByUlid"
+	MidService_GetUlidByUUID_FullMethodName      = "/gmid.MidService/GetUlidByUUID"
+	MidService_GetUUIDByUlid_FullMethodName      = "/gmid.MidService/GetUUIDByUlid"
+	MidService_GetFullIds_FullMethodName         = "/gmid.MidService/GetFullIds"
+	MidService_GetStudentNoByUlid_FullMethodName = "/gmid.MidService/GetStudentNoByUlid"
 )
 
 // MidServiceClient is the client API for MidService service.
@@ -31,6 +33,10 @@ type MidServiceClient interface {
 	GetUlidByUUID(ctx context.Context, in *GetUlidByUUIDRequest, opts ...grpc.CallOption) (*GetUlidByUUIDResponse, error)
 	// 根据 user_ulid 获取 user_uuid
 	GetUUIDByUlid(ctx context.Context, in *GetUUIDByUlidRequest, opts ...grpc.CallOption) (*GetUUIDByUlidResponse, error)
+	// 根据 uuid 或 ulid 获取完整标识信息
+	GetFullIds(ctx context.Context, in *GetFullIdsRequest, opts ...grpc.CallOption) (*GetFullIdsResponse, error)
+	// 根据 user_ulid 获取或分配学号
+	GetStudentNoByUlid(ctx context.Context, in *GetStudentNoByUlidRequest, opts ...grpc.CallOption) (*GetStudentNoByUlidResponse, error)
 }
 
 type midServiceClient struct {
@@ -61,6 +67,26 @@ func (c *midServiceClient) GetUUIDByUlid(ctx context.Context, in *GetUUIDByUlidR
 	return out, nil
 }
 
+func (c *midServiceClient) GetFullIds(ctx context.Context, in *GetFullIdsRequest, opts ...grpc.CallOption) (*GetFullIdsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFullIdsResponse)
+	err := c.cc.Invoke(ctx, MidService_GetFullIds_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *midServiceClient) GetStudentNoByUlid(ctx context.Context, in *GetStudentNoByUlidRequest, opts ...grpc.CallOption) (*GetStudentNoByUlidResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStudentNoByUlidResponse)
+	err := c.cc.Invoke(ctx, MidService_GetStudentNoByUlid_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MidServiceServer is the server API for MidService service.
 // All implementations must embed UnimplementedMidServiceServer
 // for forward compatibility.
@@ -69,6 +95,10 @@ type MidServiceServer interface {
 	GetUlidByUUID(context.Context, *GetUlidByUUIDRequest) (*GetUlidByUUIDResponse, error)
 	// 根据 user_ulid 获取 user_uuid
 	GetUUIDByUlid(context.Context, *GetUUIDByUlidRequest) (*GetUUIDByUlidResponse, error)
+	// 根据 uuid 或 ulid 获取完整标识信息
+	GetFullIds(context.Context, *GetFullIdsRequest) (*GetFullIdsResponse, error)
+	// 根据 user_ulid 获取或分配学号
+	GetStudentNoByUlid(context.Context, *GetStudentNoByUlidRequest) (*GetStudentNoByUlidResponse, error)
 	mustEmbedUnimplementedMidServiceServer()
 }
 
@@ -84,6 +114,12 @@ func (UnimplementedMidServiceServer) GetUlidByUUID(context.Context, *GetUlidByUU
 }
 func (UnimplementedMidServiceServer) GetUUIDByUlid(context.Context, *GetUUIDByUlidRequest) (*GetUUIDByUlidResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUUIDByUlid not implemented")
+}
+func (UnimplementedMidServiceServer) GetFullIds(context.Context, *GetFullIdsRequest) (*GetFullIdsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFullIds not implemented")
+}
+func (UnimplementedMidServiceServer) GetStudentNoByUlid(context.Context, *GetStudentNoByUlidRequest) (*GetStudentNoByUlidResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStudentNoByUlid not implemented")
 }
 func (UnimplementedMidServiceServer) mustEmbedUnimplementedMidServiceServer() {}
 func (UnimplementedMidServiceServer) testEmbeddedByValue()                    {}
@@ -142,6 +178,42 @@ func _MidService_GetUUIDByUlid_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MidService_GetFullIds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFullIdsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MidServiceServer).GetFullIds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MidService_GetFullIds_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MidServiceServer).GetFullIds(ctx, req.(*GetFullIdsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MidService_GetStudentNoByUlid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStudentNoByUlidRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MidServiceServer).GetStudentNoByUlid(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MidService_GetStudentNoByUlid_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MidServiceServer).GetStudentNoByUlid(ctx, req.(*GetStudentNoByUlidRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MidService_ServiceDesc is the grpc.ServiceDesc for MidService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -156,6 +228,14 @@ var MidService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUUIDByUlid",
 			Handler:    _MidService_GetUUIDByUlid_Handler,
+		},
+		{
+			MethodName: "GetFullIds",
+			Handler:    _MidService_GetFullIds_Handler,
+		},
+		{
+			MethodName: "GetStudentNoByUlid",
+			Handler:    _MidService_GetStudentNoByUlid_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

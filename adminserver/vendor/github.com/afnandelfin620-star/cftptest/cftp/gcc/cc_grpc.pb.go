@@ -28,9 +28,6 @@ const (
 	CCService_GetPipeline_FullMethodName                 = "/gcc.CCService/GetPipeline"
 	CCService_GetPipelineFinalEligibility_FullMethodName = "/gcc.CCService/GetPipelineFinalEligibility"
 	CCService_ListPipelines_FullMethodName               = "/gcc.CCService/ListPipelines"
-	CCService_CreateCatalog_FullMethodName               = "/gcc.CCService/CreateCatalog"
-	CCService_UpdateCatalog_FullMethodName               = "/gcc.CCService/UpdateCatalog"
-	CCService_ListCatalogs_FullMethodName                = "/gcc.CCService/ListCatalogs"
 )
 
 // CCServiceClient is the client API for CCService service.
@@ -50,9 +47,6 @@ type CCServiceClient interface {
 	GetPipeline(ctx context.Context, in *GetPipelineRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
 	GetPipelineFinalEligibility(ctx context.Context, in *GetPipelineFinalEligibilityRequest, opts ...grpc.CallOption) (*GetPipelineFinalEligibilityResponse, error)
 	ListPipelines(ctx context.Context, in *ListPipelinesRequest, opts ...grpc.CallOption) (*ListPipelinesResponse, error)
-	CreateCatalog(ctx context.Context, in *CreateCatalogRequest, opts ...grpc.CallOption) (*Catalog, error)
-	UpdateCatalog(ctx context.Context, in *UpdateCatalogRequest, opts ...grpc.CallOption) (*Catalog, error)
-	ListCatalogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListCatalogsResponse, error)
 }
 
 type cCServiceClient struct {
@@ -143,36 +137,6 @@ func (c *cCServiceClient) ListPipelines(ctx context.Context, in *ListPipelinesRe
 	return out, nil
 }
 
-func (c *cCServiceClient) CreateCatalog(ctx context.Context, in *CreateCatalogRequest, opts ...grpc.CallOption) (*Catalog, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Catalog)
-	err := c.cc.Invoke(ctx, CCService_CreateCatalog_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cCServiceClient) UpdateCatalog(ctx context.Context, in *UpdateCatalogRequest, opts ...grpc.CallOption) (*Catalog, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Catalog)
-	err := c.cc.Invoke(ctx, CCService_UpdateCatalog_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *cCServiceClient) ListCatalogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListCatalogsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListCatalogsResponse)
-	err := c.cc.Invoke(ctx, CCService_ListCatalogs_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // CCServiceServer is the server API for CCService service.
 // All implementations must embed UnimplementedCCServiceServer
 // for forward compatibility.
@@ -190,9 +154,6 @@ type CCServiceServer interface {
 	GetPipeline(context.Context, *GetPipelineRequest) (*PipelineConfig, error)
 	GetPipelineFinalEligibility(context.Context, *GetPipelineFinalEligibilityRequest) (*GetPipelineFinalEligibilityResponse, error)
 	ListPipelines(context.Context, *ListPipelinesRequest) (*ListPipelinesResponse, error)
-	CreateCatalog(context.Context, *CreateCatalogRequest) (*Catalog, error)
-	UpdateCatalog(context.Context, *UpdateCatalogRequest) (*Catalog, error)
-	ListCatalogs(context.Context, *emptypb.Empty) (*ListCatalogsResponse, error)
 	mustEmbedUnimplementedCCServiceServer()
 }
 
@@ -226,15 +187,6 @@ func (UnimplementedCCServiceServer) GetPipelineFinalEligibility(context.Context,
 }
 func (UnimplementedCCServiceServer) ListPipelines(context.Context, *ListPipelinesRequest) (*ListPipelinesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPipelines not implemented")
-}
-func (UnimplementedCCServiceServer) CreateCatalog(context.Context, *CreateCatalogRequest) (*Catalog, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateCatalog not implemented")
-}
-func (UnimplementedCCServiceServer) UpdateCatalog(context.Context, *UpdateCatalogRequest) (*Catalog, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateCatalog not implemented")
-}
-func (UnimplementedCCServiceServer) ListCatalogs(context.Context, *emptypb.Empty) (*ListCatalogsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListCatalogs not implemented")
 }
 func (UnimplementedCCServiceServer) mustEmbedUnimplementedCCServiceServer() {}
 func (UnimplementedCCServiceServer) testEmbeddedByValue()                   {}
@@ -401,60 +353,6 @@ func _CCService_ListPipelines_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CCService_CreateCatalog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateCatalogRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CCServiceServer).CreateCatalog(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CCService_CreateCatalog_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCServiceServer).CreateCatalog(ctx, req.(*CreateCatalogRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CCService_UpdateCatalog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateCatalogRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CCServiceServer).UpdateCatalog(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CCService_UpdateCatalog_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCServiceServer).UpdateCatalog(ctx, req.(*UpdateCatalogRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _CCService_ListCatalogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(CCServiceServer).ListCatalogs(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: CCService_ListCatalogs_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCServiceServer).ListCatalogs(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // CCService_ServiceDesc is the grpc.ServiceDesc for CCService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -493,18 +391,6 @@ var CCService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPipelines",
 			Handler:    _CCService_ListPipelines_Handler,
-		},
-		{
-			MethodName: "CreateCatalog",
-			Handler:    _CCService_CreateCatalog_Handler,
-		},
-		{
-			MethodName: "UpdateCatalog",
-			Handler:    _CCService_UpdateCatalog_Handler,
-		},
-		{
-			MethodName: "ListCatalogs",
-			Handler:    _CCService_ListCatalogs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

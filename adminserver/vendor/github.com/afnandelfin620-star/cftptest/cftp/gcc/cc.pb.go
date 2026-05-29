@@ -356,8 +356,9 @@ func (x *UnitConfig) GetGlmsCourseId() string {
 
 type Qualification struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QualId        string                 `protobuf:"bytes,1,opt,name=qual_id,json=qualId,proto3" json:"qual_id,omitempty"`       // 资格 ULID 对应gcred中的cred catalog id [required]
-	NameHint      string                 `protobuf:"bytes,2,opt,name=name_hint,json=nameHint,proto3" json:"name_hint,omitempty"` // 资格名称 [required]
+	QualId        string                 `protobuf:"bytes,1,opt,name=qual_id,json=qualId,proto3" json:"qual_id,omitempty"`                        // 资格 ULID 对应gcred中的cred def id [required]
+	NameHint      string                 `protobuf:"bytes,2,opt,name=name_hint,json=nameHint,proto3" json:"name_hint,omitempty"`                  // 资格名称 [required]
+	PdfTemplateId string                 `protobuf:"bytes,3,opt,name=pdf_template_id,json=pdfTemplateId,proto3" json:"pdf_template_id,omitempty"` // 证书PDF模板 ULID [required]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -406,9 +407,16 @@ func (x *Qualification) GetNameHint() string {
 	return ""
 }
 
+func (x *Qualification) GetPdfTemplateId() string {
+	if x != nil {
+		return x.PdfTemplateId
+	}
+	return ""
+}
+
 type CreatePipelineDraftRequest struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
-	CategoryId       string                 `protobuf:"bytes,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`                     // 管线分类 [required]
+	CategoryTips     string                 `protobuf:"bytes,1,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`               // 分类提示，客户端按相同值分组展示，最长64字符
 	Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                                   // 管线名称 [required]
 	FromPipelineGuid string                 `protobuf:"bytes,3,opt,name=from_pipeline_guid,json=fromPipelineGuid,proto3" json:"from_pipeline_guid,omitempty"` // 如果提供，则从该版本复制；如果不提供，则创建全新管线 [optional]
 	PipelineId       string                 `protobuf:"bytes,4,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`                     // 外部指定的 pipeline_id ULID (版本唯一ID) [required]
@@ -447,9 +455,9 @@ func (*CreatePipelineDraftRequest) Descriptor() ([]byte, []int) {
 	return file_cc_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *CreatePipelineDraftRequest) GetCategoryId() string {
+func (x *CreatePipelineDraftRequest) GetCategoryTips() string {
 	if x != nil {
-		return x.CategoryId
+		return x.CategoryTips
 	}
 	return ""
 }
@@ -671,12 +679,11 @@ func (x *DeletePipelineRequest) GetPipelineId() string {
 }
 
 type UpdateMetadataRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	TargetId         string                 `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`                                                                                                   // pipeline_id [required]
-	NewName          string                 `protobuf:"bytes,2,opt,name=new_name,json=newName,proto3" json:"new_name,omitempty"`                                                                                                      // 新的管线名称 [required]
-	ExtendedMetadata map[string]string      `protobuf:"bytes,3,rep,name=extended_metadata,json=extendedMetadata,proto3" json:"extended_metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 扩展元数据 [optional]
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TargetId      string                 `protobuf:"bytes,1,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"` // pipeline_id [required]
+	NewName       string                 `protobuf:"bytes,2,opt,name=new_name,json=newName,proto3" json:"new_name,omitempty"`    // 新的管线名称 [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateMetadataRequest) Reset() {
@@ -721,13 +728,6 @@ func (x *UpdateMetadataRequest) GetNewName() string {
 		return x.NewName
 	}
 	return ""
-}
-
-func (x *UpdateMetadataRequest) GetExtendedMetadata() map[string]string {
-	if x != nil {
-		return x.ExtendedMetadata
-	}
-	return nil
 }
 
 type GetPipelineRequest struct {
@@ -912,8 +912,10 @@ func (x *GetPipelineFinalEligibilityResponse) GetCertQuals() []*Qualification {
 
 type ListPipelinesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CategoryId    string                 `protobuf:"bytes,1,opt,name=category_id,json=categoryId,proto3" json:"category_id,omitempty"`     // 管线分类 [required]
-	OnlyCurrent   bool                   `protobuf:"varint,2,opt,name=only_current,json=onlyCurrent,proto3" json:"only_current,omitempty"` // 是否只显示当前生效的版本 [required]
+	CategoryTips  string                 `protobuf:"bytes,1,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"` // 分类提示过滤（可选），相同category_tips的管线可归入同一表格
+	OnlyCurrent   bool                   `protobuf:"varint,2,opt,name=only_current,json=onlyCurrent,proto3" json:"only_current,omitempty"`   // 是否只显示当前生效的版本 [required]
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -948,9 +950,9 @@ func (*ListPipelinesRequest) Descriptor() ([]byte, []int) {
 	return file_cc_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *ListPipelinesRequest) GetCategoryId() string {
+func (x *ListPipelinesRequest) GetCategoryTips() string {
 	if x != nil {
-		return x.CategoryId
+		return x.CategoryTips
 	}
 	return ""
 }
@@ -960,6 +962,20 @@ func (x *ListPipelinesRequest) GetOnlyCurrent() bool {
 		return x.OnlyCurrent
 	}
 	return false
+}
+
+func (x *ListPipelinesRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListPipelinesRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
 }
 
 type ListPipelinesResponse struct {
@@ -1006,238 +1022,6 @@ func (x *ListPipelinesResponse) GetPipelines() []*PipelineConfig {
 	return nil
 }
 
-type Catalog struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CatalogId     string                 `protobuf:"bytes,1,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Catalog) Reset() {
-	*x = Catalog{}
-	mi := &file_cc_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Catalog) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Catalog) ProtoMessage() {}
-
-func (x *Catalog) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Catalog.ProtoReflect.Descriptor instead.
-func (*Catalog) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *Catalog) GetCatalogId() string {
-	if x != nil {
-		return x.CatalogId
-	}
-	return ""
-}
-
-func (x *Catalog) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Catalog) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-func (x *Catalog) GetCreatedAt() string {
-	if x != nil {
-		return x.CreatedAt
-	}
-	return ""
-}
-
-type CreateCatalogRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CatalogId     string                 `protobuf:"bytes,1,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"` // catalog ID [required]
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                            // catalog名称 [required, unique]
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`              // catalog描述 [optional]
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateCatalogRequest) Reset() {
-	*x = CreateCatalogRequest{}
-	mi := &file_cc_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateCatalogRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateCatalogRequest) ProtoMessage() {}
-
-func (x *CreateCatalogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateCatalogRequest.ProtoReflect.Descriptor instead.
-func (*CreateCatalogRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *CreateCatalogRequest) GetCatalogId() string {
-	if x != nil {
-		return x.CatalogId
-	}
-	return ""
-}
-
-func (x *CreateCatalogRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *CreateCatalogRequest) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-type UpdateCatalogRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CatalogId     string                 `protobuf:"bytes,1,opt,name=catalog_id,json=catalogId,proto3" json:"catalog_id,omitempty"` // catalog ID [required]
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                            // 新的catalog名称 [required, unique]
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`              // 新的catalog描述 [optional]
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *UpdateCatalogRequest) Reset() {
-	*x = UpdateCatalogRequest{}
-	mi := &file_cc_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UpdateCatalogRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UpdateCatalogRequest) ProtoMessage() {}
-
-func (x *UpdateCatalogRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UpdateCatalogRequest.ProtoReflect.Descriptor instead.
-func (*UpdateCatalogRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *UpdateCatalogRequest) GetCatalogId() string {
-	if x != nil {
-		return x.CatalogId
-	}
-	return ""
-}
-
-func (x *UpdateCatalogRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *UpdateCatalogRequest) GetDescription() string {
-	if x != nil {
-		return x.Description
-	}
-	return ""
-}
-
-type ListCatalogsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Catalogs      []*Catalog             `protobuf:"bytes,1,rep,name=catalogs,proto3" json:"catalogs,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListCatalogsResponse) Reset() {
-	*x = ListCatalogsResponse{}
-	mi := &file_cc_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListCatalogsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListCatalogsResponse) ProtoMessage() {}
-
-func (x *ListCatalogsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListCatalogsResponse.ProtoReflect.Descriptor instead.
-func (*ListCatalogsResponse) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *ListCatalogsResponse) GetCatalogs() []*Catalog {
-	if x != nil {
-		return x.Catalogs
-	}
-	return nil
-}
-
 var File_cc_proto protoreflect.FileDescriptor
 
 const file_cc_proto_rawDesc = "" +
@@ -1280,13 +1064,13 @@ const file_cc_proto_rawDesc = "" +
 	"\x19exemption_stripe_price_id\x18\x11 \x01(\tR\x16exemptionStripePriceId\x127\n" +
 	"\x18retake_stripe_product_id\x18\x12 \x01(\tR\x15retakeStripeProductId\x123\n" +
 	"\x16retake_stripe_price_id\x18\x13 \x01(\tR\x13retakeStripePriceId\x12$\n" +
-	"\x0eglms_course_id\x18\x14 \x01(\tR\fglmsCourseId\"E\n" +
+	"\x0eglms_course_id\x18\x14 \x01(\tR\fglmsCourseId\"m\n" +
 	"\rQualification\x12\x17\n" +
 	"\aqual_id\x18\x01 \x01(\tR\x06qualId\x12\x1b\n" +
-	"\tname_hint\x18\x02 \x01(\tR\bnameHint\"\xc5\x01\n" +
-	"\x1aCreatePipelineDraftRequest\x12\x1f\n" +
-	"\vcategory_id\x18\x01 \x01(\tR\n" +
-	"categoryId\x12\x12\n" +
+	"\tname_hint\x18\x02 \x01(\tR\bnameHint\x12&\n" +
+	"\x0fpdf_template_id\x18\x03 \x01(\tR\rpdfTemplateId\"\xc9\x01\n" +
+	"\x1aCreatePipelineDraftRequest\x12#\n" +
+	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12,\n" +
 	"\x12from_pipeline_guid\x18\x03 \x01(\tR\x10fromPipelineGuid\x12\x1f\n" +
 	"\vpipeline_id\x18\x04 \x01(\tR\n" +
@@ -1309,14 +1093,10 @@ const file_cc_proto_rawDesc = "" +
 	"pipelineId\"8\n" +
 	"\x15DeletePipelineRequest\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
-	"pipelineId\"\xf3\x01\n" +
+	"pipelineId\"O\n" +
 	"\x15UpdateMetadataRequest\x12\x1b\n" +
 	"\ttarget_id\x18\x01 \x01(\tR\btargetId\x12\x19\n" +
-	"\bnew_name\x18\x02 \x01(\tR\anewName\x12]\n" +
-	"\x11extended_metadata\x18\x03 \x03(\v20.gcc.UpdateMetadataRequest.ExtendedMetadataEntryR\x10extendedMetadata\x1aC\n" +
-	"\x15ExtendedMetadataEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"g\n" +
+	"\bnew_name\x18\x02 \x01(\tR\anewName\"g\n" +
 	"\x12GetPipelineRequest\x12!\n" +
 	"\vpipeline_id\x18\x01 \x01(\tH\x00R\n" +
 	"pipelineId\x12%\n" +
@@ -1329,32 +1109,14 @@ const file_cc_proto_rawDesc = "" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
 	"pipelineId\x121\n" +
 	"\n" +
-	"cert_quals\x18\x02 \x03(\v2\x12.gcc.QualificationR\tcertQuals\"Z\n" +
-	"\x14ListPipelinesRequest\x12\x1f\n" +
-	"\vcategory_id\x18\x01 \x01(\tR\n" +
-	"categoryId\x12!\n" +
-	"\fonly_current\x18\x02 \x01(\bR\vonlyCurrent\"J\n" +
+	"cert_quals\x18\x02 \x03(\v2\x12.gcc.QualificationR\tcertQuals\"\x8c\x01\n" +
+	"\x14ListPipelinesRequest\x12#\n" +
+	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12!\n" +
+	"\fonly_current\x18\x02 \x01(\bR\vonlyCurrent\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x04 \x01(\x05R\x06offset\"J\n" +
 	"\x15ListPipelinesResponse\x121\n" +
-	"\tpipelines\x18\x01 \x03(\v2\x13.gcc.PipelineConfigR\tpipelines\"}\n" +
-	"\aCatalog\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x01 \x01(\tR\tcatalogId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1d\n" +
-	"\n" +
-	"created_at\x18\x04 \x01(\tR\tcreatedAt\"k\n" +
-	"\x14CreateCatalogRequest\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x01 \x01(\tR\tcatalogId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\"k\n" +
-	"\x14UpdateCatalogRequest\x12\x1d\n" +
-	"\n" +
-	"catalog_id\x18\x01 \x01(\tR\tcatalogId\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\"@\n" +
-	"\x14ListCatalogsResponse\x12(\n" +
-	"\bcatalogs\x18\x01 \x03(\v2\f.gcc.CatalogR\bcatalogs2\xb4\x06\n" +
+	"\tpipelines\x18\x01 \x03(\v2\x13.gcc.PipelineConfigR\tpipelines2\xfd\x04\n" +
 	"\tCCService\x12K\n" +
 	"\x13CreatePipelineDraft\x12\x1f.gcc.CreatePipelineDraftRequest\x1a\x13.gcc.PipelineConfig\x12S\n" +
 	"\x17UpdatePipelineStructure\x12#.gcc.UpdatePipelineStructureRequest\x1a\x13.gcc.PipelineConfig\x12C\n" +
@@ -1363,10 +1125,7 @@ const file_cc_proto_rawDesc = "" +
 	"\x16UpdatePipelineMetadata\x12\x1a.gcc.UpdateMetadataRequest\x1a\x16.google.protobuf.Empty\x12;\n" +
 	"\vGetPipeline\x12\x17.gcc.GetPipelineRequest\x1a\x13.gcc.PipelineConfig\x12p\n" +
 	"\x1bGetPipelineFinalEligibility\x12'.gcc.GetPipelineFinalEligibilityRequest\x1a(.gcc.GetPipelineFinalEligibilityResponse\x12F\n" +
-	"\rListPipelines\x12\x19.gcc.ListPipelinesRequest\x1a\x1a.gcc.ListPipelinesResponse\x128\n" +
-	"\rCreateCatalog\x12\x19.gcc.CreateCatalogRequest\x1a\f.gcc.Catalog\x128\n" +
-	"\rUpdateCatalog\x12\x19.gcc.UpdateCatalogRequest\x1a\f.gcc.Catalog\x12A\n" +
-	"\fListCatalogs\x12\x16.google.protobuf.Empty\x1a\x19.gcc.ListCatalogsResponseB\n" +
+	"\rListPipelines\x12\x19.gcc.ListPipelinesRequest\x1a\x1a.gcc.ListPipelinesResponseB\n" +
 	"Z\bcftp/gccb\x06proto3"
 
 var (
@@ -1381,7 +1140,7 @@ func file_cc_proto_rawDescGZIP() []byte {
 	return file_cc_proto_rawDescData
 }
 
-var file_cc_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_cc_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_cc_proto_goTypes = []any{
 	(*PipelineConfig)(nil),                      // 0: gcc.PipelineConfig
 	(*StageConfig)(nil),                         // 1: gcc.StageConfig
@@ -1397,12 +1156,7 @@ var file_cc_proto_goTypes = []any{
 	(*GetPipelineFinalEligibilityResponse)(nil), // 11: gcc.GetPipelineFinalEligibilityResponse
 	(*ListPipelinesRequest)(nil),                // 12: gcc.ListPipelinesRequest
 	(*ListPipelinesResponse)(nil),               // 13: gcc.ListPipelinesResponse
-	(*Catalog)(nil),                             // 14: gcc.Catalog
-	(*CreateCatalogRequest)(nil),                // 15: gcc.CreateCatalogRequest
-	(*UpdateCatalogRequest)(nil),                // 16: gcc.UpdateCatalogRequest
-	(*ListCatalogsResponse)(nil),                // 17: gcc.ListCatalogsResponse
-	nil,                                         // 18: gcc.UpdateMetadataRequest.ExtendedMetadataEntry
-	(*emptypb.Empty)(nil),                       // 19: google.protobuf.Empty
+	(*emptypb.Empty)(nil),                       // 14: google.protobuf.Empty
 }
 var file_cc_proto_depIdxs = []int32{
 	3,  // 0: gcc.PipelineConfig.unlock_quals:type_name -> gcc.Qualification
@@ -1412,37 +1166,29 @@ var file_cc_proto_depIdxs = []int32{
 	1,  // 4: gcc.UpdatePipelineStructureRequest.stages:type_name -> gcc.StageConfig
 	3,  // 5: gcc.UpdatePipelineStructureRequest.unlock_quals:type_name -> gcc.Qualification
 	3,  // 6: gcc.UpdatePipelineStructureRequest.cert_quals:type_name -> gcc.Qualification
-	18, // 7: gcc.UpdateMetadataRequest.extended_metadata:type_name -> gcc.UpdateMetadataRequest.ExtendedMetadataEntry
-	3,  // 8: gcc.GetPipelineFinalEligibilityResponse.cert_quals:type_name -> gcc.Qualification
-	0,  // 9: gcc.ListPipelinesResponse.pipelines:type_name -> gcc.PipelineConfig
-	14, // 10: gcc.ListCatalogsResponse.catalogs:type_name -> gcc.Catalog
-	4,  // 11: gcc.CCService.CreatePipelineDraft:input_type -> gcc.CreatePipelineDraftRequest
-	5,  // 12: gcc.CCService.UpdatePipelineStructure:input_type -> gcc.UpdatePipelineStructureRequest
-	6,  // 13: gcc.CCService.PublishPipeline:input_type -> gcc.PublishPipelineRequest
-	7,  // 14: gcc.CCService.DeletePipeline:input_type -> gcc.DeletePipelineRequest
-	8,  // 15: gcc.CCService.UpdatePipelineMetadata:input_type -> gcc.UpdateMetadataRequest
-	9,  // 16: gcc.CCService.GetPipeline:input_type -> gcc.GetPipelineRequest
-	10, // 17: gcc.CCService.GetPipelineFinalEligibility:input_type -> gcc.GetPipelineFinalEligibilityRequest
-	12, // 18: gcc.CCService.ListPipelines:input_type -> gcc.ListPipelinesRequest
-	15, // 19: gcc.CCService.CreateCatalog:input_type -> gcc.CreateCatalogRequest
-	16, // 20: gcc.CCService.UpdateCatalog:input_type -> gcc.UpdateCatalogRequest
-	19, // 21: gcc.CCService.ListCatalogs:input_type -> google.protobuf.Empty
-	0,  // 22: gcc.CCService.CreatePipelineDraft:output_type -> gcc.PipelineConfig
-	0,  // 23: gcc.CCService.UpdatePipelineStructure:output_type -> gcc.PipelineConfig
-	0,  // 24: gcc.CCService.PublishPipeline:output_type -> gcc.PipelineConfig
-	19, // 25: gcc.CCService.DeletePipeline:output_type -> google.protobuf.Empty
-	19, // 26: gcc.CCService.UpdatePipelineMetadata:output_type -> google.protobuf.Empty
-	0,  // 27: gcc.CCService.GetPipeline:output_type -> gcc.PipelineConfig
-	11, // 28: gcc.CCService.GetPipelineFinalEligibility:output_type -> gcc.GetPipelineFinalEligibilityResponse
-	13, // 29: gcc.CCService.ListPipelines:output_type -> gcc.ListPipelinesResponse
-	14, // 30: gcc.CCService.CreateCatalog:output_type -> gcc.Catalog
-	14, // 31: gcc.CCService.UpdateCatalog:output_type -> gcc.Catalog
-	17, // 32: gcc.CCService.ListCatalogs:output_type -> gcc.ListCatalogsResponse
-	22, // [22:33] is the sub-list for method output_type
-	11, // [11:22] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	3,  // 7: gcc.GetPipelineFinalEligibilityResponse.cert_quals:type_name -> gcc.Qualification
+	0,  // 8: gcc.ListPipelinesResponse.pipelines:type_name -> gcc.PipelineConfig
+	4,  // 9: gcc.CCService.CreatePipelineDraft:input_type -> gcc.CreatePipelineDraftRequest
+	5,  // 10: gcc.CCService.UpdatePipelineStructure:input_type -> gcc.UpdatePipelineStructureRequest
+	6,  // 11: gcc.CCService.PublishPipeline:input_type -> gcc.PublishPipelineRequest
+	7,  // 12: gcc.CCService.DeletePipeline:input_type -> gcc.DeletePipelineRequest
+	8,  // 13: gcc.CCService.UpdatePipelineMetadata:input_type -> gcc.UpdateMetadataRequest
+	9,  // 14: gcc.CCService.GetPipeline:input_type -> gcc.GetPipelineRequest
+	10, // 15: gcc.CCService.GetPipelineFinalEligibility:input_type -> gcc.GetPipelineFinalEligibilityRequest
+	12, // 16: gcc.CCService.ListPipelines:input_type -> gcc.ListPipelinesRequest
+	0,  // 17: gcc.CCService.CreatePipelineDraft:output_type -> gcc.PipelineConfig
+	0,  // 18: gcc.CCService.UpdatePipelineStructure:output_type -> gcc.PipelineConfig
+	0,  // 19: gcc.CCService.PublishPipeline:output_type -> gcc.PipelineConfig
+	14, // 20: gcc.CCService.DeletePipeline:output_type -> google.protobuf.Empty
+	14, // 21: gcc.CCService.UpdatePipelineMetadata:output_type -> google.protobuf.Empty
+	0,  // 22: gcc.CCService.GetPipeline:output_type -> gcc.PipelineConfig
+	11, // 23: gcc.CCService.GetPipelineFinalEligibility:output_type -> gcc.GetPipelineFinalEligibilityResponse
+	13, // 24: gcc.CCService.ListPipelines:output_type -> gcc.ListPipelinesResponse
+	17, // [17:25] is the sub-list for method output_type
+	9,  // [9:17] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_cc_proto_init() }
@@ -1460,7 +1206,7 @@ func file_cc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cc_proto_rawDesc), len(file_cc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

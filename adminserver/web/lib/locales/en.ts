@@ -200,6 +200,8 @@ export const en: AppTranslations = {
     unpublishSuccess: "Course unpublished",
     deleteSuccess: "Course deleted",
     confirmDelete: "Delete this course?",
+    deletePublishedBlocked: "Published courses cannot be deleted directly. Unpublish first; the current GLMS API does not expose unpublish yet.",
+    unpublishUnavailable: "The current GLMS API does not expose unpublish yet",
     materials: "Materials",
     chapters: "Chapters",
     quizzes: "Quizzes",
@@ -299,6 +301,7 @@ export const en: AppTranslations = {
     loadBrokenAssets: "Check assets",
     noBrokenAssets: "No broken assets loaded",
     noErrorMessage: "No error message",
+    loadMoreCourses: "Load more courses",
     loadMore: "Load more",
   },
   catalogsPage: {

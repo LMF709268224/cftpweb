@@ -197,6 +197,206 @@ func (x *GetUUIDByUlidResponse) GetUserUuid() string {
 	return ""
 }
 
+type GetFullIdsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserUuid      string                 `protobuf:"bytes,1,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	UserUlid      string                 `protobuf:"bytes,2,opt,name=user_ulid,json=userUlid,proto3" json:"user_ulid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFullIdsRequest) Reset() {
+	*x = GetFullIdsRequest{}
+	mi := &file_mid_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFullIdsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFullIdsRequest) ProtoMessage() {}
+
+func (x *GetFullIdsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mid_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFullIdsRequest.ProtoReflect.Descriptor instead.
+func (*GetFullIdsRequest) Descriptor() ([]byte, []int) {
+	return file_mid_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetFullIdsRequest) GetUserUuid() string {
+	if x != nil {
+		return x.UserUuid
+	}
+	return ""
+}
+
+func (x *GetFullIdsRequest) GetUserUlid() string {
+	if x != nil {
+		return x.UserUlid
+	}
+	return ""
+}
+
+type GetFullIdsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserUlid      string                 `protobuf:"bytes,1,opt,name=user_ulid,json=userUlid,proto3" json:"user_ulid,omitempty"`
+	UserUuid      string                 `protobuf:"bytes,2,opt,name=user_uuid,json=userUuid,proto3" json:"user_uuid,omitempty"`
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // Casdoor 用户 ID (owner/name)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFullIdsResponse) Reset() {
+	*x = GetFullIdsResponse{}
+	mi := &file_mid_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFullIdsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFullIdsResponse) ProtoMessage() {}
+
+func (x *GetFullIdsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mid_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFullIdsResponse.ProtoReflect.Descriptor instead.
+func (*GetFullIdsResponse) Descriptor() ([]byte, []int) {
+	return file_mid_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetFullIdsResponse) GetUserUlid() string {
+	if x != nil {
+		return x.UserUlid
+	}
+	return ""
+}
+
+func (x *GetFullIdsResponse) GetUserUuid() string {
+	if x != nil {
+		return x.UserUuid
+	}
+	return ""
+}
+
+func (x *GetFullIdsResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type GetStudentNoByUlidRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserUlid      string                 `protobuf:"bytes,1,opt,name=user_ulid,json=userUlid,proto3" json:"user_ulid,omitempty"` // 业务系统用户 ULID [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStudentNoByUlidRequest) Reset() {
+	*x = GetStudentNoByUlidRequest{}
+	mi := &file_mid_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStudentNoByUlidRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStudentNoByUlidRequest) ProtoMessage() {}
+
+func (x *GetStudentNoByUlidRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mid_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStudentNoByUlidRequest.ProtoReflect.Descriptor instead.
+func (*GetStudentNoByUlidRequest) Descriptor() ([]byte, []int) {
+	return file_mid_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetStudentNoByUlidRequest) GetUserUlid() string {
+	if x != nil {
+		return x.UserUlid
+	}
+	return ""
+}
+
+type GetStudentNoByUlidResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StudentNo     string                 `protobuf:"bytes,1,opt,name=student_no,json=studentNo,proto3" json:"student_no,omitempty"` // 学号
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStudentNoByUlidResponse) Reset() {
+	*x = GetStudentNoByUlidResponse{}
+	mi := &file_mid_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStudentNoByUlidResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStudentNoByUlidResponse) ProtoMessage() {}
+
+func (x *GetStudentNoByUlidResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mid_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStudentNoByUlidResponse.ProtoReflect.Descriptor instead.
+func (*GetStudentNoByUlidResponse) Descriptor() ([]byte, []int) {
+	return file_mid_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *GetStudentNoByUlidResponse) GetStudentNo() string {
+	if x != nil {
+		return x.StudentNo
+	}
+	return ""
+}
+
 var File_mid_proto protoreflect.FileDescriptor
 
 const file_mid_proto_rawDesc = "" +
@@ -209,11 +409,26 @@ const file_mid_proto_rawDesc = "" +
 	"\x14GetUUIDByUlidRequest\x12\x1b\n" +
 	"\tuser_ulid\x18\x01 \x01(\tR\buserUlid\"4\n" +
 	"\x15GetUUIDByUlidResponse\x12\x1b\n" +
-	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid2\xa0\x01\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\"M\n" +
+	"\x11GetFullIdsRequest\x12\x1b\n" +
+	"\tuser_uuid\x18\x01 \x01(\tR\buserUuid\x12\x1b\n" +
+	"\tuser_ulid\x18\x02 \x01(\tR\buserUlid\"g\n" +
+	"\x12GetFullIdsResponse\x12\x1b\n" +
+	"\tuser_ulid\x18\x01 \x01(\tR\buserUlid\x12\x1b\n" +
+	"\tuser_uuid\x18\x02 \x01(\tR\buserUuid\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\"8\n" +
+	"\x19GetStudentNoByUlidRequest\x12\x1b\n" +
+	"\tuser_ulid\x18\x01 \x01(\tR\buserUlid\";\n" +
+	"\x1aGetStudentNoByUlidResponse\x12\x1d\n" +
+	"\n" +
+	"student_no\x18\x01 \x01(\tR\tstudentNo2\xba\x02\n" +
 	"\n" +
 	"MidService\x12H\n" +
 	"\rGetUlidByUUID\x12\x1a.gmid.GetUlidByUUIDRequest\x1a\x1b.gmid.GetUlidByUUIDResponse\x12H\n" +
-	"\rGetUUIDByUlid\x12\x1a.gmid.GetUUIDByUlidRequest\x1a\x1b.gmid.GetUUIDByUlidResponseB\vZ\tcftp/gmidb\x06proto3"
+	"\rGetUUIDByUlid\x12\x1a.gmid.GetUUIDByUlidRequest\x1a\x1b.gmid.GetUUIDByUlidResponse\x12?\n" +
+	"\n" +
+	"GetFullIds\x12\x17.gmid.GetFullIdsRequest\x1a\x18.gmid.GetFullIdsResponse\x12W\n" +
+	"\x12GetStudentNoByUlid\x12\x1f.gmid.GetStudentNoByUlidRequest\x1a .gmid.GetStudentNoByUlidResponseB\vZ\tcftp/gmidb\x06proto3"
 
 var (
 	file_mid_proto_rawDescOnce sync.Once
@@ -227,20 +442,28 @@ func file_mid_proto_rawDescGZIP() []byte {
 	return file_mid_proto_rawDescData
 }
 
-var file_mid_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_mid_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_mid_proto_goTypes = []any{
-	(*GetUlidByUUIDRequest)(nil),  // 0: gmid.GetUlidByUUIDRequest
-	(*GetUlidByUUIDResponse)(nil), // 1: gmid.GetUlidByUUIDResponse
-	(*GetUUIDByUlidRequest)(nil),  // 2: gmid.GetUUIDByUlidRequest
-	(*GetUUIDByUlidResponse)(nil), // 3: gmid.GetUUIDByUlidResponse
+	(*GetUlidByUUIDRequest)(nil),       // 0: gmid.GetUlidByUUIDRequest
+	(*GetUlidByUUIDResponse)(nil),      // 1: gmid.GetUlidByUUIDResponse
+	(*GetUUIDByUlidRequest)(nil),       // 2: gmid.GetUUIDByUlidRequest
+	(*GetUUIDByUlidResponse)(nil),      // 3: gmid.GetUUIDByUlidResponse
+	(*GetFullIdsRequest)(nil),          // 4: gmid.GetFullIdsRequest
+	(*GetFullIdsResponse)(nil),         // 5: gmid.GetFullIdsResponse
+	(*GetStudentNoByUlidRequest)(nil),  // 6: gmid.GetStudentNoByUlidRequest
+	(*GetStudentNoByUlidResponse)(nil), // 7: gmid.GetStudentNoByUlidResponse
 }
 var file_mid_proto_depIdxs = []int32{
 	0, // 0: gmid.MidService.GetUlidByUUID:input_type -> gmid.GetUlidByUUIDRequest
 	2, // 1: gmid.MidService.GetUUIDByUlid:input_type -> gmid.GetUUIDByUlidRequest
-	1, // 2: gmid.MidService.GetUlidByUUID:output_type -> gmid.GetUlidByUUIDResponse
-	3, // 3: gmid.MidService.GetUUIDByUlid:output_type -> gmid.GetUUIDByUlidResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	4, // 2: gmid.MidService.GetFullIds:input_type -> gmid.GetFullIdsRequest
+	6, // 3: gmid.MidService.GetStudentNoByUlid:input_type -> gmid.GetStudentNoByUlidRequest
+	1, // 4: gmid.MidService.GetUlidByUUID:output_type -> gmid.GetUlidByUUIDResponse
+	3, // 5: gmid.MidService.GetUUIDByUlid:output_type -> gmid.GetUUIDByUlidResponse
+	5, // 6: gmid.MidService.GetFullIds:output_type -> gmid.GetFullIdsResponse
+	7, // 7: gmid.MidService.GetStudentNoByUlid:output_type -> gmid.GetStudentNoByUlidResponse
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -257,7 +480,7 @@ func file_mid_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mid_proto_rawDesc), len(file_mid_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -198,6 +198,8 @@ export const zh = {
     unpublishSuccess: "课程已下架",
     deleteSuccess: "课程已删除",
     confirmDelete: "确定删除这门课程吗？",
+    deletePublishedBlocked: "已发布课程不能直接删除，请先下架；当前 GLMS 暂未提供下架接口。",
+    unpublishUnavailable: "当前 GLMS 暂未提供下架接口",
     materials: "资料",
     chapters: "章节",
     quizzes: "测验",
@@ -297,6 +299,7 @@ export const zh = {
     loadBrokenAssets: "检查资源",
     noBrokenAssets: "暂无异常资源数据",
     noErrorMessage: "无错误信息",
+    loadMoreCourses: "加载更多课程",
     loadMore: "加载更多",
   },
   catalogsPage: {

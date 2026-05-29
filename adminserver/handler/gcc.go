@@ -2,25 +2,23 @@ package handler
 
 import (
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"strconv"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
-
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // ListPipelines GET /api/pipelines
 func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
-	var req gccpb.ListPipelinesRequest
-	// 可以从 query params 中解析条件
-	req.CategoryId = r.URL.Query().Get("category_id")
-	req.OnlyCurrent = r.URL.Query().Get("only_current") == "true"
+	req := &gccpb.ListPipelinesRequest{
+		CategoryTips: r.URL.Query().Get("category_tips"),
+		OnlyCurrent:  r.URL.Query().Get("only_current") == "true",
+		Limit:        int32(parseUint32Query(r, "limit")),
+		Offset:       int32(parseUint32Query(r, "offset")),
+	}
 
-	resp, err := h.Gcc.ListPipelines(r.Context(), &req)
+	resp, err := h.Gcc.ListPipelines(r.Context(), req)
 	if err != nil {
-		slog.Error("ListPipelines failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
@@ -39,13 +37,12 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 	if req.FromPipelineGuid == "" && req.PipelineGuid == "" {
 		req.PipelineGuid = newLmsID()
 	}
-	if !requireRequestFields(w, req.CategoryId, "category_id", req.Name, "name") {
+	if !requireRequestFields(w, req.CategoryTips, "category_tips", req.Name, "name") {
 		return
 	}
 
 	resp, err := h.Gcc.CreatePipelineDraft(r.Context(), &req)
 	if err != nil {
-		slog.Error("CreatePipelineDraft failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
@@ -89,7 +86,6 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 
 	resp, err := h.Gcc.UpdatePipelineStructure(r.Context(), &req)
 	if err != nil {
-		slog.Error("UpdatePipelineStructure failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
@@ -112,7 +108,6 @@ func (h *Handler) PublishPipeline(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := h.Gcc.PublishPipeline(r.Context(), &req)
 	if err != nil {
-		slog.Error("PublishPipeline failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
@@ -126,12 +121,12 @@ func (h *Handler) GetPipeline(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var req gccpb.GetPipelineRequest
-	req.Query = &gccpb.GetPipelineRequest_PipelineId{PipelineId: id}
+	req := &gccpb.GetPipelineRequest{
+		Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: id},
+	}
 
-	resp, err := h.Gcc.GetPipeline(r.Context(), &req)
+	resp, err := h.Gcc.GetPipeline(r.Context(), req)
 	if err != nil {
-		slog.Error("GetPipeline failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
@@ -141,59 +136,18 @@ func (h *Handler) GetPipeline(w http.ResponseWriter, r *http.Request) {
 
 // ListCatalogs GET /api/catalogs
 func (h *Handler) ListCatalogs(w http.ResponseWriter, r *http.Request) {
-	resp, err := h.Gcc.ListCatalogs(r.Context(), &emptypb.Empty{})
-	if err != nil {
-		slog.Error("ListCatalogs failed", "error", err)
-		HandleGrpcError(w, err)
-		return
-	}
-
-	WriteJSON(w, http.StatusOK, resp)
+	// TODO: 待微服务团队补充 GCC catalog 管理接口后接入；当前 GCC proto 已移除 ListCatalogs/CreateCatalog/UpdateCatalog。
+	WriteJSON(w, http.StatusOK, map[string]any{"catalogs": []any{}})
 }
 
 // CreateCatalog POST /api/catalogs
 func (h *Handler) CreateCatalog(w http.ResponseWriter, r *http.Request) {
-	var req gccpb.CreateCatalogRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
-		return
-	}
-	if !requireRequestField(w, req.Name, "name") {
-		return
-	}
-
-	resp, err := h.Gcc.CreateCatalog(r.Context(), &req)
-	if err != nil {
-		slog.Error("CreateCatalog failed", "error", err)
-		HandleGrpcError(w, err)
-		return
-	}
-
-	WriteJSON(w, http.StatusOK, resp)
+	// TODO: 待微服务团队补充 GCC catalog 管理接口后接入；当前 GCC proto 已移除 ListCatalogs/CreateCatalog/UpdateCatalog。
+	WriteError(w, http.StatusNotImplemented, ErrInvalidRequest, "catalog management API is not available in current GCC proto")
 }
 
 // UpdateCatalog PUT /api/catalogs/{catalog_id}
 func (h *Handler) UpdateCatalog(w http.ResponseWriter, r *http.Request) {
-	id, ok := requiredURLParam(w, r, "catalog_id")
-	if !ok {
-		return
-	}
-	var req gccpb.UpdateCatalogRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
-		return
-	}
-	req.CatalogId = id
-	if !requireRequestField(w, req.Name, "name") {
-		return
-	}
-
-	resp, err := h.Gcc.UpdateCatalog(r.Context(), &req)
-	if err != nil {
-		slog.Error("UpdateCatalog failed", "error", err)
-		HandleGrpcError(w, err)
-		return
-	}
-
-	WriteJSON(w, http.StatusOK, resp)
+	// TODO: 待微服务团队补充 GCC catalog 管理接口后接入；当前 GCC proto 已移除 ListCatalogs/CreateCatalog/UpdateCatalog。
+	WriteError(w, http.StatusNotImplemented, ErrInvalidRequest, "catalog management API is not available in current GCC proto")
 }
