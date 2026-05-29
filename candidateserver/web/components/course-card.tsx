@@ -163,7 +163,7 @@ export function CourseCard({
     <>
       {isPurchased ? (
         <Link
-          href={`/courses/${id}`}
+          href={`/courses/detail?id=${encodeURIComponent(id)}`}
           className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/20 hover:-translate-y-1"
         >
           {cardContent}

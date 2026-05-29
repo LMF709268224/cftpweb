@@ -36,6 +36,8 @@ import {
 
 import { useTranslation } from "@/lib/useLanguage"
 
+const pipelineDetailHref = (id: string) => `/courses/detail?id=${encodeURIComponent(id)}`
+
 // 资料类型图标
 const resourceTypeIcons: any = {
   video: Video,
@@ -263,7 +265,7 @@ export default function CoursesPage() {
                       )}
                       {course.status === "learning" && (
                         <Link
-                          href={`/courses/${course.id}`}
+                          href={pipelineDetailHref(course.id)}
                           className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
                         >
                           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg">
@@ -357,7 +359,7 @@ export default function CoursesPage() {
 
                       {course.status === "learning" && (
                         <Button asChild className="gap-2">
-                          <Link href={`/courses/${course.id}`}>
+                          <Link href={pipelineDetailHref(course.id)}>
                             {t.courses.continueLearning}
                             <ChevronRight className="h-4 w-4" />
                           </Link>
@@ -365,7 +367,7 @@ export default function CoursesPage() {
                       )}
                       {course.status === "completed" && (
                         <Button variant="outline" asChild className="gap-2">
-                          <Link href={`/courses/${course.id}`}>
+                          <Link href={pipelineDetailHref(course.id)}>
                             {t.courses.reviewCourse}
                             <ChevronRight className="h-4 w-4" />
                           </Link>
