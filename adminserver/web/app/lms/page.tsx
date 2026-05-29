@@ -24,6 +24,7 @@ type LmsCourse = {
   title?: string
   description?: string
   thumbnail_object_key?: string
+  thumbnail_file_hash?: string
   duration_min?: number
   certification_enabled?: boolean
   certification_def_id?: string
@@ -41,6 +42,7 @@ type CourseForm = {
   title: string
   description: string
   thumbnail_object_key: string
+  thumbnail_file_hash: string
   duration_min: string
   certification_enabled: boolean
   certification_def_id: string
@@ -165,6 +167,7 @@ const emptyForm: CourseForm = {
   title: "",
   description: "",
   thumbnail_object_key: "",
+  thumbnail_file_hash: "",
   duration_min: "",
   certification_enabled: false,
   certification_def_id: "",
@@ -220,6 +223,13 @@ function uploadHeaders(contentType: string, signedHeaders?: Record<string, strin
   return headers
 }
 
+function uploadHeadersWithSha256(contentType: string, fileHash: string, signedHeaders?: Record<string, string>) {
+  const headers = uploadHeaders(contentType, signedHeaders)
+  if (!headers.has("x-amz-meta-sha256")) headers.set("x-amz-meta-sha256", fileHash)
+  if (!headers.has("x-amz-meta-file-hash")) headers.set("x-amz-meta-file-hash", fileHash)
+  return headers
+}
+
 function formFromCourse(course: LmsCourse | null): CourseForm {
   if (!course) return emptyForm
   return {
@@ -227,6 +237,7 @@ function formFromCourse(course: LmsCourse | null): CourseForm {
     title: course.title || "",
     description: course.description || "",
     thumbnail_object_key: course.thumbnail_object_key || "",
+    thumbnail_file_hash: course.thumbnail_file_hash || "",
     duration_min: course.duration_min ? String(course.duration_min) : "",
     certification_enabled: Boolean(course.certification_enabled),
     certification_def_id: course.certification_def_id || "",
@@ -239,6 +250,7 @@ function formToPayload(form: CourseForm, version?: number) {
     title: form.title.trim(),
     description: form.description.trim(),
     thumbnail_object_key: form.thumbnail_object_key.trim(),
+    thumbnail_file_hash: form.thumbnail_file_hash.trim(),
     duration_min: Number(form.duration_min || 0),
     certification_enabled: form.certification_enabled,
     certification_def_id: form.certification_enabled ? form.certification_def_id.trim() : "",
@@ -562,12 +574,12 @@ export default function LmsCoursesPage() {
 
       const uploadRes = await fetch(upload.upload_url, {
         method: "PUT",
-        headers: uploadHeaders(contentType, upload.signed_headers),
+        headers: uploadHeadersWithSha256(contentType, fileHash, upload.signed_headers),
         body: file,
       })
       if (!uploadRes.ok) throw new Error(`thumbnail upload failed: ${uploadRes.status}`)
 
-      const nextForm = { ...form, thumbnail_object_key: upload.object_key || "" }
+      const nextForm = { ...form, thumbnail_object_key: upload.object_key || "", thumbnail_file_hash: fileHash }
       setForm(nextForm)
       await persistCourse(nextForm, selectedCourse)
       toast.success(page.thumbnailUploadSuccess)
