@@ -56,7 +56,9 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/{pipeline_id}", h.GetPipeline)
 			r.Post("/", h.CreatePipelineDraft)
 			r.Put("/{pipeline_id}/structure", h.UpdatePipelineStructure)
+			r.Put("/{pipeline_id}/metadata", h.UpdatePipelineMetadata)
 			r.Post("/{pipeline_id}/publish", h.PublishPipeline)
+			r.Delete("/{pipeline_id}", h.DeletePipeline)
 		})
 
 		// ===== 鐩綍鍒嗙被绠＄悊 (Catalogs) =====

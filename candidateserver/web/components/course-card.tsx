@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
 import { Clock, Users, ChevronRight, CheckCircle2, Play, ShoppingCart } from "lucide-react"
 import { PurchaseDialog } from "./purchase-dialog"
+import { useTranslation } from "@/lib/useLanguage"
 
 interface CourseCardProps {
   id: string
@@ -21,12 +22,7 @@ interface CourseCardProps {
   progress?: number
   price?: number
   priceLabel?: string
-}
-
-const categoryLabels = {
-  course: "课程",
-  column: "专栏",
-  short: "短课程",
+  paymentConfigured?: boolean
 }
 
 const categoryStyles = {
@@ -42,14 +38,21 @@ export function CourseCard({
   image,
   category,
   provider,
-  duration = "40小时",
+  duration,
   students = 1200,
   isPurchased = false,
   progress,
   price = 500,
   priceLabel,
+  paymentConfigured = false,
 }: CourseCardProps) {
+  const { t } = useTranslation()
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false)
+  const categoryLabels = {
+    course: t.courses.categoryCourse,
+    column: t.courses.categoryColumn,
+    short: t.courses.categoryShort,
+  }
 
   const handleClick = (e: React.MouseEvent) => {
     if (!isPurchased) {
@@ -84,12 +87,12 @@ export function CourseCard({
         {isPurchased ? (
           <Badge className="absolute right-4 top-4 bg-emerald-500 text-white border-0 gap-1">
             <CheckCircle2 className="h-3 w-3" />
-            已购买
+            {t.courses.purchased}
           </Badge>
         ) : (
           <Badge className="absolute right-4 top-4 bg-primary text-white border-0 gap-1">
             <ShoppingCart className="h-3 w-3" />
-            {priceLabel || `$${price}`}
+            {priceLabel || (paymentConfigured ? t.courses.configuredPayment : `$${price}`)}
           </Badge>
         )}
 
@@ -116,7 +119,7 @@ export function CourseCard({
         {isPurchased && progress !== undefined && (
           <div className="mb-4">
             <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="text-muted-foreground">学习进度</span>
+              <span className="text-muted-foreground">{t.courses.courseProgress}</span>
               <span className="font-medium text-primary">{progress}%</span>
             </div>
             <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
@@ -133,7 +136,7 @@ export function CourseCard({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
               <Clock className="h-4 w-4" />
-              <span>{duration}</span>
+              <span>{duration || `40 ${t.courses.hours}`}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Users className="h-4 w-4" />

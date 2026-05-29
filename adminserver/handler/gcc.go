@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"strings"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 )
@@ -66,6 +67,12 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "stages is required")
 		return
 	}
+	if !requirePairedFields(w, req.UnlockStripeProductId, "unlock_stripe_product_id", req.UnlockStripePriceId, "unlock_stripe_price_id") {
+		return
+	}
+	if !requirePairedFields(w, req.PackageStripeProductId, "package_stripe_product_id", req.PackageStripePriceId, "package_stripe_price_id") {
+		return
+	}
 	for i, stage := range req.Stages {
 		if !requireRequestField(w, stage.Name, "stages["+strconv.Itoa(i)+"].name") {
 			return
@@ -79,6 +86,16 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 				unit.UnitId = newLmsID()
 			}
 			if !requireRequestField(w, unit.GlmsCourseId, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"].glms_course_id") {
+				return
+			}
+			prefix := "stages[" + strconv.Itoa(i) + "].units[" + strconv.Itoa(j) + "]"
+			if !requirePairedFields(w, unit.StripeProductId, prefix+".stripe_product_id", unit.StripePriceId, prefix+".stripe_price_id") {
+				return
+			}
+			if !requirePairedFields(w, unit.ExemptionStripeProductId, prefix+".exemption_stripe_product_id", unit.ExemptionStripePriceId, prefix+".exemption_stripe_price_id") {
+				return
+			}
+			if !requirePairedFields(w, unit.RetakeStripeProductId, prefix+".retake_stripe_product_id", unit.RetakeStripePriceId, prefix+".retake_stripe_price_id") {
 				return
 			}
 		}
@@ -107,6 +124,49 @@ func (h *Handler) PublishPipeline(w http.ResponseWriter, r *http.Request) {
 	req.PipelineId = id
 
 	resp, err := h.Gcc.PublishPipeline(r.Context(), &req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// DeletePipeline DELETE /api/pipelines/{pipeline_id}
+func (h *Handler) DeletePipeline(w http.ResponseWriter, r *http.Request) {
+	id, ok := requiredURLParam(w, r, "pipeline_id")
+	if !ok {
+		return
+	}
+
+	resp, err := h.Gcc.DeletePipeline(r.Context(), &gccpb.DeletePipelineRequest{
+		PipelineId: id,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// UpdatePipelineMetadata PUT /api/pipelines/{pipeline_id}/metadata
+func (h *Handler) UpdatePipelineMetadata(w http.ResponseWriter, r *http.Request) {
+	id, ok := requiredURLParam(w, r, "pipeline_id")
+	if !ok {
+		return
+	}
+	var req gccpb.UpdateMetadataRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	req.TargetId = id
+	if !requireRequestField(w, req.NewName, "new_name") {
+		return
+	}
+
+	resp, err := h.Gcc.UpdatePipelineMetadata(r.Context(), &req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -150,4 +210,18 @@ func (h *Handler) CreateCatalog(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) UpdateCatalog(w http.ResponseWriter, r *http.Request) {
 	// TODO: 待微服务团队补充 GCC catalog 管理接口后接入；当前 GCC proto 已移除 ListCatalogs/CreateCatalog/UpdateCatalog。
 	WriteError(w, http.StatusNotImplemented, ErrInvalidRequest, "catalog management API is not available in current GCC proto")
+}
+
+func requirePairedFields(w http.ResponseWriter, left string, leftName string, right string, rightName string) bool {
+	hasLeft := strings.TrimSpace(left) != ""
+	hasRight := strings.TrimSpace(right) != ""
+	if hasLeft == hasRight {
+		return true
+	}
+	if hasLeft {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, rightName+" is required when "+leftName+" is provided")
+		return false
+	}
+	WriteError(w, http.StatusBadRequest, ErrInvalidRequest, leftName+" is required when "+rightName+" is provided")
+	return false
 }

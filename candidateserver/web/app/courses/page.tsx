@@ -81,15 +81,16 @@ export default function CoursesPage() {
             setAllCourses(res.pipelines.map((p: any) => ({
               id: p.pipeline_id,
               title: p.name || t.common.unknownCourse,
-              description: p.pipeline_guid || "", // Map accordingly
+              description: `${p.stages?.length || 0} ${t.courses.stages} · ${(p.stages || []).reduce((total: number, stage: any) => total + (stage.units?.length || 0), 0)} ${t.courses.units}`,
               image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&auto=format&fit=crop&q=60", // placeholder
               category: "course",
-              provider: "GFI",
-              duration: "100+",
+              provider: t.courses.certificationPath,
+              duration: `${p.stages?.length || 0} ${t.courses.stages}`,
               students: 0,
               isPurchased: false,
               price: 0,
-              priceLabel: p.unlock_stripe_price_id ? t.courses.viewDetails : t.common.na,
+              paymentConfigured: Boolean(p.unlock_stripe_price_id || p.package_stripe_price_id),
+              priceLabel: p.unlock_stripe_price_id || p.package_stripe_price_id ? t.courses.configuredPayment : t.courses.noPayment,
             })))
           }
         } else if (activeTab === "my") {
@@ -318,7 +319,7 @@ export default function CoursesPage() {
                       <div className="mt-4 flex items-center gap-6 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1.5">
                           <BookOpen className="h-4 w-4" />
-                          <span>{course.completedLessons}/{course.totalLessons} 节课</span>
+                          <span>{course.completedLessons}/{course.totalLessons} {t.courses.units}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <Clock className="h-4 w-4" />
