@@ -176,7 +176,7 @@ func serveSPA(r *chi.Mux, publicDir string) {
 		// 检查该文件在磁盘上是否存在且不是目录
 		if stat, err := os.Stat(fullPath); err == nil && !stat.IsDir() {
 			// 文件存在，直接正常返回静态文件
-			http.ServeFile(w, r, fullPath)
+			serveStaticFile(w, r, fullPath)
 			return
 		}
 
@@ -184,22 +184,36 @@ func serveSPA(r *chi.Mux, publicDir string) {
 		// 例如请求 /callback，寻找 /callback.html
 		htmlPath := fullPath + ".html"
 		if stat, err := os.Stat(htmlPath); err == nil && !stat.IsDir() {
-			http.ServeFile(w, r, htmlPath)
+			serveHTMLFile(w, r, htmlPath)
 			return
 		}
 
 		// 例如请求 /courses，寻找 /courses/index.html
 		indexPath := filepath.Join(fullPath, "index.html")
 		if stat, err := os.Stat(indexPath); err == nil && !stat.IsDir() {
-			http.ServeFile(w, r, indexPath)
+			serveHTMLFile(w, r, indexPath)
 			return
 		}
 
 		// 4. 既不是 API，也不是存在的静态资源或 Next.js 页面
 		// 统一把 index.html 交给浏览器（但这在 Next.js App Router 静态导出中通常会导致 hydration mismatch 或渲染错误页面，
 		// 不过为了兜底还是保留）
-		http.ServeFile(w, r, filepath.Join(filesDir, "index.html"))
+		serveHTMLFile(w, r, filepath.Join(filesDir, "index.html"))
 	})
+}
+
+func serveStaticFile(w http.ResponseWriter, r *http.Request, filename string) {
+	if strings.HasPrefix(r.URL.Path, "/_next/static/") {
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	} else {
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+	}
+	http.ServeFile(w, r, filename)
+}
+
+func serveHTMLFile(w http.ResponseWriter, r *http.Request, filename string) {
+	w.Header().Set("Cache-Control", "no-cache")
+	http.ServeFile(w, r, filename)
 }
 
 func safeJoin(baseDir, requestPath string) (string, bool) {

@@ -32,6 +32,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 
+const unreadCacheKey = "sidebar_unread_count_cache"
+const unreadCacheTTL = 30_000
+
 export function Sidebar() {
   const { t, lang, changeLanguage } = useTranslation()
   const [collapsed, setCollapsed] = useState(false)
@@ -60,9 +63,19 @@ export function Sidebar() {
     }
     const fetchUnreadCount = async () => {
       try {
+        const cached = localStorage.getItem(unreadCacheKey)
+        if (cached) {
+          const payload = JSON.parse(cached) as { value: number; expiresAt: number }
+          if (payload.expiresAt > Date.now()) {
+            setUnreadCount(payload.value)
+            return
+          }
+        }
         const dashboard = await apiClient("/api/dashboard")
         if (dashboard && dashboard.unread_messages_count !== undefined) {
-          setUnreadCount(dashboard.unread_messages_count)
+          const value = dashboard.unread_messages_count
+          setUnreadCount(value)
+          localStorage.setItem(unreadCacheKey, JSON.stringify({ value, expiresAt: Date.now() + unreadCacheTTL }))
         }
       } catch (err) {}
     }

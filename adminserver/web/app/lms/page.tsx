@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { AlertTriangle, BookOpen, CheckCircle2, ClipboardList, Eye, FileJson, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
 import { toast } from "sonner"
 
@@ -253,6 +253,7 @@ export default function LmsCoursesPage() {
   const [catalogs, setCatalogs] = useState<CatalogOption[]>([])
   const [credentialDefinitions, setCredentialDefinitions] = useState<CredentialDefinitionOption[]>([])
   const [selectedId, setSelectedId] = useState("")
+  const selectedIdRef = useRef("")
   const [form, setForm] = useState<CourseForm>(emptyForm)
   const [categoryFilter, setCategoryFilter] = useState("")
   const [publishedOnly, setPublishedOnly] = useState(false)
@@ -305,6 +306,10 @@ export default function LmsCoursesPage() {
     () => courses.find((course) => course.course_id === selectedId) || null,
     [courses, selectedId]
   )
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId
+  }, [selectedId])
   const selectedCoursePublished = Boolean(
     selectedCourse?.is_published || selectedCourse?.status?.toLowerCase() === "active"
   )
@@ -358,7 +363,8 @@ export default function LmsCoursesPage() {
       setCourseListNextPageToken(res?.next_page_token || "")
       setCourses((prevCourses) => {
         const mergedCourses = pageToken ? [...prevCourses, ...nextCourses] : nextCourses
-        if (selectedId && !mergedCourses.some((course: LmsCourse) => course.course_id === selectedId)) {
+        const currentSelectedId = selectedIdRef.current
+        if (!pageToken && currentSelectedId && !mergedCourses.some((course: LmsCourse) => course.course_id === currentSelectedId)) {
           setSelectedId("")
           setForm(emptyForm)
           setPreview(null)
@@ -372,7 +378,7 @@ export default function LmsCoursesPage() {
       setLoading(false)
       setCourseListLoadingMore(false)
     }
-  }, [categoryFilter, publishedOnly, selectedId])
+  }, [categoryFilter, publishedOnly])
 
   useEffect(() => {
     loadCourses()

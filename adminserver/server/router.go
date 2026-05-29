@@ -1,4 +1,4 @@
-﻿package server
+package server
 
 import (
 	"net/http"
@@ -241,7 +241,7 @@ func serveSPA(r *chi.Mux, publicDir string) {
 
 		// Serve an existing static file directly.
 		if stat, err := os.Stat(fullPath); err == nil && !stat.IsDir() {
-			http.ServeFile(w, r, fullPath)
+			serveStaticFile(w, r, fullPath)
 			return
 		}
 
@@ -249,21 +249,35 @@ func serveSPA(r *chi.Mux, publicDir string) {
 		// 渚嬪璇锋眰 /callback锛屽鎵?/callback.html
 		htmlPath := fullPath + ".html"
 		if stat, err := os.Stat(htmlPath); err == nil && !stat.IsDir() {
-			http.ServeFile(w, r, htmlPath)
+			serveHTMLFile(w, r, htmlPath)
 			return
 		}
 
 		// 渚嬪璇锋眰 /courses锛屽鎵?/courses/index.html
 		indexPath := filepath.Join(fullPath, "index.html")
 		if stat, err := os.Stat(indexPath); err == nil && !stat.IsDir() {
-			http.ServeFile(w, r, indexPath)
+			serveHTMLFile(w, r, indexPath)
 			return
 		}
 
 		// 4. 鏃笉鏄?API锛屼篃涓嶆槸瀛樺湪鐨勯潤鎬佽祫婧愭垨 Next.js 椤甸潰
 		// 缁熶竴鎶?index.html 浜ょ粰娴忚鍣紙浣嗚繖鍦?Next.js App Router 闈欐€佸鍑轰腑閫氬父浼氬鑷?hydration mismatch 鎴栨覆鏌撻敊璇〉闈紝
-		http.ServeFile(w, r, filepath.Join(filesDir, "index.html"))
+		serveHTMLFile(w, r, filepath.Join(filesDir, "index.html"))
 	})
+}
+
+func serveStaticFile(w http.ResponseWriter, r *http.Request, filename string) {
+	if strings.HasPrefix(r.URL.Path, "/_next/static/") {
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	} else {
+		w.Header().Set("Cache-Control", "public, max-age=86400")
+	}
+	http.ServeFile(w, r, filename)
+}
+
+func serveHTMLFile(w http.ResponseWriter, r *http.Request, filename string) {
+	w.Header().Set("Cache-Control", "no-cache")
+	http.ServeFile(w, r, filename)
 }
 
 func safeJoin(baseDir, requestPath string) (string, bool) {
