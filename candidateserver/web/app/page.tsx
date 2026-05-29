@@ -4,6 +4,7 @@ import React from "react"
 
 import { useEffect, useState } from "react"
 import { apiClient } from "@/lib/apiClient"
+import { getCachedDashboard } from "@/lib/dashboardCache"
 import { Sidebar } from "@/components/sidebar"
 import { StatsCard } from "@/components/stats-card"
 import { TodoList } from "@/components/todo-list"
@@ -54,7 +55,7 @@ export default function HomePage() {
     }
     const fetchDashboard = async () => {
       try {
-        const dashboard = await apiClient("/api/dashboard")
+        const dashboard = await getCachedDashboard()
         if (dashboard && dashboard.unread_messages_count !== undefined) {
           setUnreadCount(dashboard.unread_messages_count)
         }

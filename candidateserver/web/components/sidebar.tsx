@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { apiClient } from "@/lib/apiClient"
+import { getCachedDashboard } from "@/lib/dashboardCache"
 import {
   Home,
   BookOpen,
@@ -31,9 +32,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-
-const unreadCacheKey = "sidebar_unread_count_cache"
-const unreadCacheTTL = 30_000
 
 export function Sidebar() {
   const { t, lang, changeLanguage } = useTranslation()
@@ -63,19 +61,9 @@ export function Sidebar() {
     }
     const fetchUnreadCount = async () => {
       try {
-        const cached = localStorage.getItem(unreadCacheKey)
-        if (cached) {
-          const payload = JSON.parse(cached) as { value: number; expiresAt: number }
-          if (payload.expiresAt > Date.now()) {
-            setUnreadCount(payload.value)
-            return
-          }
-        }
-        const dashboard = await apiClient("/api/dashboard")
+        const dashboard = await getCachedDashboard()
         if (dashboard && dashboard.unread_messages_count !== undefined) {
-          const value = dashboard.unread_messages_count
-          setUnreadCount(value)
-          localStorage.setItem(unreadCacheKey, JSON.stringify({ value, expiresAt: Date.now() + unreadCacheTTL }))
+          setUnreadCount(dashboard.unread_messages_count)
         }
       } catch (err) {}
     }
