@@ -8,45 +8,33 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // ListPipelines  GET /api/mall/pipelines
 func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
-	catalogsResp, err := h.Gcc.ListCatalogs(r.Context(), &emptypb.Empty{})
+	resp, err := h.Gcc.ListPipelines(r.Context(), &gccpb.ListPipelinesRequest{
+		OnlyCurrent: true,
+	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
 	out := ListPipelinesRsp{
-		Pipelines: make([]PipelineConfig, 0),
+		Pipelines: make([]PipelineConfig, 0, len(resp.GetPipelines())),
 	}
 
-	for _, catalog := range catalogsResp.GetCatalogs() {
-		resp, err := h.Gcc.ListPipelines(r.Context(), &gccpb.ListPipelinesRequest{
-			CategoryId:  catalog.GetCatalogId(),
-			OnlyCurrent: true,
+	// TODO: 待微服务团队补充 GCC catalog 管理/列表接口后接入分类分组；当前 GCC proto 已移除 ListCatalogs。
+	for _, pipeline := range resp.GetPipelines() {
+		finalEligibilityResp, err := h.Gcc.GetPipelineFinalEligibility(r.Context(), &gccpb.GetPipelineFinalEligibilityRequest{
+			PipelineId: pipeline.GetPipelineId(),
 		})
 		if err != nil {
-			slog.Error("Failed to list pipelines", "error", err, "catalog_id", catalog.GetCatalogId())
+			slog.Error("Failed to get pipeline final eligibility", "error", err, "pipeline_id", pipeline.GetPipelineId())
 			continue
 		}
 
-		for _, pipeline := range resp.GetPipelines() {
-			// 获取结业资格
-			finalEligibilityResp, err := h.Gcc.GetPipelineFinalEligibility(r.Context(), &gccpb.GetPipelineFinalEligibilityRequest{
-				PipelineId: pipeline.GetPipelineId(),
-			})
-			if err != nil {
-				slog.Error("Failed to get pipeline final eligibility", "error", err, "pipeline_id", pipeline.GetPipelineId())
-				continue
-			}
-
-			out.Pipelines = append(out.Pipelines, toPipelineConfig(pipeline, finalEligibilityResp.GetCertQuals()))
-		}
-
-		//TODO 获取单个管线，看看是否已购买
+		out.Pipelines = append(out.Pipelines, toPipelineConfig(pipeline, finalEligibilityResp.GetCertQuals()))
 	}
 
 	WriteJSON(w, http.StatusOK, out)
