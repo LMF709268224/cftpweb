@@ -217,17 +217,8 @@ async function sha256Hex(file: File) {
   return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
-function uploadHeaders(contentType: string, signedHeaders?: Record<string, string>) {
-  const headers = new Headers(signedHeaders || {})
-  if (!headers.has("Content-Type")) headers.set("Content-Type", contentType)
-  return headers
-}
-
-function uploadHeadersWithSha256(contentType: string, fileHash: string, signedHeaders?: Record<string, string>) {
-  const headers = uploadHeaders(contentType, signedHeaders)
-  if (!headers.has("x-amz-meta-sha256")) headers.set("x-amz-meta-sha256", fileHash)
-  if (!headers.has("x-amz-meta-file-hash")) headers.set("x-amz-meta-file-hash", fileHash)
-  return headers
+function uploadHeaders(signedHeaders?: Record<string, string>) {
+  return new Headers(signedHeaders || {})
 }
 
 function formFromCourse(course: LmsCourse | null): CourseForm {
@@ -574,7 +565,7 @@ export default function LmsCoursesPage() {
 
       const uploadRes = await fetch(upload.upload_url, {
         method: "PUT",
-        headers: uploadHeadersWithSha256(contentType, fileHash, upload.signed_headers),
+        headers: uploadHeaders(upload.signed_headers),
         body: file,
       })
       if (!uploadRes.ok) throw new Error(`thumbnail upload failed: ${uploadRes.status}`)

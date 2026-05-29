@@ -21,17 +21,8 @@ async function sha256Hex(file: File) {
   return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, "0")).join("")
 }
 
-function uploadHeaders(contentType: string, signedHeaders?: Record<string, string>) {
-  const headers = new Headers(signedHeaders || {})
-  if (!headers.has("Content-Type")) headers.set("Content-Type", contentType)
-  return headers
-}
-
-function uploadHeadersWithSha256(contentType: string, fileHash: string, signedHeaders?: Record<string, string>) {
-  const headers = uploadHeaders(contentType, signedHeaders)
-  if (!headers.has("x-amz-meta-sha256")) headers.set("x-amz-meta-sha256", fileHash)
-  if (!headers.has("x-amz-meta-file-hash")) headers.set("x-amz-meta-file-hash", fileHash)
-  return headers
+function uploadHeaders(signedHeaders?: Record<string, string>) {
+  return new Headers(signedHeaders || {})
 }
 
 export default function CredentialsPage() {
@@ -96,7 +87,7 @@ export default function CredentialsPage() {
       // 2. Upload file directly to S3 using the presigned URL
       const uploadRes = await fetch(res.upload_url, {
         method: "PUT",
-        headers: uploadHeadersWithSha256(contentType, fileHash, res.signed_headers),
+        headers: uploadHeaders(res.signed_headers),
         body: file
       })
 
