@@ -147,6 +147,8 @@ export const en: AppTranslations = {
     backToPipelines: "Back to pipelines",
     purchased: "Purchased",
     certificationPath: "Certification Path",
+    version: "Version",
+    finalQualifications: "Final Qualifications",
     categoryCourse: "Course",
     categoryColumn: "Column",
     categoryShort: "Short Course",

@@ -9,6 +9,11 @@ import { Clock, Users, ChevronRight, CheckCircle2, Play, ShoppingCart } from "lu
 import { PurchaseDialog } from "./purchase-dialog"
 import { useTranslation } from "@/lib/useLanguage"
 
+type CourseCardStat = {
+  label: string
+  value: string | number
+}
+
 interface CourseCardProps {
   id: string
   title: string
@@ -23,6 +28,9 @@ interface CourseCardProps {
   price?: number
   priceLabel?: string
   paymentConfigured?: boolean
+  statusLabel?: string
+  versionLabel?: string
+  stats?: CourseCardStat[]
 }
 
 const categoryStyles = {
@@ -45,6 +53,9 @@ export function CourseCard({
   price = 500,
   priceLabel,
   paymentConfigured = false,
+  statusLabel,
+  versionLabel,
+  stats = [],
 }: CourseCardProps) {
   const { t } = useTranslation()
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false)
@@ -115,6 +126,13 @@ export function CourseCard({
         </h3>
         <p className="mb-4 text-sm text-muted-foreground line-clamp-2">{description}</p>
 
+        {(statusLabel || versionLabel) && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {statusLabel && <Badge variant="outline">{statusLabel}</Badge>}
+            {versionLabel && <Badge variant="outline">{versionLabel}</Badge>}
+          </div>
+        )}
+
         {/* Progress Bar (if purchased and has progress) */}
         {isPurchased && progress !== undefined && (
           <div className="mb-4">
@@ -144,6 +162,17 @@ export function CourseCard({
             </div>
           </div>
         </div>
+
+        {stats.length > 0 && (
+          <div className="mt-4 grid grid-cols-3 gap-2 rounded-md bg-muted p-2 text-center">
+            {stats.map((stat) => (
+              <div key={stat.label}>
+                <div className="text-sm font-semibold text-foreground">{stat.value}</div>
+                <div className="truncate text-[11px] text-muted-foreground">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Provider */}
         <div className="mt-4 flex items-center justify-between pt-4 border-t border-border">

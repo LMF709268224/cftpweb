@@ -26,6 +26,16 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: 待微服务团队补充 GCC catalog 管理/列表接口后接入分类分组；当前 GCC proto 已移除 ListCatalogs。
 	for _, pipeline := range resp.GetPipelines() {
+		pipelineForOutput := pipeline
+		detailResp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
+			Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipeline.GetPipelineId()},
+		})
+		if err != nil {
+			slog.Warn("Failed to get pipeline detail for mall list", "error", err, "pipeline_id", pipeline.GetPipelineId())
+		} else {
+			pipelineForOutput = detailResp
+		}
+
 		finalEligibilityResp, err := h.Gcc.GetPipelineFinalEligibility(r.Context(), &gccpb.GetPipelineFinalEligibilityRequest{
 			PipelineId: pipeline.GetPipelineId(),
 		})
@@ -34,7 +44,7 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		out.Pipelines = append(out.Pipelines, toPipelineConfig(pipeline, finalEligibilityResp.GetCertQuals()))
+		out.Pipelines = append(out.Pipelines, toPipelineConfig(pipelineForOutput, finalEligibilityResp.GetCertQuals()))
 	}
 
 	WriteJSON(w, http.StatusOK, out)

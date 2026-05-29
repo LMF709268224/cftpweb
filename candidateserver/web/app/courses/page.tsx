@@ -80,20 +80,38 @@ export default function CoursesPage() {
           const res = await apiClient("/api/mall/pipelines")
           // Adjust based on the actual response structure of ListPipelinesRsp
           if (res?.pipelines) {
-            setAllCourses(res.pipelines.map((p: any) => ({
-              id: p.pipeline_id,
-              title: p.name || t.common.unknownCourse,
-              description: `${p.stages?.length || 0} ${t.courses.stages} · ${(p.stages || []).reduce((total: number, stage: any) => total + (stage.units?.length || 0), 0)} ${t.courses.units}`,
-              image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&auto=format&fit=crop&q=60", // placeholder
-              category: "course",
-              provider: t.courses.certificationPath,
-              duration: `${p.stages?.length || 0} ${t.courses.stages}`,
-              students: 0,
-              isPurchased: false,
-              price: 0,
-              paymentConfigured: Boolean(p.unlock_stripe_price_id || p.package_stripe_price_id),
-              priceLabel: p.unlock_stripe_price_id || p.package_stripe_price_id ? t.courses.configuredPayment : t.courses.noPayment,
-            })))
+            setAllCourses(res.pipelines.map((p: any) => {
+              const stages = p.stages || []
+              const unitCount = stages.reduce((total: number, stage: any) => total + (stage.units?.length || 0), 0)
+              const finalQualCount = p.final_quals?.length || 0
+              const paymentConfigured = Boolean(p.unlock_stripe_price_id || p.package_stripe_price_id)
+              const firstStageNames = stages
+                .slice(0, 2)
+                .map((stage: any) => stage.name)
+                .filter(Boolean)
+                .join(" / ")
+              return {
+                id: p.pipeline_id,
+                title: p.name || t.common.unknownCourse,
+                description: firstStageNames || `${stages.length} ${t.courses.stages} · ${unitCount} ${t.courses.units}`,
+                image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&auto=format&fit=crop&q=60", // placeholder
+                category: "course",
+                provider: t.courses.certificationPath,
+                duration: `${stages.length} ${t.courses.stages}`,
+                students: unitCount,
+                isPurchased: false,
+                price: 0,
+                paymentConfigured,
+                priceLabel: paymentConfigured ? t.courses.configuredPayment : t.courses.noPayment,
+                statusLabel: p.status || t.common.na,
+                versionLabel: `${t.courses.version} ${p.version || 0}`,
+                stats: [
+                  { label: t.courses.stages, value: stages.length },
+                  { label: t.courses.units, value: unitCount },
+                  { label: t.courses.finalQualifications, value: finalQualCount },
+                ],
+              }
+            }))
           }
         } else if (activeTab === "my") {
           const res = await apiClient("/api/pipeline")

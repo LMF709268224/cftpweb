@@ -145,6 +145,8 @@ export const zh = {
     backToPipelines: "返回管线列表",
     purchased: "已购买",
     certificationPath: "认证路径",
+    version: "版本",
+    finalQualifications: "结业资格",
     categoryCourse: "课程",
     categoryColumn: "专栏",
     categoryShort: "短课程",
