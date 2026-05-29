@@ -138,6 +138,7 @@ func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification)
 		PipelineGuid:           p.GetPipelineGuid(),
 		Version:                p.GetVersion(),
 		Name:                   p.GetName(),
+		CategoryTips:           p.GetCategoryTips(),
 		UnlockStripeProductId:  p.GetUnlockStripeProductId(),
 		UnlockStripePriceId:    p.GetUnlockStripePriceId(),
 		PackageStripeProductId: p.GetPackageStripeProductId(),

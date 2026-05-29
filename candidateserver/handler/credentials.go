@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
@@ -55,6 +56,16 @@ func (h *Handler) RequestUploadUrl(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
+	if !requireRequestFields(
+		w,
+		body.CredDefId, "cred_def_id",
+		body.FileHash, "file_hash",
+		body.FileExt, "file_ext",
+		body.ContentType, "content_type",
+		body.FileUsage, "file_usage",
+	) {
+		return
+	}
 
 	req := &gcredspb.RequestUploadUrlRequest{
 		CandidateId: candidateID,
@@ -95,9 +106,21 @@ func (h *Handler) SubmitApplication(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
+	if !requireRequestField(w, body.CredDefId, "cred_def_id") {
+		return
+	}
 
 	pbFiles := make([]*gcredspb.FileInfo, 0, len(body.Files))
-	for _, f := range body.Files {
+	for i, f := range body.Files {
+		if !requireRequestFields(
+			w,
+			f.FileHash, fmt.Sprintf("files[%d].file_hash", i),
+			f.FileName, fmt.Sprintf("files[%d].file_name", i),
+			f.FileExt, fmt.Sprintf("files[%d].file_ext", i),
+			f.FileUsage, fmt.Sprintf("files[%d].file_usage", i),
+		) {
+			return
+		}
 		pbFiles = append(pbFiles, &gcredspb.FileInfo{
 			FileHash:  f.FileHash,
 			FileName:  f.FileName,
@@ -144,9 +167,21 @@ func (h *Handler) UpdateApplication(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
+	if !requireRequestField(w, body.AppId, "app_id") {
+		return
+	}
 
 	pbFiles := make([]*gcredspb.FileInfo, 0, len(body.Files))
-	for _, f := range body.Files {
+	for i, f := range body.Files {
+		if !requireRequestFields(
+			w,
+			f.FileHash, fmt.Sprintf("files[%d].file_hash", i),
+			f.FileName, fmt.Sprintf("files[%d].file_name", i),
+			f.FileExt, fmt.Sprintf("files[%d].file_ext", i),
+			f.FileUsage, fmt.Sprintf("files[%d].file_usage", i),
+		) {
+			return
+		}
 		pbFiles = append(pbFiles, &gcredspb.FileInfo{
 			FileHash:  f.FileHash,
 			FileName:  f.FileName,

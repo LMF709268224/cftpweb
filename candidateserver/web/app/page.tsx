@@ -7,37 +7,32 @@ import { apiClient } from "@/lib/apiClient"
 import { Sidebar } from "@/components/sidebar"
 import { StatsCard } from "@/components/stats-card"
 import { TodoList } from "@/components/todo-list"
-import { LearningProgress } from "@/components/learning-progress"
 import { BookOpen, CheckCircle2, Crown, MessageSquare } from "lucide-react"
 import { useTranslation } from "@/lib/useLanguage"
+
+type DashboardStats = {
+  courses_in_progress?: number
+  certifications_earned?: number
+  membership_level?: string
+  unread_messages?: number
+}
 
 export default function HomePage() {
   const { t, lang } = useTranslation()
   const [userName, setUserName] = useState("...")
   const [unreadCount, setUnreadCount] = useState(0)
+  const [stats, setStats] = useState<DashboardStats>({})
 
-  const todoItems = [
-    {
-      id: "1",
-      icon: "message" as const,
-      title: lang === "zh" ? `你有 ${unreadCount} 条未读消息` : `You have ${unreadCount} unread messages`,
-      action: { label: t.home.view, href: "/messages" },
-    },
-    {
-      id: "2",
-      icon: "file" as const,
-      title: t.home.todo2Title,
-      description: t.home.todo2Desc,
-      action: { label: t.home.view, href: "/records" },
-    },
-    {
-      id: "3",
-      icon: "rejected" as const,
-      title: t.home.todo3Title,
-      description: t.home.todo3Desc,
-      action: { label: t.home.reapply, href: "/exams" },
-    },
-  ]
+  const todoItems = unreadCount > 0
+    ? [
+        {
+          id: "message-unread",
+          icon: "message" as const,
+          title: lang === "zh" ? `你有 ${unreadCount} 条未读消息` : `You have ${unreadCount} unread messages`,
+          action: { label: t.home.view, href: "/messages" },
+        },
+      ]
+    : []
 
   useEffect(() => {
     // 尝试从 /api/user/me 获取最新用户信息
@@ -62,6 +57,9 @@ export default function HomePage() {
         const dashboard = await apiClient("/api/dashboard")
         if (dashboard && dashboard.unread_messages_count !== undefined) {
           setUnreadCount(dashboard.unread_messages_count)
+        }
+        if (dashboard?.stats) {
+          setStats(dashboard.stats)
         }
       } catch (err) {
         console.error(err)
@@ -88,26 +86,26 @@ export default function HomePage() {
           <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <StatsCard
               title={t.home.courseInProgress}
-              value="1"
+              value={String(stats.courses_in_progress || 0)}
               icon={BookOpen}
               variant="primary"
-              description="CFtP 认证课程"
+              description={t.courses.tabs.my}
               href="/courses"
             />
             <StatsCard
               title={t.home.certified}
-              value="1"
+              value={String(stats.certifications_earned || 0)}
               icon={CheckCircle2}
               variant="success"
-              description="L1A 基础模块"
+              description={t.sidebar.certificates}
               href="/certificates"
             />
             <StatsCard
               title={t.home.memberLevel}
-              value={t.common.certifiedMember}
+              value={stats.membership_level || t.common.na}
               icon={Crown}
               variant="warning"
-              description="Charterholder"
+              description={t.membership.title}
               href="/membership"
             />
             <StatsCard
@@ -121,23 +119,8 @@ export default function HomePage() {
           </div>
 
           {/* Main Content Grid */}
-          <div className="grid gap-6 lg:grid-cols-5">
-            {/* Todo List - Takes 3 columns */}
-            <div className="lg:col-span-3">
-              <TodoList items={todoItems} />
-            </div>
-
-            {/* Learning Progress - Takes 2 columns */}
-            <div className="lg:col-span-2">
-              <LearningProgress
-                courseName="CFtP (Chartered Fintech Practitioner)"
-                courseDescription="金融科技专业认证"
-                currentModule="L1B Fintech"
-                progress={38}
-                totalModules={5}
-                completedModules={2}
-              />
-            </div>
+          <div>
+            <TodoList items={todoItems} />
           </div>
         </div>
       </main>

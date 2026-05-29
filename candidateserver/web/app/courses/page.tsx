@@ -19,7 +19,6 @@ import {
   Clock,
   CheckCircle2,
   BookOpen,
-  MoreHorizontal,
   Eye,
   Bookmark,
   ChevronRight
@@ -27,13 +26,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
 import { useTranslation } from "@/lib/useLanguage"
 
 const pipelineDetailHref = (id: string) => `/courses/detail?id=${encodeURIComponent(id)}`
@@ -50,13 +42,6 @@ const resourceTypeColors: any = {
   video: "bg-red-100 text-red-600",
   pdf: "bg-orange-100 text-orange-600",
   document: "bg-blue-100 text-blue-600",
-}
-
-// 资料类型标签
-const resourceTypeLabels: any = {
-  video: "视频",
-  pdf: "PDF",
-  document: "文档",
 }
 
 export default function CoursesPage() {
@@ -94,9 +79,8 @@ export default function CoursesPage() {
                 id: p.pipeline_id,
                 title: p.name || t.common.unknownCourse,
                 description: firstStageNames || `${stages.length} ${t.courses.stages} · ${unitCount} ${t.courses.units}`,
-                image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&auto=format&fit=crop&q=60", // placeholder
                 category: "course",
-                provider: t.courses.certificationPath,
+                provider: p.category_tips || t.courses.certificationPath,
                 duration: `${stages.length} ${t.courses.stages}`,
                 students: unitCount,
                 isPurchased: false,
@@ -117,17 +101,13 @@ export default function CoursesPage() {
           const res = await apiClient("/api/pipeline")
           if (res?.list) {
             setMyCourses(res.list.map((p: any) => ({
-              id: p.pipeline_cc_ulid,
-              title: t.common.unknownCourse, // In real app, need to join with static config
-              image: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&auto=format&fit=crop&q=60",
-              progress: p.progress ? Math.round(p.progress * 100) : 0,
-              totalLessons: 10,
-              completedLessons: 0,
-              totalHours: 20,
-              studiedHours: 0,
-              lastStudied: t.common.na,
-              currentLesson: t.common.na,
-              status: p.status === 2 ? "completed" : "learning",
+              id: p.pipeline_cc_ulid || p.pipeline_ulid,
+              instanceId: p.pipeline_ulid,
+              currentStageId: p.current_stage_ulid,
+              progress: Math.round(Number(p.progress || 0)),
+              status: p.status,
+              startedAt: p.started_at,
+              completedAt: p.completed_at,
             })))
           }
         } else if (activeTab === "resources") {
@@ -266,56 +246,25 @@ export default function CoursesPage() {
                   key={course.id}
                   className="group relative overflow-hidden rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:shadow-lg hover:border-primary/20"
                 >
-                  <div className="flex gap-6">
-                    {/* 课程封面 */}
-                    <div className="relative h-32 w-48 shrink-0 overflow-hidden rounded-lg">
-                      <img
-                        src={course.image}
-                        alt={course.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      {course.status === "completed" && (
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500">
-                            <CheckCircle2 className="h-6 w-6 text-white" />
-                          </div>
-                        </div>
-                      )}
-                      {course.status === "learning" && (
-                        <Link
-                          href={pipelineDetailHref(course.id)}
-                          className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
-                        >
-                          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg">
-                            <Play className="h-6 w-6 text-primary-foreground ml-1" />
-                          </div>
-                        </Link>
-                      )}
+                  <div className="flex gap-5">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <BookOpen className="h-7 w-7" />
                     </div>
 
-                    {/* 课程信息 */}
                     <div className="flex flex-1 flex-col justify-between">
                       <div>
                         <div className="flex items-start justify-between">
                           <div>
                             <h3 className="text-lg font-semibold text-card-foreground group-hover:text-primary transition-colors">
-                              {course.title}
+                              {course.id || t.common.unknownCourse}
                             </h3>
                             <p className="mt-1 text-sm text-muted-foreground">
-                              {course.status === "completed" ? t.courses.completedAll : `${t.courses.currentLearning}${course.currentLesson}`}
+                              {course.instanceId || t.common.na}
                             </p>
                           </div>
-                          <Badge 
-                            variant={course.status === "completed" ? "default" : "secondary"}
-                            className={cn(
-                              course.status === "completed" && "bg-green-500 hover:bg-green-600"
-                            )}
-                          >
-                            {course.status === "completed" ? t.courses.completed : t.courses.learning}
-                          </Badge>
+                          <Badge variant="secondary">{course.status || t.common.na}</Badge>
                         </div>
 
-                        {/* 进度条 */}
                         <div className="mt-4">
                           <div className="mb-2 flex items-center justify-between text-sm">
                             <span className="text-muted-foreground">{t.courses.courseProgress}</span>
@@ -323,74 +272,27 @@ export default function CoursesPage() {
                           </div>
                           <div className="h-2 overflow-hidden rounded-full bg-muted">
                             <div
-                              className={cn(
-                                "h-full rounded-full transition-all duration-500",
-                                course.status === "completed" 
-                                  ? "bg-green-500" 
-                                  : "bg-primary"
-                              )}
+                              className="h-full rounded-full bg-primary transition-all duration-500"
                               style={{ width: `${course.progress}%` }}
                             />
                           </div>
                         </div>
                       </div>
 
-                      {/* 统计信息 */}
-                      <div className="mt-4 flex items-center gap-6 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <BookOpen className="h-4 w-4" />
-                          <span>{course.completedLessons}/{course.totalLessons} {t.courses.units}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-4 w-4" />
-                          <span>{course.studiedHours}/{course.totalHours} {t.courses.hours}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span>{t.courses.lastStudied}{course.lastStudied}</span>
-                        </div>
+                      <div className="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        {course.currentStageId && <span>{t.courses.stage}: {course.currentStageId}</span>}
+                        {course.startedAt && <span>{course.startedAt}</span>}
+                        {course.completedAt && <span>{course.completedAt}</span>}
                       </div>
                     </div>
 
-                    {/* 操作按钮 */}
                     <div className="flex flex-col items-end justify-between">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            {t.courses.viewDetails}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Bookmark className="mr-2 h-4 w-4" />
-                            {t.courses.addBookmark}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Download className="mr-2 h-4 w-4" />
-                            {t.courses.downloadMaterials}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-
-                      {course.status === "learning" && (
-                        <Button asChild className="gap-2">
-                          <Link href={pipelineDetailHref(course.id)}>
-                            {t.courses.continueLearning}
-                            <ChevronRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      )}
-                      {course.status === "completed" && (
-                        <Button variant="outline" asChild className="gap-2">
-                          <Link href={pipelineDetailHref(course.id)}>
-                            {t.courses.reviewCourse}
-                            <ChevronRight className="h-4 w-4" />
-                          </Link>
-                        </Button>
-                      )}
+                      <Button asChild className="gap-2">
+                        <Link href={pipelineDetailHref(course.id)}>
+                          {t.courses.viewDetails}
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
                     </div>
                   </div>
                 </div>

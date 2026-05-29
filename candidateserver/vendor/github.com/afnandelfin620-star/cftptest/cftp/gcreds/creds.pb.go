@@ -2873,8 +2873,9 @@ func (x *RequestUploadUrlRequest) GetFileUsage() string {
 
 type RequestUploadUrlResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	UploadUrl     string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"` // S3 presigned PUT URL
-	FileKey       string                 `protobuf:"bytes,2,opt,name=file_key,json=fileKey,proto3" json:"file_key,omitempty"`       // 对应的 S3 Key
+	UploadUrl     string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`                                                                                       // S3 presigned PUT URL
+	FileKey       string                 `protobuf:"bytes,2,opt,name=file_key,json=fileKey,proto3" json:"file_key,omitempty"`                                                                                             // 对应的 S3 Key
+	SignedHeaders map[string]string      `protobuf:"bytes,3,rep,name=signed_headers,json=signedHeaders,proto3" json:"signed_headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"` // 预签名上传需要附带的 HTTP Header
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2921,6 +2922,13 @@ func (x *RequestUploadUrlResponse) GetFileKey() string {
 		return x.FileKey
 	}
 	return ""
+}
+
+func (x *RequestUploadUrlResponse) GetSignedHeaders() map[string]string {
+	if x != nil {
+		return x.SignedHeaders
+	}
+	return nil
 }
 
 var File_creds_proto protoreflect.FileDescriptor
@@ -3177,11 +3185,15 @@ const file_creds_proto_rawDesc = "" +
 	"\bfile_ext\x18\x04 \x01(\tR\afileExt\x12!\n" +
 	"\fcontent_type\x18\x05 \x01(\tR\vcontentType\x12\x1d\n" +
 	"\n" +
-	"file_usage\x18\x06 \x01(\tR\tfileUsage\"T\n" +
+	"file_usage\x18\x06 \x01(\tR\tfileUsage\"\xf2\x01\n" +
 	"\x18RequestUploadUrlResponse\x12\x1d\n" +
 	"\n" +
 	"upload_url\x18\x01 \x01(\tR\tuploadUrl\x12\x19\n" +
-	"\bfile_key\x18\x02 \x01(\tR\afileKey*\x91\x01\n" +
+	"\bfile_key\x18\x02 \x01(\tR\afileKey\x12Z\n" +
+	"\x0esigned_headers\x18\x03 \x03(\v23.gcreds.RequestUploadUrlResponse.SignedHeadersEntryR\rsignedHeaders\x1a@\n" +
+	"\x12SignedHeadersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01*\x91\x01\n" +
 	"\x10CredentialStatus\x12!\n" +
 	"\x1dCREDENTIAL_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18CREDENTIAL_STATUS_ACTIVE\x10\x01\x12\x1d\n" +
@@ -3239,7 +3251,7 @@ func file_creds_proto_rawDescGZIP() []byte {
 }
 
 var file_creds_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_creds_proto_msgTypes = make([]protoimpl.MessageInfo, 39)
+var file_creds_proto_msgTypes = make([]protoimpl.MessageInfo, 40)
 var file_creds_proto_goTypes = []any{
 	(CredentialStatus)(0),                       // 0: gcreds.CredentialStatus
 	(CredentialFileType)(0),                     // 1: gcreds.CredentialFileType
@@ -3283,6 +3295,7 @@ var file_creds_proto_goTypes = []any{
 	(*ListPdfRequestsResponse)(nil),             // 39: gcreds.ListPdfRequestsResponse
 	(*RequestUploadUrlRequest)(nil),             // 40: gcreds.RequestUploadUrlRequest
 	(*RequestUploadUrlResponse)(nil),            // 41: gcreds.RequestUploadUrlResponse
+	nil,                                         // 42: gcreds.RequestUploadUrlResponse.SignedHeadersEntry
 }
 var file_creds_proto_depIdxs = []int32{
 	1,  // 0: gcreds.CredentialFileConstraint.type:type_name -> gcreds.CredentialFileType
@@ -3301,61 +3314,62 @@ var file_creds_proto_depIdxs = []int32{
 	2,  // 13: gcreds.PdfRequest.status:type_name -> gcreds.PdfRequestStatus
 	2,  // 14: gcreds.ListPdfRequestsRequest.status:type_name -> gcreds.PdfRequestStatus
 	32, // 15: gcreds.ListPdfRequestsResponse.requests:type_name -> gcreds.PdfRequest
-	8,  // 16: gcreds.CredentialService.CreateCredentialDefinition:input_type -> gcreds.CreateCredentialDefinitionRequest
-	9,  // 17: gcreds.CredentialService.ListCredentialDefinitions:input_type -> gcreds.ListCredentialDefinitionsRequest
-	11, // 18: gcreds.CredentialService.SubmitApplication:input_type -> gcreds.SubmitApplicationRequest
-	13, // 19: gcreds.CredentialService.UpdateApplication:input_type -> gcreds.UpdateApplicationRequest
-	12, // 20: gcreds.CredentialService.AuditApplication:input_type -> gcreds.AuditApplicationRequest
-	14, // 21: gcreds.CredentialService.ListCandidateApplications:input_type -> gcreds.ListApplicationsRequest
-	14, // 22: gcreds.CredentialService.ListApplications:input_type -> gcreds.ListApplicationsRequest
-	16, // 23: gcreds.CredentialService.GrantUploadPermission:input_type -> gcreds.GrantUploadPermissionRequest
-	17, // 24: gcreds.CredentialService.RevokeUploadPermission:input_type -> gcreds.RevokeUploadPermissionRequest
-	18, // 25: gcreds.CredentialService.CheckUploadPermission:input_type -> gcreds.CheckUploadPermissionRequest
-	40, // 26: gcreds.CredentialService.RequestUploadUrl:input_type -> gcreds.RequestUploadUrlRequest
-	20, // 27: gcreds.CredentialService.GetLatestCredential:input_type -> gcreds.GetLatestCredentialRequest
-	21, // 28: gcreds.CredentialService.CheckCandidateQualification:input_type -> gcreds.CheckCandidateQualificationRequest
-	23, // 29: gcreds.CredentialService.GetCredentialVersion:input_type -> gcreds.GetCredentialVersionRequest
-	24, // 30: gcreds.CredentialService.MarkExpired:input_type -> gcreds.MarkExpiredRequest
-	25, // 31: gcreds.CredentialService.RevokeCredential:input_type -> gcreds.RevokeCredentialRequest
-	27, // 32: gcreds.CredentialService.CreatePdfTemplate:input_type -> gcreds.CreatePdfTemplateRequest
-	28, // 33: gcreds.CredentialService.UpdatePdfTemplate:input_type -> gcreds.UpdatePdfTemplateRequest
-	29, // 34: gcreds.CredentialService.GetPdfTemplate:input_type -> gcreds.GetPdfTemplateRequest
-	30, // 35: gcreds.CredentialService.ListPdfTemplates:input_type -> gcreds.ListPdfTemplatesRequest
-	33, // 36: gcreds.CredentialService.CreatePdfRequest:input_type -> gcreds.CreatePdfRequestRequest
-	34, // 37: gcreds.CredentialService.UpdatePdfRequest:input_type -> gcreds.UpdatePdfRequestRequest
-	35, // 38: gcreds.CredentialService.GetPdfRequest:input_type -> gcreds.GetPdfRequestRequest
-	36, // 39: gcreds.CredentialService.GetPdfCertificate:input_type -> gcreds.GetPdfCertificateRequest
-	38, // 40: gcreds.CredentialService.ListPdfRequests:input_type -> gcreds.ListPdfRequestsRequest
-	4,  // 41: gcreds.CredentialService.CreateCredentialDefinition:output_type -> gcreds.CredentialDefinition
-	10, // 42: gcreds.CredentialService.ListCredentialDefinitions:output_type -> gcreds.ListCredentialDefinitionsResponse
-	7,  // 43: gcreds.CredentialService.SubmitApplication:output_type -> gcreds.Application
-	7,  // 44: gcreds.CredentialService.UpdateApplication:output_type -> gcreds.Application
-	7,  // 45: gcreds.CredentialService.AuditApplication:output_type -> gcreds.Application
-	15, // 46: gcreds.CredentialService.ListCandidateApplications:output_type -> gcreds.ListApplicationsResponse
-	15, // 47: gcreds.CredentialService.ListApplications:output_type -> gcreds.ListApplicationsResponse
-	19, // 48: gcreds.CredentialService.GrantUploadPermission:output_type -> gcreds.UploadPermissionResponse
-	19, // 49: gcreds.CredentialService.RevokeUploadPermission:output_type -> gcreds.UploadPermissionResponse
-	19, // 50: gcreds.CredentialService.CheckUploadPermission:output_type -> gcreds.UploadPermissionResponse
-	41, // 51: gcreds.CredentialService.RequestUploadUrl:output_type -> gcreds.RequestUploadUrlResponse
-	5,  // 52: gcreds.CredentialService.GetLatestCredential:output_type -> gcreds.Credential
-	22, // 53: gcreds.CredentialService.CheckCandidateQualification:output_type -> gcreds.CheckCandidateQualificationResponse
-	5,  // 54: gcreds.CredentialService.GetCredentialVersion:output_type -> gcreds.Credential
-	5,  // 55: gcreds.CredentialService.MarkExpired:output_type -> gcreds.Credential
-	5,  // 56: gcreds.CredentialService.RevokeCredential:output_type -> gcreds.Credential
-	26, // 57: gcreds.CredentialService.CreatePdfTemplate:output_type -> gcreds.PdfTemplate
-	26, // 58: gcreds.CredentialService.UpdatePdfTemplate:output_type -> gcreds.PdfTemplate
-	26, // 59: gcreds.CredentialService.GetPdfTemplate:output_type -> gcreds.PdfTemplate
-	31, // 60: gcreds.CredentialService.ListPdfTemplates:output_type -> gcreds.ListPdfTemplatesResponse
-	32, // 61: gcreds.CredentialService.CreatePdfRequest:output_type -> gcreds.PdfRequest
-	32, // 62: gcreds.CredentialService.UpdatePdfRequest:output_type -> gcreds.PdfRequest
-	32, // 63: gcreds.CredentialService.GetPdfRequest:output_type -> gcreds.PdfRequest
-	37, // 64: gcreds.CredentialService.GetPdfCertificate:output_type -> gcreds.GetPdfCertificateResponse
-	39, // 65: gcreds.CredentialService.ListPdfRequests:output_type -> gcreds.ListPdfRequestsResponse
-	41, // [41:66] is the sub-list for method output_type
-	16, // [16:41] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	42, // 16: gcreds.RequestUploadUrlResponse.signed_headers:type_name -> gcreds.RequestUploadUrlResponse.SignedHeadersEntry
+	8,  // 17: gcreds.CredentialService.CreateCredentialDefinition:input_type -> gcreds.CreateCredentialDefinitionRequest
+	9,  // 18: gcreds.CredentialService.ListCredentialDefinitions:input_type -> gcreds.ListCredentialDefinitionsRequest
+	11, // 19: gcreds.CredentialService.SubmitApplication:input_type -> gcreds.SubmitApplicationRequest
+	13, // 20: gcreds.CredentialService.UpdateApplication:input_type -> gcreds.UpdateApplicationRequest
+	12, // 21: gcreds.CredentialService.AuditApplication:input_type -> gcreds.AuditApplicationRequest
+	14, // 22: gcreds.CredentialService.ListCandidateApplications:input_type -> gcreds.ListApplicationsRequest
+	14, // 23: gcreds.CredentialService.ListApplications:input_type -> gcreds.ListApplicationsRequest
+	16, // 24: gcreds.CredentialService.GrantUploadPermission:input_type -> gcreds.GrantUploadPermissionRequest
+	17, // 25: gcreds.CredentialService.RevokeUploadPermission:input_type -> gcreds.RevokeUploadPermissionRequest
+	18, // 26: gcreds.CredentialService.CheckUploadPermission:input_type -> gcreds.CheckUploadPermissionRequest
+	40, // 27: gcreds.CredentialService.RequestUploadUrl:input_type -> gcreds.RequestUploadUrlRequest
+	20, // 28: gcreds.CredentialService.GetLatestCredential:input_type -> gcreds.GetLatestCredentialRequest
+	21, // 29: gcreds.CredentialService.CheckCandidateQualification:input_type -> gcreds.CheckCandidateQualificationRequest
+	23, // 30: gcreds.CredentialService.GetCredentialVersion:input_type -> gcreds.GetCredentialVersionRequest
+	24, // 31: gcreds.CredentialService.MarkExpired:input_type -> gcreds.MarkExpiredRequest
+	25, // 32: gcreds.CredentialService.RevokeCredential:input_type -> gcreds.RevokeCredentialRequest
+	27, // 33: gcreds.CredentialService.CreatePdfTemplate:input_type -> gcreds.CreatePdfTemplateRequest
+	28, // 34: gcreds.CredentialService.UpdatePdfTemplate:input_type -> gcreds.UpdatePdfTemplateRequest
+	29, // 35: gcreds.CredentialService.GetPdfTemplate:input_type -> gcreds.GetPdfTemplateRequest
+	30, // 36: gcreds.CredentialService.ListPdfTemplates:input_type -> gcreds.ListPdfTemplatesRequest
+	33, // 37: gcreds.CredentialService.CreatePdfRequest:input_type -> gcreds.CreatePdfRequestRequest
+	34, // 38: gcreds.CredentialService.UpdatePdfRequest:input_type -> gcreds.UpdatePdfRequestRequest
+	35, // 39: gcreds.CredentialService.GetPdfRequest:input_type -> gcreds.GetPdfRequestRequest
+	36, // 40: gcreds.CredentialService.GetPdfCertificate:input_type -> gcreds.GetPdfCertificateRequest
+	38, // 41: gcreds.CredentialService.ListPdfRequests:input_type -> gcreds.ListPdfRequestsRequest
+	4,  // 42: gcreds.CredentialService.CreateCredentialDefinition:output_type -> gcreds.CredentialDefinition
+	10, // 43: gcreds.CredentialService.ListCredentialDefinitions:output_type -> gcreds.ListCredentialDefinitionsResponse
+	7,  // 44: gcreds.CredentialService.SubmitApplication:output_type -> gcreds.Application
+	7,  // 45: gcreds.CredentialService.UpdateApplication:output_type -> gcreds.Application
+	7,  // 46: gcreds.CredentialService.AuditApplication:output_type -> gcreds.Application
+	15, // 47: gcreds.CredentialService.ListCandidateApplications:output_type -> gcreds.ListApplicationsResponse
+	15, // 48: gcreds.CredentialService.ListApplications:output_type -> gcreds.ListApplicationsResponse
+	19, // 49: gcreds.CredentialService.GrantUploadPermission:output_type -> gcreds.UploadPermissionResponse
+	19, // 50: gcreds.CredentialService.RevokeUploadPermission:output_type -> gcreds.UploadPermissionResponse
+	19, // 51: gcreds.CredentialService.CheckUploadPermission:output_type -> gcreds.UploadPermissionResponse
+	41, // 52: gcreds.CredentialService.RequestUploadUrl:output_type -> gcreds.RequestUploadUrlResponse
+	5,  // 53: gcreds.CredentialService.GetLatestCredential:output_type -> gcreds.Credential
+	22, // 54: gcreds.CredentialService.CheckCandidateQualification:output_type -> gcreds.CheckCandidateQualificationResponse
+	5,  // 55: gcreds.CredentialService.GetCredentialVersion:output_type -> gcreds.Credential
+	5,  // 56: gcreds.CredentialService.MarkExpired:output_type -> gcreds.Credential
+	5,  // 57: gcreds.CredentialService.RevokeCredential:output_type -> gcreds.Credential
+	26, // 58: gcreds.CredentialService.CreatePdfTemplate:output_type -> gcreds.PdfTemplate
+	26, // 59: gcreds.CredentialService.UpdatePdfTemplate:output_type -> gcreds.PdfTemplate
+	26, // 60: gcreds.CredentialService.GetPdfTemplate:output_type -> gcreds.PdfTemplate
+	31, // 61: gcreds.CredentialService.ListPdfTemplates:output_type -> gcreds.ListPdfTemplatesResponse
+	32, // 62: gcreds.CredentialService.CreatePdfRequest:output_type -> gcreds.PdfRequest
+	32, // 63: gcreds.CredentialService.UpdatePdfRequest:output_type -> gcreds.PdfRequest
+	32, // 64: gcreds.CredentialService.GetPdfRequest:output_type -> gcreds.PdfRequest
+	37, // 65: gcreds.CredentialService.GetPdfCertificate:output_type -> gcreds.GetPdfCertificateResponse
+	39, // 66: gcreds.CredentialService.ListPdfRequests:output_type -> gcreds.ListPdfRequestsResponse
+	42, // [42:67] is the sub-list for method output_type
+	17, // [17:42] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_creds_proto_init() }
@@ -3369,7 +3383,7 @@ func file_creds_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_creds_proto_rawDesc), len(file_creds_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   39,
+			NumMessages:   40,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -19,6 +19,7 @@ type Pipeline = {
   pipeline_guid: string
   version: number
   name: string
+  category_tips?: string
   status: string
   is_current: boolean
   created_at: string
@@ -83,7 +84,7 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
   if (!pipeline) return emptyForm
   return {
     name: pipeline.name || "",
-    category_tips: "",
+    category_tips: pipeline.category_tips || "",
     unlock_stripe_product_id: pipeline.unlock_stripe_product_id || "",
     unlock_stripe_price_id: pipeline.unlock_stripe_price_id || "",
     package_stripe_product_id: pipeline.package_stripe_product_id || "",

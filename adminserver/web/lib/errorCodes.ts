@@ -251,7 +251,7 @@ export function localizeApiErrorMessage(
 
   match = message.match(/^published course "([^"]+)" cannot be modified$/)
   if (match) {
-    return `已发布课程 ${match[1]} 不能直接修改，请先下架`
+    return `已发布课程 ${match[1]} 不能直接修改，请创建新版本或编辑草稿版本`
   }
 
   if (errorCode && ErrorMessages[errorCode]) {

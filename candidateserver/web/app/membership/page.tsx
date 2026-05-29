@@ -4,10 +4,8 @@ import React from "react"
 
 import { useState } from "react"
 import { Sidebar } from "@/components/sidebar"
-import { MembershipCard } from "@/components/membership-card"
 import { cn } from "@/lib/utils"
 import { Check, Crown, Zap, Star, Shield, Download, Video, Percent, HelpCircle } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 
 import { useTranslation } from "@/lib/useLanguage"
 
@@ -77,7 +75,6 @@ export default function MembershipPage() {
       features: lang === "zh"
         ? ["全部课程访问", "Webinar 录播", "资料下载", "CFtP 称号使用", "课程折扣 20%"]
         : ["Full course access", "Webinar replays", "Material downloads", "CFtP Designation", "20% course discount"],
-      current: true,
       highlight: true,
     },
     {
@@ -104,15 +101,16 @@ export default function MembershipPage() {
             <p className="mt-1 text-muted-foreground">{t.membership.subtitle}</p>
           </div>
 
-          {/* Membership Card */}
-          <div className="mb-8 max-w-2xl">
-            <MembershipCard
-              level="certified"
-              levelName={t.membership.charterholder}
-              expiryDate="2027-01-15"
-              subscribedDate="2026-01-15"
-              isAutoRenew={true}
-            />
+          <div className="mb-8 max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                <Crown className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-card-foreground">{t.membership.currentMember}</h2>
+                <p className="text-sm text-muted-foreground">{t.membership.devNotice}</p>
+              </div>
+            </div>
           </div>
 
           {/* Tabs */}
@@ -168,12 +166,6 @@ export default function MembershipPage() {
                       : "border-border bg-card"
                   )}
                 >
-                  {level.current && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground whitespace-nowrap">
-                      {t.membership.currentLevelBadge}
-                    </Badge>
-                  )}
-                  
                   <div className="mb-4 text-center">
                     <div className={cn(
                       "mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full",

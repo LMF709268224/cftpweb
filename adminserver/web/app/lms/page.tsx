@@ -208,42 +208,17 @@ const emptyOptionForm = {
 
 const courseListPageSize = 20
 
-const sampleCourseImportJson = `{
-  "title": "高等数学",
-  "description": "这是高等数学课程",
-  "duration_min": 50,
-  "chapters": [
-    {
-      "title": "第一章",
-      "sort_order": 1,
-      "lessons": [
-        {
-          "title": "第一课",
-          "sort_order": 1,
-          "lesson_type": "text",
-          "body": "这里是课时文本内容"
-        }
-      ]
-    }
-  ]
-}`
+async function sha256Hex(file: File) {
+  const buffer = await file.arrayBuffer()
+  const hash = await crypto.subtle.digest("SHA-256", buffer)
+  return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, "0")).join("")
+}
 
-const sampleQuizImportJson = `{
-  "title": "第一章课检",
-  "passing_score": 60,
-  "max_attempts": 1,
-  "questions": [
-    {
-      "question_text": "1 + 1 = ?",
-      "question_type": "single_choice",
-      "points": 1,
-      "options": [
-        { "option_text": "1", "is_correct": false },
-        { "option_text": "2", "is_correct": true }
-      ]
-    }
-  ]
-}`
+function uploadHeaders(contentType: string, signedHeaders?: Record<string, string>) {
+  const headers = new Headers(signedHeaders || {})
+  if (!headers.has("Content-Type")) headers.set("Content-Type", contentType)
+  return headers
+}
 
 function formFromCourse(course: LmsCourse | null): CourseForm {
   if (!course) return emptyForm
@@ -323,7 +298,7 @@ export default function LmsCoursesPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [importScope, setImportScope] = useState<"course" | "quiz">("course")
   const [importCategoryTips, setImportCategoryTips] = useState("")
-  const [importJson, setImportJson] = useState(sampleCourseImportJson)
+  const [importJson, setImportJson] = useState("")
   const [importing, setImporting] = useState(false)
 
   const selectedCourse = useMemo(
@@ -439,10 +414,14 @@ export default function LmsCoursesPage() {
 
   const switchImportScope = (scope: "course" | "quiz") => {
     setImportScope(scope)
-    setImportJson(scope === "course" ? sampleCourseImportJson : sampleQuizImportJson)
+    setImportJson("")
   }
 
   const importLmsJson = async () => {
+    if (!importJson.trim()) {
+      toast.error(page.importInvalidJson)
+      return
+    }
     try {
       JSON.parse(importJson)
     } catch {
@@ -562,6 +541,7 @@ export default function LmsCoursesPage() {
     setThumbnailUploading(true)
     try {
       const contentType = file.type || "application/octet-stream"
+      const fileHash = await sha256Hex(file)
       const upload = await apiClient("/api/lms/upload-url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -570,12 +550,13 @@ export default function LmsCoursesPage() {
           file_name: file.name,
           content_type: contentType,
           course_id: selectedCourse.course_id,
+          file_hash: fileHash,
         }),
       })
 
       const uploadRes = await fetch(upload.upload_url, {
         method: "PUT",
-        headers: { "Content-Type": contentType },
+        headers: uploadHeaders(contentType, upload.signed_headers),
         body: file,
       })
       if (!uploadRes.ok) throw new Error(`thumbnail upload failed: ${uploadRes.status}`)
@@ -1158,7 +1139,6 @@ export default function LmsCoursesPage() {
             </label>
           </div>
 
-          {/* TODO: 待 GLMS 提供 UnpublishCourse 接口后，接入真正的课程下架按钮。 */}
           <div className="grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
             <section className="rounded-lg border bg-card">
               <div className="flex items-center justify-between border-b px-4 py-3">
@@ -1223,11 +1203,6 @@ export default function LmsCoursesPage() {
                         <Button variant="outline" size="sm" onClick={publishCourse}>
                           <UploadCloud className="mr-2 h-4 w-4" />
                           {page.publish}
-                        </Button>
-                      )}
-                      {selectedCoursePublished && (
-                        <Button variant="outline" size="sm" disabled title={page.unpublishUnavailable}>
-                          {page.unpublish}
                         </Button>
                       )}
                       <Button variant="destructive" size="sm" onClick={deleteCourse} disabled={selectedCoursePublished}>

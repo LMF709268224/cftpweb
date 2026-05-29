@@ -5,7 +5,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Badge } from "@/components/ui/badge"
-import { Clock, Users, ChevronRight, CheckCircle2, Play, ShoppingCart } from "lucide-react"
+import { BookOpen, Clock, Users, ChevronRight, CheckCircle2, Play, ShoppingCart } from "lucide-react"
 import { PurchaseDialog } from "./purchase-dialog"
 import { useTranslation } from "@/lib/useLanguage"
 
@@ -18,7 +18,7 @@ interface CourseCardProps {
   id: string
   title: string
   description: string
-  image: string
+  image?: string
   category: "course" | "column" | "short"
   provider: string
   duration?: string
@@ -47,10 +47,10 @@ export function CourseCard({
   category,
   provider,
   duration,
-  students = 1200,
+  students,
   isPurchased = false,
   progress,
-  price = 500,
+  price = 0,
   priceLabel,
   paymentConfigured = false,
   statusLabel,
@@ -74,15 +74,22 @@ export function CourseCard({
 
   const cardContent = (
     <>
-      {/* Image Section */}
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
-        <Image
-          src={image}
-          alt={title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        {image ? (
+          <>
+            <Image
+              src={image}
+              alt={title}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          </>
+        ) : (
+          <div className="flex h-full items-center justify-center bg-muted">
+            <BookOpen className="h-14 w-14 text-muted-foreground/60" />
+          </div>
+        )}
         
         {/* Category Badge */}
         <Badge
@@ -103,7 +110,7 @@ export function CourseCard({
         ) : (
           <Badge className="absolute right-4 top-4 bg-primary text-white border-0 gap-1">
             <ShoppingCart className="h-3 w-3" />
-            {priceLabel || (paymentConfigured ? t.courses.configuredPayment : `$${price}`)}
+            {priceLabel || (paymentConfigured ? t.courses.configuredPayment : t.courses.noPayment)}
           </Badge>
         )}
 
@@ -150,18 +157,24 @@ export function CourseCard({
         )}
 
         {/* Meta Info */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5">
-              <Clock className="h-4 w-4" />
-              <span>{duration || `40 ${t.courses.hours}`}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              <span>{students.toLocaleString()}</span>
+        {(duration || students !== undefined) && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <div className="flex items-center gap-4">
+              {duration && (
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-4 w-4" />
+                  <span>{duration}</span>
+                </div>
+              )}
+              {students !== undefined && (
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-4 w-4" />
+                  <span>{students.toLocaleString()}</span>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
 
         {stats.length > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-2 rounded-md bg-muted p-2 text-center">

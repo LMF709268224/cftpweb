@@ -38,6 +38,7 @@ type PipelineConfig struct {
 	UnlockStripePriceId    string                 `protobuf:"bytes,14,opt,name=unlock_stripe_price_id,json=unlockStripePriceId,proto3" json:"unlock_stripe_price_id,omitempty"`          // Stripe Price ID for unlocking [optional/conditional]
 	PackageStripeProductId string                 `protobuf:"bytes,15,opt,name=package_stripe_product_id,json=packageStripeProductId,proto3" json:"package_stripe_product_id,omitempty"` // Stripe Product ID for package purchase [optional/conditional]
 	PackageStripePriceId   string                 `protobuf:"bytes,16,opt,name=package_stripe_price_id,json=packageStripePriceId,proto3" json:"package_stripe_price_id,omitempty"`       // Stripe Price ID for package purchase [optional/conditional]
+	CategoryTips           string                 `protobuf:"bytes,17,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`                                   // 分类提示 [required]
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -166,6 +167,13 @@ func (x *PipelineConfig) GetPackageStripeProductId() string {
 func (x *PipelineConfig) GetPackageStripePriceId() string {
 	if x != nil {
 		return x.PackageStripePriceId
+	}
+	return ""
+}
+
+func (x *PipelineConfig) GetCategoryTips() string {
+	if x != nil {
+		return x.CategoryTips
 	}
 	return ""
 }
@@ -1026,7 +1034,7 @@ var File_cc_proto protoreflect.FileDescriptor
 
 const file_cc_proto_rawDesc = "" +
 	"\n" +
-	"\bcc.proto\x12\x03gcc\x1a\x1bgoogle/protobuf/empty.proto\"\xce\x04\n" +
+	"\bcc.proto\x12\x03gcc\x1a\x1bgoogle/protobuf/empty.proto\"\xf3\x04\n" +
 	"\x0ePipelineConfig\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
 	"pipelineId\x12#\n" +
@@ -1046,7 +1054,8 @@ const file_cc_proto_rawDesc = "" +
 	"\x18unlock_stripe_product_id\x18\r \x01(\tR\x15unlockStripeProductId\x123\n" +
 	"\x16unlock_stripe_price_id\x18\x0e \x01(\tR\x13unlockStripePriceId\x129\n" +
 	"\x19package_stripe_product_id\x18\x0f \x01(\tR\x16packageStripeProductId\x125\n" +
-	"\x17package_stripe_price_id\x18\x10 \x01(\tR\x14packageStripePriceId\"\x82\x01\n" +
+	"\x17package_stripe_price_id\x18\x10 \x01(\tR\x14packageStripePriceId\x12#\n" +
+	"\rcategory_tips\x18\x11 \x01(\tR\fcategoryTips\"\x82\x01\n" +
 	"\vStageConfig\x12\x19\n" +
 	"\bstage_id\x18\x01 \x01(\tR\astageId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +

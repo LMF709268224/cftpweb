@@ -57,7 +57,11 @@ export function TodoList({ items, className }: TodoListProps) {
         </Badge>
       </div>
       <div className="divide-y divide-border">
-        {items.map((item) => {
+        {items.length === 0 ? (
+          <div className="px-6 py-10 text-center text-sm text-muted-foreground">
+            {lang === "zh" ? "暂无待处理事项" : "No pending tasks"}
+          </div>
+        ) : items.map((item) => {
           const Icon = iconMap[item.icon]
           return (
             <div

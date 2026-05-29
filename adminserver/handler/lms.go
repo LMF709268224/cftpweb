@@ -129,6 +129,9 @@ func validateLmsUploadURLPayload(w http.ResponseWriter, req *lmspb.CreateUploadU
 	if !requireRequestField(w, req.FileName, "file_name") {
 		return false
 	}
+	if !requireRequestField(w, req.FileHash, "file_hash") {
+		return false
+	}
 	switch req.UploadType {
 	case lmspb.UploadType_UPLOAD_TYPE_COURSE_THUMBNAIL:
 		return requireRequestField(w, req.CourseId, "course_id")

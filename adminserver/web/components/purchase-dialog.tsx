@@ -4,7 +4,6 @@ import { useState } from "react"
 import { apiClient } from "@/lib/apiClient"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -12,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { CreditCard, Building2, Tag, CheckCircle2 } from "lucide-react"
+import { CreditCard, Building2 } from "lucide-react"
 
 interface PurchaseDialogProps {
   open: boolean
@@ -32,20 +31,7 @@ export function PurchaseDialog({
   pipelineId,
 }: PurchaseDialogProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("stripe")
-  const [couponCode, setCouponCode] = useState("")
-  const [couponApplied, setCouponApplied] = useState(false)
-  const [discount, setDiscount] = useState(0)
   const [loading, setLoading] = useState(false)
-
-  const handleApplyCoupon = () => {
-    // 模拟优惠码验证
-    if (couponCode.toUpperCase() === "CFTP2026") {
-      setDiscount(50)
-      setCouponApplied(true)
-    }
-  }
-
-  const finalPrice = price - discount
 
   const handlePayment = async () => {
     setLoading(true)
@@ -92,13 +78,8 @@ export function PurchaseDialog({
             <div className="flex justify-between items-center py-2 border-b border-border/50">
               <span className="text-sm text-muted-foreground">总费用</span>
               <div className="text-right">
-                {discount > 0 && (
-                  <span className="text-sm text-muted-foreground line-through mr-2">
-                    ${price}
-                  </span>
-                )}
                 <span className="text-lg font-bold text-foreground">
-                  ${finalPrice}
+                  ${price}
                 </span>
               </div>
             </div>
@@ -169,42 +150,6 @@ export function PurchaseDialog({
             </div>
           </div>
 
-          {/* Coupon Code */}
-          <div className="space-y-3">
-            <label className="text-sm font-medium text-foreground">优惠券 / 折扣码</label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="输入折扣码 (如 CFTP2026)"
-                  value={couponCode}
-                  onChange={(e) => {
-                    setCouponCode(e.target.value)
-                    setCouponApplied(false)
-                    setDiscount(0)
-                  }}
-                  className="pl-10"
-                  disabled={couponApplied}
-                />
-                {couponApplied && (
-                  <CheckCircle2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-500" />
-                )}
-              </div>
-              <Button
-                variant="outline"
-                onClick={handleApplyCoupon}
-                disabled={!couponCode || couponApplied}
-              >
-                应用
-              </Button>
-            </div>
-            {couponApplied && (
-              <p className="text-xs text-emerald-600 flex items-center gap-1">
-                <CheckCircle2 className="h-3 w-3" />
-                优惠码已应用，已减免 ${discount}
-              </p>
-            )}
-          </div>
         </div>
 
         {/* Footer Actions */}

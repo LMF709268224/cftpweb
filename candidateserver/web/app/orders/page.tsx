@@ -4,11 +4,9 @@ import React from "react"
 
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   ShoppingCart,
   Receipt,
-  Download,
   ChevronRight,
   CheckCircle2,
   Clock,
@@ -17,32 +15,16 @@ import {
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/lib/useLanguage"
 
-const orders = [
-  {
-    id: "ORD-2026-001",
-    items: ["CFtP (Chartered Fintech Practitioner)"],
-    date: "2026-01-15",
-    amount: "¥1,999.00",
-    status: "completed",
-    paymentMethod: "微信支付",
-  },
-  {
-    id: "ORD-2025-042",
-    items: ["CFtX 金融科技入门"],
-    date: "2025-10-08",
-    amount: "¥299.00",
-    status: "completed",
-    paymentMethod: "支付宝",
-  },
-  {
-    id: "ORD-2025-038",
-    items: ["持证会员年费"],
-    date: "2025-01-15",
-    amount: "¥1,999.00",
-    status: "completed",
-    paymentMethod: "银行卡",
-  },
-]
+type OrderItem = {
+  id: string
+  items: string[]
+  date: string
+  amount: string
+  status: keyof typeof statusConfig
+  paymentMethod: string
+}
+
+const orders: OrderItem[] = []
 
 const statusConfig = {
   completed: {
@@ -128,8 +110,23 @@ export default function OrdersPage() {
               <h2 className="font-semibold text-card-foreground">{t.orders.orderHistory}</h2>
             </div>
             
-            <div className="divide-y divide-border">
-              {orders.map((order) => {
+            {orders.length === 0 ? (
+              <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                  <Package className="h-7 w-7 text-muted-foreground" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
+                  {lang === "zh" ? "暂无订单记录" : "No orders yet"}
+                </h3>
+                <p className="max-w-md text-sm text-muted-foreground">
+                  {lang === "zh"
+                    ? "订单接口接入后，这里会展示真实的购买记录和支付状态。"
+                    : "Order records and payment status will appear here after the order API is connected."}
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border">
+                {orders.map((order) => {
                 const config = statusConfig[order.status as keyof typeof statusConfig]
                 return (
                   <div
@@ -161,15 +158,13 @@ export default function OrdersPage() {
                       <div className="text-right">
                         <p className="font-semibold text-card-foreground">{order.amount}</p>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Download className="h-4 w-4" />
-                      </Button>
                       <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
                     </div>
                   </div>
                 )
-              })}
-            </div>
+                })}
+              </div>
+            )}
           </div>
         </div>
       </main>

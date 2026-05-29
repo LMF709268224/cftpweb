@@ -84,6 +84,7 @@ type PipelineConfig struct {
 	PipelineGuid           string          `json:"pipeline_guid,omitempty"`    // ULID (业务唯一ID) [required]
 	Version                uint32          `json:"version,omitempty"`          // 版本号 [required]
 	Name                   string          `json:"name,omitempty"`             // 管线名称 [required]
+	CategoryTips           string          `json:"category_tips,omitempty"`    // 分类提示 [required]
 	UnlockFee              int64           `json:"unlock_fee,omitempty"`       // 解锁费用，单位：分 [required]
 	PackageDiscount        int32           `json:"package_discount,omitempty"` // 套餐折扣，单位：基点（9500 = 95%）[required]
 	UnlockQuals            []Qualification `json:"unlock_quals,omitempty"`     // 解锁条件 [required]

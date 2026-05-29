@@ -15,6 +15,18 @@ import { formatBackendDate } from "@/lib/utils"
 import { Award, FileText, CheckCircle, XCircle, Clock, AlertCircle } from "lucide-react"
 import { useTranslation } from "@/lib/useLanguage"
 
+async function sha256Hex(file: File) {
+  const buffer = await file.arrayBuffer()
+  const hash = await crypto.subtle.digest("SHA-256", buffer)
+  return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, "0")).join("")
+}
+
+function uploadHeaders(contentType: string, signedHeaders?: Record<string, string>) {
+  const headers = new Headers(signedHeaders || {})
+  if (!headers.has("Content-Type")) headers.set("Content-Type", contentType)
+  return headers
+}
+
 export default function CredentialsPage() {
   const { t } = useTranslation()
   const [definitions, setDefinitions] = useState<any[]>([])
@@ -59,9 +71,9 @@ export default function CredentialsPage() {
   const handleFileUpload = async (constraintName: string, file: File) => {
     // 1. Request presigned URL
     const fileExt = file.name.includes('.') ? '.' + file.name.split('.').pop() : ''
-    // Mock a 64-character SHA-256 hex string since backend requires exactly 64 chars
-    const fileHash = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('')
     try {
+      const fileHash = await sha256Hex(file)
+      const contentType = file.type || "application/octet-stream"
       const res = await apiClient("/api/credentials/upload-url", {
         method: "POST",
         body: JSON.stringify({
@@ -69,7 +81,7 @@ export default function CredentialsPage() {
           file_name: file.name,
           file_ext: fileExt,
           file_hash: fileHash,
-          content_type: file.type,
+          content_type: contentType,
           file_usage: constraintName
         })
       })
@@ -77,7 +89,7 @@ export default function CredentialsPage() {
       // 2. Upload file directly to S3 using the presigned URL
       const uploadRes = await fetch(res.upload_url, {
         method: "PUT",
-        headers: { "Content-Type": file.type },
+        headers: uploadHeaders(contentType, res.signed_headers),
         body: file
       })
 
@@ -89,7 +101,7 @@ export default function CredentialsPage() {
         ...prev,
         [constraintName]: {
           name: file.name,
-          url: res.file_url,
+          url: res.file_key,
           ext: fileExt,
           hash: fileHash,
           size: file.size
