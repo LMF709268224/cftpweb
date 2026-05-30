@@ -195,6 +195,8 @@ type Message struct {
 	Status    MessageStatus `protobuf:"varint,9,opt,name=status,proto3,enum=gmsg.MessageStatus" json:"status,omitempty"`
 	// 时间使用 string 表达 (格式: "2026-04-27T16:00:00Z")
 	CreatedAt     string `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Version       uint32 `protobuf:"varint,11,opt,name=version,proto3" json:"version,omitempty"`                     // 乐观锁版本号
+	UpdatedAt     string `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // 最后修改时间
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -299,6 +301,20 @@ func (x *Message) GetCreatedAt() string {
 	return ""
 }
 
+func (x *Message) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *Message) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
 type Template struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TemplateId    string                 `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`
@@ -391,6 +407,82 @@ func (x *Template) GetUpdatedAt() string {
 	return ""
 }
 
+type TemplateSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TemplateId    string                 `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`
+	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	Version       uint32                 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     string                 `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TemplateSummary) Reset() {
+	*x = TemplateSummary{}
+	mi := &file_msg_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TemplateSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TemplateSummary) ProtoMessage() {}
+
+func (x *TemplateSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TemplateSummary.ProtoReflect.Descriptor instead.
+func (*TemplateSummary) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *TemplateSummary) GetTemplateId() string {
+	if x != nil {
+		return x.TemplateId
+	}
+	return ""
+}
+
+func (x *TemplateSummary) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *TemplateSummary) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *TemplateSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *TemplateSummary) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
 // 通用简单响应，替代 google.protobuf.Empty
 type CommonResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -402,7 +494,7 @@ type CommonResponse struct {
 
 func (x *CommonResponse) Reset() {
 	*x = CommonResponse{}
-	mi := &file_msg_proto_msgTypes[2]
+	mi := &file_msg_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -414,7 +506,7 @@ func (x *CommonResponse) String() string {
 func (*CommonResponse) ProtoMessage() {}
 
 func (x *CommonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[2]
+	mi := &file_msg_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -427,7 +519,7 @@ func (x *CommonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommonResponse.ProtoReflect.Descriptor instead.
 func (*CommonResponse) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{2}
+	return file_msg_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CommonResponse) GetSuccess() bool {
@@ -449,14 +541,14 @@ type ListMessagesRequest struct {
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                  // 用户的ID [required]
 	Status        *MessageStatus         `protobuf:"varint,2,opt,name=status,proto3,enum=gmsg.MessageStatus,oneof" json:"status,omitempty"` // 消息状态 [optional]
 	Limit         uint32                 `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`                                 // 每页数量 [optional]
-	LastId        uint64                 `protobuf:"varint,4,opt,name=last_id,json=lastId,proto3" json:"last_id,omitempty"`                 // 上一条消息的ID,用于分页, 此处对应的是数据表中的自增ID [optional]
+	LastId        uint64                 `protobuf:"varint,4,opt,name=last_id,json=lastId,proto3" json:"last_id,omitempty"`                 // 上一条消息 of ID,用于分页, 此处对应的是数据表中的自增ID [optional]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ListMessagesRequest) Reset() {
 	*x = ListMessagesRequest{}
-	mi := &file_msg_proto_msgTypes[3]
+	mi := &file_msg_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -468,7 +560,7 @@ func (x *ListMessagesRequest) String() string {
 func (*ListMessagesRequest) ProtoMessage() {}
 
 func (x *ListMessagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[3]
+	mi := &file_msg_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -481,7 +573,7 @@ func (x *ListMessagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMessagesRequest.ProtoReflect.Descriptor instead.
 func (*ListMessagesRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{3}
+	return file_msg_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ListMessagesRequest) GetUserId() string {
@@ -514,7 +606,7 @@ func (x *ListMessagesRequest) GetLastId() uint64 {
 
 type ListMessagesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Messages      []*Message             `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
+	Messages      []*MessageItem         `protobuf:"bytes,1,rep,name=messages,proto3" json:"messages,omitempty"`
 	HasMore       bool                   `protobuf:"varint,2,opt,name=has_more,json=hasMore,proto3" json:"has_more,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -522,7 +614,7 @@ type ListMessagesResponse struct {
 
 func (x *ListMessagesResponse) Reset() {
 	*x = ListMessagesResponse{}
-	mi := &file_msg_proto_msgTypes[4]
+	mi := &file_msg_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -534,7 +626,7 @@ func (x *ListMessagesResponse) String() string {
 func (*ListMessagesResponse) ProtoMessage() {}
 
 func (x *ListMessagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[4]
+	mi := &file_msg_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,10 +639,10 @@ func (x *ListMessagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMessagesResponse.ProtoReflect.Descriptor instead.
 func (*ListMessagesResponse) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{4}
+	return file_msg_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *ListMessagesResponse) GetMessages() []*Message {
+func (x *ListMessagesResponse) GetMessages() []*MessageItem {
 	if x != nil {
 		return x.Messages
 	}
@@ -574,7 +666,7 @@ type DeleteMessagesRequest struct {
 
 func (x *DeleteMessagesRequest) Reset() {
 	*x = DeleteMessagesRequest{}
-	mi := &file_msg_proto_msgTypes[5]
+	mi := &file_msg_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -586,7 +678,7 @@ func (x *DeleteMessagesRequest) String() string {
 func (*DeleteMessagesRequest) ProtoMessage() {}
 
 func (x *DeleteMessagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[5]
+	mi := &file_msg_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -599,7 +691,7 @@ func (x *DeleteMessagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteMessagesRequest.ProtoReflect.Descriptor instead.
 func (*DeleteMessagesRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{5}
+	return file_msg_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *DeleteMessagesRequest) GetUserId() string {
@@ -625,7 +717,7 @@ type ClearAllMessagesRequest struct {
 
 func (x *ClearAllMessagesRequest) Reset() {
 	*x = ClearAllMessagesRequest{}
-	mi := &file_msg_proto_msgTypes[6]
+	mi := &file_msg_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -637,7 +729,7 @@ func (x *ClearAllMessagesRequest) String() string {
 func (*ClearAllMessagesRequest) ProtoMessage() {}
 
 func (x *ClearAllMessagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[6]
+	mi := &file_msg_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -650,7 +742,7 @@ func (x *ClearAllMessagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ClearAllMessagesRequest.ProtoReflect.Descriptor instead.
 func (*ClearAllMessagesRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{6}
+	return file_msg_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ClearAllMessagesRequest) GetUserId() string {
@@ -675,7 +767,7 @@ type SendMessageRequest struct {
 
 func (x *SendMessageRequest) Reset() {
 	*x = SendMessageRequest{}
-	mi := &file_msg_proto_msgTypes[7]
+	mi := &file_msg_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -687,7 +779,7 @@ func (x *SendMessageRequest) String() string {
 func (*SendMessageRequest) ProtoMessage() {}
 
 func (x *SendMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[7]
+	mi := &file_msg_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -700,7 +792,7 @@ func (x *SendMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendMessageRequest.ProtoReflect.Descriptor instead.
 func (*SendMessageRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{7}
+	return file_msg_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *SendMessageRequest) GetUserIds() []string {
@@ -762,7 +854,7 @@ type SendMessageResponse struct {
 
 func (x *SendMessageResponse) Reset() {
 	*x = SendMessageResponse{}
-	mi := &file_msg_proto_msgTypes[8]
+	mi := &file_msg_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -774,7 +866,7 @@ func (x *SendMessageResponse) String() string {
 func (*SendMessageResponse) ProtoMessage() {}
 
 func (x *SendMessageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[8]
+	mi := &file_msg_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -787,7 +879,7 @@ func (x *SendMessageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendMessageResponse.ProtoReflect.Descriptor instead.
 func (*SendMessageResponse) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{8}
+	return file_msg_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SendMessageResponse) GetCount() uint32 {
@@ -815,7 +907,7 @@ type RevokeMessageRequest struct {
 
 func (x *RevokeMessageRequest) Reset() {
 	*x = RevokeMessageRequest{}
-	mi := &file_msg_proto_msgTypes[9]
+	mi := &file_msg_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -827,7 +919,7 @@ func (x *RevokeMessageRequest) String() string {
 func (*RevokeMessageRequest) ProtoMessage() {}
 
 func (x *RevokeMessageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[9]
+	mi := &file_msg_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -840,7 +932,7 @@ func (x *RevokeMessageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokeMessageRequest.ProtoReflect.Descriptor instead.
 func (*RevokeMessageRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{9}
+	return file_msg_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *RevokeMessageRequest) GetUserId() string {
@@ -876,7 +968,7 @@ type CreateTemplateRequest struct {
 
 func (x *CreateTemplateRequest) Reset() {
 	*x = CreateTemplateRequest{}
-	mi := &file_msg_proto_msgTypes[10]
+	mi := &file_msg_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -888,7 +980,7 @@ func (x *CreateTemplateRequest) String() string {
 func (*CreateTemplateRequest) ProtoMessage() {}
 
 func (x *CreateTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[10]
+	mi := &file_msg_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -901,7 +993,7 @@ func (x *CreateTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateTemplateRequest.ProtoReflect.Descriptor instead.
 func (*CreateTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{10}
+	return file_msg_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CreateTemplateRequest) GetTemplateId() string {
@@ -941,7 +1033,7 @@ type GetTemplateRequest struct {
 
 func (x *GetTemplateRequest) Reset() {
 	*x = GetTemplateRequest{}
-	mi := &file_msg_proto_msgTypes[11]
+	mi := &file_msg_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -953,7 +1045,7 @@ func (x *GetTemplateRequest) String() string {
 func (*GetTemplateRequest) ProtoMessage() {}
 
 func (x *GetTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[11]
+	mi := &file_msg_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -966,7 +1058,7 @@ func (x *GetTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTemplateRequest.ProtoReflect.Descriptor instead.
 func (*GetTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{11}
+	return file_msg_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetTemplateRequest) GetTemplateId() string {
@@ -989,7 +1081,7 @@ type UpdateTemplateRequest struct {
 
 func (x *UpdateTemplateRequest) Reset() {
 	*x = UpdateTemplateRequest{}
-	mi := &file_msg_proto_msgTypes[12]
+	mi := &file_msg_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1001,7 +1093,7 @@ func (x *UpdateTemplateRequest) String() string {
 func (*UpdateTemplateRequest) ProtoMessage() {}
 
 func (x *UpdateTemplateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[12]
+	mi := &file_msg_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1014,7 +1106,7 @@ func (x *UpdateTemplateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateTemplateRequest.ProtoReflect.Descriptor instead.
 func (*UpdateTemplateRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{12}
+	return file_msg_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *UpdateTemplateRequest) GetTemplateId() string {
@@ -1063,7 +1155,7 @@ type ListTemplatesRequest struct {
 
 func (x *ListTemplatesRequest) Reset() {
 	*x = ListTemplatesRequest{}
-	mi := &file_msg_proto_msgTypes[13]
+	mi := &file_msg_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1075,7 +1167,7 @@ func (x *ListTemplatesRequest) String() string {
 func (*ListTemplatesRequest) ProtoMessage() {}
 
 func (x *ListTemplatesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[13]
+	mi := &file_msg_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1088,7 +1180,7 @@ func (x *ListTemplatesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTemplatesRequest.ProtoReflect.Descriptor instead.
 func (*ListTemplatesRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{13}
+	return file_msg_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ListTemplatesRequest) GetKeyword() string {
@@ -1114,7 +1206,7 @@ func (x *ListTemplatesRequest) GetPageSize() uint32 {
 
 type ListTemplatesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Templates     []*Template            `protobuf:"bytes,1,rep,name=templates,proto3" json:"templates,omitempty"`
+	Templates     []*TemplateSummary     `protobuf:"bytes,1,rep,name=templates,proto3" json:"templates,omitempty"`
 	Total         uint32                 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1122,7 +1214,7 @@ type ListTemplatesResponse struct {
 
 func (x *ListTemplatesResponse) Reset() {
 	*x = ListTemplatesResponse{}
-	mi := &file_msg_proto_msgTypes[14]
+	mi := &file_msg_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1134,7 +1226,7 @@ func (x *ListTemplatesResponse) String() string {
 func (*ListTemplatesResponse) ProtoMessage() {}
 
 func (x *ListTemplatesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[14]
+	mi := &file_msg_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1147,10 +1239,10 @@ func (x *ListTemplatesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListTemplatesResponse.ProtoReflect.Descriptor instead.
 func (*ListTemplatesResponse) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{14}
+	return file_msg_proto_rawDescGZIP(), []int{15}
 }
 
-func (x *ListTemplatesResponse) GetTemplates() []*Template {
+func (x *ListTemplatesResponse) GetTemplates() []*TemplateSummary {
 	if x != nil {
 		return x.Templates
 	}
@@ -1174,7 +1266,7 @@ type MarkAsReadRequest struct {
 
 func (x *MarkAsReadRequest) Reset() {
 	*x = MarkAsReadRequest{}
-	mi := &file_msg_proto_msgTypes[15]
+	mi := &file_msg_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1186,7 +1278,7 @@ func (x *MarkAsReadRequest) String() string {
 func (*MarkAsReadRequest) ProtoMessage() {}
 
 func (x *MarkAsReadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[15]
+	mi := &file_msg_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1199,7 +1291,7 @@ func (x *MarkAsReadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MarkAsReadRequest.ProtoReflect.Descriptor instead.
 func (*MarkAsReadRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{15}
+	return file_msg_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *MarkAsReadRequest) GetUserId() string {
@@ -1227,7 +1319,7 @@ type ListMessagesAdminRequest struct {
 
 func (x *ListMessagesAdminRequest) Reset() {
 	*x = ListMessagesAdminRequest{}
-	mi := &file_msg_proto_msgTypes[16]
+	mi := &file_msg_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1239,7 +1331,7 @@ func (x *ListMessagesAdminRequest) String() string {
 func (*ListMessagesAdminRequest) ProtoMessage() {}
 
 func (x *ListMessagesAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[16]
+	mi := &file_msg_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1252,7 +1344,7 @@ func (x *ListMessagesAdminRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMessagesAdminRequest.ProtoReflect.Descriptor instead.
 func (*ListMessagesAdminRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{16}
+	return file_msg_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListMessagesAdminRequest) GetStatus() MessageStatus {
@@ -1293,7 +1385,7 @@ type MessageItem struct {
 
 func (x *MessageItem) Reset() {
 	*x = MessageItem{}
-	mi := &file_msg_proto_msgTypes[17]
+	mi := &file_msg_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1305,7 +1397,7 @@ func (x *MessageItem) String() string {
 func (*MessageItem) ProtoMessage() {}
 
 func (x *MessageItem) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[17]
+	mi := &file_msg_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1318,7 +1410,7 @@ func (x *MessageItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MessageItem.ProtoReflect.Descriptor instead.
 func (*MessageItem) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{17}
+	return file_msg_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *MessageItem) GetId() uint64 {
@@ -1394,7 +1486,7 @@ type ListMessagesAdminResponse struct {
 
 func (x *ListMessagesAdminResponse) Reset() {
 	*x = ListMessagesAdminResponse{}
-	mi := &file_msg_proto_msgTypes[18]
+	mi := &file_msg_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1406,7 +1498,7 @@ func (x *ListMessagesAdminResponse) String() string {
 func (*ListMessagesAdminResponse) ProtoMessage() {}
 
 func (x *ListMessagesAdminResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[18]
+	mi := &file_msg_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1419,7 +1511,7 @@ func (x *ListMessagesAdminResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListMessagesAdminResponse.ProtoReflect.Descriptor instead.
 func (*ListMessagesAdminResponse) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{18}
+	return file_msg_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ListMessagesAdminResponse) GetMessages() []*MessageItem {
@@ -1444,7 +1536,7 @@ type GetMessageStatsRequest struct {
 
 func (x *GetMessageStatsRequest) Reset() {
 	*x = GetMessageStatsRequest{}
-	mi := &file_msg_proto_msgTypes[19]
+	mi := &file_msg_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1456,7 +1548,7 @@ func (x *GetMessageStatsRequest) String() string {
 func (*GetMessageStatsRequest) ProtoMessage() {}
 
 func (x *GetMessageStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[19]
+	mi := &file_msg_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1469,7 +1561,7 @@ func (x *GetMessageStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMessageStatsRequest.ProtoReflect.Descriptor instead.
 func (*GetMessageStatsRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{19}
+	return file_msg_proto_rawDescGZIP(), []int{20}
 }
 
 type GetMessageStatsResponse struct {
@@ -1481,7 +1573,7 @@ type GetMessageStatsResponse struct {
 
 func (x *GetMessageStatsResponse) Reset() {
 	*x = GetMessageStatsResponse{}
-	mi := &file_msg_proto_msgTypes[20]
+	mi := &file_msg_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1493,7 +1585,7 @@ func (x *GetMessageStatsResponse) String() string {
 func (*GetMessageStatsResponse) ProtoMessage() {}
 
 func (x *GetMessageStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[20]
+	mi := &file_msg_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1506,7 +1598,7 @@ func (x *GetMessageStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetMessageStatsResponse.ProtoReflect.Descriptor instead.
 func (*GetMessageStatsResponse) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{20}
+	return file_msg_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetMessageStatsResponse) GetStatusCounts() map[string]int64 {
@@ -1516,11 +1608,107 @@ func (x *GetMessageStatsResponse) GetStatusCounts() map[string]int64 {
 	return nil
 }
 
+type GetMessageDetailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // 用户ID [required]
+	MessageId     string                 `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"` // 消息ID [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMessageDetailRequest) Reset() {
+	*x = GetMessageDetailRequest{}
+	mi := &file_msg_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMessageDetailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMessageDetailRequest) ProtoMessage() {}
+
+func (x *GetMessageDetailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMessageDetailRequest.ProtoReflect.Descriptor instead.
+func (*GetMessageDetailRequest) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetMessageDetailRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetMessageDetailRequest) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
+	}
+	return ""
+}
+
+type GetTemplateDetailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TemplateId    string                 `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"` // 模板ID [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetTemplateDetailRequest) Reset() {
+	*x = GetTemplateDetailRequest{}
+	mi := &file_msg_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetTemplateDetailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetTemplateDetailRequest) ProtoMessage() {}
+
+func (x *GetTemplateDetailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetTemplateDetailRequest.ProtoReflect.Descriptor instead.
+func (*GetTemplateDetailRequest) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *GetTemplateDetailRequest) GetTemplateId() string {
+	if x != nil {
+		return x.TemplateId
+	}
+	return ""
+}
+
 var File_msg_proto protoreflect.FileDescriptor
 
 const file_msg_proto_rawDesc = "" +
 	"\n" +
-	"\tmsg.proto\x12\x04gmsg\"\xcf\x02\n" +
+	"\tmsg.proto\x12\x04gmsg\"\x88\x03\n" +
 	"\aMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -1536,7 +1724,10 @@ const file_msg_proto_rawDesc = "" +
 	"\x06status\x18\t \x01(\x0e2\x13.gmsg.MessageStatusR\x06status\x12\x1d\n" +
 	"\n" +
 	"created_at\x18\n" +
-	" \x01(\tR\tcreatedAt\"\xe3\x01\n" +
+	" \x01(\tR\tcreatedAt\x12\x18\n" +
+	"\aversion\x18\v \x01(\rR\aversion\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\f \x01(\tR\tupdatedAt\"\xe3\x01\n" +
 	"\bTemplate\x12\x1f\n" +
 	"\vtemplate_id\x18\x01 \x01(\tR\n" +
 	"templateId\x12\x1b\n" +
@@ -1548,7 +1739,16 @@ const file_msg_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\tR\tupdatedAt\"D\n" +
+	"updated_at\x18\a \x01(\tR\tupdatedAt\"\xac\x01\n" +
+	"\x0fTemplateSummary\x12\x1f\n" +
+	"\vtemplate_id\x18\x01 \x01(\tR\n" +
+	"templateId\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\rR\aversion\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x04 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\x05 \x01(\tR\tupdatedAt\"D\n" +
 	"\x0eCommonResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"\x9a\x01\n" +
@@ -1557,9 +1757,9 @@ const file_msg_proto_rawDesc = "" +
 	"\x06status\x18\x02 \x01(\x0e2\x13.gmsg.MessageStatusH\x00R\x06status\x88\x01\x01\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\rR\x05limit\x12\x17\n" +
 	"\alast_id\x18\x04 \x01(\x04R\x06lastIdB\t\n" +
-	"\a_status\"\\\n" +
-	"\x14ListMessagesResponse\x12)\n" +
-	"\bmessages\x18\x01 \x03(\v2\r.gmsg.MessageR\bmessages\x12\x19\n" +
+	"\a_status\"`\n" +
+	"\x14ListMessagesResponse\x12-\n" +
+	"\bmessages\x18\x01 \x03(\v2\x11.gmsg.MessageItemR\bmessages\x12\x19\n" +
 	"\bhas_more\x18\x02 \x01(\bR\ahasMore\"Q\n" +
 	"\x15DeleteMessagesRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1f\n" +
@@ -1607,9 +1807,9 @@ const file_msg_proto_rawDesc = "" +
 	"\x14ListTemplatesRequest\x12\x18\n" +
 	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\rR\bpageSize\"[\n" +
-	"\x15ListTemplatesResponse\x12,\n" +
-	"\ttemplates\x18\x01 \x03(\v2\x0e.gmsg.TemplateR\ttemplates\x12\x14\n" +
+	"\tpage_size\x18\x03 \x01(\rR\bpageSize\"b\n" +
+	"\x15ListTemplatesResponse\x123\n" +
+	"\ttemplates\x18\x01 \x03(\v2\x15.gmsg.TemplateSummaryR\ttemplates\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\rR\x05total\"M\n" +
 	"\x11MarkAsReadRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1f\n" +
@@ -1642,7 +1842,14 @@ const file_msg_proto_rawDesc = "" +
 	"\rstatus_counts\x18\x01 \x03(\v2/.gmsg.GetMessageStatsResponse.StatusCountsEntryR\fstatusCounts\x1a?\n" +
 	"\x11StatusCountsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01*?\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"Q\n" +
+	"\x17GetMessageDetailRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x02 \x01(\tR\tmessageId\";\n" +
+	"\x18GetTemplateDetailRequest\x12\x1f\n" +
+	"\vtemplate_id\x18\x01 \x01(\tR\n" +
+	"templateId*?\n" +
 	"\rMessageStatus\x12\n" +
 	"\n" +
 	"\x06UNREAD\x10\x00\x12\b\n" +
@@ -1659,7 +1866,7 @@ const file_msg_proto_rawDesc = "" +
 	"\tMsgSource\x12\x12\n" +
 	"\x0eUNKNOWN_SOURCE\x10\x00\x12\x0f\n" +
 	"\vAUTO_SYSTEM\x10\x01\x12\x10\n" +
-	"\fMANUAL_ADMIN\x10\x022\xd0\x06\n" +
+	"\fMANUAL_ADMIN\x10\x022\xd7\a\n" +
 	"\x0eMessageService\x12E\n" +
 	"\fListMessages\x12\x19.gmsg.ListMessagesRequest\x1a\x1a.gmsg.ListMessagesResponse\x12;\n" +
 	"\n" +
@@ -1669,11 +1876,13 @@ const file_msg_proto_rawDesc = "" +
 	"\vSendMessage\x12\x18.gmsg.SendMessageRequest\x1a\x19.gmsg.SendMessageResponse\x12A\n" +
 	"\rRevokeMessage\x12\x1a.gmsg.RevokeMessageRequest\x1a\x14.gmsg.CommonResponse\x12T\n" +
 	"\x11ListMessagesAdmin\x12\x1e.gmsg.ListMessagesAdminRequest\x1a\x1f.gmsg.ListMessagesAdminResponse\x12N\n" +
-	"\x0fGetMessageStats\x12\x1c.gmsg.GetMessageStatsRequest\x1a\x1d.gmsg.GetMessageStatsResponse\x12=\n" +
+	"\x0fGetMessageStats\x12\x1c.gmsg.GetMessageStatsRequest\x1a\x1d.gmsg.GetMessageStatsResponse\x12@\n" +
+	"\x10GetMessageDetail\x12\x1d.gmsg.GetMessageDetailRequest\x1a\r.gmsg.Message\x12=\n" +
 	"\x0eCreateTemplate\x12\x1b.gmsg.CreateTemplateRequest\x1a\x0e.gmsg.Template\x127\n" +
 	"\vGetTemplate\x12\x18.gmsg.GetTemplateRequest\x1a\x0e.gmsg.Template\x12=\n" +
 	"\x0eUpdateTemplate\x12\x1b.gmsg.UpdateTemplateRequest\x1a\x0e.gmsg.Template\x12H\n" +
-	"\rListTemplates\x12\x1a.gmsg.ListTemplatesRequest\x1a\x1b.gmsg.ListTemplatesResponseB\vZ\tcftp/gmsgb\x06proto3"
+	"\rListTemplates\x12\x1a.gmsg.ListTemplatesRequest\x1a\x1b.gmsg.ListTemplatesResponse\x12C\n" +
+	"\x11GetTemplateDetail\x12\x1e.gmsg.GetTemplateDetailRequest\x1a\x0e.gmsg.TemplateB\vZ\tcftp/gmsgb\x06proto3"
 
 var (
 	file_msg_proto_rawDescOnce sync.Once
@@ -1688,75 +1897,82 @@ func file_msg_proto_rawDescGZIP() []byte {
 }
 
 var file_msg_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 var file_msg_proto_goTypes = []any{
 	(MessageStatus)(0),                // 0: gmsg.MessageStatus
 	(MsgType)(0),                      // 1: gmsg.MsgType
 	(MsgSource)(0),                    // 2: gmsg.MsgSource
 	(*Message)(nil),                   // 3: gmsg.Message
 	(*Template)(nil),                  // 4: gmsg.Template
-	(*CommonResponse)(nil),            // 5: gmsg.CommonResponse
-	(*ListMessagesRequest)(nil),       // 6: gmsg.ListMessagesRequest
-	(*ListMessagesResponse)(nil),      // 7: gmsg.ListMessagesResponse
-	(*DeleteMessagesRequest)(nil),     // 8: gmsg.DeleteMessagesRequest
-	(*ClearAllMessagesRequest)(nil),   // 9: gmsg.ClearAllMessagesRequest
-	(*SendMessageRequest)(nil),        // 10: gmsg.SendMessageRequest
-	(*SendMessageResponse)(nil),       // 11: gmsg.SendMessageResponse
-	(*RevokeMessageRequest)(nil),      // 12: gmsg.RevokeMessageRequest
-	(*CreateTemplateRequest)(nil),     // 13: gmsg.CreateTemplateRequest
-	(*GetTemplateRequest)(nil),        // 14: gmsg.GetTemplateRequest
-	(*UpdateTemplateRequest)(nil),     // 15: gmsg.UpdateTemplateRequest
-	(*ListTemplatesRequest)(nil),      // 16: gmsg.ListTemplatesRequest
-	(*ListTemplatesResponse)(nil),     // 17: gmsg.ListTemplatesResponse
-	(*MarkAsReadRequest)(nil),         // 18: gmsg.MarkAsReadRequest
-	(*ListMessagesAdminRequest)(nil),  // 19: gmsg.ListMessagesAdminRequest
-	(*MessageItem)(nil),               // 20: gmsg.MessageItem
-	(*ListMessagesAdminResponse)(nil), // 21: gmsg.ListMessagesAdminResponse
-	(*GetMessageStatsRequest)(nil),    // 22: gmsg.GetMessageStatsRequest
-	(*GetMessageStatsResponse)(nil),   // 23: gmsg.GetMessageStatsResponse
-	nil,                               // 24: gmsg.GetMessageStatsResponse.StatusCountsEntry
+	(*TemplateSummary)(nil),           // 5: gmsg.TemplateSummary
+	(*CommonResponse)(nil),            // 6: gmsg.CommonResponse
+	(*ListMessagesRequest)(nil),       // 7: gmsg.ListMessagesRequest
+	(*ListMessagesResponse)(nil),      // 8: gmsg.ListMessagesResponse
+	(*DeleteMessagesRequest)(nil),     // 9: gmsg.DeleteMessagesRequest
+	(*ClearAllMessagesRequest)(nil),   // 10: gmsg.ClearAllMessagesRequest
+	(*SendMessageRequest)(nil),        // 11: gmsg.SendMessageRequest
+	(*SendMessageResponse)(nil),       // 12: gmsg.SendMessageResponse
+	(*RevokeMessageRequest)(nil),      // 13: gmsg.RevokeMessageRequest
+	(*CreateTemplateRequest)(nil),     // 14: gmsg.CreateTemplateRequest
+	(*GetTemplateRequest)(nil),        // 15: gmsg.GetTemplateRequest
+	(*UpdateTemplateRequest)(nil),     // 16: gmsg.UpdateTemplateRequest
+	(*ListTemplatesRequest)(nil),      // 17: gmsg.ListTemplatesRequest
+	(*ListTemplatesResponse)(nil),     // 18: gmsg.ListTemplatesResponse
+	(*MarkAsReadRequest)(nil),         // 19: gmsg.MarkAsReadRequest
+	(*ListMessagesAdminRequest)(nil),  // 20: gmsg.ListMessagesAdminRequest
+	(*MessageItem)(nil),               // 21: gmsg.MessageItem
+	(*ListMessagesAdminResponse)(nil), // 22: gmsg.ListMessagesAdminResponse
+	(*GetMessageStatsRequest)(nil),    // 23: gmsg.GetMessageStatsRequest
+	(*GetMessageStatsResponse)(nil),   // 24: gmsg.GetMessageStatsResponse
+	(*GetMessageDetailRequest)(nil),   // 25: gmsg.GetMessageDetailRequest
+	(*GetTemplateDetailRequest)(nil),  // 26: gmsg.GetTemplateDetailRequest
+	nil,                               // 27: gmsg.GetMessageStatsResponse.StatusCountsEntry
 }
 var file_msg_proto_depIdxs = []int32{
 	1,  // 0: gmsg.Message.msg_type:type_name -> gmsg.MsgType
 	2,  // 1: gmsg.Message.msg_source:type_name -> gmsg.MsgSource
 	0,  // 2: gmsg.Message.status:type_name -> gmsg.MessageStatus
 	0,  // 3: gmsg.ListMessagesRequest.status:type_name -> gmsg.MessageStatus
-	3,  // 4: gmsg.ListMessagesResponse.messages:type_name -> gmsg.Message
+	21, // 4: gmsg.ListMessagesResponse.messages:type_name -> gmsg.MessageItem
 	1,  // 5: gmsg.SendMessageRequest.msg_type:type_name -> gmsg.MsgType
 	2,  // 6: gmsg.SendMessageRequest.msg_source:type_name -> gmsg.MsgSource
-	4,  // 7: gmsg.ListTemplatesResponse.templates:type_name -> gmsg.Template
+	5,  // 7: gmsg.ListTemplatesResponse.templates:type_name -> gmsg.TemplateSummary
 	0,  // 8: gmsg.ListMessagesAdminRequest.status:type_name -> gmsg.MessageStatus
 	1,  // 9: gmsg.MessageItem.msg_type:type_name -> gmsg.MsgType
 	2,  // 10: gmsg.MessageItem.msg_source:type_name -> gmsg.MsgSource
 	0,  // 11: gmsg.MessageItem.status:type_name -> gmsg.MessageStatus
-	20, // 12: gmsg.ListMessagesAdminResponse.messages:type_name -> gmsg.MessageItem
-	24, // 13: gmsg.GetMessageStatsResponse.status_counts:type_name -> gmsg.GetMessageStatsResponse.StatusCountsEntry
-	6,  // 14: gmsg.MessageService.ListMessages:input_type -> gmsg.ListMessagesRequest
-	18, // 15: gmsg.MessageService.MarkAsRead:input_type -> gmsg.MarkAsReadRequest
-	8,  // 16: gmsg.MessageService.DeleteMessages:input_type -> gmsg.DeleteMessagesRequest
-	9,  // 17: gmsg.MessageService.ClearAllMessages:input_type -> gmsg.ClearAllMessagesRequest
-	10, // 18: gmsg.MessageService.SendMessage:input_type -> gmsg.SendMessageRequest
-	12, // 19: gmsg.MessageService.RevokeMessage:input_type -> gmsg.RevokeMessageRequest
-	19, // 20: gmsg.MessageService.ListMessagesAdmin:input_type -> gmsg.ListMessagesAdminRequest
-	22, // 21: gmsg.MessageService.GetMessageStats:input_type -> gmsg.GetMessageStatsRequest
-	13, // 22: gmsg.MessageService.CreateTemplate:input_type -> gmsg.CreateTemplateRequest
-	14, // 23: gmsg.MessageService.GetTemplate:input_type -> gmsg.GetTemplateRequest
-	15, // 24: gmsg.MessageService.UpdateTemplate:input_type -> gmsg.UpdateTemplateRequest
-	16, // 25: gmsg.MessageService.ListTemplates:input_type -> gmsg.ListTemplatesRequest
-	7,  // 26: gmsg.MessageService.ListMessages:output_type -> gmsg.ListMessagesResponse
-	5,  // 27: gmsg.MessageService.MarkAsRead:output_type -> gmsg.CommonResponse
-	5,  // 28: gmsg.MessageService.DeleteMessages:output_type -> gmsg.CommonResponse
-	5,  // 29: gmsg.MessageService.ClearAllMessages:output_type -> gmsg.CommonResponse
-	11, // 30: gmsg.MessageService.SendMessage:output_type -> gmsg.SendMessageResponse
-	5,  // 31: gmsg.MessageService.RevokeMessage:output_type -> gmsg.CommonResponse
-	21, // 32: gmsg.MessageService.ListMessagesAdmin:output_type -> gmsg.ListMessagesAdminResponse
-	23, // 33: gmsg.MessageService.GetMessageStats:output_type -> gmsg.GetMessageStatsResponse
-	4,  // 34: gmsg.MessageService.CreateTemplate:output_type -> gmsg.Template
-	4,  // 35: gmsg.MessageService.GetTemplate:output_type -> gmsg.Template
-	4,  // 36: gmsg.MessageService.UpdateTemplate:output_type -> gmsg.Template
-	17, // 37: gmsg.MessageService.ListTemplates:output_type -> gmsg.ListTemplatesResponse
-	26, // [26:38] is the sub-list for method output_type
-	14, // [14:26] is the sub-list for method input_type
+	21, // 12: gmsg.ListMessagesAdminResponse.messages:type_name -> gmsg.MessageItem
+	27, // 13: gmsg.GetMessageStatsResponse.status_counts:type_name -> gmsg.GetMessageStatsResponse.StatusCountsEntry
+	7,  // 14: gmsg.MessageService.ListMessages:input_type -> gmsg.ListMessagesRequest
+	19, // 15: gmsg.MessageService.MarkAsRead:input_type -> gmsg.MarkAsReadRequest
+	9,  // 16: gmsg.MessageService.DeleteMessages:input_type -> gmsg.DeleteMessagesRequest
+	10, // 17: gmsg.MessageService.ClearAllMessages:input_type -> gmsg.ClearAllMessagesRequest
+	11, // 18: gmsg.MessageService.SendMessage:input_type -> gmsg.SendMessageRequest
+	13, // 19: gmsg.MessageService.RevokeMessage:input_type -> gmsg.RevokeMessageRequest
+	20, // 20: gmsg.MessageService.ListMessagesAdmin:input_type -> gmsg.ListMessagesAdminRequest
+	23, // 21: gmsg.MessageService.GetMessageStats:input_type -> gmsg.GetMessageStatsRequest
+	25, // 22: gmsg.MessageService.GetMessageDetail:input_type -> gmsg.GetMessageDetailRequest
+	14, // 23: gmsg.MessageService.CreateTemplate:input_type -> gmsg.CreateTemplateRequest
+	15, // 24: gmsg.MessageService.GetTemplate:input_type -> gmsg.GetTemplateRequest
+	16, // 25: gmsg.MessageService.UpdateTemplate:input_type -> gmsg.UpdateTemplateRequest
+	17, // 26: gmsg.MessageService.ListTemplates:input_type -> gmsg.ListTemplatesRequest
+	26, // 27: gmsg.MessageService.GetTemplateDetail:input_type -> gmsg.GetTemplateDetailRequest
+	8,  // 28: gmsg.MessageService.ListMessages:output_type -> gmsg.ListMessagesResponse
+	6,  // 29: gmsg.MessageService.MarkAsRead:output_type -> gmsg.CommonResponse
+	6,  // 30: gmsg.MessageService.DeleteMessages:output_type -> gmsg.CommonResponse
+	6,  // 31: gmsg.MessageService.ClearAllMessages:output_type -> gmsg.CommonResponse
+	12, // 32: gmsg.MessageService.SendMessage:output_type -> gmsg.SendMessageResponse
+	6,  // 33: gmsg.MessageService.RevokeMessage:output_type -> gmsg.CommonResponse
+	22, // 34: gmsg.MessageService.ListMessagesAdmin:output_type -> gmsg.ListMessagesAdminResponse
+	24, // 35: gmsg.MessageService.GetMessageStats:output_type -> gmsg.GetMessageStatsResponse
+	3,  // 36: gmsg.MessageService.GetMessageDetail:output_type -> gmsg.Message
+	4,  // 37: gmsg.MessageService.CreateTemplate:output_type -> gmsg.Template
+	4,  // 38: gmsg.MessageService.GetTemplate:output_type -> gmsg.Template
+	4,  // 39: gmsg.MessageService.UpdateTemplate:output_type -> gmsg.Template
+	18, // 40: gmsg.MessageService.ListTemplates:output_type -> gmsg.ListTemplatesResponse
+	4,  // 41: gmsg.MessageService.GetTemplateDetail:output_type -> gmsg.Template
+	28, // [28:42] is the sub-list for method output_type
+	14, // [14:28] is the sub-list for method input_type
 	14, // [14:14] is the sub-list for extension type_name
 	14, // [14:14] is the sub-list for extension extendee
 	0,  // [0:14] is the sub-list for field type_name
@@ -1767,15 +1983,15 @@ func file_msg_proto_init() {
 	if File_msg_proto != nil {
 		return
 	}
-	file_msg_proto_msgTypes[3].OneofWrappers = []any{}
-	file_msg_proto_msgTypes[16].OneofWrappers = []any{}
+	file_msg_proto_msgTypes[4].OneofWrappers = []any{}
+	file_msg_proto_msgTypes[17].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_msg_proto_rawDesc), len(file_msg_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   22,
+			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

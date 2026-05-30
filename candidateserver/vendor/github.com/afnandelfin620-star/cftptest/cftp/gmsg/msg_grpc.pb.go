@@ -27,10 +27,12 @@ const (
 	MessageService_RevokeMessage_FullMethodName     = "/gmsg.MessageService/RevokeMessage"
 	MessageService_ListMessagesAdmin_FullMethodName = "/gmsg.MessageService/ListMessagesAdmin"
 	MessageService_GetMessageStats_FullMethodName   = "/gmsg.MessageService/GetMessageStats"
+	MessageService_GetMessageDetail_FullMethodName  = "/gmsg.MessageService/GetMessageDetail"
 	MessageService_CreateTemplate_FullMethodName    = "/gmsg.MessageService/CreateTemplate"
 	MessageService_GetTemplate_FullMethodName       = "/gmsg.MessageService/GetTemplate"
 	MessageService_UpdateTemplate_FullMethodName    = "/gmsg.MessageService/UpdateTemplate"
 	MessageService_ListTemplates_FullMethodName     = "/gmsg.MessageService/ListTemplates"
+	MessageService_GetTemplateDetail_FullMethodName = "/gmsg.MessageService/GetTemplateDetail"
 )
 
 // MessageServiceClient is the client API for MessageService service.
@@ -50,11 +52,15 @@ type MessageServiceClient interface {
 	// --- 管理端：分页列出消息与计数 ---
 	ListMessagesAdmin(ctx context.Context, in *ListMessagesAdminRequest, opts ...grpc.CallOption) (*ListMessagesAdminResponse, error)
 	GetMessageStats(ctx context.Context, in *GetMessageStatsRequest, opts ...grpc.CallOption) (*GetMessageStatsResponse, error)
+	// 管理端：获取单条消息详情
+	GetMessageDetail(ctx context.Context, in *GetMessageDetailRequest, opts ...grpc.CallOption) (*Message, error)
 	// --- 管理端：模板 CRUD ---
 	CreateTemplate(ctx context.Context, in *CreateTemplateRequest, opts ...grpc.CallOption) (*Template, error)
 	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*Template, error)
 	UpdateTemplate(ctx context.Context, in *UpdateTemplateRequest, opts ...grpc.CallOption) (*Template, error)
 	ListTemplates(ctx context.Context, in *ListTemplatesRequest, opts ...grpc.CallOption) (*ListTemplatesResponse, error)
+	// 管理端：获取模板详情（与 GetTemplate 等价，遵循命名约定）
+	GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*Template, error)
 }
 
 type messageServiceClient struct {
@@ -145,6 +151,16 @@ func (c *messageServiceClient) GetMessageStats(ctx context.Context, in *GetMessa
 	return out, nil
 }
 
+func (c *messageServiceClient) GetMessageDetail(ctx context.Context, in *GetMessageDetailRequest, opts ...grpc.CallOption) (*Message, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Message)
+	err := c.cc.Invoke(ctx, MessageService_GetMessageDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *messageServiceClient) CreateTemplate(ctx context.Context, in *CreateTemplateRequest, opts ...grpc.CallOption) (*Template, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Template)
@@ -185,6 +201,16 @@ func (c *messageServiceClient) ListTemplates(ctx context.Context, in *ListTempla
 	return out, nil
 }
 
+func (c *messageServiceClient) GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*Template, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Template)
+	err := c.cc.Invoke(ctx, MessageService_GetTemplateDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MessageServiceServer is the server API for MessageService service.
 // All implementations must embed UnimplementedMessageServiceServer
 // for forward compatibility.
@@ -202,11 +228,15 @@ type MessageServiceServer interface {
 	// --- 管理端：分页列出消息与计数 ---
 	ListMessagesAdmin(context.Context, *ListMessagesAdminRequest) (*ListMessagesAdminResponse, error)
 	GetMessageStats(context.Context, *GetMessageStatsRequest) (*GetMessageStatsResponse, error)
+	// 管理端：获取单条消息详情
+	GetMessageDetail(context.Context, *GetMessageDetailRequest) (*Message, error)
 	// --- 管理端：模板 CRUD ---
 	CreateTemplate(context.Context, *CreateTemplateRequest) (*Template, error)
 	GetTemplate(context.Context, *GetTemplateRequest) (*Template, error)
 	UpdateTemplate(context.Context, *UpdateTemplateRequest) (*Template, error)
 	ListTemplates(context.Context, *ListTemplatesRequest) (*ListTemplatesResponse, error)
+	// 管理端：获取模板详情（与 GetTemplate 等价，遵循命名约定）
+	GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*Template, error)
 	mustEmbedUnimplementedMessageServiceServer()
 }
 
@@ -241,6 +271,9 @@ func (UnimplementedMessageServiceServer) ListMessagesAdmin(context.Context, *Lis
 func (UnimplementedMessageServiceServer) GetMessageStats(context.Context, *GetMessageStatsRequest) (*GetMessageStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMessageStats not implemented")
 }
+func (UnimplementedMessageServiceServer) GetMessageDetail(context.Context, *GetMessageDetailRequest) (*Message, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMessageDetail not implemented")
+}
 func (UnimplementedMessageServiceServer) CreateTemplate(context.Context, *CreateTemplateRequest) (*Template, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateTemplate not implemented")
 }
@@ -252,6 +285,9 @@ func (UnimplementedMessageServiceServer) UpdateTemplate(context.Context, *Update
 }
 func (UnimplementedMessageServiceServer) ListTemplates(context.Context, *ListTemplatesRequest) (*ListTemplatesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTemplates not implemented")
+}
+func (UnimplementedMessageServiceServer) GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*Template, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTemplateDetail not implemented")
 }
 func (UnimplementedMessageServiceServer) mustEmbedUnimplementedMessageServiceServer() {}
 func (UnimplementedMessageServiceServer) testEmbeddedByValue()                        {}
@@ -418,6 +454,24 @@ func _MessageService_GetMessageStats_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessageService_GetMessageDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMessageDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessageServiceServer).GetMessageDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessageService_GetMessageDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessageServiceServer).GetMessageDetail(ctx, req.(*GetMessageDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MessageService_CreateTemplate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateTemplateRequest)
 	if err := dec(in); err != nil {
@@ -490,6 +544,24 @@ func _MessageService_ListTemplates_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessageService_GetTemplateDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTemplateDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessageServiceServer).GetTemplateDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessageService_GetTemplateDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessageServiceServer).GetTemplateDetail(ctx, req.(*GetTemplateDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MessageService_ServiceDesc is the grpc.ServiceDesc for MessageService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -530,6 +602,10 @@ var MessageService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MessageService_GetMessageStats_Handler,
 		},
 		{
+			MethodName: "GetMessageDetail",
+			Handler:    _MessageService_GetMessageDetail_Handler,
+		},
+		{
 			MethodName: "CreateTemplate",
 			Handler:    _MessageService_CreateTemplate_Handler,
 		},
@@ -544,6 +620,10 @@ var MessageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListTemplates",
 			Handler:    _MessageService_ListTemplates_Handler,
+		},
+		{
+			MethodName: "GetTemplateDetail",
+			Handler:    _MessageService_GetTemplateDetail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

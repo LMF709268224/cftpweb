@@ -49,11 +49,20 @@ type Qualification = {
   name_hint?: string
 }
 
+type CourseSummary = {
+  course_id?: string
+  title?: string
+  category_tips?: string
+  duration_min?: number
+  status?: string
+}
+
 function CourseDetailContent() {
   const searchParams = useSearchParams()
   const pipelineId = searchParams.get("id") || ""
   const { t } = useTranslation()
   const [detail, setDetail] = useState<PipelineDetail | null>(null)
+  const [courseSummaries, setCourseSummaries] = useState<Record<string, CourseSummary>>({})
   const [loading, setLoading] = useState(Boolean(pipelineId))
   const [purchaseOpen, setPurchaseOpen] = useState(false)
 
@@ -76,13 +85,49 @@ function CourseDetailContent() {
   }, [pipelineId])
 
   const pipeline = detail?.config
-  const stages = pipeline?.stages || []
+  const stages = useMemo(() => pipeline?.stages || [], [pipeline])
   const totalUnits = useMemo(
     () => stages.reduce((total, stage) => total + (stage.units?.length || 0), 0),
     [stages],
   )
   const paymentConfigured = Boolean(pipeline?.unlock_stripe_price_id || pipeline?.package_stripe_price_id)
   const purchased = Boolean(detail?.instance && Object.keys(detail.instance).length > 0)
+
+  useEffect(() => {
+    const courseIds = Array.from(
+      new Set(
+        stages
+          .flatMap((stage) => stage.units || [])
+          .map((unit) => unit.glms_course_id)
+          .filter((id): id is string => Boolean(id))
+      )
+    )
+    if (courseIds.length === 0) {
+      setCourseSummaries({})
+      return
+    }
+
+    let cancelled = false
+    Promise.all(
+      courseIds.map(async (courseId) => {
+        try {
+          const res = await apiClient(`/api/mall/courses/${courseId}`)
+          return [courseId, res?.course || res] as const
+        } catch {
+          return [courseId, null] as const
+        }
+      })
+    ).then((items) => {
+      if (cancelled) return
+      setCourseSummaries(
+        Object.fromEntries(items.filter(([, course]) => Boolean(course))) as Record<string, CourseSummary>
+      )
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [stages])
 
   return (
     <div className="min-h-screen bg-background">
@@ -169,8 +214,10 @@ function CourseDetailContent() {
                       </div>
 
                       <div className="divide-y">
-                        {(stage.units || []).map((unit, unitIndex) => (
-                          <div key={unit.unit_id || unitIndex} className="flex items-center justify-between px-5 py-3">
+                        {(stage.units || []).map((unit, unitIndex) => {
+                          const course = unit.glms_course_id ? courseSummaries[unit.glms_course_id] : null
+                          return (
+                          <div key={unit.unit_id || unitIndex} className="flex items-center justify-between gap-4 px-5 py-3">
                             <div className="flex items-center gap-3">
                               {purchased ? (
                                 <Play className="h-4 w-4 text-primary" />
@@ -178,16 +225,21 @@ function CourseDetailContent() {
                                 <Lock className="h-4 w-4 text-muted-foreground" />
                               )}
                               <div>
-                                <div className="text-sm font-medium">{unit.glms_course_id || `${t.courses.unit} ${unitIndex + 1}`}</div>
-                                <div className="text-xs text-muted-foreground">{unit.unit_id || t.common.na}</div>
+                                <div className="text-sm font-medium">{course?.title || unit.glms_course_id || `${t.courses.unit} ${unitIndex + 1}`}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {unit.glms_course_id || unit.unit_id || t.common.na}
+                                  {course?.duration_min ? ` · ${course.duration_min} min` : ""}
+                                </div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
+                              {course?.category_tips && <Badge variant="outline">{course.category_tips}</Badge>}
                               {unit.allow_retake && <Badge variant="outline">{t.courses.reviewCourse}</Badge>}
                               <Badge variant="outline">{unit.stripe_price_id ? t.courses.configuredPayment : t.courses.noPayment}</Badge>
                             </div>
                           </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   ))

@@ -110,7 +110,7 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if statusFilter != "" {
-		filtered := make([]*gcredspb.Application, 0, len(res.GetApplications()))
+		filtered := make([]*gcredspb.ApplicationSummary, 0, len(res.GetApplications()))
 		for _, app := range res.GetApplications() {
 			if normalizeApplicationStatus(app.GetStatus()) == statusFilter {
 				filtered = append(filtered, app)

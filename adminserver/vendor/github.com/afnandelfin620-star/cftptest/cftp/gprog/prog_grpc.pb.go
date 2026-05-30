@@ -19,15 +19,32 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ProgService_PipelineCreate_FullMethodName             = "/gprog.ProgService/PipelineCreate"
-	ProgService_CandidateSignupExam_FullMethodName        = "/gprog.ProgService/CandidateSignupExam"
-	ProgService_CandidateApplyRetake_FullMethodName       = "/gprog.ProgService/CandidateApplyRetake"
-	ProgService_AdminTerminatePipeline_FullMethodName     = "/gprog.ProgService/AdminTerminatePipeline"
-	ProgService_AdminForceCourseCompleted_FullMethodName  = "/gprog.ProgService/AdminForceCourseCompleted"
-	ProgService_AdminForceCourseSignupExam_FullMethodName = "/gprog.ProgService/AdminForceCourseSignupExam"
-	ProgService_IgnoreMailTask_FullMethodName             = "/gprog.ProgService/IgnoreMailTask"
-	ProgService_ResendMailTask_FullMethodName             = "/gprog.ProgService/ResendMailTask"
-	ProgService_ListCandidatePipelines_FullMethodName     = "/gprog.ProgService/ListCandidatePipelines"
+	ProgService_PipelineCreate_FullMethodName               = "/gprog.ProgService/PipelineCreate"
+	ProgService_CandidateSignupExam_FullMethodName          = "/gprog.ProgService/CandidateSignupExam"
+	ProgService_CandidateApplyRetake_FullMethodName         = "/gprog.ProgService/CandidateApplyRetake"
+	ProgService_AdminTerminatePipeline_FullMethodName       = "/gprog.ProgService/AdminTerminatePipeline"
+	ProgService_AdminForceCourseCompleted_FullMethodName    = "/gprog.ProgService/AdminForceCourseCompleted"
+	ProgService_AdminForceCourseSignupExam_FullMethodName   = "/gprog.ProgService/AdminForceCourseSignupExam"
+	ProgService_IgnoreMailTask_FullMethodName               = "/gprog.ProgService/IgnoreMailTask"
+	ProgService_ResendMailTask_FullMethodName               = "/gprog.ProgService/ResendMailTask"
+	ProgService_ListCandidatePipelines_FullMethodName       = "/gprog.ProgService/ListCandidatePipelines"
+	ProgService_GetPipelineDetail_FullMethodName            = "/gprog.ProgService/GetPipelineDetail"
+	ProgService_GetCourseUnitDetail_FullMethodName          = "/gprog.ProgService/GetCourseUnitDetail"
+	ProgService_ListStatusTransitionLogs_FullMethodName     = "/gprog.ProgService/ListStatusTransitionLogs"
+	ProgService_ListMailTasks_FullMethodName                = "/gprog.ProgService/ListMailTasks"
+	ProgService_GetMailTaskDetail_FullMethodName            = "/gprog.ProgService/GetMailTaskDetail"
+	ProgService_ListCertificateTasks_FullMethodName         = "/gprog.ProgService/ListCertificateTasks"
+	ProgService_GetCertificateTaskDetail_FullMethodName     = "/gprog.ProgService/GetCertificateTaskDetail"
+	ProgService_RetryCertificateTask_FullMethodName         = "/gprog.ProgService/RetryCertificateTask"
+	ProgService_ListPipelines_FullMethodName                = "/gprog.ProgService/ListPipelines"
+	ProgService_ListStages_FullMethodName                   = "/gprog.ProgService/ListStages"
+	ProgService_GetStageDetail_FullMethodName               = "/gprog.ProgService/GetStageDetail"
+	ProgService_ListCourseUnits_FullMethodName              = "/gprog.ProgService/ListCourseUnits"
+	ProgService_ListDriverEvents_FullMethodName             = "/gprog.ProgService/ListDriverEvents"
+	ProgService_GetDriverEventDetail_FullMethodName         = "/gprog.ProgService/GetDriverEventDetail"
+	ProgService_ListNatsMessages_FullMethodName             = "/gprog.ProgService/ListNatsMessages"
+	ProgService_GetNatsMessageDetail_FullMethodName         = "/gprog.ProgService/GetNatsMessageDetail"
+	ProgService_GetStatusTransitionLogDetail_FullMethodName = "/gprog.ProgService/GetStatusTransitionLogDetail"
 )
 
 // ProgServiceClient is the client API for ProgService service.
@@ -52,6 +69,32 @@ type ProgServiceClient interface {
 	ResendMailTask(ctx context.Context, in *ResendMailTaskReq, opts ...grpc.CallOption) (*ResendMailTaskRsp, error)
 	// candidate 或管理端调用该接口查询某个考生的 pipeline 列表
 	ListCandidatePipelines(ctx context.Context, in *ListCandidatePipelinesReq, opts ...grpc.CallOption) (*ListCandidatePipelinesRsp, error)
+	// 查询某个 pipeline 的详细详情（含 stages / units 结构树）
+	GetPipelineDetail(ctx context.Context, in *GetPipelineDetailReq, opts ...grpc.CallOption) (*GetPipelineDetailRsp, error)
+	// 查询某个 course unit 的详情
+	GetCourseUnitDetail(ctx context.Context, in *GetCourseUnitDetailReq, opts ...grpc.CallOption) (*GetCourseUnitDetailRsp, error)
+	// 查询某个 pipeline 的状态切换记录审计日志
+	ListStatusTransitionLogs(ctx context.Context, in *ListStatusTransitionLogsReq, opts ...grpc.CallOption) (*ListStatusTransitionLogsRsp, error)
+	// 查询考生的邮件发送任务列表（轻量摘要）
+	ListMailTasks(ctx context.Context, in *ListMailTasksReq, opts ...grpc.CallOption) (*ListMailTasksRsp, error)
+	// 点查邮件任务的详细信息
+	GetMailTaskDetail(ctx context.Context, in *GetMailTaskDetailReq, opts ...grpc.CallOption) (*GetMailTaskDetailRsp, error)
+	// 查询考生的证书签发任务（轻量摘要）
+	ListCertificateTasks(ctx context.Context, in *ListCertificateTasksReq, opts ...grpc.CallOption) (*ListCertificateTasksRsp, error)
+	// 点查证书任务的详细信息
+	GetCertificateTaskDetail(ctx context.Context, in *GetCertificateTaskDetailReq, opts ...grpc.CallOption) (*GetCertificateTaskDetailRsp, error)
+	// admin 调用该接口重试颁发失败的证书任务
+	RetryCertificateTask(ctx context.Context, in *RetryCertificateTaskReq, opts ...grpc.CallOption) (*RetryCertificateTaskRsp, error)
+	// --- New Query RPCs ---
+	ListPipelines(ctx context.Context, in *ListPipelinesReq, opts ...grpc.CallOption) (*ListPipelinesRsp, error)
+	ListStages(ctx context.Context, in *ListStagesReq, opts ...grpc.CallOption) (*ListStagesRsp, error)
+	GetStageDetail(ctx context.Context, in *GetStageDetailReq, opts ...grpc.CallOption) (*GetStageDetailRsp, error)
+	ListCourseUnits(ctx context.Context, in *ListCourseUnitsReq, opts ...grpc.CallOption) (*ListCourseUnitsRsp, error)
+	ListDriverEvents(ctx context.Context, in *ListDriverEventsReq, opts ...grpc.CallOption) (*ListDriverEventsRsp, error)
+	GetDriverEventDetail(ctx context.Context, in *GetDriverEventDetailReq, opts ...grpc.CallOption) (*GetDriverEventDetailRsp, error)
+	ListNatsMessages(ctx context.Context, in *ListNatsMessagesReq, opts ...grpc.CallOption) (*ListNatsMessagesRsp, error)
+	GetNatsMessageDetail(ctx context.Context, in *GetNatsMessageDetailReq, opts ...grpc.CallOption) (*GetNatsMessageDetailRsp, error)
+	GetStatusTransitionLogDetail(ctx context.Context, in *GetStatusTransitionLogDetailReq, opts ...grpc.CallOption) (*GetStatusTransitionLogDetailRsp, error)
 }
 
 type progServiceClient struct {
@@ -152,6 +195,176 @@ func (c *progServiceClient) ListCandidatePipelines(ctx context.Context, in *List
 	return out, nil
 }
 
+func (c *progServiceClient) GetPipelineDetail(ctx context.Context, in *GetPipelineDetailReq, opts ...grpc.CallOption) (*GetPipelineDetailRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPipelineDetailRsp)
+	err := c.cc.Invoke(ctx, ProgService_GetPipelineDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) GetCourseUnitDetail(ctx context.Context, in *GetCourseUnitDetailReq, opts ...grpc.CallOption) (*GetCourseUnitDetailRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCourseUnitDetailRsp)
+	err := c.cc.Invoke(ctx, ProgService_GetCourseUnitDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) ListStatusTransitionLogs(ctx context.Context, in *ListStatusTransitionLogsReq, opts ...grpc.CallOption) (*ListStatusTransitionLogsRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListStatusTransitionLogsRsp)
+	err := c.cc.Invoke(ctx, ProgService_ListStatusTransitionLogs_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) ListMailTasks(ctx context.Context, in *ListMailTasksReq, opts ...grpc.CallOption) (*ListMailTasksRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListMailTasksRsp)
+	err := c.cc.Invoke(ctx, ProgService_ListMailTasks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) GetMailTaskDetail(ctx context.Context, in *GetMailTaskDetailReq, opts ...grpc.CallOption) (*GetMailTaskDetailRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMailTaskDetailRsp)
+	err := c.cc.Invoke(ctx, ProgService_GetMailTaskDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) ListCertificateTasks(ctx context.Context, in *ListCertificateTasksReq, opts ...grpc.CallOption) (*ListCertificateTasksRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCertificateTasksRsp)
+	err := c.cc.Invoke(ctx, ProgService_ListCertificateTasks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) GetCertificateTaskDetail(ctx context.Context, in *GetCertificateTaskDetailReq, opts ...grpc.CallOption) (*GetCertificateTaskDetailRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCertificateTaskDetailRsp)
+	err := c.cc.Invoke(ctx, ProgService_GetCertificateTaskDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) RetryCertificateTask(ctx context.Context, in *RetryCertificateTaskReq, opts ...grpc.CallOption) (*RetryCertificateTaskRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RetryCertificateTaskRsp)
+	err := c.cc.Invoke(ctx, ProgService_RetryCertificateTask_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) ListPipelines(ctx context.Context, in *ListPipelinesReq, opts ...grpc.CallOption) (*ListPipelinesRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPipelinesRsp)
+	err := c.cc.Invoke(ctx, ProgService_ListPipelines_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) ListStages(ctx context.Context, in *ListStagesReq, opts ...grpc.CallOption) (*ListStagesRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListStagesRsp)
+	err := c.cc.Invoke(ctx, ProgService_ListStages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) GetStageDetail(ctx context.Context, in *GetStageDetailReq, opts ...grpc.CallOption) (*GetStageDetailRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStageDetailRsp)
+	err := c.cc.Invoke(ctx, ProgService_GetStageDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) ListCourseUnits(ctx context.Context, in *ListCourseUnitsReq, opts ...grpc.CallOption) (*ListCourseUnitsRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCourseUnitsRsp)
+	err := c.cc.Invoke(ctx, ProgService_ListCourseUnits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) ListDriverEvents(ctx context.Context, in *ListDriverEventsReq, opts ...grpc.CallOption) (*ListDriverEventsRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListDriverEventsRsp)
+	err := c.cc.Invoke(ctx, ProgService_ListDriverEvents_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) GetDriverEventDetail(ctx context.Context, in *GetDriverEventDetailReq, opts ...grpc.CallOption) (*GetDriverEventDetailRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetDriverEventDetailRsp)
+	err := c.cc.Invoke(ctx, ProgService_GetDriverEventDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) ListNatsMessages(ctx context.Context, in *ListNatsMessagesReq, opts ...grpc.CallOption) (*ListNatsMessagesRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListNatsMessagesRsp)
+	err := c.cc.Invoke(ctx, ProgService_ListNatsMessages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) GetNatsMessageDetail(ctx context.Context, in *GetNatsMessageDetailReq, opts ...grpc.CallOption) (*GetNatsMessageDetailRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetNatsMessageDetailRsp)
+	err := c.cc.Invoke(ctx, ProgService_GetNatsMessageDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *progServiceClient) GetStatusTransitionLogDetail(ctx context.Context, in *GetStatusTransitionLogDetailReq, opts ...grpc.CallOption) (*GetStatusTransitionLogDetailRsp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStatusTransitionLogDetailRsp)
+	err := c.cc.Invoke(ctx, ProgService_GetStatusTransitionLogDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProgServiceServer is the server API for ProgService service.
 // All implementations must embed UnimplementedProgServiceServer
 // for forward compatibility.
@@ -174,6 +387,32 @@ type ProgServiceServer interface {
 	ResendMailTask(context.Context, *ResendMailTaskReq) (*ResendMailTaskRsp, error)
 	// candidate 或管理端调用该接口查询某个考生的 pipeline 列表
 	ListCandidatePipelines(context.Context, *ListCandidatePipelinesReq) (*ListCandidatePipelinesRsp, error)
+	// 查询某个 pipeline 的详细详情（含 stages / units 结构树）
+	GetPipelineDetail(context.Context, *GetPipelineDetailReq) (*GetPipelineDetailRsp, error)
+	// 查询某个 course unit 的详情
+	GetCourseUnitDetail(context.Context, *GetCourseUnitDetailReq) (*GetCourseUnitDetailRsp, error)
+	// 查询某个 pipeline 的状态切换记录审计日志
+	ListStatusTransitionLogs(context.Context, *ListStatusTransitionLogsReq) (*ListStatusTransitionLogsRsp, error)
+	// 查询考生的邮件发送任务列表（轻量摘要）
+	ListMailTasks(context.Context, *ListMailTasksReq) (*ListMailTasksRsp, error)
+	// 点查邮件任务的详细信息
+	GetMailTaskDetail(context.Context, *GetMailTaskDetailReq) (*GetMailTaskDetailRsp, error)
+	// 查询考生的证书签发任务（轻量摘要）
+	ListCertificateTasks(context.Context, *ListCertificateTasksReq) (*ListCertificateTasksRsp, error)
+	// 点查证书任务的详细信息
+	GetCertificateTaskDetail(context.Context, *GetCertificateTaskDetailReq) (*GetCertificateTaskDetailRsp, error)
+	// admin 调用该接口重试颁发失败的证书任务
+	RetryCertificateTask(context.Context, *RetryCertificateTaskReq) (*RetryCertificateTaskRsp, error)
+	// --- New Query RPCs ---
+	ListPipelines(context.Context, *ListPipelinesReq) (*ListPipelinesRsp, error)
+	ListStages(context.Context, *ListStagesReq) (*ListStagesRsp, error)
+	GetStageDetail(context.Context, *GetStageDetailReq) (*GetStageDetailRsp, error)
+	ListCourseUnits(context.Context, *ListCourseUnitsReq) (*ListCourseUnitsRsp, error)
+	ListDriverEvents(context.Context, *ListDriverEventsReq) (*ListDriverEventsRsp, error)
+	GetDriverEventDetail(context.Context, *GetDriverEventDetailReq) (*GetDriverEventDetailRsp, error)
+	ListNatsMessages(context.Context, *ListNatsMessagesReq) (*ListNatsMessagesRsp, error)
+	GetNatsMessageDetail(context.Context, *GetNatsMessageDetailReq) (*GetNatsMessageDetailRsp, error)
+	GetStatusTransitionLogDetail(context.Context, *GetStatusTransitionLogDetailReq) (*GetStatusTransitionLogDetailRsp, error)
 	mustEmbedUnimplementedProgServiceServer()
 }
 
@@ -210,6 +449,57 @@ func (UnimplementedProgServiceServer) ResendMailTask(context.Context, *ResendMai
 }
 func (UnimplementedProgServiceServer) ListCandidatePipelines(context.Context, *ListCandidatePipelinesReq) (*ListCandidatePipelinesRsp, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCandidatePipelines not implemented")
+}
+func (UnimplementedProgServiceServer) GetPipelineDetail(context.Context, *GetPipelineDetailReq) (*GetPipelineDetailRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPipelineDetail not implemented")
+}
+func (UnimplementedProgServiceServer) GetCourseUnitDetail(context.Context, *GetCourseUnitDetailReq) (*GetCourseUnitDetailRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCourseUnitDetail not implemented")
+}
+func (UnimplementedProgServiceServer) ListStatusTransitionLogs(context.Context, *ListStatusTransitionLogsReq) (*ListStatusTransitionLogsRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListStatusTransitionLogs not implemented")
+}
+func (UnimplementedProgServiceServer) ListMailTasks(context.Context, *ListMailTasksReq) (*ListMailTasksRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListMailTasks not implemented")
+}
+func (UnimplementedProgServiceServer) GetMailTaskDetail(context.Context, *GetMailTaskDetailReq) (*GetMailTaskDetailRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMailTaskDetail not implemented")
+}
+func (UnimplementedProgServiceServer) ListCertificateTasks(context.Context, *ListCertificateTasksReq) (*ListCertificateTasksRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCertificateTasks not implemented")
+}
+func (UnimplementedProgServiceServer) GetCertificateTaskDetail(context.Context, *GetCertificateTaskDetailReq) (*GetCertificateTaskDetailRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCertificateTaskDetail not implemented")
+}
+func (UnimplementedProgServiceServer) RetryCertificateTask(context.Context, *RetryCertificateTaskReq) (*RetryCertificateTaskRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method RetryCertificateTask not implemented")
+}
+func (UnimplementedProgServiceServer) ListPipelines(context.Context, *ListPipelinesReq) (*ListPipelinesRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPipelines not implemented")
+}
+func (UnimplementedProgServiceServer) ListStages(context.Context, *ListStagesReq) (*ListStagesRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListStages not implemented")
+}
+func (UnimplementedProgServiceServer) GetStageDetail(context.Context, *GetStageDetailReq) (*GetStageDetailRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStageDetail not implemented")
+}
+func (UnimplementedProgServiceServer) ListCourseUnits(context.Context, *ListCourseUnitsReq) (*ListCourseUnitsRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCourseUnits not implemented")
+}
+func (UnimplementedProgServiceServer) ListDriverEvents(context.Context, *ListDriverEventsReq) (*ListDriverEventsRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListDriverEvents not implemented")
+}
+func (UnimplementedProgServiceServer) GetDriverEventDetail(context.Context, *GetDriverEventDetailReq) (*GetDriverEventDetailRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetDriverEventDetail not implemented")
+}
+func (UnimplementedProgServiceServer) ListNatsMessages(context.Context, *ListNatsMessagesReq) (*ListNatsMessagesRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListNatsMessages not implemented")
+}
+func (UnimplementedProgServiceServer) GetNatsMessageDetail(context.Context, *GetNatsMessageDetailReq) (*GetNatsMessageDetailRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetNatsMessageDetail not implemented")
+}
+func (UnimplementedProgServiceServer) GetStatusTransitionLogDetail(context.Context, *GetStatusTransitionLogDetailReq) (*GetStatusTransitionLogDetailRsp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStatusTransitionLogDetail not implemented")
 }
 func (UnimplementedProgServiceServer) mustEmbedUnimplementedProgServiceServer() {}
 func (UnimplementedProgServiceServer) testEmbeddedByValue()                     {}
@@ -394,6 +684,312 @@ func _ProgService_ListCandidatePipelines_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProgService_GetPipelineDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPipelineDetailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).GetPipelineDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_GetPipelineDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).GetPipelineDetail(ctx, req.(*GetPipelineDetailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_GetCourseUnitDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCourseUnitDetailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).GetCourseUnitDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_GetCourseUnitDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).GetCourseUnitDetail(ctx, req.(*GetCourseUnitDetailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_ListStatusTransitionLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListStatusTransitionLogsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).ListStatusTransitionLogs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_ListStatusTransitionLogs_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).ListStatusTransitionLogs(ctx, req.(*ListStatusTransitionLogsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_ListMailTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMailTasksReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).ListMailTasks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_ListMailTasks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).ListMailTasks(ctx, req.(*ListMailTasksReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_GetMailTaskDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMailTaskDetailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).GetMailTaskDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_GetMailTaskDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).GetMailTaskDetail(ctx, req.(*GetMailTaskDetailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_ListCertificateTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCertificateTasksReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).ListCertificateTasks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_ListCertificateTasks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).ListCertificateTasks(ctx, req.(*ListCertificateTasksReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_GetCertificateTaskDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCertificateTaskDetailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).GetCertificateTaskDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_GetCertificateTaskDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).GetCertificateTaskDetail(ctx, req.(*GetCertificateTaskDetailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_RetryCertificateTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetryCertificateTaskReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).RetryCertificateTask(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_RetryCertificateTask_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).RetryCertificateTask(ctx, req.(*RetryCertificateTaskReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_ListPipelines_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPipelinesReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).ListPipelines(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_ListPipelines_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).ListPipelines(ctx, req.(*ListPipelinesReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_ListStages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListStagesReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).ListStages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_ListStages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).ListStages(ctx, req.(*ListStagesReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_GetStageDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStageDetailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).GetStageDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_GetStageDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).GetStageDetail(ctx, req.(*GetStageDetailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_ListCourseUnits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCourseUnitsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).ListCourseUnits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_ListCourseUnits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).ListCourseUnits(ctx, req.(*ListCourseUnitsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_ListDriverEvents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDriverEventsReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).ListDriverEvents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_ListDriverEvents_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).ListDriverEvents(ctx, req.(*ListDriverEventsReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_GetDriverEventDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetDriverEventDetailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).GetDriverEventDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_GetDriverEventDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).GetDriverEventDetail(ctx, req.(*GetDriverEventDetailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_ListNatsMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListNatsMessagesReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).ListNatsMessages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_ListNatsMessages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).ListNatsMessages(ctx, req.(*ListNatsMessagesReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_GetNatsMessageDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetNatsMessageDetailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).GetNatsMessageDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_GetNatsMessageDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).GetNatsMessageDetail(ctx, req.(*GetNatsMessageDetailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProgService_GetStatusTransitionLogDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStatusTransitionLogDetailReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProgServiceServer).GetStatusTransitionLogDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProgService_GetStatusTransitionLogDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProgServiceServer).GetStatusTransitionLogDetail(ctx, req.(*GetStatusTransitionLogDetailReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProgService_ServiceDesc is the grpc.ServiceDesc for ProgService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -436,6 +1032,74 @@ var ProgService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListCandidatePipelines",
 			Handler:    _ProgService_ListCandidatePipelines_Handler,
+		},
+		{
+			MethodName: "GetPipelineDetail",
+			Handler:    _ProgService_GetPipelineDetail_Handler,
+		},
+		{
+			MethodName: "GetCourseUnitDetail",
+			Handler:    _ProgService_GetCourseUnitDetail_Handler,
+		},
+		{
+			MethodName: "ListStatusTransitionLogs",
+			Handler:    _ProgService_ListStatusTransitionLogs_Handler,
+		},
+		{
+			MethodName: "ListMailTasks",
+			Handler:    _ProgService_ListMailTasks_Handler,
+		},
+		{
+			MethodName: "GetMailTaskDetail",
+			Handler:    _ProgService_GetMailTaskDetail_Handler,
+		},
+		{
+			MethodName: "ListCertificateTasks",
+			Handler:    _ProgService_ListCertificateTasks_Handler,
+		},
+		{
+			MethodName: "GetCertificateTaskDetail",
+			Handler:    _ProgService_GetCertificateTaskDetail_Handler,
+		},
+		{
+			MethodName: "RetryCertificateTask",
+			Handler:    _ProgService_RetryCertificateTask_Handler,
+		},
+		{
+			MethodName: "ListPipelines",
+			Handler:    _ProgService_ListPipelines_Handler,
+		},
+		{
+			MethodName: "ListStages",
+			Handler:    _ProgService_ListStages_Handler,
+		},
+		{
+			MethodName: "GetStageDetail",
+			Handler:    _ProgService_GetStageDetail_Handler,
+		},
+		{
+			MethodName: "ListCourseUnits",
+			Handler:    _ProgService_ListCourseUnits_Handler,
+		},
+		{
+			MethodName: "ListDriverEvents",
+			Handler:    _ProgService_ListDriverEvents_Handler,
+		},
+		{
+			MethodName: "GetDriverEventDetail",
+			Handler:    _ProgService_GetDriverEventDetail_Handler,
+		},
+		{
+			MethodName: "ListNatsMessages",
+			Handler:    _ProgService_ListNatsMessages_Handler,
+		},
+		{
+			MethodName: "GetNatsMessageDetail",
+			Handler:    _ProgService_GetNatsMessageDetail_Handler,
+		},
+		{
+			MethodName: "GetStatusTransitionLogDetail",
+			Handler:    _ProgService_GetStatusTransitionLogDetail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

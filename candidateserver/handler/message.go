@@ -2,10 +2,8 @@ package handler
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 )
@@ -62,38 +60,15 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		// 渲染模板
-		payloadStr := msg.GetPayload()
+		// MessageItem no longer carries per-message payload in the latest gmsg proto.
+		payloadStr := "{}"
 		if tpl != nil {
-			var payloadData map[string]interface{}
-			if err := json.Unmarshal([]byte(payloadStr), &payloadData); err == nil {
-				title := tpl.TitleTpl
-				content := tpl.ContentTpl
-				for k, v := range payloadData {
-					valStr := fmt.Sprintf("%v", v)
-					title = strings.ReplaceAll(title, "{{"+k+"}}", valStr)
-					title = strings.ReplaceAll(title, "{{."+k+"}}", valStr)
-					content = strings.ReplaceAll(content, "{{"+k+"}}", valStr)
-					content = strings.ReplaceAll(content, "{{."+k+"}}", valStr)
-				}
-				
-				// 构建前端所需格式
-				finalPayload := map[string]string{
-					"title":   title,
-					"content": content,
-				}
-				if b, err := json.Marshal(finalPayload); err == nil {
-					payloadStr = string(b)
-				}
-			} else {
-				// 如果 Payload 不是有效的 JSON，直接将模板内容作为 Fallback
-				finalPayload := map[string]string{
-					"title":   tpl.TitleTpl,
-					"content": tpl.ContentTpl,
-				}
-				if b, err := json.Marshal(finalPayload); err == nil {
-					payloadStr = string(b)
-				}
+			finalPayload := map[string]string{
+				"title":   tpl.TitleTpl,
+				"content": tpl.ContentTpl,
+			}
+			if b, err := json.Marshal(finalPayload); err == nil {
+				payloadStr = string(b)
 			}
 		}
 

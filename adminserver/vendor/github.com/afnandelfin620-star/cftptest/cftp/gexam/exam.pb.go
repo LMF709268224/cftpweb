@@ -940,12 +940,16 @@ func (x *ExamStatusTransitionsResponse) GetTransitions() []*ExamStatusTransition
 }
 
 type ListExamsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        *string                `protobuf:"bytes,1,opt,name=status,proto3,oneof" json:"status,omitempty"`                // 状态筛选 ("OPEN", "SCHEDULED", "DONE") [optional]
-	Page          uint32                 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`                         // 页码, 1-based [optional]
-	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // 每页数量 [optional]
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Status             *string                `protobuf:"bytes,1,opt,name=status,proto3,oneof" json:"status,omitempty"`                                                   // 状态筛选 ("OPEN", "SCHEDULED", "DONE") [optional]
+	Page               uint32                 `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`                                                            // 页码, 1-based [optional]
+	PageSize           uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`                                    // 每页数量 [optional]
+	ResultStatus       *string                `protobuf:"bytes,4,opt,name=result_status,json=resultStatus,proto3,oneof" json:"result_status,omitempty"`                   // 结果状态筛选 [optional]
+	CandidateId        *string                `protobuf:"bytes,5,opt,name=candidate_id,json=candidateId,proto3,oneof" json:"candidate_id,omitempty"`                      // 考生ID筛选 [optional]
+	ConfirmationNumber *string                `protobuf:"bytes,6,opt,name=confirmation_number,json=confirmationNumber,proto3,oneof" json:"confirmation_number,omitempty"` // 预约确认号筛选 [optional]
+	CourseUnitUlid     *string                `protobuf:"bytes,7,opt,name=course_unit_ulid,json=courseUnitUlid,proto3,oneof" json:"course_unit_ulid,omitempty"`           // 课程单元ULID筛选 [optional]
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ListExamsRequest) Reset() {
@@ -999,6 +1003,34 @@ func (x *ListExamsRequest) GetPageSize() uint32 {
 	return 0
 }
 
+func (x *ListExamsRequest) GetResultStatus() string {
+	if x != nil && x.ResultStatus != nil {
+		return *x.ResultStatus
+	}
+	return ""
+}
+
+func (x *ListExamsRequest) GetCandidateId() string {
+	if x != nil && x.CandidateId != nil {
+		return *x.CandidateId
+	}
+	return ""
+}
+
+func (x *ListExamsRequest) GetConfirmationNumber() string {
+	if x != nil && x.ConfirmationNumber != nil {
+		return *x.ConfirmationNumber
+	}
+	return ""
+}
+
+func (x *ListExamsRequest) GetCourseUnitUlid() string {
+	if x != nil && x.CourseUnitUlid != nil {
+		return *x.CourseUnitUlid
+	}
+	return ""
+}
+
 type ListExamsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Exams         []*ExamInfo            `protobuf:"bytes,1,rep,name=exams,proto3" json:"exams,omitempty"`  // 考试列表
@@ -1045,6 +1077,1352 @@ func (x *ListExamsResponse) GetExams() []*ExamInfo {
 }
 
 func (x *ListExamsResponse) GetTotal() uint32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type ExamDetail struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ExamId         string                 `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	BusinessUnit   string                 `protobuf:"bytes,2,opt,name=business_unit,json=businessUnit,proto3" json:"business_unit,omitempty"`
+	CourseUnitUlid string                 `protobuf:"bytes,3,opt,name=course_unit_ulid,json=courseUnitUlid,proto3" json:"course_unit_ulid,omitempty"`
+	ProgramCode    string                 `protobuf:"bytes,4,opt,name=program_code,json=programCode,proto3" json:"program_code,omitempty"`
+	ExamCode       string                 `protobuf:"bytes,5,opt,name=exam_code,json=examCode,proto3" json:"exam_code,omitempty"`
+	ExamForm       string                 `protobuf:"bytes,6,opt,name=exam_form,json=examForm,proto3" json:"exam_form,omitempty"`
+	// 考生详情
+	CandidateId         string `protobuf:"bytes,7,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
+	CandidateFirstName  string `protobuf:"bytes,8,opt,name=candidate_first_name,json=candidateFirstName,proto3" json:"candidate_first_name,omitempty"`
+	CandidateMiddleName string `protobuf:"bytes,9,opt,name=candidate_middle_name,json=candidateMiddleName,proto3" json:"candidate_middle_name,omitempty"`
+	CandidateLastName   string `protobuf:"bytes,10,opt,name=candidate_last_name,json=candidateLastName,proto3" json:"candidate_last_name,omitempty"`
+	CandidateEmail      string `protobuf:"bytes,11,opt,name=candidate_email,json=candidateEmail,proto3" json:"candidate_email,omitempty"`
+	CandidateHomePhone  string `protobuf:"bytes,12,opt,name=candidate_home_phone,json=candidateHomePhone,proto3" json:"candidate_home_phone,omitempty"`
+	CandidateWorkPhone  string `protobuf:"bytes,13,opt,name=candidate_work_phone,json=candidateWorkPhone,proto3" json:"candidate_work_phone,omitempty"`
+	CandidateGender     string `protobuf:"bytes,14,opt,name=candidate_gender,json=candidateGender,proto3" json:"candidate_gender,omitempty"`
+	CandidateBirthdate  string `protobuf:"bytes,15,opt,name=candidate_birthdate,json=candidateBirthdate,proto3" json:"candidate_birthdate,omitempty"`
+	CandidateCountry    string `protobuf:"bytes,16,opt,name=candidate_country,json=candidateCountry,proto3" json:"candidate_country,omitempty"`
+	CandidateProvince   string `protobuf:"bytes,17,opt,name=candidate_province,json=candidateProvince,proto3" json:"candidate_province,omitempty"`
+	CandidateCity       string `protobuf:"bytes,18,opt,name=candidate_city,json=candidateCity,proto3" json:"candidate_city,omitempty"`
+	CandidateAddress    string `protobuf:"bytes,19,opt,name=candidate_address,json=candidateAddress,proto3" json:"candidate_address,omitempty"`
+	CandidatePostalCode string `protobuf:"bytes,20,opt,name=candidate_postal_code,json=candidatePostalCode,proto3" json:"candidate_postal_code,omitempty"`
+	// 流程与结果状态
+	ExamStatus   string `protobuf:"bytes,21,opt,name=exam_status,json=examStatus,proto3" json:"exam_status,omitempty"`
+	ResultStatus string `protobuf:"bytes,22,opt,name=result_status,json=resultStatus,proto3" json:"result_status,omitempty"`
+	ResultUrl    string `protobuf:"bytes,23,opt,name=result_url,json=resultUrl,proto3" json:"result_url,omitempty"`
+	// 成绩详情
+	TotalScore       float64 `protobuf:"fixed64,24,opt,name=total_score,json=totalScore,proto3" json:"total_score,omitempty"`
+	IsPassed         bool    `protobuf:"varint,25,opt,name=is_passed,json=isPassed,proto3" json:"is_passed,omitempty"`
+	ScoreDetailsJson string  `protobuf:"bytes,26,opt,name=score_details_json,json=scoreDetailsJson,proto3" json:"score_details_json,omitempty"`
+	// 预约信息
+	ConfirmationNumber   string `protobuf:"bytes,27,opt,name=confirmation_number,json=confirmationNumber,proto3" json:"confirmation_number,omitempty"`
+	AppointmentStartTime string `protobuf:"bytes,28,opt,name=appointment_start_time,json=appointmentStartTime,proto3" json:"appointment_start_time,omitempty"`
+	AppointmentEndTime   string `protobuf:"bytes,29,opt,name=appointment_end_time,json=appointmentEndTime,proto3" json:"appointment_end_time,omitempty"`
+	SiteCode             string `protobuf:"bytes,30,opt,name=site_code,json=siteCode,proto3" json:"site_code,omitempty"`
+	SiteName             string `protobuf:"bytes,31,opt,name=site_name,json=siteName,proto3" json:"site_name,omitempty"`
+	DeliveryMode         string `protobuf:"bytes,32,opt,name=delivery_mode,json=deliveryMode,proto3" json:"delivery_mode,omitempty"`
+	// 调度与重试
+	ResultRetryCount   uint32 `protobuf:"varint,33,opt,name=result_retry_count,json=resultRetryCount,proto3" json:"result_retry_count,omitempty"`
+	ResultRetryAt      string `protobuf:"bytes,34,opt,name=result_retry_at,json=resultRetryAt,proto3" json:"result_retry_at,omitempty"`
+	ResultErrorMessage string `protobuf:"bytes,35,opt,name=result_error_message,json=resultErrorMessage,proto3" json:"result_error_message,omitempty"`
+	ResultMaxRetries   uint32 `protobuf:"varint,36,opt,name=result_max_retries,json=resultMaxRetries,proto3" json:"result_max_retries,omitempty"`
+	// 审计与时间戳
+	LastTermurlTimestamp string `protobuf:"bytes,37,opt,name=last_termurl_timestamp,json=lastTermurlTimestamp,proto3" json:"last_termurl_timestamp,omitempty"`
+	LastTermurlType      string `protobuf:"bytes,38,opt,name=last_termurl_type,json=lastTermurlType,proto3" json:"last_termurl_type,omitempty"`
+	LastEventTimestamp   string `protobuf:"bytes,39,opt,name=last_event_timestamp,json=lastEventTimestamp,proto3" json:"last_event_timestamp,omitempty"`
+	LastEventType        string `protobuf:"bytes,40,opt,name=last_event_type,json=lastEventType,proto3" json:"last_event_type,omitempty"`
+	LastMessageId        string `protobuf:"bytes,41,opt,name=last_message_id,json=lastMessageId,proto3" json:"last_message_id,omitempty"`
+	RescheduleCount      uint32 `protobuf:"varint,42,opt,name=reschedule_count,json=rescheduleCount,proto3" json:"reschedule_count,omitempty"`
+	Version              uint32 `protobuf:"varint,43,opt,name=version,proto3" json:"version,omitempty"`
+	CreatedAt            string `protobuf:"bytes,44,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt            string `protobuf:"bytes,45,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *ExamDetail) Reset() {
+	*x = ExamDetail{}
+	mi := &file_exam_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExamDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExamDetail) ProtoMessage() {}
+
+func (x *ExamDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExamDetail.ProtoReflect.Descriptor instead.
+func (*ExamDetail) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ExamDetail) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetBusinessUnit() string {
+	if x != nil {
+		return x.BusinessUnit
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCourseUnitUlid() string {
+	if x != nil {
+		return x.CourseUnitUlid
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetProgramCode() string {
+	if x != nil {
+		return x.ProgramCode
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetExamCode() string {
+	if x != nil {
+		return x.ExamCode
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetExamForm() string {
+	if x != nil {
+		return x.ExamForm
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateFirstName() string {
+	if x != nil {
+		return x.CandidateFirstName
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateMiddleName() string {
+	if x != nil {
+		return x.CandidateMiddleName
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateLastName() string {
+	if x != nil {
+		return x.CandidateLastName
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateEmail() string {
+	if x != nil {
+		return x.CandidateEmail
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateHomePhone() string {
+	if x != nil {
+		return x.CandidateHomePhone
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateWorkPhone() string {
+	if x != nil {
+		return x.CandidateWorkPhone
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateGender() string {
+	if x != nil {
+		return x.CandidateGender
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateBirthdate() string {
+	if x != nil {
+		return x.CandidateBirthdate
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateCountry() string {
+	if x != nil {
+		return x.CandidateCountry
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateProvince() string {
+	if x != nil {
+		return x.CandidateProvince
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateCity() string {
+	if x != nil {
+		return x.CandidateCity
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidateAddress() string {
+	if x != nil {
+		return x.CandidateAddress
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCandidatePostalCode() string {
+	if x != nil {
+		return x.CandidatePostalCode
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetExamStatus() string {
+	if x != nil {
+		return x.ExamStatus
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetResultStatus() string {
+	if x != nil {
+		return x.ResultStatus
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetResultUrl() string {
+	if x != nil {
+		return x.ResultUrl
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetTotalScore() float64 {
+	if x != nil {
+		return x.TotalScore
+	}
+	return 0
+}
+
+func (x *ExamDetail) GetIsPassed() bool {
+	if x != nil {
+		return x.IsPassed
+	}
+	return false
+}
+
+func (x *ExamDetail) GetScoreDetailsJson() string {
+	if x != nil {
+		return x.ScoreDetailsJson
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetConfirmationNumber() string {
+	if x != nil {
+		return x.ConfirmationNumber
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetAppointmentStartTime() string {
+	if x != nil {
+		return x.AppointmentStartTime
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetAppointmentEndTime() string {
+	if x != nil {
+		return x.AppointmentEndTime
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetSiteCode() string {
+	if x != nil {
+		return x.SiteCode
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetSiteName() string {
+	if x != nil {
+		return x.SiteName
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetDeliveryMode() string {
+	if x != nil {
+		return x.DeliveryMode
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetResultRetryCount() uint32 {
+	if x != nil {
+		return x.ResultRetryCount
+	}
+	return 0
+}
+
+func (x *ExamDetail) GetResultRetryAt() string {
+	if x != nil {
+		return x.ResultRetryAt
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetResultErrorMessage() string {
+	if x != nil {
+		return x.ResultErrorMessage
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetResultMaxRetries() uint32 {
+	if x != nil {
+		return x.ResultMaxRetries
+	}
+	return 0
+}
+
+func (x *ExamDetail) GetLastTermurlTimestamp() string {
+	if x != nil {
+		return x.LastTermurlTimestamp
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetLastTermurlType() string {
+	if x != nil {
+		return x.LastTermurlType
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetLastEventTimestamp() string {
+	if x != nil {
+		return x.LastEventTimestamp
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetLastEventType() string {
+	if x != nil {
+		return x.LastEventType
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetLastMessageId() string {
+	if x != nil {
+		return x.LastMessageId
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetRescheduleCount() uint32 {
+	if x != nil {
+		return x.RescheduleCount
+	}
+	return 0
+}
+
+func (x *ExamDetail) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *ExamDetail) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type ListAuditMessagesRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	ProcessedStatus *string                `protobuf:"bytes,1,opt,name=processed_status,json=processedStatus,proto3,oneof" json:"processed_status,omitempty"` // "PENDING", "PROCESSED", "SKIPPED"
+	EventType       *string                `protobuf:"bytes,2,opt,name=event_type,json=eventType,proto3,oneof" json:"event_type,omitempty"`
+	StartTime       *string                `protobuf:"bytes,3,opt,name=start_time,json=startTime,proto3,oneof" json:"start_time,omitempty"` // RFC3339 [optional]
+	EndTime         *string                `protobuf:"bytes,4,opt,name=end_time,json=endTime,proto3,oneof" json:"end_time,omitempty"`       // RFC3339 [optional]
+	Page            uint32                 `protobuf:"varint,5,opt,name=page,proto3" json:"page,omitempty"`                                 // 页码, 1-based
+	PageSize        uint32                 `protobuf:"varint,6,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`         // 每页数量
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListAuditMessagesRequest) Reset() {
+	*x = ListAuditMessagesRequest{}
+	mi := &file_exam_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAuditMessagesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAuditMessagesRequest) ProtoMessage() {}
+
+func (x *ListAuditMessagesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAuditMessagesRequest.ProtoReflect.Descriptor instead.
+func (*ListAuditMessagesRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ListAuditMessagesRequest) GetProcessedStatus() string {
+	if x != nil && x.ProcessedStatus != nil {
+		return *x.ProcessedStatus
+	}
+	return ""
+}
+
+func (x *ListAuditMessagesRequest) GetEventType() string {
+	if x != nil && x.EventType != nil {
+		return *x.EventType
+	}
+	return ""
+}
+
+func (x *ListAuditMessagesRequest) GetStartTime() string {
+	if x != nil && x.StartTime != nil {
+		return *x.StartTime
+	}
+	return ""
+}
+
+func (x *ListAuditMessagesRequest) GetEndTime() string {
+	if x != nil && x.EndTime != nil {
+		return *x.EndTime
+	}
+	return ""
+}
+
+func (x *ListAuditMessagesRequest) GetPage() uint32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListAuditMessagesRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListAuditMessagesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AuditMessages []*AuditMessageSummary `protobuf:"bytes,1,rep,name=audit_messages,json=auditMessages,proto3" json:"audit_messages,omitempty"`
+	Total         uint32                 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListAuditMessagesResponse) Reset() {
+	*x = ListAuditMessagesResponse{}
+	mi := &file_exam_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListAuditMessagesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListAuditMessagesResponse) ProtoMessage() {}
+
+func (x *ListAuditMessagesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListAuditMessagesResponse.ProtoReflect.Descriptor instead.
+func (*ListAuditMessagesResponse) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *ListAuditMessagesResponse) GetAuditMessages() []*AuditMessageSummary {
+	if x != nil {
+		return x.AuditMessages
+	}
+	return nil
+}
+
+func (x *ListAuditMessagesResponse) GetTotal() uint32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type AuditMessageSummary struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	MessageId       string                 `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	EventType       string                 `protobuf:"bytes,3,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+	EventTimestamp  string                 `protobuf:"bytes,4,opt,name=event_timestamp,json=eventTimestamp,proto3" json:"event_timestamp,omitempty"`
+	AuditDate       string                 `protobuf:"bytes,5,opt,name=audit_date,json=auditDate,proto3" json:"audit_date,omitempty"`
+	AuditStatus     string                 `protobuf:"bytes,6,opt,name=audit_status,json=auditStatus,proto3" json:"audit_status,omitempty"`
+	ProcessedStatus string                 `protobuf:"bytes,7,opt,name=processed_status,json=processedStatus,proto3" json:"processed_status,omitempty"`
+	ProcessAttempts uint32                 `protobuf:"varint,8,opt,name=process_attempts,json=processAttempts,proto3" json:"process_attempts,omitempty"`
+	CreatedAt       string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *AuditMessageSummary) Reset() {
+	*x = AuditMessageSummary{}
+	mi := &file_exam_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuditMessageSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuditMessageSummary) ProtoMessage() {}
+
+func (x *AuditMessageSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuditMessageSummary.ProtoReflect.Descriptor instead.
+func (*AuditMessageSummary) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *AuditMessageSummary) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *AuditMessageSummary) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
+	}
+	return ""
+}
+
+func (x *AuditMessageSummary) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
+func (x *AuditMessageSummary) GetEventTimestamp() string {
+	if x != nil {
+		return x.EventTimestamp
+	}
+	return ""
+}
+
+func (x *AuditMessageSummary) GetAuditDate() string {
+	if x != nil {
+		return x.AuditDate
+	}
+	return ""
+}
+
+func (x *AuditMessageSummary) GetAuditStatus() string {
+	if x != nil {
+		return x.AuditStatus
+	}
+	return ""
+}
+
+func (x *AuditMessageSummary) GetProcessedStatus() string {
+	if x != nil {
+		return x.ProcessedStatus
+	}
+	return ""
+}
+
+func (x *AuditMessageSummary) GetProcessAttempts() uint32 {
+	if x != nil {
+		return x.ProcessAttempts
+	}
+	return 0
+}
+
+func (x *AuditMessageSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type GetAuditMessageDetailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MessageId     string                 `protobuf:"bytes,1,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetAuditMessageDetailRequest) Reset() {
+	*x = GetAuditMessageDetailRequest{}
+	mi := &file_exam_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAuditMessageDetailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAuditMessageDetailRequest) ProtoMessage() {}
+
+func (x *GetAuditMessageDetailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetAuditMessageDetailRequest.ProtoReflect.Descriptor instead.
+func (*GetAuditMessageDetailRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GetAuditMessageDetailRequest) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
+	}
+	return ""
+}
+
+type AuditMessageDetail struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	MessageId       string                 `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`
+	EventType       string                 `protobuf:"bytes,3,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+	EventTimestamp  string                 `protobuf:"bytes,4,opt,name=event_timestamp,json=eventTimestamp,proto3" json:"event_timestamp,omitempty"`
+	PayloadJson     string                 `protobuf:"bytes,5,opt,name=payload_json,json=payloadJson,proto3" json:"payload_json,omitempty"`
+	AuditDate       string                 `protobuf:"bytes,6,opt,name=audit_date,json=auditDate,proto3" json:"audit_date,omitempty"`
+	AuditStatus     string                 `protobuf:"bytes,7,opt,name=audit_status,json=auditStatus,proto3" json:"audit_status,omitempty"`
+	ProcessedStatus string                 `protobuf:"bytes,8,opt,name=processed_status,json=processedStatus,proto3" json:"processed_status,omitempty"`
+	ProcessedAt     string                 `protobuf:"bytes,9,opt,name=processed_at,json=processedAt,proto3" json:"processed_at,omitempty"`
+	ProcessAttempts uint32                 `protobuf:"varint,10,opt,name=process_attempts,json=processAttempts,proto3" json:"process_attempts,omitempty"`
+	CreatedAt       string                 `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *AuditMessageDetail) Reset() {
+	*x = AuditMessageDetail{}
+	mi := &file_exam_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuditMessageDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuditMessageDetail) ProtoMessage() {}
+
+func (x *AuditMessageDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AuditMessageDetail.ProtoReflect.Descriptor instead.
+func (*AuditMessageDetail) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *AuditMessageDetail) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *AuditMessageDetail) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
+	}
+	return ""
+}
+
+func (x *AuditMessageDetail) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
+func (x *AuditMessageDetail) GetEventTimestamp() string {
+	if x != nil {
+		return x.EventTimestamp
+	}
+	return ""
+}
+
+func (x *AuditMessageDetail) GetPayloadJson() string {
+	if x != nil {
+		return x.PayloadJson
+	}
+	return ""
+}
+
+func (x *AuditMessageDetail) GetAuditDate() string {
+	if x != nil {
+		return x.AuditDate
+	}
+	return ""
+}
+
+func (x *AuditMessageDetail) GetAuditStatus() string {
+	if x != nil {
+		return x.AuditStatus
+	}
+	return ""
+}
+
+func (x *AuditMessageDetail) GetProcessedStatus() string {
+	if x != nil {
+		return x.ProcessedStatus
+	}
+	return ""
+}
+
+func (x *AuditMessageDetail) GetProcessedAt() string {
+	if x != nil {
+		return x.ProcessedAt
+	}
+	return ""
+}
+
+func (x *AuditMessageDetail) GetProcessAttempts() uint32 {
+	if x != nil {
+		return x.ProcessAttempts
+	}
+	return 0
+}
+
+func (x *AuditMessageDetail) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ListWebhookMessagesRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	ProcessedStatus    *string                `protobuf:"bytes,1,opt,name=processed_status,json=processedStatus,proto3,oneof" json:"processed_status,omitempty"`
+	EventType          *string                `protobuf:"bytes,2,opt,name=event_type,json=eventType,proto3,oneof" json:"event_type,omitempty"`
+	ExamId             *string                `protobuf:"bytes,3,opt,name=exam_id,json=examId,proto3,oneof" json:"exam_id,omitempty"`
+	ConfirmationNumber *string                `protobuf:"bytes,4,opt,name=confirmation_number,json=confirmationNumber,proto3,oneof" json:"confirmation_number,omitempty"`
+	StartTime          *string                `protobuf:"bytes,5,opt,name=start_time,json=startTime,proto3,oneof" json:"start_time,omitempty"`
+	EndTime            *string                `protobuf:"bytes,6,opt,name=end_time,json=endTime,proto3,oneof" json:"end_time,omitempty"`
+	Page               uint32                 `protobuf:"varint,7,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize           uint32                 `protobuf:"varint,8,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ListWebhookMessagesRequest) Reset() {
+	*x = ListWebhookMessagesRequest{}
+	mi := &file_exam_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWebhookMessagesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWebhookMessagesRequest) ProtoMessage() {}
+
+func (x *ListWebhookMessagesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWebhookMessagesRequest.ProtoReflect.Descriptor instead.
+func (*ListWebhookMessagesRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ListWebhookMessagesRequest) GetProcessedStatus() string {
+	if x != nil && x.ProcessedStatus != nil {
+		return *x.ProcessedStatus
+	}
+	return ""
+}
+
+func (x *ListWebhookMessagesRequest) GetEventType() string {
+	if x != nil && x.EventType != nil {
+		return *x.EventType
+	}
+	return ""
+}
+
+func (x *ListWebhookMessagesRequest) GetExamId() string {
+	if x != nil && x.ExamId != nil {
+		return *x.ExamId
+	}
+	return ""
+}
+
+func (x *ListWebhookMessagesRequest) GetConfirmationNumber() string {
+	if x != nil && x.ConfirmationNumber != nil {
+		return *x.ConfirmationNumber
+	}
+	return ""
+}
+
+func (x *ListWebhookMessagesRequest) GetStartTime() string {
+	if x != nil && x.StartTime != nil {
+		return *x.StartTime
+	}
+	return ""
+}
+
+func (x *ListWebhookMessagesRequest) GetEndTime() string {
+	if x != nil && x.EndTime != nil {
+		return *x.EndTime
+	}
+	return ""
+}
+
+func (x *ListWebhookMessagesRequest) GetPage() uint32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListWebhookMessagesRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListWebhookMessagesResponse struct {
+	state           protoimpl.MessageState   `protogen:"open.v1"`
+	WebhookMessages []*WebhookMessageSummary `protobuf:"bytes,1,rep,name=webhook_messages,json=webhookMessages,proto3" json:"webhook_messages,omitempty"`
+	Total           uint32                   `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *ListWebhookMessagesResponse) Reset() {
+	*x = ListWebhookMessagesResponse{}
+	mi := &file_exam_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListWebhookMessagesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListWebhookMessagesResponse) ProtoMessage() {}
+
+func (x *ListWebhookMessagesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListWebhookMessagesResponse.ProtoReflect.Descriptor instead.
+func (*ListWebhookMessagesResponse) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ListWebhookMessagesResponse) GetWebhookMessages() []*WebhookMessageSummary {
+	if x != nil {
+		return x.WebhookMessages
+	}
+	return nil
+}
+
+func (x *ListWebhookMessagesResponse) GetTotal() uint32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type WebhookMessageSummary struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	MsgFp              string                 `protobuf:"bytes,2,opt,name=msg_fp,json=msgFp,proto3" json:"msg_fp,omitempty"`
+	EventType          string                 `protobuf:"bytes,3,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+	EventTimestamp     string                 `protobuf:"bytes,4,opt,name=event_timestamp,json=eventTimestamp,proto3" json:"event_timestamp,omitempty"`
+	ExamId             string                 `protobuf:"bytes,5,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ConfirmationNumber string                 `protobuf:"bytes,6,opt,name=confirmation_number,json=confirmationNumber,proto3" json:"confirmation_number,omitempty"`
+	ProcessedStatus    string                 `protobuf:"bytes,7,opt,name=processed_status,json=processedStatus,proto3" json:"processed_status,omitempty"`
+	CreatedAt          string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *WebhookMessageSummary) Reset() {
+	*x = WebhookMessageSummary{}
+	mi := &file_exam_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WebhookMessageSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WebhookMessageSummary) ProtoMessage() {}
+
+func (x *WebhookMessageSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WebhookMessageSummary.ProtoReflect.Descriptor instead.
+func (*WebhookMessageSummary) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *WebhookMessageSummary) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *WebhookMessageSummary) GetMsgFp() string {
+	if x != nil {
+		return x.MsgFp
+	}
+	return ""
+}
+
+func (x *WebhookMessageSummary) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
+func (x *WebhookMessageSummary) GetEventTimestamp() string {
+	if x != nil {
+		return x.EventTimestamp
+	}
+	return ""
+}
+
+func (x *WebhookMessageSummary) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *WebhookMessageSummary) GetConfirmationNumber() string {
+	if x != nil {
+		return x.ConfirmationNumber
+	}
+	return ""
+}
+
+func (x *WebhookMessageSummary) GetProcessedStatus() string {
+	if x != nil {
+		return x.ProcessedStatus
+	}
+	return ""
+}
+
+func (x *WebhookMessageSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type GetWebhookMessageDetailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MsgFp         string                 `protobuf:"bytes,1,opt,name=msg_fp,json=msgFp,proto3" json:"msg_fp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetWebhookMessageDetailRequest) Reset() {
+	*x = GetWebhookMessageDetailRequest{}
+	mi := &file_exam_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetWebhookMessageDetailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetWebhookMessageDetailRequest) ProtoMessage() {}
+
+func (x *GetWebhookMessageDetailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetWebhookMessageDetailRequest.ProtoReflect.Descriptor instead.
+func (*GetWebhookMessageDetailRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetWebhookMessageDetailRequest) GetMsgFp() string {
+	if x != nil {
+		return x.MsgFp
+	}
+	return ""
+}
+
+type WebhookMessageDetail struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Id                 uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	MsgFp              string                 `protobuf:"bytes,2,opt,name=msg_fp,json=msgFp,proto3" json:"msg_fp,omitempty"`
+	EventType          string                 `protobuf:"bytes,3,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+	EventTimestamp     string                 `protobuf:"bytes,4,opt,name=event_timestamp,json=eventTimestamp,proto3" json:"event_timestamp,omitempty"`
+	ExamId             string                 `protobuf:"bytes,5,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ConfirmationNumber string                 `protobuf:"bytes,6,opt,name=confirmation_number,json=confirmationNumber,proto3" json:"confirmation_number,omitempty"`
+	PayloadJson        string                 `protobuf:"bytes,7,opt,name=payload_json,json=payloadJson,proto3" json:"payload_json,omitempty"`
+	ProcessedStatus    string                 `protobuf:"bytes,8,opt,name=processed_status,json=processedStatus,proto3" json:"processed_status,omitempty"`
+	ProcessedAt        string                 `protobuf:"bytes,9,opt,name=processed_at,json=processedAt,proto3" json:"processed_at,omitempty"`
+	CreatedAt          string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *WebhookMessageDetail) Reset() {
+	*x = WebhookMessageDetail{}
+	mi := &file_exam_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *WebhookMessageDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*WebhookMessageDetail) ProtoMessage() {}
+
+func (x *WebhookMessageDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use WebhookMessageDetail.ProtoReflect.Descriptor instead.
+func (*WebhookMessageDetail) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *WebhookMessageDetail) GetId() uint64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *WebhookMessageDetail) GetMsgFp() string {
+	if x != nil {
+		return x.MsgFp
+	}
+	return ""
+}
+
+func (x *WebhookMessageDetail) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
+func (x *WebhookMessageDetail) GetEventTimestamp() string {
+	if x != nil {
+		return x.EventTimestamp
+	}
+	return ""
+}
+
+func (x *WebhookMessageDetail) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *WebhookMessageDetail) GetConfirmationNumber() string {
+	if x != nil {
+		return x.ConfirmationNumber
+	}
+	return ""
+}
+
+func (x *WebhookMessageDetail) GetPayloadJson() string {
+	if x != nil {
+		return x.PayloadJson
+	}
+	return ""
+}
+
+func (x *WebhookMessageDetail) GetProcessedStatus() string {
+	if x != nil {
+		return x.ProcessedStatus
+	}
+	return ""
+}
+
+func (x *WebhookMessageDetail) GetProcessedAt() string {
+	if x != nil {
+		return x.ProcessedAt
+	}
+	return ""
+}
+
+func (x *WebhookMessageDetail) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ListExamStatusTransitionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ExamId        *string                `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3,oneof" json:"exam_id,omitempty"`
+	StatusType    *string                `protobuf:"bytes,2,opt,name=status_type,json=statusType,proto3,oneof" json:"status_type,omitempty"` // "EXAM" or "RESULT"
+	Page          uint32                 `protobuf:"varint,3,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,4,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListExamStatusTransitionsRequest) Reset() {
+	*x = ListExamStatusTransitionsRequest{}
+	mi := &file_exam_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListExamStatusTransitionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListExamStatusTransitionsRequest) ProtoMessage() {}
+
+func (x *ListExamStatusTransitionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListExamStatusTransitionsRequest.ProtoReflect.Descriptor instead.
+func (*ListExamStatusTransitionsRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *ListExamStatusTransitionsRequest) GetExamId() string {
+	if x != nil && x.ExamId != nil {
+		return *x.ExamId
+	}
+	return ""
+}
+
+func (x *ListExamStatusTransitionsRequest) GetStatusType() string {
+	if x != nil && x.StatusType != nil {
+		return *x.StatusType
+	}
+	return ""
+}
+
+func (x *ListExamStatusTransitionsRequest) GetPage() uint32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListExamStatusTransitionsRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListExamStatusTransitionsResponse struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Transitions   []*ExamStatusTransition `protobuf:"bytes,1,rep,name=transitions,proto3" json:"transitions,omitempty"`
+	Total         uint32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListExamStatusTransitionsResponse) Reset() {
+	*x = ListExamStatusTransitionsResponse{}
+	mi := &file_exam_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListExamStatusTransitionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListExamStatusTransitionsResponse) ProtoMessage() {}
+
+func (x *ListExamStatusTransitionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListExamStatusTransitionsResponse.ProtoReflect.Descriptor instead.
+func (*ListExamStatusTransitionsResponse) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ListExamStatusTransitionsResponse) GetTransitions() []*ExamStatusTransition {
+	if x != nil {
+		return x.Transitions
+	}
+	return nil
+}
+
+func (x *ListExamStatusTransitionsResponse) GetTotal() uint32 {
 	if x != nil {
 		return x.Total
 	}
@@ -1141,15 +2519,186 @@ const file_exam_proto_rawDesc = "" +
 	"created_at\x18\t \x01(\tR\tcreatedAt\"w\n" +
 	"\x1dExamStatusTransitionsResponse\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12=\n" +
-	"\vtransitions\x18\x02 \x03(\v2\x1b.gexam.ExamStatusTransitionR\vtransitions\"k\n" +
+	"\vtransitions\x18\x02 \x03(\v2\x1b.gexam.ExamStatusTransitionR\vtransitions\"\xf2\x02\n" +
 	"\x10ListExamsRequest\x12\x1b\n" +
 	"\x06status\x18\x01 \x01(\tH\x00R\x06status\x88\x01\x01\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
-	"\tpage_size\x18\x03 \x01(\rR\bpageSizeB\t\n" +
-	"\a_status\"P\n" +
+	"\tpage_size\x18\x03 \x01(\rR\bpageSize\x12(\n" +
+	"\rresult_status\x18\x04 \x01(\tH\x01R\fresultStatus\x88\x01\x01\x12&\n" +
+	"\fcandidate_id\x18\x05 \x01(\tH\x02R\vcandidateId\x88\x01\x01\x124\n" +
+	"\x13confirmation_number\x18\x06 \x01(\tH\x03R\x12confirmationNumber\x88\x01\x01\x12-\n" +
+	"\x10course_unit_ulid\x18\a \x01(\tH\x04R\x0ecourseUnitUlid\x88\x01\x01B\t\n" +
+	"\a_statusB\x10\n" +
+	"\x0e_result_statusB\x0f\n" +
+	"\r_candidate_idB\x16\n" +
+	"\x14_confirmation_numberB\x13\n" +
+	"\x11_course_unit_ulid\"P\n" +
 	"\x11ListExamsResponse\x12%\n" +
 	"\x05exams\x18\x01 \x03(\v2\x0f.gexam.ExamInfoR\x05exams\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\rR\x05total2\xb4\x04\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"\xbd\x0e\n" +
+	"\n" +
+	"ExamDetail\x12\x17\n" +
+	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12#\n" +
+	"\rbusiness_unit\x18\x02 \x01(\tR\fbusinessUnit\x12(\n" +
+	"\x10course_unit_ulid\x18\x03 \x01(\tR\x0ecourseUnitUlid\x12!\n" +
+	"\fprogram_code\x18\x04 \x01(\tR\vprogramCode\x12\x1b\n" +
+	"\texam_code\x18\x05 \x01(\tR\bexamCode\x12\x1b\n" +
+	"\texam_form\x18\x06 \x01(\tR\bexamForm\x12!\n" +
+	"\fcandidate_id\x18\a \x01(\tR\vcandidateId\x120\n" +
+	"\x14candidate_first_name\x18\b \x01(\tR\x12candidateFirstName\x122\n" +
+	"\x15candidate_middle_name\x18\t \x01(\tR\x13candidateMiddleName\x12.\n" +
+	"\x13candidate_last_name\x18\n" +
+	" \x01(\tR\x11candidateLastName\x12'\n" +
+	"\x0fcandidate_email\x18\v \x01(\tR\x0ecandidateEmail\x120\n" +
+	"\x14candidate_home_phone\x18\f \x01(\tR\x12candidateHomePhone\x120\n" +
+	"\x14candidate_work_phone\x18\r \x01(\tR\x12candidateWorkPhone\x12)\n" +
+	"\x10candidate_gender\x18\x0e \x01(\tR\x0fcandidateGender\x12/\n" +
+	"\x13candidate_birthdate\x18\x0f \x01(\tR\x12candidateBirthdate\x12+\n" +
+	"\x11candidate_country\x18\x10 \x01(\tR\x10candidateCountry\x12-\n" +
+	"\x12candidate_province\x18\x11 \x01(\tR\x11candidateProvince\x12%\n" +
+	"\x0ecandidate_city\x18\x12 \x01(\tR\rcandidateCity\x12+\n" +
+	"\x11candidate_address\x18\x13 \x01(\tR\x10candidateAddress\x122\n" +
+	"\x15candidate_postal_code\x18\x14 \x01(\tR\x13candidatePostalCode\x12\x1f\n" +
+	"\vexam_status\x18\x15 \x01(\tR\n" +
+	"examStatus\x12#\n" +
+	"\rresult_status\x18\x16 \x01(\tR\fresultStatus\x12\x1d\n" +
+	"\n" +
+	"result_url\x18\x17 \x01(\tR\tresultUrl\x12\x1f\n" +
+	"\vtotal_score\x18\x18 \x01(\x01R\n" +
+	"totalScore\x12\x1b\n" +
+	"\tis_passed\x18\x19 \x01(\bR\bisPassed\x12,\n" +
+	"\x12score_details_json\x18\x1a \x01(\tR\x10scoreDetailsJson\x12/\n" +
+	"\x13confirmation_number\x18\x1b \x01(\tR\x12confirmationNumber\x124\n" +
+	"\x16appointment_start_time\x18\x1c \x01(\tR\x14appointmentStartTime\x120\n" +
+	"\x14appointment_end_time\x18\x1d \x01(\tR\x12appointmentEndTime\x12\x1b\n" +
+	"\tsite_code\x18\x1e \x01(\tR\bsiteCode\x12\x1b\n" +
+	"\tsite_name\x18\x1f \x01(\tR\bsiteName\x12#\n" +
+	"\rdelivery_mode\x18  \x01(\tR\fdeliveryMode\x12,\n" +
+	"\x12result_retry_count\x18! \x01(\rR\x10resultRetryCount\x12&\n" +
+	"\x0fresult_retry_at\x18\" \x01(\tR\rresultRetryAt\x120\n" +
+	"\x14result_error_message\x18# \x01(\tR\x12resultErrorMessage\x12,\n" +
+	"\x12result_max_retries\x18$ \x01(\rR\x10resultMaxRetries\x124\n" +
+	"\x16last_termurl_timestamp\x18% \x01(\tR\x14lastTermurlTimestamp\x12*\n" +
+	"\x11last_termurl_type\x18& \x01(\tR\x0flastTermurlType\x120\n" +
+	"\x14last_event_timestamp\x18' \x01(\tR\x12lastEventTimestamp\x12&\n" +
+	"\x0flast_event_type\x18( \x01(\tR\rlastEventType\x12&\n" +
+	"\x0flast_message_id\x18) \x01(\tR\rlastMessageId\x12)\n" +
+	"\x10reschedule_count\x18* \x01(\rR\x0frescheduleCount\x12\x18\n" +
+	"\aversion\x18+ \x01(\rR\aversion\x12\x1d\n" +
+	"\n" +
+	"created_at\x18, \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18- \x01(\tR\tupdatedAt\"\xa3\x02\n" +
+	"\x18ListAuditMessagesRequest\x12.\n" +
+	"\x10processed_status\x18\x01 \x01(\tH\x00R\x0fprocessedStatus\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"event_type\x18\x02 \x01(\tH\x01R\teventType\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"start_time\x18\x03 \x01(\tH\x02R\tstartTime\x88\x01\x01\x12\x1e\n" +
+	"\bend_time\x18\x04 \x01(\tH\x03R\aendTime\x88\x01\x01\x12\x12\n" +
+	"\x04page\x18\x05 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x06 \x01(\rR\bpageSizeB\x13\n" +
+	"\x11_processed_statusB\r\n" +
+	"\v_event_typeB\r\n" +
+	"\v_start_timeB\v\n" +
+	"\t_end_time\"t\n" +
+	"\x19ListAuditMessagesResponse\x12A\n" +
+	"\x0eaudit_messages\x18\x01 \x03(\v2\x1a.gexam.AuditMessageSummaryR\rauditMessages\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"\xc3\x02\n" +
+	"\x13AuditMessageSummary\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x02 \x01(\tR\tmessageId\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\x03 \x01(\tR\teventType\x12'\n" +
+	"\x0fevent_timestamp\x18\x04 \x01(\tR\x0eeventTimestamp\x12\x1d\n" +
+	"\n" +
+	"audit_date\x18\x05 \x01(\tR\tauditDate\x12!\n" +
+	"\faudit_status\x18\x06 \x01(\tR\vauditStatus\x12)\n" +
+	"\x10processed_status\x18\a \x01(\tR\x0fprocessedStatus\x12)\n" +
+	"\x10process_attempts\x18\b \x01(\rR\x0fprocessAttempts\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\"=\n" +
+	"\x1cGetAuditMessageDetailRequest\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x01 \x01(\tR\tmessageId\"\x88\x03\n" +
+	"\x12AuditMessageDetail\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x02 \x01(\tR\tmessageId\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\x03 \x01(\tR\teventType\x12'\n" +
+	"\x0fevent_timestamp\x18\x04 \x01(\tR\x0eeventTimestamp\x12!\n" +
+	"\fpayload_json\x18\x05 \x01(\tR\vpayloadJson\x12\x1d\n" +
+	"\n" +
+	"audit_date\x18\x06 \x01(\tR\tauditDate\x12!\n" +
+	"\faudit_status\x18\a \x01(\tR\vauditStatus\x12)\n" +
+	"\x10processed_status\x18\b \x01(\tR\x0fprocessedStatus\x12!\n" +
+	"\fprocessed_at\x18\t \x01(\tR\vprocessedAt\x12)\n" +
+	"\x10process_attempts\x18\n" +
+	" \x01(\rR\x0fprocessAttempts\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\v \x01(\tR\tcreatedAt\"\x9d\x03\n" +
+	"\x1aListWebhookMessagesRequest\x12.\n" +
+	"\x10processed_status\x18\x01 \x01(\tH\x00R\x0fprocessedStatus\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"event_type\x18\x02 \x01(\tH\x01R\teventType\x88\x01\x01\x12\x1c\n" +
+	"\aexam_id\x18\x03 \x01(\tH\x02R\x06examId\x88\x01\x01\x124\n" +
+	"\x13confirmation_number\x18\x04 \x01(\tH\x03R\x12confirmationNumber\x88\x01\x01\x12\"\n" +
+	"\n" +
+	"start_time\x18\x05 \x01(\tH\x04R\tstartTime\x88\x01\x01\x12\x1e\n" +
+	"\bend_time\x18\x06 \x01(\tH\x05R\aendTime\x88\x01\x01\x12\x12\n" +
+	"\x04page\x18\a \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\b \x01(\rR\bpageSizeB\x13\n" +
+	"\x11_processed_statusB\r\n" +
+	"\v_event_typeB\n" +
+	"\n" +
+	"\b_exam_idB\x16\n" +
+	"\x14_confirmation_numberB\r\n" +
+	"\v_start_timeB\v\n" +
+	"\t_end_time\"|\n" +
+	"\x1bListWebhookMessagesResponse\x12G\n" +
+	"\x10webhook_messages\x18\x01 \x03(\v2\x1c.gexam.WebhookMessageSummaryR\x0fwebhookMessages\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"\x9a\x02\n" +
+	"\x15WebhookMessageSummary\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x15\n" +
+	"\x06msg_fp\x18\x02 \x01(\tR\x05msgFp\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\x03 \x01(\tR\teventType\x12'\n" +
+	"\x0fevent_timestamp\x18\x04 \x01(\tR\x0eeventTimestamp\x12\x17\n" +
+	"\aexam_id\x18\x05 \x01(\tR\x06examId\x12/\n" +
+	"\x13confirmation_number\x18\x06 \x01(\tR\x12confirmationNumber\x12)\n" +
+	"\x10processed_status\x18\a \x01(\tR\x0fprocessedStatus\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\b \x01(\tR\tcreatedAt\"7\n" +
+	"\x1eGetWebhookMessageDetailRequest\x12\x15\n" +
+	"\x06msg_fp\x18\x01 \x01(\tR\x05msgFp\"\xdf\x02\n" +
+	"\x14WebhookMessageDetail\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x15\n" +
+	"\x06msg_fp\x18\x02 \x01(\tR\x05msgFp\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\x03 \x01(\tR\teventType\x12'\n" +
+	"\x0fevent_timestamp\x18\x04 \x01(\tR\x0eeventTimestamp\x12\x17\n" +
+	"\aexam_id\x18\x05 \x01(\tR\x06examId\x12/\n" +
+	"\x13confirmation_number\x18\x06 \x01(\tR\x12confirmationNumber\x12!\n" +
+	"\fpayload_json\x18\a \x01(\tR\vpayloadJson\x12)\n" +
+	"\x10processed_status\x18\b \x01(\tR\x0fprocessedStatus\x12!\n" +
+	"\fprocessed_at\x18\t \x01(\tR\vprocessedAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\tR\tcreatedAt\"\xb3\x01\n" +
+	" ListExamStatusTransitionsRequest\x12\x1c\n" +
+	"\aexam_id\x18\x01 \x01(\tH\x00R\x06examId\x88\x01\x01\x12$\n" +
+	"\vstatus_type\x18\x02 \x01(\tH\x01R\n" +
+	"statusType\x88\x01\x01\x12\x12\n" +
+	"\x04page\x18\x03 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x04 \x01(\rR\bpageSizeB\n" +
+	"\n" +
+	"\b_exam_idB\x0e\n" +
+	"\f_status_type\"x\n" +
+	"!ListExamStatusTransitionsResponse\x12=\n" +
+	"\vtransitions\x18\x01 \x03(\v2\x1b.gexam.ExamStatusTransitionR\vtransitions\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total2\xcd\b\n" +
 	"\fGExamService\x12A\n" +
 	"\n" +
 	"CreateExam\x12\x18.gexam.CreateExamRequest\x1a\x19.gexam.CreateExamResponse\x121\n" +
@@ -1159,7 +2708,13 @@ const file_exam_proto_rawDesc = "" +
 	"\x0fTermUrlCallback\x12\x1d.gexam.TermUrlCallbackRequest\x1a\x1e.gexam.TermUrlCallbackResponse\x12W\n" +
 	"\x18GetExamStatusTransitions\x12\x15.gexam.GetExamRequest\x1a$.gexam.ExamStatusTransitionsResponse\x12@\n" +
 	"\x0eSyncExamResult\x12\x15.gexam.GetExamRequest\x1a\x17.gexam.ExamResultDetail\x12>\n" +
-	"\tListExams\x12\x17.gexam.ListExamsRequest\x1a\x18.gexam.ListExamsResponseB\fZ\n" +
+	"\tListExams\x12\x17.gexam.ListExamsRequest\x1a\x18.gexam.ListExamsResponse\x129\n" +
+	"\rGetExamDetail\x12\x15.gexam.GetExamRequest\x1a\x11.gexam.ExamDetail\x12V\n" +
+	"\x11ListAuditMessages\x12\x1f.gexam.ListAuditMessagesRequest\x1a .gexam.ListAuditMessagesResponse\x12W\n" +
+	"\x15GetAuditMessageDetail\x12#.gexam.GetAuditMessageDetailRequest\x1a\x19.gexam.AuditMessageDetail\x12\\\n" +
+	"\x13ListWebhookMessages\x12!.gexam.ListWebhookMessagesRequest\x1a\".gexam.ListWebhookMessagesResponse\x12]\n" +
+	"\x17GetWebhookMessageDetail\x12%.gexam.GetWebhookMessageDetailRequest\x1a\x1b.gexam.WebhookMessageDetail\x12n\n" +
+	"\x19ListExamStatusTransitions\x12'.gexam.ListExamStatusTransitionsRequest\x1a(.gexam.ListExamStatusTransitionsResponseB\fZ\n" +
 	"cftp/gexamb\x06proto3"
 
 var (
@@ -1174,46 +2729,74 @@ func file_exam_proto_rawDescGZIP() []byte {
 	return file_exam_proto_rawDescData
 }
 
-var file_exam_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_exam_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_exam_proto_goTypes = []any{
-	(*CreateExamRequest)(nil),             // 0: gexam.CreateExamRequest
-	(*GetExamRequest)(nil),                // 1: gexam.GetExamRequest
-	(*GetURLRequest)(nil),                 // 2: gexam.GetURLRequest
-	(*TermUrlCallbackRequest)(nil),        // 3: gexam.TermUrlCallbackRequest
-	(*TermUrlCallbackResponse)(nil),       // 4: gexam.TermUrlCallbackResponse
-	(*CreateExamResponse)(nil),            // 5: gexam.CreateExamResponse
-	(*ExamInfo)(nil),                      // 6: gexam.ExamInfo
-	(*ExamResultDetail)(nil),              // 7: gexam.ExamResultDetail
-	(*URLResponse)(nil),                   // 8: gexam.URLResponse
-	(*ExamStatusTransition)(nil),          // 9: gexam.ExamStatusTransition
-	(*ExamStatusTransitionsResponse)(nil), // 10: gexam.ExamStatusTransitionsResponse
-	(*ListExamsRequest)(nil),              // 11: gexam.ListExamsRequest
-	(*ListExamsResponse)(nil),             // 12: gexam.ListExamsResponse
+	(*CreateExamRequest)(nil),                 // 0: gexam.CreateExamRequest
+	(*GetExamRequest)(nil),                    // 1: gexam.GetExamRequest
+	(*GetURLRequest)(nil),                     // 2: gexam.GetURLRequest
+	(*TermUrlCallbackRequest)(nil),            // 3: gexam.TermUrlCallbackRequest
+	(*TermUrlCallbackResponse)(nil),           // 4: gexam.TermUrlCallbackResponse
+	(*CreateExamResponse)(nil),                // 5: gexam.CreateExamResponse
+	(*ExamInfo)(nil),                          // 6: gexam.ExamInfo
+	(*ExamResultDetail)(nil),                  // 7: gexam.ExamResultDetail
+	(*URLResponse)(nil),                       // 8: gexam.URLResponse
+	(*ExamStatusTransition)(nil),              // 9: gexam.ExamStatusTransition
+	(*ExamStatusTransitionsResponse)(nil),     // 10: gexam.ExamStatusTransitionsResponse
+	(*ListExamsRequest)(nil),                  // 11: gexam.ListExamsRequest
+	(*ListExamsResponse)(nil),                 // 12: gexam.ListExamsResponse
+	(*ExamDetail)(nil),                        // 13: gexam.ExamDetail
+	(*ListAuditMessagesRequest)(nil),          // 14: gexam.ListAuditMessagesRequest
+	(*ListAuditMessagesResponse)(nil),         // 15: gexam.ListAuditMessagesResponse
+	(*AuditMessageSummary)(nil),               // 16: gexam.AuditMessageSummary
+	(*GetAuditMessageDetailRequest)(nil),      // 17: gexam.GetAuditMessageDetailRequest
+	(*AuditMessageDetail)(nil),                // 18: gexam.AuditMessageDetail
+	(*ListWebhookMessagesRequest)(nil),        // 19: gexam.ListWebhookMessagesRequest
+	(*ListWebhookMessagesResponse)(nil),       // 20: gexam.ListWebhookMessagesResponse
+	(*WebhookMessageSummary)(nil),             // 21: gexam.WebhookMessageSummary
+	(*GetWebhookMessageDetailRequest)(nil),    // 22: gexam.GetWebhookMessageDetailRequest
+	(*WebhookMessageDetail)(nil),              // 23: gexam.WebhookMessageDetail
+	(*ListExamStatusTransitionsRequest)(nil),  // 24: gexam.ListExamStatusTransitionsRequest
+	(*ListExamStatusTransitionsResponse)(nil), // 25: gexam.ListExamStatusTransitionsResponse
 }
 var file_exam_proto_depIdxs = []int32{
 	9,  // 0: gexam.ExamStatusTransitionsResponse.transitions:type_name -> gexam.ExamStatusTransition
 	6,  // 1: gexam.ListExamsResponse.exams:type_name -> gexam.ExamInfo
-	0,  // 2: gexam.GExamService.CreateExam:input_type -> gexam.CreateExamRequest
-	1,  // 3: gexam.GExamService.GetExam:input_type -> gexam.GetExamRequest
-	1,  // 4: gexam.GExamService.GetExamResultDetail:input_type -> gexam.GetExamRequest
-	2,  // 5: gexam.GExamService.GetScheduleURL:input_type -> gexam.GetURLRequest
-	3,  // 6: gexam.GExamService.TermUrlCallback:input_type -> gexam.TermUrlCallbackRequest
-	1,  // 7: gexam.GExamService.GetExamStatusTransitions:input_type -> gexam.GetExamRequest
-	1,  // 8: gexam.GExamService.SyncExamResult:input_type -> gexam.GetExamRequest
-	11, // 9: gexam.GExamService.ListExams:input_type -> gexam.ListExamsRequest
-	5,  // 10: gexam.GExamService.CreateExam:output_type -> gexam.CreateExamResponse
-	6,  // 11: gexam.GExamService.GetExam:output_type -> gexam.ExamInfo
-	7,  // 12: gexam.GExamService.GetExamResultDetail:output_type -> gexam.ExamResultDetail
-	8,  // 13: gexam.GExamService.GetScheduleURL:output_type -> gexam.URLResponse
-	4,  // 14: gexam.GExamService.TermUrlCallback:output_type -> gexam.TermUrlCallbackResponse
-	10, // 15: gexam.GExamService.GetExamStatusTransitions:output_type -> gexam.ExamStatusTransitionsResponse
-	7,  // 16: gexam.GExamService.SyncExamResult:output_type -> gexam.ExamResultDetail
-	12, // 17: gexam.GExamService.ListExams:output_type -> gexam.ListExamsResponse
-	10, // [10:18] is the sub-list for method output_type
-	2,  // [2:10] is the sub-list for method input_type
-	2,  // [2:2] is the sub-list for extension type_name
-	2,  // [2:2] is the sub-list for extension extendee
-	0,  // [0:2] is the sub-list for field type_name
+	16, // 2: gexam.ListAuditMessagesResponse.audit_messages:type_name -> gexam.AuditMessageSummary
+	21, // 3: gexam.ListWebhookMessagesResponse.webhook_messages:type_name -> gexam.WebhookMessageSummary
+	9,  // 4: gexam.ListExamStatusTransitionsResponse.transitions:type_name -> gexam.ExamStatusTransition
+	0,  // 5: gexam.GExamService.CreateExam:input_type -> gexam.CreateExamRequest
+	1,  // 6: gexam.GExamService.GetExam:input_type -> gexam.GetExamRequest
+	1,  // 7: gexam.GExamService.GetExamResultDetail:input_type -> gexam.GetExamRequest
+	2,  // 8: gexam.GExamService.GetScheduleURL:input_type -> gexam.GetURLRequest
+	3,  // 9: gexam.GExamService.TermUrlCallback:input_type -> gexam.TermUrlCallbackRequest
+	1,  // 10: gexam.GExamService.GetExamStatusTransitions:input_type -> gexam.GetExamRequest
+	1,  // 11: gexam.GExamService.SyncExamResult:input_type -> gexam.GetExamRequest
+	11, // 12: gexam.GExamService.ListExams:input_type -> gexam.ListExamsRequest
+	1,  // 13: gexam.GExamService.GetExamDetail:input_type -> gexam.GetExamRequest
+	14, // 14: gexam.GExamService.ListAuditMessages:input_type -> gexam.ListAuditMessagesRequest
+	17, // 15: gexam.GExamService.GetAuditMessageDetail:input_type -> gexam.GetAuditMessageDetailRequest
+	19, // 16: gexam.GExamService.ListWebhookMessages:input_type -> gexam.ListWebhookMessagesRequest
+	22, // 17: gexam.GExamService.GetWebhookMessageDetail:input_type -> gexam.GetWebhookMessageDetailRequest
+	24, // 18: gexam.GExamService.ListExamStatusTransitions:input_type -> gexam.ListExamStatusTransitionsRequest
+	5,  // 19: gexam.GExamService.CreateExam:output_type -> gexam.CreateExamResponse
+	6,  // 20: gexam.GExamService.GetExam:output_type -> gexam.ExamInfo
+	7,  // 21: gexam.GExamService.GetExamResultDetail:output_type -> gexam.ExamResultDetail
+	8,  // 22: gexam.GExamService.GetScheduleURL:output_type -> gexam.URLResponse
+	4,  // 23: gexam.GExamService.TermUrlCallback:output_type -> gexam.TermUrlCallbackResponse
+	10, // 24: gexam.GExamService.GetExamStatusTransitions:output_type -> gexam.ExamStatusTransitionsResponse
+	7,  // 25: gexam.GExamService.SyncExamResult:output_type -> gexam.ExamResultDetail
+	12, // 26: gexam.GExamService.ListExams:output_type -> gexam.ListExamsResponse
+	13, // 27: gexam.GExamService.GetExamDetail:output_type -> gexam.ExamDetail
+	15, // 28: gexam.GExamService.ListAuditMessages:output_type -> gexam.ListAuditMessagesResponse
+	18, // 29: gexam.GExamService.GetAuditMessageDetail:output_type -> gexam.AuditMessageDetail
+	20, // 30: gexam.GExamService.ListWebhookMessages:output_type -> gexam.ListWebhookMessagesResponse
+	23, // 31: gexam.GExamService.GetWebhookMessageDetail:output_type -> gexam.WebhookMessageDetail
+	25, // 32: gexam.GExamService.ListExamStatusTransitions:output_type -> gexam.ListExamStatusTransitionsResponse
+	19, // [19:33] is the sub-list for method output_type
+	5,  // [5:19] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_exam_proto_init() }
@@ -1222,13 +2805,16 @@ func file_exam_proto_init() {
 		return
 	}
 	file_exam_proto_msgTypes[11].OneofWrappers = []any{}
+	file_exam_proto_msgTypes[14].OneofWrappers = []any{}
+	file_exam_proto_msgTypes[19].OneofWrappers = []any{}
+	file_exam_proto_msgTypes[24].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_exam_proto_rawDesc), len(file_exam_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -29,7 +29,7 @@ type PipelineConfig struct {
 	Version                uint32                 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`                                                                 // 版本号 [required]
 	Name                   string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`                                                                        // 管线名称 [required]
 	UnlockQuals            []*Qualification       `protobuf:"bytes,7,rep,name=unlock_quals,json=unlockQuals,proto3" json:"unlock_quals,omitempty"`                                       // 解锁条件 [required]
-	CertQuals              []*Qualification       `protobuf:"bytes,8,rep,name=cert_quals,json=certQuals,proto3" json:"cert_quals,omitempty"`                                             // 证书要求 [required]
+	CertsQuals             []*Qualification       `protobuf:"bytes,8,rep,name=certs_quals,json=certsQuals,proto3" json:"certs_quals,omitempty"`                                          // 证书要求 [required]
 	Stages                 []*StageConfig         `protobuf:"bytes,9,rep,name=stages,proto3" json:"stages,omitempty"`                                                                    // 阶段配置 [required]
 	Status                 string                 `protobuf:"bytes,10,opt,name=status,proto3" json:"status,omitempty"`                                                                   // 状态 [required]
 	IsCurrent              bool                   `protobuf:"varint,11,opt,name=is_current,json=isCurrent,proto3" json:"is_current,omitempty"`                                           // 是否为当前版本 [required]
@@ -39,6 +39,7 @@ type PipelineConfig struct {
 	PackageStripeProductId string                 `protobuf:"bytes,15,opt,name=package_stripe_product_id,json=packageStripeProductId,proto3" json:"package_stripe_product_id,omitempty"` // Stripe Product ID for package purchase [optional/conditional]
 	PackageStripePriceId   string                 `protobuf:"bytes,16,opt,name=package_stripe_price_id,json=packageStripePriceId,proto3" json:"package_stripe_price_id,omitempty"`       // Stripe Price ID for package purchase [optional/conditional]
 	CategoryTips           string                 `protobuf:"bytes,17,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`                                   // 分类提示 [required]
+	Certs                  []*Qualification       `protobuf:"bytes,18,rep,name=certs,proto3" json:"certs,omitempty"`                                                                     // 最终拿到的证书 [optional]
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -108,9 +109,9 @@ func (x *PipelineConfig) GetUnlockQuals() []*Qualification {
 	return nil
 }
 
-func (x *PipelineConfig) GetCertQuals() []*Qualification {
+func (x *PipelineConfig) GetCertsQuals() []*Qualification {
 	if x != nil {
-		return x.CertQuals
+		return x.CertsQuals
 	}
 	return nil
 }
@@ -176,6 +177,13 @@ func (x *PipelineConfig) GetCategoryTips() string {
 		return x.CategoryTips
 	}
 	return ""
+}
+
+func (x *PipelineConfig) GetCerts() []*Qualification {
+	if x != nil {
+		return x.Certs
+	}
+	return nil
 }
 
 type StageConfig struct {
@@ -251,6 +259,7 @@ type UnitConfig struct {
 	UnitId                   string                 `protobuf:"bytes,1,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`                                                            // 阶段单元(计费) ULID [required]
 	ExemptionQuals           []string               `protobuf:"bytes,5,rep,name=exemption_quals,json=exemptionQuals,proto3" json:"exemption_quals,omitempty"`                                    // 资格 ULID 列表  [required]
 	AllowRetake              bool                   `protobuf:"varint,9,opt,name=allow_retake,json=allowRetake,proto3" json:"allow_retake,omitempty"`                                            // 是否允许重考 [required]
+	AllowExemption           bool                   `protobuf:"varint,21,opt,name=allow_exemption,json=allowExemption,proto3" json:"allow_exemption,omitempty"`                                  // 是否允许免考 [required]
 	StripeProductId          string                 `protobuf:"bytes,14,opt,name=stripe_product_id,json=stripeProductId,proto3" json:"stripe_product_id,omitempty"`                              // Stripe Product ID for base fee [optional/conditional]
 	StripePriceId            string                 `protobuf:"bytes,15,opt,name=stripe_price_id,json=stripePriceId,proto3" json:"stripe_price_id,omitempty"`                                    // Stripe Price ID for base fee [optional/conditional]
 	ExemptionStripeProductId string                 `protobuf:"bytes,16,opt,name=exemption_stripe_product_id,json=exemptionStripeProductId,proto3" json:"exemption_stripe_product_id,omitempty"` // Stripe Product ID for exemption audit [optional/conditional]
@@ -258,6 +267,9 @@ type UnitConfig struct {
 	RetakeStripeProductId    string                 `protobuf:"bytes,18,opt,name=retake_stripe_product_id,json=retakeStripeProductId,proto3" json:"retake_stripe_product_id,omitempty"`          // Stripe Product ID for retake [optional/conditional]
 	RetakeStripePriceId      string                 `protobuf:"bytes,19,opt,name=retake_stripe_price_id,json=retakeStripePriceId,proto3" json:"retake_stripe_price_id,omitempty"`                // Stripe Price ID for retake [optional/conditional]
 	GlmsCourseId             string                 `protobuf:"bytes,20,opt,name=glms_course_id,json=glmsCourseId,proto3" json:"glms_course_id,omitempty"`                                       // GMLS Course ID [optional]
+	Program                  string                 `protobuf:"bytes,22,opt,name=program,proto3" json:"program,omitempty"`                                                                       // 考试program [optional]
+	ExamId                   string                 `protobuf:"bytes,23,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`                                                           // 考试id [optional]
+	FormCode                 string                 `protobuf:"bytes,24,opt,name=form_code,json=formCode,proto3" json:"form_code,omitempty"`                                                     // 考试form code [optional]
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
@@ -313,6 +325,13 @@ func (x *UnitConfig) GetAllowRetake() bool {
 	return false
 }
 
+func (x *UnitConfig) GetAllowExemption() bool {
+	if x != nil {
+		return x.AllowExemption
+	}
+	return false
+}
+
 func (x *UnitConfig) GetStripeProductId() string {
 	if x != nil {
 		return x.StripeProductId
@@ -358,6 +377,27 @@ func (x *UnitConfig) GetRetakeStripePriceId() string {
 func (x *UnitConfig) GetGlmsCourseId() string {
 	if x != nil {
 		return x.GlmsCourseId
+	}
+	return ""
+}
+
+func (x *UnitConfig) GetProgram() string {
+	if x != nil {
+		return x.Program
+	}
+	return ""
+}
+
+func (x *UnitConfig) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *UnitConfig) GetFormCode() string {
+	if x != nil {
+		return x.FormCode
 	}
 	return ""
 }
@@ -503,11 +543,12 @@ type UpdatePipelineStructureRequest struct {
 	PipelineId             string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`                                         // 必须是 Draft 状态的 管线 ID [required]
 	Stages                 []*StageConfig         `protobuf:"bytes,2,rep,name=stages,proto3" json:"stages,omitempty"`                                                                   // 包含修改后的完整 Stage/Unit 树，GCC 将全量覆盖 Draft 的内部结构 [required]
 	UnlockQuals            []*Qualification       `protobuf:"bytes,5,rep,name=unlock_quals,json=unlockQuals,proto3" json:"unlock_quals,omitempty"`                                      // 解锁条件 [required]
-	CertQuals              []*Qualification       `protobuf:"bytes,6,rep,name=cert_quals,json=certQuals,proto3" json:"cert_quals,omitempty"`                                            // 证书要求 [required]
+	CertsQuals             []*Qualification       `protobuf:"bytes,6,rep,name=certs_quals,json=certsQuals,proto3" json:"certs_quals,omitempty"`                                         // 证书要求 [required]
 	UnlockStripeProductId  string                 `protobuf:"bytes,7,opt,name=unlock_stripe_product_id,json=unlockStripeProductId,proto3" json:"unlock_stripe_product_id,omitempty"`    // Stripe Product ID for unlocking [optional/conditional]
 	UnlockStripePriceId    string                 `protobuf:"bytes,8,opt,name=unlock_stripe_price_id,json=unlockStripePriceId,proto3" json:"unlock_stripe_price_id,omitempty"`          // Stripe Price ID for unlocking [optional/conditional]
 	PackageStripeProductId string                 `protobuf:"bytes,9,opt,name=package_stripe_product_id,json=packageStripeProductId,proto3" json:"package_stripe_product_id,omitempty"` // Stripe Product ID for package purchase [optional/conditional]
 	PackageStripePriceId   string                 `protobuf:"bytes,10,opt,name=package_stripe_price_id,json=packageStripePriceId,proto3" json:"package_stripe_price_id,omitempty"`      // Stripe Price ID for package purchase [optional/conditional]
+	Certs                  []*Qualification       `protobuf:"bytes,11,rep,name=certs,proto3" json:"certs,omitempty"`                                                                    // 最终拿到的证书 [required]
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -563,9 +604,9 @@ func (x *UpdatePipelineStructureRequest) GetUnlockQuals() []*Qualification {
 	return nil
 }
 
-func (x *UpdatePipelineStructureRequest) GetCertQuals() []*Qualification {
+func (x *UpdatePipelineStructureRequest) GetCertsQuals() []*Qualification {
 	if x != nil {
-		return x.CertQuals
+		return x.CertsQuals
 	}
 	return nil
 }
@@ -596,6 +637,13 @@ func (x *UpdatePipelineStructureRequest) GetPackageStripePriceId() string {
 		return x.PackageStripePriceId
 	}
 	return ""
+}
+
+func (x *UpdatePipelineStructureRequest) GetCerts() []*Qualification {
+	if x != nil {
+		return x.Certs
+	}
+	return nil
 }
 
 type PublishPipelineRequest struct {
@@ -869,7 +917,8 @@ func (x *GetPipelineFinalEligibilityRequest) GetPipelineId() string {
 type GetPipelineFinalEligibilityResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PipelineId    string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"` // pipeline 配置版本 ID [required]
-	CertQuals     []*Qualification       `protobuf:"bytes,2,rep,name=cert_quals,json=certQuals,proto3" json:"cert_quals,omitempty"`    // 证书要求 [required]
+	CertsQuals    []*Qualification       `protobuf:"bytes,2,rep,name=certs_quals,json=certsQuals,proto3" json:"certs_quals,omitempty"` // 证书前提要求 [required]
+	Certs         []*Qualification       `protobuf:"bytes,3,rep,name=certs,proto3" json:"certs,omitempty"`                             // 最终证书 [required]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -911,9 +960,16 @@ func (x *GetPipelineFinalEligibilityResponse) GetPipelineId() string {
 	return ""
 }
 
-func (x *GetPipelineFinalEligibilityResponse) GetCertQuals() []*Qualification {
+func (x *GetPipelineFinalEligibilityResponse) GetCertsQuals() []*Qualification {
 	if x != nil {
-		return x.CertQuals
+		return x.CertsQuals
+	}
+	return nil
+}
+
+func (x *GetPipelineFinalEligibilityResponse) GetCerts() []*Qualification {
+	if x != nil {
+		return x.Certs
 	}
 	return nil
 }
@@ -988,7 +1044,7 @@ func (x *ListPipelinesRequest) GetOffset() int32 {
 
 type ListPipelinesResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Pipelines     []*PipelineConfig      `protobuf:"bytes,1,rep,name=pipelines,proto3" json:"pipelines,omitempty"`
+	Pipelines     []*PipelineSummary     `protobuf:"bytes,1,rep,name=pipelines,proto3" json:"pipelines,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1023,9 +1079,741 @@ func (*ListPipelinesResponse) Descriptor() ([]byte, []int) {
 	return file_cc_proto_rawDescGZIP(), []int{13}
 }
 
-func (x *ListPipelinesResponse) GetPipelines() []*PipelineConfig {
+func (x *ListPipelinesResponse) GetPipelines() []*PipelineSummary {
 	if x != nil {
 		return x.Pipelines
+	}
+	return nil
+}
+
+type PipelineSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PipelineId    string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	PipelineGuid  string                 `protobuf:"bytes,2,opt,name=pipeline_guid,json=pipelineGuid,proto3" json:"pipeline_guid,omitempty"`
+	Version       uint32                 `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"`
+	Name          string                 `protobuf:"bytes,4,opt,name=name,proto3" json:"name,omitempty"`
+	CategoryTips  string                 `protobuf:"bytes,5,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`
+	Status        string                 `protobuf:"bytes,6,opt,name=status,proto3" json:"status,omitempty"`
+	IsCurrent     bool                   `protobuf:"varint,7,opt,name=is_current,json=isCurrent,proto3" json:"is_current,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     string                 `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PipelineSummary) Reset() {
+	*x = PipelineSummary{}
+	mi := &file_cc_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PipelineSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PipelineSummary) ProtoMessage() {}
+
+func (x *PipelineSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PipelineSummary.ProtoReflect.Descriptor instead.
+func (*PipelineSummary) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *PipelineSummary) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *PipelineSummary) GetPipelineGuid() string {
+	if x != nil {
+		return x.PipelineGuid
+	}
+	return ""
+}
+
+func (x *PipelineSummary) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *PipelineSummary) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PipelineSummary) GetCategoryTips() string {
+	if x != nil {
+		return x.CategoryTips
+	}
+	return ""
+}
+
+func (x *PipelineSummary) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *PipelineSummary) GetIsCurrent() bool {
+	if x != nil {
+		return x.IsCurrent
+	}
+	return false
+}
+
+func (x *PipelineSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *PipelineSummary) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type StageSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StageId       string                 `protobuf:"bytes,1,opt,name=stage_id,json=stageId,proto3" json:"stage_id,omitempty"`
+	PipelineId    string                 `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	Name          string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	SortOrder     int32                  `protobuf:"varint,4,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	UnitCount     int32                  `protobuf:"varint,5,opt,name=unit_count,json=unitCount,proto3" json:"unit_count,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StageSummary) Reset() {
+	*x = StageSummary{}
+	mi := &file_cc_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StageSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StageSummary) ProtoMessage() {}
+
+func (x *StageSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StageSummary.ProtoReflect.Descriptor instead.
+func (*StageSummary) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *StageSummary) GetStageId() string {
+	if x != nil {
+		return x.StageId
+	}
+	return ""
+}
+
+func (x *StageSummary) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *StageSummary) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *StageSummary) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *StageSummary) GetUnitCount() int32 {
+	if x != nil {
+		return x.UnitCount
+	}
+	return 0
+}
+
+func (x *StageSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *StageSummary) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type UnitSummary struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UnitId         string                 `protobuf:"bytes,1,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
+	StageId        string                 `protobuf:"bytes,2,opt,name=stage_id,json=stageId,proto3" json:"stage_id,omitempty"`
+	GlmsCourseId   string                 `protobuf:"bytes,3,opt,name=glms_course_id,json=glmsCourseId,proto3" json:"glms_course_id,omitempty"`
+	AllowRetake    bool                   `protobuf:"varint,4,opt,name=allow_retake,json=allowRetake,proto3" json:"allow_retake,omitempty"`
+	AllowExemption bool                   `protobuf:"varint,5,opt,name=allow_exemption,json=allowExemption,proto3" json:"allow_exemption,omitempty"`
+	CreatedAt      string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt      string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Program        string                 `protobuf:"bytes,8,opt,name=program,proto3" json:"program,omitempty"`
+	ExamId         string                 `protobuf:"bytes,9,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	FormCode       string                 `protobuf:"bytes,10,opt,name=form_code,json=formCode,proto3" json:"form_code,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *UnitSummary) Reset() {
+	*x = UnitSummary{}
+	mi := &file_cc_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnitSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnitSummary) ProtoMessage() {}
+
+func (x *UnitSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnitSummary.ProtoReflect.Descriptor instead.
+func (*UnitSummary) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *UnitSummary) GetUnitId() string {
+	if x != nil {
+		return x.UnitId
+	}
+	return ""
+}
+
+func (x *UnitSummary) GetStageId() string {
+	if x != nil {
+		return x.StageId
+	}
+	return ""
+}
+
+func (x *UnitSummary) GetGlmsCourseId() string {
+	if x != nil {
+		return x.GlmsCourseId
+	}
+	return ""
+}
+
+func (x *UnitSummary) GetAllowRetake() bool {
+	if x != nil {
+		return x.AllowRetake
+	}
+	return false
+}
+
+func (x *UnitSummary) GetAllowExemption() bool {
+	if x != nil {
+		return x.AllowExemption
+	}
+	return false
+}
+
+func (x *UnitSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *UnitSummary) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *UnitSummary) GetProgram() string {
+	if x != nil {
+		return x.Program
+	}
+	return ""
+}
+
+func (x *UnitSummary) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *UnitSummary) GetFormCode() string {
+	if x != nil {
+		return x.FormCode
+	}
+	return ""
+}
+
+type GetPipelineDetailRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Query:
+	//
+	//	*GetPipelineDetailRequest_PipelineId
+	//	*GetPipelineDetailRequest_PipelineGuid
+	Query         isGetPipelineDetailRequest_Query `protobuf_oneof:"query"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPipelineDetailRequest) Reset() {
+	*x = GetPipelineDetailRequest{}
+	mi := &file_cc_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPipelineDetailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPipelineDetailRequest) ProtoMessage() {}
+
+func (x *GetPipelineDetailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPipelineDetailRequest.ProtoReflect.Descriptor instead.
+func (*GetPipelineDetailRequest) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *GetPipelineDetailRequest) GetQuery() isGetPipelineDetailRequest_Query {
+	if x != nil {
+		return x.Query
+	}
+	return nil
+}
+
+func (x *GetPipelineDetailRequest) GetPipelineId() string {
+	if x != nil {
+		if x, ok := x.Query.(*GetPipelineDetailRequest_PipelineId); ok {
+			return x.PipelineId
+		}
+	}
+	return ""
+}
+
+func (x *GetPipelineDetailRequest) GetPipelineGuid() string {
+	if x != nil {
+		if x, ok := x.Query.(*GetPipelineDetailRequest_PipelineGuid); ok {
+			return x.PipelineGuid
+		}
+	}
+	return ""
+}
+
+type isGetPipelineDetailRequest_Query interface {
+	isGetPipelineDetailRequest_Query()
+}
+
+type GetPipelineDetailRequest_PipelineId struct {
+	PipelineId string `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3,oneof"`
+}
+
+type GetPipelineDetailRequest_PipelineGuid struct {
+	PipelineGuid string `protobuf:"bytes,2,opt,name=pipeline_guid,json=pipelineGuid,proto3,oneof"`
+}
+
+func (*GetPipelineDetailRequest_PipelineId) isGetPipelineDetailRequest_Query() {}
+
+func (*GetPipelineDetailRequest_PipelineGuid) isGetPipelineDetailRequest_Query() {}
+
+type GetUnitDetailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UnitId        string                 `protobuf:"bytes,1,opt,name=unit_id,json=unitId,proto3" json:"unit_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUnitDetailRequest) Reset() {
+	*x = GetUnitDetailRequest{}
+	mi := &file_cc_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUnitDetailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUnitDetailRequest) ProtoMessage() {}
+
+func (x *GetUnitDetailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUnitDetailRequest.ProtoReflect.Descriptor instead.
+func (*GetUnitDetailRequest) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *GetUnitDetailRequest) GetUnitId() string {
+	if x != nil {
+		return x.UnitId
+	}
+	return ""
+}
+
+type ListStagesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PipelineId    string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListStagesRequest) Reset() {
+	*x = ListStagesRequest{}
+	mi := &file_cc_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListStagesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListStagesRequest) ProtoMessage() {}
+
+func (x *ListStagesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListStagesRequest.ProtoReflect.Descriptor instead.
+func (*ListStagesRequest) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ListStagesRequest) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *ListStagesRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListStagesRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListStagesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stages        []*StageSummary        `protobuf:"bytes,1,rep,name=stages,proto3" json:"stages,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListStagesResponse) Reset() {
+	*x = ListStagesResponse{}
+	mi := &file_cc_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListStagesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListStagesResponse) ProtoMessage() {}
+
+func (x *ListStagesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListStagesResponse.ProtoReflect.Descriptor instead.
+func (*ListStagesResponse) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *ListStagesResponse) GetStages() []*StageSummary {
+	if x != nil {
+		return x.Stages
+	}
+	return nil
+}
+
+type GetStageDetailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StageId       string                 `protobuf:"bytes,1,opt,name=stage_id,json=stageId,proto3" json:"stage_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStageDetailRequest) Reset() {
+	*x = GetStageDetailRequest{}
+	mi := &file_cc_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStageDetailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStageDetailRequest) ProtoMessage() {}
+
+func (x *GetStageDetailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStageDetailRequest.ProtoReflect.Descriptor instead.
+func (*GetStageDetailRequest) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *GetStageDetailRequest) GetStageId() string {
+	if x != nil {
+		return x.StageId
+	}
+	return ""
+}
+
+type ListUnitsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Types that are valid to be assigned to Filter:
+	//
+	//	*ListUnitsRequest_StageId
+	//	*ListUnitsRequest_PipelineId
+	Filter        isListUnitsRequest_Filter `protobuf_oneof:"filter"`
+	Limit         int32                     `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                     `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUnitsRequest) Reset() {
+	*x = ListUnitsRequest{}
+	mi := &file_cc_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUnitsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUnitsRequest) ProtoMessage() {}
+
+func (x *ListUnitsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUnitsRequest.ProtoReflect.Descriptor instead.
+func (*ListUnitsRequest) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *ListUnitsRequest) GetFilter() isListUnitsRequest_Filter {
+	if x != nil {
+		return x.Filter
+	}
+	return nil
+}
+
+func (x *ListUnitsRequest) GetStageId() string {
+	if x != nil {
+		if x, ok := x.Filter.(*ListUnitsRequest_StageId); ok {
+			return x.StageId
+		}
+	}
+	return ""
+}
+
+func (x *ListUnitsRequest) GetPipelineId() string {
+	if x != nil {
+		if x, ok := x.Filter.(*ListUnitsRequest_PipelineId); ok {
+			return x.PipelineId
+		}
+	}
+	return ""
+}
+
+func (x *ListUnitsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListUnitsRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type isListUnitsRequest_Filter interface {
+	isListUnitsRequest_Filter()
+}
+
+type ListUnitsRequest_StageId struct {
+	StageId string `protobuf:"bytes,1,opt,name=stage_id,json=stageId,proto3,oneof"`
+}
+
+type ListUnitsRequest_PipelineId struct {
+	PipelineId string `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3,oneof"`
+}
+
+func (*ListUnitsRequest_StageId) isListUnitsRequest_Filter() {}
+
+func (*ListUnitsRequest_PipelineId) isListUnitsRequest_Filter() {}
+
+type ListUnitsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Units         []*UnitSummary         `protobuf:"bytes,1,rep,name=units,proto3" json:"units,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUnitsResponse) Reset() {
+	*x = ListUnitsResponse{}
+	mi := &file_cc_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUnitsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUnitsResponse) ProtoMessage() {}
+
+func (x *ListUnitsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUnitsResponse.ProtoReflect.Descriptor instead.
+func (*ListUnitsResponse) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *ListUnitsResponse) GetUnits() []*UnitSummary {
+	if x != nil {
+		return x.Units
 	}
 	return nil
 }
@@ -1034,16 +1822,16 @@ var File_cc_proto protoreflect.FileDescriptor
 
 const file_cc_proto_rawDesc = "" +
 	"\n" +
-	"\bcc.proto\x12\x03gcc\x1a\x1bgoogle/protobuf/empty.proto\"\xf3\x04\n" +
+	"\bcc.proto\x12\x03gcc\x1a\x1bgoogle/protobuf/empty.proto\"\x9f\x05\n" +
 	"\x0ePipelineConfig\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
 	"pipelineId\x12#\n" +
 	"\rpipeline_guid\x18\x02 \x01(\tR\fpipelineGuid\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\rR\aversion\x12\x12\n" +
 	"\x04name\x18\x04 \x01(\tR\x04name\x125\n" +
-	"\funlock_quals\x18\a \x03(\v2\x12.gcc.QualificationR\vunlockQuals\x121\n" +
-	"\n" +
-	"cert_quals\x18\b \x03(\v2\x12.gcc.QualificationR\tcertQuals\x12(\n" +
+	"\funlock_quals\x18\a \x03(\v2\x12.gcc.QualificationR\vunlockQuals\x123\n" +
+	"\vcerts_quals\x18\b \x03(\v2\x12.gcc.QualificationR\n" +
+	"certsQuals\x12(\n" +
 	"\x06stages\x18\t \x03(\v2\x10.gcc.StageConfigR\x06stages\x12\x16\n" +
 	"\x06status\x18\n" +
 	" \x01(\tR\x06status\x12\x1d\n" +
@@ -1055,25 +1843,30 @@ const file_cc_proto_rawDesc = "" +
 	"\x16unlock_stripe_price_id\x18\x0e \x01(\tR\x13unlockStripePriceId\x129\n" +
 	"\x19package_stripe_product_id\x18\x0f \x01(\tR\x16packageStripeProductId\x125\n" +
 	"\x17package_stripe_price_id\x18\x10 \x01(\tR\x14packageStripePriceId\x12#\n" +
-	"\rcategory_tips\x18\x11 \x01(\tR\fcategoryTips\"\x82\x01\n" +
+	"\rcategory_tips\x18\x11 \x01(\tR\fcategoryTips\x12(\n" +
+	"\x05certs\x18\x12 \x03(\v2\x12.gcc.QualificationR\x05certs\"\x82\x01\n" +
 	"\vStageConfig\x12\x19\n" +
 	"\bstage_id\x18\x01 \x01(\tR\astageId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
 	"\n" +
 	"sort_order\x18\x03 \x01(\x05R\tsortOrder\x12%\n" +
-	"\x05units\x18\x04 \x03(\v2\x0f.gcc.UnitConfigR\x05units\"\xd3\x03\n" +
+	"\x05units\x18\x04 \x03(\v2\x0f.gcc.UnitConfigR\x05units\"\xcc\x04\n" +
 	"\n" +
 	"UnitConfig\x12\x17\n" +
 	"\aunit_id\x18\x01 \x01(\tR\x06unitId\x12'\n" +
 	"\x0fexemption_quals\x18\x05 \x03(\tR\x0eexemptionQuals\x12!\n" +
-	"\fallow_retake\x18\t \x01(\bR\vallowRetake\x12*\n" +
+	"\fallow_retake\x18\t \x01(\bR\vallowRetake\x12'\n" +
+	"\x0fallow_exemption\x18\x15 \x01(\bR\x0eallowExemption\x12*\n" +
 	"\x11stripe_product_id\x18\x0e \x01(\tR\x0fstripeProductId\x12&\n" +
 	"\x0fstripe_price_id\x18\x0f \x01(\tR\rstripePriceId\x12=\n" +
 	"\x1bexemption_stripe_product_id\x18\x10 \x01(\tR\x18exemptionStripeProductId\x129\n" +
 	"\x19exemption_stripe_price_id\x18\x11 \x01(\tR\x16exemptionStripePriceId\x127\n" +
 	"\x18retake_stripe_product_id\x18\x12 \x01(\tR\x15retakeStripeProductId\x123\n" +
 	"\x16retake_stripe_price_id\x18\x13 \x01(\tR\x13retakeStripePriceId\x12$\n" +
-	"\x0eglms_course_id\x18\x14 \x01(\tR\fglmsCourseId\"m\n" +
+	"\x0eglms_course_id\x18\x14 \x01(\tR\fglmsCourseId\x12\x18\n" +
+	"\aprogram\x18\x16 \x01(\tR\aprogram\x12\x17\n" +
+	"\aexam_id\x18\x17 \x01(\tR\x06examId\x12\x1b\n" +
+	"\tform_code\x18\x18 \x01(\tR\bformCode\"m\n" +
 	"\rQualification\x12\x17\n" +
 	"\aqual_id\x18\x01 \x01(\tR\x06qualId\x12\x1b\n" +
 	"\tname_hint\x18\x02 \x01(\tR\bnameHint\x12&\n" +
@@ -1084,19 +1877,20 @@ const file_cc_proto_rawDesc = "" +
 	"\x12from_pipeline_guid\x18\x03 \x01(\tR\x10fromPipelineGuid\x12\x1f\n" +
 	"\vpipeline_id\x18\x04 \x01(\tR\n" +
 	"pipelineId\x12#\n" +
-	"\rpipeline_guid\x18\x05 \x01(\tR\fpipelineGuid\"\xb5\x03\n" +
+	"\rpipeline_guid\x18\x05 \x01(\tR\fpipelineGuid\"\xe1\x03\n" +
 	"\x1eUpdatePipelineStructureRequest\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
 	"pipelineId\x12(\n" +
 	"\x06stages\x18\x02 \x03(\v2\x10.gcc.StageConfigR\x06stages\x125\n" +
-	"\funlock_quals\x18\x05 \x03(\v2\x12.gcc.QualificationR\vunlockQuals\x121\n" +
-	"\n" +
-	"cert_quals\x18\x06 \x03(\v2\x12.gcc.QualificationR\tcertQuals\x127\n" +
+	"\funlock_quals\x18\x05 \x03(\v2\x12.gcc.QualificationR\vunlockQuals\x123\n" +
+	"\vcerts_quals\x18\x06 \x03(\v2\x12.gcc.QualificationR\n" +
+	"certsQuals\x127\n" +
 	"\x18unlock_stripe_product_id\x18\a \x01(\tR\x15unlockStripeProductId\x123\n" +
 	"\x16unlock_stripe_price_id\x18\b \x01(\tR\x13unlockStripePriceId\x129\n" +
 	"\x19package_stripe_product_id\x18\t \x01(\tR\x16packageStripeProductId\x125\n" +
 	"\x17package_stripe_price_id\x18\n" +
-	" \x01(\tR\x14packageStripePriceId\"9\n" +
+	" \x01(\tR\x14packageStripePriceId\x12(\n" +
+	"\x05certs\x18\v \x03(\v2\x12.gcc.QualificationR\x05certs\"9\n" +
 	"\x16PublishPipelineRequest\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
 	"pipelineId\"8\n" +
@@ -1113,28 +1907,101 @@ const file_cc_proto_rawDesc = "" +
 	"\x05query\"E\n" +
 	"\"GetPipelineFinalEligibilityRequest\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
-	"pipelineId\"y\n" +
+	"pipelineId\"\xa5\x01\n" +
 	"#GetPipelineFinalEligibilityResponse\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
-	"pipelineId\x121\n" +
-	"\n" +
-	"cert_quals\x18\x02 \x03(\v2\x12.gcc.QualificationR\tcertQuals\"\x8c\x01\n" +
+	"pipelineId\x123\n" +
+	"\vcerts_quals\x18\x02 \x03(\v2\x12.gcc.QualificationR\n" +
+	"certsQuals\x12(\n" +
+	"\x05certs\x18\x03 \x03(\v2\x12.gcc.QualificationR\x05certs\"\x8c\x01\n" +
 	"\x14ListPipelinesRequest\x12#\n" +
 	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12!\n" +
 	"\fonly_current\x18\x02 \x01(\bR\vonlyCurrent\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x04 \x01(\x05R\x06offset\"J\n" +
-	"\x15ListPipelinesResponse\x121\n" +
-	"\tpipelines\x18\x01 \x03(\v2\x13.gcc.PipelineConfigR\tpipelines2\xfd\x04\n" +
+	"\x06offset\x18\x04 \x01(\x05R\x06offset\"K\n" +
+	"\x15ListPipelinesResponse\x122\n" +
+	"\tpipelines\x18\x01 \x03(\v2\x14.gcc.PipelineSummaryR\tpipelines\"\x9f\x02\n" +
+	"\x0fPipelineSummary\x12\x1f\n" +
+	"\vpipeline_id\x18\x01 \x01(\tR\n" +
+	"pipelineId\x12#\n" +
+	"\rpipeline_guid\x18\x02 \x01(\tR\fpipelineGuid\x12\x18\n" +
+	"\aversion\x18\x03 \x01(\rR\aversion\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12#\n" +
+	"\rcategory_tips\x18\x05 \x01(\tR\fcategoryTips\x12\x16\n" +
+	"\x06status\x18\x06 \x01(\tR\x06status\x12\x1d\n" +
+	"\n" +
+	"is_current\x18\a \x01(\bR\tisCurrent\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\b \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\t \x01(\tR\tupdatedAt\"\xda\x01\n" +
+	"\fStageSummary\x12\x19\n" +
+	"\bstage_id\x18\x01 \x01(\tR\astageId\x12\x1f\n" +
+	"\vpipeline_id\x18\x02 \x01(\tR\n" +
+	"pipelineId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\x04 \x01(\x05R\tsortOrder\x12\x1d\n" +
+	"\n" +
+	"unit_count\x18\x05 \x01(\x05R\tunitCount\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\tR\tupdatedAt\"\xc1\x02\n" +
+	"\vUnitSummary\x12\x17\n" +
+	"\aunit_id\x18\x01 \x01(\tR\x06unitId\x12\x19\n" +
+	"\bstage_id\x18\x02 \x01(\tR\astageId\x12$\n" +
+	"\x0eglms_course_id\x18\x03 \x01(\tR\fglmsCourseId\x12!\n" +
+	"\fallow_retake\x18\x04 \x01(\bR\vallowRetake\x12'\n" +
+	"\x0fallow_exemption\x18\x05 \x01(\bR\x0eallowExemption\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\a \x01(\tR\tupdatedAt\x12\x18\n" +
+	"\aprogram\x18\b \x01(\tR\aprogram\x12\x17\n" +
+	"\aexam_id\x18\t \x01(\tR\x06examId\x12\x1b\n" +
+	"\tform_code\x18\n" +
+	" \x01(\tR\bformCode\"m\n" +
+	"\x18GetPipelineDetailRequest\x12!\n" +
+	"\vpipeline_id\x18\x01 \x01(\tH\x00R\n" +
+	"pipelineId\x12%\n" +
+	"\rpipeline_guid\x18\x02 \x01(\tH\x00R\fpipelineGuidB\a\n" +
+	"\x05query\"/\n" +
+	"\x14GetUnitDetailRequest\x12\x17\n" +
+	"\aunit_id\x18\x01 \x01(\tR\x06unitId\"b\n" +
+	"\x11ListStagesRequest\x12\x1f\n" +
+	"\vpipeline_id\x18\x01 \x01(\tR\n" +
+	"pipelineId\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offset\"?\n" +
+	"\x12ListStagesResponse\x12)\n" +
+	"\x06stages\x18\x01 \x03(\v2\x11.gcc.StageSummaryR\x06stages\"2\n" +
+	"\x15GetStageDetailRequest\x12\x19\n" +
+	"\bstage_id\x18\x01 \x01(\tR\astageId\"\x8a\x01\n" +
+	"\x10ListUnitsRequest\x12\x1b\n" +
+	"\bstage_id\x18\x01 \x01(\tH\x00R\astageId\x12!\n" +
+	"\vpipeline_id\x18\x02 \x01(\tH\x00R\n" +
+	"pipelineId\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x04 \x01(\x05R\x06offsetB\b\n" +
+	"\x06filter\";\n" +
+	"\x11ListUnitsResponse\x12&\n" +
+	"\x05units\x18\x01 \x03(\v2\x10.gcc.UnitSummaryR\x05units2\xbe\a\n" +
 	"\tCCService\x12K\n" +
 	"\x13CreatePipelineDraft\x12\x1f.gcc.CreatePipelineDraftRequest\x1a\x13.gcc.PipelineConfig\x12S\n" +
 	"\x17UpdatePipelineStructure\x12#.gcc.UpdatePipelineStructureRequest\x1a\x13.gcc.PipelineConfig\x12C\n" +
 	"\x0fPublishPipeline\x12\x1b.gcc.PublishPipelineRequest\x1a\x13.gcc.PipelineConfig\x12D\n" +
 	"\x0eDeletePipeline\x12\x1a.gcc.DeletePipelineRequest\x1a\x16.google.protobuf.Empty\x12L\n" +
 	"\x16UpdatePipelineMetadata\x12\x1a.gcc.UpdateMetadataRequest\x1a\x16.google.protobuf.Empty\x12;\n" +
-	"\vGetPipeline\x12\x17.gcc.GetPipelineRequest\x1a\x13.gcc.PipelineConfig\x12p\n" +
+	"\vGetPipeline\x12\x17.gcc.GetPipelineRequest\x1a\x13.gcc.PipelineConfig\x12G\n" +
+	"\x11GetPipelineDetail\x12\x1d.gcc.GetPipelineDetailRequest\x1a\x13.gcc.PipelineConfig\x12p\n" +
 	"\x1bGetPipelineFinalEligibility\x12'.gcc.GetPipelineFinalEligibilityRequest\x1a(.gcc.GetPipelineFinalEligibilityResponse\x12F\n" +
-	"\rListPipelines\x12\x19.gcc.ListPipelinesRequest\x1a\x1a.gcc.ListPipelinesResponseB\n" +
+	"\rListPipelines\x12\x19.gcc.ListPipelinesRequest\x1a\x1a.gcc.ListPipelinesResponse\x12=\n" +
+	"\n" +
+	"ListStages\x12\x16.gcc.ListStagesRequest\x1a\x17.gcc.ListStagesResponse\x12>\n" +
+	"\x0eGetStageDetail\x12\x1a.gcc.GetStageDetailRequest\x1a\x10.gcc.StageConfig\x12:\n" +
+	"\tListUnits\x12\x15.gcc.ListUnitsRequest\x1a\x16.gcc.ListUnitsResponse\x12;\n" +
+	"\rGetUnitDetail\x12\x19.gcc.GetUnitDetailRequest\x1a\x0f.gcc.UnitConfigB\n" +
 	"Z\bcftp/gccb\x06proto3"
 
 var (
@@ -1149,7 +2016,7 @@ func file_cc_proto_rawDescGZIP() []byte {
 	return file_cc_proto_rawDescData
 }
 
-var file_cc_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_cc_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_cc_proto_goTypes = []any{
 	(*PipelineConfig)(nil),                      // 0: gcc.PipelineConfig
 	(*StageConfig)(nil),                         // 1: gcc.StageConfig
@@ -1165,39 +2032,64 @@ var file_cc_proto_goTypes = []any{
 	(*GetPipelineFinalEligibilityResponse)(nil), // 11: gcc.GetPipelineFinalEligibilityResponse
 	(*ListPipelinesRequest)(nil),                // 12: gcc.ListPipelinesRequest
 	(*ListPipelinesResponse)(nil),               // 13: gcc.ListPipelinesResponse
-	(*emptypb.Empty)(nil),                       // 14: google.protobuf.Empty
+	(*PipelineSummary)(nil),                     // 14: gcc.PipelineSummary
+	(*StageSummary)(nil),                        // 15: gcc.StageSummary
+	(*UnitSummary)(nil),                         // 16: gcc.UnitSummary
+	(*GetPipelineDetailRequest)(nil),            // 17: gcc.GetPipelineDetailRequest
+	(*GetUnitDetailRequest)(nil),                // 18: gcc.GetUnitDetailRequest
+	(*ListStagesRequest)(nil),                   // 19: gcc.ListStagesRequest
+	(*ListStagesResponse)(nil),                  // 20: gcc.ListStagesResponse
+	(*GetStageDetailRequest)(nil),               // 21: gcc.GetStageDetailRequest
+	(*ListUnitsRequest)(nil),                    // 22: gcc.ListUnitsRequest
+	(*ListUnitsResponse)(nil),                   // 23: gcc.ListUnitsResponse
+	(*emptypb.Empty)(nil),                       // 24: google.protobuf.Empty
 }
 var file_cc_proto_depIdxs = []int32{
 	3,  // 0: gcc.PipelineConfig.unlock_quals:type_name -> gcc.Qualification
-	3,  // 1: gcc.PipelineConfig.cert_quals:type_name -> gcc.Qualification
+	3,  // 1: gcc.PipelineConfig.certs_quals:type_name -> gcc.Qualification
 	1,  // 2: gcc.PipelineConfig.stages:type_name -> gcc.StageConfig
-	2,  // 3: gcc.StageConfig.units:type_name -> gcc.UnitConfig
-	1,  // 4: gcc.UpdatePipelineStructureRequest.stages:type_name -> gcc.StageConfig
-	3,  // 5: gcc.UpdatePipelineStructureRequest.unlock_quals:type_name -> gcc.Qualification
-	3,  // 6: gcc.UpdatePipelineStructureRequest.cert_quals:type_name -> gcc.Qualification
-	3,  // 7: gcc.GetPipelineFinalEligibilityResponse.cert_quals:type_name -> gcc.Qualification
-	0,  // 8: gcc.ListPipelinesResponse.pipelines:type_name -> gcc.PipelineConfig
-	4,  // 9: gcc.CCService.CreatePipelineDraft:input_type -> gcc.CreatePipelineDraftRequest
-	5,  // 10: gcc.CCService.UpdatePipelineStructure:input_type -> gcc.UpdatePipelineStructureRequest
-	6,  // 11: gcc.CCService.PublishPipeline:input_type -> gcc.PublishPipelineRequest
-	7,  // 12: gcc.CCService.DeletePipeline:input_type -> gcc.DeletePipelineRequest
-	8,  // 13: gcc.CCService.UpdatePipelineMetadata:input_type -> gcc.UpdateMetadataRequest
-	9,  // 14: gcc.CCService.GetPipeline:input_type -> gcc.GetPipelineRequest
-	10, // 15: gcc.CCService.GetPipelineFinalEligibility:input_type -> gcc.GetPipelineFinalEligibilityRequest
-	12, // 16: gcc.CCService.ListPipelines:input_type -> gcc.ListPipelinesRequest
-	0,  // 17: gcc.CCService.CreatePipelineDraft:output_type -> gcc.PipelineConfig
-	0,  // 18: gcc.CCService.UpdatePipelineStructure:output_type -> gcc.PipelineConfig
-	0,  // 19: gcc.CCService.PublishPipeline:output_type -> gcc.PipelineConfig
-	14, // 20: gcc.CCService.DeletePipeline:output_type -> google.protobuf.Empty
-	14, // 21: gcc.CCService.UpdatePipelineMetadata:output_type -> google.protobuf.Empty
-	0,  // 22: gcc.CCService.GetPipeline:output_type -> gcc.PipelineConfig
-	11, // 23: gcc.CCService.GetPipelineFinalEligibility:output_type -> gcc.GetPipelineFinalEligibilityResponse
-	13, // 24: gcc.CCService.ListPipelines:output_type -> gcc.ListPipelinesResponse
-	17, // [17:25] is the sub-list for method output_type
-	9,  // [9:17] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	3,  // 3: gcc.PipelineConfig.certs:type_name -> gcc.Qualification
+	2,  // 4: gcc.StageConfig.units:type_name -> gcc.UnitConfig
+	1,  // 5: gcc.UpdatePipelineStructureRequest.stages:type_name -> gcc.StageConfig
+	3,  // 6: gcc.UpdatePipelineStructureRequest.unlock_quals:type_name -> gcc.Qualification
+	3,  // 7: gcc.UpdatePipelineStructureRequest.certs_quals:type_name -> gcc.Qualification
+	3,  // 8: gcc.UpdatePipelineStructureRequest.certs:type_name -> gcc.Qualification
+	3,  // 9: gcc.GetPipelineFinalEligibilityResponse.certs_quals:type_name -> gcc.Qualification
+	3,  // 10: gcc.GetPipelineFinalEligibilityResponse.certs:type_name -> gcc.Qualification
+	14, // 11: gcc.ListPipelinesResponse.pipelines:type_name -> gcc.PipelineSummary
+	15, // 12: gcc.ListStagesResponse.stages:type_name -> gcc.StageSummary
+	16, // 13: gcc.ListUnitsResponse.units:type_name -> gcc.UnitSummary
+	4,  // 14: gcc.CCService.CreatePipelineDraft:input_type -> gcc.CreatePipelineDraftRequest
+	5,  // 15: gcc.CCService.UpdatePipelineStructure:input_type -> gcc.UpdatePipelineStructureRequest
+	6,  // 16: gcc.CCService.PublishPipeline:input_type -> gcc.PublishPipelineRequest
+	7,  // 17: gcc.CCService.DeletePipeline:input_type -> gcc.DeletePipelineRequest
+	8,  // 18: gcc.CCService.UpdatePipelineMetadata:input_type -> gcc.UpdateMetadataRequest
+	9,  // 19: gcc.CCService.GetPipeline:input_type -> gcc.GetPipelineRequest
+	17, // 20: gcc.CCService.GetPipelineDetail:input_type -> gcc.GetPipelineDetailRequest
+	10, // 21: gcc.CCService.GetPipelineFinalEligibility:input_type -> gcc.GetPipelineFinalEligibilityRequest
+	12, // 22: gcc.CCService.ListPipelines:input_type -> gcc.ListPipelinesRequest
+	19, // 23: gcc.CCService.ListStages:input_type -> gcc.ListStagesRequest
+	21, // 24: gcc.CCService.GetStageDetail:input_type -> gcc.GetStageDetailRequest
+	22, // 25: gcc.CCService.ListUnits:input_type -> gcc.ListUnitsRequest
+	18, // 26: gcc.CCService.GetUnitDetail:input_type -> gcc.GetUnitDetailRequest
+	0,  // 27: gcc.CCService.CreatePipelineDraft:output_type -> gcc.PipelineConfig
+	0,  // 28: gcc.CCService.UpdatePipelineStructure:output_type -> gcc.PipelineConfig
+	0,  // 29: gcc.CCService.PublishPipeline:output_type -> gcc.PipelineConfig
+	24, // 30: gcc.CCService.DeletePipeline:output_type -> google.protobuf.Empty
+	24, // 31: gcc.CCService.UpdatePipelineMetadata:output_type -> google.protobuf.Empty
+	0,  // 32: gcc.CCService.GetPipeline:output_type -> gcc.PipelineConfig
+	0,  // 33: gcc.CCService.GetPipelineDetail:output_type -> gcc.PipelineConfig
+	11, // 34: gcc.CCService.GetPipelineFinalEligibility:output_type -> gcc.GetPipelineFinalEligibilityResponse
+	13, // 35: gcc.CCService.ListPipelines:output_type -> gcc.ListPipelinesResponse
+	20, // 36: gcc.CCService.ListStages:output_type -> gcc.ListStagesResponse
+	1,  // 37: gcc.CCService.GetStageDetail:output_type -> gcc.StageConfig
+	23, // 38: gcc.CCService.ListUnits:output_type -> gcc.ListUnitsResponse
+	2,  // 39: gcc.CCService.GetUnitDetail:output_type -> gcc.UnitConfig
+	27, // [27:40] is the sub-list for method output_type
+	14, // [14:27] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_cc_proto_init() }
@@ -1209,13 +2101,21 @@ func file_cc_proto_init() {
 		(*GetPipelineRequest_PipelineId)(nil),
 		(*GetPipelineRequest_PipelineGuid)(nil),
 	}
+	file_cc_proto_msgTypes[17].OneofWrappers = []any{
+		(*GetPipelineDetailRequest_PipelineId)(nil),
+		(*GetPipelineDetailRequest_PipelineGuid)(nil),
+	}
+	file_cc_proto_msgTypes[22].OneofWrappers = []any{
+		(*ListUnitsRequest_StageId)(nil),
+		(*ListUnitsRequest_PipelineId)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cc_proto_rawDesc), len(file_cc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

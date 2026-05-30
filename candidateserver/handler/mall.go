@@ -2,10 +2,12 @@ package handler
 
 import (
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -26,7 +28,7 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: 待微服务团队补充 GCC catalog 管理/列表接口后接入分类分组；当前 GCC proto 已移除 ListCatalogs。
 	for _, pipeline := range resp.GetPipelines() {
-		pipelineForOutput := pipeline
+		var pipelineForOutput *gccpb.PipelineConfig
 		detailResp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
 			Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipeline.GetPipelineId()},
 		})
@@ -34,6 +36,9 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 			slog.Warn("Failed to get pipeline detail for mall list", "error", err, "pipeline_id", pipeline.GetPipelineId())
 		} else {
 			pipelineForOutput = detailResp
+		}
+		if pipelineForOutput == nil {
+			pipelineForOutput = pipelineSummaryToConfig(pipeline)
 		}
 
 		finalEligibilityResp, err := h.Gcc.GetPipelineFinalEligibility(r.Context(), &gccpb.GetPipelineFinalEligibilityRequest{
@@ -44,7 +49,7 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		out.Pipelines = append(out.Pipelines, toPipelineConfig(pipelineForOutput, finalEligibilityResp.GetCertQuals()))
+		out.Pipelines = append(out.Pipelines, toPipelineConfig(pipelineForOutput, finalEligibilityResp.GetCerts()))
 	}
 
 	WriteJSON(w, http.StatusOK, out)
@@ -53,7 +58,10 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 // GetPipelineDetail  GET /api/mall/pipelines/{id}
 func (h *Handler) GetPipelineDetail(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
-	pipelineID := chi.URLParam(r, "pipelineId")
+	pipelineID := strings.TrimSpace(chi.URLParam(r, "pipelineId"))
+	if !requireRequestField(w, pipelineID, "pipeline_id") {
+		return
+	}
 	ctx := r.Context()
 
 	// 1. 获取静态配置
@@ -86,10 +94,30 @@ func (h *Handler) GetPipelineDetail(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, out)
 }
 
+// GetMallCourseSummary GET /api/mall/courses/{courseId}
+func (h *Handler) GetMallCourseSummary(w http.ResponseWriter, r *http.Request) {
+	courseID := strings.TrimSpace(chi.URLParam(r, "courseId"))
+	if !requireRequestField(w, courseID, "course_id") {
+		return
+	}
+
+	resp, err := h.Lms.GetCourseSummary(r.Context(), &lmspb.GetCourseRequest{
+		CourseId: courseID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 // PurchasePipeline  POST /api/mall/pipelines/{pipelineId}/purchase
 func (h *Handler) PurchasePipeline(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
-	pipelineID := chi.URLParam(r, "pipelineId")
+	pipelineID := strings.TrimSpace(chi.URLParam(r, "pipelineId"))
+	if !requireRequestField(w, pipelineID, "pipeline_id") {
+		return
+	}
 
 	var req PurchasePipelineReq
 	if err := ReadJSON(r, &req); err != nil {
@@ -144,12 +172,28 @@ func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification)
 		PackageStripeProductId: p.GetPackageStripeProductId(),
 		PackageStripePriceId:   p.GetPackageStripePriceId(),
 		UnlockQuals:            toUnlockQuals(p.GetUnlockQuals()),
-		CertQuals:              toUnlockQuals(p.GetCertQuals()),
+		CertQuals:              toUnlockQuals(p.GetCertsQuals()),
 		Stages:                 toStages(p.GetStages()),
 		Status:                 p.GetStatus(),
 		IsCurrent:              p.GetIsCurrent(),
 		CreatedAt:              p.GetCreatedAt(),
 		FinalQuals:             toUnlockQuals(certQuals),
+	}
+}
+
+func pipelineSummaryToConfig(p *gccpb.PipelineSummary) *gccpb.PipelineConfig {
+	if p == nil {
+		return nil
+	}
+	return &gccpb.PipelineConfig{
+		PipelineId:   p.GetPipelineId(),
+		PipelineGuid: p.GetPipelineGuid(),
+		Version:      p.GetVersion(),
+		Name:         p.GetName(),
+		Status:       p.GetStatus(),
+		IsCurrent:    p.GetIsCurrent(),
+		CreatedAt:    p.GetCreatedAt(),
+		CategoryTips: p.GetCategoryTips(),
 	}
 }
 

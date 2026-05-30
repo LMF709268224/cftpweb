@@ -29,6 +29,7 @@ const (
 	PipelineStatus_PIPELINE_STATUS_RUNNING         PipelineStatus = 1
 	PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG PipelineStatus = 2
 	PipelineStatus_PIPELINE_STATUS_COMPLETED       PipelineStatus = 3
+	PipelineStatus_PIPELINE_STATUS_ISSUING_CERT    PipelineStatus = 4
 )
 
 // Enum value maps for PipelineStatus.
@@ -38,12 +39,14 @@ var (
 		1: "PIPELINE_STATUS_RUNNING",
 		2: "PIPELINE_STATUS_WAIT_FINAL_ELIG",
 		3: "PIPELINE_STATUS_COMPLETED",
+		4: "PIPELINE_STATUS_ISSUING_CERT",
 	}
 	PipelineStatus_value = map[string]int32{
 		"PIPELINE_STATUS_UNSPECIFIED":     0,
 		"PIPELINE_STATUS_RUNNING":         1,
 		"PIPELINE_STATUS_WAIT_FINAL_ELIG": 2,
 		"PIPELINE_STATUS_COMPLETED":       3,
+		"PIPELINE_STATUS_ISSUING_CERT":    4,
 	}
 )
 
@@ -1492,6 +1495,3034 @@ func (x *PipelineSummary) GetCreatedAt() string {
 	return ""
 }
 
+type GetPipelineDetailReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PipelineUlid  string                 `protobuf:"bytes,1,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"` // [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPipelineDetailReq) Reset() {
+	*x = GetPipelineDetailReq{}
+	mi := &file_prog_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPipelineDetailReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPipelineDetailReq) ProtoMessage() {}
+
+func (x *GetPipelineDetailReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPipelineDetailReq.ProtoReflect.Descriptor instead.
+func (*GetPipelineDetailReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *GetPipelineDetailReq) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+type GetPipelineDetailRsp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pipeline      *PipelineDetail        `protobuf:"bytes,1,opt,name=pipeline,proto3" json:"pipeline,omitempty"` // pipeline 详情
+	Stages        []*StageDetail         `protobuf:"bytes,2,rep,name=stages,proto3" json:"stages,omitempty"`     // stage 详情树
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPipelineDetailRsp) Reset() {
+	*x = GetPipelineDetailRsp{}
+	mi := &file_prog_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPipelineDetailRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPipelineDetailRsp) ProtoMessage() {}
+
+func (x *GetPipelineDetailRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPipelineDetailRsp.ProtoReflect.Descriptor instead.
+func (*GetPipelineDetailRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *GetPipelineDetailRsp) GetPipeline() *PipelineDetail {
+	if x != nil {
+		return x.Pipeline
+	}
+	return nil
+}
+
+func (x *GetPipelineDetailRsp) GetStages() []*StageDetail {
+	if x != nil {
+		return x.Stages
+	}
+	return nil
+}
+
+type PipelineDetail struct {
+	state               protoimpl.MessageState `protogen:"open.v1"`
+	PipelineUlid        string                 `protobuf:"bytes,1,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`
+	CandidateUlid       string                 `protobuf:"bytes,2,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"`
+	PipelineCcUlid      string                 `protobuf:"bytes,3,opt,name=pipeline_cc_ulid,json=pipelineCcUlid,proto3" json:"pipeline_cc_ulid,omitempty"`
+	Status              PipelineStatus         `protobuf:"varint,4,opt,name=status,proto3,enum=gprog.PipelineStatus" json:"status,omitempty"`
+	CurrentStageUlid    string                 `protobuf:"bytes,5,opt,name=current_stage_ulid,json=currentStageUlid,proto3" json:"current_stage_ulid,omitempty"`
+	CourseSelectionJson string                 `protobuf:"bytes,6,opt,name=course_selection_json,json=courseSelectionJson,proto3" json:"course_selection_json,omitempty"` // 选课JSON大字段
+	StartedAt           string                 `protobuf:"bytes,7,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	CompletedAt         string                 `protobuf:"bytes,8,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	CompletedReason     string                 `protobuf:"bytes,9,opt,name=completed_reason,json=completedReason,proto3" json:"completed_reason,omitempty"`
+	LastEventAt         string                 `protobuf:"bytes,10,opt,name=last_event_at,json=lastEventAt,proto3" json:"last_event_at,omitempty"`
+	LastReconciledAt    string                 `protobuf:"bytes,11,opt,name=last_reconciled_at,json=lastReconciledAt,proto3" json:"last_reconciled_at,omitempty"`
+	CreatedAt           string                 `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *PipelineDetail) Reset() {
+	*x = PipelineDetail{}
+	mi := &file_prog_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PipelineDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PipelineDetail) ProtoMessage() {}
+
+func (x *PipelineDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PipelineDetail.ProtoReflect.Descriptor instead.
+func (*PipelineDetail) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *PipelineDetail) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetCandidateUlid() string {
+	if x != nil {
+		return x.CandidateUlid
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetPipelineCcUlid() string {
+	if x != nil {
+		return x.PipelineCcUlid
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetStatus() PipelineStatus {
+	if x != nil {
+		return x.Status
+	}
+	return PipelineStatus_PIPELINE_STATUS_UNSPECIFIED
+}
+
+func (x *PipelineDetail) GetCurrentStageUlid() string {
+	if x != nil {
+		return x.CurrentStageUlid
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetCourseSelectionJson() string {
+	if x != nil {
+		return x.CourseSelectionJson
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetStartedAt() string {
+	if x != nil {
+		return x.StartedAt
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetCompletedAt() string {
+	if x != nil {
+		return x.CompletedAt
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetCompletedReason() string {
+	if x != nil {
+		return x.CompletedReason
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetLastEventAt() string {
+	if x != nil {
+		return x.LastEventAt
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetLastReconciledAt() string {
+	if x != nil {
+		return x.LastReconciledAt
+	}
+	return ""
+}
+
+func (x *PipelineDetail) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type StageDetail struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stage         *StageSummary          `protobuf:"bytes,1,opt,name=stage,proto3" json:"stage,omitempty"`
+	CourseUnits   []*CourseUnitSummary   `protobuf:"bytes,2,rep,name=course_units,json=courseUnits,proto3" json:"course_units,omitempty"` // stage 下属单元
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StageDetail) Reset() {
+	*x = StageDetail{}
+	mi := &file_prog_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StageDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StageDetail) ProtoMessage() {}
+
+func (x *StageDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StageDetail.ProtoReflect.Descriptor instead.
+func (*StageDetail) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *StageDetail) GetStage() *StageSummary {
+	if x != nil {
+		return x.Stage
+	}
+	return nil
+}
+
+func (x *StageDetail) GetCourseUnits() []*CourseUnitSummary {
+	if x != nil {
+		return x.CourseUnits
+	}
+	return nil
+}
+
+type StageSummary struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	StageUlid       string                 `protobuf:"bytes,1,opt,name=stage_ulid,json=stageUlid,proto3" json:"stage_ulid,omitempty"`
+	PipelineUlid    string                 `protobuf:"bytes,2,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`
+	StageCcUlid     string                 `protobuf:"bytes,3,opt,name=stage_cc_ulid,json=stageCcUlid,proto3" json:"stage_cc_ulid,omitempty"`
+	SeqNo           uint32                 `protobuf:"varint,4,opt,name=seq_no,json=seqNo,proto3" json:"seq_no,omitempty"`
+	Status          StageStatus            `protobuf:"varint,5,opt,name=status,proto3,enum=gprog.StageStatus" json:"status,omitempty"`
+	StartedAt       string                 `protobuf:"bytes,6,opt,name=started_at,json=startedAt,proto3" json:"started_at,omitempty"`
+	CompletedAt     string                 `protobuf:"bytes,7,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	CompletedReason string                 `protobuf:"bytes,8,opt,name=completed_reason,json=completedReason,proto3" json:"completed_reason,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *StageSummary) Reset() {
+	*x = StageSummary{}
+	mi := &file_prog_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StageSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StageSummary) ProtoMessage() {}
+
+func (x *StageSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StageSummary.ProtoReflect.Descriptor instead.
+func (*StageSummary) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *StageSummary) GetStageUlid() string {
+	if x != nil {
+		return x.StageUlid
+	}
+	return ""
+}
+
+func (x *StageSummary) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *StageSummary) GetStageCcUlid() string {
+	if x != nil {
+		return x.StageCcUlid
+	}
+	return ""
+}
+
+func (x *StageSummary) GetSeqNo() uint32 {
+	if x != nil {
+		return x.SeqNo
+	}
+	return 0
+}
+
+func (x *StageSummary) GetStatus() StageStatus {
+	if x != nil {
+		return x.Status
+	}
+	return StageStatus_STAGE_STATUS_UNSPECIFIED
+}
+
+func (x *StageSummary) GetStartedAt() string {
+	if x != nil {
+		return x.StartedAt
+	}
+	return ""
+}
+
+func (x *StageSummary) GetCompletedAt() string {
+	if x != nil {
+		return x.CompletedAt
+	}
+	return ""
+}
+
+func (x *StageSummary) GetCompletedReason() string {
+	if x != nil {
+		return x.CompletedReason
+	}
+	return ""
+}
+
+type CourseUnitSummary struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	CourseUnitUlid   string                 `protobuf:"bytes,1,opt,name=course_unit_ulid,json=courseUnitUlid,proto3" json:"course_unit_ulid,omitempty"`
+	CourseUnitCcUlid string                 `protobuf:"bytes,2,opt,name=course_unit_cc_ulid,json=courseUnitCcUlid,proto3" json:"course_unit_cc_ulid,omitempty"`
+	Status           CourseUnitStatus       `protobuf:"varint,3,opt,name=status,proto3,enum=gprog.CourseUnitStatus" json:"status,omitempty"`
+	CourseProgress   string                 `protobuf:"bytes,4,opt,name=course_progress,json=courseProgress,proto3" json:"course_progress,omitempty"`
+	ExamUlid         string                 `protobuf:"bytes,5,opt,name=exam_ulid,json=examUlid,proto3" json:"exam_ulid,omitempty"`
+	RetriedCount     uint32                 `protobuf:"varint,6,opt,name=retried_count,json=retriedCount,proto3" json:"retried_count,omitempty"`
+	CompletedAt      string                 `protobuf:"bytes,7,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *CourseUnitSummary) Reset() {
+	*x = CourseUnitSummary{}
+	mi := &file_prog_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CourseUnitSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CourseUnitSummary) ProtoMessage() {}
+
+func (x *CourseUnitSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CourseUnitSummary.ProtoReflect.Descriptor instead.
+func (*CourseUnitSummary) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *CourseUnitSummary) GetCourseUnitUlid() string {
+	if x != nil {
+		return x.CourseUnitUlid
+	}
+	return ""
+}
+
+func (x *CourseUnitSummary) GetCourseUnitCcUlid() string {
+	if x != nil {
+		return x.CourseUnitCcUlid
+	}
+	return ""
+}
+
+func (x *CourseUnitSummary) GetStatus() CourseUnitStatus {
+	if x != nil {
+		return x.Status
+	}
+	return CourseUnitStatus_COURSE_UNIT_STATUS_UNSPECIFIED
+}
+
+func (x *CourseUnitSummary) GetCourseProgress() string {
+	if x != nil {
+		return x.CourseProgress
+	}
+	return ""
+}
+
+func (x *CourseUnitSummary) GetExamUlid() string {
+	if x != nil {
+		return x.ExamUlid
+	}
+	return ""
+}
+
+func (x *CourseUnitSummary) GetRetriedCount() uint32 {
+	if x != nil {
+		return x.RetriedCount
+	}
+	return 0
+}
+
+func (x *CourseUnitSummary) GetCompletedAt() string {
+	if x != nil {
+		return x.CompletedAt
+	}
+	return ""
+}
+
+type GetCourseUnitDetailReq struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	CourseUnitUlid string                 `protobuf:"bytes,1,opt,name=course_unit_ulid,json=courseUnitUlid,proto3" json:"course_unit_ulid,omitempty"` // [required]
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetCourseUnitDetailReq) Reset() {
+	*x = GetCourseUnitDetailReq{}
+	mi := &file_prog_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCourseUnitDetailReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCourseUnitDetailReq) ProtoMessage() {}
+
+func (x *GetCourseUnitDetailReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCourseUnitDetailReq.ProtoReflect.Descriptor instead.
+func (*GetCourseUnitDetailReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *GetCourseUnitDetailReq) GetCourseUnitUlid() string {
+	if x != nil {
+		return x.CourseUnitUlid
+	}
+	return ""
+}
+
+type GetCourseUnitDetailRsp struct {
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	CourseUnitUlid       string                 `protobuf:"bytes,1,opt,name=course_unit_ulid,json=courseUnitUlid,proto3" json:"course_unit_ulid,omitempty"`
+	PipelineUlid         string                 `protobuf:"bytes,2,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`
+	StageUlid            string                 `protobuf:"bytes,3,opt,name=stage_ulid,json=stageUlid,proto3" json:"stage_ulid,omitempty"`
+	CourseUnitCcUlid     string                 `protobuf:"bytes,4,opt,name=course_unit_cc_ulid,json=courseUnitCcUlid,proto3" json:"course_unit_cc_ulid,omitempty"`
+	Status               CourseUnitStatus       `protobuf:"varint,5,opt,name=status,proto3,enum=gprog.CourseUnitStatus" json:"status,omitempty"`
+	CourseProgress       string                 `protobuf:"bytes,6,opt,name=course_progress,json=courseProgress,proto3" json:"course_progress,omitempty"`
+	ExamUlid             string                 `protobuf:"bytes,7,opt,name=exam_ulid,json=examUlid,proto3" json:"exam_ulid,omitempty"`
+	RetriedCount         uint32                 `protobuf:"varint,8,opt,name=retried_count,json=retriedCount,proto3" json:"retried_count,omitempty"`
+	StudyFinishedAt      string                 `protobuf:"bytes,9,opt,name=study_finished_at,json=studyFinishedAt,proto3" json:"study_finished_at,omitempty"`
+	ExamStartedAt        string                 `protobuf:"bytes,10,opt,name=exam_started_at,json=examStartedAt,proto3" json:"exam_started_at,omitempty"`
+	ExamFinishedAt       string                 `protobuf:"bytes,11,opt,name=exam_finished_at,json=examFinishedAt,proto3" json:"exam_finished_at,omitempty"`
+	CompletedAt          string                 `protobuf:"bytes,12,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	CompletedReason      string                 `protobuf:"bytes,13,opt,name=completed_reason,json=completedReason,proto3" json:"completed_reason,omitempty"`
+	ParentStageStatus    StageStatus            `protobuf:"varint,14,opt,name=parent_stage_status,json=parentStageStatus,proto3,enum=gprog.StageStatus" json:"parent_stage_status,omitempty"`             // 所属 stage 状态
+	ParentPipelineStatus PipelineStatus         `protobuf:"varint,15,opt,name=parent_pipeline_status,json=parentPipelineStatus,proto3,enum=gprog.PipelineStatus" json:"parent_pipeline_status,omitempty"` // 所属 pipeline 状态
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *GetCourseUnitDetailRsp) Reset() {
+	*x = GetCourseUnitDetailRsp{}
+	mi := &file_prog_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCourseUnitDetailRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCourseUnitDetailRsp) ProtoMessage() {}
+
+func (x *GetCourseUnitDetailRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCourseUnitDetailRsp.ProtoReflect.Descriptor instead.
+func (*GetCourseUnitDetailRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *GetCourseUnitDetailRsp) GetCourseUnitUlid() string {
+	if x != nil {
+		return x.CourseUnitUlid
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetStageUlid() string {
+	if x != nil {
+		return x.StageUlid
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetCourseUnitCcUlid() string {
+	if x != nil {
+		return x.CourseUnitCcUlid
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetStatus() CourseUnitStatus {
+	if x != nil {
+		return x.Status
+	}
+	return CourseUnitStatus_COURSE_UNIT_STATUS_UNSPECIFIED
+}
+
+func (x *GetCourseUnitDetailRsp) GetCourseProgress() string {
+	if x != nil {
+		return x.CourseProgress
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetExamUlid() string {
+	if x != nil {
+		return x.ExamUlid
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetRetriedCount() uint32 {
+	if x != nil {
+		return x.RetriedCount
+	}
+	return 0
+}
+
+func (x *GetCourseUnitDetailRsp) GetStudyFinishedAt() string {
+	if x != nil {
+		return x.StudyFinishedAt
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetExamStartedAt() string {
+	if x != nil {
+		return x.ExamStartedAt
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetExamFinishedAt() string {
+	if x != nil {
+		return x.ExamFinishedAt
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetCompletedAt() string {
+	if x != nil {
+		return x.CompletedAt
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetCompletedReason() string {
+	if x != nil {
+		return x.CompletedReason
+	}
+	return ""
+}
+
+func (x *GetCourseUnitDetailRsp) GetParentStageStatus() StageStatus {
+	if x != nil {
+		return x.ParentStageStatus
+	}
+	return StageStatus_STAGE_STATUS_UNSPECIFIED
+}
+
+func (x *GetCourseUnitDetailRsp) GetParentPipelineStatus() PipelineStatus {
+	if x != nil {
+		return x.ParentPipelineStatus
+	}
+	return PipelineStatus_PIPELINE_STATUS_UNSPECIFIED
+}
+
+type ListStatusTransitionLogsReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PipelineUlid  string                 `protobuf:"bytes,1,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"` // [required]
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`                                  // [optional]
+	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`                                // [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListStatusTransitionLogsReq) Reset() {
+	*x = ListStatusTransitionLogsReq{}
+	mi := &file_prog_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListStatusTransitionLogsReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListStatusTransitionLogsReq) ProtoMessage() {}
+
+func (x *ListStatusTransitionLogsReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListStatusTransitionLogsReq.ProtoReflect.Descriptor instead.
+func (*ListStatusTransitionLogsReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *ListStatusTransitionLogsReq) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *ListStatusTransitionLogsReq) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListStatusTransitionLogsReq) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListStatusTransitionLogsRsp struct {
+	state         protoimpl.MessageState        `protogen:"open.v1"`
+	Logs          []*StatusTransitionLogSummary `protobuf:"bytes,1,rep,name=logs,proto3" json:"logs,omitempty"`
+	Total         int32                         `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListStatusTransitionLogsRsp) Reset() {
+	*x = ListStatusTransitionLogsRsp{}
+	mi := &file_prog_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListStatusTransitionLogsRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListStatusTransitionLogsRsp) ProtoMessage() {}
+
+func (x *ListStatusTransitionLogsRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListStatusTransitionLogsRsp.ProtoReflect.Descriptor instead.
+func (*ListStatusTransitionLogsRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ListStatusTransitionLogsRsp) GetLogs() []*StatusTransitionLogSummary {
+	if x != nil {
+		return x.Logs
+	}
+	return nil
+}
+
+func (x *ListStatusTransitionLogsRsp) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type StatusTransitionLogSummary struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TransitionUlid string                 `protobuf:"bytes,1,opt,name=transition_ulid,json=transitionUlid,proto3" json:"transition_ulid,omitempty"`
+	EntityType     string                 `protobuf:"bytes,2,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`
+	EntityUlid     string                 `protobuf:"bytes,3,opt,name=entity_ulid,json=entityUlid,proto3" json:"entity_ulid,omitempty"`
+	FromStatus     string                 `protobuf:"bytes,4,opt,name=from_status,json=fromStatus,proto3" json:"from_status,omitempty"`
+	ToStatus       string                 `protobuf:"bytes,5,opt,name=to_status,json=toStatus,proto3" json:"to_status,omitempty"`
+	ReasonCode     string                 `protobuf:"bytes,6,opt,name=reason_code,json=reasonCode,proto3" json:"reason_code,omitempty"`
+	ReasonMessage  string                 `protobuf:"bytes,7,opt,name=reason_message,json=reasonMessage,proto3" json:"reason_message,omitempty"`
+	TriggerSource  string                 `protobuf:"bytes,8,opt,name=trigger_source,json=triggerSource,proto3" json:"trigger_source,omitempty"`
+	EventType      string                 `protobuf:"bytes,9,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+	CreatedAt      string                 `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *StatusTransitionLogSummary) Reset() {
+	*x = StatusTransitionLogSummary{}
+	mi := &file_prog_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StatusTransitionLogSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StatusTransitionLogSummary) ProtoMessage() {}
+
+func (x *StatusTransitionLogSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StatusTransitionLogSummary.ProtoReflect.Descriptor instead.
+func (*StatusTransitionLogSummary) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *StatusTransitionLogSummary) GetTransitionUlid() string {
+	if x != nil {
+		return x.TransitionUlid
+	}
+	return ""
+}
+
+func (x *StatusTransitionLogSummary) GetEntityType() string {
+	if x != nil {
+		return x.EntityType
+	}
+	return ""
+}
+
+func (x *StatusTransitionLogSummary) GetEntityUlid() string {
+	if x != nil {
+		return x.EntityUlid
+	}
+	return ""
+}
+
+func (x *StatusTransitionLogSummary) GetFromStatus() string {
+	if x != nil {
+		return x.FromStatus
+	}
+	return ""
+}
+
+func (x *StatusTransitionLogSummary) GetToStatus() string {
+	if x != nil {
+		return x.ToStatus
+	}
+	return ""
+}
+
+func (x *StatusTransitionLogSummary) GetReasonCode() string {
+	if x != nil {
+		return x.ReasonCode
+	}
+	return ""
+}
+
+func (x *StatusTransitionLogSummary) GetReasonMessage() string {
+	if x != nil {
+		return x.ReasonMessage
+	}
+	return ""
+}
+
+func (x *StatusTransitionLogSummary) GetTriggerSource() string {
+	if x != nil {
+		return x.TriggerSource
+	}
+	return ""
+}
+
+func (x *StatusTransitionLogSummary) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
+func (x *StatusTransitionLogSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ListMailTasksReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`    // [required]
+	PipelineUlid  string                 `protobuf:"bytes,2,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"` // [optional]
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`                                  // [optional]
+	Offset        int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`                                // [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMailTasksReq) Reset() {
+	*x = ListMailTasksReq{}
+	mi := &file_prog_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMailTasksReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMailTasksReq) ProtoMessage() {}
+
+func (x *ListMailTasksReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMailTasksReq.ProtoReflect.Descriptor instead.
+func (*ListMailTasksReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ListMailTasksReq) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *ListMailTasksReq) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *ListMailTasksReq) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListMailTasksReq) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListMailTasksRsp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Tasks         []*MailTaskSummary     `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListMailTasksRsp) Reset() {
+	*x = ListMailTasksRsp{}
+	mi := &file_prog_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListMailTasksRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListMailTasksRsp) ProtoMessage() {}
+
+func (x *ListMailTasksRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListMailTasksRsp.ProtoReflect.Descriptor instead.
+func (*ListMailTasksRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ListMailTasksRsp) GetTasks() []*MailTaskSummary {
+	if x != nil {
+		return x.Tasks
+	}
+	return nil
+}
+
+func (x *ListMailTasksRsp) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type MailTaskSummary struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	MailTaskUlid   string                 `protobuf:"bytes,1,opt,name=mail_task_ulid,json=mailTaskUlid,proto3" json:"mail_task_ulid,omitempty"`
+	CandidateId    string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
+	PipelineUlid   string                 `protobuf:"bytes,3,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`
+	StageUlid      string                 `protobuf:"bytes,4,opt,name=stage_ulid,json=stageUlid,proto3" json:"stage_ulid,omitempty"`
+	CourseUnitUlid string                 `protobuf:"bytes,5,opt,name=course_unit_ulid,json=courseUnitUlid,proto3" json:"course_unit_ulid,omitempty"`
+	MailType       string                 `protobuf:"bytes,6,opt,name=mail_type,json=mailType,proto3" json:"mail_type,omitempty"`
+	RecipientEmail string                 `protobuf:"bytes,7,opt,name=recipient_email,json=recipientEmail,proto3" json:"recipient_email,omitempty"`
+	RecipientName  string                 `protobuf:"bytes,8,opt,name=recipient_name,json=recipientName,proto3" json:"recipient_name,omitempty"`
+	Subject        string                 `protobuf:"bytes,9,opt,name=subject,proto3" json:"subject,omitempty"`
+	TaskStatus     string                 `protobuf:"bytes,10,opt,name=task_status,json=taskStatus,proto3" json:"task_status,omitempty"`
+	FinalAt        string                 `protobuf:"bytes,11,opt,name=final_at,json=finalAt,proto3" json:"final_at,omitempty"`
+	CreatedAt      string                 `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *MailTaskSummary) Reset() {
+	*x = MailTaskSummary{}
+	mi := &file_prog_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *MailTaskSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*MailTaskSummary) ProtoMessage() {}
+
+func (x *MailTaskSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use MailTaskSummary.ProtoReflect.Descriptor instead.
+func (*MailTaskSummary) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *MailTaskSummary) GetMailTaskUlid() string {
+	if x != nil {
+		return x.MailTaskUlid
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetStageUlid() string {
+	if x != nil {
+		return x.StageUlid
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetCourseUnitUlid() string {
+	if x != nil {
+		return x.CourseUnitUlid
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetMailType() string {
+	if x != nil {
+		return x.MailType
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetRecipientEmail() string {
+	if x != nil {
+		return x.RecipientEmail
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetRecipientName() string {
+	if x != nil {
+		return x.RecipientName
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetTaskStatus() string {
+	if x != nil {
+		return x.TaskStatus
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetFinalAt() string {
+	if x != nil {
+		return x.FinalAt
+	}
+	return ""
+}
+
+func (x *MailTaskSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type GetMailTaskDetailReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MailTaskUlid  string                 `protobuf:"bytes,1,opt,name=mail_task_ulid,json=mailTaskUlid,proto3" json:"mail_task_ulid,omitempty"` // [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMailTaskDetailReq) Reset() {
+	*x = GetMailTaskDetailReq{}
+	mi := &file_prog_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMailTaskDetailReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMailTaskDetailReq) ProtoMessage() {}
+
+func (x *GetMailTaskDetailReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMailTaskDetailReq.ProtoReflect.Descriptor instead.
+func (*GetMailTaskDetailReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *GetMailTaskDetailReq) GetMailTaskUlid() string {
+	if x != nil {
+		return x.MailTaskUlid
+	}
+	return ""
+}
+
+type GetMailTaskDetailRsp struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	Summary            *MailTaskSummary       `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	TemplateId         string                 `protobuf:"bytes,2,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`
+	TemplateParamsJson string                 `protobuf:"bytes,3,opt,name=template_params_json,json=templateParamsJson,proto3" json:"template_params_json,omitempty"` // 邮件模板参数大JSON
+	ManualBy           string                 `protobuf:"bytes,4,opt,name=manual_by,json=manualBy,proto3" json:"manual_by,omitempty"`
+	LastErrorCode      string                 `protobuf:"bytes,5,opt,name=last_error_code,json=lastErrorCode,proto3" json:"last_error_code,omitempty"`
+	LastErrorMsg       string                 `protobuf:"bytes,6,opt,name=last_error_msg,json=lastErrorMsg,proto3" json:"last_error_msg,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *GetMailTaskDetailRsp) Reset() {
+	*x = GetMailTaskDetailRsp{}
+	mi := &file_prog_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMailTaskDetailRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMailTaskDetailRsp) ProtoMessage() {}
+
+func (x *GetMailTaskDetailRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMailTaskDetailRsp.ProtoReflect.Descriptor instead.
+func (*GetMailTaskDetailRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *GetMailTaskDetailRsp) GetSummary() *MailTaskSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+func (x *GetMailTaskDetailRsp) GetTemplateId() string {
+	if x != nil {
+		return x.TemplateId
+	}
+	return ""
+}
+
+func (x *GetMailTaskDetailRsp) GetTemplateParamsJson() string {
+	if x != nil {
+		return x.TemplateParamsJson
+	}
+	return ""
+}
+
+func (x *GetMailTaskDetailRsp) GetManualBy() string {
+	if x != nil {
+		return x.ManualBy
+	}
+	return ""
+}
+
+func (x *GetMailTaskDetailRsp) GetLastErrorCode() string {
+	if x != nil {
+		return x.LastErrorCode
+	}
+	return ""
+}
+
+func (x *GetMailTaskDetailRsp) GetLastErrorMsg() string {
+	if x != nil {
+		return x.LastErrorMsg
+	}
+	return ""
+}
+
+type ListCertificateTasksReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CandidateUlid string                 `protobuf:"bytes,1,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"` // [required]
+	PipelineUlid  string                 `protobuf:"bytes,2,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`    // [optional]
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`                                     // [optional]
+	Offset        int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`                                   // [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCertificateTasksReq) Reset() {
+	*x = ListCertificateTasksReq{}
+	mi := &file_prog_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCertificateTasksReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCertificateTasksReq) ProtoMessage() {}
+
+func (x *ListCertificateTasksReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCertificateTasksReq.ProtoReflect.Descriptor instead.
+func (*ListCertificateTasksReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *ListCertificateTasksReq) GetCandidateUlid() string {
+	if x != nil {
+		return x.CandidateUlid
+	}
+	return ""
+}
+
+func (x *ListCertificateTasksReq) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *ListCertificateTasksReq) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListCertificateTasksReq) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListCertificateTasksRsp struct {
+	state         protoimpl.MessageState    `protogen:"open.v1"`
+	Tasks         []*CertificateTaskSummary `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
+	Total         int32                     `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCertificateTasksRsp) Reset() {
+	*x = ListCertificateTasksRsp{}
+	mi := &file_prog_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCertificateTasksRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCertificateTasksRsp) ProtoMessage() {}
+
+func (x *ListCertificateTasksRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCertificateTasksRsp.ProtoReflect.Descriptor instead.
+func (*ListCertificateTasksRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *ListCertificateTasksRsp) GetTasks() []*CertificateTaskSummary {
+	if x != nil {
+		return x.Tasks
+	}
+	return nil
+}
+
+func (x *ListCertificateTasksRsp) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type CertificateTaskSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TaskUlid      string                 `protobuf:"bytes,1,opt,name=task_ulid,json=taskUlid,proto3" json:"task_ulid,omitempty"`
+	PipelineUlid  string                 `protobuf:"bytes,2,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`
+	CandidateUlid string                 `protobuf:"bytes,3,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"`
+	QualId        string                 `protobuf:"bytes,4,opt,name=qual_id,json=qualId,proto3" json:"qual_id,omitempty"`
+	RequestId     string                 `protobuf:"bytes,5,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	DegreeNo      string                 `protobuf:"bytes,6,opt,name=degree_no,json=degreeNo,proto3" json:"degree_no,omitempty"`
+	Status        string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	CredId        string                 `protobuf:"bytes,8,opt,name=cred_id,json=credId,proto3" json:"cred_id,omitempty"`
+	CreatedAt     string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CertificateTaskSummary) Reset() {
+	*x = CertificateTaskSummary{}
+	mi := &file_prog_proto_msgTypes[37]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CertificateTaskSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CertificateTaskSummary) ProtoMessage() {}
+
+func (x *CertificateTaskSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[37]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CertificateTaskSummary.ProtoReflect.Descriptor instead.
+func (*CertificateTaskSummary) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *CertificateTaskSummary) GetTaskUlid() string {
+	if x != nil {
+		return x.TaskUlid
+	}
+	return ""
+}
+
+func (x *CertificateTaskSummary) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *CertificateTaskSummary) GetCandidateUlid() string {
+	if x != nil {
+		return x.CandidateUlid
+	}
+	return ""
+}
+
+func (x *CertificateTaskSummary) GetQualId() string {
+	if x != nil {
+		return x.QualId
+	}
+	return ""
+}
+
+func (x *CertificateTaskSummary) GetRequestId() string {
+	if x != nil {
+		return x.RequestId
+	}
+	return ""
+}
+
+func (x *CertificateTaskSummary) GetDegreeNo() string {
+	if x != nil {
+		return x.DegreeNo
+	}
+	return ""
+}
+
+func (x *CertificateTaskSummary) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *CertificateTaskSummary) GetCredId() string {
+	if x != nil {
+		return x.CredId
+	}
+	return ""
+}
+
+func (x *CertificateTaskSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type GetCertificateTaskDetailReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TaskUlid      string                 `protobuf:"bytes,1,opt,name=task_ulid,json=taskUlid,proto3" json:"task_ulid,omitempty"` // [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCertificateTaskDetailReq) Reset() {
+	*x = GetCertificateTaskDetailReq{}
+	mi := &file_prog_proto_msgTypes[38]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCertificateTaskDetailReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCertificateTaskDetailReq) ProtoMessage() {}
+
+func (x *GetCertificateTaskDetailReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[38]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCertificateTaskDetailReq.ProtoReflect.Descriptor instead.
+func (*GetCertificateTaskDetailReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{38}
+}
+
+func (x *GetCertificateTaskDetailReq) GetTaskUlid() string {
+	if x != nil {
+		return x.TaskUlid
+	}
+	return ""
+}
+
+type GetCertificateTaskDetailRsp struct {
+	state          protoimpl.MessageState  `protogen:"open.v1"`
+	Summary        *CertificateTaskSummary `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	TemplateParams string                  `protobuf:"bytes,2,opt,name=template_params,json=templateParams,proto3" json:"template_params,omitempty"` // PDF模板参数大JSON
+	ErrorMessage   string                  `protobuf:"bytes,3,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetCertificateTaskDetailRsp) Reset() {
+	*x = GetCertificateTaskDetailRsp{}
+	mi := &file_prog_proto_msgTypes[39]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCertificateTaskDetailRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCertificateTaskDetailRsp) ProtoMessage() {}
+
+func (x *GetCertificateTaskDetailRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[39]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCertificateTaskDetailRsp.ProtoReflect.Descriptor instead.
+func (*GetCertificateTaskDetailRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *GetCertificateTaskDetailRsp) GetSummary() *CertificateTaskSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+func (x *GetCertificateTaskDetailRsp) GetTemplateParams() string {
+	if x != nil {
+		return x.TemplateParams
+	}
+	return ""
+}
+
+func (x *GetCertificateTaskDetailRsp) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+type RetryCertificateTaskReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TaskUlid      string                 `protobuf:"bytes,1,opt,name=task_ulid,json=taskUlid,proto3" json:"task_ulid,omitempty"` // [required]
+	AdminId       string                 `protobuf:"bytes,2,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty"`    // [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetryCertificateTaskReq) Reset() {
+	*x = RetryCertificateTaskReq{}
+	mi := &file_prog_proto_msgTypes[40]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetryCertificateTaskReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetryCertificateTaskReq) ProtoMessage() {}
+
+func (x *RetryCertificateTaskReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[40]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetryCertificateTaskReq.ProtoReflect.Descriptor instead.
+func (*RetryCertificateTaskReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{40}
+}
+
+func (x *RetryCertificateTaskReq) GetTaskUlid() string {
+	if x != nil {
+		return x.TaskUlid
+	}
+	return ""
+}
+
+func (x *RetryCertificateTaskReq) GetAdminId() string {
+	if x != nil {
+		return x.AdminId
+	}
+	return ""
+}
+
+type RetryCertificateTaskRsp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TaskUlid      string                 `protobuf:"bytes,1,opt,name=task_ulid,json=taskUlid,proto3" json:"task_ulid,omitempty"` // [required]
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`                     // [required]
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`                   // [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetryCertificateTaskRsp) Reset() {
+	*x = RetryCertificateTaskRsp{}
+	mi := &file_prog_proto_msgTypes[41]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetryCertificateTaskRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetryCertificateTaskRsp) ProtoMessage() {}
+
+func (x *RetryCertificateTaskRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[41]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetryCertificateTaskRsp.ProtoReflect.Descriptor instead.
+func (*RetryCertificateTaskRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{41}
+}
+
+func (x *RetryCertificateTaskRsp) GetTaskUlid() string {
+	if x != nil {
+		return x.TaskUlid
+	}
+	return ""
+}
+
+func (x *RetryCertificateTaskRsp) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *RetryCertificateTaskRsp) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type ListPipelinesReq struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	CandidateUlid  string                 `protobuf:"bytes,1,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"`      // [optional]
+	PipelineCcUlid string                 `protobuf:"bytes,2,opt,name=pipeline_cc_ulid,json=pipelineCcUlid,proto3" json:"pipeline_cc_ulid,omitempty"` // [optional]
+	Status         PipelineStatus         `protobuf:"varint,3,opt,name=status,proto3,enum=gprog.PipelineStatus" json:"status,omitempty"`              // [optional]
+	Limit          int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`                                          // [optional]
+	Offset         int32                  `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`                                        // [optional]
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ListPipelinesReq) Reset() {
+	*x = ListPipelinesReq{}
+	mi := &file_prog_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPipelinesReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPipelinesReq) ProtoMessage() {}
+
+func (x *ListPipelinesReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPipelinesReq.ProtoReflect.Descriptor instead.
+func (*ListPipelinesReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *ListPipelinesReq) GetCandidateUlid() string {
+	if x != nil {
+		return x.CandidateUlid
+	}
+	return ""
+}
+
+func (x *ListPipelinesReq) GetPipelineCcUlid() string {
+	if x != nil {
+		return x.PipelineCcUlid
+	}
+	return ""
+}
+
+func (x *ListPipelinesReq) GetStatus() PipelineStatus {
+	if x != nil {
+		return x.Status
+	}
+	return PipelineStatus_PIPELINE_STATUS_UNSPECIFIED
+}
+
+func (x *ListPipelinesReq) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListPipelinesReq) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListPipelinesRsp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Pipelines     []*PipelineSummary     `protobuf:"bytes,1,rep,name=pipelines,proto3" json:"pipelines,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPipelinesRsp) Reset() {
+	*x = ListPipelinesRsp{}
+	mi := &file_prog_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPipelinesRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPipelinesRsp) ProtoMessage() {}
+
+func (x *ListPipelinesRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPipelinesRsp.ProtoReflect.Descriptor instead.
+func (*ListPipelinesRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{43}
+}
+
+func (x *ListPipelinesRsp) GetPipelines() []*PipelineSummary {
+	if x != nil {
+		return x.Pipelines
+	}
+	return nil
+}
+
+func (x *ListPipelinesRsp) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type ListStagesReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PipelineUlid  string                 `protobuf:"bytes,1,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"` // [required]
+	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`                                  // [optional]
+	Offset        int32                  `protobuf:"varint,3,opt,name=offset,proto3" json:"offset,omitempty"`                                // [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListStagesReq) Reset() {
+	*x = ListStagesReq{}
+	mi := &file_prog_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListStagesReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListStagesReq) ProtoMessage() {}
+
+func (x *ListStagesReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListStagesReq.ProtoReflect.Descriptor instead.
+func (*ListStagesReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *ListStagesReq) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *ListStagesReq) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListStagesReq) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListStagesRsp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Stages        []*StageSummary        `protobuf:"bytes,1,rep,name=stages,proto3" json:"stages,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListStagesRsp) Reset() {
+	*x = ListStagesRsp{}
+	mi := &file_prog_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListStagesRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListStagesRsp) ProtoMessage() {}
+
+func (x *ListStagesRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListStagesRsp.ProtoReflect.Descriptor instead.
+func (*ListStagesRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *ListStagesRsp) GetStages() []*StageSummary {
+	if x != nil {
+		return x.Stages
+	}
+	return nil
+}
+
+func (x *ListStagesRsp) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type GetStageDetailReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	StageUlid     string                 `protobuf:"bytes,1,opt,name=stage_ulid,json=stageUlid,proto3" json:"stage_ulid,omitempty"` // [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStageDetailReq) Reset() {
+	*x = GetStageDetailReq{}
+	mi := &file_prog_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStageDetailReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStageDetailReq) ProtoMessage() {}
+
+func (x *GetStageDetailReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStageDetailReq.ProtoReflect.Descriptor instead.
+func (*GetStageDetailReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *GetStageDetailReq) GetStageUlid() string {
+	if x != nil {
+		return x.StageUlid
+	}
+	return ""
+}
+
+type GetStageDetailRsp struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Summary          *StageSummary          `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	CourseUnits      []*CourseUnitSummary   `protobuf:"bytes,2,rep,name=course_units,json=courseUnits,proto3" json:"course_units,omitempty"`
+	LastEventAt      string                 `protobuf:"bytes,3,opt,name=last_event_at,json=lastEventAt,proto3" json:"last_event_at,omitempty"`
+	LastReconciledAt string                 `protobuf:"bytes,4,opt,name=last_reconciled_at,json=lastReconciledAt,proto3" json:"last_reconciled_at,omitempty"`
+	CreatedAt        string                 `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt        string                 `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GetStageDetailRsp) Reset() {
+	*x = GetStageDetailRsp{}
+	mi := &file_prog_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStageDetailRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStageDetailRsp) ProtoMessage() {}
+
+func (x *GetStageDetailRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStageDetailRsp.ProtoReflect.Descriptor instead.
+func (*GetStageDetailRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *GetStageDetailRsp) GetSummary() *StageSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+func (x *GetStageDetailRsp) GetCourseUnits() []*CourseUnitSummary {
+	if x != nil {
+		return x.CourseUnits
+	}
+	return nil
+}
+
+func (x *GetStageDetailRsp) GetLastEventAt() string {
+	if x != nil {
+		return x.LastEventAt
+	}
+	return ""
+}
+
+func (x *GetStageDetailRsp) GetLastReconciledAt() string {
+	if x != nil {
+		return x.LastReconciledAt
+	}
+	return ""
+}
+
+func (x *GetStageDetailRsp) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *GetStageDetailRsp) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type ListCourseUnitsReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PipelineUlid  string                 `protobuf:"bytes,1,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"` // [required]
+	StageUlid     string                 `protobuf:"bytes,2,opt,name=stage_ulid,json=stageUlid,proto3" json:"stage_ulid,omitempty"`          // [optional]
+	Status        CourseUnitStatus       `protobuf:"varint,3,opt,name=status,proto3,enum=gprog.CourseUnitStatus" json:"status,omitempty"`    // [optional]
+	Limit         int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`                                  // [optional]
+	Offset        int32                  `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`                                // [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCourseUnitsReq) Reset() {
+	*x = ListCourseUnitsReq{}
+	mi := &file_prog_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCourseUnitsReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCourseUnitsReq) ProtoMessage() {}
+
+func (x *ListCourseUnitsReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCourseUnitsReq.ProtoReflect.Descriptor instead.
+func (*ListCourseUnitsReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{48}
+}
+
+func (x *ListCourseUnitsReq) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *ListCourseUnitsReq) GetStageUlid() string {
+	if x != nil {
+		return x.StageUlid
+	}
+	return ""
+}
+
+func (x *ListCourseUnitsReq) GetStatus() CourseUnitStatus {
+	if x != nil {
+		return x.Status
+	}
+	return CourseUnitStatus_COURSE_UNIT_STATUS_UNSPECIFIED
+}
+
+func (x *ListCourseUnitsReq) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListCourseUnitsReq) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListCourseUnitsRsp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CourseUnits   []*CourseUnitSummary   `protobuf:"bytes,1,rep,name=course_units,json=courseUnits,proto3" json:"course_units,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListCourseUnitsRsp) Reset() {
+	*x = ListCourseUnitsRsp{}
+	mi := &file_prog_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListCourseUnitsRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListCourseUnitsRsp) ProtoMessage() {}
+
+func (x *ListCourseUnitsRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListCourseUnitsRsp.ProtoReflect.Descriptor instead.
+func (*ListCourseUnitsRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *ListCourseUnitsRsp) GetCourseUnits() []*CourseUnitSummary {
+	if x != nil {
+		return x.CourseUnits
+	}
+	return nil
+}
+
+func (x *ListCourseUnitsRsp) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type DriverEventSummary struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	EventUlid       string                 `protobuf:"bytes,1,opt,name=event_ulid,json=eventUlid,proto3" json:"event_ulid,omitempty"`
+	EntityType      string                 `protobuf:"bytes,2,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`
+	EntityUlid      string                 `protobuf:"bytes,3,opt,name=entity_ulid,json=entityUlid,proto3" json:"entity_ulid,omitempty"`
+	EventType       string                 `protobuf:"bytes,4,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`
+	Source          string                 `protobuf:"bytes,5,opt,name=source,proto3" json:"source,omitempty"`
+	EventStatus     string                 `protobuf:"bytes,6,opt,name=event_status,json=eventStatus,proto3" json:"event_status,omitempty"`
+	ProcessAttempts uint32                 `protobuf:"varint,7,opt,name=process_attempts,json=processAttempts,proto3" json:"process_attempts,omitempty"`
+	LastReconcileAt string                 `protobuf:"bytes,8,opt,name=last_reconcile_at,json=lastReconcileAt,proto3" json:"last_reconcile_at,omitempty"`
+	CreatedAt       string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *DriverEventSummary) Reset() {
+	*x = DriverEventSummary{}
+	mi := &file_prog_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DriverEventSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DriverEventSummary) ProtoMessage() {}
+
+func (x *DriverEventSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DriverEventSummary.ProtoReflect.Descriptor instead.
+func (*DriverEventSummary) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *DriverEventSummary) GetEventUlid() string {
+	if x != nil {
+		return x.EventUlid
+	}
+	return ""
+}
+
+func (x *DriverEventSummary) GetEntityType() string {
+	if x != nil {
+		return x.EntityType
+	}
+	return ""
+}
+
+func (x *DriverEventSummary) GetEntityUlid() string {
+	if x != nil {
+		return x.EntityUlid
+	}
+	return ""
+}
+
+func (x *DriverEventSummary) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
+func (x *DriverEventSummary) GetSource() string {
+	if x != nil {
+		return x.Source
+	}
+	return ""
+}
+
+func (x *DriverEventSummary) GetEventStatus() string {
+	if x != nil {
+		return x.EventStatus
+	}
+	return ""
+}
+
+func (x *DriverEventSummary) GetProcessAttempts() uint32 {
+	if x != nil {
+		return x.ProcessAttempts
+	}
+	return 0
+}
+
+func (x *DriverEventSummary) GetLastReconcileAt() string {
+	if x != nil {
+		return x.LastReconcileAt
+	}
+	return ""
+}
+
+func (x *DriverEventSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ListDriverEventsReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EntityType    string                 `protobuf:"bytes,1,opt,name=entity_type,json=entityType,proto3" json:"entity_type,omitempty"`    // [optional]
+	EntityUlid    string                 `protobuf:"bytes,2,opt,name=entity_ulid,json=entityUlid,proto3" json:"entity_ulid,omitempty"`    // [optional]
+	EventStatus   string                 `protobuf:"bytes,3,opt,name=event_status,json=eventStatus,proto3" json:"event_status,omitempty"` // [optional]
+	EventType     string                 `protobuf:"bytes,4,opt,name=event_type,json=eventType,proto3" json:"event_type,omitempty"`       // [optional]
+	Limit         int32                  `protobuf:"varint,5,opt,name=limit,proto3" json:"limit,omitempty"`                               // [optional]
+	Offset        int32                  `protobuf:"varint,6,opt,name=offset,proto3" json:"offset,omitempty"`                             // [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDriverEventsReq) Reset() {
+	*x = ListDriverEventsReq{}
+	mi := &file_prog_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverEventsReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverEventsReq) ProtoMessage() {}
+
+func (x *ListDriverEventsReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverEventsReq.ProtoReflect.Descriptor instead.
+func (*ListDriverEventsReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *ListDriverEventsReq) GetEntityType() string {
+	if x != nil {
+		return x.EntityType
+	}
+	return ""
+}
+
+func (x *ListDriverEventsReq) GetEntityUlid() string {
+	if x != nil {
+		return x.EntityUlid
+	}
+	return ""
+}
+
+func (x *ListDriverEventsReq) GetEventStatus() string {
+	if x != nil {
+		return x.EventStatus
+	}
+	return ""
+}
+
+func (x *ListDriverEventsReq) GetEventType() string {
+	if x != nil {
+		return x.EventType
+	}
+	return ""
+}
+
+func (x *ListDriverEventsReq) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListDriverEventsReq) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListDriverEventsRsp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*DriverEventSummary  `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDriverEventsRsp) Reset() {
+	*x = ListDriverEventsRsp{}
+	mi := &file_prog_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDriverEventsRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDriverEventsRsp) ProtoMessage() {}
+
+func (x *ListDriverEventsRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDriverEventsRsp.ProtoReflect.Descriptor instead.
+func (*ListDriverEventsRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *ListDriverEventsRsp) GetItems() []*DriverEventSummary {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListDriverEventsRsp) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type GetDriverEventDetailReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	EventUlid     string                 `protobuf:"bytes,1,opt,name=event_ulid,json=eventUlid,proto3" json:"event_ulid,omitempty"` // [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetDriverEventDetailReq) Reset() {
+	*x = GetDriverEventDetailReq{}
+	mi := &file_prog_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverEventDetailReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverEventDetailReq) ProtoMessage() {}
+
+func (x *GetDriverEventDetailReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverEventDetailReq.ProtoReflect.Descriptor instead.
+func (*GetDriverEventDetailReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{53}
+}
+
+func (x *GetDriverEventDetailReq) GetEventUlid() string {
+	if x != nil {
+		return x.EventUlid
+	}
+	return ""
+}
+
+type GetDriverEventDetailRsp struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Summary          *DriverEventSummary    `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	PayloadJson      string                 `protobuf:"bytes,2,opt,name=payload_json,json=payloadJson,proto3" json:"payload_json,omitempty"` // The large JSON field
+	LastErrorCode    string                 `protobuf:"bytes,3,opt,name=last_error_code,json=lastErrorCode,proto3" json:"last_error_code,omitempty"`
+	LastErrorMessage string                 `protobuf:"bytes,4,opt,name=last_error_message,json=lastErrorMessage,proto3" json:"last_error_message,omitempty"`
+	UpdatedAt        string                 `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GetDriverEventDetailRsp) Reset() {
+	*x = GetDriverEventDetailRsp{}
+	mi := &file_prog_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetDriverEventDetailRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetDriverEventDetailRsp) ProtoMessage() {}
+
+func (x *GetDriverEventDetailRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetDriverEventDetailRsp.ProtoReflect.Descriptor instead.
+func (*GetDriverEventDetailRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *GetDriverEventDetailRsp) GetSummary() *DriverEventSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+func (x *GetDriverEventDetailRsp) GetPayloadJson() string {
+	if x != nil {
+		return x.PayloadJson
+	}
+	return ""
+}
+
+func (x *GetDriverEventDetailRsp) GetLastErrorCode() string {
+	if x != nil {
+		return x.LastErrorCode
+	}
+	return ""
+}
+
+func (x *GetDriverEventDetailRsp) GetLastErrorMessage() string {
+	if x != nil {
+		return x.LastErrorMessage
+	}
+	return ""
+}
+
+func (x *GetDriverEventDetailRsp) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type NatsMessageSummary struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	MessageUlid      string                 `protobuf:"bytes,1,opt,name=message_ulid,json=messageUlid,proto3" json:"message_ulid,omitempty"`
+	Subject          string                 `protobuf:"bytes,2,opt,name=subject,proto3" json:"subject,omitempty"`
+	SourceService    string                 `protobuf:"bytes,3,opt,name=source_service,json=sourceService,proto3" json:"source_service,omitempty"`
+	MessageType      string                 `protobuf:"bytes,4,opt,name=message_type,json=messageType,proto3" json:"message_type,omitempty"`
+	ReceiveStatus    string                 `protobuf:"bytes,5,opt,name=receive_status,json=receiveStatus,proto3" json:"receive_status,omitempty"`
+	ProcessAttempts  uint32                 `protobuf:"varint,6,opt,name=process_attempts,json=processAttempts,proto3" json:"process_attempts,omitempty"`
+	ReceivedAt       string                 `protobuf:"bytes,7,opt,name=received_at,json=receivedAt,proto3" json:"received_at,omitempty"`
+	LastProcessingAt string                 `protobuf:"bytes,8,opt,name=last_processing_at,json=lastProcessingAt,proto3" json:"last_processing_at,omitempty"`
+	CreatedAt        string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *NatsMessageSummary) Reset() {
+	*x = NatsMessageSummary{}
+	mi := &file_prog_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NatsMessageSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NatsMessageSummary) ProtoMessage() {}
+
+func (x *NatsMessageSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NatsMessageSummary.ProtoReflect.Descriptor instead.
+func (*NatsMessageSummary) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *NatsMessageSummary) GetMessageUlid() string {
+	if x != nil {
+		return x.MessageUlid
+	}
+	return ""
+}
+
+func (x *NatsMessageSummary) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *NatsMessageSummary) GetSourceService() string {
+	if x != nil {
+		return x.SourceService
+	}
+	return ""
+}
+
+func (x *NatsMessageSummary) GetMessageType() string {
+	if x != nil {
+		return x.MessageType
+	}
+	return ""
+}
+
+func (x *NatsMessageSummary) GetReceiveStatus() string {
+	if x != nil {
+		return x.ReceiveStatus
+	}
+	return ""
+}
+
+func (x *NatsMessageSummary) GetProcessAttempts() uint32 {
+	if x != nil {
+		return x.ProcessAttempts
+	}
+	return 0
+}
+
+func (x *NatsMessageSummary) GetReceivedAt() string {
+	if x != nil {
+		return x.ReceivedAt
+	}
+	return ""
+}
+
+func (x *NatsMessageSummary) GetLastProcessingAt() string {
+	if x != nil {
+		return x.LastProcessingAt
+	}
+	return ""
+}
+
+func (x *NatsMessageSummary) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+type ListNatsMessagesReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ReceiveStatus string                 `protobuf:"bytes,1,opt,name=receive_status,json=receiveStatus,proto3" json:"receive_status,omitempty"` // [optional]
+	SourceService string                 `protobuf:"bytes,2,opt,name=source_service,json=sourceService,proto3" json:"source_service,omitempty"` // [optional]
+	Limit         int32                  `protobuf:"varint,3,opt,name=limit,proto3" json:"limit,omitempty"`                                     // [optional]
+	Offset        int32                  `protobuf:"varint,4,opt,name=offset,proto3" json:"offset,omitempty"`                                   // [optional]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListNatsMessagesReq) Reset() {
+	*x = ListNatsMessagesReq{}
+	mi := &file_prog_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListNatsMessagesReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListNatsMessagesReq) ProtoMessage() {}
+
+func (x *ListNatsMessagesReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListNatsMessagesReq.ProtoReflect.Descriptor instead.
+func (*ListNatsMessagesReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{56}
+}
+
+func (x *ListNatsMessagesReq) GetReceiveStatus() string {
+	if x != nil {
+		return x.ReceiveStatus
+	}
+	return ""
+}
+
+func (x *ListNatsMessagesReq) GetSourceService() string {
+	if x != nil {
+		return x.SourceService
+	}
+	return ""
+}
+
+func (x *ListNatsMessagesReq) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *ListNatsMessagesReq) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type ListNatsMessagesRsp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Items         []*NatsMessageSummary  `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
+	Total         int32                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListNatsMessagesRsp) Reset() {
+	*x = ListNatsMessagesRsp{}
+	mi := &file_prog_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListNatsMessagesRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListNatsMessagesRsp) ProtoMessage() {}
+
+func (x *ListNatsMessagesRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListNatsMessagesRsp.ProtoReflect.Descriptor instead.
+func (*ListNatsMessagesRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *ListNatsMessagesRsp) GetItems() []*NatsMessageSummary {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *ListNatsMessagesRsp) GetTotal() int32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type GetNatsMessageDetailReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MessageUlid   string                 `protobuf:"bytes,1,opt,name=message_ulid,json=messageUlid,proto3" json:"message_ulid,omitempty"` // [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetNatsMessageDetailReq) Reset() {
+	*x = GetNatsMessageDetailReq{}
+	mi := &file_prog_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetNatsMessageDetailReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetNatsMessageDetailReq) ProtoMessage() {}
+
+func (x *GetNatsMessageDetailReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetNatsMessageDetailReq.ProtoReflect.Descriptor instead.
+func (*GetNatsMessageDetailReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *GetNatsMessageDetailReq) GetMessageUlid() string {
+	if x != nil {
+		return x.MessageUlid
+	}
+	return ""
+}
+
+type GetNatsMessageDetailRsp struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Summary          *NatsMessageSummary    `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	MessagePayload   string                 `protobuf:"bytes,2,opt,name=message_payload,json=messagePayload,proto3" json:"message_payload,omitempty"` // The large JSON field
+	LastErrorCode    string                 `protobuf:"bytes,3,opt,name=last_error_code,json=lastErrorCode,proto3" json:"last_error_code,omitempty"`
+	LastErrorMessage string                 `protobuf:"bytes,4,opt,name=last_error_message,json=lastErrorMessage,proto3" json:"last_error_message,omitempty"`
+	UpdatedAt        string                 `protobuf:"bytes,5,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *GetNatsMessageDetailRsp) Reset() {
+	*x = GetNatsMessageDetailRsp{}
+	mi := &file_prog_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetNatsMessageDetailRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetNatsMessageDetailRsp) ProtoMessage() {}
+
+func (x *GetNatsMessageDetailRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetNatsMessageDetailRsp.ProtoReflect.Descriptor instead.
+func (*GetNatsMessageDetailRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *GetNatsMessageDetailRsp) GetSummary() *NatsMessageSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+func (x *GetNatsMessageDetailRsp) GetMessagePayload() string {
+	if x != nil {
+		return x.MessagePayload
+	}
+	return ""
+}
+
+func (x *GetNatsMessageDetailRsp) GetLastErrorCode() string {
+	if x != nil {
+		return x.LastErrorCode
+	}
+	return ""
+}
+
+func (x *GetNatsMessageDetailRsp) GetLastErrorMessage() string {
+	if x != nil {
+		return x.LastErrorMessage
+	}
+	return ""
+}
+
+func (x *GetNatsMessageDetailRsp) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type GetStatusTransitionLogDetailReq struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	TransitionUlid string                 `protobuf:"bytes,1,opt,name=transition_ulid,json=transitionUlid,proto3" json:"transition_ulid,omitempty"` // [required]
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetStatusTransitionLogDetailReq) Reset() {
+	*x = GetStatusTransitionLogDetailReq{}
+	mi := &file_prog_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatusTransitionLogDetailReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatusTransitionLogDetailReq) ProtoMessage() {}
+
+func (x *GetStatusTransitionLogDetailReq) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatusTransitionLogDetailReq.ProtoReflect.Descriptor instead.
+func (*GetStatusTransitionLogDetailReq) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *GetStatusTransitionLogDetailReq) GetTransitionUlid() string {
+	if x != nil {
+		return x.TransitionUlid
+	}
+	return ""
+}
+
+type GetStatusTransitionLogDetailRsp struct {
+	state         protoimpl.MessageState      `protogen:"open.v1"`
+	Summary       *StatusTransitionLogSummary `protobuf:"bytes,1,opt,name=summary,proto3" json:"summary,omitempty"`
+	PipelineUlid  string                      `protobuf:"bytes,2,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStatusTransitionLogDetailRsp) Reset() {
+	*x = GetStatusTransitionLogDetailRsp{}
+	mi := &file_prog_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatusTransitionLogDetailRsp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatusTransitionLogDetailRsp) ProtoMessage() {}
+
+func (x *GetStatusTransitionLogDetailRsp) ProtoReflect() protoreflect.Message {
+	mi := &file_prog_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatusTransitionLogDetailRsp.ProtoReflect.Descriptor instead.
+func (*GetStatusTransitionLogDetailRsp) Descriptor() ([]byte, []int) {
+	return file_prog_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *GetStatusTransitionLogDetailRsp) GetSummary() *StatusTransitionLogSummary {
+	if x != nil {
+		return x.Summary
+	}
+	return nil
+}
+
+func (x *GetStatusTransitionLogDetailRsp) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
 var File_prog_proto protoreflect.FileDescriptor
 
 const file_prog_proto_rawDesc = "" +
@@ -1596,12 +4627,279 @@ const file_prog_proto_rawDesc = "" +
 	"started_at\x18\x06 \x01(\tR\tstartedAt\x12!\n" +
 	"\fcompleted_at\x18\a \x01(\tR\vcompletedAt\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\b \x01(\tR\tcreatedAt*\x92\x01\n" +
+	"created_at\x18\b \x01(\tR\tcreatedAt\";\n" +
+	"\x14GetPipelineDetailReq\x12#\n" +
+	"\rpipeline_ulid\x18\x01 \x01(\tR\fpipelineUlid\"u\n" +
+	"\x14GetPipelineDetailRsp\x121\n" +
+	"\bpipeline\x18\x01 \x01(\v2\x15.gprog.PipelineDetailR\bpipeline\x12*\n" +
+	"\x06stages\x18\x02 \x03(\v2\x12.gprog.StageDetailR\x06stages\"\xf5\x03\n" +
+	"\x0ePipelineDetail\x12#\n" +
+	"\rpipeline_ulid\x18\x01 \x01(\tR\fpipelineUlid\x12%\n" +
+	"\x0ecandidate_ulid\x18\x02 \x01(\tR\rcandidateUlid\x12(\n" +
+	"\x10pipeline_cc_ulid\x18\x03 \x01(\tR\x0epipelineCcUlid\x12-\n" +
+	"\x06status\x18\x04 \x01(\x0e2\x15.gprog.PipelineStatusR\x06status\x12,\n" +
+	"\x12current_stage_ulid\x18\x05 \x01(\tR\x10currentStageUlid\x122\n" +
+	"\x15course_selection_json\x18\x06 \x01(\tR\x13courseSelectionJson\x12\x1d\n" +
+	"\n" +
+	"started_at\x18\a \x01(\tR\tstartedAt\x12!\n" +
+	"\fcompleted_at\x18\b \x01(\tR\vcompletedAt\x12)\n" +
+	"\x10completed_reason\x18\t \x01(\tR\x0fcompletedReason\x12\"\n" +
+	"\rlast_event_at\x18\n" +
+	" \x01(\tR\vlastEventAt\x12,\n" +
+	"\x12last_reconciled_at\x18\v \x01(\tR\x10lastReconciledAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\f \x01(\tR\tcreatedAt\"u\n" +
+	"\vStageDetail\x12)\n" +
+	"\x05stage\x18\x01 \x01(\v2\x13.gprog.StageSummaryR\x05stage\x12;\n" +
+	"\fcourse_units\x18\x02 \x03(\v2\x18.gprog.CourseUnitSummaryR\vcourseUnits\"\xa6\x02\n" +
+	"\fStageSummary\x12\x1d\n" +
+	"\n" +
+	"stage_ulid\x18\x01 \x01(\tR\tstageUlid\x12#\n" +
+	"\rpipeline_ulid\x18\x02 \x01(\tR\fpipelineUlid\x12\"\n" +
+	"\rstage_cc_ulid\x18\x03 \x01(\tR\vstageCcUlid\x12\x15\n" +
+	"\x06seq_no\x18\x04 \x01(\rR\x05seqNo\x12*\n" +
+	"\x06status\x18\x05 \x01(\x0e2\x12.gprog.StageStatusR\x06status\x12\x1d\n" +
+	"\n" +
+	"started_at\x18\x06 \x01(\tR\tstartedAt\x12!\n" +
+	"\fcompleted_at\x18\a \x01(\tR\vcompletedAt\x12)\n" +
+	"\x10completed_reason\x18\b \x01(\tR\x0fcompletedReason\"\xab\x02\n" +
+	"\x11CourseUnitSummary\x12(\n" +
+	"\x10course_unit_ulid\x18\x01 \x01(\tR\x0ecourseUnitUlid\x12-\n" +
+	"\x13course_unit_cc_ulid\x18\x02 \x01(\tR\x10courseUnitCcUlid\x12/\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x17.gprog.CourseUnitStatusR\x06status\x12'\n" +
+	"\x0fcourse_progress\x18\x04 \x01(\tR\x0ecourseProgress\x12\x1b\n" +
+	"\texam_ulid\x18\x05 \x01(\tR\bexamUlid\x12#\n" +
+	"\rretried_count\x18\x06 \x01(\rR\fretriedCount\x12!\n" +
+	"\fcompleted_at\x18\a \x01(\tR\vcompletedAt\"B\n" +
+	"\x16GetCourseUnitDetailReq\x12(\n" +
+	"\x10course_unit_ulid\x18\x01 \x01(\tR\x0ecourseUnitUlid\"\xae\x05\n" +
+	"\x16GetCourseUnitDetailRsp\x12(\n" +
+	"\x10course_unit_ulid\x18\x01 \x01(\tR\x0ecourseUnitUlid\x12#\n" +
+	"\rpipeline_ulid\x18\x02 \x01(\tR\fpipelineUlid\x12\x1d\n" +
+	"\n" +
+	"stage_ulid\x18\x03 \x01(\tR\tstageUlid\x12-\n" +
+	"\x13course_unit_cc_ulid\x18\x04 \x01(\tR\x10courseUnitCcUlid\x12/\n" +
+	"\x06status\x18\x05 \x01(\x0e2\x17.gprog.CourseUnitStatusR\x06status\x12'\n" +
+	"\x0fcourse_progress\x18\x06 \x01(\tR\x0ecourseProgress\x12\x1b\n" +
+	"\texam_ulid\x18\a \x01(\tR\bexamUlid\x12#\n" +
+	"\rretried_count\x18\b \x01(\rR\fretriedCount\x12*\n" +
+	"\x11study_finished_at\x18\t \x01(\tR\x0fstudyFinishedAt\x12&\n" +
+	"\x0fexam_started_at\x18\n" +
+	" \x01(\tR\rexamStartedAt\x12(\n" +
+	"\x10exam_finished_at\x18\v \x01(\tR\x0eexamFinishedAt\x12!\n" +
+	"\fcompleted_at\x18\f \x01(\tR\vcompletedAt\x12)\n" +
+	"\x10completed_reason\x18\r \x01(\tR\x0fcompletedReason\x12B\n" +
+	"\x13parent_stage_status\x18\x0e \x01(\x0e2\x12.gprog.StageStatusR\x11parentStageStatus\x12K\n" +
+	"\x16parent_pipeline_status\x18\x0f \x01(\x0e2\x15.gprog.PipelineStatusR\x14parentPipelineStatus\"p\n" +
+	"\x1bListStatusTransitionLogsReq\x12#\n" +
+	"\rpipeline_ulid\x18\x01 \x01(\tR\fpipelineUlid\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offset\"j\n" +
+	"\x1bListStatusTransitionLogsRsp\x125\n" +
+	"\x04logs\x18\x01 \x03(\v2!.gprog.StatusTransitionLogSummaryR\x04logs\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xf2\x02\n" +
+	"\x1aStatusTransitionLogSummary\x12'\n" +
+	"\x0ftransition_ulid\x18\x01 \x01(\tR\x0etransitionUlid\x12\x1f\n" +
+	"\ventity_type\x18\x02 \x01(\tR\n" +
+	"entityType\x12\x1f\n" +
+	"\ventity_ulid\x18\x03 \x01(\tR\n" +
+	"entityUlid\x12\x1f\n" +
+	"\vfrom_status\x18\x04 \x01(\tR\n" +
+	"fromStatus\x12\x1b\n" +
+	"\tto_status\x18\x05 \x01(\tR\btoStatus\x12\x1f\n" +
+	"\vreason_code\x18\x06 \x01(\tR\n" +
+	"reasonCode\x12%\n" +
+	"\x0ereason_message\x18\a \x01(\tR\rreasonMessage\x12%\n" +
+	"\x0etrigger_source\x18\b \x01(\tR\rtriggerSource\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\t \x01(\tR\teventType\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\n" +
+	" \x01(\tR\tcreatedAt\"\x88\x01\n" +
+	"\x10ListMailTasksReq\x12!\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12#\n" +
+	"\rpipeline_ulid\x18\x02 \x01(\tR\fpipelineUlid\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x04 \x01(\x05R\x06offset\"V\n" +
+	"\x10ListMailTasksRsp\x12,\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x16.gprog.MailTaskSummaryR\x05tasks\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xaa\x03\n" +
+	"\x0fMailTaskSummary\x12$\n" +
+	"\x0email_task_ulid\x18\x01 \x01(\tR\fmailTaskUlid\x12!\n" +
+	"\fcandidate_id\x18\x02 \x01(\tR\vcandidateId\x12#\n" +
+	"\rpipeline_ulid\x18\x03 \x01(\tR\fpipelineUlid\x12\x1d\n" +
+	"\n" +
+	"stage_ulid\x18\x04 \x01(\tR\tstageUlid\x12(\n" +
+	"\x10course_unit_ulid\x18\x05 \x01(\tR\x0ecourseUnitUlid\x12\x1b\n" +
+	"\tmail_type\x18\x06 \x01(\tR\bmailType\x12'\n" +
+	"\x0frecipient_email\x18\a \x01(\tR\x0erecipientEmail\x12%\n" +
+	"\x0erecipient_name\x18\b \x01(\tR\rrecipientName\x12\x18\n" +
+	"\asubject\x18\t \x01(\tR\asubject\x12\x1f\n" +
+	"\vtask_status\x18\n" +
+	" \x01(\tR\n" +
+	"taskStatus\x12\x19\n" +
+	"\bfinal_at\x18\v \x01(\tR\afinalAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\f \x01(\tR\tcreatedAt\"<\n" +
+	"\x14GetMailTaskDetailReq\x12$\n" +
+	"\x0email_task_ulid\x18\x01 \x01(\tR\fmailTaskUlid\"\x86\x02\n" +
+	"\x14GetMailTaskDetailRsp\x120\n" +
+	"\asummary\x18\x01 \x01(\v2\x16.gprog.MailTaskSummaryR\asummary\x12\x1f\n" +
+	"\vtemplate_id\x18\x02 \x01(\tR\n" +
+	"templateId\x120\n" +
+	"\x14template_params_json\x18\x03 \x01(\tR\x12templateParamsJson\x12\x1b\n" +
+	"\tmanual_by\x18\x04 \x01(\tR\bmanualBy\x12&\n" +
+	"\x0flast_error_code\x18\x05 \x01(\tR\rlastErrorCode\x12$\n" +
+	"\x0elast_error_msg\x18\x06 \x01(\tR\flastErrorMsg\"\x93\x01\n" +
+	"\x17ListCertificateTasksReq\x12%\n" +
+	"\x0ecandidate_ulid\x18\x01 \x01(\tR\rcandidateUlid\x12#\n" +
+	"\rpipeline_ulid\x18\x02 \x01(\tR\fpipelineUlid\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x04 \x01(\x05R\x06offset\"d\n" +
+	"\x17ListCertificateTasksRsp\x123\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x1d.gprog.CertificateTaskSummaryR\x05tasks\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xa6\x02\n" +
+	"\x16CertificateTaskSummary\x12\x1b\n" +
+	"\ttask_ulid\x18\x01 \x01(\tR\btaskUlid\x12#\n" +
+	"\rpipeline_ulid\x18\x02 \x01(\tR\fpipelineUlid\x12%\n" +
+	"\x0ecandidate_ulid\x18\x03 \x01(\tR\rcandidateUlid\x12\x17\n" +
+	"\aqual_id\x18\x04 \x01(\tR\x06qualId\x12\x1d\n" +
+	"\n" +
+	"request_id\x18\x05 \x01(\tR\trequestId\x12\x1b\n" +
+	"\tdegree_no\x18\x06 \x01(\tR\bdegreeNo\x12\x16\n" +
+	"\x06status\x18\a \x01(\tR\x06status\x12\x17\n" +
+	"\acred_id\x18\b \x01(\tR\x06credId\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\":\n" +
+	"\x1bGetCertificateTaskDetailReq\x12\x1b\n" +
+	"\ttask_ulid\x18\x01 \x01(\tR\btaskUlid\"\xa4\x01\n" +
+	"\x1bGetCertificateTaskDetailRsp\x127\n" +
+	"\asummary\x18\x01 \x01(\v2\x1d.gprog.CertificateTaskSummaryR\asummary\x12'\n" +
+	"\x0ftemplate_params\x18\x02 \x01(\tR\x0etemplateParams\x12#\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"Q\n" +
+	"\x17RetryCertificateTaskReq\x12\x1b\n" +
+	"\ttask_ulid\x18\x01 \x01(\tR\btaskUlid\x12\x19\n" +
+	"\badmin_id\x18\x02 \x01(\tR\aadminId\"h\n" +
+	"\x17RetryCertificateTaskRsp\x12\x1b\n" +
+	"\ttask_ulid\x18\x01 \x01(\tR\btaskUlid\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\xc0\x01\n" +
+	"\x10ListPipelinesReq\x12%\n" +
+	"\x0ecandidate_ulid\x18\x01 \x01(\tR\rcandidateUlid\x12(\n" +
+	"\x10pipeline_cc_ulid\x18\x02 \x01(\tR\x0epipelineCcUlid\x12-\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x15.gprog.PipelineStatusR\x06status\x12\x14\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x05 \x01(\x05R\x06offset\"^\n" +
+	"\x10ListPipelinesRsp\x124\n" +
+	"\tpipelines\x18\x01 \x03(\v2\x16.gprog.PipelineSummaryR\tpipelines\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"b\n" +
+	"\rListStagesReq\x12#\n" +
+	"\rpipeline_ulid\x18\x01 \x01(\tR\fpipelineUlid\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x03 \x01(\x05R\x06offset\"R\n" +
+	"\rListStagesRsp\x12+\n" +
+	"\x06stages\x18\x01 \x03(\v2\x13.gprog.StageSummaryR\x06stages\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"2\n" +
+	"\x11GetStageDetailReq\x12\x1d\n" +
+	"\n" +
+	"stage_ulid\x18\x01 \x01(\tR\tstageUlid\"\x8f\x02\n" +
+	"\x11GetStageDetailRsp\x12-\n" +
+	"\asummary\x18\x01 \x01(\v2\x13.gprog.StageSummaryR\asummary\x12;\n" +
+	"\fcourse_units\x18\x02 \x03(\v2\x18.gprog.CourseUnitSummaryR\vcourseUnits\x12\"\n" +
+	"\rlast_event_at\x18\x03 \x01(\tR\vlastEventAt\x12,\n" +
+	"\x12last_reconciled_at\x18\x04 \x01(\tR\x10lastReconciledAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x05 \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\x06 \x01(\tR\tupdatedAt\"\xb7\x01\n" +
+	"\x12ListCourseUnitsReq\x12#\n" +
+	"\rpipeline_ulid\x18\x01 \x01(\tR\fpipelineUlid\x12\x1d\n" +
+	"\n" +
+	"stage_ulid\x18\x02 \x01(\tR\tstageUlid\x12/\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x17.gprog.CourseUnitStatusR\x06status\x12\x14\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x05 \x01(\x05R\x06offset\"g\n" +
+	"\x12ListCourseUnitsRsp\x12;\n" +
+	"\fcourse_units\x18\x01 \x03(\v2\x18.gprog.CourseUnitSummaryR\vcourseUnits\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xc5\x02\n" +
+	"\x12DriverEventSummary\x12\x1d\n" +
+	"\n" +
+	"event_ulid\x18\x01 \x01(\tR\teventUlid\x12\x1f\n" +
+	"\ventity_type\x18\x02 \x01(\tR\n" +
+	"entityType\x12\x1f\n" +
+	"\ventity_ulid\x18\x03 \x01(\tR\n" +
+	"entityUlid\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\x04 \x01(\tR\teventType\x12\x16\n" +
+	"\x06source\x18\x05 \x01(\tR\x06source\x12!\n" +
+	"\fevent_status\x18\x06 \x01(\tR\veventStatus\x12)\n" +
+	"\x10process_attempts\x18\a \x01(\rR\x0fprocessAttempts\x12*\n" +
+	"\x11last_reconcile_at\x18\b \x01(\tR\x0flastReconcileAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\"\xc7\x01\n" +
+	"\x13ListDriverEventsReq\x12\x1f\n" +
+	"\ventity_type\x18\x01 \x01(\tR\n" +
+	"entityType\x12\x1f\n" +
+	"\ventity_ulid\x18\x02 \x01(\tR\n" +
+	"entityUlid\x12!\n" +
+	"\fevent_status\x18\x03 \x01(\tR\veventStatus\x12\x1d\n" +
+	"\n" +
+	"event_type\x18\x04 \x01(\tR\teventType\x12\x14\n" +
+	"\x05limit\x18\x05 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x06 \x01(\x05R\x06offset\"\\\n" +
+	"\x13ListDriverEventsRsp\x12/\n" +
+	"\x05items\x18\x01 \x03(\v2\x19.gprog.DriverEventSummaryR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"8\n" +
+	"\x17GetDriverEventDetailReq\x12\x1d\n" +
+	"\n" +
+	"event_ulid\x18\x01 \x01(\tR\teventUlid\"\xe6\x01\n" +
+	"\x17GetDriverEventDetailRsp\x123\n" +
+	"\asummary\x18\x01 \x01(\v2\x19.gprog.DriverEventSummaryR\asummary\x12!\n" +
+	"\fpayload_json\x18\x02 \x01(\tR\vpayloadJson\x12&\n" +
+	"\x0flast_error_code\x18\x03 \x01(\tR\rlastErrorCode\x12,\n" +
+	"\x12last_error_message\x18\x04 \x01(\tR\x10lastErrorMessage\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\x05 \x01(\tR\tupdatedAt\"\xdb\x02\n" +
+	"\x12NatsMessageSummary\x12!\n" +
+	"\fmessage_ulid\x18\x01 \x01(\tR\vmessageUlid\x12\x18\n" +
+	"\asubject\x18\x02 \x01(\tR\asubject\x12%\n" +
+	"\x0esource_service\x18\x03 \x01(\tR\rsourceService\x12!\n" +
+	"\fmessage_type\x18\x04 \x01(\tR\vmessageType\x12%\n" +
+	"\x0ereceive_status\x18\x05 \x01(\tR\rreceiveStatus\x12)\n" +
+	"\x10process_attempts\x18\x06 \x01(\rR\x0fprocessAttempts\x12\x1f\n" +
+	"\vreceived_at\x18\a \x01(\tR\n" +
+	"receivedAt\x12,\n" +
+	"\x12last_processing_at\x18\b \x01(\tR\x10lastProcessingAt\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\"\x91\x01\n" +
+	"\x13ListNatsMessagesReq\x12%\n" +
+	"\x0ereceive_status\x18\x01 \x01(\tR\rreceiveStatus\x12%\n" +
+	"\x0esource_service\x18\x02 \x01(\tR\rsourceService\x12\x14\n" +
+	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x04 \x01(\x05R\x06offset\"\\\n" +
+	"\x13ListNatsMessagesRsp\x12/\n" +
+	"\x05items\x18\x01 \x03(\v2\x19.gprog.NatsMessageSummaryR\x05items\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"<\n" +
+	"\x17GetNatsMessageDetailReq\x12!\n" +
+	"\fmessage_ulid\x18\x01 \x01(\tR\vmessageUlid\"\xec\x01\n" +
+	"\x17GetNatsMessageDetailRsp\x123\n" +
+	"\asummary\x18\x01 \x01(\v2\x19.gprog.NatsMessageSummaryR\asummary\x12'\n" +
+	"\x0fmessage_payload\x18\x02 \x01(\tR\x0emessagePayload\x12&\n" +
+	"\x0flast_error_code\x18\x03 \x01(\tR\rlastErrorCode\x12,\n" +
+	"\x12last_error_message\x18\x04 \x01(\tR\x10lastErrorMessage\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\x05 \x01(\tR\tupdatedAt\"J\n" +
+	"\x1fGetStatusTransitionLogDetailReq\x12'\n" +
+	"\x0ftransition_ulid\x18\x01 \x01(\tR\x0etransitionUlid\"\x83\x01\n" +
+	"\x1fGetStatusTransitionLogDetailRsp\x12;\n" +
+	"\asummary\x18\x01 \x01(\v2!.gprog.StatusTransitionLogSummaryR\asummary\x12#\n" +
+	"\rpipeline_ulid\x18\x02 \x01(\tR\fpipelineUlid*\xb4\x01\n" +
 	"\x0ePipelineStatus\x12\x1f\n" +
 	"\x1bPIPELINE_STATUS_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17PIPELINE_STATUS_RUNNING\x10\x01\x12#\n" +
 	"\x1fPIPELINE_STATUS_WAIT_FINAL_ELIG\x10\x02\x12\x1d\n" +
-	"\x19PIPELINE_STATUS_COMPLETED\x10\x03*\x82\x01\n" +
+	"\x19PIPELINE_STATUS_COMPLETED\x10\x03\x12 \n" +
+	"\x1cPIPELINE_STATUS_ISSUING_CERT\x10\x04*\x82\x01\n" +
 	"\vStageStatus\x12\x1c\n" +
 	"\x18STAGE_STATUS_UNSPECIFIED\x10\x00\x12\x1f\n" +
 	"\x1bSTAGE_STATUS_WAIT_CANDIDATE\x10\x01\x12\x18\n" +
@@ -1614,7 +4912,7 @@ const file_prog_proto_rawDesc = "" +
 	"\x1cCOURSE_UNIT_STATUS_EXAM_OPEN\x10\x03\x12%\n" +
 	"!COURSE_UNIT_STATUS_EXAM_SCHEDULED\x10\x04\x12\"\n" +
 	"\x1eCOURSE_UNIT_STATUS_EXAM_FAILED\x10\x05\x12 \n" +
-	"\x1cCOURSE_UNIT_STATUS_COMPLETED\x10\x062\x99\x06\n" +
+	"\x1cCOURSE_UNIT_STATUS_COMPLETED\x10\x062\x8b\x11\n" +
 	"\vProgService\x12D\n" +
 	"\x0ePipelineCreate\x12\x18.gprog.PipelineCreateReq\x1a\x18.gprog.PipelineCreateRsp\x12S\n" +
 	"\x13CandidateSignupExam\x12\x1d.gprog.CandidateSignupExamReq\x1a\x1d.gprog.CandidateSignupExamRsp\x12V\n" +
@@ -1624,7 +4922,25 @@ const file_prog_proto_rawDesc = "" +
 	"\x1aAdminForceCourseSignupExam\x12$.gprog.AdminForceCourseSignupExamReq\x1a$.gprog.AdminForceCourseSignupExamRsp\x12D\n" +
 	"\x0eIgnoreMailTask\x12\x18.gprog.IgnoreMailTaskReq\x1a\x18.gprog.IgnoreMailTaskRsp\x12D\n" +
 	"\x0eResendMailTask\x12\x18.gprog.ResendMailTaskReq\x1a\x18.gprog.ResendMailTaskRsp\x12\\\n" +
-	"\x16ListCandidatePipelines\x12 .gprog.ListCandidatePipelinesReq\x1a .gprog.ListCandidatePipelinesRspB\fZ\n" +
+	"\x16ListCandidatePipelines\x12 .gprog.ListCandidatePipelinesReq\x1a .gprog.ListCandidatePipelinesRsp\x12M\n" +
+	"\x11GetPipelineDetail\x12\x1b.gprog.GetPipelineDetailReq\x1a\x1b.gprog.GetPipelineDetailRsp\x12S\n" +
+	"\x13GetCourseUnitDetail\x12\x1d.gprog.GetCourseUnitDetailReq\x1a\x1d.gprog.GetCourseUnitDetailRsp\x12b\n" +
+	"\x18ListStatusTransitionLogs\x12\".gprog.ListStatusTransitionLogsReq\x1a\".gprog.ListStatusTransitionLogsRsp\x12A\n" +
+	"\rListMailTasks\x12\x17.gprog.ListMailTasksReq\x1a\x17.gprog.ListMailTasksRsp\x12M\n" +
+	"\x11GetMailTaskDetail\x12\x1b.gprog.GetMailTaskDetailReq\x1a\x1b.gprog.GetMailTaskDetailRsp\x12V\n" +
+	"\x14ListCertificateTasks\x12\x1e.gprog.ListCertificateTasksReq\x1a\x1e.gprog.ListCertificateTasksRsp\x12b\n" +
+	"\x18GetCertificateTaskDetail\x12\".gprog.GetCertificateTaskDetailReq\x1a\".gprog.GetCertificateTaskDetailRsp\x12V\n" +
+	"\x14RetryCertificateTask\x12\x1e.gprog.RetryCertificateTaskReq\x1a\x1e.gprog.RetryCertificateTaskRsp\x12A\n" +
+	"\rListPipelines\x12\x17.gprog.ListPipelinesReq\x1a\x17.gprog.ListPipelinesRsp\x128\n" +
+	"\n" +
+	"ListStages\x12\x14.gprog.ListStagesReq\x1a\x14.gprog.ListStagesRsp\x12D\n" +
+	"\x0eGetStageDetail\x12\x18.gprog.GetStageDetailReq\x1a\x18.gprog.GetStageDetailRsp\x12G\n" +
+	"\x0fListCourseUnits\x12\x19.gprog.ListCourseUnitsReq\x1a\x19.gprog.ListCourseUnitsRsp\x12J\n" +
+	"\x10ListDriverEvents\x12\x1a.gprog.ListDriverEventsReq\x1a\x1a.gprog.ListDriverEventsRsp\x12V\n" +
+	"\x14GetDriverEventDetail\x12\x1e.gprog.GetDriverEventDetailReq\x1a\x1e.gprog.GetDriverEventDetailRsp\x12J\n" +
+	"\x10ListNatsMessages\x12\x1a.gprog.ListNatsMessagesReq\x1a\x1a.gprog.ListNatsMessagesRsp\x12V\n" +
+	"\x14GetNatsMessageDetail\x12\x1e.gprog.GetNatsMessageDetailReq\x1a\x1e.gprog.GetNatsMessageDetailRsp\x12n\n" +
+	"\x1cGetStatusTransitionLogDetail\x12&.gprog.GetStatusTransitionLogDetailReq\x1a&.gprog.GetStatusTransitionLogDetailRspB\fZ\n" +
 	"cftp/gprogb\x06proto3"
 
 var (
@@ -1640,30 +4956,73 @@ func file_prog_proto_rawDescGZIP() []byte {
 }
 
 var file_prog_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_prog_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_prog_proto_msgTypes = make([]protoimpl.MessageInfo, 62)
 var file_prog_proto_goTypes = []any{
-	(PipelineStatus)(0),                   // 0: gprog.PipelineStatus
-	(StageStatus)(0),                      // 1: gprog.StageStatus
-	(CourseUnitStatus)(0),                 // 2: gprog.CourseUnitStatus
-	(*PipelineCreateReq)(nil),             // 3: gprog.PipelineCreateReq
-	(*PipelineCreateRsp)(nil),             // 4: gprog.PipelineCreateRsp
-	(*CandidateSignupExamReq)(nil),        // 5: gprog.CandidateSignupExamReq
-	(*CandidateSignupExamRsp)(nil),        // 6: gprog.CandidateSignupExamRsp
-	(*CandidateApplyRetakeReq)(nil),       // 7: gprog.CandidateApplyRetakeReq
-	(*CandidateApplyRetakeRsp)(nil),       // 8: gprog.CandidateApplyRetakeRsp
-	(*AdminTerminatePipelineReq)(nil),     // 9: gprog.AdminTerminatePipelineReq
-	(*AdminTerminatePipelineRsp)(nil),     // 10: gprog.AdminTerminatePipelineRsp
-	(*AdminForceCourseCompletedReq)(nil),  // 11: gprog.AdminForceCourseCompletedReq
-	(*AdminForceCourseCompletedRsp)(nil),  // 12: gprog.AdminForceCourseCompletedRsp
-	(*AdminForceCourseSignupExamReq)(nil), // 13: gprog.AdminForceCourseSignupExamReq
-	(*AdminForceCourseSignupExamRsp)(nil), // 14: gprog.AdminForceCourseSignupExamRsp
-	(*IgnoreMailTaskReq)(nil),             // 15: gprog.IgnoreMailTaskReq
-	(*IgnoreMailTaskRsp)(nil),             // 16: gprog.IgnoreMailTaskRsp
-	(*ResendMailTaskReq)(nil),             // 17: gprog.ResendMailTaskReq
-	(*ResendMailTaskRsp)(nil),             // 18: gprog.ResendMailTaskRsp
-	(*ListCandidatePipelinesReq)(nil),     // 19: gprog.ListCandidatePipelinesReq
-	(*ListCandidatePipelinesRsp)(nil),     // 20: gprog.ListCandidatePipelinesRsp
-	(*PipelineSummary)(nil),               // 21: gprog.PipelineSummary
+	(PipelineStatus)(0),                     // 0: gprog.PipelineStatus
+	(StageStatus)(0),                        // 1: gprog.StageStatus
+	(CourseUnitStatus)(0),                   // 2: gprog.CourseUnitStatus
+	(*PipelineCreateReq)(nil),               // 3: gprog.PipelineCreateReq
+	(*PipelineCreateRsp)(nil),               // 4: gprog.PipelineCreateRsp
+	(*CandidateSignupExamReq)(nil),          // 5: gprog.CandidateSignupExamReq
+	(*CandidateSignupExamRsp)(nil),          // 6: gprog.CandidateSignupExamRsp
+	(*CandidateApplyRetakeReq)(nil),         // 7: gprog.CandidateApplyRetakeReq
+	(*CandidateApplyRetakeRsp)(nil),         // 8: gprog.CandidateApplyRetakeRsp
+	(*AdminTerminatePipelineReq)(nil),       // 9: gprog.AdminTerminatePipelineReq
+	(*AdminTerminatePipelineRsp)(nil),       // 10: gprog.AdminTerminatePipelineRsp
+	(*AdminForceCourseCompletedReq)(nil),    // 11: gprog.AdminForceCourseCompletedReq
+	(*AdminForceCourseCompletedRsp)(nil),    // 12: gprog.AdminForceCourseCompletedRsp
+	(*AdminForceCourseSignupExamReq)(nil),   // 13: gprog.AdminForceCourseSignupExamReq
+	(*AdminForceCourseSignupExamRsp)(nil),   // 14: gprog.AdminForceCourseSignupExamRsp
+	(*IgnoreMailTaskReq)(nil),               // 15: gprog.IgnoreMailTaskReq
+	(*IgnoreMailTaskRsp)(nil),               // 16: gprog.IgnoreMailTaskRsp
+	(*ResendMailTaskReq)(nil),               // 17: gprog.ResendMailTaskReq
+	(*ResendMailTaskRsp)(nil),               // 18: gprog.ResendMailTaskRsp
+	(*ListCandidatePipelinesReq)(nil),       // 19: gprog.ListCandidatePipelinesReq
+	(*ListCandidatePipelinesRsp)(nil),       // 20: gprog.ListCandidatePipelinesRsp
+	(*PipelineSummary)(nil),                 // 21: gprog.PipelineSummary
+	(*GetPipelineDetailReq)(nil),            // 22: gprog.GetPipelineDetailReq
+	(*GetPipelineDetailRsp)(nil),            // 23: gprog.GetPipelineDetailRsp
+	(*PipelineDetail)(nil),                  // 24: gprog.PipelineDetail
+	(*StageDetail)(nil),                     // 25: gprog.StageDetail
+	(*StageSummary)(nil),                    // 26: gprog.StageSummary
+	(*CourseUnitSummary)(nil),               // 27: gprog.CourseUnitSummary
+	(*GetCourseUnitDetailReq)(nil),          // 28: gprog.GetCourseUnitDetailReq
+	(*GetCourseUnitDetailRsp)(nil),          // 29: gprog.GetCourseUnitDetailRsp
+	(*ListStatusTransitionLogsReq)(nil),     // 30: gprog.ListStatusTransitionLogsReq
+	(*ListStatusTransitionLogsRsp)(nil),     // 31: gprog.ListStatusTransitionLogsRsp
+	(*StatusTransitionLogSummary)(nil),      // 32: gprog.StatusTransitionLogSummary
+	(*ListMailTasksReq)(nil),                // 33: gprog.ListMailTasksReq
+	(*ListMailTasksRsp)(nil),                // 34: gprog.ListMailTasksRsp
+	(*MailTaskSummary)(nil),                 // 35: gprog.MailTaskSummary
+	(*GetMailTaskDetailReq)(nil),            // 36: gprog.GetMailTaskDetailReq
+	(*GetMailTaskDetailRsp)(nil),            // 37: gprog.GetMailTaskDetailRsp
+	(*ListCertificateTasksReq)(nil),         // 38: gprog.ListCertificateTasksReq
+	(*ListCertificateTasksRsp)(nil),         // 39: gprog.ListCertificateTasksRsp
+	(*CertificateTaskSummary)(nil),          // 40: gprog.CertificateTaskSummary
+	(*GetCertificateTaskDetailReq)(nil),     // 41: gprog.GetCertificateTaskDetailReq
+	(*GetCertificateTaskDetailRsp)(nil),     // 42: gprog.GetCertificateTaskDetailRsp
+	(*RetryCertificateTaskReq)(nil),         // 43: gprog.RetryCertificateTaskReq
+	(*RetryCertificateTaskRsp)(nil),         // 44: gprog.RetryCertificateTaskRsp
+	(*ListPipelinesReq)(nil),                // 45: gprog.ListPipelinesReq
+	(*ListPipelinesRsp)(nil),                // 46: gprog.ListPipelinesRsp
+	(*ListStagesReq)(nil),                   // 47: gprog.ListStagesReq
+	(*ListStagesRsp)(nil),                   // 48: gprog.ListStagesRsp
+	(*GetStageDetailReq)(nil),               // 49: gprog.GetStageDetailReq
+	(*GetStageDetailRsp)(nil),               // 50: gprog.GetStageDetailRsp
+	(*ListCourseUnitsReq)(nil),              // 51: gprog.ListCourseUnitsReq
+	(*ListCourseUnitsRsp)(nil),              // 52: gprog.ListCourseUnitsRsp
+	(*DriverEventSummary)(nil),              // 53: gprog.DriverEventSummary
+	(*ListDriverEventsReq)(nil),             // 54: gprog.ListDriverEventsReq
+	(*ListDriverEventsRsp)(nil),             // 55: gprog.ListDriverEventsRsp
+	(*GetDriverEventDetailReq)(nil),         // 56: gprog.GetDriverEventDetailReq
+	(*GetDriverEventDetailRsp)(nil),         // 57: gprog.GetDriverEventDetailRsp
+	(*NatsMessageSummary)(nil),              // 58: gprog.NatsMessageSummary
+	(*ListNatsMessagesReq)(nil),             // 59: gprog.ListNatsMessagesReq
+	(*ListNatsMessagesRsp)(nil),             // 60: gprog.ListNatsMessagesRsp
+	(*GetNatsMessageDetailReq)(nil),         // 61: gprog.GetNatsMessageDetailReq
+	(*GetNatsMessageDetailRsp)(nil),         // 62: gprog.GetNatsMessageDetailRsp
+	(*GetStatusTransitionLogDetailReq)(nil), // 63: gprog.GetStatusTransitionLogDetailReq
+	(*GetStatusTransitionLogDetailRsp)(nil), // 64: gprog.GetStatusTransitionLogDetailRsp
 }
 var file_prog_proto_depIdxs = []int32{
 	0,  // 0: gprog.PipelineCreateRsp.pipeline_status:type_name -> gprog.PipelineStatus
@@ -1676,29 +5035,90 @@ var file_prog_proto_depIdxs = []int32{
 	0,  // 7: gprog.ListCandidatePipelinesReq.status:type_name -> gprog.PipelineStatus
 	21, // 8: gprog.ListCandidatePipelinesRsp.pipelines:type_name -> gprog.PipelineSummary
 	0,  // 9: gprog.PipelineSummary.status:type_name -> gprog.PipelineStatus
-	3,  // 10: gprog.ProgService.PipelineCreate:input_type -> gprog.PipelineCreateReq
-	5,  // 11: gprog.ProgService.CandidateSignupExam:input_type -> gprog.CandidateSignupExamReq
-	7,  // 12: gprog.ProgService.CandidateApplyRetake:input_type -> gprog.CandidateApplyRetakeReq
-	9,  // 13: gprog.ProgService.AdminTerminatePipeline:input_type -> gprog.AdminTerminatePipelineReq
-	11, // 14: gprog.ProgService.AdminForceCourseCompleted:input_type -> gprog.AdminForceCourseCompletedReq
-	13, // 15: gprog.ProgService.AdminForceCourseSignupExam:input_type -> gprog.AdminForceCourseSignupExamReq
-	15, // 16: gprog.ProgService.IgnoreMailTask:input_type -> gprog.IgnoreMailTaskReq
-	17, // 17: gprog.ProgService.ResendMailTask:input_type -> gprog.ResendMailTaskReq
-	19, // 18: gprog.ProgService.ListCandidatePipelines:input_type -> gprog.ListCandidatePipelinesReq
-	4,  // 19: gprog.ProgService.PipelineCreate:output_type -> gprog.PipelineCreateRsp
-	6,  // 20: gprog.ProgService.CandidateSignupExam:output_type -> gprog.CandidateSignupExamRsp
-	8,  // 21: gprog.ProgService.CandidateApplyRetake:output_type -> gprog.CandidateApplyRetakeRsp
-	10, // 22: gprog.ProgService.AdminTerminatePipeline:output_type -> gprog.AdminTerminatePipelineRsp
-	12, // 23: gprog.ProgService.AdminForceCourseCompleted:output_type -> gprog.AdminForceCourseCompletedRsp
-	14, // 24: gprog.ProgService.AdminForceCourseSignupExam:output_type -> gprog.AdminForceCourseSignupExamRsp
-	16, // 25: gprog.ProgService.IgnoreMailTask:output_type -> gprog.IgnoreMailTaskRsp
-	18, // 26: gprog.ProgService.ResendMailTask:output_type -> gprog.ResendMailTaskRsp
-	20, // 27: gprog.ProgService.ListCandidatePipelines:output_type -> gprog.ListCandidatePipelinesRsp
-	19, // [19:28] is the sub-list for method output_type
-	10, // [10:19] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	24, // 10: gprog.GetPipelineDetailRsp.pipeline:type_name -> gprog.PipelineDetail
+	25, // 11: gprog.GetPipelineDetailRsp.stages:type_name -> gprog.StageDetail
+	0,  // 12: gprog.PipelineDetail.status:type_name -> gprog.PipelineStatus
+	26, // 13: gprog.StageDetail.stage:type_name -> gprog.StageSummary
+	27, // 14: gprog.StageDetail.course_units:type_name -> gprog.CourseUnitSummary
+	1,  // 15: gprog.StageSummary.status:type_name -> gprog.StageStatus
+	2,  // 16: gprog.CourseUnitSummary.status:type_name -> gprog.CourseUnitStatus
+	2,  // 17: gprog.GetCourseUnitDetailRsp.status:type_name -> gprog.CourseUnitStatus
+	1,  // 18: gprog.GetCourseUnitDetailRsp.parent_stage_status:type_name -> gprog.StageStatus
+	0,  // 19: gprog.GetCourseUnitDetailRsp.parent_pipeline_status:type_name -> gprog.PipelineStatus
+	32, // 20: gprog.ListStatusTransitionLogsRsp.logs:type_name -> gprog.StatusTransitionLogSummary
+	35, // 21: gprog.ListMailTasksRsp.tasks:type_name -> gprog.MailTaskSummary
+	35, // 22: gprog.GetMailTaskDetailRsp.summary:type_name -> gprog.MailTaskSummary
+	40, // 23: gprog.ListCertificateTasksRsp.tasks:type_name -> gprog.CertificateTaskSummary
+	40, // 24: gprog.GetCertificateTaskDetailRsp.summary:type_name -> gprog.CertificateTaskSummary
+	0,  // 25: gprog.ListPipelinesReq.status:type_name -> gprog.PipelineStatus
+	21, // 26: gprog.ListPipelinesRsp.pipelines:type_name -> gprog.PipelineSummary
+	26, // 27: gprog.ListStagesRsp.stages:type_name -> gprog.StageSummary
+	26, // 28: gprog.GetStageDetailRsp.summary:type_name -> gprog.StageSummary
+	27, // 29: gprog.GetStageDetailRsp.course_units:type_name -> gprog.CourseUnitSummary
+	2,  // 30: gprog.ListCourseUnitsReq.status:type_name -> gprog.CourseUnitStatus
+	27, // 31: gprog.ListCourseUnitsRsp.course_units:type_name -> gprog.CourseUnitSummary
+	53, // 32: gprog.ListDriverEventsRsp.items:type_name -> gprog.DriverEventSummary
+	53, // 33: gprog.GetDriverEventDetailRsp.summary:type_name -> gprog.DriverEventSummary
+	58, // 34: gprog.ListNatsMessagesRsp.items:type_name -> gprog.NatsMessageSummary
+	58, // 35: gprog.GetNatsMessageDetailRsp.summary:type_name -> gprog.NatsMessageSummary
+	32, // 36: gprog.GetStatusTransitionLogDetailRsp.summary:type_name -> gprog.StatusTransitionLogSummary
+	3,  // 37: gprog.ProgService.PipelineCreate:input_type -> gprog.PipelineCreateReq
+	5,  // 38: gprog.ProgService.CandidateSignupExam:input_type -> gprog.CandidateSignupExamReq
+	7,  // 39: gprog.ProgService.CandidateApplyRetake:input_type -> gprog.CandidateApplyRetakeReq
+	9,  // 40: gprog.ProgService.AdminTerminatePipeline:input_type -> gprog.AdminTerminatePipelineReq
+	11, // 41: gprog.ProgService.AdminForceCourseCompleted:input_type -> gprog.AdminForceCourseCompletedReq
+	13, // 42: gprog.ProgService.AdminForceCourseSignupExam:input_type -> gprog.AdminForceCourseSignupExamReq
+	15, // 43: gprog.ProgService.IgnoreMailTask:input_type -> gprog.IgnoreMailTaskReq
+	17, // 44: gprog.ProgService.ResendMailTask:input_type -> gprog.ResendMailTaskReq
+	19, // 45: gprog.ProgService.ListCandidatePipelines:input_type -> gprog.ListCandidatePipelinesReq
+	22, // 46: gprog.ProgService.GetPipelineDetail:input_type -> gprog.GetPipelineDetailReq
+	28, // 47: gprog.ProgService.GetCourseUnitDetail:input_type -> gprog.GetCourseUnitDetailReq
+	30, // 48: gprog.ProgService.ListStatusTransitionLogs:input_type -> gprog.ListStatusTransitionLogsReq
+	33, // 49: gprog.ProgService.ListMailTasks:input_type -> gprog.ListMailTasksReq
+	36, // 50: gprog.ProgService.GetMailTaskDetail:input_type -> gprog.GetMailTaskDetailReq
+	38, // 51: gprog.ProgService.ListCertificateTasks:input_type -> gprog.ListCertificateTasksReq
+	41, // 52: gprog.ProgService.GetCertificateTaskDetail:input_type -> gprog.GetCertificateTaskDetailReq
+	43, // 53: gprog.ProgService.RetryCertificateTask:input_type -> gprog.RetryCertificateTaskReq
+	45, // 54: gprog.ProgService.ListPipelines:input_type -> gprog.ListPipelinesReq
+	47, // 55: gprog.ProgService.ListStages:input_type -> gprog.ListStagesReq
+	49, // 56: gprog.ProgService.GetStageDetail:input_type -> gprog.GetStageDetailReq
+	51, // 57: gprog.ProgService.ListCourseUnits:input_type -> gprog.ListCourseUnitsReq
+	54, // 58: gprog.ProgService.ListDriverEvents:input_type -> gprog.ListDriverEventsReq
+	56, // 59: gprog.ProgService.GetDriverEventDetail:input_type -> gprog.GetDriverEventDetailReq
+	59, // 60: gprog.ProgService.ListNatsMessages:input_type -> gprog.ListNatsMessagesReq
+	61, // 61: gprog.ProgService.GetNatsMessageDetail:input_type -> gprog.GetNatsMessageDetailReq
+	63, // 62: gprog.ProgService.GetStatusTransitionLogDetail:input_type -> gprog.GetStatusTransitionLogDetailReq
+	4,  // 63: gprog.ProgService.PipelineCreate:output_type -> gprog.PipelineCreateRsp
+	6,  // 64: gprog.ProgService.CandidateSignupExam:output_type -> gprog.CandidateSignupExamRsp
+	8,  // 65: gprog.ProgService.CandidateApplyRetake:output_type -> gprog.CandidateApplyRetakeRsp
+	10, // 66: gprog.ProgService.AdminTerminatePipeline:output_type -> gprog.AdminTerminatePipelineRsp
+	12, // 67: gprog.ProgService.AdminForceCourseCompleted:output_type -> gprog.AdminForceCourseCompletedRsp
+	14, // 68: gprog.ProgService.AdminForceCourseSignupExam:output_type -> gprog.AdminForceCourseSignupExamRsp
+	16, // 69: gprog.ProgService.IgnoreMailTask:output_type -> gprog.IgnoreMailTaskRsp
+	18, // 70: gprog.ProgService.ResendMailTask:output_type -> gprog.ResendMailTaskRsp
+	20, // 71: gprog.ProgService.ListCandidatePipelines:output_type -> gprog.ListCandidatePipelinesRsp
+	23, // 72: gprog.ProgService.GetPipelineDetail:output_type -> gprog.GetPipelineDetailRsp
+	29, // 73: gprog.ProgService.GetCourseUnitDetail:output_type -> gprog.GetCourseUnitDetailRsp
+	31, // 74: gprog.ProgService.ListStatusTransitionLogs:output_type -> gprog.ListStatusTransitionLogsRsp
+	34, // 75: gprog.ProgService.ListMailTasks:output_type -> gprog.ListMailTasksRsp
+	37, // 76: gprog.ProgService.GetMailTaskDetail:output_type -> gprog.GetMailTaskDetailRsp
+	39, // 77: gprog.ProgService.ListCertificateTasks:output_type -> gprog.ListCertificateTasksRsp
+	42, // 78: gprog.ProgService.GetCertificateTaskDetail:output_type -> gprog.GetCertificateTaskDetailRsp
+	44, // 79: gprog.ProgService.RetryCertificateTask:output_type -> gprog.RetryCertificateTaskRsp
+	46, // 80: gprog.ProgService.ListPipelines:output_type -> gprog.ListPipelinesRsp
+	48, // 81: gprog.ProgService.ListStages:output_type -> gprog.ListStagesRsp
+	50, // 82: gprog.ProgService.GetStageDetail:output_type -> gprog.GetStageDetailRsp
+	52, // 83: gprog.ProgService.ListCourseUnits:output_type -> gprog.ListCourseUnitsRsp
+	55, // 84: gprog.ProgService.ListDriverEvents:output_type -> gprog.ListDriverEventsRsp
+	57, // 85: gprog.ProgService.GetDriverEventDetail:output_type -> gprog.GetDriverEventDetailRsp
+	60, // 86: gprog.ProgService.ListNatsMessages:output_type -> gprog.ListNatsMessagesRsp
+	62, // 87: gprog.ProgService.GetNatsMessageDetail:output_type -> gprog.GetNatsMessageDetailRsp
+	64, // 88: gprog.ProgService.GetStatusTransitionLogDetail:output_type -> gprog.GetStatusTransitionLogDetailRsp
+	63, // [63:89] is the sub-list for method output_type
+	37, // [37:63] is the sub-list for method input_type
+	37, // [37:37] is the sub-list for extension type_name
+	37, // [37:37] is the sub-list for extension extendee
+	0,  // [0:37] is the sub-list for field type_name
 }
 
 func init() { file_prog_proto_init() }
@@ -1712,7 +5132,7 @@ func file_prog_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_prog_proto_rawDesc), len(file_prog_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   19,
+			NumMessages:   62,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

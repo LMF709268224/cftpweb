@@ -26,8 +26,13 @@ const (
 	CCService_DeletePipeline_FullMethodName              = "/gcc.CCService/DeletePipeline"
 	CCService_UpdatePipelineMetadata_FullMethodName      = "/gcc.CCService/UpdatePipelineMetadata"
 	CCService_GetPipeline_FullMethodName                 = "/gcc.CCService/GetPipeline"
+	CCService_GetPipelineDetail_FullMethodName           = "/gcc.CCService/GetPipelineDetail"
 	CCService_GetPipelineFinalEligibility_FullMethodName = "/gcc.CCService/GetPipelineFinalEligibility"
 	CCService_ListPipelines_FullMethodName               = "/gcc.CCService/ListPipelines"
+	CCService_ListStages_FullMethodName                  = "/gcc.CCService/ListStages"
+	CCService_GetStageDetail_FullMethodName              = "/gcc.CCService/GetStageDetail"
+	CCService_ListUnits_FullMethodName                   = "/gcc.CCService/ListUnits"
+	CCService_GetUnitDetail_FullMethodName               = "/gcc.CCService/GetUnitDetail"
 )
 
 // CCServiceClient is the client API for CCService service.
@@ -45,8 +50,13 @@ type CCServiceClient interface {
 	// 更新描述性信息 (实时生效，不产生新版本)
 	UpdatePipelineMetadata(ctx context.Context, in *UpdateMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetPipeline(ctx context.Context, in *GetPipelineRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
+	GetPipelineDetail(ctx context.Context, in *GetPipelineDetailRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
 	GetPipelineFinalEligibility(ctx context.Context, in *GetPipelineFinalEligibilityRequest, opts ...grpc.CallOption) (*GetPipelineFinalEligibilityResponse, error)
 	ListPipelines(ctx context.Context, in *ListPipelinesRequest, opts ...grpc.CallOption) (*ListPipelinesResponse, error)
+	ListStages(ctx context.Context, in *ListStagesRequest, opts ...grpc.CallOption) (*ListStagesResponse, error)
+	GetStageDetail(ctx context.Context, in *GetStageDetailRequest, opts ...grpc.CallOption) (*StageConfig, error)
+	ListUnits(ctx context.Context, in *ListUnitsRequest, opts ...grpc.CallOption) (*ListUnitsResponse, error)
+	GetUnitDetail(ctx context.Context, in *GetUnitDetailRequest, opts ...grpc.CallOption) (*UnitConfig, error)
 }
 
 type cCServiceClient struct {
@@ -117,6 +127,16 @@ func (c *cCServiceClient) GetPipeline(ctx context.Context, in *GetPipelineReques
 	return out, nil
 }
 
+func (c *cCServiceClient) GetPipelineDetail(ctx context.Context, in *GetPipelineDetailRequest, opts ...grpc.CallOption) (*PipelineConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PipelineConfig)
+	err := c.cc.Invoke(ctx, CCService_GetPipelineDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *cCServiceClient) GetPipelineFinalEligibility(ctx context.Context, in *GetPipelineFinalEligibilityRequest, opts ...grpc.CallOption) (*GetPipelineFinalEligibilityResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetPipelineFinalEligibilityResponse)
@@ -131,6 +151,46 @@ func (c *cCServiceClient) ListPipelines(ctx context.Context, in *ListPipelinesRe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListPipelinesResponse)
 	err := c.cc.Invoke(ctx, CCService_ListPipelines_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cCServiceClient) ListStages(ctx context.Context, in *ListStagesRequest, opts ...grpc.CallOption) (*ListStagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListStagesResponse)
+	err := c.cc.Invoke(ctx, CCService_ListStages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cCServiceClient) GetStageDetail(ctx context.Context, in *GetStageDetailRequest, opts ...grpc.CallOption) (*StageConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StageConfig)
+	err := c.cc.Invoke(ctx, CCService_GetStageDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cCServiceClient) ListUnits(ctx context.Context, in *ListUnitsRequest, opts ...grpc.CallOption) (*ListUnitsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUnitsResponse)
+	err := c.cc.Invoke(ctx, CCService_ListUnits_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cCServiceClient) GetUnitDetail(ctx context.Context, in *GetUnitDetailRequest, opts ...grpc.CallOption) (*UnitConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnitConfig)
+	err := c.cc.Invoke(ctx, CCService_GetUnitDetail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -152,8 +212,13 @@ type CCServiceServer interface {
 	// 更新描述性信息 (实时生效，不产生新版本)
 	UpdatePipelineMetadata(context.Context, *UpdateMetadataRequest) (*emptypb.Empty, error)
 	GetPipeline(context.Context, *GetPipelineRequest) (*PipelineConfig, error)
+	GetPipelineDetail(context.Context, *GetPipelineDetailRequest) (*PipelineConfig, error)
 	GetPipelineFinalEligibility(context.Context, *GetPipelineFinalEligibilityRequest) (*GetPipelineFinalEligibilityResponse, error)
 	ListPipelines(context.Context, *ListPipelinesRequest) (*ListPipelinesResponse, error)
+	ListStages(context.Context, *ListStagesRequest) (*ListStagesResponse, error)
+	GetStageDetail(context.Context, *GetStageDetailRequest) (*StageConfig, error)
+	ListUnits(context.Context, *ListUnitsRequest) (*ListUnitsResponse, error)
+	GetUnitDetail(context.Context, *GetUnitDetailRequest) (*UnitConfig, error)
 	mustEmbedUnimplementedCCServiceServer()
 }
 
@@ -182,11 +247,26 @@ func (UnimplementedCCServiceServer) UpdatePipelineMetadata(context.Context, *Upd
 func (UnimplementedCCServiceServer) GetPipeline(context.Context, *GetPipelineRequest) (*PipelineConfig, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPipeline not implemented")
 }
+func (UnimplementedCCServiceServer) GetPipelineDetail(context.Context, *GetPipelineDetailRequest) (*PipelineConfig, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPipelineDetail not implemented")
+}
 func (UnimplementedCCServiceServer) GetPipelineFinalEligibility(context.Context, *GetPipelineFinalEligibilityRequest) (*GetPipelineFinalEligibilityResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPipelineFinalEligibility not implemented")
 }
 func (UnimplementedCCServiceServer) ListPipelines(context.Context, *ListPipelinesRequest) (*ListPipelinesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPipelines not implemented")
+}
+func (UnimplementedCCServiceServer) ListStages(context.Context, *ListStagesRequest) (*ListStagesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListStages not implemented")
+}
+func (UnimplementedCCServiceServer) GetStageDetail(context.Context, *GetStageDetailRequest) (*StageConfig, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStageDetail not implemented")
+}
+func (UnimplementedCCServiceServer) ListUnits(context.Context, *ListUnitsRequest) (*ListUnitsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUnits not implemented")
+}
+func (UnimplementedCCServiceServer) GetUnitDetail(context.Context, *GetUnitDetailRequest) (*UnitConfig, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetUnitDetail not implemented")
 }
 func (UnimplementedCCServiceServer) mustEmbedUnimplementedCCServiceServer() {}
 func (UnimplementedCCServiceServer) testEmbeddedByValue()                   {}
@@ -317,6 +397,24 @@ func _CCService_GetPipeline_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CCService_GetPipelineDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPipelineDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCServiceServer).GetPipelineDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCService_GetPipelineDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCServiceServer).GetPipelineDetail(ctx, req.(*GetPipelineDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CCService_GetPipelineFinalEligibility_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetPipelineFinalEligibilityRequest)
 	if err := dec(in); err != nil {
@@ -353,6 +451,78 @@ func _CCService_ListPipelines_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CCService_ListStages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListStagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCServiceServer).ListStages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCService_ListStages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCServiceServer).ListStages(ctx, req.(*ListStagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CCService_GetStageDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStageDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCServiceServer).GetStageDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCService_GetStageDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCServiceServer).GetStageDetail(ctx, req.(*GetStageDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CCService_ListUnits_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUnitsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCServiceServer).ListUnits(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCService_ListUnits_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCServiceServer).ListUnits(ctx, req.(*ListUnitsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CCService_GetUnitDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUnitDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCServiceServer).GetUnitDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCService_GetUnitDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCServiceServer).GetUnitDetail(ctx, req.(*GetUnitDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CCService_ServiceDesc is the grpc.ServiceDesc for CCService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -385,12 +555,32 @@ var CCService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CCService_GetPipeline_Handler,
 		},
 		{
+			MethodName: "GetPipelineDetail",
+			Handler:    _CCService_GetPipelineDetail_Handler,
+		},
+		{
 			MethodName: "GetPipelineFinalEligibility",
 			Handler:    _CCService_GetPipelineFinalEligibility_Handler,
 		},
 		{
 			MethodName: "ListPipelines",
 			Handler:    _CCService_ListPipelines_Handler,
+		},
+		{
+			MethodName: "ListStages",
+			Handler:    _CCService_ListStages_Handler,
+		},
+		{
+			MethodName: "GetStageDetail",
+			Handler:    _CCService_GetStageDetail_Handler,
+		},
+		{
+			MethodName: "ListUnits",
+			Handler:    _CCService_ListUnits_Handler,
+		},
+		{
+			MethodName: "GetUnitDetail",
+			Handler:    _CCService_GetUnitDetail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

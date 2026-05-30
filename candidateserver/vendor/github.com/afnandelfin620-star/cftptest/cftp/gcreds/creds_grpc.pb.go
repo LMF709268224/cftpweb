@@ -19,31 +19,38 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CredentialService_CreateCredentialDefinition_FullMethodName  = "/gcreds.CredentialService/CreateCredentialDefinition"
-	CredentialService_ListCredentialDefinitions_FullMethodName   = "/gcreds.CredentialService/ListCredentialDefinitions"
-	CredentialService_SubmitApplication_FullMethodName           = "/gcreds.CredentialService/SubmitApplication"
-	CredentialService_UpdateApplication_FullMethodName           = "/gcreds.CredentialService/UpdateApplication"
-	CredentialService_AuditApplication_FullMethodName            = "/gcreds.CredentialService/AuditApplication"
-	CredentialService_ListCandidateApplications_FullMethodName   = "/gcreds.CredentialService/ListCandidateApplications"
-	CredentialService_ListApplications_FullMethodName            = "/gcreds.CredentialService/ListApplications"
-	CredentialService_GrantUploadPermission_FullMethodName       = "/gcreds.CredentialService/GrantUploadPermission"
-	CredentialService_RevokeUploadPermission_FullMethodName      = "/gcreds.CredentialService/RevokeUploadPermission"
-	CredentialService_CheckUploadPermission_FullMethodName       = "/gcreds.CredentialService/CheckUploadPermission"
-	CredentialService_RequestUploadUrl_FullMethodName            = "/gcreds.CredentialService/RequestUploadUrl"
-	CredentialService_GetLatestCredential_FullMethodName         = "/gcreds.CredentialService/GetLatestCredential"
-	CredentialService_CheckCandidateQualification_FullMethodName = "/gcreds.CredentialService/CheckCandidateQualification"
-	CredentialService_GetCredentialVersion_FullMethodName        = "/gcreds.CredentialService/GetCredentialVersion"
-	CredentialService_MarkExpired_FullMethodName                 = "/gcreds.CredentialService/MarkExpired"
-	CredentialService_RevokeCredential_FullMethodName            = "/gcreds.CredentialService/RevokeCredential"
-	CredentialService_CreatePdfTemplate_FullMethodName           = "/gcreds.CredentialService/CreatePdfTemplate"
-	CredentialService_UpdatePdfTemplate_FullMethodName           = "/gcreds.CredentialService/UpdatePdfTemplate"
-	CredentialService_GetPdfTemplate_FullMethodName              = "/gcreds.CredentialService/GetPdfTemplate"
-	CredentialService_ListPdfTemplates_FullMethodName            = "/gcreds.CredentialService/ListPdfTemplates"
-	CredentialService_CreatePdfRequest_FullMethodName            = "/gcreds.CredentialService/CreatePdfRequest"
-	CredentialService_UpdatePdfRequest_FullMethodName            = "/gcreds.CredentialService/UpdatePdfRequest"
-	CredentialService_GetPdfRequest_FullMethodName               = "/gcreds.CredentialService/GetPdfRequest"
-	CredentialService_GetPdfCertificate_FullMethodName           = "/gcreds.CredentialService/GetPdfCertificate"
-	CredentialService_ListPdfRequests_FullMethodName             = "/gcreds.CredentialService/ListPdfRequests"
+	CredentialService_CreateCredentialDefinition_FullMethodName    = "/gcreds.CredentialService/CreateCredentialDefinition"
+	CredentialService_GetCredentialDefinitionDetail_FullMethodName = "/gcreds.CredentialService/GetCredentialDefinitionDetail"
+	CredentialService_ListCredentialDefinitions_FullMethodName     = "/gcreds.CredentialService/ListCredentialDefinitions"
+	CredentialService_SubmitApplication_FullMethodName             = "/gcreds.CredentialService/SubmitApplication"
+	CredentialService_UpdateApplication_FullMethodName             = "/gcreds.CredentialService/UpdateApplication"
+	CredentialService_AuditApplication_FullMethodName              = "/gcreds.CredentialService/AuditApplication"
+	CredentialService_GetApplicationDetail_FullMethodName          = "/gcreds.CredentialService/GetApplicationDetail"
+	CredentialService_ListCandidateApplications_FullMethodName     = "/gcreds.CredentialService/ListCandidateApplications"
+	CredentialService_ListApplications_FullMethodName              = "/gcreds.CredentialService/ListApplications"
+	CredentialService_GrantUploadPermission_FullMethodName         = "/gcreds.CredentialService/GrantUploadPermission"
+	CredentialService_RevokeUploadPermission_FullMethodName        = "/gcreds.CredentialService/RevokeUploadPermission"
+	CredentialService_CheckUploadPermission_FullMethodName         = "/gcreds.CredentialService/CheckUploadPermission"
+	CredentialService_RequestUploadUrl_FullMethodName              = "/gcreds.CredentialService/RequestUploadUrl"
+	CredentialService_ListCredentials_FullMethodName               = "/gcreds.CredentialService/ListCredentials"
+	CredentialService_GetCredentialDetail_FullMethodName           = "/gcreds.CredentialService/GetCredentialDetail"
+	CredentialService_GetLatestCredential_FullMethodName           = "/gcreds.CredentialService/GetLatestCredential"
+	CredentialService_CheckCandidateQualification_FullMethodName   = "/gcreds.CredentialService/CheckCandidateQualification"
+	CredentialService_GetCredentialVersion_FullMethodName          = "/gcreds.CredentialService/GetCredentialVersion"
+	CredentialService_MarkExpired_FullMethodName                   = "/gcreds.CredentialService/MarkExpired"
+	CredentialService_RevokeCredential_FullMethodName              = "/gcreds.CredentialService/RevokeCredential"
+	CredentialService_CreatePdfTemplate_FullMethodName             = "/gcreds.CredentialService/CreatePdfTemplate"
+	CredentialService_UpdatePdfTemplate_FullMethodName             = "/gcreds.CredentialService/UpdatePdfTemplate"
+	CredentialService_GetPdfTemplate_FullMethodName                = "/gcreds.CredentialService/GetPdfTemplate"
+	CredentialService_GetPdfTemplateDetail_FullMethodName          = "/gcreds.CredentialService/GetPdfTemplateDetail"
+	CredentialService_ListPdfTemplates_FullMethodName              = "/gcreds.CredentialService/ListPdfTemplates"
+	CredentialService_CreatePdfRequest_FullMethodName              = "/gcreds.CredentialService/CreatePdfRequest"
+	CredentialService_UpdatePdfRequest_FullMethodName              = "/gcreds.CredentialService/UpdatePdfRequest"
+	CredentialService_GetPdfRequest_FullMethodName                 = "/gcreds.CredentialService/GetPdfRequest"
+	CredentialService_GetPdfRequestDetail_FullMethodName           = "/gcreds.CredentialService/GetPdfRequestDetail"
+	CredentialService_GetPdfCertificate_FullMethodName             = "/gcreds.CredentialService/GetPdfCertificate"
+	CredentialService_ListPdfRequests_FullMethodName               = "/gcreds.CredentialService/ListPdfRequests"
+	CredentialService_CheckResourcesExist_FullMethodName           = "/gcreds.CredentialService/CheckResourcesExist"
 )
 
 // CredentialServiceClient is the client API for CredentialService service.
@@ -53,15 +60,18 @@ const (
 // 资格资料管理服务
 type CredentialServiceClient interface {
 	// --- 资格定义 (CredentialDefinition) ---
-	CreateCredentialDefinition(ctx context.Context, in *CreateCredentialDefinitionRequest, opts ...grpc.CallOption) (*CredentialDefinition, error)
+	CreateCredentialDefinition(ctx context.Context, in *CreateCredentialDefinitionRequest, opts ...grpc.CallOption) (*CredentialDefinitionSummary, error)
+	GetCredentialDefinitionDetail(ctx context.Context, in *GetCredentialDefinitionDetailRequest, opts ...grpc.CallOption) (*CredentialDefinition, error)
 	ListCredentialDefinitions(ctx context.Context, in *ListCredentialDefinitionsRequest, opts ...grpc.CallOption) (*ListCredentialDefinitionsResponse, error)
 	// --- 申请流程 (Application) ---
 	// 考生提交资料申请
-	SubmitApplication(ctx context.Context, in *SubmitApplicationRequest, opts ...grpc.CallOption) (*Application, error)
+	SubmitApplication(ctx context.Context, in *SubmitApplicationRequest, opts ...grpc.CallOption) (*ApplicationSummary, error)
 	// 考生更新资料申请 (只更新部分文件并重新进入待审核状态)
-	UpdateApplication(ctx context.Context, in *UpdateApplicationRequest, opts ...grpc.CallOption) (*Application, error)
+	UpdateApplication(ctx context.Context, in *UpdateApplicationRequest, opts ...grpc.CallOption) (*ApplicationSummary, error)
 	// 管理员审核申请 (审核通过会生成新的 Credential 版本)
-	AuditApplication(ctx context.Context, in *AuditApplicationRequest, opts ...grpc.CallOption) (*Application, error)
+	AuditApplication(ctx context.Context, in *AuditApplicationRequest, opts ...grpc.CallOption) (*ApplicationSummary, error)
+	// 获取单笔申请单的详细信息
+	GetApplicationDetail(ctx context.Context, in *GetApplicationDetailRequest, opts ...grpc.CallOption) (*Application, error)
 	// 考生列举自己的申请结果
 	ListCandidateApplications(ctx context.Context, in *ListApplicationsRequest, opts ...grpc.CallOption) (*ListApplicationsResponse, error)
 	// 分页及条件列出申请记录 (管理员用)
@@ -75,28 +85,36 @@ type CredentialServiceClient interface {
 	// 考生请求上传资料的 presigned URL
 	RequestUploadUrl(ctx context.Context, in *RequestUploadUrlRequest, opts ...grpc.CallOption) (*RequestUploadUrlResponse, error)
 	// --- 档案管理 (Credential) ---
+	// 分页及条件列出资格档案 (管理员/开发用)
+	ListCredentials(ctx context.Context, in *ListCredentialsRequest, opts ...grpc.CallOption) (*ListCredentialsResponse, error)
+	// 获取资格的特定版本详情 (根据 cred_id 直接获取)
+	GetCredentialDetail(ctx context.Context, in *GetCredentialDetailRequest, opts ...grpc.CallOption) (*Credential, error)
 	// 获取考生当前的最新资格状态
-	GetLatestCredential(ctx context.Context, in *GetLatestCredentialRequest, opts ...grpc.CallOption) (*Credential, error)
+	GetLatestCredential(ctx context.Context, in *GetLatestCredentialRequest, opts ...grpc.CallOption) (*CredentialSummary, error)
 	// 快速检查考生是否持有某项有效资格
 	CheckCandidateQualification(ctx context.Context, in *CheckCandidateQualificationRequest, opts ...grpc.CallOption) (*CheckCandidateQualificationResponse, error)
 	// 获取资格的特定版本快照
-	GetCredentialVersion(ctx context.Context, in *GetCredentialVersionRequest, opts ...grpc.CallOption) (*Credential, error)
+	GetCredentialVersion(ctx context.Context, in *GetCredentialVersionRequest, opts ...grpc.CallOption) (*CredentialSummary, error)
 	// --- 运维与干预 ---
 	// 管理员手动标记资格过期 (生成新的 Expired 版本)
-	MarkExpired(ctx context.Context, in *MarkExpiredRequest, opts ...grpc.CallOption) (*Credential, error)
+	MarkExpired(ctx context.Context, in *MarkExpiredRequest, opts ...grpc.CallOption) (*CredentialSummary, error)
 	// 管理员撤销资格 (生成新的 Revoked 版本)
-	RevokeCredential(ctx context.Context, in *RevokeCredentialRequest, opts ...grpc.CallOption) (*Credential, error)
+	RevokeCredential(ctx context.Context, in *RevokeCredentialRequest, opts ...grpc.CallOption) (*CredentialSummary, error)
 	// --- PDF 证书模板管理 (PdfTemplate) ---
-	CreatePdfTemplate(ctx context.Context, in *CreatePdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplate, error)
-	UpdatePdfTemplate(ctx context.Context, in *UpdatePdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplate, error)
-	GetPdfTemplate(ctx context.Context, in *GetPdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplate, error)
+	CreatePdfTemplate(ctx context.Context, in *CreatePdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplateSummary, error)
+	UpdatePdfTemplate(ctx context.Context, in *UpdatePdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplateSummary, error)
+	GetPdfTemplate(ctx context.Context, in *GetPdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplateSummary, error)
+	GetPdfTemplateDetail(ctx context.Context, in *GetPdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplateDetail, error)
 	ListPdfTemplates(ctx context.Context, in *ListPdfTemplatesRequest, opts ...grpc.CallOption) (*ListPdfTemplatesResponse, error)
 	// --- PDF 证书生成请求 (PdfRequest) ---
-	CreatePdfRequest(ctx context.Context, in *CreatePdfRequestRequest, opts ...grpc.CallOption) (*PdfRequest, error)
-	UpdatePdfRequest(ctx context.Context, in *UpdatePdfRequestRequest, opts ...grpc.CallOption) (*PdfRequest, error)
-	GetPdfRequest(ctx context.Context, in *GetPdfRequestRequest, opts ...grpc.CallOption) (*PdfRequest, error)
+	CreatePdfRequest(ctx context.Context, in *CreatePdfRequestRequest, opts ...grpc.CallOption) (*PdfRequestSummary, error)
+	UpdatePdfRequest(ctx context.Context, in *UpdatePdfRequestRequest, opts ...grpc.CallOption) (*PdfRequestSummary, error)
+	GetPdfRequest(ctx context.Context, in *GetPdfRequestRequest, opts ...grpc.CallOption) (*PdfRequestSummary, error)
+	GetPdfRequestDetail(ctx context.Context, in *GetPdfRequestRequest, opts ...grpc.CallOption) (*PdfRequest, error)
 	GetPdfCertificate(ctx context.Context, in *GetPdfCertificateRequest, opts ...grpc.CallOption) (*GetPdfCertificateResponse, error)
 	ListPdfRequests(ctx context.Context, in *ListPdfRequestsRequest, opts ...grpc.CallOption) (*ListPdfRequestsResponse, error)
+	// --- 资源存在性批量校验 (CheckResourcesExist) ---
+	CheckResourcesExist(ctx context.Context, in *CheckResourcesExistRequest, opts ...grpc.CallOption) (*CheckResourcesExistResponse, error)
 }
 
 type credentialServiceClient struct {
@@ -107,10 +125,20 @@ func NewCredentialServiceClient(cc grpc.ClientConnInterface) CredentialServiceCl
 	return &credentialServiceClient{cc}
 }
 
-func (c *credentialServiceClient) CreateCredentialDefinition(ctx context.Context, in *CreateCredentialDefinitionRequest, opts ...grpc.CallOption) (*CredentialDefinition, error) {
+func (c *credentialServiceClient) CreateCredentialDefinition(ctx context.Context, in *CreateCredentialDefinitionRequest, opts ...grpc.CallOption) (*CredentialDefinitionSummary, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CredentialDefinitionSummary)
+	err := c.cc.Invoke(ctx, CredentialService_CreateCredentialDefinition_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) GetCredentialDefinitionDetail(ctx context.Context, in *GetCredentialDefinitionDetailRequest, opts ...grpc.CallOption) (*CredentialDefinition, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CredentialDefinition)
-	err := c.cc.Invoke(ctx, CredentialService_CreateCredentialDefinition_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CredentialService_GetCredentialDefinitionDetail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -127,9 +155,9 @@ func (c *credentialServiceClient) ListCredentialDefinitions(ctx context.Context,
 	return out, nil
 }
 
-func (c *credentialServiceClient) SubmitApplication(ctx context.Context, in *SubmitApplicationRequest, opts ...grpc.CallOption) (*Application, error) {
+func (c *credentialServiceClient) SubmitApplication(ctx context.Context, in *SubmitApplicationRequest, opts ...grpc.CallOption) (*ApplicationSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Application)
+	out := new(ApplicationSummary)
 	err := c.cc.Invoke(ctx, CredentialService_SubmitApplication_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -137,9 +165,9 @@ func (c *credentialServiceClient) SubmitApplication(ctx context.Context, in *Sub
 	return out, nil
 }
 
-func (c *credentialServiceClient) UpdateApplication(ctx context.Context, in *UpdateApplicationRequest, opts ...grpc.CallOption) (*Application, error) {
+func (c *credentialServiceClient) UpdateApplication(ctx context.Context, in *UpdateApplicationRequest, opts ...grpc.CallOption) (*ApplicationSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Application)
+	out := new(ApplicationSummary)
 	err := c.cc.Invoke(ctx, CredentialService_UpdateApplication_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -147,10 +175,20 @@ func (c *credentialServiceClient) UpdateApplication(ctx context.Context, in *Upd
 	return out, nil
 }
 
-func (c *credentialServiceClient) AuditApplication(ctx context.Context, in *AuditApplicationRequest, opts ...grpc.CallOption) (*Application, error) {
+func (c *credentialServiceClient) AuditApplication(ctx context.Context, in *AuditApplicationRequest, opts ...grpc.CallOption) (*ApplicationSummary, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ApplicationSummary)
+	err := c.cc.Invoke(ctx, CredentialService_AuditApplication_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) GetApplicationDetail(ctx context.Context, in *GetApplicationDetailRequest, opts ...grpc.CallOption) (*Application, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Application)
-	err := c.cc.Invoke(ctx, CredentialService_AuditApplication_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CredentialService_GetApplicationDetail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -217,9 +255,29 @@ func (c *credentialServiceClient) RequestUploadUrl(ctx context.Context, in *Requ
 	return out, nil
 }
 
-func (c *credentialServiceClient) GetLatestCredential(ctx context.Context, in *GetLatestCredentialRequest, opts ...grpc.CallOption) (*Credential, error) {
+func (c *credentialServiceClient) ListCredentials(ctx context.Context, in *ListCredentialsRequest, opts ...grpc.CallOption) (*ListCredentialsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCredentialsResponse)
+	err := c.cc.Invoke(ctx, CredentialService_ListCredentials_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) GetCredentialDetail(ctx context.Context, in *GetCredentialDetailRequest, opts ...grpc.CallOption) (*Credential, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Credential)
+	err := c.cc.Invoke(ctx, CredentialService_GetCredentialDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) GetLatestCredential(ctx context.Context, in *GetLatestCredentialRequest, opts ...grpc.CallOption) (*CredentialSummary, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CredentialSummary)
 	err := c.cc.Invoke(ctx, CredentialService_GetLatestCredential_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -237,9 +295,9 @@ func (c *credentialServiceClient) CheckCandidateQualification(ctx context.Contex
 	return out, nil
 }
 
-func (c *credentialServiceClient) GetCredentialVersion(ctx context.Context, in *GetCredentialVersionRequest, opts ...grpc.CallOption) (*Credential, error) {
+func (c *credentialServiceClient) GetCredentialVersion(ctx context.Context, in *GetCredentialVersionRequest, opts ...grpc.CallOption) (*CredentialSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Credential)
+	out := new(CredentialSummary)
 	err := c.cc.Invoke(ctx, CredentialService_GetCredentialVersion_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -247,9 +305,9 @@ func (c *credentialServiceClient) GetCredentialVersion(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *credentialServiceClient) MarkExpired(ctx context.Context, in *MarkExpiredRequest, opts ...grpc.CallOption) (*Credential, error) {
+func (c *credentialServiceClient) MarkExpired(ctx context.Context, in *MarkExpiredRequest, opts ...grpc.CallOption) (*CredentialSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Credential)
+	out := new(CredentialSummary)
 	err := c.cc.Invoke(ctx, CredentialService_MarkExpired_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -257,9 +315,9 @@ func (c *credentialServiceClient) MarkExpired(ctx context.Context, in *MarkExpir
 	return out, nil
 }
 
-func (c *credentialServiceClient) RevokeCredential(ctx context.Context, in *RevokeCredentialRequest, opts ...grpc.CallOption) (*Credential, error) {
+func (c *credentialServiceClient) RevokeCredential(ctx context.Context, in *RevokeCredentialRequest, opts ...grpc.CallOption) (*CredentialSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Credential)
+	out := new(CredentialSummary)
 	err := c.cc.Invoke(ctx, CredentialService_RevokeCredential_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -267,9 +325,9 @@ func (c *credentialServiceClient) RevokeCredential(ctx context.Context, in *Revo
 	return out, nil
 }
 
-func (c *credentialServiceClient) CreatePdfTemplate(ctx context.Context, in *CreatePdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplate, error) {
+func (c *credentialServiceClient) CreatePdfTemplate(ctx context.Context, in *CreatePdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplateSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PdfTemplate)
+	out := new(PdfTemplateSummary)
 	err := c.cc.Invoke(ctx, CredentialService_CreatePdfTemplate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -277,9 +335,9 @@ func (c *credentialServiceClient) CreatePdfTemplate(ctx context.Context, in *Cre
 	return out, nil
 }
 
-func (c *credentialServiceClient) UpdatePdfTemplate(ctx context.Context, in *UpdatePdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplate, error) {
+func (c *credentialServiceClient) UpdatePdfTemplate(ctx context.Context, in *UpdatePdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplateSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PdfTemplate)
+	out := new(PdfTemplateSummary)
 	err := c.cc.Invoke(ctx, CredentialService_UpdatePdfTemplate_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -287,10 +345,20 @@ func (c *credentialServiceClient) UpdatePdfTemplate(ctx context.Context, in *Upd
 	return out, nil
 }
 
-func (c *credentialServiceClient) GetPdfTemplate(ctx context.Context, in *GetPdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplate, error) {
+func (c *credentialServiceClient) GetPdfTemplate(ctx context.Context, in *GetPdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplateSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PdfTemplate)
+	out := new(PdfTemplateSummary)
 	err := c.cc.Invoke(ctx, CredentialService_GetPdfTemplate_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) GetPdfTemplateDetail(ctx context.Context, in *GetPdfTemplateRequest, opts ...grpc.CallOption) (*PdfTemplateDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PdfTemplateDetail)
+	err := c.cc.Invoke(ctx, CredentialService_GetPdfTemplateDetail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -307,9 +375,9 @@ func (c *credentialServiceClient) ListPdfTemplates(ctx context.Context, in *List
 	return out, nil
 }
 
-func (c *credentialServiceClient) CreatePdfRequest(ctx context.Context, in *CreatePdfRequestRequest, opts ...grpc.CallOption) (*PdfRequest, error) {
+func (c *credentialServiceClient) CreatePdfRequest(ctx context.Context, in *CreatePdfRequestRequest, opts ...grpc.CallOption) (*PdfRequestSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PdfRequest)
+	out := new(PdfRequestSummary)
 	err := c.cc.Invoke(ctx, CredentialService_CreatePdfRequest_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -317,9 +385,9 @@ func (c *credentialServiceClient) CreatePdfRequest(ctx context.Context, in *Crea
 	return out, nil
 }
 
-func (c *credentialServiceClient) UpdatePdfRequest(ctx context.Context, in *UpdatePdfRequestRequest, opts ...grpc.CallOption) (*PdfRequest, error) {
+func (c *credentialServiceClient) UpdatePdfRequest(ctx context.Context, in *UpdatePdfRequestRequest, opts ...grpc.CallOption) (*PdfRequestSummary, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PdfRequest)
+	out := new(PdfRequestSummary)
 	err := c.cc.Invoke(ctx, CredentialService_UpdatePdfRequest_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -327,10 +395,20 @@ func (c *credentialServiceClient) UpdatePdfRequest(ctx context.Context, in *Upda
 	return out, nil
 }
 
-func (c *credentialServiceClient) GetPdfRequest(ctx context.Context, in *GetPdfRequestRequest, opts ...grpc.CallOption) (*PdfRequest, error) {
+func (c *credentialServiceClient) GetPdfRequest(ctx context.Context, in *GetPdfRequestRequest, opts ...grpc.CallOption) (*PdfRequestSummary, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PdfRequestSummary)
+	err := c.cc.Invoke(ctx, CredentialService_GetPdfRequest_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) GetPdfRequestDetail(ctx context.Context, in *GetPdfRequestRequest, opts ...grpc.CallOption) (*PdfRequest, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PdfRequest)
-	err := c.cc.Invoke(ctx, CredentialService_GetPdfRequest_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, CredentialService_GetPdfRequestDetail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -357,6 +435,16 @@ func (c *credentialServiceClient) ListPdfRequests(ctx context.Context, in *ListP
 	return out, nil
 }
 
+func (c *credentialServiceClient) CheckResourcesExist(ctx context.Context, in *CheckResourcesExistRequest, opts ...grpc.CallOption) (*CheckResourcesExistResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckResourcesExistResponse)
+	err := c.cc.Invoke(ctx, CredentialService_CheckResourcesExist_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CredentialServiceServer is the server API for CredentialService service.
 // All implementations must embed UnimplementedCredentialServiceServer
 // for forward compatibility.
@@ -364,15 +452,18 @@ func (c *credentialServiceClient) ListPdfRequests(ctx context.Context, in *ListP
 // 资格资料管理服务
 type CredentialServiceServer interface {
 	// --- 资格定义 (CredentialDefinition) ---
-	CreateCredentialDefinition(context.Context, *CreateCredentialDefinitionRequest) (*CredentialDefinition, error)
+	CreateCredentialDefinition(context.Context, *CreateCredentialDefinitionRequest) (*CredentialDefinitionSummary, error)
+	GetCredentialDefinitionDetail(context.Context, *GetCredentialDefinitionDetailRequest) (*CredentialDefinition, error)
 	ListCredentialDefinitions(context.Context, *ListCredentialDefinitionsRequest) (*ListCredentialDefinitionsResponse, error)
 	// --- 申请流程 (Application) ---
 	// 考生提交资料申请
-	SubmitApplication(context.Context, *SubmitApplicationRequest) (*Application, error)
+	SubmitApplication(context.Context, *SubmitApplicationRequest) (*ApplicationSummary, error)
 	// 考生更新资料申请 (只更新部分文件并重新进入待审核状态)
-	UpdateApplication(context.Context, *UpdateApplicationRequest) (*Application, error)
+	UpdateApplication(context.Context, *UpdateApplicationRequest) (*ApplicationSummary, error)
 	// 管理员审核申请 (审核通过会生成新的 Credential 版本)
-	AuditApplication(context.Context, *AuditApplicationRequest) (*Application, error)
+	AuditApplication(context.Context, *AuditApplicationRequest) (*ApplicationSummary, error)
+	// 获取单笔申请单的详细信息
+	GetApplicationDetail(context.Context, *GetApplicationDetailRequest) (*Application, error)
 	// 考生列举自己的申请结果
 	ListCandidateApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error)
 	// 分页及条件列出申请记录 (管理员用)
@@ -386,28 +477,36 @@ type CredentialServiceServer interface {
 	// 考生请求上传资料的 presigned URL
 	RequestUploadUrl(context.Context, *RequestUploadUrlRequest) (*RequestUploadUrlResponse, error)
 	// --- 档案管理 (Credential) ---
+	// 分页及条件列出资格档案 (管理员/开发用)
+	ListCredentials(context.Context, *ListCredentialsRequest) (*ListCredentialsResponse, error)
+	// 获取资格的特定版本详情 (根据 cred_id 直接获取)
+	GetCredentialDetail(context.Context, *GetCredentialDetailRequest) (*Credential, error)
 	// 获取考生当前的最新资格状态
-	GetLatestCredential(context.Context, *GetLatestCredentialRequest) (*Credential, error)
+	GetLatestCredential(context.Context, *GetLatestCredentialRequest) (*CredentialSummary, error)
 	// 快速检查考生是否持有某项有效资格
 	CheckCandidateQualification(context.Context, *CheckCandidateQualificationRequest) (*CheckCandidateQualificationResponse, error)
 	// 获取资格的特定版本快照
-	GetCredentialVersion(context.Context, *GetCredentialVersionRequest) (*Credential, error)
+	GetCredentialVersion(context.Context, *GetCredentialVersionRequest) (*CredentialSummary, error)
 	// --- 运维与干预 ---
 	// 管理员手动标记资格过期 (生成新的 Expired 版本)
-	MarkExpired(context.Context, *MarkExpiredRequest) (*Credential, error)
+	MarkExpired(context.Context, *MarkExpiredRequest) (*CredentialSummary, error)
 	// 管理员撤销资格 (生成新的 Revoked 版本)
-	RevokeCredential(context.Context, *RevokeCredentialRequest) (*Credential, error)
+	RevokeCredential(context.Context, *RevokeCredentialRequest) (*CredentialSummary, error)
 	// --- PDF 证书模板管理 (PdfTemplate) ---
-	CreatePdfTemplate(context.Context, *CreatePdfTemplateRequest) (*PdfTemplate, error)
-	UpdatePdfTemplate(context.Context, *UpdatePdfTemplateRequest) (*PdfTemplate, error)
-	GetPdfTemplate(context.Context, *GetPdfTemplateRequest) (*PdfTemplate, error)
+	CreatePdfTemplate(context.Context, *CreatePdfTemplateRequest) (*PdfTemplateSummary, error)
+	UpdatePdfTemplate(context.Context, *UpdatePdfTemplateRequest) (*PdfTemplateSummary, error)
+	GetPdfTemplate(context.Context, *GetPdfTemplateRequest) (*PdfTemplateSummary, error)
+	GetPdfTemplateDetail(context.Context, *GetPdfTemplateRequest) (*PdfTemplateDetail, error)
 	ListPdfTemplates(context.Context, *ListPdfTemplatesRequest) (*ListPdfTemplatesResponse, error)
 	// --- PDF 证书生成请求 (PdfRequest) ---
-	CreatePdfRequest(context.Context, *CreatePdfRequestRequest) (*PdfRequest, error)
-	UpdatePdfRequest(context.Context, *UpdatePdfRequestRequest) (*PdfRequest, error)
-	GetPdfRequest(context.Context, *GetPdfRequestRequest) (*PdfRequest, error)
+	CreatePdfRequest(context.Context, *CreatePdfRequestRequest) (*PdfRequestSummary, error)
+	UpdatePdfRequest(context.Context, *UpdatePdfRequestRequest) (*PdfRequestSummary, error)
+	GetPdfRequest(context.Context, *GetPdfRequestRequest) (*PdfRequestSummary, error)
+	GetPdfRequestDetail(context.Context, *GetPdfRequestRequest) (*PdfRequest, error)
 	GetPdfCertificate(context.Context, *GetPdfCertificateRequest) (*GetPdfCertificateResponse, error)
 	ListPdfRequests(context.Context, *ListPdfRequestsRequest) (*ListPdfRequestsResponse, error)
+	// --- 资源存在性批量校验 (CheckResourcesExist) ---
+	CheckResourcesExist(context.Context, *CheckResourcesExistRequest) (*CheckResourcesExistResponse, error)
 	mustEmbedUnimplementedCredentialServiceServer()
 }
 
@@ -418,20 +517,26 @@ type CredentialServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedCredentialServiceServer struct{}
 
-func (UnimplementedCredentialServiceServer) CreateCredentialDefinition(context.Context, *CreateCredentialDefinitionRequest) (*CredentialDefinition, error) {
+func (UnimplementedCredentialServiceServer) CreateCredentialDefinition(context.Context, *CreateCredentialDefinitionRequest) (*CredentialDefinitionSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateCredentialDefinition not implemented")
+}
+func (UnimplementedCredentialServiceServer) GetCredentialDefinitionDetail(context.Context, *GetCredentialDefinitionDetailRequest) (*CredentialDefinition, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCredentialDefinitionDetail not implemented")
 }
 func (UnimplementedCredentialServiceServer) ListCredentialDefinitions(context.Context, *ListCredentialDefinitionsRequest) (*ListCredentialDefinitionsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCredentialDefinitions not implemented")
 }
-func (UnimplementedCredentialServiceServer) SubmitApplication(context.Context, *SubmitApplicationRequest) (*Application, error) {
+func (UnimplementedCredentialServiceServer) SubmitApplication(context.Context, *SubmitApplicationRequest) (*ApplicationSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method SubmitApplication not implemented")
 }
-func (UnimplementedCredentialServiceServer) UpdateApplication(context.Context, *UpdateApplicationRequest) (*Application, error) {
+func (UnimplementedCredentialServiceServer) UpdateApplication(context.Context, *UpdateApplicationRequest) (*ApplicationSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateApplication not implemented")
 }
-func (UnimplementedCredentialServiceServer) AuditApplication(context.Context, *AuditApplicationRequest) (*Application, error) {
+func (UnimplementedCredentialServiceServer) AuditApplication(context.Context, *AuditApplicationRequest) (*ApplicationSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method AuditApplication not implemented")
+}
+func (UnimplementedCredentialServiceServer) GetApplicationDetail(context.Context, *GetApplicationDetailRequest) (*Application, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetApplicationDetail not implemented")
 }
 func (UnimplementedCredentialServiceServer) ListCandidateApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCandidateApplications not implemented")
@@ -451,47 +556,62 @@ func (UnimplementedCredentialServiceServer) CheckUploadPermission(context.Contex
 func (UnimplementedCredentialServiceServer) RequestUploadUrl(context.Context, *RequestUploadUrlRequest) (*RequestUploadUrlResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RequestUploadUrl not implemented")
 }
-func (UnimplementedCredentialServiceServer) GetLatestCredential(context.Context, *GetLatestCredentialRequest) (*Credential, error) {
+func (UnimplementedCredentialServiceServer) ListCredentials(context.Context, *ListCredentialsRequest) (*ListCredentialsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCredentials not implemented")
+}
+func (UnimplementedCredentialServiceServer) GetCredentialDetail(context.Context, *GetCredentialDetailRequest) (*Credential, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetCredentialDetail not implemented")
+}
+func (UnimplementedCredentialServiceServer) GetLatestCredential(context.Context, *GetLatestCredentialRequest) (*CredentialSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLatestCredential not implemented")
 }
 func (UnimplementedCredentialServiceServer) CheckCandidateQualification(context.Context, *CheckCandidateQualificationRequest) (*CheckCandidateQualificationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CheckCandidateQualification not implemented")
 }
-func (UnimplementedCredentialServiceServer) GetCredentialVersion(context.Context, *GetCredentialVersionRequest) (*Credential, error) {
+func (UnimplementedCredentialServiceServer) GetCredentialVersion(context.Context, *GetCredentialVersionRequest) (*CredentialSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCredentialVersion not implemented")
 }
-func (UnimplementedCredentialServiceServer) MarkExpired(context.Context, *MarkExpiredRequest) (*Credential, error) {
+func (UnimplementedCredentialServiceServer) MarkExpired(context.Context, *MarkExpiredRequest) (*CredentialSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method MarkExpired not implemented")
 }
-func (UnimplementedCredentialServiceServer) RevokeCredential(context.Context, *RevokeCredentialRequest) (*Credential, error) {
+func (UnimplementedCredentialServiceServer) RevokeCredential(context.Context, *RevokeCredentialRequest) (*CredentialSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeCredential not implemented")
 }
-func (UnimplementedCredentialServiceServer) CreatePdfTemplate(context.Context, *CreatePdfTemplateRequest) (*PdfTemplate, error) {
+func (UnimplementedCredentialServiceServer) CreatePdfTemplate(context.Context, *CreatePdfTemplateRequest) (*PdfTemplateSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreatePdfTemplate not implemented")
 }
-func (UnimplementedCredentialServiceServer) UpdatePdfTemplate(context.Context, *UpdatePdfTemplateRequest) (*PdfTemplate, error) {
+func (UnimplementedCredentialServiceServer) UpdatePdfTemplate(context.Context, *UpdatePdfTemplateRequest) (*PdfTemplateSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdatePdfTemplate not implemented")
 }
-func (UnimplementedCredentialServiceServer) GetPdfTemplate(context.Context, *GetPdfTemplateRequest) (*PdfTemplate, error) {
+func (UnimplementedCredentialServiceServer) GetPdfTemplate(context.Context, *GetPdfTemplateRequest) (*PdfTemplateSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPdfTemplate not implemented")
+}
+func (UnimplementedCredentialServiceServer) GetPdfTemplateDetail(context.Context, *GetPdfTemplateRequest) (*PdfTemplateDetail, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPdfTemplateDetail not implemented")
 }
 func (UnimplementedCredentialServiceServer) ListPdfTemplates(context.Context, *ListPdfTemplatesRequest) (*ListPdfTemplatesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPdfTemplates not implemented")
 }
-func (UnimplementedCredentialServiceServer) CreatePdfRequest(context.Context, *CreatePdfRequestRequest) (*PdfRequest, error) {
+func (UnimplementedCredentialServiceServer) CreatePdfRequest(context.Context, *CreatePdfRequestRequest) (*PdfRequestSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreatePdfRequest not implemented")
 }
-func (UnimplementedCredentialServiceServer) UpdatePdfRequest(context.Context, *UpdatePdfRequestRequest) (*PdfRequest, error) {
+func (UnimplementedCredentialServiceServer) UpdatePdfRequest(context.Context, *UpdatePdfRequestRequest) (*PdfRequestSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdatePdfRequest not implemented")
 }
-func (UnimplementedCredentialServiceServer) GetPdfRequest(context.Context, *GetPdfRequestRequest) (*PdfRequest, error) {
+func (UnimplementedCredentialServiceServer) GetPdfRequest(context.Context, *GetPdfRequestRequest) (*PdfRequestSummary, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPdfRequest not implemented")
+}
+func (UnimplementedCredentialServiceServer) GetPdfRequestDetail(context.Context, *GetPdfRequestRequest) (*PdfRequest, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPdfRequestDetail not implemented")
 }
 func (UnimplementedCredentialServiceServer) GetPdfCertificate(context.Context, *GetPdfCertificateRequest) (*GetPdfCertificateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPdfCertificate not implemented")
 }
 func (UnimplementedCredentialServiceServer) ListPdfRequests(context.Context, *ListPdfRequestsRequest) (*ListPdfRequestsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPdfRequests not implemented")
+}
+func (UnimplementedCredentialServiceServer) CheckResourcesExist(context.Context, *CheckResourcesExistRequest) (*CheckResourcesExistResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckResourcesExist not implemented")
 }
 func (UnimplementedCredentialServiceServer) mustEmbedUnimplementedCredentialServiceServer() {}
 func (UnimplementedCredentialServiceServer) testEmbeddedByValue()                           {}
@@ -528,6 +648,24 @@ func _CredentialService_CreateCredentialDefinition_Handler(srv interface{}, ctx 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CredentialServiceServer).CreateCredentialDefinition(ctx, req.(*CreateCredentialDefinitionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CredentialService_GetCredentialDefinitionDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCredentialDefinitionDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).GetCredentialDefinitionDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_GetCredentialDefinitionDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).GetCredentialDefinitionDetail(ctx, req.(*GetCredentialDefinitionDetailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -600,6 +738,24 @@ func _CredentialService_AuditApplication_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CredentialServiceServer).AuditApplication(ctx, req.(*AuditApplicationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CredentialService_GetApplicationDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetApplicationDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).GetApplicationDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_GetApplicationDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).GetApplicationDetail(ctx, req.(*GetApplicationDetailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -708,6 +864,42 @@ func _CredentialService_RequestUploadUrl_Handler(srv interface{}, ctx context.Co
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CredentialServiceServer).RequestUploadUrl(ctx, req.(*RequestUploadUrlRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CredentialService_ListCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCredentialsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).ListCredentials(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_ListCredentials_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).ListCredentials(ctx, req.(*ListCredentialsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CredentialService_GetCredentialDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCredentialDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).GetCredentialDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_GetCredentialDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).GetCredentialDetail(ctx, req.(*GetCredentialDetailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -856,6 +1048,24 @@ func _CredentialService_GetPdfTemplate_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CredentialService_GetPdfTemplateDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPdfTemplateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).GetPdfTemplateDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_GetPdfTemplateDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).GetPdfTemplateDetail(ctx, req.(*GetPdfTemplateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CredentialService_ListPdfTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListPdfTemplatesRequest)
 	if err := dec(in); err != nil {
@@ -928,6 +1138,24 @@ func _CredentialService_GetPdfRequest_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CredentialService_GetPdfRequestDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPdfRequestRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).GetPdfRequestDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_GetPdfRequestDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).GetPdfRequestDetail(ctx, req.(*GetPdfRequestRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _CredentialService_GetPdfCertificate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetPdfCertificateRequest)
 	if err := dec(in); err != nil {
@@ -964,6 +1192,24 @@ func _CredentialService_ListPdfRequests_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CredentialService_CheckResourcesExist_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckResourcesExistRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).CheckResourcesExist(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_CheckResourcesExist_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).CheckResourcesExist(ctx, req.(*CheckResourcesExistRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CredentialService_ServiceDesc is the grpc.ServiceDesc for CredentialService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -974,6 +1220,10 @@ var CredentialService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateCredentialDefinition",
 			Handler:    _CredentialService_CreateCredentialDefinition_Handler,
+		},
+		{
+			MethodName: "GetCredentialDefinitionDetail",
+			Handler:    _CredentialService_GetCredentialDefinitionDetail_Handler,
 		},
 		{
 			MethodName: "ListCredentialDefinitions",
@@ -990,6 +1240,10 @@ var CredentialService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AuditApplication",
 			Handler:    _CredentialService_AuditApplication_Handler,
+		},
+		{
+			MethodName: "GetApplicationDetail",
+			Handler:    _CredentialService_GetApplicationDetail_Handler,
 		},
 		{
 			MethodName: "ListCandidateApplications",
@@ -1014,6 +1268,14 @@ var CredentialService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestUploadUrl",
 			Handler:    _CredentialService_RequestUploadUrl_Handler,
+		},
+		{
+			MethodName: "ListCredentials",
+			Handler:    _CredentialService_ListCredentials_Handler,
+		},
+		{
+			MethodName: "GetCredentialDetail",
+			Handler:    _CredentialService_GetCredentialDetail_Handler,
 		},
 		{
 			MethodName: "GetLatestCredential",
@@ -1048,6 +1310,10 @@ var CredentialService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CredentialService_GetPdfTemplate_Handler,
 		},
 		{
+			MethodName: "GetPdfTemplateDetail",
+			Handler:    _CredentialService_GetPdfTemplateDetail_Handler,
+		},
+		{
 			MethodName: "ListPdfTemplates",
 			Handler:    _CredentialService_ListPdfTemplates_Handler,
 		},
@@ -1064,12 +1330,20 @@ var CredentialService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CredentialService_GetPdfRequest_Handler,
 		},
 		{
+			MethodName: "GetPdfRequestDetail",
+			Handler:    _CredentialService_GetPdfRequestDetail_Handler,
+		},
+		{
 			MethodName: "GetPdfCertificate",
 			Handler:    _CredentialService_GetPdfCertificate_Handler,
 		},
 		{
 			MethodName: "ListPdfRequests",
 			Handler:    _CredentialService_ListPdfRequests_Handler,
+		},
+		{
+			MethodName: "CheckResourcesExist",
+			Handler:    _CredentialService_CheckResourcesExist_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

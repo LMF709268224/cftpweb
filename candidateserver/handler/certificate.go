@@ -26,7 +26,7 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 		item := CertificateItem{
 			CatalogId:   def.GetCredDefId(), // Map CredDefId to CatalogId for frontend compatibility
 			Name:        def.GetName(),
-			Description: def.GetDescription(),
+			Description: def.GetCategory(),
 		}
 
 		credResp, err := h.Creds.GetLatestCredential(r.Context(), &gcredspb.GetLatestCredentialRequest{
@@ -44,7 +44,6 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 		item.CandidateId = credResp.GetCandidateId()
 		item.Version = credResp.GetVersion()
 		item.Status = credResp.GetStatus()
-		item.Files = toCertificateFileInfos(credResp.GetFiles())
 		item.AuditorId = credResp.GetAuditorId()
 		item.AuditRemark = credResp.GetAuditRemark()
 		item.ValidUntil = credResp.GetValidUntil()
@@ -54,24 +53,4 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, out)
-}
-
-func toCertificateFileInfos(files []*gcredspb.FileInfo) []CertificateFileInfo {
-	if files == nil {
-		return nil
-	}
-
-	out := make([]CertificateFileInfo, 0, len(files))
-	for _, file := range files {
-		out = append(out, CertificateFileInfo{
-			FileHash:  file.GetFileHash(),
-			FileName:  file.GetFileName(),
-			FileType:  file.GetFileType(),
-			FileExt:   file.GetFileExt(),
-			FileSize:  file.GetFileSize(),
-			FileUsage: file.GetFileUsage(),
-			ViewUrl:   file.GetViewUrl(),
-		})
-	}
-	return out
 }

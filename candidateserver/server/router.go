@@ -59,6 +59,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		})
 
 		// ===== 管线 (pipeline) =====
+		r.Get("/mall/courses/{courseId}", h.GetMallCourseSummary)
+
 		r.Route("/pipeline", func(r chi.Router) {
 			r.Get("/", h.ListMyPipelines)        // 我的管线
 			r.Get("/materials", h.ListMaterials) // 最近学习资料

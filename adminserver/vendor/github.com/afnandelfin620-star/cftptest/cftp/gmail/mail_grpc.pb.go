@@ -19,16 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MailService_CreateMail_FullMethodName      = "/gmail.MailService/CreateMail"
-	MailService_GetMailStatus_FullMethodName   = "/gmail.MailService/GetMailStatus"
-	MailService_GetMail_FullMethodName         = "/gmail.MailService/GetMail"
-	MailService_CancelMail_FullMethodName      = "/gmail.MailService/CancelMail"
-	MailService_ListMails_FullMethodName       = "/gmail.MailService/ListMails"
-	MailService_GetMailStats_FullMethodName    = "/gmail.MailService/GetMailStats"
-	MailService_CreateTemplate_FullMethodName  = "/gmail.MailService/CreateTemplate"
-	MailService_UpdateTemplate_FullMethodName  = "/gmail.MailService/UpdateTemplate"
-	MailService_GetTemplateList_FullMethodName = "/gmail.MailService/GetTemplateList"
-	MailService_GetTemplate_FullMethodName     = "/gmail.MailService/GetTemplate"
+	MailService_CreateMail_FullMethodName        = "/gmail.MailService/CreateMail"
+	MailService_GetMailStatus_FullMethodName     = "/gmail.MailService/GetMailStatus"
+	MailService_GetMail_FullMethodName           = "/gmail.MailService/GetMail"
+	MailService_CancelMail_FullMethodName        = "/gmail.MailService/CancelMail"
+	MailService_ListMails_FullMethodName         = "/gmail.MailService/ListMails"
+	MailService_GetMailStats_FullMethodName      = "/gmail.MailService/GetMailStats"
+	MailService_CreateTemplate_FullMethodName    = "/gmail.MailService/CreateTemplate"
+	MailService_UpdateTemplate_FullMethodName    = "/gmail.MailService/UpdateTemplate"
+	MailService_GetTemplateList_FullMethodName   = "/gmail.MailService/GetTemplateList"
+	MailService_GetTemplate_FullMethodName       = "/gmail.MailService/GetTemplate"
+	MailService_GetMailDetail_FullMethodName     = "/gmail.MailService/GetMailDetail"
+	MailService_ListTemplates_FullMethodName     = "/gmail.MailService/ListTemplates"
+	MailService_GetTemplateDetail_FullMethodName = "/gmail.MailService/GetTemplateDetail"
 )
 
 // MailServiceClient is the client API for MailService service.
@@ -55,6 +58,12 @@ type MailServiceClient interface {
 	GetTemplateList(ctx context.Context, in *GetTemplateListRequest, opts ...grpc.CallOption) (*GetTemplateListResponse, error)
 	// 查询单个邮件模板
 	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*GetTemplateResponse, error)
+	// 获取邮件详细信息
+	GetMailDetail(ctx context.Context, in *GetMailDetailRequest, opts ...grpc.CallOption) (*GetMailDetailResponse, error)
+	// 分页查询模板列表
+	ListTemplates(ctx context.Context, in *ListTemplatesRequest, opts ...grpc.CallOption) (*ListTemplatesResponse, error)
+	// 获取单个邮件模板详细信息
+	GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*GetTemplateDetailResponse, error)
 }
 
 type mailServiceClient struct {
@@ -165,6 +174,36 @@ func (c *mailServiceClient) GetTemplate(ctx context.Context, in *GetTemplateRequ
 	return out, nil
 }
 
+func (c *mailServiceClient) GetMailDetail(ctx context.Context, in *GetMailDetailRequest, opts ...grpc.CallOption) (*GetMailDetailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMailDetailResponse)
+	err := c.cc.Invoke(ctx, MailService_GetMailDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailServiceClient) ListTemplates(ctx context.Context, in *ListTemplatesRequest, opts ...grpc.CallOption) (*ListTemplatesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTemplatesResponse)
+	err := c.cc.Invoke(ctx, MailService_ListTemplates_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *mailServiceClient) GetTemplateDetail(ctx context.Context, in *GetTemplateDetailRequest, opts ...grpc.CallOption) (*GetTemplateDetailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetTemplateDetailResponse)
+	err := c.cc.Invoke(ctx, MailService_GetTemplateDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MailServiceServer is the server API for MailService service.
 // All implementations must embed UnimplementedMailServiceServer
 // for forward compatibility.
@@ -189,6 +228,12 @@ type MailServiceServer interface {
 	GetTemplateList(context.Context, *GetTemplateListRequest) (*GetTemplateListResponse, error)
 	// 查询单个邮件模板
 	GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error)
+	// 获取邮件详细信息
+	GetMailDetail(context.Context, *GetMailDetailRequest) (*GetMailDetailResponse, error)
+	// 分页查询模板列表
+	ListTemplates(context.Context, *ListTemplatesRequest) (*ListTemplatesResponse, error)
+	// 获取单个邮件模板详细信息
+	GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*GetTemplateDetailResponse, error)
 	mustEmbedUnimplementedMailServiceServer()
 }
 
@@ -228,6 +273,15 @@ func (UnimplementedMailServiceServer) GetTemplateList(context.Context, *GetTempl
 }
 func (UnimplementedMailServiceServer) GetTemplate(context.Context, *GetTemplateRequest) (*GetTemplateResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTemplate not implemented")
+}
+func (UnimplementedMailServiceServer) GetMailDetail(context.Context, *GetMailDetailRequest) (*GetMailDetailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMailDetail not implemented")
+}
+func (UnimplementedMailServiceServer) ListTemplates(context.Context, *ListTemplatesRequest) (*ListTemplatesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTemplates not implemented")
+}
+func (UnimplementedMailServiceServer) GetTemplateDetail(context.Context, *GetTemplateDetailRequest) (*GetTemplateDetailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTemplateDetail not implemented")
 }
 func (UnimplementedMailServiceServer) mustEmbedUnimplementedMailServiceServer() {}
 func (UnimplementedMailServiceServer) testEmbeddedByValue()                     {}
@@ -430,6 +484,60 @@ func _MailService_GetTemplate_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MailService_GetMailDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMailDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailServiceServer).GetMailDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MailService_GetMailDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailServiceServer).GetMailDetail(ctx, req.(*GetMailDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailService_ListTemplates_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTemplatesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailServiceServer).ListTemplates(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MailService_ListTemplates_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailServiceServer).ListTemplates(ctx, req.(*ListTemplatesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MailService_GetTemplateDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTemplateDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MailServiceServer).GetTemplateDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MailService_GetTemplateDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MailServiceServer).GetTemplateDetail(ctx, req.(*GetTemplateDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MailService_ServiceDesc is the grpc.ServiceDesc for MailService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -476,6 +584,18 @@ var MailService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTemplate",
 			Handler:    _MailService_GetTemplate_Handler,
+		},
+		{
+			MethodName: "GetMailDetail",
+			Handler:    _MailService_GetMailDetail_Handler,
+		},
+		{
+			MethodName: "ListTemplates",
+			Handler:    _MailService_ListTemplates_Handler,
+		},
+		{
+			MethodName: "GetTemplateDetail",
+			Handler:    _MailService_GetTemplateDetail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

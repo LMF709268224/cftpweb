@@ -19,14 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	GExamService_CreateExam_FullMethodName               = "/gexam.GExamService/CreateExam"
-	GExamService_GetExam_FullMethodName                  = "/gexam.GExamService/GetExam"
-	GExamService_GetExamResultDetail_FullMethodName      = "/gexam.GExamService/GetExamResultDetail"
-	GExamService_GetScheduleURL_FullMethodName           = "/gexam.GExamService/GetScheduleURL"
-	GExamService_TermUrlCallback_FullMethodName          = "/gexam.GExamService/TermUrlCallback"
-	GExamService_GetExamStatusTransitions_FullMethodName = "/gexam.GExamService/GetExamStatusTransitions"
-	GExamService_SyncExamResult_FullMethodName           = "/gexam.GExamService/SyncExamResult"
-	GExamService_ListExams_FullMethodName                = "/gexam.GExamService/ListExams"
+	GExamService_CreateExam_FullMethodName                = "/gexam.GExamService/CreateExam"
+	GExamService_GetExam_FullMethodName                   = "/gexam.GExamService/GetExam"
+	GExamService_GetExamResultDetail_FullMethodName       = "/gexam.GExamService/GetExamResultDetail"
+	GExamService_GetScheduleURL_FullMethodName            = "/gexam.GExamService/GetScheduleURL"
+	GExamService_TermUrlCallback_FullMethodName           = "/gexam.GExamService/TermUrlCallback"
+	GExamService_GetExamStatusTransitions_FullMethodName  = "/gexam.GExamService/GetExamStatusTransitions"
+	GExamService_SyncExamResult_FullMethodName            = "/gexam.GExamService/SyncExamResult"
+	GExamService_ListExams_FullMethodName                 = "/gexam.GExamService/ListExams"
+	GExamService_GetExamDetail_FullMethodName             = "/gexam.GExamService/GetExamDetail"
+	GExamService_ListAuditMessages_FullMethodName         = "/gexam.GExamService/ListAuditMessages"
+	GExamService_GetAuditMessageDetail_FullMethodName     = "/gexam.GExamService/GetAuditMessageDetail"
+	GExamService_ListWebhookMessages_FullMethodName       = "/gexam.GExamService/ListWebhookMessages"
+	GExamService_GetWebhookMessageDetail_FullMethodName   = "/gexam.GExamService/GetWebhookMessageDetail"
+	GExamService_ListExamStatusTransitions_FullMethodName = "/gexam.GExamService/ListExamStatusTransitions"
 )
 
 // GExamServiceClient is the client API for GExamService service.
@@ -50,6 +56,18 @@ type GExamServiceClient interface {
 	SyncExamResult(ctx context.Context, in *GetExamRequest, opts ...grpc.CallOption) (*ExamResultDetail, error)
 	// 管理端：分页列出考试
 	ListExams(ctx context.Context, in *ListExamsRequest, opts ...grpc.CallOption) (*ListExamsResponse, error)
+	// 获取考试详细信息：包含所有字段，如考生详细信息、成绩 JSON、乐观锁版本以及审计时间戳等
+	GetExamDetail(ctx context.Context, in *GetExamRequest, opts ...grpc.CallOption) (*ExamDetail, error)
+	// 管理端：分页列出审计日志 (不包含 payload 重字段)
+	ListAuditMessages(ctx context.Context, in *ListAuditMessagesRequest, opts ...grpc.CallOption) (*ListAuditMessagesResponse, error)
+	// 获取审计日志详情 (包含完整的 JSON payload)
+	GetAuditMessageDetail(ctx context.Context, in *GetAuditMessageDetailRequest, opts ...grpc.CallOption) (*AuditMessageDetail, error)
+	// 管理端：分页列出 Webhook 消息 (不包含 payload 重字段)
+	ListWebhookMessages(ctx context.Context, in *ListWebhookMessagesRequest, opts ...grpc.CallOption) (*ListWebhookMessagesResponse, error)
+	// 获取 Webhook 消息详情 (包含完整的 JSON payload)
+	GetWebhookMessageDetail(ctx context.Context, in *GetWebhookMessageDetailRequest, opts ...grpc.CallOption) (*WebhookMessageDetail, error)
+	// 管理端/开发端：全局分页列出考试状态变迁历史
+	ListExamStatusTransitions(ctx context.Context, in *ListExamStatusTransitionsRequest, opts ...grpc.CallOption) (*ListExamStatusTransitionsResponse, error)
 }
 
 type gExamServiceClient struct {
@@ -140,6 +158,66 @@ func (c *gExamServiceClient) ListExams(ctx context.Context, in *ListExamsRequest
 	return out, nil
 }
 
+func (c *gExamServiceClient) GetExamDetail(ctx context.Context, in *GetExamRequest, opts ...grpc.CallOption) (*ExamDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExamDetail)
+	err := c.cc.Invoke(ctx, GExamService_GetExamDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gExamServiceClient) ListAuditMessages(ctx context.Context, in *ListAuditMessagesRequest, opts ...grpc.CallOption) (*ListAuditMessagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListAuditMessagesResponse)
+	err := c.cc.Invoke(ctx, GExamService_ListAuditMessages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gExamServiceClient) GetAuditMessageDetail(ctx context.Context, in *GetAuditMessageDetailRequest, opts ...grpc.CallOption) (*AuditMessageDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AuditMessageDetail)
+	err := c.cc.Invoke(ctx, GExamService_GetAuditMessageDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gExamServiceClient) ListWebhookMessages(ctx context.Context, in *ListWebhookMessagesRequest, opts ...grpc.CallOption) (*ListWebhookMessagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListWebhookMessagesResponse)
+	err := c.cc.Invoke(ctx, GExamService_ListWebhookMessages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gExamServiceClient) GetWebhookMessageDetail(ctx context.Context, in *GetWebhookMessageDetailRequest, opts ...grpc.CallOption) (*WebhookMessageDetail, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(WebhookMessageDetail)
+	err := c.cc.Invoke(ctx, GExamService_GetWebhookMessageDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gExamServiceClient) ListExamStatusTransitions(ctx context.Context, in *ListExamStatusTransitionsRequest, opts ...grpc.CallOption) (*ListExamStatusTransitionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListExamStatusTransitionsResponse)
+	err := c.cc.Invoke(ctx, GExamService_ListExamStatusTransitions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GExamServiceServer is the server API for GExamService service.
 // All implementations must embed UnimplementedGExamServiceServer
 // for forward compatibility.
@@ -161,6 +239,18 @@ type GExamServiceServer interface {
 	SyncExamResult(context.Context, *GetExamRequest) (*ExamResultDetail, error)
 	// 管理端：分页列出考试
 	ListExams(context.Context, *ListExamsRequest) (*ListExamsResponse, error)
+	// 获取考试详细信息：包含所有字段，如考生详细信息、成绩 JSON、乐观锁版本以及审计时间戳等
+	GetExamDetail(context.Context, *GetExamRequest) (*ExamDetail, error)
+	// 管理端：分页列出审计日志 (不包含 payload 重字段)
+	ListAuditMessages(context.Context, *ListAuditMessagesRequest) (*ListAuditMessagesResponse, error)
+	// 获取审计日志详情 (包含完整的 JSON payload)
+	GetAuditMessageDetail(context.Context, *GetAuditMessageDetailRequest) (*AuditMessageDetail, error)
+	// 管理端：分页列出 Webhook 消息 (不包含 payload 重字段)
+	ListWebhookMessages(context.Context, *ListWebhookMessagesRequest) (*ListWebhookMessagesResponse, error)
+	// 获取 Webhook 消息详情 (包含完整的 JSON payload)
+	GetWebhookMessageDetail(context.Context, *GetWebhookMessageDetailRequest) (*WebhookMessageDetail, error)
+	// 管理端/开发端：全局分页列出考试状态变迁历史
+	ListExamStatusTransitions(context.Context, *ListExamStatusTransitionsRequest) (*ListExamStatusTransitionsResponse, error)
 	mustEmbedUnimplementedGExamServiceServer()
 }
 
@@ -194,6 +284,24 @@ func (UnimplementedGExamServiceServer) SyncExamResult(context.Context, *GetExamR
 }
 func (UnimplementedGExamServiceServer) ListExams(context.Context, *ListExamsRequest) (*ListExamsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListExams not implemented")
+}
+func (UnimplementedGExamServiceServer) GetExamDetail(context.Context, *GetExamRequest) (*ExamDetail, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetExamDetail not implemented")
+}
+func (UnimplementedGExamServiceServer) ListAuditMessages(context.Context, *ListAuditMessagesRequest) (*ListAuditMessagesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListAuditMessages not implemented")
+}
+func (UnimplementedGExamServiceServer) GetAuditMessageDetail(context.Context, *GetAuditMessageDetailRequest) (*AuditMessageDetail, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetAuditMessageDetail not implemented")
+}
+func (UnimplementedGExamServiceServer) ListWebhookMessages(context.Context, *ListWebhookMessagesRequest) (*ListWebhookMessagesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListWebhookMessages not implemented")
+}
+func (UnimplementedGExamServiceServer) GetWebhookMessageDetail(context.Context, *GetWebhookMessageDetailRequest) (*WebhookMessageDetail, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetWebhookMessageDetail not implemented")
+}
+func (UnimplementedGExamServiceServer) ListExamStatusTransitions(context.Context, *ListExamStatusTransitionsRequest) (*ListExamStatusTransitionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListExamStatusTransitions not implemented")
 }
 func (UnimplementedGExamServiceServer) mustEmbedUnimplementedGExamServiceServer() {}
 func (UnimplementedGExamServiceServer) testEmbeddedByValue()                      {}
@@ -360,6 +468,114 @@ func _GExamService_ListExams_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GExamService_GetExamDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetExamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).GetExamDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_GetExamDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).GetExamDetail(ctx, req.(*GetExamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GExamService_ListAuditMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListAuditMessagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).ListAuditMessages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_ListAuditMessages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).ListAuditMessages(ctx, req.(*ListAuditMessagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GExamService_GetAuditMessageDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAuditMessageDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).GetAuditMessageDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_GetAuditMessageDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).GetAuditMessageDetail(ctx, req.(*GetAuditMessageDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GExamService_ListWebhookMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListWebhookMessagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).ListWebhookMessages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_ListWebhookMessages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).ListWebhookMessages(ctx, req.(*ListWebhookMessagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GExamService_GetWebhookMessageDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetWebhookMessageDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).GetWebhookMessageDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_GetWebhookMessageDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).GetWebhookMessageDetail(ctx, req.(*GetWebhookMessageDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GExamService_ListExamStatusTransitions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListExamStatusTransitionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).ListExamStatusTransitions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_ListExamStatusTransitions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).ListExamStatusTransitions(ctx, req.(*ListExamStatusTransitionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GExamService_ServiceDesc is the grpc.ServiceDesc for GExamService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -398,6 +614,30 @@ var GExamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListExams",
 			Handler:    _GExamService_ListExams_Handler,
+		},
+		{
+			MethodName: "GetExamDetail",
+			Handler:    _GExamService_GetExamDetail_Handler,
+		},
+		{
+			MethodName: "ListAuditMessages",
+			Handler:    _GExamService_ListAuditMessages_Handler,
+		},
+		{
+			MethodName: "GetAuditMessageDetail",
+			Handler:    _GExamService_GetAuditMessageDetail_Handler,
+		},
+		{
+			MethodName: "ListWebhookMessages",
+			Handler:    _GExamService_ListWebhookMessages_Handler,
+		},
+		{
+			MethodName: "GetWebhookMessageDetail",
+			Handler:    _GExamService_GetWebhookMessageDetail_Handler,
+		},
+		{
+			MethodName: "ListExamStatusTransitions",
+			Handler:    _GExamService_ListExamStatusTransitions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -191,7 +191,23 @@ func (h *Handler) GetLmsCourse(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	resp, err := h.Lms.GetCourse(r.Context(), &lmspb.GetCourseRequest{
+	resp, err := h.Lms.GetCourseSummary(r.Context(), &lmspb.GetCourseRequest{
+		CourseId: courseID,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetLmsCourseDetail GET /api/lms/courses/{course_id}/detail
+func (h *Handler) GetLmsCourseDetail(w http.ResponseWriter, r *http.Request) {
+	courseID, ok := requiredURLParam(w, r, "course_id")
+	if !ok {
+		return
+	}
+	resp, err := h.Lms.GetCourseDetail(r.Context(), &lmspb.GetCourseDetailRequest{
 		CourseId: courseID,
 	})
 	if err != nil {
@@ -325,6 +341,157 @@ func (h *Handler) GetLmsCandidateProgressForAdmin(w http.ResponseWriter, r *http
 	resp, err := h.Lms.GetCandidateProgressForAdmin(r.Context(), &lmspb.GetCandidateProgressForAdminRequest{
 		CandidateId: candidateID,
 		CourseId:    courseID,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// ListLmsCourseEnrollments GET /api/lms/enrollments
+func (h *Handler) ListLmsCourseEnrollments(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Lms.ListCourseEnrollments(r.Context(), &lmspb.ListCourseEnrollmentsRequest{
+		CandidateId: r.URL.Query().Get("candidate_id"),
+		CourseId:    r.URL.Query().Get("course_id"),
+		BizUnit:     r.URL.Query().Get("biz_unit"),
+		Status:      r.URL.Query().Get("status"),
+		PageSize:    parseUint32Query(r, "page_size"),
+		PageToken:   r.URL.Query().Get("page_token"),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetLmsCourseEnrollmentDetail GET /api/lms/enrollments/{enrollment_id}
+func (h *Handler) GetLmsCourseEnrollmentDetail(w http.ResponseWriter, r *http.Request) {
+	enrollmentID, ok := requiredURLParam(w, r, "enrollment_id")
+	if !ok {
+		return
+	}
+	resp, err := h.Lms.GetCourseEnrollmentDetail(r.Context(), &lmspb.GetCourseEnrollmentDetailRequest{
+		EnrollmentId: enrollmentID,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// ListLmsLessonProgress GET /api/lms/lesson-progress
+func (h *Handler) ListLmsLessonProgress(w http.ResponseWriter, r *http.Request) {
+	candidateID := r.URL.Query().Get("candidate_id")
+	if !requireRequestField(w, candidateID, "candidate_id") {
+		return
+	}
+	resp, err := h.Lms.ListLessonProgress(r.Context(), &lmspb.ListLessonProgressRequest{
+		CandidateId: candidateID,
+		LessonId:    r.URL.Query().Get("lesson_id"),
+		Status:      r.URL.Query().Get("status"),
+		PageSize:    parseUint32Query(r, "page_size"),
+		PageToken:   r.URL.Query().Get("page_token"),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetLmsLessonProgressDetail GET /api/lms/lessons/{lesson_id}/progress
+func (h *Handler) GetLmsLessonProgressDetail(w http.ResponseWriter, r *http.Request) {
+	lessonID, ok := requiredURLParam(w, r, "lesson_id")
+	if !ok {
+		return
+	}
+	candidateID := r.URL.Query().Get("candidate_id")
+	if !requireRequestField(w, candidateID, "candidate_id") {
+		return
+	}
+	resp, err := h.Lms.GetLessonProgressDetail(r.Context(), &lmspb.GetLessonProgressDetailRequest{
+		UserId:   candidateID,
+		LessonId: lessonID,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// ListLmsChapterProgress GET /api/lms/chapter-progress
+func (h *Handler) ListLmsChapterProgress(w http.ResponseWriter, r *http.Request) {
+	candidateID := r.URL.Query().Get("candidate_id")
+	courseID := r.URL.Query().Get("course_id")
+	if !requireRequestFields(w, candidateID, "candidate_id", courseID, "course_id") {
+		return
+	}
+	resp, err := h.Lms.ListChapterProgress(r.Context(), &lmspb.ListChapterProgressRequest{
+		CandidateId: candidateID,
+		CourseId:    courseID,
+		PageSize:    parseUint32Query(r, "page_size"),
+		PageToken:   r.URL.Query().Get("page_token"),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetLmsChapterProgressDetail GET /api/lms/chapters/{chapter_id}/progress
+func (h *Handler) GetLmsChapterProgressDetail(w http.ResponseWriter, r *http.Request) {
+	chapterID, ok := requiredURLParam(w, r, "chapter_id")
+	if !ok {
+		return
+	}
+	candidateID := r.URL.Query().Get("candidate_id")
+	if !requireRequestField(w, candidateID, "candidate_id") {
+		return
+	}
+	resp, err := h.Lms.GetChapterProgressDetail(r.Context(), &lmspb.GetChapterProgressDetailRequest{
+		CandidateId: candidateID,
+		ChapterId:   chapterID,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// ListLmsQuizAttempts GET /api/lms/quizzes/{quiz_id}/attempts
+func (h *Handler) ListLmsQuizAttempts(w http.ResponseWriter, r *http.Request) {
+	quizID, ok := requiredURLParam(w, r, "quiz_id")
+	if !ok {
+		return
+	}
+	resp, err := h.Lms.ListQuizAttempts(r.Context(), &lmspb.ListQuizAttemptsRequest{
+		QuizId:    quizID,
+		UserId:    r.URL.Query().Get("candidate_id"),
+		Status:    r.URL.Query().Get("status"),
+		PageSize:  parseUint32Query(r, "page_size"),
+		PageToken: r.URL.Query().Get("page_token"),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetLmsQuizAttemptDetail GET /api/lms/quiz-attempts/{attempt_id}
+func (h *Handler) GetLmsQuizAttemptDetail(w http.ResponseWriter, r *http.Request) {
+	attemptID, ok := requiredURLParam(w, r, "attempt_id")
+	if !ok {
+		return
+	}
+	resp, err := h.Lms.GetQuizAttemptDetail(r.Context(), &lmspb.GetQuizAttemptDetailRequest{
+		AttemptId: attemptID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1238,6 +1405,40 @@ func (h *Handler) ListLmsObjects(w http.ResponseWriter, r *http.Request) {
 		Prefix:    r.URL.Query().Get("prefix"),
 		PageSize:  parseUint32Query(r, "page_size"),
 		PageToken: r.URL.Query().Get("page_token"),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// ListLmsCourseAssets GET /api/lms/assets
+func (h *Handler) ListLmsCourseAssets(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Lms.ListCourseAssets(r.Context(), &lmspb.ListCourseAssetsRequest{
+		Status:       r.URL.Query().Get("status"),
+		AssetType:    r.URL.Query().Get("asset_type"),
+		AssociatedId: r.URL.Query().Get("associated_id"),
+		PageSize:     parseUint32Query(r, "page_size"),
+		PageToken:    r.URL.Query().Get("page_token"),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetLmsCourseAssetDetail GET /api/lms/assets/detail?object_key=...
+func (h *Handler) GetLmsCourseAssetDetail(w http.ResponseWriter, r *http.Request) {
+	objectKey := strings.TrimSpace(r.URL.Query().Get("object_key"))
+	associatedID := strings.TrimSpace(r.URL.Query().Get("associated_id"))
+	if !requireRequestFields(w, objectKey, "object_key", associatedID, "associated_id") {
+		return
+	}
+	resp, err := h.Lms.GetCourseAssetDetail(r.Context(), &lmspb.GetCourseAssetDetailRequest{
+		ObjectKey:    objectKey,
+		AssociatedId: associatedID,
 	})
 	if err != nil {
 		writeLmsError(w, err)

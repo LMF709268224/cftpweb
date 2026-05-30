@@ -63,10 +63,19 @@ type CredentialDefinitionOption = {
 type CourseEnrollment = {
   enrollment_id: string
   candidate_id: string
+  course_id?: string
+  biz_unit?: string
   status?: string
   progress_percentage?: number
+  total_lessons?: number
+  total_quizzes?: number
+  completed_lessons_count?: number
+  passed_quizzes_count?: number
   joined_at?: string
   completed_at?: string
+  version?: number
+  created_at?: string
+  updated_at?: string
 }
 
 type CandidateProgress = {
@@ -84,6 +93,8 @@ type CandidateProgress = {
 type BrokenAsset = {
   object_key: string
   asset_type?: string
+  associated_id?: string
+  file_hash?: string
   status?: string
   error_message?: string
   reconciled_at?: string
@@ -97,6 +108,55 @@ type BrokenAsset = {
   lesson_title?: string
   material_id?: string
   material_title?: string
+}
+
+type CourseDetailCounts = {
+  course?: LmsCourse
+  chapter_count?: number
+  lesson_count?: number
+  quiz_count?: number
+  material_count?: number
+  asset_count?: number
+  enrollment_count?: number
+}
+
+type LessonProgress = {
+  user_id?: string
+  candidate_id?: string
+  lesson_id?: string
+  lesson_title?: string
+  status?: string
+  started_at?: string
+  completed_at?: string
+  created_at?: string
+  updated_at?: string
+}
+
+type ChapterProgress = {
+  candidate_id?: string
+  chapter_id?: string
+  chapter_title?: string
+  course_id?: string
+  total_lessons?: number
+  total_quizzes?: number
+  completed_lessons_count?: number
+  passed_quizzes_count?: number
+  status?: string
+  created_at?: string
+  updated_at?: string
+}
+
+type QuizAttempt = {
+  attempt_id?: string
+  quiz_id?: string
+  quiz_title?: string
+  user_id?: string
+  status?: string
+  score?: number
+  max_score?: number
+  is_passed?: boolean
+  started_at?: string
+  completed_at?: string
 }
 
 type Chapter = {
@@ -272,10 +332,25 @@ export default function LmsCoursesPage() {
   const [enrollmentsLoading, setEnrollmentsLoading] = useState(false)
   const [progressDetail, setProgressDetail] = useState<CandidateProgress | null>(null)
   const [progressLoadingFor, setProgressLoadingFor] = useState("")
+  const [assetStatus, setAssetStatus] = useState("all")
   const [brokenAssetType, setBrokenAssetType] = useState("all")
   const [brokenAssets, setBrokenAssets] = useState<BrokenAsset[]>([])
   const [brokenAssetsLoading, setBrokenAssetsLoading] = useState(false)
   const [brokenAssetsNextPageToken, setBrokenAssetsNextPageToken] = useState("")
+  const [courseDetail, setCourseDetail] = useState<CourseDetailCounts | null>(null)
+  const [courseDetailLoading, setCourseDetailLoading] = useState(false)
+  const [enrollmentDetail, setEnrollmentDetail] = useState<CourseEnrollment | null>(null)
+  const [enrollmentDetailLoadingFor, setEnrollmentDetailLoadingFor] = useState("")
+  const [lessonProgress, setLessonProgress] = useState<LessonProgress[]>([])
+  const [lessonProgressDetail, setLessonProgressDetail] = useState<any>(null)
+  const [lessonProgressLoadingFor, setLessonProgressLoadingFor] = useState("")
+  const [chapterProgress, setChapterProgress] = useState<ChapterProgress | null>(null)
+  const [chapterProgressLoadingFor, setChapterProgressLoadingFor] = useState("")
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([])
+  const [quizAttemptDetail, setQuizAttemptDetail] = useState<any>(null)
+  const [quizAttemptsLoadingFor, setQuizAttemptsLoadingFor] = useState("")
+  const [assetDetail, setAssetDetail] = useState<BrokenAsset | null>(null)
+  const [assetDetailLoadingFor, setAssetDetailLoadingFor] = useState("")
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [selectedChapterId, setSelectedChapterId] = useState("")
   const [chapterForm, setChapterForm] = useState(emptyChapterForm)
@@ -332,6 +407,20 @@ export default function LmsCoursesPage() {
     [questions, selectedQuestionId]
   )
 
+  const resetCourseInspectionState = () => {
+    setPreview(null)
+    setEnrollments([])
+    setProgressDetail(null)
+    setCourseDetail(null)
+    setEnrollmentDetail(null)
+    setLessonProgress([])
+    setLessonProgressDetail(null)
+    setChapterProgress(null)
+    setQuizAttempts([])
+    setQuizAttemptDetail(null)
+    setAssetDetail(null)
+  }
+
   const resetCourseContentState = () => {
     setChapters([])
     setSelectedChapterId("")
@@ -370,9 +459,7 @@ export default function LmsCoursesPage() {
         if (!pageToken && currentSelectedId && !mergedCourses.some((course: LmsCourse) => course.course_id === currentSelectedId)) {
           setSelectedId("")
           setForm(emptyForm)
-          setPreview(null)
-          setEnrollments([])
-          setProgressDetail(null)
+          resetCourseInspectionState()
           resetCourseContentState()
         }
         return mergedCourses
@@ -406,18 +493,14 @@ export default function LmsCoursesPage() {
   const selectCourse = (course: LmsCourse) => {
     setSelectedId(course.course_id)
     setForm(formFromCourse(course))
-    setPreview(null)
-    setEnrollments([])
-    setProgressDetail(null)
+    resetCourseInspectionState()
     resetCourseContentState()
   }
 
   const startNewCourse = () => {
     setSelectedId("")
     setForm(emptyForm)
-    setPreview(null)
-    setEnrollments([])
-    setProgressDetail(null)
+    resetCourseInspectionState()
     resetCourseContentState()
   }
 
@@ -713,9 +796,7 @@ export default function LmsCoursesPage() {
     toast.success(page.deleteSuccess)
     setSelectedId("")
     setForm(emptyForm)
-    setPreview(null)
-    setEnrollments([])
-    setProgressDetail(null)
+    resetCourseInspectionState()
     resetCourseContentState()
     await loadCourses()
   }
@@ -728,6 +809,17 @@ export default function LmsCoursesPage() {
       setPreview(res?.complete_course || res)
     } finally {
       setPreviewLoading(false)
+    }
+  }
+
+  const loadCourseDetail = async () => {
+    if (!selectedCourse) return
+    setCourseDetailLoading(true)
+    try {
+      const res = await apiClient(`/api/lms/courses/${selectedCourse.course_id}/detail`)
+      setCourseDetail(res?.course_detail || res)
+    } finally {
+      setCourseDetailLoading(false)
     }
   }
 
@@ -989,8 +1081,25 @@ export default function LmsCoursesPage() {
       const res = await apiClient(`/api/lms/courses/${selectedCourse.course_id}/enrollments?${params.toString()}`)
       setEnrollments(res?.enrollments || [])
       setProgressDetail(null)
+      setEnrollmentDetail(null)
+      setLessonProgress([])
+      setLessonProgressDetail(null)
+      setChapterProgress(null)
+      setQuizAttempts([])
+      setQuizAttemptDetail(null)
     } finally {
       setEnrollmentsLoading(false)
+    }
+  }
+
+  const loadEnrollmentDetail = async (enrollment: CourseEnrollment) => {
+    if (!enrollment.enrollment_id) return
+    setEnrollmentDetailLoadingFor(enrollment.enrollment_id)
+    try {
+      const res = await apiClient(`/api/lms/enrollments/${enrollment.enrollment_id}`)
+      setEnrollmentDetail(res?.enrollment || res)
+    } finally {
+      setEnrollmentDetailLoadingFor("")
     }
   }
 
@@ -1005,17 +1114,101 @@ export default function LmsCoursesPage() {
     }
   }
 
+  const loadLessonProgressForCandidate = async (candidateId: string) => {
+    if (!candidateId) return
+    setLessonProgressLoadingFor(candidateId)
+    try {
+      const params = new URLSearchParams({ candidate_id: candidateId, page_size: "50" })
+      const res = await apiClient(`/api/lms/lesson-progress?${params.toString()}`)
+      setLessonProgress(res?.progress || [])
+      setLessonProgressDetail(null)
+    } finally {
+      setLessonProgressLoadingFor("")
+    }
+  }
+
+  const loadLessonProgressDetail = async (item: LessonProgress) => {
+    const candidateID = item.user_id || item.candidate_id || ""
+    if (!candidateID || !item.lesson_id) return
+    setLessonProgressLoadingFor(`${candidateID}:${item.lesson_id}`)
+    try {
+      const params = new URLSearchParams({ candidate_id: candidateID })
+      const res = await apiClient(`/api/lms/lessons/${item.lesson_id}/progress?${params.toString()}`)
+      setLessonProgressDetail(res?.progress || res)
+    } finally {
+      setLessonProgressLoadingFor("")
+    }
+  }
+
+  const loadChapterProgressForCandidate = async (candidateId: string, chapterId = selectedChapterId) => {
+    if (!selectedCourse || !candidateId || !chapterId) {
+      toast.error(page.selectChapterForProgress)
+      return
+    }
+    setChapterProgressLoadingFor(candidateId)
+    try {
+      const params = new URLSearchParams({ candidate_id: candidateId })
+      const res = await apiClient(`/api/lms/chapters/${chapterId}/progress?${params.toString()}`)
+      setChapterProgress(res?.progress || res?.chapter_progress || res)
+    } finally {
+      setChapterProgressLoadingFor("")
+    }
+  }
+
+  const loadQuizAttemptsForCandidate = async (candidateId: string, quizId = selectedQuizId) => {
+    if (!candidateId || !quizId) {
+      toast.error(page.selectQuizForAttempts)
+      return
+    }
+    setQuizAttemptsLoadingFor(candidateId)
+    try {
+      const params = new URLSearchParams({ candidate_id: candidateId, page_size: "20" })
+      const res = await apiClient(`/api/lms/quizzes/${quizId}/attempts?${params.toString()}`)
+      setQuizAttempts(res?.attempts || [])
+      setQuizAttemptDetail(null)
+    } finally {
+      setQuizAttemptsLoadingFor("")
+    }
+  }
+
+  const loadQuizAttemptDetail = async (attempt: QuizAttempt) => {
+    if (!attempt.attempt_id) return
+    setQuizAttemptsLoadingFor(attempt.attempt_id)
+    try {
+      const res = await apiClient(`/api/lms/quiz-attempts/${attempt.attempt_id}`)
+      setQuizAttemptDetail(res?.attempt || res)
+    } finally {
+      setQuizAttemptsLoadingFor("")
+    }
+  }
+
   const loadBrokenAssets = async (pageToken = "") => {
     setBrokenAssetsLoading(true)
     try {
       const params = new URLSearchParams({ page_size: "20" })
       if (pageToken) params.set("page_token", pageToken)
       if (brokenAssetType !== "all") params.set("asset_type", brokenAssetType)
-      const res = await apiClient(`/api/lms/broken-assets?${params.toString()}`)
+      if (assetStatus !== "all") params.set("status", assetStatus)
+      const res = await apiClient(`/api/lms/assets?${params.toString()}`)
       setBrokenAssets(pageToken ? [...brokenAssets, ...(res?.assets || [])] : res?.assets || [])
       setBrokenAssetsNextPageToken(res?.next_page_token || "")
     } finally {
       setBrokenAssetsLoading(false)
+    }
+  }
+
+  const loadAssetDetail = async (asset: BrokenAsset) => {
+    if (!asset.object_key || !asset.associated_id) {
+      toast.error(page.assetDetailMissingFields)
+      return
+    }
+    setAssetDetailLoadingFor(`${asset.object_key}:${asset.associated_id}`)
+    try {
+      const params = new URLSearchParams({ object_key: asset.object_key, associated_id: asset.associated_id })
+      const res = await apiClient(`/api/lms/assets/detail?${params.toString()}`)
+      setAssetDetail(res?.asset || res)
+    } finally {
+      setAssetDetailLoadingFor("")
     }
   }
 
@@ -1777,10 +1970,16 @@ export default function LmsCoursesPage() {
               <div className="rounded-lg border bg-card">
                 <div className="flex items-center justify-between border-b px-4 py-3">
                   <h2 className="font-semibold">{page.completePreview}</h2>
-                  <Button variant="outline" size="sm" onClick={loadCompleteCourse} disabled={!selectedCourse || previewLoading}>
-                    {previewLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
-                    {page.loadComplete}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={loadCourseDetail} disabled={!selectedCourse || courseDetailLoading}>
+                      <RefreshCw className={cn("mr-2 h-4 w-4", courseDetailLoading && "animate-spin")} />
+                      {page.loadCourseDetail}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={loadCompleteCourse} disabled={!selectedCourse || previewLoading}>
+                      {previewLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Eye className="mr-2 h-4 w-4" />}
+                      {page.loadComplete}
+                    </Button>
+                  </div>
                 </div>
                 <div className="p-4">
                   {!selectedCourse ? (
@@ -1796,6 +1995,22 @@ export default function LmsCoursesPage() {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <CheckCircle2 className="h-4 w-4" />
                       {page.noPreview}
+                    </div>
+                  )}
+                  {courseDetail && (
+                    <div className="mt-4 grid gap-3 text-sm md:grid-cols-3">
+                      <div className="rounded-md border p-3">
+                        <div className="text-xs text-muted-foreground">{page.chapters}</div>
+                        <div className="mt-1 text-lg font-semibold">{courseDetail.chapter_count || 0}</div>
+                      </div>
+                      <div className="rounded-md border p-3">
+                        <div className="text-xs text-muted-foreground">{page.lessons}</div>
+                        <div className="mt-1 text-lg font-semibold">{courseDetail.lesson_count || 0}</div>
+                      </div>
+                      <div className="rounded-md border p-3">
+                        <div className="text-xs text-muted-foreground">{page.quizzes}</div>
+                        <div className="mt-1 text-lg font-semibold">{courseDetail.quiz_count || 0}</div>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1834,7 +2049,7 @@ export default function LmsCoursesPage() {
                       {enrollments.map((enrollment) => (
                         <div
                           key={enrollment.enrollment_id}
-                          className="grid gap-3 border-b px-3 py-3 text-sm last:border-b-0 lg:grid-cols-[minmax(0,1.5fr)_100px_90px_140px_110px]"
+                          className="grid gap-3 border-b px-3 py-3 text-sm last:border-b-0 xl:grid-cols-[minmax(0,1.4fr)_90px_90px_120px_minmax(0,1fr)]"
                         >
                           <div className="min-w-0">
                             <div className="truncate font-medium">{enrollment.candidate_id}</div>
@@ -1847,21 +2062,73 @@ export default function LmsCoursesPage() {
                             {enrollment.progress_percentage || 0}%
                           </div>
                           <div className="text-xs text-muted-foreground">{formatBackendDate(enrollment.joined_at)}</div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => loadCandidateProgress(enrollment.candidate_id)}
-                            disabled={progressLoadingFor === enrollment.candidate_id}
-                          >
-                            {progressLoadingFor === enrollment.candidate_id ? (
-                              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Eye className="mr-2 h-4 w-4" />
-                            )}
-                            {page.viewProgress}
-                          </Button>
+                          <div className="flex flex-wrap justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => loadEnrollmentDetail(enrollment)}
+                              disabled={enrollmentDetailLoadingFor === enrollment.enrollment_id}
+                            >
+                              <Eye className="mr-1 h-4 w-4" />
+                              {page.detail}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => loadCandidateProgress(enrollment.candidate_id)}
+                              disabled={progressLoadingFor === enrollment.candidate_id}
+                            >
+                              {progressLoadingFor === enrollment.candidate_id ? (
+                                <RefreshCw className="mr-1 h-4 w-4 animate-spin" />
+                              ) : (
+                                <Eye className="mr-1 h-4 w-4" />
+                              )}
+                              {page.viewProgress}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => loadLessonProgressForCandidate(enrollment.candidate_id)}
+                              disabled={lessonProgressLoadingFor === enrollment.candidate_id}
+                            >
+                              <BookOpen className="mr-1 h-4 w-4" />
+                              {page.lessonProgress}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => loadChapterProgressForCandidate(enrollment.candidate_id)}
+                              disabled={chapterProgressLoadingFor === enrollment.candidate_id}
+                            >
+                              <ClipboardList className="mr-1 h-4 w-4" />
+                              {page.chapterProgress}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => loadQuizAttemptsForCandidate(enrollment.candidate_id)}
+                              disabled={quizAttemptsLoadingFor === enrollment.candidate_id}
+                            >
+                              <CheckCircle2 className="mr-1 h-4 w-4" />
+                              {page.quizAttempts}
+                            </Button>
+                          </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {enrollmentDetail && (
+                    <div className="mt-4 rounded-md bg-muted p-3 text-sm">
+                      <div className="mb-2 font-medium">{page.enrollmentDetail}</div>
+                      <div className="grid gap-2 text-muted-foreground md:grid-cols-3">
+                        <div>{page.candidate}: {enrollmentDetail.candidate_id}</div>
+                        <div>{page.status}: {enrollmentDetail.status || t.common.na}</div>
+                        <div>{page.progress}: {enrollmentDetail.progress_percentage || 0}%</div>
+                        <div>{page.completedLessons}: {enrollmentDetail.completed_lessons_count || 0}/{enrollmentDetail.total_lessons || 0}</div>
+                        <div>{page.passedQuizzes}: {enrollmentDetail.passed_quizzes_count || 0}/{enrollmentDetail.total_quizzes || 0}</div>
+                        <div>{page.completedAt}: {formatBackendDate(enrollmentDetail.completed_at)}</div>
+                      </div>
                     </div>
                   )}
 
@@ -1882,13 +2149,90 @@ export default function LmsCoursesPage() {
                       </div>
                     </div>
                   )}
+
+                  {lessonProgress.length > 0 && (
+                    <div className="mt-4 overflow-hidden rounded-md border">
+                      <div className="border-b bg-muted px-3 py-2 text-sm font-medium">{page.lessonProgress}</div>
+                      {lessonProgress.map((item) => (
+                        <div key={`${item.user_id || item.candidate_id}-${item.lesson_id}`} className="grid gap-2 border-b px-3 py-2 text-sm last:border-b-0 md:grid-cols-[minmax(0,1fr)_100px_150px_80px]">
+                          <div className="min-w-0">
+                            <div className="truncate font-medium">{item.lesson_title || item.lesson_id}</div>
+                            <div className="truncate text-xs text-muted-foreground">{item.lesson_id}</div>
+                          </div>
+                          <Badge variant="outline" className="w-fit">{item.status || t.common.na}</Badge>
+                          <div className="text-xs text-muted-foreground">{formatBackendDate(item.completed_at || item.updated_at)}</div>
+                          <Button variant="ghost" size="sm" onClick={() => loadLessonProgressDetail(item)}>{page.detail}</Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {lessonProgressDetail && (
+                    <pre className="mt-3 max-h-72 overflow-auto rounded-md bg-muted p-3 text-xs text-muted-foreground">
+                      {JSON.stringify(lessonProgressDetail, null, 2)}
+                    </pre>
+                  )}
+
+                  {chapterProgress && (
+                    <div className="mt-4 rounded-md bg-muted p-3 text-sm">
+                      <div className="mb-2 font-medium">{page.chapterProgress}</div>
+                      <div className="grid gap-2 text-muted-foreground md:grid-cols-3">
+                        <div>{page.currentChapter}: {chapterProgress.chapter_title || chapterProgress.chapter_id}</div>
+                        <div>{page.status}: {chapterProgress.status || t.common.na}</div>
+                        <div>{page.completedLessons}: {chapterProgress.completed_lessons_count || 0}/{chapterProgress.total_lessons || 0}</div>
+                        <div>{page.passedQuizzes}: {chapterProgress.passed_quizzes_count || 0}/{chapterProgress.total_quizzes || 0}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {quizAttempts.length > 0 && (
+                    <div className="mt-4 overflow-hidden rounded-md border">
+                      <div className="border-b bg-muted px-3 py-2 text-sm font-medium">{page.quizAttempts}</div>
+                      {quizAttempts.map((attempt) => (
+                        <div key={attempt.attempt_id} className="grid gap-2 border-b px-3 py-2 text-sm last:border-b-0 md:grid-cols-[minmax(0,1fr)_100px_120px_150px_80px]">
+                          <div className="min-w-0">
+                            <div className="truncate font-medium">{attempt.quiz_title || attempt.quiz_id}</div>
+                            <div className="truncate text-xs text-muted-foreground">{attempt.attempt_id}</div>
+                          </div>
+                          <Badge variant={attempt.is_passed ? "default" : "outline"} className="w-fit">{attempt.status || t.common.na}</Badge>
+                          <div>{attempt.score || 0}/{attempt.max_score || 0}</div>
+                          <div className="text-xs text-muted-foreground">{formatBackendDate(attempt.completed_at || attempt.started_at)}</div>
+                          <Button variant="ghost" size="sm" onClick={() => loadQuizAttemptDetail(attempt)}>{page.detail}</Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {quizAttemptDetail && (
+                    <pre className="mt-3 max-h-72 overflow-auto rounded-md bg-muted p-3 text-xs text-muted-foreground">
+                      {JSON.stringify(quizAttemptDetail, null, 2)}
+                    </pre>
+                  )}
                 </div>
               </div>
 
               <div className="rounded-lg border bg-card">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
-                  <h2 className="font-semibold">{page.brokenAssets}</h2>
+                  <h2 className="font-semibold">{page.courseAssets}</h2>
                   <div className="flex items-center gap-2">
+                    <Select
+                      value={assetStatus}
+                      onValueChange={(value) => {
+                        setAssetStatus(value)
+                        setBrokenAssets([])
+                        setBrokenAssetsNextPageToken("")
+                      }}
+                    >
+                      <SelectTrigger className="h-9 w-36">
+                        <SelectValue placeholder={page.assetStatus} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{page.statusAll}</SelectItem>
+                        <SelectItem value="active">{page.assetStatusActive}</SelectItem>
+                        <SelectItem value="broken">{page.assetStatusBroken}</SelectItem>
+                        <SelectItem value="missing">{page.assetStatusMissing}</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Select
                       value={brokenAssetType}
                       onValueChange={(value) => {
@@ -1909,7 +2253,7 @@ export default function LmsCoursesPage() {
                     </Select>
                     <Button variant="outline" size="sm" onClick={() => loadBrokenAssets()} disabled={brokenAssetsLoading}>
                       <RefreshCw className={cn("mr-2 h-4 w-4", brokenAssetsLoading && "animate-spin")} />
-                      {page.loadBrokenAssets}
+                      {page.loadCourseAssets}
                     </Button>
                   </div>
                 </div>
@@ -1917,14 +2261,14 @@ export default function LmsCoursesPage() {
                   {brokenAssets.length === 0 ? (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <AlertTriangle className="h-4 w-4" />
-                      {page.noBrokenAssets}
+                      {page.noCourseAssets}
                     </div>
                   ) : (
                     <div className="overflow-hidden rounded-md border">
                       {brokenAssets.map((asset) => (
                         <div
                           key={`${asset.object_key}-${asset.asset_type}-${asset.created_at}`}
-                          className="grid gap-3 border-b px-3 py-3 text-sm last:border-b-0 lg:grid-cols-[120px_minmax(0,1.4fr)_minmax(0,1fr)_120px]"
+                          className="grid gap-3 border-b px-3 py-3 text-sm last:border-b-0 xl:grid-cols-[120px_minmax(0,1.3fr)_minmax(0,1fr)_120px_90px]"
                         >
                           <Badge variant="outline" className="w-fit">
                             {asset.asset_type || t.common.na}
@@ -1935,11 +2279,35 @@ export default function LmsCoursesPage() {
                           </div>
                           <div className="min-w-0 text-muted-foreground">
                             <div className="truncate">{describeBrokenAssetOwner(asset)}</div>
-                            <div className="truncate text-xs">{asset.course_id || asset.chapter_id || asset.lesson_id || asset.material_id || t.common.na}</div>
+                            <div className="truncate text-xs">{asset.associated_id || asset.course_id || asset.chapter_id || asset.lesson_id || asset.material_id || t.common.na}</div>
                           </div>
                           <div className="text-xs text-muted-foreground">{formatBackendDate(asset.updated_at || asset.created_at)}</div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => loadAssetDetail(asset)}
+                            disabled={assetDetailLoadingFor === `${asset.object_key}:${asset.associated_id}`}
+                          >
+                            <Eye className="mr-1 h-4 w-4" />
+                            {page.detail}
+                          </Button>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {assetDetail && (
+                    <div className="mt-4 rounded-md bg-muted p-3 text-sm">
+                      <div className="mb-2 font-medium">{page.assetDetail}</div>
+                      <div className="grid gap-2 text-muted-foreground md:grid-cols-2">
+                        <div className="truncate">Object Key: {assetDetail.object_key}</div>
+                        <div>{page.assetType}: {assetDetail.asset_type || t.common.na}</div>
+                        <div>{page.status}: {assetDetail.status || t.common.na}</div>
+                        <div>Associated ID: {assetDetail.associated_id || t.common.na}</div>
+                        <div className="truncate">SHA-256: {assetDetail.file_hash || t.common.na}</div>
+                        <div>{formatBackendDate(assetDetail.reconciled_at || assetDetail.updated_at)}</div>
+                        <div className="md:col-span-2">{assetDetail.error_message || page.noErrorMessage}</div>
+                      </div>
                     </div>
                   )}
 
