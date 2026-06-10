@@ -311,8 +311,8 @@ func (h *Handler) GetMallPipelineThumbnailURL(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	viewResp, err := h.Gcc.CreateViewURL(r.Context(), &gccpb.CreateViewURLRequest{
-		ObjectKey: objectKey,
+	viewResp, err := h.Gcc.GetPublicURL(r.Context(), &gccpb.GetPublicURLRequest{
+		PipelineId: pipelineID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -320,8 +320,7 @@ func (h *Handler) GetMallPipelineThumbnailURL(w http.ResponseWriter, r *http.Req
 	}
 
 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
-		URL:       viewResp.GetViewUrl(),
-		ExpiresAt: viewResp.GetExpiresAt(),
+		URL: viewResp.GetPublicUrl(),
 	})
 }
 
