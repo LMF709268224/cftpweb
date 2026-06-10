@@ -334,11 +334,13 @@ export function PurchaseDialog({
         payment_status: "success",
         payment_action: activeOrder.action,
         order_id: activeOrder.orderId,
+        pipeline_id: pipelineId,
       })
       const cancelParams = new URLSearchParams({
         payment_status: "cancelled",
         payment_action: activeOrder.action,
         order_id: activeOrder.orderId,
+        pipeline_id: pipelineId,
       })
       const res = await apiClient("/api/mall/payments/initiate", {
         method: "POST",

@@ -58,6 +58,21 @@ const loadPipelineThumbnailUrl = async (pipelineId: string, thumbnailObjectKey?:
 }
 
 // 资料类型图标
+const mapCandidatePipeline = (pipeline: any, unknownCourse: string) => ({
+  id: pipeline.pipeline_cc_ulid || pipeline.pipeline_ulid,
+  instanceId: pipeline.pipeline_ulid,
+  configId: pipeline.pipeline_cc_ulid,
+  title: certificationDisplayName(pipeline.pipeline_name) || pipeline.pipeline_cc_ulid || pipeline.pipeline_ulid || unknownCourse,
+  currentStage: pipeline.current_stage_name || pipeline.current_stage_ulid,
+  progress: pipeline.progress_available ? Math.round(Number(pipeline.progress)) : undefined,
+  progressAvailable: Boolean(pipeline.progress_available),
+  statusValue: pipeline.status,
+  startedAt: pipeline.started_at,
+  completedAt: pipeline.completed_at,
+})
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const resourceTypeIcons: any = {
   video: Video,
   pdf: FileText,
@@ -84,6 +99,14 @@ export default function CoursesPage() {
   const [learningResources, setLearningResources] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
+  const refreshMyCourses = async () => {
+    const res = await apiClient("/api/pipeline")
+    const list = Array.isArray(res?.list) ? res.list : []
+    const mapped = list.map((pipeline: any) => mapCandidatePipeline(pipeline, t.common.unknownCourse))
+    setMyCourses(mapped)
+    return mapped
+  }
+
   useEffect(() => {
     if (typeof window === "undefined") return
 
@@ -92,6 +115,7 @@ export default function CoursesPage() {
     if (!paymentStatus) return
 
     const paymentAction = url.searchParams.get("payment_action")
+    const purchasedPipelineId = url.searchParams.get("pipeline_id")
     const isUnlock = paymentAction === "unlock"
     const copy = {
       purchaseSuccess: lang === "zh" ? "购买成功，课程列表已刷新。" : "Purchase successful. The course list has been refreshed.",
@@ -102,7 +126,31 @@ export default function CoursesPage() {
 
     if (paymentStatus === "success") {
       toast.success(isUnlock ? copy.unlockSuccess : copy.purchaseSuccess)
-      if (!isUnlock) setActiveTab("my")
+      if (!isUnlock) {
+        setActiveTab("my")
+        setSearchQuery("")
+        setMyCourses([])
+
+        const refreshPurchasedCourses = async () => {
+          setLoading(true)
+          try {
+            for (let attempt = 0; attempt < 5; attempt += 1) {
+              const courses = await refreshMyCourses()
+              const hasPurchasedCourse = purchasedPipelineId
+                ? courses.some((course: any) => course.id === purchasedPipelineId || course.configId === purchasedPipelineId || course.instanceId === purchasedPipelineId)
+                : courses.length > 0
+              if (hasPurchasedCourse) return
+              await delay(900)
+            }
+          } catch (error) {
+            console.error(error)
+          } finally {
+            setLoading(false)
+          }
+        }
+
+        void refreshPurchasedCourses()
+      }
     } else if (paymentStatus === "cancelled") {
       toast.warning(copy.cancelled)
     } else if (paymentStatus === "failed") {
@@ -114,6 +162,7 @@ export default function CoursesPage() {
     url.searchParams.delete("payment_status")
     url.searchParams.delete("payment_action")
     url.searchParams.delete("order_id")
+    url.searchParams.delete("pipeline_id")
     window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
   }, [lang])
 
@@ -156,20 +205,7 @@ export default function CoursesPage() {
             setAllCourses(cards)
           }
         } else if (activeTab === "my") {
-          const res = await apiClient("/api/pipeline")
-          if (res?.list) {
-            setMyCourses(res.list.map((p: any) => ({
-              id: p.pipeline_cc_ulid || p.pipeline_ulid,
-              instanceId: p.pipeline_ulid,
-              title: certificationDisplayName(p.pipeline_name) || p.pipeline_cc_ulid || p.pipeline_ulid,
-              currentStage: p.current_stage_name || p.current_stage_ulid,
-              progress: p.progress_available ? Math.round(Number(p.progress)) : undefined,
-              progressAvailable: Boolean(p.progress_available),
-              statusValue: p.status,
-              startedAt: p.started_at,
-              completedAt: p.completed_at,
-            })))
-          }
+          await refreshMyCourses()
         } else if (activeTab === "resources") {
           const res = await apiClient("/api/pipeline/materials")
           if (res?.materials) {
@@ -315,6 +351,13 @@ export default function CoursesPage() {
 
           {activeTab === "my" && (
             <div className="space-y-4">
+              {loading && myCourses.length === 0 && (
+                <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-12 text-muted-foreground">
+                  <Clock className="h-5 w-5 animate-spin" />
+                  <span>{lang === "zh" ? "正在刷新我的认证..." : "Refreshing my certifications..."}</span>
+                </div>
+              )}
+
               {myCourses.map((course) => (
                 <div
                   key={course.id}
@@ -373,7 +416,7 @@ export default function CoursesPage() {
                 </div>
               ))}
 
-              {myCourses.length === 0 && (
+              {!loading && myCourses.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <div className="mb-4 h-16 w-16 rounded-full bg-muted flex items-center justify-center">
                     <BookOpen className="h-8 w-8 text-muted-foreground" />
