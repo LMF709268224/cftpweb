@@ -359,6 +359,8 @@ export const en: AppTranslations = {
     statusNoResult: "No result yet",
     statusScheduled: "Exam Scheduled",
     statusOpen: "Exam Open to Schedule",
+    notScheduledTitle: "Exam not scheduled yet",
+    notScheduledDesc: "This exam does not have a confirmation number, site, or appointment time yet. Schedule it first to view the details.",
     confirmationNumber: "Confirmation No.",
     site: "Site",
     appointmentStart: "Appointment Start",

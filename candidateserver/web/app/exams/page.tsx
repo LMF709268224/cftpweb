@@ -64,6 +64,14 @@ const hasExamResult = (exam: ExamItem) => {
   )
 }
 
+const hasText = (value?: string | null) => Boolean(value?.trim())
+
+const hasAppointmentDetails = (exam: ExamItem) =>
+  hasText(exam.confirmation_number) ||
+  hasText(exam.site_name) ||
+  hasText(exam.appointment_start_time) ||
+  hasText(exam.appointment_end_time)
+
 const tabs: Array<{ id: TabId; icon: React.ComponentType<{ className?: string }>; labelKey: keyof any }> = [
   { id: "current", icon: CalendarClock, labelKey: "currentTab" },
   { id: "history", icon: History, labelKey: "historyTab" },
@@ -240,18 +248,37 @@ export default function ExamsPage() {
                           </div>
                           <h3 className="text-lg font-semibold text-foreground">{exam.exam_code || exam.program_code || exam.exam_id || t.common.unknown}</h3>
                           <div className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-                            <div>
-                              <span className="font-medium text-foreground">{t.examsPage.confirmationNumber}:</span> {exam.confirmation_number || t.common.unknown}
-                            </div>
-                            <div>
-                              <span className="font-medium text-foreground">{t.examsPage.site}:</span> {exam.site_name || t.common.unknown}
-                            </div>
-                            <div>
-                              <span className="font-medium text-foreground">{t.examsPage.appointmentStart}:</span> {formatBackendDate(exam.appointment_start_time)}
-                            </div>
-                            <div>
-                              <span className="font-medium text-foreground">{t.examsPage.appointmentEnd}:</span> {formatBackendDate(exam.appointment_end_time)}
-                            </div>
+                            {hasText(exam.confirmation_number) && (
+                              <div>
+                                <span className="font-medium text-foreground">{t.examsPage.confirmationNumber}:</span> {exam.confirmation_number}
+                              </div>
+                            )}
+                            {hasText(exam.site_name) && (
+                              <div>
+                                <span className="font-medium text-foreground">{t.examsPage.site}:</span> {exam.site_name}
+                              </div>
+                            )}
+                            {hasText(exam.appointment_start_time) && (
+                              <div>
+                                <span className="font-medium text-foreground">{t.examsPage.appointmentStart}:</span> {formatBackendDate(exam.appointment_start_time)}
+                              </div>
+                            )}
+                            {hasText(exam.appointment_end_time) && (
+                              <div>
+                                <span className="font-medium text-foreground">{t.examsPage.appointmentEnd}:</span> {formatBackendDate(exam.appointment_end_time)}
+                              </div>
+                            )}
+                            {!hasAppointmentDetails(exam) && !hasExamResult(exam) && (
+                              <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
+                                <div className="flex items-start gap-2">
+                                  <CalendarClock className="mt-0.5 h-4 w-4 shrink-0" />
+                                  <div>
+                                    <div className="font-medium text-blue-800">{t.examsPage.notScheduledTitle}</div>
+                                    <div className="mt-1 text-xs">{t.examsPage.notScheduledDesc}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                             <div>
                               <span className="font-medium text-foreground">{t.examsPage.candidate}:</span>{" "}
                               {[exam.candidate_first_name, exam.candidate_last_name].filter(Boolean).join(" ") || exam.candidate_email || t.common.unknown}

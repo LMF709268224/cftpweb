@@ -357,6 +357,8 @@ export const zh = {
     statusNoResult: "未出结果",
     statusScheduled: "已预约考试",
     statusOpen: "可预约考试",
+    notScheduledTitle: "尚未预约考试",
+    notScheduledDesc: "当前考试还没有确认号、考点或预约时间，请完成预约后再查看具体安排。",
     confirmationNumber: "确认号",
     site: "站点",
     appointmentStart: "预约开始",
