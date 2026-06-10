@@ -66,6 +66,7 @@ export function CourseCard({
   const [eligibilityLoading, setEligibilityLoading] = useState(false)
   const resolvedStatusLabel = statusValue !== undefined ? getStatusLabel(t, CANDIDATE_PIPELINE_STATUS_LABELS, statusValue) : statusLabel
   const blockers = eligibility?.blockers || []
+  const effectivePurchased = isPurchased || blockers.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")
   const cardCopy = {
     ready: lang === "zh" ? "可购买认证" : "Ready to buy",
     unlock: lang === "zh" ? "需要先解锁" : "Unlock required",
@@ -107,7 +108,7 @@ export function CourseCard({
   }
 
   const accessState = (() => {
-    if (isPurchased) return null
+    if (effectivePurchased) return null
     if (eligibilityLoading && !eligibility) {
       return {
         label: cardCopy.checking,
@@ -144,7 +145,7 @@ export function CourseCard({
   })()
 
   const handleClick = (e: React.MouseEvent) => {
-    if (!isPurchased) {
+    if (!effectivePurchased) {
       e.preventDefault()
       setShowPurchaseDialog(true)
     }
@@ -169,7 +170,7 @@ export function CourseCard({
         )}
         
         {/* Purchased Badge */}
-        {isPurchased && (
+        {effectivePurchased && (
           <Badge className="absolute right-3 top-3 bg-emerald-500 text-white border-0 gap-1">
             <CheckCircle2 className="h-3 w-3" />
             {t.courses.purchased}
@@ -179,7 +180,7 @@ export function CourseCard({
         {/* Play button on hover */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-primary shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
-            {isPurchased ? (
+            {effectivePurchased ? (
               <Play className="h-4 w-4 fill-current" />
             ) : (
               <ShoppingCart className="h-4 w-4" />
@@ -213,7 +214,7 @@ export function CourseCard({
         )}
 
         {/* Progress Bar (if purchased and has progress) */}
-        {isPurchased && progress !== undefined && (
+        {effectivePurchased && progress !== undefined && (
           <div className="mb-4">
             <div className="flex items-center justify-between text-xs mb-1.5">
               <span className="text-muted-foreground">{t.courses.courseProgress}</span>
@@ -275,7 +276,7 @@ export function CourseCard({
 
   return (
     <>
-      {isPurchased ? (
+      {effectivePurchased ? (
         <Link
           href={`/courses/detail?id=${encodeURIComponent(id)}`}
           className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:shadow-lg hover:border-primary/20 hover:-translate-y-1"

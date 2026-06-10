@@ -71,8 +71,6 @@ const mapCandidatePipeline = (pipeline: any, unknownCourse: string) => ({
   completedAt: pipeline.completed_at,
 })
 
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
 const resourceTypeIcons: any = {
   video: Video,
   pdf: FileText,
@@ -127,29 +125,21 @@ export default function CoursesPage() {
     if (paymentStatus === "success") {
       toast.success(isUnlock ? copy.unlockSuccess : copy.purchaseSuccess)
       if (!isUnlock) {
-        setActiveTab("my")
-        setSearchQuery("")
-        setMyCourses([])
-
-        const refreshPurchasedCourses = async () => {
-          setLoading(true)
+        const refreshPurchasedEligibility = async () => {
+          if (!purchasedPipelineId) return
           try {
-            for (let attempt = 0; attempt < 5; attempt += 1) {
-              const courses = await refreshMyCourses()
-              const hasPurchasedCourse = purchasedPipelineId
-                ? courses.some((course: any) => course.id === purchasedPipelineId || course.configId === purchasedPipelineId || course.instanceId === purchasedPipelineId)
-                : courses.length > 0
-              if (hasPurchasedCourse) return
-              await delay(900)
-            }
+            await apiClient(`/api/mall/pipelines/${encodeURIComponent(purchasedPipelineId)}/eligibility`)
+            setAllCourses((courses) => courses.map((course) => (
+              course.id === purchasedPipelineId
+                ? { ...course, eligibilityRefreshKey: Date.now() }
+                : course
+            )))
           } catch (error) {
             console.error(error)
-          } finally {
-            setLoading(false)
           }
         }
 
-        void refreshPurchasedCourses()
+        void refreshPurchasedEligibility()
       }
     } else if (paymentStatus === "cancelled") {
       toast.warning(copy.cancelled)
@@ -344,7 +334,7 @@ export default function CoursesPage() {
           {activeTab === "all" && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filteredCourses.map((course) => (
-                <CourseCard key={course.id} {...course} />
+                <CourseCard key={`${course.id}-${course.eligibilityRefreshKey || 0}`} {...course} />
               ))}
             </div>
           )}
