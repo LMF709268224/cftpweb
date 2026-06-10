@@ -1,14 +1,15 @@
 package handler
 
 import (
+	"log/slog"
+	"net/http"
+	"strings"
+
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gprog "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
-	"log/slog"
-	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -297,31 +298,31 @@ func (h *Handler) GetMallPipelineThumbnailURL(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	pipelineResp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-		Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineID},
+	// pipelineResp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
+	// 	Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineID},
+	// })
+	// if err != nil {
+	// 	HandleGrpcError(w, err)
+	// 	return
+	// }
+
+	// objectKey := strings.TrimSpace(pipelineResp.GetThumbnailObjectKey())
+	// if objectKey == "" {
+	// 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{})
+	// 	return
+	// }
+
+	viewResp, err := h.Gcc.GetPublicURL(r.Context(), &gccpb.GetPublicURLRequest{
+		PipelineId: pipelineID,
 	})
 	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	objectKey := strings.TrimSpace(pipelineResp.GetThumbnailObjectKey())
-	if objectKey == "" {
+		slog.Warn("Failed to get pipeline thumbnail url", "error", err, "pipeline_id", pipelineID)
 		WriteJSON(w, http.StatusOK, GetAccessURLRsp{})
 		return
 	}
 
-	viewResp, err := h.Lms.CreateViewURLAdmin(r.Context(), &lmspb.CreateViewURLRequest{
-		ObjectKey: objectKey,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
-		URL:       viewResp.GetViewUrl(),
-		ExpiresAt: viewResp.GetExpiresAt(),
+		URL: viewResp.GetPublicUrl(),
 	})
 }
 

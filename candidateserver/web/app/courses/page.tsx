@@ -39,8 +39,8 @@ const certificationDisplayName = (value?: string) => {
     .replace(/管线/g, "认证")
 }
 
-const loadPipelineThumbnailUrl = async (pipelineId: string, thumbnailObjectKey?: string) => {
-  if (!pipelineId || !thumbnailObjectKey) return ""
+const loadPipelineThumbnailUrl = async (pipelineId: string) => {
+  if (!pipelineId) return ""
   try {
     const headers = new Headers()
     const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : ""
@@ -169,7 +169,7 @@ export default function CoursesPage() {
               const stages = p.stages || []
               const unitCount = stages.reduce((total: number, stage: any) => total + (stage.units?.length || 0), 0)
               const finalQualCount = p.final_quals?.length || 0
-              const image = await loadPipelineThumbnailUrl(p.pipeline_id, p.thumbnail_object_key)
+              const image = await loadPipelineThumbnailUrl(p.pipeline_id)
               const firstStageNames = stages
                 .slice(0, 2)
                 .map((stage: any) => stage.name)
