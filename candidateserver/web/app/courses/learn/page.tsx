@@ -1260,7 +1260,12 @@ function LearningContent() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  variant="ghost"
+                                  variant={item.completed ? "outline" : "default"}
+                                  className={
+                                    item.completed
+                                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 disabled:opacity-100"
+                                      : "shadow-sm shadow-primary/20"
+                                  }
                                   disabled={item.completed}
                                   onClick={() => void markLessonCompleted(item.lesson?.lesson_id)}
                                 >
@@ -1325,7 +1330,16 @@ function LearningContent() {
                     </div>
                     <h2 className="text-center text-2xl font-bold text-foreground">{lesson?.title || t.common.unknownCourse}</h2>
                     <div className="flex justify-start gap-2 lg:justify-end">
-                      <Button variant="outline" onClick={markCompleted} disabled={currentLessonCompleted}>
+                      <Button
+                        variant={currentLessonCompleted ? "outline" : "default"}
+                        className={
+                          currentLessonCompleted
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 disabled:opacity-100"
+                            : "shadow-md shadow-primary/20"
+                        }
+                        onClick={markCompleted}
+                        disabled={currentLessonCompleted}
+                      >
                         <CheckCircle2 className="h-4 w-4" />
                         {currentLessonCompleted ? t.learning.completedTag : t.learning.completeLesson}
                       </Button>
