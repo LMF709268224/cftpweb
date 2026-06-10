@@ -354,15 +354,70 @@ func (QuizQuestionType) EnumDescriptor() ([]byte, []int) {
 	return file_lms_proto_rawDescGZIP(), []int{5}
 }
 
+// 资源包文件类型
+type ResourcePackFileType int32
+
+const (
+	ResourcePackFileType_RESOURCE_PACK_FILE_TYPE_UNSPECIFIED ResourcePackFileType = 0 // 未指定
+	ResourcePackFileType_RESOURCE_PACK_FILE_TYPE_VIDEO       ResourcePackFileType = 1 // 视频
+	ResourcePackFileType_RESOURCE_PACK_FILE_TYPE_PDF         ResourcePackFileType = 2 // PDF文档
+	ResourcePackFileType_RESOURCE_PACK_FILE_TYPE_ZIP         ResourcePackFileType = 3 // ZIP压缩包
+)
+
+// Enum value maps for ResourcePackFileType.
+var (
+	ResourcePackFileType_name = map[int32]string{
+		0: "RESOURCE_PACK_FILE_TYPE_UNSPECIFIED",
+		1: "RESOURCE_PACK_FILE_TYPE_VIDEO",
+		2: "RESOURCE_PACK_FILE_TYPE_PDF",
+		3: "RESOURCE_PACK_FILE_TYPE_ZIP",
+	}
+	ResourcePackFileType_value = map[string]int32{
+		"RESOURCE_PACK_FILE_TYPE_UNSPECIFIED": 0,
+		"RESOURCE_PACK_FILE_TYPE_VIDEO":       1,
+		"RESOURCE_PACK_FILE_TYPE_PDF":         2,
+		"RESOURCE_PACK_FILE_TYPE_ZIP":         3,
+	}
+)
+
+func (x ResourcePackFileType) Enum() *ResourcePackFileType {
+	p := new(ResourcePackFileType)
+	*p = x
+	return p
+}
+
+func (x ResourcePackFileType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ResourcePackFileType) Descriptor() protoreflect.EnumDescriptor {
+	return file_lms_proto_enumTypes[6].Descriptor()
+}
+
+func (ResourcePackFileType) Type() protoreflect.EnumType {
+	return &file_lms_proto_enumTypes[6]
+}
+
+func (x ResourcePackFileType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ResourcePackFileType.Descriptor instead.
+func (ResourcePackFileType) EnumDescriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{6}
+}
+
 // 上传类型（决定S3存储路径和校验规则）
 type UploadType int32
 
 const (
-	UploadType_UPLOAD_TYPE_UNSPECIFIED      UploadType = 0 // 未指定
-	UploadType_UPLOAD_TYPE_COURSE_THUMBNAIL UploadType = 1 // 课程封面图
-	UploadType_UPLOAD_TYPE_COURSE_MATERIAL  UploadType = 2 // 课程资料文件
-	UploadType_UPLOAD_TYPE_LESSON_ASSET     UploadType = 3 // 课时素材文件
-	UploadType_UPLOAD_TYPE_QUIZ_ASSET       UploadType = 4 // 测验素材文件
+	UploadType_UPLOAD_TYPE_UNSPECIFIED             UploadType = 0 // 未指定
+	UploadType_UPLOAD_TYPE_COURSE_THUMBNAIL        UploadType = 1 // 课程封面图
+	UploadType_UPLOAD_TYPE_COURSE_MATERIAL         UploadType = 2 // 课程资料文件
+	UploadType_UPLOAD_TYPE_LESSON_ASSET            UploadType = 3 // 课时素材文件
+	UploadType_UPLOAD_TYPE_QUIZ_ASSET              UploadType = 4 // 测验素材文件
+	UploadType_UPLOAD_TYPE_RESOURCE_PACK_THUMBNAIL UploadType = 5 // 资源包封面图
+	UploadType_UPLOAD_TYPE_RESOURCE_PACK_FILE      UploadType = 6 // 资源包文件
 )
 
 // Enum value maps for UploadType.
@@ -373,13 +428,17 @@ var (
 		2: "UPLOAD_TYPE_COURSE_MATERIAL",
 		3: "UPLOAD_TYPE_LESSON_ASSET",
 		4: "UPLOAD_TYPE_QUIZ_ASSET",
+		5: "UPLOAD_TYPE_RESOURCE_PACK_THUMBNAIL",
+		6: "UPLOAD_TYPE_RESOURCE_PACK_FILE",
 	}
 	UploadType_value = map[string]int32{
-		"UPLOAD_TYPE_UNSPECIFIED":      0,
-		"UPLOAD_TYPE_COURSE_THUMBNAIL": 1,
-		"UPLOAD_TYPE_COURSE_MATERIAL":  2,
-		"UPLOAD_TYPE_LESSON_ASSET":     3,
-		"UPLOAD_TYPE_QUIZ_ASSET":       4,
+		"UPLOAD_TYPE_UNSPECIFIED":             0,
+		"UPLOAD_TYPE_COURSE_THUMBNAIL":        1,
+		"UPLOAD_TYPE_COURSE_MATERIAL":         2,
+		"UPLOAD_TYPE_LESSON_ASSET":            3,
+		"UPLOAD_TYPE_QUIZ_ASSET":              4,
+		"UPLOAD_TYPE_RESOURCE_PACK_THUMBNAIL": 5,
+		"UPLOAD_TYPE_RESOURCE_PACK_FILE":      6,
 	}
 )
 
@@ -394,11 +453,11 @@ func (x UploadType) String() string {
 }
 
 func (UploadType) Descriptor() protoreflect.EnumDescriptor {
-	return file_lms_proto_enumTypes[6].Descriptor()
+	return file_lms_proto_enumTypes[7].Descriptor()
 }
 
 func (UploadType) Type() protoreflect.EnumType {
-	return &file_lms_proto_enumTypes[6]
+	return &file_lms_proto_enumTypes[7]
 }
 
 func (x UploadType) Number() protoreflect.EnumNumber {
@@ -407,7 +466,7 @@ func (x UploadType) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use UploadType.Descriptor instead.
 func (UploadType) EnumDescriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{6}
+	return file_lms_proto_rawDescGZIP(), []int{7}
 }
 
 // 课程实体（支持版本化：每次编辑生成新版本，发布后旧版本标记为Deprecated）
@@ -6648,9 +6707,10 @@ func (x *ReorderQuizOptionsResponse) GetSuccess() bool {
 
 type ListObjectsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Prefix        string                 `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`                        // S3对象key前缀过滤
-	PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`   // 每页数量
-	PageToken     string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"` // 分页游标
+	Prefix        string                 `protobuf:"bytes,1,opt,name=prefix,proto3" json:"prefix,omitempty"`                           // S3对象key前缀过滤
+	PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`      // 每页数量
+	PageToken     string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`    // 分页游标
+	BucketType    string                 `protobuf:"bytes,4,opt,name=bucket_type,json=bucketType,proto3" json:"bucket_type,omitempty"` // 存储桶类型: private / public (默认 private)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -6702,6 +6762,13 @@ func (x *ListObjectsRequest) GetPageSize() uint32 {
 func (x *ListObjectsRequest) GetPageToken() string {
 	if x != nil {
 		return x.PageToken
+	}
+	return ""
+}
+
+func (x *ListObjectsRequest) GetBucketType() string {
+	if x != nil {
+		return x.BucketType
 	}
 	return ""
 }
@@ -6767,18 +6834,20 @@ func (x *ListObjectsResponse) GetNextPageToken() string {
 }
 
 type CreateUploadURLRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UploadType    UploadType             `protobuf:"varint,1,opt,name=upload_type,json=uploadType,proto3,enum=glms.UploadType" json:"upload_type,omitempty"` // 上传类型，决定S3路径和校验规则 ([required])
-	FileName      string                 `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`                             // 文件名 ([required])
-	ContentType   string                 `protobuf:"bytes,3,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`                    // 文件MIME类型 ([required])
-	CourseId      string                 `protobuf:"bytes,4,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                             // 课程ID ([required])
-	ChapterId     string                 `protobuf:"bytes,5,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`                          // 章节ID（上传课时素材时必填）
-	MaterialId    string                 `protobuf:"bytes,6,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`                       // 资料ID（上传课程资料时必填）
-	LessonId      string                 `protobuf:"bytes,7,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`                             // 课时ID（上传课时素材时必填）
-	QuizId        string                 `protobuf:"bytes,8,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                                   // 测验ID（上传测验素材时必填）
-	FileHash      string                 `protobuf:"bytes,9,opt,name=file_hash,json=fileHash,proto3" json:"file_hash,omitempty"`                             // 文件SHA256哈希 ([required])
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	UploadType         UploadType             `protobuf:"varint,1,opt,name=upload_type,json=uploadType,proto3,enum=glms.UploadType" json:"upload_type,omitempty"`        // 上传类型，决定S3路径和校验规则 ([required])
+	FileName           string                 `protobuf:"bytes,2,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`                                    // 文件名 ([required])
+	ContentType        string                 `protobuf:"bytes,3,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`                           // 文件MIME类型 ([required])
+	CourseId           string                 `protobuf:"bytes,4,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                    // 课程ID ([required])
+	ChapterId          string                 `protobuf:"bytes,5,opt,name=chapter_id,json=chapterId,proto3" json:"chapter_id,omitempty"`                                 // 章节ID（上传课时素材时必填）
+	MaterialId         string                 `protobuf:"bytes,6,opt,name=material_id,json=materialId,proto3" json:"material_id,omitempty"`                              // 资料ID（上传课程资料时必填）
+	LessonId           string                 `protobuf:"bytes,7,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`                                    // 课时ID（上传课时素材时必填）
+	QuizId             string                 `protobuf:"bytes,8,opt,name=quiz_id,json=quizId,proto3" json:"quiz_id,omitempty"`                                          // 测验ID（上传测验素材时必填）
+	FileHash           string                 `protobuf:"bytes,9,opt,name=file_hash,json=fileHash,proto3" json:"file_hash,omitempty"`                                    // 文件SHA256哈希 ([required])
+	PackId             string                 `protobuf:"bytes,10,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`                                         // 资源包ID（上传资源包封面图/文件时必填）
+	ResourcePackFileId string                 `protobuf:"bytes,11,opt,name=resource_pack_file_id,json=resourcePackFileId,proto3" json:"resource_pack_file_id,omitempty"` // 资源包文件ID（上传资源包文件时必填）
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateUploadURLRequest) Reset() {
@@ -6870,6 +6939,20 @@ func (x *CreateUploadURLRequest) GetQuizId() string {
 func (x *CreateUploadURLRequest) GetFileHash() string {
 	if x != nil {
 		return x.FileHash
+	}
+	return ""
+}
+
+func (x *CreateUploadURLRequest) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+func (x *CreateUploadURLRequest) GetResourcePackFileId() string {
+	if x != nil {
+		return x.ResourcePackFileId
 	}
 	return ""
 }
@@ -15535,6 +15618,1590 @@ func (x *CreateViewURLCandidateRequest) GetObjectKey() string {
 	return ""
 }
 
+type CreateResourcePackRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	PackId             string                 `protobuf:"bytes,6,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	Title              string                 `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	Description        string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
+	ThumbnailObjectKey string                 `protobuf:"bytes,3,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
+	ThumbnailFileHash  string                 `protobuf:"bytes,4,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`
+	Respath            string                 `protobuf:"bytes,5,opt,name=respath,proto3" json:"respath,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *CreateResourcePackRequest) Reset() {
+	*x = CreateResourcePackRequest{}
+	mi := &file_lms_proto_msgTypes[232]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateResourcePackRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateResourcePackRequest) ProtoMessage() {}
+
+func (x *CreateResourcePackRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[232]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateResourcePackRequest.ProtoReflect.Descriptor instead.
+func (*CreateResourcePackRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{232}
+}
+
+func (x *CreateResourcePackRequest) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+func (x *CreateResourcePackRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CreateResourcePackRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateResourcePackRequest) GetThumbnailObjectKey() string {
+	if x != nil {
+		return x.ThumbnailObjectKey
+	}
+	return ""
+}
+
+func (x *CreateResourcePackRequest) GetThumbnailFileHash() string {
+	if x != nil {
+		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *CreateResourcePackRequest) GetRespath() string {
+	if x != nil {
+		return x.Respath
+	}
+	return ""
+}
+
+type UpdateResourcePackRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	PackId             string                 `protobuf:"bytes,1,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	Title              string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description        string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	ThumbnailObjectKey string                 `protobuf:"bytes,4,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
+	ThumbnailFileHash  string                 `protobuf:"bytes,5,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`
+	Respath            string                 `protobuf:"bytes,6,opt,name=respath,proto3" json:"respath,omitempty"`
+	Status             string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	Version            uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *UpdateResourcePackRequest) Reset() {
+	*x = UpdateResourcePackRequest{}
+	mi := &file_lms_proto_msgTypes[233]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateResourcePackRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateResourcePackRequest) ProtoMessage() {}
+
+func (x *UpdateResourcePackRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[233]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateResourcePackRequest.ProtoReflect.Descriptor instead.
+func (*UpdateResourcePackRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{233}
+}
+
+func (x *UpdateResourcePackRequest) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackRequest) GetThumbnailObjectKey() string {
+	if x != nil {
+		return x.ThumbnailObjectKey
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackRequest) GetThumbnailFileHash() string {
+	if x != nil {
+		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackRequest) GetRespath() string {
+	if x != nil {
+		return x.Respath
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackRequest) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+type DeleteResourcePackRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PackId        string                 `protobuf:"bytes,1,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteResourcePackRequest) Reset() {
+	*x = DeleteResourcePackRequest{}
+	mi := &file_lms_proto_msgTypes[234]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteResourcePackRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteResourcePackRequest) ProtoMessage() {}
+
+func (x *DeleteResourcePackRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[234]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteResourcePackRequest.ProtoReflect.Descriptor instead.
+func (*DeleteResourcePackRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{234}
+}
+
+func (x *DeleteResourcePackRequest) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+func (x *DeleteResourcePackRequest) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+type DeleteResourcePackResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteResourcePackResponse) Reset() {
+	*x = DeleteResourcePackResponse{}
+	mi := &file_lms_proto_msgTypes[235]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteResourcePackResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteResourcePackResponse) ProtoMessage() {}
+
+func (x *DeleteResourcePackResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[235]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteResourcePackResponse.ProtoReflect.Descriptor instead.
+func (*DeleteResourcePackResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{235}
+}
+
+func (x *DeleteResourcePackResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type GetResourcePackRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PackId        string                 `protobuf:"bytes,1,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetResourcePackRequest) Reset() {
+	*x = GetResourcePackRequest{}
+	mi := &file_lms_proto_msgTypes[236]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetResourcePackRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetResourcePackRequest) ProtoMessage() {}
+
+func (x *GetResourcePackRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[236]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetResourcePackRequest.ProtoReflect.Descriptor instead.
+func (*GetResourcePackRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{236}
+}
+
+func (x *GetResourcePackRequest) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+type ListResourcePacksRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PageSize      uint32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListResourcePacksRequest) Reset() {
+	*x = ListResourcePacksRequest{}
+	mi := &file_lms_proto_msgTypes[237]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListResourcePacksRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListResourcePacksRequest) ProtoMessage() {}
+
+func (x *ListResourcePacksRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[237]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListResourcePacksRequest.ProtoReflect.Descriptor instead.
+func (*ListResourcePacksRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{237}
+}
+
+func (x *ListResourcePacksRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListResourcePacksRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *ListResourcePacksRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type ListResourcePacksResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Packs         []*ResourcePack        `protobuf:"bytes,1,rep,name=packs,proto3" json:"packs,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListResourcePacksResponse) Reset() {
+	*x = ListResourcePacksResponse{}
+	mi := &file_lms_proto_msgTypes[238]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListResourcePacksResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListResourcePacksResponse) ProtoMessage() {}
+
+func (x *ListResourcePacksResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[238]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListResourcePacksResponse.ProtoReflect.Descriptor instead.
+func (*ListResourcePacksResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{238}
+}
+
+func (x *ListResourcePacksResponse) GetPacks() []*ResourcePack {
+	if x != nil {
+		return x.Packs
+	}
+	return nil
+}
+
+func (x *ListResourcePacksResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type CreateResourcePackFileRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	FileId             string                 `protobuf:"bytes,13,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	PackId             string                 `protobuf:"bytes,1,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	Title              string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description        string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	ThumbnailObjectKey string                 `protobuf:"bytes,4,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
+	ThumbnailFileHash  string                 `protobuf:"bytes,5,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`
+	FileType           ResourcePackFileType   `protobuf:"varint,6,opt,name=file_type,json=fileType,proto3,enum=glms.ResourcePackFileType" json:"file_type,omitempty"`
+	FileName           string                 `protobuf:"bytes,7,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileSize           uint64                 `protobuf:"varint,8,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	FileHash           string                 `protobuf:"bytes,9,opt,name=file_hash,json=fileHash,proto3" json:"file_hash,omitempty"`
+	FileObjectKey      string                 `protobuf:"bytes,10,opt,name=file_object_key,json=fileObjectKey,proto3" json:"file_object_key,omitempty"`
+	VideoStreamUid     string                 `protobuf:"bytes,11,opt,name=video_stream_uid,json=videoStreamUid,proto3" json:"video_stream_uid,omitempty"`
+	SortOrder          uint32                 `protobuf:"varint,12,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *CreateResourcePackFileRequest) Reset() {
+	*x = CreateResourcePackFileRequest{}
+	mi := &file_lms_proto_msgTypes[239]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateResourcePackFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateResourcePackFileRequest) ProtoMessage() {}
+
+func (x *CreateResourcePackFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[239]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateResourcePackFileRequest.ProtoReflect.Descriptor instead.
+func (*CreateResourcePackFileRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{239}
+}
+
+func (x *CreateResourcePackFileRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetThumbnailObjectKey() string {
+	if x != nil {
+		return x.ThumbnailObjectKey
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetThumbnailFileHash() string {
+	if x != nil {
+		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetFileType() ResourcePackFileType {
+	if x != nil {
+		return x.FileType
+	}
+	return ResourcePackFileType_RESOURCE_PACK_FILE_TYPE_UNSPECIFIED
+}
+
+func (x *CreateResourcePackFileRequest) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetFileSize() uint64 {
+	if x != nil {
+		return x.FileSize
+	}
+	return 0
+}
+
+func (x *CreateResourcePackFileRequest) GetFileHash() string {
+	if x != nil {
+		return x.FileHash
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetFileObjectKey() string {
+	if x != nil {
+		return x.FileObjectKey
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetVideoStreamUid() string {
+	if x != nil {
+		return x.VideoStreamUid
+	}
+	return ""
+}
+
+func (x *CreateResourcePackFileRequest) GetSortOrder() uint32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+type UpdateResourcePackFileRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	FileId             string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	Title              string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description        string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	ThumbnailObjectKey string                 `protobuf:"bytes,4,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
+	ThumbnailFileHash  string                 `protobuf:"bytes,5,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`
+	FileType           ResourcePackFileType   `protobuf:"varint,6,opt,name=file_type,json=fileType,proto3,enum=glms.ResourcePackFileType" json:"file_type,omitempty"`
+	FileName           string                 `protobuf:"bytes,7,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileSize           uint64                 `protobuf:"varint,8,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	FileHash           string                 `protobuf:"bytes,9,opt,name=file_hash,json=fileHash,proto3" json:"file_hash,omitempty"`
+	FileObjectKey      string                 `protobuf:"bytes,10,opt,name=file_object_key,json=fileObjectKey,proto3" json:"file_object_key,omitempty"`
+	VideoStreamUid     string                 `protobuf:"bytes,11,opt,name=video_stream_uid,json=videoStreamUid,proto3" json:"video_stream_uid,omitempty"`
+	SortOrder          uint32                 `protobuf:"varint,12,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	Version            uint32                 `protobuf:"varint,13,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *UpdateResourcePackFileRequest) Reset() {
+	*x = UpdateResourcePackFileRequest{}
+	mi := &file_lms_proto_msgTypes[240]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateResourcePackFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateResourcePackFileRequest) ProtoMessage() {}
+
+func (x *UpdateResourcePackFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[240]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateResourcePackFileRequest.ProtoReflect.Descriptor instead.
+func (*UpdateResourcePackFileRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{240}
+}
+
+func (x *UpdateResourcePackFileRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileRequest) GetThumbnailObjectKey() string {
+	if x != nil {
+		return x.ThumbnailObjectKey
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileRequest) GetThumbnailFileHash() string {
+	if x != nil {
+		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileRequest) GetFileType() ResourcePackFileType {
+	if x != nil {
+		return x.FileType
+	}
+	return ResourcePackFileType_RESOURCE_PACK_FILE_TYPE_UNSPECIFIED
+}
+
+func (x *UpdateResourcePackFileRequest) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileRequest) GetFileSize() uint64 {
+	if x != nil {
+		return x.FileSize
+	}
+	return 0
+}
+
+func (x *UpdateResourcePackFileRequest) GetFileHash() string {
+	if x != nil {
+		return x.FileHash
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileRequest) GetFileObjectKey() string {
+	if x != nil {
+		return x.FileObjectKey
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileRequest) GetVideoStreamUid() string {
+	if x != nil {
+		return x.VideoStreamUid
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileRequest) GetSortOrder() uint32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *UpdateResourcePackFileRequest) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+type DeleteResourcePackFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	Version       uint32                 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteResourcePackFileRequest) Reset() {
+	*x = DeleteResourcePackFileRequest{}
+	mi := &file_lms_proto_msgTypes[241]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteResourcePackFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteResourcePackFileRequest) ProtoMessage() {}
+
+func (x *DeleteResourcePackFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[241]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteResourcePackFileRequest.ProtoReflect.Descriptor instead.
+func (*DeleteResourcePackFileRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{241}
+}
+
+func (x *DeleteResourcePackFileRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *DeleteResourcePackFileRequest) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+type DeleteResourcePackFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteResourcePackFileResponse) Reset() {
+	*x = DeleteResourcePackFileResponse{}
+	mi := &file_lms_proto_msgTypes[242]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteResourcePackFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteResourcePackFileResponse) ProtoMessage() {}
+
+func (x *DeleteResourcePackFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[242]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteResourcePackFileResponse.ProtoReflect.Descriptor instead.
+func (*DeleteResourcePackFileResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{242}
+}
+
+func (x *DeleteResourcePackFileResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+type GetResourcePackFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetResourcePackFileRequest) Reset() {
+	*x = GetResourcePackFileRequest{}
+	mi := &file_lms_proto_msgTypes[243]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetResourcePackFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetResourcePackFileRequest) ProtoMessage() {}
+
+func (x *GetResourcePackFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[243]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetResourcePackFileRequest.ProtoReflect.Descriptor instead.
+func (*GetResourcePackFileRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{243}
+}
+
+func (x *GetResourcePackFileRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+type ListResourcePackFilesRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PackId        string                 `protobuf:"bytes,1,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListResourcePackFilesRequest) Reset() {
+	*x = ListResourcePackFilesRequest{}
+	mi := &file_lms_proto_msgTypes[244]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListResourcePackFilesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListResourcePackFilesRequest) ProtoMessage() {}
+
+func (x *ListResourcePackFilesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[244]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListResourcePackFilesRequest.ProtoReflect.Descriptor instead.
+func (*ListResourcePackFilesRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{244}
+}
+
+func (x *ListResourcePackFilesRequest) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+func (x *ListResourcePackFilesRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListResourcePackFilesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListResourcePackFilesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Files         []*ResourcePackFile    `protobuf:"bytes,1,rep,name=files,proto3" json:"files,omitempty"`
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListResourcePackFilesResponse) Reset() {
+	*x = ListResourcePackFilesResponse{}
+	mi := &file_lms_proto_msgTypes[245]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListResourcePackFilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListResourcePackFilesResponse) ProtoMessage() {}
+
+func (x *ListResourcePackFilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[245]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListResourcePackFilesResponse.ProtoReflect.Descriptor instead.
+func (*ListResourcePackFilesResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{245}
+}
+
+func (x *ListResourcePackFilesResponse) GetFiles() []*ResourcePackFile {
+	if x != nil {
+		return x.Files
+	}
+	return nil
+}
+
+func (x *ListResourcePackFilesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+type GetLessonVideoPlayURLRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`          // 课时 ID [required]
+	CandidateId   string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生 ID [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLessonVideoPlayURLRequest) Reset() {
+	*x = GetLessonVideoPlayURLRequest{}
+	mi := &file_lms_proto_msgTypes[246]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLessonVideoPlayURLRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLessonVideoPlayURLRequest) ProtoMessage() {}
+
+func (x *GetLessonVideoPlayURLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[246]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLessonVideoPlayURLRequest.ProtoReflect.Descriptor instead.
+func (*GetLessonVideoPlayURLRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{246}
+}
+
+func (x *GetLessonVideoPlayURLRequest) GetLessonId() string {
+	if x != nil {
+		return x.LessonId
+	}
+	return ""
+}
+
+func (x *GetLessonVideoPlayURLRequest) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+type GetLessonVideoPlayURLResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PlayUrl       string                 `protobuf:"bytes,1,opt,name=play_url,json=playUrl,proto3" json:"play_url,omitempty"`       // 动态生成的加密播放 URL
+	ExpiresAt     string                 `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // (UTC, RFC3339)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLessonVideoPlayURLResponse) Reset() {
+	*x = GetLessonVideoPlayURLResponse{}
+	mi := &file_lms_proto_msgTypes[247]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLessonVideoPlayURLResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLessonVideoPlayURLResponse) ProtoMessage() {}
+
+func (x *GetLessonVideoPlayURLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[247]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLessonVideoPlayURLResponse.ProtoReflect.Descriptor instead.
+func (*GetLessonVideoPlayURLResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{247}
+}
+
+func (x *GetLessonVideoPlayURLResponse) GetPlayUrl() string {
+	if x != nil {
+		return x.PlayUrl
+	}
+	return ""
+}
+
+func (x *GetLessonVideoPlayURLResponse) GetExpiresAt() string {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return ""
+}
+
+type GetResourcePackFileViewURLRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileId        string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`                // [required]
+	CandidateId   string                 `protobuf:"bytes,2,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetResourcePackFileViewURLRequest) Reset() {
+	*x = GetResourcePackFileViewURLRequest{}
+	mi := &file_lms_proto_msgTypes[248]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetResourcePackFileViewURLRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetResourcePackFileViewURLRequest) ProtoMessage() {}
+
+func (x *GetResourcePackFileViewURLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[248]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetResourcePackFileViewURLRequest.ProtoReflect.Descriptor instead.
+func (*GetResourcePackFileViewURLRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{248}
+}
+
+func (x *GetResourcePackFileViewURLRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *GetResourcePackFileViewURLRequest) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+type GetResourcePackFileViewURLResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ViewUrl       string                 `protobuf:"bytes,1,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`       // S3 pre-signed URL or Cloudflare signed token URL
+	ExpiresAt     string                 `protobuf:"bytes,2,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"` // (UTC, RFC3339)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetResourcePackFileViewURLResponse) Reset() {
+	*x = GetResourcePackFileViewURLResponse{}
+	mi := &file_lms_proto_msgTypes[249]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetResourcePackFileViewURLResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetResourcePackFileViewURLResponse) ProtoMessage() {}
+
+func (x *GetResourcePackFileViewURLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[249]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetResourcePackFileViewURLResponse.ProtoReflect.Descriptor instead.
+func (*GetResourcePackFileViewURLResponse) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{249}
+}
+
+func (x *GetResourcePackFileViewURLResponse) GetViewUrl() string {
+	if x != nil {
+		return x.ViewUrl
+	}
+	return ""
+}
+
+func (x *GetResourcePackFileViewURLResponse) GetExpiresAt() string {
+	if x != nil {
+		return x.ExpiresAt
+	}
+	return ""
+}
+
+type ResourcePack struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	PackId             string                 `protobuf:"bytes,1,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	Title              string                 `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	Description        string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	ThumbnailObjectKey string                 `protobuf:"bytes,4,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
+	ThumbnailFileHash  string                 `protobuf:"bytes,5,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`
+	Respath            string                 `protobuf:"bytes,6,opt,name=respath,proto3" json:"respath,omitempty"`
+	Status             string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
+	Version            uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`
+	CreatedAt          string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt          string                 `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ResourcePack) Reset() {
+	*x = ResourcePack{}
+	mi := &file_lms_proto_msgTypes[250]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResourcePack) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourcePack) ProtoMessage() {}
+
+func (x *ResourcePack) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[250]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResourcePack.ProtoReflect.Descriptor instead.
+func (*ResourcePack) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{250}
+}
+
+func (x *ResourcePack) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+func (x *ResourcePack) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *ResourcePack) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ResourcePack) GetThumbnailObjectKey() string {
+	if x != nil {
+		return x.ThumbnailObjectKey
+	}
+	return ""
+}
+
+func (x *ResourcePack) GetThumbnailFileHash() string {
+	if x != nil {
+		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *ResourcePack) GetRespath() string {
+	if x != nil {
+		return x.Respath
+	}
+	return ""
+}
+
+func (x *ResourcePack) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+func (x *ResourcePack) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *ResourcePack) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *ResourcePack) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type ResourcePackFile struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	FileId             string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	PackId             string                 `protobuf:"bytes,2,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	Title              string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`
+	Description        string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	ThumbnailObjectKey string                 `protobuf:"bytes,5,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
+	ThumbnailFileHash  string                 `protobuf:"bytes,6,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`
+	FileType           ResourcePackFileType   `protobuf:"varint,7,opt,name=file_type,json=fileType,proto3,enum=glms.ResourcePackFileType" json:"file_type,omitempty"`
+	FileName           string                 `protobuf:"bytes,8,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileSize           uint64                 `protobuf:"varint,9,opt,name=file_size,json=fileSize,proto3" json:"file_size,omitempty"`
+	FileHash           string                 `protobuf:"bytes,10,opt,name=file_hash,json=fileHash,proto3" json:"file_hash,omitempty"`
+	FileObjectKey      string                 `protobuf:"bytes,11,opt,name=file_object_key,json=fileObjectKey,proto3" json:"file_object_key,omitempty"`
+	VideoStreamUid     string                 `protobuf:"bytes,12,opt,name=video_stream_uid,json=videoStreamUid,proto3" json:"video_stream_uid,omitempty"`
+	SortOrder          uint32                 `protobuf:"varint,13,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	Version            uint32                 `protobuf:"varint,14,opt,name=version,proto3" json:"version,omitempty"`
+	CreatedAt          string                 `protobuf:"bytes,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt          string                 `protobuf:"bytes,16,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *ResourcePackFile) Reset() {
+	*x = ResourcePackFile{}
+	mi := &file_lms_proto_msgTypes[251]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResourcePackFile) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourcePackFile) ProtoMessage() {}
+
+func (x *ResourcePackFile) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[251]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ResourcePackFile.ProtoReflect.Descriptor instead.
+func (*ResourcePackFile) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{251}
+}
+
+func (x *ResourcePackFile) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetThumbnailObjectKey() string {
+	if x != nil {
+		return x.ThumbnailObjectKey
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetThumbnailFileHash() string {
+	if x != nil {
+		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetFileType() ResourcePackFileType {
+	if x != nil {
+		return x.FileType
+	}
+	return ResourcePackFileType_RESOURCE_PACK_FILE_TYPE_UNSPECIFIED
+}
+
+func (x *ResourcePackFile) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetFileSize() uint64 {
+	if x != nil {
+		return x.FileSize
+	}
+	return 0
+}
+
+func (x *ResourcePackFile) GetFileHash() string {
+	if x != nil {
+		return x.FileHash
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetFileObjectKey() string {
+	if x != nil {
+		return x.FileObjectKey
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetVideoStreamUid() string {
+	if x != nil {
+		return x.VideoStreamUid
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetSortOrder() uint32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *ResourcePackFile) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *ResourcePackFile) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *ResourcePackFile) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+type ListResourcePacksCandidateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListResourcePacksCandidateRequest) Reset() {
+	*x = ListResourcePacksCandidateRequest{}
+	mi := &file_lms_proto_msgTypes[252]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListResourcePacksCandidateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListResourcePacksCandidateRequest) ProtoMessage() {}
+
+func (x *ListResourcePacksCandidateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[252]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListResourcePacksCandidateRequest.ProtoReflect.Descriptor instead.
+func (*ListResourcePacksCandidateRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{252}
+}
+
+func (x *ListResourcePacksCandidateRequest) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *ListResourcePacksCandidateRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListResourcePacksCandidateRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+type ListResourcePackFilesCandidateRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"`
+	PackId        string                 `protobuf:"bytes,2,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
+	PageSize      uint32                 `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	PageToken     string                 `protobuf:"bytes,4,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListResourcePackFilesCandidateRequest) Reset() {
+	*x = ListResourcePackFilesCandidateRequest{}
+	mi := &file_lms_proto_msgTypes[253]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListResourcePackFilesCandidateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListResourcePackFilesCandidateRequest) ProtoMessage() {}
+
+func (x *ListResourcePackFilesCandidateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[253]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListResourcePackFilesCandidateRequest.ProtoReflect.Descriptor instead.
+func (*ListResourcePackFilesCandidateRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{253}
+}
+
+func (x *ListResourcePackFilesCandidateRequest) GetCandidateId() string {
+	if x != nil {
+		return x.CandidateId
+	}
+	return ""
+}
+
+func (x *ListResourcePackFilesCandidateRequest) GetPackId() string {
+	if x != nil {
+		return x.PackId
+	}
+	return ""
+}
+
+func (x *ListResourcePackFilesCandidateRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListResourcePackFilesCandidateRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
 var File_lms_proto protoreflect.FileDescriptor
 
 const file_lms_proto_rawDesc = "" +
@@ -16057,17 +17724,19 @@ const file_lms_proto_rawDesc = "" +
 	"questionId\x12'\n" +
 	"\x05items\x18\x02 \x03(\v2\x11.glms.ReorderItemR\x05items\"6\n" +
 	"\x1aReorderQuizOptionsResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"h\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x89\x01\n" +
 	"\x12ListObjectsRequest\x12\x16\n" +
 	"\x06prefix\x18\x01 \x01(\tR\x06prefix\x12\x1b\n" +
 	"\tpage_size\x18\x02 \x01(\rR\bpageSize\x12\x1d\n" +
 	"\n" +
-	"page_token\x18\x03 \x01(\tR\tpageToken\"\x8c\x01\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\x12\x1f\n" +
+	"\vbucket_type\x18\x04 \x01(\tR\n" +
+	"bucketType\"\x8c\x01\n" +
 	"\x13ListObjectsResponse\x12\x1f\n" +
 	"\vbucket_name\x18\x01 \x01(\tR\n" +
 	"bucketName\x12,\n" +
 	"\aobjects\x18\x02 \x03(\v2\x12.glms.BucketObjectR\aobjects\x12&\n" +
-	"\x0fnext_page_token\x18\x03 \x01(\tR\rnextPageToken\"\xbb\x02\n" +
+	"\x0fnext_page_token\x18\x03 \x01(\tR\rnextPageToken\"\x87\x03\n" +
 	"\x16CreateUploadURLRequest\x121\n" +
 	"\vupload_type\x18\x01 \x01(\x0e2\x10.glms.UploadTypeR\n" +
 	"uploadType\x12\x1b\n" +
@@ -16080,7 +17749,10 @@ const file_lms_proto_rawDesc = "" +
 	"materialId\x12\x1b\n" +
 	"\tlesson_id\x18\a \x01(\tR\blessonId\x12\x17\n" +
 	"\aquiz_id\x18\b \x01(\tR\x06quizId\x12\x1b\n" +
-	"\tfile_hash\x18\t \x01(\tR\bfileHash\"\xb2\x02\n" +
+	"\tfile_hash\x18\t \x01(\tR\bfileHash\x12\x17\n" +
+	"\apack_id\x18\n" +
+	" \x01(\tR\x06packId\x121\n" +
+	"\x15resource_pack_file_id\x18\v \x01(\tR\x12resourcePackFileId\"\xb2\x02\n" +
 	"\x17CreateUploadURLResponse\x12\x1f\n" +
 	"\vbucket_name\x18\x01 \x01(\tR\n" +
 	"bucketName\x12\x1d\n" +
@@ -16857,7 +18529,145 @@ const file_lms_proto_rawDesc = "" +
 	"\x1dCreateViewURLCandidateRequest\x12!\n" +
 	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
 	"\n" +
-	"object_key\x18\x02 \x01(\tR\tobjectKey*\x99\x01\n" +
+	"object_key\x18\x02 \x01(\tR\tobjectKey\"\xe8\x01\n" +
+	"\x19CreateResourcePackRequest\x12\x17\n" +
+	"\apack_id\x18\x06 \x01(\tR\x06packId\x12\x14\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x02 \x01(\tR\vdescription\x120\n" +
+	"\x14thumbnail_object_key\x18\x03 \x01(\tR\x12thumbnailObjectKey\x12.\n" +
+	"\x13thumbnail_file_hash\x18\x04 \x01(\tR\x11thumbnailFileHash\x12\x18\n" +
+	"\arespath\x18\x05 \x01(\tR\arespath\"\x9a\x02\n" +
+	"\x19UpdateResourcePackRequest\x12\x17\n" +
+	"\apack_id\x18\x01 \x01(\tR\x06packId\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x120\n" +
+	"\x14thumbnail_object_key\x18\x04 \x01(\tR\x12thumbnailObjectKey\x12.\n" +
+	"\x13thumbnail_file_hash\x18\x05 \x01(\tR\x11thumbnailFileHash\x12\x18\n" +
+	"\arespath\x18\x06 \x01(\tR\arespath\x12\x16\n" +
+	"\x06status\x18\a \x01(\tR\x06status\x12\x18\n" +
+	"\aversion\x18\b \x01(\rR\aversion\"N\n" +
+	"\x19DeleteResourcePackRequest\x12\x17\n" +
+	"\apack_id\x18\x01 \x01(\tR\x06packId\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\rR\aversion\"6\n" +
+	"\x1aDeleteResourcePackResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"1\n" +
+	"\x16GetResourcePackRequest\x12\x17\n" +
+	"\apack_id\x18\x01 \x01(\tR\x06packId\"n\n" +
+	"\x18ListResourcePacksRequest\x12\x1b\n" +
+	"\tpage_size\x18\x01 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\x12\x16\n" +
+	"\x06status\x18\x03 \x01(\tR\x06status\"m\n" +
+	"\x19ListResourcePacksResponse\x12(\n" +
+	"\x05packs\x18\x01 \x03(\v2\x12.glms.ResourcePackR\x05packs\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xec\x03\n" +
+	"\x1dCreateResourcePackFileRequest\x12\x17\n" +
+	"\afile_id\x18\r \x01(\tR\x06fileId\x12\x17\n" +
+	"\apack_id\x18\x01 \x01(\tR\x06packId\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x120\n" +
+	"\x14thumbnail_object_key\x18\x04 \x01(\tR\x12thumbnailObjectKey\x12.\n" +
+	"\x13thumbnail_file_hash\x18\x05 \x01(\tR\x11thumbnailFileHash\x127\n" +
+	"\tfile_type\x18\x06 \x01(\x0e2\x1a.glms.ResourcePackFileTypeR\bfileType\x12\x1b\n" +
+	"\tfile_name\x18\a \x01(\tR\bfileName\x12\x1b\n" +
+	"\tfile_size\x18\b \x01(\x04R\bfileSize\x12\x1b\n" +
+	"\tfile_hash\x18\t \x01(\tR\bfileHash\x12&\n" +
+	"\x0ffile_object_key\x18\n" +
+	" \x01(\tR\rfileObjectKey\x12(\n" +
+	"\x10video_stream_uid\x18\v \x01(\tR\x0evideoStreamUid\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\f \x01(\rR\tsortOrder\"\xed\x03\n" +
+	"\x1dUpdateResourcePackFileRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x120\n" +
+	"\x14thumbnail_object_key\x18\x04 \x01(\tR\x12thumbnailObjectKey\x12.\n" +
+	"\x13thumbnail_file_hash\x18\x05 \x01(\tR\x11thumbnailFileHash\x127\n" +
+	"\tfile_type\x18\x06 \x01(\x0e2\x1a.glms.ResourcePackFileTypeR\bfileType\x12\x1b\n" +
+	"\tfile_name\x18\a \x01(\tR\bfileName\x12\x1b\n" +
+	"\tfile_size\x18\b \x01(\x04R\bfileSize\x12\x1b\n" +
+	"\tfile_hash\x18\t \x01(\tR\bfileHash\x12&\n" +
+	"\x0ffile_object_key\x18\n" +
+	" \x01(\tR\rfileObjectKey\x12(\n" +
+	"\x10video_stream_uid\x18\v \x01(\tR\x0evideoStreamUid\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\f \x01(\rR\tsortOrder\x12\x18\n" +
+	"\aversion\x18\r \x01(\rR\aversion\"R\n" +
+	"\x1dDeleteResourcePackFileRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12\x18\n" +
+	"\aversion\x18\x02 \x01(\rR\aversion\":\n" +
+	"\x1eDeleteResourcePackFileResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"5\n" +
+	"\x1aGetResourcePackFileRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\"s\n" +
+	"\x1cListResourcePackFilesRequest\x12\x17\n" +
+	"\apack_id\x18\x01 \x01(\tR\x06packId\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"u\n" +
+	"\x1dListResourcePackFilesResponse\x12,\n" +
+	"\x05files\x18\x01 \x03(\v2\x16.glms.ResourcePackFileR\x05files\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"^\n" +
+	"\x1cGetLessonVideoPlayURLRequest\x12\x1b\n" +
+	"\tlesson_id\x18\x01 \x01(\tR\blessonId\x12!\n" +
+	"\fcandidate_id\x18\x02 \x01(\tR\vcandidateId\"Y\n" +
+	"\x1dGetLessonVideoPlayURLResponse\x12\x19\n" +
+	"\bplay_url\x18\x01 \x01(\tR\aplayUrl\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\x02 \x01(\tR\texpiresAt\"_\n" +
+	"!GetResourcePackFileViewURLRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12!\n" +
+	"\fcandidate_id\x18\x02 \x01(\tR\vcandidateId\"^\n" +
+	"\"GetResourcePackFileViewURLResponse\x12\x19\n" +
+	"\bview_url\x18\x01 \x01(\tR\aviewUrl\x12\x1d\n" +
+	"\n" +
+	"expires_at\x18\x02 \x01(\tR\texpiresAt\"\xcb\x02\n" +
+	"\fResourcePack\x12\x17\n" +
+	"\apack_id\x18\x01 \x01(\tR\x06packId\x12\x14\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\x120\n" +
+	"\x14thumbnail_object_key\x18\x04 \x01(\tR\x12thumbnailObjectKey\x12.\n" +
+	"\x13thumbnail_file_hash\x18\x05 \x01(\tR\x11thumbnailFileHash\x12\x18\n" +
+	"\arespath\x18\x06 \x01(\tR\arespath\x12\x16\n" +
+	"\x06status\x18\a \x01(\tR\x06status\x12\x18\n" +
+	"\aversion\x18\b \x01(\rR\aversion\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\n" +
+	" \x01(\tR\tupdatedAt\"\xb7\x04\n" +
+	"\x10ResourcePackFile\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12\x17\n" +
+	"\apack_id\x18\x02 \x01(\tR\x06packId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\x12 \n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x120\n" +
+	"\x14thumbnail_object_key\x18\x05 \x01(\tR\x12thumbnailObjectKey\x12.\n" +
+	"\x13thumbnail_file_hash\x18\x06 \x01(\tR\x11thumbnailFileHash\x127\n" +
+	"\tfile_type\x18\a \x01(\x0e2\x1a.glms.ResourcePackFileTypeR\bfileType\x12\x1b\n" +
+	"\tfile_name\x18\b \x01(\tR\bfileName\x12\x1b\n" +
+	"\tfile_size\x18\t \x01(\x04R\bfileSize\x12\x1b\n" +
+	"\tfile_hash\x18\n" +
+	" \x01(\tR\bfileHash\x12&\n" +
+	"\x0ffile_object_key\x18\v \x01(\tR\rfileObjectKey\x12(\n" +
+	"\x10video_stream_uid\x18\f \x01(\tR\x0evideoStreamUid\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\r \x01(\rR\tsortOrder\x12\x18\n" +
+	"\aversion\x18\x0e \x01(\rR\aversion\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\x0f \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\x10 \x01(\tR\tupdatedAt\"\x82\x01\n" +
+	"!ListResourcePacksCandidateRequest\x12!\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\"\x9f\x01\n" +
+	"%ListResourcePackFilesCandidateRequest\x12!\n" +
+	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x17\n" +
+	"\apack_id\x18\x02 \x01(\tR\x06packId\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\rR\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x04 \x01(\tR\tpageToken*\x99\x01\n" +
 	"\fMaterialType\x12\x1d\n" +
 	"\x19MATERIAL_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16MATERIAL_TYPE_TEXTBOOK\x10\x01\x12\x18\n" +
@@ -16894,14 +18704,21 @@ const file_lms_proto_rawDesc = "" +
 	"\x1eQUIZ_QUESTION_TYPE_UNSPECIFIED\x10\x00\x12$\n" +
 	" QUIZ_QUESTION_TYPE_SINGLE_CHOICE\x10\x01\x12&\n" +
 	"\"QUIZ_QUESTION_TYPE_MULTIPLE_CHOICE\x10\x02\x12!\n" +
-	"\x1dQUIZ_QUESTION_TYPE_TRUE_FALSE\x10\x03*\xa6\x01\n" +
+	"\x1dQUIZ_QUESTION_TYPE_TRUE_FALSE\x10\x03*\xa4\x01\n" +
+	"\x14ResourcePackFileType\x12'\n" +
+	"#RESOURCE_PACK_FILE_TYPE_UNSPECIFIED\x10\x00\x12!\n" +
+	"\x1dRESOURCE_PACK_FILE_TYPE_VIDEO\x10\x01\x12\x1f\n" +
+	"\x1bRESOURCE_PACK_FILE_TYPE_PDF\x10\x02\x12\x1f\n" +
+	"\x1bRESOURCE_PACK_FILE_TYPE_ZIP\x10\x03*\xf3\x01\n" +
 	"\n" +
 	"UploadType\x12\x1b\n" +
 	"\x17UPLOAD_TYPE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cUPLOAD_TYPE_COURSE_THUMBNAIL\x10\x01\x12\x1f\n" +
 	"\x1bUPLOAD_TYPE_COURSE_MATERIAL\x10\x02\x12\x1c\n" +
 	"\x18UPLOAD_TYPE_LESSON_ASSET\x10\x03\x12\x1a\n" +
-	"\x16UPLOAD_TYPE_QUIZ_ASSET\x10\x042\xacL\n" +
+	"\x16UPLOAD_TYPE_QUIZ_ASSET\x10\x04\x12'\n" +
+	"#UPLOAD_TYPE_RESOURCE_PACK_THUMBNAIL\x10\x05\x12\"\n" +
+	"\x1eUPLOAD_TYPE_RESOURCE_PACK_FILE\x10\x062\xcbV\n" +
 	"\n" +
 	"LmsService\x12F\n" +
 	"\x16CreateCourseDraftAdmin\x12\x1e.glms.CreateCourseDraftRequest\x1a\f.glms.Course\x12J\n" +
@@ -16987,7 +18804,17 @@ const file_lms_proto_rawDesc = "" +
 	"&CreateCourseSupplementaryMaterialAdmin\x12..glms.CreateCourseSupplementaryMaterialRequest\x1a/.glms.CreateCourseSupplementaryMaterialResponse\x12\x89\x01\n" +
 	"&UpdateCourseSupplementaryMaterialAdmin\x12..glms.UpdateCourseSupplementaryMaterialRequest\x1a/.glms.UpdateCourseSupplementaryMaterialResponse\x12\x89\x01\n" +
 	"&DeleteCourseSupplementaryMaterialAdmin\x12..glms.DeleteCourseSupplementaryMaterialRequest\x1a/.glms.DeleteCourseSupplementaryMaterialResponse\x12\x80\x01\n" +
-	"#GetCourseSupplementaryMaterialAdmin\x12+.glms.GetCourseSupplementaryMaterialRequest\x1a,.glms.GetCourseSupplementaryMaterialResponse\x12Z\n" +
+	"#GetCourseSupplementaryMaterialAdmin\x12+.glms.GetCourseSupplementaryMaterialRequest\x1a,.glms.GetCourseSupplementaryMaterialResponse\x12N\n" +
+	"\x17CreateResourcePackAdmin\x12\x1f.glms.CreateResourcePackRequest\x1a\x12.glms.ResourcePack\x12N\n" +
+	"\x17UpdateResourcePackAdmin\x12\x1f.glms.UpdateResourcePackRequest\x1a\x12.glms.ResourcePack\x12\\\n" +
+	"\x17DeleteResourcePackAdmin\x12\x1f.glms.DeleteResourcePackRequest\x1a .glms.DeleteResourcePackResponse\x12H\n" +
+	"\x14GetResourcePackAdmin\x12\x1c.glms.GetResourcePackRequest\x1a\x12.glms.ResourcePack\x12Y\n" +
+	"\x16ListResourcePacksAdmin\x12\x1e.glms.ListResourcePacksRequest\x1a\x1f.glms.ListResourcePacksResponse\x12Z\n" +
+	"\x1bCreateResourcePackFileAdmin\x12#.glms.CreateResourcePackFileRequest\x1a\x16.glms.ResourcePackFile\x12Z\n" +
+	"\x1bUpdateResourcePackFileAdmin\x12#.glms.UpdateResourcePackFileRequest\x1a\x16.glms.ResourcePackFile\x12h\n" +
+	"\x1bDeleteResourcePackFileAdmin\x12#.glms.DeleteResourcePackFileRequest\x1a$.glms.DeleteResourcePackFileResponse\x12T\n" +
+	"\x18GetResourcePackFileAdmin\x12 .glms.GetResourcePackFileRequest\x1a\x16.glms.ResourcePackFile\x12e\n" +
+	"\x1aListResourcePackFilesAdmin\x12\".glms.ListResourcePackFilesRequest\x1a#.glms.ListResourcePackFilesResponse\x12Z\n" +
 	"\x10GetCourseSummary\x12&.glms.GetCourseSummaryCandidateRequest\x1a\x1e.glms.GetCourseSummaryResponse\x12W\n" +
 	"\x0fGetCourseDetail\x12%.glms.GetCourseDetailCandidateRequest\x1a\x1d.glms.GetCourseDetailResponse\x12K\n" +
 	"\vListCourses\x12!.glms.ListCoursesCandidateRequest\x1a\x19.glms.ListCoursesResponse\x12]\n" +
@@ -17005,7 +18832,11 @@ const file_lms_proto_rawDesc = "" +
 	"\x11GetCompleteCourse\x12'.glms.GetCompleteCourseCandidateRequest\x1a\x1f.glms.GetCompleteCourseResponse\x12?\n" +
 	"\aGetQuiz\x12\x1d.glms.GetQuizCandidateRequest\x1a\x15.glms.GetQuizResponse\x12K\n" +
 	"\vListQuizzes\x12!.glms.ListQuizzesCandidateRequest\x1a\x19.glms.ListQuizzesResponse\x12Q\n" +
-	"\rCreateViewURL\x12#.glms.CreateViewURLCandidateRequest\x1a\x1b.glms.CreateViewURLResponse\x12c\n" +
+	"\rCreateViewURL\x12#.glms.CreateViewURLCandidateRequest\x1a\x1b.glms.CreateViewURLResponse\x12`\n" +
+	"\x15GetLessonVideoPlayURL\x12\".glms.GetLessonVideoPlayURLRequest\x1a#.glms.GetLessonVideoPlayURLResponse\x12o\n" +
+	"\x1aGetResourcePackFileViewURL\x12'.glms.GetResourcePackFileViewURLRequest\x1a(.glms.GetResourcePackFileViewURLResponse\x12]\n" +
+	"\x11ListResourcePacks\x12'.glms.ListResourcePacksCandidateRequest\x1a\x1f.glms.ListResourcePacksResponse\x12i\n" +
+	"\x15ListResourcePackFiles\x12+.glms.ListResourcePackFilesCandidateRequest\x1a#.glms.ListResourcePackFilesResponse\x12c\n" +
 	"\x16CompleteLessonLearning\x12#.glms.CompleteLessonLearningRequest\x1a$.glms.CompleteLessonLearningResponse\x129\n" +
 	"\bTakeQuiz\x12\x15.glms.TakeQuizRequest\x1a\x16.glms.TakeQuizResponse\x12`\n" +
 	"\x15GetCandidateQuizPaper\x12\".glms.GetCandidateQuizPaperRequest\x1a#.glms.GetCandidateQuizPaperResponse\x12?\n" +
@@ -17026,8 +18857,8 @@ func file_lms_proto_rawDescGZIP() []byte {
 	return file_lms_proto_rawDescData
 }
 
-var file_lms_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
-var file_lms_proto_msgTypes = make([]protoimpl.MessageInfo, 233)
+var file_lms_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
+var file_lms_proto_msgTypes = make([]protoimpl.MessageInfo, 255)
 var file_lms_proto_goTypes = []any{
 	(MaterialType)(0),                                 // 0: glms.MaterialType
 	(LessonType)(0),                                   // 1: glms.LessonType
@@ -17035,240 +18866,263 @@ var file_lms_proto_goTypes = []any{
 	(PrerequisiteResult)(0),                           // 3: glms.PrerequisiteResult
 	(QuizzableType)(0),                                // 4: glms.QuizzableType
 	(QuizQuestionType)(0),                             // 5: glms.QuizQuestionType
-	(UploadType)(0),                                   // 6: glms.UploadType
-	(*Course)(nil),                                    // 7: glms.Course
-	(*CourseMaterial)(nil),                            // 8: glms.CourseMaterial
-	(*Chapter)(nil),                                   // 9: glms.Chapter
-	(*Lesson)(nil),                                    // 10: glms.Lesson
-	(*Prerequisite)(nil),                              // 11: glms.Prerequisite
-	(*Quiz)(nil),                                      // 12: glms.Quiz
-	(*QuizQuestion)(nil),                              // 13: glms.QuizQuestion
-	(*QuizOption)(nil),                                // 14: glms.QuizOption
-	(*ReorderItem)(nil),                               // 15: glms.ReorderItem
-	(*BucketObject)(nil),                              // 16: glms.BucketObject
-	(*CreateCourseDraftRequest)(nil),                  // 17: glms.CreateCourseDraftRequest
-	(*UpdateCourseRequest)(nil),                       // 18: glms.UpdateCourseRequest
-	(*UpdateCourseResponse)(nil),                      // 19: glms.UpdateCourseResponse
-	(*DeleteCourseRequest)(nil),                       // 20: glms.DeleteCourseRequest
-	(*DeleteCourseResponse)(nil),                      // 21: glms.DeleteCourseResponse
-	(*GetCourseRequest)(nil),                          // 22: glms.GetCourseRequest
-	(*GetCourseResponse)(nil),                         // 23: glms.GetCourseResponse
-	(*ListCoursesRequest)(nil),                        // 24: glms.ListCoursesRequest
-	(*ListCoursesResponse)(nil),                       // 25: glms.ListCoursesResponse
-	(*PublishCourseRequest)(nil),                      // 26: glms.PublishCourseRequest
-	(*PublishCourseResponse)(nil),                     // 27: glms.PublishCourseResponse
-	(*CreateCourseMaterialRequest)(nil),               // 28: glms.CreateCourseMaterialRequest
-	(*CreateCourseMaterialResponse)(nil),              // 29: glms.CreateCourseMaterialResponse
-	(*UpdateCourseMaterialRequest)(nil),               // 30: glms.UpdateCourseMaterialRequest
-	(*UpdateCourseMaterialResponse)(nil),              // 31: glms.UpdateCourseMaterialResponse
-	(*DeleteCourseMaterialRequest)(nil),               // 32: glms.DeleteCourseMaterialRequest
-	(*DeleteCourseMaterialResponse)(nil),              // 33: glms.DeleteCourseMaterialResponse
-	(*GetCourseMaterialRequest)(nil),                  // 34: glms.GetCourseMaterialRequest
-	(*GetCourseMaterialResponse)(nil),                 // 35: glms.GetCourseMaterialResponse
-	(*ListCourseMaterialsRequest)(nil),                // 36: glms.ListCourseMaterialsRequest
-	(*ListCourseMaterialsResponse)(nil),               // 37: glms.ListCourseMaterialsResponse
-	(*ReorderCourseMaterialsRequest)(nil),             // 38: glms.ReorderCourseMaterialsRequest
-	(*ReorderCourseMaterialsResponse)(nil),            // 39: glms.ReorderCourseMaterialsResponse
-	(*CreateChapterRequest)(nil),                      // 40: glms.CreateChapterRequest
-	(*CreateChapterResponse)(nil),                     // 41: glms.CreateChapterResponse
-	(*UpdateChapterRequest)(nil),                      // 42: glms.UpdateChapterRequest
-	(*UpdateChapterResponse)(nil),                     // 43: glms.UpdateChapterResponse
-	(*DeleteChapterRequest)(nil),                      // 44: glms.DeleteChapterRequest
-	(*DeleteChapterResponse)(nil),                     // 45: glms.DeleteChapterResponse
-	(*GetChapterRequest)(nil),                         // 46: glms.GetChapterRequest
-	(*GetChapterResponse)(nil),                        // 47: glms.GetChapterResponse
-	(*ListChaptersRequest)(nil),                       // 48: glms.ListChaptersRequest
-	(*ListChaptersResponse)(nil),                      // 49: glms.ListChaptersResponse
-	(*ReorderChaptersRequest)(nil),                    // 50: glms.ReorderChaptersRequest
-	(*ReorderChaptersResponse)(nil),                   // 51: glms.ReorderChaptersResponse
-	(*CreateLessonRequest)(nil),                       // 52: glms.CreateLessonRequest
-	(*CreateLessonResponse)(nil),                      // 53: glms.CreateLessonResponse
-	(*UpdateLessonRequest)(nil),                       // 54: glms.UpdateLessonRequest
-	(*UpdateLessonResponse)(nil),                      // 55: glms.UpdateLessonResponse
-	(*DeleteLessonRequest)(nil),                       // 56: glms.DeleteLessonRequest
-	(*DeleteLessonResponse)(nil),                      // 57: glms.DeleteLessonResponse
-	(*GetLessonRequest)(nil),                          // 58: glms.GetLessonRequest
-	(*GetLessonResponse)(nil),                         // 59: glms.GetLessonResponse
-	(*ListLessonsRequest)(nil),                        // 60: glms.ListLessonsRequest
-	(*ListLessonsResponse)(nil),                       // 61: glms.ListLessonsResponse
-	(*ReorderLessonsRequest)(nil),                     // 62: glms.ReorderLessonsRequest
-	(*ReorderLessonsResponse)(nil),                    // 63: glms.ReorderLessonsResponse
-	(*CreatePrerequisiteRequest)(nil),                 // 64: glms.CreatePrerequisiteRequest
-	(*CreatePrerequisiteResponse)(nil),                // 65: glms.CreatePrerequisiteResponse
-	(*UpdatePrerequisiteRequest)(nil),                 // 66: glms.UpdatePrerequisiteRequest
-	(*UpdatePrerequisiteResponse)(nil),                // 67: glms.UpdatePrerequisiteResponse
-	(*DeletePrerequisiteRequest)(nil),                 // 68: glms.DeletePrerequisiteRequest
-	(*DeletePrerequisiteResponse)(nil),                // 69: glms.DeletePrerequisiteResponse
-	(*GetPrerequisiteRequest)(nil),                    // 70: glms.GetPrerequisiteRequest
-	(*GetPrerequisiteResponse)(nil),                   // 71: glms.GetPrerequisiteResponse
-	(*ListPrerequisitesRequest)(nil),                  // 72: glms.ListPrerequisitesRequest
-	(*ListPrerequisitesResponse)(nil),                 // 73: glms.ListPrerequisitesResponse
-	(*CreateQuizRequest)(nil),                         // 74: glms.CreateQuizRequest
-	(*CreateQuizResponse)(nil),                        // 75: glms.CreateQuizResponse
-	(*UpdateQuizRequest)(nil),                         // 76: glms.UpdateQuizRequest
-	(*UpdateQuizResponse)(nil),                        // 77: glms.UpdateQuizResponse
-	(*DeleteQuizRequest)(nil),                         // 78: glms.DeleteQuizRequest
-	(*DeleteQuizResponse)(nil),                        // 79: glms.DeleteQuizResponse
-	(*GetQuizRequest)(nil),                            // 80: glms.GetQuizRequest
-	(*GetQuizResponse)(nil),                           // 81: glms.GetQuizResponse
-	(*ListQuizzesRequest)(nil),                        // 82: glms.ListQuizzesRequest
-	(*ListQuizzesResponse)(nil),                       // 83: glms.ListQuizzesResponse
-	(*CreateQuizQuestionRequest)(nil),                 // 84: glms.CreateQuizQuestionRequest
-	(*CreateQuizQuestionResponse)(nil),                // 85: glms.CreateQuizQuestionResponse
-	(*UpdateQuizQuestionRequest)(nil),                 // 86: glms.UpdateQuizQuestionRequest
-	(*UpdateQuizQuestionResponse)(nil),                // 87: glms.UpdateQuizQuestionResponse
-	(*DeleteQuizQuestionRequest)(nil),                 // 88: glms.DeleteQuizQuestionRequest
-	(*DeleteQuizQuestionResponse)(nil),                // 89: glms.DeleteQuizQuestionResponse
-	(*GetQuizQuestionRequest)(nil),                    // 90: glms.GetQuizQuestionRequest
-	(*GetQuizQuestionResponse)(nil),                   // 91: glms.GetQuizQuestionResponse
-	(*ListQuizQuestionsRequest)(nil),                  // 92: glms.ListQuizQuestionsRequest
-	(*ListQuizQuestionsResponse)(nil),                 // 93: glms.ListQuizQuestionsResponse
-	(*ReorderQuizQuestionsRequest)(nil),               // 94: glms.ReorderQuizQuestionsRequest
-	(*ReorderQuizQuestionsResponse)(nil),              // 95: glms.ReorderQuizQuestionsResponse
-	(*CreateQuizOptionRequest)(nil),                   // 96: glms.CreateQuizOptionRequest
-	(*CreateQuizOptionResponse)(nil),                  // 97: glms.CreateQuizOptionResponse
-	(*UpdateQuizOptionRequest)(nil),                   // 98: glms.UpdateQuizOptionRequest
-	(*UpdateQuizOptionResponse)(nil),                  // 99: glms.UpdateQuizOptionResponse
-	(*DeleteQuizOptionRequest)(nil),                   // 100: glms.DeleteQuizOptionRequest
-	(*DeleteQuizOptionResponse)(nil),                  // 101: glms.DeleteQuizOptionResponse
-	(*GetQuizOptionRequest)(nil),                      // 102: glms.GetQuizOptionRequest
-	(*GetQuizOptionResponse)(nil),                     // 103: glms.GetQuizOptionResponse
-	(*ListQuizOptionsRequest)(nil),                    // 104: glms.ListQuizOptionsRequest
-	(*ListQuizOptionsResponse)(nil),                   // 105: glms.ListQuizOptionsResponse
-	(*ReorderQuizOptionsRequest)(nil),                 // 106: glms.ReorderQuizOptionsRequest
-	(*ReorderQuizOptionsResponse)(nil),                // 107: glms.ReorderQuizOptionsResponse
-	(*ListObjectsRequest)(nil),                        // 108: glms.ListObjectsRequest
-	(*ListObjectsResponse)(nil),                       // 109: glms.ListObjectsResponse
-	(*CreateUploadURLRequest)(nil),                    // 110: glms.CreateUploadURLRequest
-	(*CreateUploadURLResponse)(nil),                   // 111: glms.CreateUploadURLResponse
-	(*CreateViewURLRequest)(nil),                      // 112: glms.CreateViewURLRequest
-	(*CreateViewURLResponse)(nil),                     // 113: glms.CreateViewURLResponse
-	(*GrantCourseAccessPermissionAdminRequest)(nil),   // 114: glms.GrantCourseAccessPermissionAdminRequest
-	(*GrantCourseAccessPermissionAdminResponse)(nil),  // 115: glms.GrantCourseAccessPermissionAdminResponse
-	(*RevokeCourseAccessPermissionAdminRequest)(nil),  // 116: glms.RevokeCourseAccessPermissionAdminRequest
-	(*RevokeCourseAccessPermissionAdminResponse)(nil), // 117: glms.RevokeCourseAccessPermissionAdminResponse
-	(*EnrollCandidateCourseRequest)(nil),              // 118: glms.EnrollCandidateCourseRequest
-	(*EnrollCandidateCourseResponse)(nil),             // 119: glms.EnrollCandidateCourseResponse
-	(*BatchEnrollCandidateCoursesRequest)(nil),        // 120: glms.BatchEnrollCandidateCoursesRequest
-	(*BatchEnrollResult)(nil),                         // 121: glms.BatchEnrollResult
-	(*BatchEnrollCandidateCoursesResponse)(nil),       // 122: glms.BatchEnrollCandidateCoursesResponse
-	(*CompleteLessonLearningRequest)(nil),             // 123: glms.CompleteLessonLearningRequest
-	(*CompleteLessonLearningResponse)(nil),            // 124: glms.CompleteLessonLearningResponse
-	(*ListCandidateEnrollmentsRequest)(nil),           // 125: glms.ListCandidateEnrollmentsRequest
-	(*CandidateEnrollmentSummary)(nil),                // 126: glms.CandidateEnrollmentSummary
-	(*ListCandidateEnrollmentsResponse)(nil),          // 127: glms.ListCandidateEnrollmentsResponse
-	(*GetCandidateEnrollmentDetailRequest)(nil),       // 128: glms.GetCandidateEnrollmentDetailRequest
-	(*GetCandidateEnrollmentDetailResponse)(nil),      // 129: glms.GetCandidateEnrollmentDetailResponse
-	(*ListCourseEnrollmentsForAdminRequest)(nil),      // 130: glms.ListCourseEnrollmentsForAdminRequest
-	(*CourseEnrollmentSummaryForAdmin)(nil),           // 131: glms.CourseEnrollmentSummaryForAdmin
-	(*ListCourseEnrollmentsForAdminResponse)(nil),     // 132: glms.ListCourseEnrollmentsForAdminResponse
-	(*GetCandidateProgressForAdminRequest)(nil),       // 133: glms.GetCandidateProgressForAdminRequest
-	(*GetCandidateProgressForAdminResponse)(nil),      // 134: glms.GetCandidateProgressForAdminResponse
-	(*QuizOptionDetail)(nil),                          // 135: glms.QuizOptionDetail
-	(*QuizQuestionDetail)(nil),                        // 136: glms.QuizQuestionDetail
-	(*QuizDetail)(nil),                                // 137: glms.QuizDetail
-	(*LessonDetail)(nil),                              // 138: glms.LessonDetail
-	(*ChapterDetail)(nil),                             // 139: glms.ChapterDetail
-	(*CompleteCourse)(nil),                            // 140: glms.CompleteCourse
-	(*SupplementaryMaterial)(nil),                     // 141: glms.SupplementaryMaterial
-	(*GetCompleteCourseRequest)(nil),                  // 142: glms.GetCompleteCourseRequest
-	(*GetCompleteCourseResponse)(nil),                 // 143: glms.GetCompleteCourseResponse
-	(*CreateCourseSupplementaryMaterialRequest)(nil),  // 144: glms.CreateCourseSupplementaryMaterialRequest
-	(*CreateCourseSupplementaryMaterialResponse)(nil), // 145: glms.CreateCourseSupplementaryMaterialResponse
-	(*UpdateCourseSupplementaryMaterialRequest)(nil),  // 146: glms.UpdateCourseSupplementaryMaterialRequest
-	(*UpdateCourseSupplementaryMaterialResponse)(nil), // 147: glms.UpdateCourseSupplementaryMaterialResponse
-	(*DeleteCourseSupplementaryMaterialRequest)(nil),  // 148: glms.DeleteCourseSupplementaryMaterialRequest
-	(*DeleteCourseSupplementaryMaterialResponse)(nil), // 149: glms.DeleteCourseSupplementaryMaterialResponse
-	(*GetCourseSupplementaryMaterialRequest)(nil),     // 150: glms.GetCourseSupplementaryMaterialRequest
-	(*GetCourseSupplementaryMaterialResponse)(nil),    // 151: glms.GetCourseSupplementaryMaterialResponse
-	(*TakeQuizRequest)(nil),                           // 152: glms.TakeQuizRequest
-	(*TakeQuizResponse)(nil),                          // 153: glms.TakeQuizResponse
-	(*QuizOptionForCandidate)(nil),                    // 154: glms.QuizOptionForCandidate
-	(*QuizQuestionForCandidate)(nil),                  // 155: glms.QuizQuestionForCandidate
-	(*GetCandidateQuizPaperRequest)(nil),              // 156: glms.GetCandidateQuizPaperRequest
-	(*GetCandidateQuizPaperResponse)(nil),             // 157: glms.GetCandidateQuizPaperResponse
-	(*QuizAnswerSubmission)(nil),                      // 158: glms.QuizAnswerSubmission
-	(*SubmitQuizRequest)(nil),                         // 159: glms.SubmitQuizRequest
-	(*SubmitQuizResponse)(nil),                        // 160: glms.SubmitQuizResponse
-	(*BrokenAssetDetail)(nil),                         // 161: glms.BrokenAssetDetail
-	(*ListBrokenAssetsRequest)(nil),                   // 162: glms.ListBrokenAssetsRequest
-	(*ListBrokenAssetsResponse)(nil),                  // 163: glms.ListBrokenAssetsResponse
-	(*ImportQuizRequest)(nil),                         // 164: glms.ImportQuizRequest
-	(*ImportQuizResponse)(nil),                        // 165: glms.ImportQuizResponse
-	(*ImportCourseRequest)(nil),                       // 166: glms.ImportCourseRequest
-	(*ImportCourseResponse)(nil),                      // 167: glms.ImportCourseResponse
-	(*GetCourseSummaryResponse)(nil),                  // 168: glms.GetCourseSummaryResponse
-	(*CourseSummary)(nil),                             // 169: glms.CourseSummary
-	(*CourseMaterialSummary)(nil),                     // 170: glms.CourseMaterialSummary
-	(*ChapterSummary)(nil),                            // 171: glms.ChapterSummary
-	(*LessonSummary)(nil),                             // 172: glms.LessonSummary
-	(*PrerequisiteSummary)(nil),                       // 173: glms.PrerequisiteSummary
-	(*QuizSummary)(nil),                               // 174: glms.QuizSummary
-	(*QuizQuestionSummary)(nil),                       // 175: glms.QuizQuestionSummary
-	(*QuizOptionSummary)(nil),                         // 176: glms.QuizOptionSummary
-	(*CourseDetail)(nil),                              // 177: glms.CourseDetail
-	(*GetCourseDetailRequest)(nil),                    // 178: glms.GetCourseDetailRequest
-	(*GetCourseDetailResponse)(nil),                   // 179: glms.GetCourseDetailResponse
-	(*GetCourseMaterialDetailResponse)(nil),           // 180: glms.GetCourseMaterialDetailResponse
-	(*GetChapterDetailResponse)(nil),                  // 181: glms.GetChapterDetailResponse
-	(*GetLessonDetailResponse)(nil),                   // 182: glms.GetLessonDetailResponse
-	(*GetPrerequisiteDetailResponse)(nil),             // 183: glms.GetPrerequisiteDetailResponse
-	(*GetQuizDetailRequest)(nil),                      // 184: glms.GetQuizDetailRequest
-	(*GetQuizDetailResponse)(nil),                     // 185: glms.GetQuizDetailResponse
-	(*GetQuizQuestionDetailResponse)(nil),             // 186: glms.GetQuizQuestionDetailResponse
-	(*GetQuizOptionDetailResponse)(nil),               // 187: glms.GetQuizOptionDetailResponse
-	(*ListLessonProgressRequest)(nil),                 // 188: glms.ListLessonProgressRequest
-	(*LessonProgressSummary)(nil),                     // 189: glms.LessonProgressSummary
-	(*ListLessonProgressResponse)(nil),                // 190: glms.ListLessonProgressResponse
-	(*GetLessonProgressDetailRequest)(nil),            // 191: glms.GetLessonProgressDetailRequest
-	(*GetLessonProgressDetailResponse)(nil),           // 192: glms.GetLessonProgressDetailResponse
-	(*ListQuizAttemptsRequest)(nil),                   // 193: glms.ListQuizAttemptsRequest
-	(*QuizAttemptSummary)(nil),                        // 194: glms.QuizAttemptSummary
-	(*ListQuizAttemptsResponse)(nil),                  // 195: glms.ListQuizAttemptsResponse
-	(*GetQuizAttemptDetailRequest)(nil),               // 196: glms.GetQuizAttemptDetailRequest
-	(*QuizAttemptDetail)(nil),                         // 197: glms.QuizAttemptDetail
-	(*GetQuizAttemptDetailResponse)(nil),              // 198: glms.GetQuizAttemptDetailResponse
-	(*ListChapterProgressRequest)(nil),                // 199: glms.ListChapterProgressRequest
-	(*ChapterProgressSummary)(nil),                    // 200: glms.ChapterProgressSummary
-	(*ListChapterProgressResponse)(nil),               // 201: glms.ListChapterProgressResponse
-	(*GetChapterProgressDetailRequest)(nil),           // 202: glms.GetChapterProgressDetailRequest
-	(*GetChapterProgressDetailResponse)(nil),          // 203: glms.GetChapterProgressDetailResponse
-	(*ListCourseAssetsRequest)(nil),                   // 204: glms.ListCourseAssetsRequest
-	(*CourseAssetSummary)(nil),                        // 205: glms.CourseAssetSummary
-	(*ListCourseAssetsResponse)(nil),                  // 206: glms.ListCourseAssetsResponse
-	(*GetCourseAssetDetailRequest)(nil),               // 207: glms.GetCourseAssetDetailRequest
-	(*GetCourseAssetDetailResponse)(nil),              // 208: glms.GetCourseAssetDetailResponse
-	(*CourseAsset)(nil),                               // 209: glms.CourseAsset
-	(*ListPrerequisitesByRequiredEntityRequest)(nil),  // 210: glms.ListPrerequisitesByRequiredEntityRequest
-	(*ListPrerequisitesByRequiredEntityResponse)(nil), // 211: glms.ListPrerequisitesByRequiredEntityResponse
-	(*ListLessonsByCourseRequest)(nil),                // 212: glms.ListLessonsByCourseRequest
-	(*ListLessonsByCourseResponse)(nil),               // 213: glms.ListLessonsByCourseResponse
-	(*ListCourseEnrollmentsRequest)(nil),              // 214: glms.ListCourseEnrollmentsRequest
-	(*ListCourseEnrollmentsResponse)(nil),             // 215: glms.ListCourseEnrollmentsResponse
-	(*CourseEnrollment)(nil),                          // 216: glms.CourseEnrollment
-	(*GetCourseEnrollmentDetailRequest)(nil),          // 217: glms.GetCourseEnrollmentDetailRequest
-	(*GetCourseEnrollmentDetailResponse)(nil),         // 218: glms.GetCourseEnrollmentDetailResponse
-	(*LessonProgress)(nil),                            // 219: glms.LessonProgress
-	(*ChapterProgress)(nil),                           // 220: glms.ChapterProgress
-	(*SyncCourseProgressRequest)(nil),                 // 221: glms.SyncCourseProgressRequest
-	(*SyncCourseProgressResponse)(nil),                // 222: glms.SyncCourseProgressResponse
-	(*GetCourseSummaryCandidateRequest)(nil),          // 223: glms.GetCourseSummaryCandidateRequest
-	(*GetCourseDetailCandidateRequest)(nil),           // 224: glms.GetCourseDetailCandidateRequest
-	(*ListCoursesCandidateRequest)(nil),               // 225: glms.ListCoursesCandidateRequest
-	(*GetCourseMaterialCandidateRequest)(nil),         // 226: glms.GetCourseMaterialCandidateRequest
-	(*ListCourseMaterialsCandidateRequest)(nil),       // 227: glms.ListCourseMaterialsCandidateRequest
-	(*GetChapterCandidateRequest)(nil),                // 228: glms.GetChapterCandidateRequest
-	(*GetChapterDetailCandidateRequest)(nil),          // 229: glms.GetChapterDetailCandidateRequest
-	(*ListChaptersCandidateRequest)(nil),              // 230: glms.ListChaptersCandidateRequest
-	(*GetLessonCandidateRequest)(nil),                 // 231: glms.GetLessonCandidateRequest
-	(*GetLessonDetailCandidateRequest)(nil),           // 232: glms.GetLessonDetailCandidateRequest
-	(*ListLessonsCandidateRequest)(nil),               // 233: glms.ListLessonsCandidateRequest
-	(*ListLessonsByCourseCandidateRequest)(nil),       // 234: glms.ListLessonsByCourseCandidateRequest
-	(*GetCompleteCourseCandidateRequest)(nil),         // 235: glms.GetCompleteCourseCandidateRequest
-	(*GetQuizCandidateRequest)(nil),                   // 236: glms.GetQuizCandidateRequest
-	(*ListQuizzesCandidateRequest)(nil),               // 237: glms.ListQuizzesCandidateRequest
-	(*CreateViewURLCandidateRequest)(nil),             // 238: glms.CreateViewURLCandidateRequest
-	nil,                                               // 239: glms.CreateUploadURLResponse.SignedHeadersEntry
+	(ResourcePackFileType)(0),                         // 6: glms.ResourcePackFileType
+	(UploadType)(0),                                   // 7: glms.UploadType
+	(*Course)(nil),                                    // 8: glms.Course
+	(*CourseMaterial)(nil),                            // 9: glms.CourseMaterial
+	(*Chapter)(nil),                                   // 10: glms.Chapter
+	(*Lesson)(nil),                                    // 11: glms.Lesson
+	(*Prerequisite)(nil),                              // 12: glms.Prerequisite
+	(*Quiz)(nil),                                      // 13: glms.Quiz
+	(*QuizQuestion)(nil),                              // 14: glms.QuizQuestion
+	(*QuizOption)(nil),                                // 15: glms.QuizOption
+	(*ReorderItem)(nil),                               // 16: glms.ReorderItem
+	(*BucketObject)(nil),                              // 17: glms.BucketObject
+	(*CreateCourseDraftRequest)(nil),                  // 18: glms.CreateCourseDraftRequest
+	(*UpdateCourseRequest)(nil),                       // 19: glms.UpdateCourseRequest
+	(*UpdateCourseResponse)(nil),                      // 20: glms.UpdateCourseResponse
+	(*DeleteCourseRequest)(nil),                       // 21: glms.DeleteCourseRequest
+	(*DeleteCourseResponse)(nil),                      // 22: glms.DeleteCourseResponse
+	(*GetCourseRequest)(nil),                          // 23: glms.GetCourseRequest
+	(*GetCourseResponse)(nil),                         // 24: glms.GetCourseResponse
+	(*ListCoursesRequest)(nil),                        // 25: glms.ListCoursesRequest
+	(*ListCoursesResponse)(nil),                       // 26: glms.ListCoursesResponse
+	(*PublishCourseRequest)(nil),                      // 27: glms.PublishCourseRequest
+	(*PublishCourseResponse)(nil),                     // 28: glms.PublishCourseResponse
+	(*CreateCourseMaterialRequest)(nil),               // 29: glms.CreateCourseMaterialRequest
+	(*CreateCourseMaterialResponse)(nil),              // 30: glms.CreateCourseMaterialResponse
+	(*UpdateCourseMaterialRequest)(nil),               // 31: glms.UpdateCourseMaterialRequest
+	(*UpdateCourseMaterialResponse)(nil),              // 32: glms.UpdateCourseMaterialResponse
+	(*DeleteCourseMaterialRequest)(nil),               // 33: glms.DeleteCourseMaterialRequest
+	(*DeleteCourseMaterialResponse)(nil),              // 34: glms.DeleteCourseMaterialResponse
+	(*GetCourseMaterialRequest)(nil),                  // 35: glms.GetCourseMaterialRequest
+	(*GetCourseMaterialResponse)(nil),                 // 36: glms.GetCourseMaterialResponse
+	(*ListCourseMaterialsRequest)(nil),                // 37: glms.ListCourseMaterialsRequest
+	(*ListCourseMaterialsResponse)(nil),               // 38: glms.ListCourseMaterialsResponse
+	(*ReorderCourseMaterialsRequest)(nil),             // 39: glms.ReorderCourseMaterialsRequest
+	(*ReorderCourseMaterialsResponse)(nil),            // 40: glms.ReorderCourseMaterialsResponse
+	(*CreateChapterRequest)(nil),                      // 41: glms.CreateChapterRequest
+	(*CreateChapterResponse)(nil),                     // 42: glms.CreateChapterResponse
+	(*UpdateChapterRequest)(nil),                      // 43: glms.UpdateChapterRequest
+	(*UpdateChapterResponse)(nil),                     // 44: glms.UpdateChapterResponse
+	(*DeleteChapterRequest)(nil),                      // 45: glms.DeleteChapterRequest
+	(*DeleteChapterResponse)(nil),                     // 46: glms.DeleteChapterResponse
+	(*GetChapterRequest)(nil),                         // 47: glms.GetChapterRequest
+	(*GetChapterResponse)(nil),                        // 48: glms.GetChapterResponse
+	(*ListChaptersRequest)(nil),                       // 49: glms.ListChaptersRequest
+	(*ListChaptersResponse)(nil),                      // 50: glms.ListChaptersResponse
+	(*ReorderChaptersRequest)(nil),                    // 51: glms.ReorderChaptersRequest
+	(*ReorderChaptersResponse)(nil),                   // 52: glms.ReorderChaptersResponse
+	(*CreateLessonRequest)(nil),                       // 53: glms.CreateLessonRequest
+	(*CreateLessonResponse)(nil),                      // 54: glms.CreateLessonResponse
+	(*UpdateLessonRequest)(nil),                       // 55: glms.UpdateLessonRequest
+	(*UpdateLessonResponse)(nil),                      // 56: glms.UpdateLessonResponse
+	(*DeleteLessonRequest)(nil),                       // 57: glms.DeleteLessonRequest
+	(*DeleteLessonResponse)(nil),                      // 58: glms.DeleteLessonResponse
+	(*GetLessonRequest)(nil),                          // 59: glms.GetLessonRequest
+	(*GetLessonResponse)(nil),                         // 60: glms.GetLessonResponse
+	(*ListLessonsRequest)(nil),                        // 61: glms.ListLessonsRequest
+	(*ListLessonsResponse)(nil),                       // 62: glms.ListLessonsResponse
+	(*ReorderLessonsRequest)(nil),                     // 63: glms.ReorderLessonsRequest
+	(*ReorderLessonsResponse)(nil),                    // 64: glms.ReorderLessonsResponse
+	(*CreatePrerequisiteRequest)(nil),                 // 65: glms.CreatePrerequisiteRequest
+	(*CreatePrerequisiteResponse)(nil),                // 66: glms.CreatePrerequisiteResponse
+	(*UpdatePrerequisiteRequest)(nil),                 // 67: glms.UpdatePrerequisiteRequest
+	(*UpdatePrerequisiteResponse)(nil),                // 68: glms.UpdatePrerequisiteResponse
+	(*DeletePrerequisiteRequest)(nil),                 // 69: glms.DeletePrerequisiteRequest
+	(*DeletePrerequisiteResponse)(nil),                // 70: glms.DeletePrerequisiteResponse
+	(*GetPrerequisiteRequest)(nil),                    // 71: glms.GetPrerequisiteRequest
+	(*GetPrerequisiteResponse)(nil),                   // 72: glms.GetPrerequisiteResponse
+	(*ListPrerequisitesRequest)(nil),                  // 73: glms.ListPrerequisitesRequest
+	(*ListPrerequisitesResponse)(nil),                 // 74: glms.ListPrerequisitesResponse
+	(*CreateQuizRequest)(nil),                         // 75: glms.CreateQuizRequest
+	(*CreateQuizResponse)(nil),                        // 76: glms.CreateQuizResponse
+	(*UpdateQuizRequest)(nil),                         // 77: glms.UpdateQuizRequest
+	(*UpdateQuizResponse)(nil),                        // 78: glms.UpdateQuizResponse
+	(*DeleteQuizRequest)(nil),                         // 79: glms.DeleteQuizRequest
+	(*DeleteQuizResponse)(nil),                        // 80: glms.DeleteQuizResponse
+	(*GetQuizRequest)(nil),                            // 81: glms.GetQuizRequest
+	(*GetQuizResponse)(nil),                           // 82: glms.GetQuizResponse
+	(*ListQuizzesRequest)(nil),                        // 83: glms.ListQuizzesRequest
+	(*ListQuizzesResponse)(nil),                       // 84: glms.ListQuizzesResponse
+	(*CreateQuizQuestionRequest)(nil),                 // 85: glms.CreateQuizQuestionRequest
+	(*CreateQuizQuestionResponse)(nil),                // 86: glms.CreateQuizQuestionResponse
+	(*UpdateQuizQuestionRequest)(nil),                 // 87: glms.UpdateQuizQuestionRequest
+	(*UpdateQuizQuestionResponse)(nil),                // 88: glms.UpdateQuizQuestionResponse
+	(*DeleteQuizQuestionRequest)(nil),                 // 89: glms.DeleteQuizQuestionRequest
+	(*DeleteQuizQuestionResponse)(nil),                // 90: glms.DeleteQuizQuestionResponse
+	(*GetQuizQuestionRequest)(nil),                    // 91: glms.GetQuizQuestionRequest
+	(*GetQuizQuestionResponse)(nil),                   // 92: glms.GetQuizQuestionResponse
+	(*ListQuizQuestionsRequest)(nil),                  // 93: glms.ListQuizQuestionsRequest
+	(*ListQuizQuestionsResponse)(nil),                 // 94: glms.ListQuizQuestionsResponse
+	(*ReorderQuizQuestionsRequest)(nil),               // 95: glms.ReorderQuizQuestionsRequest
+	(*ReorderQuizQuestionsResponse)(nil),              // 96: glms.ReorderQuizQuestionsResponse
+	(*CreateQuizOptionRequest)(nil),                   // 97: glms.CreateQuizOptionRequest
+	(*CreateQuizOptionResponse)(nil),                  // 98: glms.CreateQuizOptionResponse
+	(*UpdateQuizOptionRequest)(nil),                   // 99: glms.UpdateQuizOptionRequest
+	(*UpdateQuizOptionResponse)(nil),                  // 100: glms.UpdateQuizOptionResponse
+	(*DeleteQuizOptionRequest)(nil),                   // 101: glms.DeleteQuizOptionRequest
+	(*DeleteQuizOptionResponse)(nil),                  // 102: glms.DeleteQuizOptionResponse
+	(*GetQuizOptionRequest)(nil),                      // 103: glms.GetQuizOptionRequest
+	(*GetQuizOptionResponse)(nil),                     // 104: glms.GetQuizOptionResponse
+	(*ListQuizOptionsRequest)(nil),                    // 105: glms.ListQuizOptionsRequest
+	(*ListQuizOptionsResponse)(nil),                   // 106: glms.ListQuizOptionsResponse
+	(*ReorderQuizOptionsRequest)(nil),                 // 107: glms.ReorderQuizOptionsRequest
+	(*ReorderQuizOptionsResponse)(nil),                // 108: glms.ReorderQuizOptionsResponse
+	(*ListObjectsRequest)(nil),                        // 109: glms.ListObjectsRequest
+	(*ListObjectsResponse)(nil),                       // 110: glms.ListObjectsResponse
+	(*CreateUploadURLRequest)(nil),                    // 111: glms.CreateUploadURLRequest
+	(*CreateUploadURLResponse)(nil),                   // 112: glms.CreateUploadURLResponse
+	(*CreateViewURLRequest)(nil),                      // 113: glms.CreateViewURLRequest
+	(*CreateViewURLResponse)(nil),                     // 114: glms.CreateViewURLResponse
+	(*GrantCourseAccessPermissionAdminRequest)(nil),   // 115: glms.GrantCourseAccessPermissionAdminRequest
+	(*GrantCourseAccessPermissionAdminResponse)(nil),  // 116: glms.GrantCourseAccessPermissionAdminResponse
+	(*RevokeCourseAccessPermissionAdminRequest)(nil),  // 117: glms.RevokeCourseAccessPermissionAdminRequest
+	(*RevokeCourseAccessPermissionAdminResponse)(nil), // 118: glms.RevokeCourseAccessPermissionAdminResponse
+	(*EnrollCandidateCourseRequest)(nil),              // 119: glms.EnrollCandidateCourseRequest
+	(*EnrollCandidateCourseResponse)(nil),             // 120: glms.EnrollCandidateCourseResponse
+	(*BatchEnrollCandidateCoursesRequest)(nil),        // 121: glms.BatchEnrollCandidateCoursesRequest
+	(*BatchEnrollResult)(nil),                         // 122: glms.BatchEnrollResult
+	(*BatchEnrollCandidateCoursesResponse)(nil),       // 123: glms.BatchEnrollCandidateCoursesResponse
+	(*CompleteLessonLearningRequest)(nil),             // 124: glms.CompleteLessonLearningRequest
+	(*CompleteLessonLearningResponse)(nil),            // 125: glms.CompleteLessonLearningResponse
+	(*ListCandidateEnrollmentsRequest)(nil),           // 126: glms.ListCandidateEnrollmentsRequest
+	(*CandidateEnrollmentSummary)(nil),                // 127: glms.CandidateEnrollmentSummary
+	(*ListCandidateEnrollmentsResponse)(nil),          // 128: glms.ListCandidateEnrollmentsResponse
+	(*GetCandidateEnrollmentDetailRequest)(nil),       // 129: glms.GetCandidateEnrollmentDetailRequest
+	(*GetCandidateEnrollmentDetailResponse)(nil),      // 130: glms.GetCandidateEnrollmentDetailResponse
+	(*ListCourseEnrollmentsForAdminRequest)(nil),      // 131: glms.ListCourseEnrollmentsForAdminRequest
+	(*CourseEnrollmentSummaryForAdmin)(nil),           // 132: glms.CourseEnrollmentSummaryForAdmin
+	(*ListCourseEnrollmentsForAdminResponse)(nil),     // 133: glms.ListCourseEnrollmentsForAdminResponse
+	(*GetCandidateProgressForAdminRequest)(nil),       // 134: glms.GetCandidateProgressForAdminRequest
+	(*GetCandidateProgressForAdminResponse)(nil),      // 135: glms.GetCandidateProgressForAdminResponse
+	(*QuizOptionDetail)(nil),                          // 136: glms.QuizOptionDetail
+	(*QuizQuestionDetail)(nil),                        // 137: glms.QuizQuestionDetail
+	(*QuizDetail)(nil),                                // 138: glms.QuizDetail
+	(*LessonDetail)(nil),                              // 139: glms.LessonDetail
+	(*ChapterDetail)(nil),                             // 140: glms.ChapterDetail
+	(*CompleteCourse)(nil),                            // 141: glms.CompleteCourse
+	(*SupplementaryMaterial)(nil),                     // 142: glms.SupplementaryMaterial
+	(*GetCompleteCourseRequest)(nil),                  // 143: glms.GetCompleteCourseRequest
+	(*GetCompleteCourseResponse)(nil),                 // 144: glms.GetCompleteCourseResponse
+	(*CreateCourseSupplementaryMaterialRequest)(nil),  // 145: glms.CreateCourseSupplementaryMaterialRequest
+	(*CreateCourseSupplementaryMaterialResponse)(nil), // 146: glms.CreateCourseSupplementaryMaterialResponse
+	(*UpdateCourseSupplementaryMaterialRequest)(nil),  // 147: glms.UpdateCourseSupplementaryMaterialRequest
+	(*UpdateCourseSupplementaryMaterialResponse)(nil), // 148: glms.UpdateCourseSupplementaryMaterialResponse
+	(*DeleteCourseSupplementaryMaterialRequest)(nil),  // 149: glms.DeleteCourseSupplementaryMaterialRequest
+	(*DeleteCourseSupplementaryMaterialResponse)(nil), // 150: glms.DeleteCourseSupplementaryMaterialResponse
+	(*GetCourseSupplementaryMaterialRequest)(nil),     // 151: glms.GetCourseSupplementaryMaterialRequest
+	(*GetCourseSupplementaryMaterialResponse)(nil),    // 152: glms.GetCourseSupplementaryMaterialResponse
+	(*TakeQuizRequest)(nil),                           // 153: glms.TakeQuizRequest
+	(*TakeQuizResponse)(nil),                          // 154: glms.TakeQuizResponse
+	(*QuizOptionForCandidate)(nil),                    // 155: glms.QuizOptionForCandidate
+	(*QuizQuestionForCandidate)(nil),                  // 156: glms.QuizQuestionForCandidate
+	(*GetCandidateQuizPaperRequest)(nil),              // 157: glms.GetCandidateQuizPaperRequest
+	(*GetCandidateQuizPaperResponse)(nil),             // 158: glms.GetCandidateQuizPaperResponse
+	(*QuizAnswerSubmission)(nil),                      // 159: glms.QuizAnswerSubmission
+	(*SubmitQuizRequest)(nil),                         // 160: glms.SubmitQuizRequest
+	(*SubmitQuizResponse)(nil),                        // 161: glms.SubmitQuizResponse
+	(*BrokenAssetDetail)(nil),                         // 162: glms.BrokenAssetDetail
+	(*ListBrokenAssetsRequest)(nil),                   // 163: glms.ListBrokenAssetsRequest
+	(*ListBrokenAssetsResponse)(nil),                  // 164: glms.ListBrokenAssetsResponse
+	(*ImportQuizRequest)(nil),                         // 165: glms.ImportQuizRequest
+	(*ImportQuizResponse)(nil),                        // 166: glms.ImportQuizResponse
+	(*ImportCourseRequest)(nil),                       // 167: glms.ImportCourseRequest
+	(*ImportCourseResponse)(nil),                      // 168: glms.ImportCourseResponse
+	(*GetCourseSummaryResponse)(nil),                  // 169: glms.GetCourseSummaryResponse
+	(*CourseSummary)(nil),                             // 170: glms.CourseSummary
+	(*CourseMaterialSummary)(nil),                     // 171: glms.CourseMaterialSummary
+	(*ChapterSummary)(nil),                            // 172: glms.ChapterSummary
+	(*LessonSummary)(nil),                             // 173: glms.LessonSummary
+	(*PrerequisiteSummary)(nil),                       // 174: glms.PrerequisiteSummary
+	(*QuizSummary)(nil),                               // 175: glms.QuizSummary
+	(*QuizQuestionSummary)(nil),                       // 176: glms.QuizQuestionSummary
+	(*QuizOptionSummary)(nil),                         // 177: glms.QuizOptionSummary
+	(*CourseDetail)(nil),                              // 178: glms.CourseDetail
+	(*GetCourseDetailRequest)(nil),                    // 179: glms.GetCourseDetailRequest
+	(*GetCourseDetailResponse)(nil),                   // 180: glms.GetCourseDetailResponse
+	(*GetCourseMaterialDetailResponse)(nil),           // 181: glms.GetCourseMaterialDetailResponse
+	(*GetChapterDetailResponse)(nil),                  // 182: glms.GetChapterDetailResponse
+	(*GetLessonDetailResponse)(nil),                   // 183: glms.GetLessonDetailResponse
+	(*GetPrerequisiteDetailResponse)(nil),             // 184: glms.GetPrerequisiteDetailResponse
+	(*GetQuizDetailRequest)(nil),                      // 185: glms.GetQuizDetailRequest
+	(*GetQuizDetailResponse)(nil),                     // 186: glms.GetQuizDetailResponse
+	(*GetQuizQuestionDetailResponse)(nil),             // 187: glms.GetQuizQuestionDetailResponse
+	(*GetQuizOptionDetailResponse)(nil),               // 188: glms.GetQuizOptionDetailResponse
+	(*ListLessonProgressRequest)(nil),                 // 189: glms.ListLessonProgressRequest
+	(*LessonProgressSummary)(nil),                     // 190: glms.LessonProgressSummary
+	(*ListLessonProgressResponse)(nil),                // 191: glms.ListLessonProgressResponse
+	(*GetLessonProgressDetailRequest)(nil),            // 192: glms.GetLessonProgressDetailRequest
+	(*GetLessonProgressDetailResponse)(nil),           // 193: glms.GetLessonProgressDetailResponse
+	(*ListQuizAttemptsRequest)(nil),                   // 194: glms.ListQuizAttemptsRequest
+	(*QuizAttemptSummary)(nil),                        // 195: glms.QuizAttemptSummary
+	(*ListQuizAttemptsResponse)(nil),                  // 196: glms.ListQuizAttemptsResponse
+	(*GetQuizAttemptDetailRequest)(nil),               // 197: glms.GetQuizAttemptDetailRequest
+	(*QuizAttemptDetail)(nil),                         // 198: glms.QuizAttemptDetail
+	(*GetQuizAttemptDetailResponse)(nil),              // 199: glms.GetQuizAttemptDetailResponse
+	(*ListChapterProgressRequest)(nil),                // 200: glms.ListChapterProgressRequest
+	(*ChapterProgressSummary)(nil),                    // 201: glms.ChapterProgressSummary
+	(*ListChapterProgressResponse)(nil),               // 202: glms.ListChapterProgressResponse
+	(*GetChapterProgressDetailRequest)(nil),           // 203: glms.GetChapterProgressDetailRequest
+	(*GetChapterProgressDetailResponse)(nil),          // 204: glms.GetChapterProgressDetailResponse
+	(*ListCourseAssetsRequest)(nil),                   // 205: glms.ListCourseAssetsRequest
+	(*CourseAssetSummary)(nil),                        // 206: glms.CourseAssetSummary
+	(*ListCourseAssetsResponse)(nil),                  // 207: glms.ListCourseAssetsResponse
+	(*GetCourseAssetDetailRequest)(nil),               // 208: glms.GetCourseAssetDetailRequest
+	(*GetCourseAssetDetailResponse)(nil),              // 209: glms.GetCourseAssetDetailResponse
+	(*CourseAsset)(nil),                               // 210: glms.CourseAsset
+	(*ListPrerequisitesByRequiredEntityRequest)(nil),  // 211: glms.ListPrerequisitesByRequiredEntityRequest
+	(*ListPrerequisitesByRequiredEntityResponse)(nil), // 212: glms.ListPrerequisitesByRequiredEntityResponse
+	(*ListLessonsByCourseRequest)(nil),                // 213: glms.ListLessonsByCourseRequest
+	(*ListLessonsByCourseResponse)(nil),               // 214: glms.ListLessonsByCourseResponse
+	(*ListCourseEnrollmentsRequest)(nil),              // 215: glms.ListCourseEnrollmentsRequest
+	(*ListCourseEnrollmentsResponse)(nil),             // 216: glms.ListCourseEnrollmentsResponse
+	(*CourseEnrollment)(nil),                          // 217: glms.CourseEnrollment
+	(*GetCourseEnrollmentDetailRequest)(nil),          // 218: glms.GetCourseEnrollmentDetailRequest
+	(*GetCourseEnrollmentDetailResponse)(nil),         // 219: glms.GetCourseEnrollmentDetailResponse
+	(*LessonProgress)(nil),                            // 220: glms.LessonProgress
+	(*ChapterProgress)(nil),                           // 221: glms.ChapterProgress
+	(*SyncCourseProgressRequest)(nil),                 // 222: glms.SyncCourseProgressRequest
+	(*SyncCourseProgressResponse)(nil),                // 223: glms.SyncCourseProgressResponse
+	(*GetCourseSummaryCandidateRequest)(nil),          // 224: glms.GetCourseSummaryCandidateRequest
+	(*GetCourseDetailCandidateRequest)(nil),           // 225: glms.GetCourseDetailCandidateRequest
+	(*ListCoursesCandidateRequest)(nil),               // 226: glms.ListCoursesCandidateRequest
+	(*GetCourseMaterialCandidateRequest)(nil),         // 227: glms.GetCourseMaterialCandidateRequest
+	(*ListCourseMaterialsCandidateRequest)(nil),       // 228: glms.ListCourseMaterialsCandidateRequest
+	(*GetChapterCandidateRequest)(nil),                // 229: glms.GetChapterCandidateRequest
+	(*GetChapterDetailCandidateRequest)(nil),          // 230: glms.GetChapterDetailCandidateRequest
+	(*ListChaptersCandidateRequest)(nil),              // 231: glms.ListChaptersCandidateRequest
+	(*GetLessonCandidateRequest)(nil),                 // 232: glms.GetLessonCandidateRequest
+	(*GetLessonDetailCandidateRequest)(nil),           // 233: glms.GetLessonDetailCandidateRequest
+	(*ListLessonsCandidateRequest)(nil),               // 234: glms.ListLessonsCandidateRequest
+	(*ListLessonsByCourseCandidateRequest)(nil),       // 235: glms.ListLessonsByCourseCandidateRequest
+	(*GetCompleteCourseCandidateRequest)(nil),         // 236: glms.GetCompleteCourseCandidateRequest
+	(*GetQuizCandidateRequest)(nil),                   // 237: glms.GetQuizCandidateRequest
+	(*ListQuizzesCandidateRequest)(nil),               // 238: glms.ListQuizzesCandidateRequest
+	(*CreateViewURLCandidateRequest)(nil),             // 239: glms.CreateViewURLCandidateRequest
+	(*CreateResourcePackRequest)(nil),                 // 240: glms.CreateResourcePackRequest
+	(*UpdateResourcePackRequest)(nil),                 // 241: glms.UpdateResourcePackRequest
+	(*DeleteResourcePackRequest)(nil),                 // 242: glms.DeleteResourcePackRequest
+	(*DeleteResourcePackResponse)(nil),                // 243: glms.DeleteResourcePackResponse
+	(*GetResourcePackRequest)(nil),                    // 244: glms.GetResourcePackRequest
+	(*ListResourcePacksRequest)(nil),                  // 245: glms.ListResourcePacksRequest
+	(*ListResourcePacksResponse)(nil),                 // 246: glms.ListResourcePacksResponse
+	(*CreateResourcePackFileRequest)(nil),             // 247: glms.CreateResourcePackFileRequest
+	(*UpdateResourcePackFileRequest)(nil),             // 248: glms.UpdateResourcePackFileRequest
+	(*DeleteResourcePackFileRequest)(nil),             // 249: glms.DeleteResourcePackFileRequest
+	(*DeleteResourcePackFileResponse)(nil),            // 250: glms.DeleteResourcePackFileResponse
+	(*GetResourcePackFileRequest)(nil),                // 251: glms.GetResourcePackFileRequest
+	(*ListResourcePackFilesRequest)(nil),              // 252: glms.ListResourcePackFilesRequest
+	(*ListResourcePackFilesResponse)(nil),             // 253: glms.ListResourcePackFilesResponse
+	(*GetLessonVideoPlayURLRequest)(nil),              // 254: glms.GetLessonVideoPlayURLRequest
+	(*GetLessonVideoPlayURLResponse)(nil),             // 255: glms.GetLessonVideoPlayURLResponse
+	(*GetResourcePackFileViewURLRequest)(nil),         // 256: glms.GetResourcePackFileViewURLRequest
+	(*GetResourcePackFileViewURLResponse)(nil),        // 257: glms.GetResourcePackFileViewURLResponse
+	(*ResourcePack)(nil),                              // 258: glms.ResourcePack
+	(*ResourcePackFile)(nil),                          // 259: glms.ResourcePackFile
+	(*ListResourcePacksCandidateRequest)(nil),         // 260: glms.ListResourcePacksCandidateRequest
+	(*ListResourcePackFilesCandidateRequest)(nil),     // 261: glms.ListResourcePackFilesCandidateRequest
+	nil, // 262: glms.CreateUploadURLResponse.SignedHeadersEntry
 }
 var file_lms_proto_depIdxs = []int32{
 	0,   // 0: glms.CourseMaterial.material_type:type_name -> glms.MaterialType
@@ -17278,74 +19132,74 @@ var file_lms_proto_depIdxs = []int32{
 	2,   // 4: glms.Prerequisite.target_entity_type:type_name -> glms.EntityType
 	4,   // 5: glms.Quiz.quizzable_type:type_name -> glms.QuizzableType
 	5,   // 6: glms.QuizQuestion.question_type:type_name -> glms.QuizQuestionType
-	7,   // 7: glms.GetCourseResponse.course:type_name -> glms.Course
-	169, // 8: glms.ListCoursesResponse.courses:type_name -> glms.CourseSummary
+	8,   // 7: glms.GetCourseResponse.course:type_name -> glms.Course
+	170, // 8: glms.ListCoursesResponse.courses:type_name -> glms.CourseSummary
 	0,   // 9: glms.CreateCourseMaterialRequest.material_type:type_name -> glms.MaterialType
 	0,   // 10: glms.UpdateCourseMaterialRequest.material_type:type_name -> glms.MaterialType
-	8,   // 11: glms.GetCourseMaterialResponse.material:type_name -> glms.CourseMaterial
-	170, // 12: glms.ListCourseMaterialsResponse.materials:type_name -> glms.CourseMaterialSummary
-	15,  // 13: glms.ReorderCourseMaterialsRequest.items:type_name -> glms.ReorderItem
-	9,   // 14: glms.GetChapterResponse.chapter:type_name -> glms.Chapter
-	171, // 15: glms.ListChaptersResponse.chapters:type_name -> glms.ChapterSummary
-	15,  // 16: glms.ReorderChaptersRequest.items:type_name -> glms.ReorderItem
+	9,   // 11: glms.GetCourseMaterialResponse.material:type_name -> glms.CourseMaterial
+	171, // 12: glms.ListCourseMaterialsResponse.materials:type_name -> glms.CourseMaterialSummary
+	16,  // 13: glms.ReorderCourseMaterialsRequest.items:type_name -> glms.ReorderItem
+	10,  // 14: glms.GetChapterResponse.chapter:type_name -> glms.Chapter
+	172, // 15: glms.ListChaptersResponse.chapters:type_name -> glms.ChapterSummary
+	16,  // 16: glms.ReorderChaptersRequest.items:type_name -> glms.ReorderItem
 	1,   // 17: glms.CreateLessonRequest.lesson_type:type_name -> glms.LessonType
 	1,   // 18: glms.UpdateLessonRequest.lesson_type:type_name -> glms.LessonType
-	10,  // 19: glms.GetLessonResponse.lesson:type_name -> glms.Lesson
-	172, // 20: glms.ListLessonsResponse.lessons:type_name -> glms.LessonSummary
-	15,  // 21: glms.ReorderLessonsRequest.items:type_name -> glms.ReorderItem
+	11,  // 19: glms.GetLessonResponse.lesson:type_name -> glms.Lesson
+	173, // 20: glms.ListLessonsResponse.lessons:type_name -> glms.LessonSummary
+	16,  // 21: glms.ReorderLessonsRequest.items:type_name -> glms.ReorderItem
 	2,   // 22: glms.CreatePrerequisiteRequest.required_entity_type:type_name -> glms.EntityType
 	3,   // 23: glms.CreatePrerequisiteRequest.required_result:type_name -> glms.PrerequisiteResult
 	2,   // 24: glms.CreatePrerequisiteRequest.target_entity_type:type_name -> glms.EntityType
 	2,   // 25: glms.UpdatePrerequisiteRequest.required_entity_type:type_name -> glms.EntityType
 	3,   // 26: glms.UpdatePrerequisiteRequest.required_result:type_name -> glms.PrerequisiteResult
 	2,   // 27: glms.UpdatePrerequisiteRequest.target_entity_type:type_name -> glms.EntityType
-	11,  // 28: glms.GetPrerequisiteResponse.prerequisite:type_name -> glms.Prerequisite
+	12,  // 28: glms.GetPrerequisiteResponse.prerequisite:type_name -> glms.Prerequisite
 	2,   // 29: glms.ListPrerequisitesRequest.target_entity_type:type_name -> glms.EntityType
-	173, // 30: glms.ListPrerequisitesResponse.prerequisites:type_name -> glms.PrerequisiteSummary
+	174, // 30: glms.ListPrerequisitesResponse.prerequisites:type_name -> glms.PrerequisiteSummary
 	4,   // 31: glms.CreateQuizRequest.quizzable_type:type_name -> glms.QuizzableType
-	12,  // 32: glms.GetQuizResponse.quiz:type_name -> glms.Quiz
+	13,  // 32: glms.GetQuizResponse.quiz:type_name -> glms.Quiz
 	4,   // 33: glms.ListQuizzesRequest.quizzable_type:type_name -> glms.QuizzableType
-	174, // 34: glms.ListQuizzesResponse.quizzes:type_name -> glms.QuizSummary
+	175, // 34: glms.ListQuizzesResponse.quizzes:type_name -> glms.QuizSummary
 	5,   // 35: glms.CreateQuizQuestionRequest.question_type:type_name -> glms.QuizQuestionType
 	5,   // 36: glms.UpdateQuizQuestionRequest.question_type:type_name -> glms.QuizQuestionType
-	13,  // 37: glms.GetQuizQuestionResponse.question:type_name -> glms.QuizQuestion
-	175, // 38: glms.ListQuizQuestionsResponse.questions:type_name -> glms.QuizQuestionSummary
-	15,  // 39: glms.ReorderQuizQuestionsRequest.items:type_name -> glms.ReorderItem
-	14,  // 40: glms.GetQuizOptionResponse.option:type_name -> glms.QuizOption
-	176, // 41: glms.ListQuizOptionsResponse.options:type_name -> glms.QuizOptionSummary
-	15,  // 42: glms.ReorderQuizOptionsRequest.items:type_name -> glms.ReorderItem
-	16,  // 43: glms.ListObjectsResponse.objects:type_name -> glms.BucketObject
-	6,   // 44: glms.CreateUploadURLRequest.upload_type:type_name -> glms.UploadType
-	239, // 45: glms.CreateUploadURLResponse.signed_headers:type_name -> glms.CreateUploadURLResponse.SignedHeadersEntry
-	121, // 46: glms.BatchEnrollCandidateCoursesResponse.results:type_name -> glms.BatchEnrollResult
-	126, // 47: glms.ListCandidateEnrollmentsResponse.enrollments:type_name -> glms.CandidateEnrollmentSummary
-	131, // 48: glms.ListCourseEnrollmentsForAdminResponse.enrollments:type_name -> glms.CourseEnrollmentSummaryForAdmin
-	14,  // 49: glms.QuizOptionDetail.option:type_name -> glms.QuizOption
-	13,  // 50: glms.QuizQuestionDetail.question:type_name -> glms.QuizQuestion
-	14,  // 51: glms.QuizQuestionDetail.options:type_name -> glms.QuizOption
-	12,  // 52: glms.QuizDetail.quiz:type_name -> glms.Quiz
-	136, // 53: glms.QuizDetail.questions:type_name -> glms.QuizQuestionDetail
-	10,  // 54: glms.LessonDetail.lesson:type_name -> glms.Lesson
-	137, // 55: glms.LessonDetail.quizzes:type_name -> glms.QuizDetail
-	9,   // 56: glms.ChapterDetail.chapter:type_name -> glms.Chapter
-	138, // 57: glms.ChapterDetail.lessons:type_name -> glms.LessonDetail
-	137, // 58: glms.ChapterDetail.quizzes:type_name -> glms.QuizDetail
-	7,   // 59: glms.CompleteCourse.course:type_name -> glms.Course
-	8,   // 60: glms.CompleteCourse.materials:type_name -> glms.CourseMaterial
-	139, // 61: glms.CompleteCourse.chapters:type_name -> glms.ChapterDetail
-	137, // 62: glms.CompleteCourse.quizzes:type_name -> glms.QuizDetail
-	141, // 63: glms.CompleteCourse.supplementary_material:type_name -> glms.SupplementaryMaterial
-	140, // 64: glms.GetCompleteCourseResponse.complete_course:type_name -> glms.CompleteCourse
-	141, // 65: glms.CreateCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
-	141, // 66: glms.UpdateCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
-	141, // 67: glms.GetCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
+	14,  // 37: glms.GetQuizQuestionResponse.question:type_name -> glms.QuizQuestion
+	176, // 38: glms.ListQuizQuestionsResponse.questions:type_name -> glms.QuizQuestionSummary
+	16,  // 39: glms.ReorderQuizQuestionsRequest.items:type_name -> glms.ReorderItem
+	15,  // 40: glms.GetQuizOptionResponse.option:type_name -> glms.QuizOption
+	177, // 41: glms.ListQuizOptionsResponse.options:type_name -> glms.QuizOptionSummary
+	16,  // 42: glms.ReorderQuizOptionsRequest.items:type_name -> glms.ReorderItem
+	17,  // 43: glms.ListObjectsResponse.objects:type_name -> glms.BucketObject
+	7,   // 44: glms.CreateUploadURLRequest.upload_type:type_name -> glms.UploadType
+	262, // 45: glms.CreateUploadURLResponse.signed_headers:type_name -> glms.CreateUploadURLResponse.SignedHeadersEntry
+	122, // 46: glms.BatchEnrollCandidateCoursesResponse.results:type_name -> glms.BatchEnrollResult
+	127, // 47: glms.ListCandidateEnrollmentsResponse.enrollments:type_name -> glms.CandidateEnrollmentSummary
+	132, // 48: glms.ListCourseEnrollmentsForAdminResponse.enrollments:type_name -> glms.CourseEnrollmentSummaryForAdmin
+	15,  // 49: glms.QuizOptionDetail.option:type_name -> glms.QuizOption
+	14,  // 50: glms.QuizQuestionDetail.question:type_name -> glms.QuizQuestion
+	15,  // 51: glms.QuizQuestionDetail.options:type_name -> glms.QuizOption
+	13,  // 52: glms.QuizDetail.quiz:type_name -> glms.Quiz
+	137, // 53: glms.QuizDetail.questions:type_name -> glms.QuizQuestionDetail
+	11,  // 54: glms.LessonDetail.lesson:type_name -> glms.Lesson
+	138, // 55: glms.LessonDetail.quizzes:type_name -> glms.QuizDetail
+	10,  // 56: glms.ChapterDetail.chapter:type_name -> glms.Chapter
+	139, // 57: glms.ChapterDetail.lessons:type_name -> glms.LessonDetail
+	138, // 58: glms.ChapterDetail.quizzes:type_name -> glms.QuizDetail
+	8,   // 59: glms.CompleteCourse.course:type_name -> glms.Course
+	9,   // 60: glms.CompleteCourse.materials:type_name -> glms.CourseMaterial
+	140, // 61: glms.CompleteCourse.chapters:type_name -> glms.ChapterDetail
+	138, // 62: glms.CompleteCourse.quizzes:type_name -> glms.QuizDetail
+	142, // 63: glms.CompleteCourse.supplementary_material:type_name -> glms.SupplementaryMaterial
+	141, // 64: glms.GetCompleteCourseResponse.complete_course:type_name -> glms.CompleteCourse
+	142, // 65: glms.CreateCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
+	142, // 66: glms.UpdateCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
+	142, // 67: glms.GetCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
 	5,   // 68: glms.QuizQuestionForCandidate.question_type:type_name -> glms.QuizQuestionType
-	154, // 69: glms.QuizQuestionForCandidate.options:type_name -> glms.QuizOptionForCandidate
-	155, // 70: glms.GetCandidateQuizPaperResponse.questions:type_name -> glms.QuizQuestionForCandidate
-	158, // 71: glms.SubmitQuizRequest.submissions:type_name -> glms.QuizAnswerSubmission
-	161, // 72: glms.ListBrokenAssetsResponse.assets:type_name -> glms.BrokenAssetDetail
+	155, // 69: glms.QuizQuestionForCandidate.options:type_name -> glms.QuizOptionForCandidate
+	156, // 70: glms.GetCandidateQuizPaperResponse.questions:type_name -> glms.QuizQuestionForCandidate
+	159, // 71: glms.SubmitQuizRequest.submissions:type_name -> glms.QuizAnswerSubmission
+	162, // 72: glms.ListBrokenAssetsResponse.assets:type_name -> glms.BrokenAssetDetail
 	4,   // 73: glms.ImportQuizRequest.quizzable_type:type_name -> glms.QuizzableType
-	169, // 74: glms.GetCourseSummaryResponse.course:type_name -> glms.CourseSummary
+	170, // 74: glms.GetCourseSummaryResponse.course:type_name -> glms.CourseSummary
 	0,   // 75: glms.CourseMaterialSummary.material_type:type_name -> glms.MaterialType
 	1,   // 76: glms.LessonSummary.lesson_type:type_name -> glms.LessonType
 	2,   // 77: glms.PrerequisiteSummary.required_entity_type:type_name -> glms.EntityType
@@ -17353,248 +19207,281 @@ var file_lms_proto_depIdxs = []int32{
 	2,   // 79: glms.PrerequisiteSummary.target_entity_type:type_name -> glms.EntityType
 	4,   // 80: glms.QuizSummary.quizzable_type:type_name -> glms.QuizzableType
 	5,   // 81: glms.QuizQuestionSummary.question_type:type_name -> glms.QuizQuestionType
-	7,   // 82: glms.CourseDetail.course:type_name -> glms.Course
-	177, // 83: glms.GetCourseDetailResponse.course_detail:type_name -> glms.CourseDetail
-	8,   // 84: glms.GetCourseMaterialDetailResponse.material:type_name -> glms.CourseMaterial
-	9,   // 85: glms.GetChapterDetailResponse.chapter:type_name -> glms.Chapter
-	10,  // 86: glms.GetLessonDetailResponse.lesson:type_name -> glms.Lesson
-	11,  // 87: glms.GetPrerequisiteDetailResponse.prerequisite:type_name -> glms.Prerequisite
-	137, // 88: glms.GetQuizDetailResponse.quiz_detail:type_name -> glms.QuizDetail
-	13,  // 89: glms.GetQuizQuestionDetailResponse.question:type_name -> glms.QuizQuestion
-	14,  // 90: glms.GetQuizOptionDetailResponse.option:type_name -> glms.QuizOption
-	189, // 91: glms.ListLessonProgressResponse.progress:type_name -> glms.LessonProgressSummary
-	219, // 92: glms.GetLessonProgressDetailResponse.progress:type_name -> glms.LessonProgress
-	194, // 93: glms.ListQuizAttemptsResponse.attempts:type_name -> glms.QuizAttemptSummary
-	197, // 94: glms.GetQuizAttemptDetailResponse.attempt:type_name -> glms.QuizAttemptDetail
-	200, // 95: glms.ListChapterProgressResponse.progress:type_name -> glms.ChapterProgressSummary
-	220, // 96: glms.GetChapterProgressDetailResponse.progress:type_name -> glms.ChapterProgress
-	205, // 97: glms.ListCourseAssetsResponse.assets:type_name -> glms.CourseAssetSummary
-	209, // 98: glms.GetCourseAssetDetailResponse.asset:type_name -> glms.CourseAsset
+	8,   // 82: glms.CourseDetail.course:type_name -> glms.Course
+	178, // 83: glms.GetCourseDetailResponse.course_detail:type_name -> glms.CourseDetail
+	9,   // 84: glms.GetCourseMaterialDetailResponse.material:type_name -> glms.CourseMaterial
+	10,  // 85: glms.GetChapterDetailResponse.chapter:type_name -> glms.Chapter
+	11,  // 86: glms.GetLessonDetailResponse.lesson:type_name -> glms.Lesson
+	12,  // 87: glms.GetPrerequisiteDetailResponse.prerequisite:type_name -> glms.Prerequisite
+	138, // 88: glms.GetQuizDetailResponse.quiz_detail:type_name -> glms.QuizDetail
+	14,  // 89: glms.GetQuizQuestionDetailResponse.question:type_name -> glms.QuizQuestion
+	15,  // 90: glms.GetQuizOptionDetailResponse.option:type_name -> glms.QuizOption
+	190, // 91: glms.ListLessonProgressResponse.progress:type_name -> glms.LessonProgressSummary
+	220, // 92: glms.GetLessonProgressDetailResponse.progress:type_name -> glms.LessonProgress
+	195, // 93: glms.ListQuizAttemptsResponse.attempts:type_name -> glms.QuizAttemptSummary
+	198, // 94: glms.GetQuizAttemptDetailResponse.attempt:type_name -> glms.QuizAttemptDetail
+	201, // 95: glms.ListChapterProgressResponse.progress:type_name -> glms.ChapterProgressSummary
+	221, // 96: glms.GetChapterProgressDetailResponse.progress:type_name -> glms.ChapterProgress
+	206, // 97: glms.ListCourseAssetsResponse.assets:type_name -> glms.CourseAssetSummary
+	210, // 98: glms.GetCourseAssetDetailResponse.asset:type_name -> glms.CourseAsset
 	2,   // 99: glms.ListPrerequisitesByRequiredEntityRequest.required_entity_type:type_name -> glms.EntityType
-	11,  // 100: glms.ListPrerequisitesByRequiredEntityResponse.prerequisites:type_name -> glms.Prerequisite
-	172, // 101: glms.ListLessonsByCourseResponse.lessons:type_name -> glms.LessonSummary
-	216, // 102: glms.ListCourseEnrollmentsResponse.enrollments:type_name -> glms.CourseEnrollment
-	216, // 103: glms.GetCourseEnrollmentDetailResponse.enrollment:type_name -> glms.CourseEnrollment
+	12,  // 100: glms.ListPrerequisitesByRequiredEntityResponse.prerequisites:type_name -> glms.Prerequisite
+	173, // 101: glms.ListLessonsByCourseResponse.lessons:type_name -> glms.LessonSummary
+	217, // 102: glms.ListCourseEnrollmentsResponse.enrollments:type_name -> glms.CourseEnrollment
+	217, // 103: glms.GetCourseEnrollmentDetailResponse.enrollment:type_name -> glms.CourseEnrollment
 	4,   // 104: glms.ListQuizzesCandidateRequest.quizzable_type:type_name -> glms.QuizzableType
-	17,  // 105: glms.LmsService.CreateCourseDraftAdmin:input_type -> glms.CreateCourseDraftRequest
-	18,  // 106: glms.LmsService.UpdateCourseAdmin:input_type -> glms.UpdateCourseRequest
-	20,  // 107: glms.LmsService.DeleteCourseAdmin:input_type -> glms.DeleteCourseRequest
-	26,  // 108: glms.LmsService.PublishCourseAdmin:input_type -> glms.PublishCourseRequest
-	22,  // 109: glms.LmsService.GetCourseSummaryAdmin:input_type -> glms.GetCourseRequest
-	178, // 110: glms.LmsService.GetCourseDetailAdmin:input_type -> glms.GetCourseDetailRequest
-	24,  // 111: glms.LmsService.ListCoursesAdmin:input_type -> glms.ListCoursesRequest
-	28,  // 112: glms.LmsService.CreateCourseMaterialAdmin:input_type -> glms.CreateCourseMaterialRequest
-	30,  // 113: glms.LmsService.UpdateCourseMaterialAdmin:input_type -> glms.UpdateCourseMaterialRequest
-	32,  // 114: glms.LmsService.DeleteCourseMaterialAdmin:input_type -> glms.DeleteCourseMaterialRequest
-	34,  // 115: glms.LmsService.GetCourseMaterialAdmin:input_type -> glms.GetCourseMaterialRequest
-	34,  // 116: glms.LmsService.GetCourseMaterialDetailAdmin:input_type -> glms.GetCourseMaterialRequest
-	36,  // 117: glms.LmsService.ListCourseMaterialsAdmin:input_type -> glms.ListCourseMaterialsRequest
-	38,  // 118: glms.LmsService.ReorderCourseMaterialsAdmin:input_type -> glms.ReorderCourseMaterialsRequest
-	40,  // 119: glms.LmsService.CreateChapterAdmin:input_type -> glms.CreateChapterRequest
-	42,  // 120: glms.LmsService.UpdateChapterAdmin:input_type -> glms.UpdateChapterRequest
-	44,  // 121: glms.LmsService.DeleteChapterAdmin:input_type -> glms.DeleteChapterRequest
-	46,  // 122: glms.LmsService.GetChapterAdmin:input_type -> glms.GetChapterRequest
-	46,  // 123: glms.LmsService.GetChapterDetailAdmin:input_type -> glms.GetChapterRequest
-	48,  // 124: glms.LmsService.ListChaptersAdmin:input_type -> glms.ListChaptersRequest
-	50,  // 125: glms.LmsService.ReorderChaptersAdmin:input_type -> glms.ReorderChaptersRequest
-	52,  // 126: glms.LmsService.CreateLessonAdmin:input_type -> glms.CreateLessonRequest
-	54,  // 127: glms.LmsService.UpdateLessonAdmin:input_type -> glms.UpdateLessonRequest
-	56,  // 128: glms.LmsService.DeleteLessonAdmin:input_type -> glms.DeleteLessonRequest
-	58,  // 129: glms.LmsService.GetLessonAdmin:input_type -> glms.GetLessonRequest
-	58,  // 130: glms.LmsService.GetLessonDetailAdmin:input_type -> glms.GetLessonRequest
-	60,  // 131: glms.LmsService.ListLessonsAdmin:input_type -> glms.ListLessonsRequest
-	62,  // 132: glms.LmsService.ReorderLessonsAdmin:input_type -> glms.ReorderLessonsRequest
-	212, // 133: glms.LmsService.ListLessonsByCourseAdmin:input_type -> glms.ListLessonsByCourseRequest
-	64,  // 134: glms.LmsService.CreatePrerequisiteAdmin:input_type -> glms.CreatePrerequisiteRequest
-	66,  // 135: glms.LmsService.UpdatePrerequisiteAdmin:input_type -> glms.UpdatePrerequisiteRequest
-	68,  // 136: glms.LmsService.DeletePrerequisiteAdmin:input_type -> glms.DeletePrerequisiteRequest
-	70,  // 137: glms.LmsService.GetPrerequisiteAdmin:input_type -> glms.GetPrerequisiteRequest
-	70,  // 138: glms.LmsService.GetPrerequisiteDetailAdmin:input_type -> glms.GetPrerequisiteRequest
-	72,  // 139: glms.LmsService.ListPrerequisitesAdmin:input_type -> glms.ListPrerequisitesRequest
-	210, // 140: glms.LmsService.ListPrerequisitesByRequiredEntityAdmin:input_type -> glms.ListPrerequisitesByRequiredEntityRequest
-	74,  // 141: glms.LmsService.CreateQuizAdmin:input_type -> glms.CreateQuizRequest
-	76,  // 142: glms.LmsService.UpdateQuizAdmin:input_type -> glms.UpdateQuizRequest
-	78,  // 143: glms.LmsService.DeleteQuizAdmin:input_type -> glms.DeleteQuizRequest
-	80,  // 144: glms.LmsService.GetQuizAdmin:input_type -> glms.GetQuizRequest
-	184, // 145: glms.LmsService.GetQuizDetailAdmin:input_type -> glms.GetQuizDetailRequest
-	82,  // 146: glms.LmsService.ListQuizzesAdmin:input_type -> glms.ListQuizzesRequest
-	84,  // 147: glms.LmsService.CreateQuizQuestionAdmin:input_type -> glms.CreateQuizQuestionRequest
-	86,  // 148: glms.LmsService.UpdateQuizQuestionAdmin:input_type -> glms.UpdateQuizQuestionRequest
-	88,  // 149: glms.LmsService.DeleteQuizQuestionAdmin:input_type -> glms.DeleteQuizQuestionRequest
-	90,  // 150: glms.LmsService.GetQuizQuestionAdmin:input_type -> glms.GetQuizQuestionRequest
-	90,  // 151: glms.LmsService.GetQuizQuestionDetailAdmin:input_type -> glms.GetQuizQuestionRequest
-	92,  // 152: glms.LmsService.ListQuizQuestionsAdmin:input_type -> glms.ListQuizQuestionsRequest
-	94,  // 153: glms.LmsService.ReorderQuizQuestionsAdmin:input_type -> glms.ReorderQuizQuestionsRequest
-	96,  // 154: glms.LmsService.CreateQuizOptionAdmin:input_type -> glms.CreateQuizOptionRequest
-	98,  // 155: glms.LmsService.UpdateQuizOptionAdmin:input_type -> glms.UpdateQuizOptionRequest
-	100, // 156: glms.LmsService.DeleteQuizOptionAdmin:input_type -> glms.DeleteQuizOptionRequest
-	102, // 157: glms.LmsService.GetQuizOptionAdmin:input_type -> glms.GetQuizOptionRequest
-	102, // 158: glms.LmsService.GetQuizOptionDetailAdmin:input_type -> glms.GetQuizOptionRequest
-	104, // 159: glms.LmsService.ListQuizOptionsAdmin:input_type -> glms.ListQuizOptionsRequest
-	106, // 160: glms.LmsService.ReorderQuizOptionsAdmin:input_type -> glms.ReorderQuizOptionsRequest
-	164, // 161: glms.LmsService.ImportQuizAdmin:input_type -> glms.ImportQuizRequest
-	166, // 162: glms.LmsService.ImportCourseAdmin:input_type -> glms.ImportCourseRequest
-	108, // 163: glms.LmsService.ListObjectsAdmin:input_type -> glms.ListObjectsRequest
-	110, // 164: glms.LmsService.CreateUploadURLAdmin:input_type -> glms.CreateUploadURLRequest
-	162, // 165: glms.LmsService.ListBrokenAssetsAdmin:input_type -> glms.ListBrokenAssetsRequest
-	118, // 166: glms.LmsService.EnrollCandidateCourseAdmin:input_type -> glms.EnrollCandidateCourseRequest
-	120, // 167: glms.LmsService.BatchEnrollCandidateCoursesAdmin:input_type -> glms.BatchEnrollCandidateCoursesRequest
-	114, // 168: glms.LmsService.GrantCourseAccessPermissionAdmin:input_type -> glms.GrantCourseAccessPermissionAdminRequest
-	116, // 169: glms.LmsService.RevokeCourseAccessPermissionAdmin:input_type -> glms.RevokeCourseAccessPermissionAdminRequest
-	188, // 170: glms.LmsService.ListLessonProgressAdmin:input_type -> glms.ListLessonProgressRequest
-	191, // 171: glms.LmsService.GetLessonProgressDetailAdmin:input_type -> glms.GetLessonProgressDetailRequest
-	193, // 172: glms.LmsService.ListQuizAttemptsAdmin:input_type -> glms.ListQuizAttemptsRequest
-	196, // 173: glms.LmsService.GetQuizAttemptDetailAdmin:input_type -> glms.GetQuizAttemptDetailRequest
-	199, // 174: glms.LmsService.ListChapterProgressAdmin:input_type -> glms.ListChapterProgressRequest
-	202, // 175: glms.LmsService.GetChapterProgressDetailAdmin:input_type -> glms.GetChapterProgressDetailRequest
-	204, // 176: glms.LmsService.ListCourseAssetsAdmin:input_type -> glms.ListCourseAssetsRequest
-	207, // 177: glms.LmsService.GetCourseAssetDetailAdmin:input_type -> glms.GetCourseAssetDetailRequest
-	214, // 178: glms.LmsService.ListCourseEnrollmentsAdmin:input_type -> glms.ListCourseEnrollmentsRequest
-	217, // 179: glms.LmsService.GetCourseEnrollmentDetailAdmin:input_type -> glms.GetCourseEnrollmentDetailRequest
-	130, // 180: glms.LmsService.ListCourseEnrollmentsForAdmin:input_type -> glms.ListCourseEnrollmentsForAdminRequest
-	133, // 181: glms.LmsService.GetCandidateProgressForAdmin:input_type -> glms.GetCandidateProgressForAdminRequest
-	221, // 182: glms.LmsService.SyncCourseProgressAdmin:input_type -> glms.SyncCourseProgressRequest
-	142, // 183: glms.LmsService.GetCompleteCourseAdmin:input_type -> glms.GetCompleteCourseRequest
-	112, // 184: glms.LmsService.CreateViewURLAdmin:input_type -> glms.CreateViewURLRequest
-	144, // 185: glms.LmsService.CreateCourseSupplementaryMaterialAdmin:input_type -> glms.CreateCourseSupplementaryMaterialRequest
-	146, // 186: glms.LmsService.UpdateCourseSupplementaryMaterialAdmin:input_type -> glms.UpdateCourseSupplementaryMaterialRequest
-	148, // 187: glms.LmsService.DeleteCourseSupplementaryMaterialAdmin:input_type -> glms.DeleteCourseSupplementaryMaterialRequest
-	150, // 188: glms.LmsService.GetCourseSupplementaryMaterialAdmin:input_type -> glms.GetCourseSupplementaryMaterialRequest
-	223, // 189: glms.LmsService.GetCourseSummary:input_type -> glms.GetCourseSummaryCandidateRequest
-	224, // 190: glms.LmsService.GetCourseDetail:input_type -> glms.GetCourseDetailCandidateRequest
-	225, // 191: glms.LmsService.ListCourses:input_type -> glms.ListCoursesCandidateRequest
-	226, // 192: glms.LmsService.GetCourseMaterial:input_type -> glms.GetCourseMaterialCandidateRequest
-	226, // 193: glms.LmsService.GetCourseMaterialDetail:input_type -> glms.GetCourseMaterialCandidateRequest
-	227, // 194: glms.LmsService.ListCourseMaterials:input_type -> glms.ListCourseMaterialsCandidateRequest
-	228, // 195: glms.LmsService.GetChapter:input_type -> glms.GetChapterCandidateRequest
-	229, // 196: glms.LmsService.GetChapterDetail:input_type -> glms.GetChapterDetailCandidateRequest
-	230, // 197: glms.LmsService.ListChapters:input_type -> glms.ListChaptersCandidateRequest
-	231, // 198: glms.LmsService.GetLesson:input_type -> glms.GetLessonCandidateRequest
-	232, // 199: glms.LmsService.GetLessonDetail:input_type -> glms.GetLessonDetailCandidateRequest
-	233, // 200: glms.LmsService.ListLessons:input_type -> glms.ListLessonsCandidateRequest
-	234, // 201: glms.LmsService.ListLessonsByCourse:input_type -> glms.ListLessonsByCourseCandidateRequest
-	235, // 202: glms.LmsService.GetCompleteCourse:input_type -> glms.GetCompleteCourseCandidateRequest
-	236, // 203: glms.LmsService.GetQuiz:input_type -> glms.GetQuizCandidateRequest
-	237, // 204: glms.LmsService.ListQuizzes:input_type -> glms.ListQuizzesCandidateRequest
-	238, // 205: glms.LmsService.CreateViewURL:input_type -> glms.CreateViewURLCandidateRequest
-	123, // 206: glms.LmsService.CompleteLessonLearning:input_type -> glms.CompleteLessonLearningRequest
-	152, // 207: glms.LmsService.TakeQuiz:input_type -> glms.TakeQuizRequest
-	156, // 208: glms.LmsService.GetCandidateQuizPaper:input_type -> glms.GetCandidateQuizPaperRequest
-	159, // 209: glms.LmsService.SubmitQuiz:input_type -> glms.SubmitQuizRequest
-	125, // 210: glms.LmsService.ListCandidateEnrollments:input_type -> glms.ListCandidateEnrollmentsRequest
-	128, // 211: glms.LmsService.GetCandidateEnrollmentDetail:input_type -> glms.GetCandidateEnrollmentDetailRequest
-	7,   // 212: glms.LmsService.CreateCourseDraftAdmin:output_type -> glms.Course
-	19,  // 213: glms.LmsService.UpdateCourseAdmin:output_type -> glms.UpdateCourseResponse
-	21,  // 214: glms.LmsService.DeleteCourseAdmin:output_type -> glms.DeleteCourseResponse
-	27,  // 215: glms.LmsService.PublishCourseAdmin:output_type -> glms.PublishCourseResponse
-	168, // 216: glms.LmsService.GetCourseSummaryAdmin:output_type -> glms.GetCourseSummaryResponse
-	179, // 217: glms.LmsService.GetCourseDetailAdmin:output_type -> glms.GetCourseDetailResponse
-	25,  // 218: glms.LmsService.ListCoursesAdmin:output_type -> glms.ListCoursesResponse
-	29,  // 219: glms.LmsService.CreateCourseMaterialAdmin:output_type -> glms.CreateCourseMaterialResponse
-	31,  // 220: glms.LmsService.UpdateCourseMaterialAdmin:output_type -> glms.UpdateCourseMaterialResponse
-	33,  // 221: glms.LmsService.DeleteCourseMaterialAdmin:output_type -> glms.DeleteCourseMaterialResponse
-	35,  // 222: glms.LmsService.GetCourseMaterialAdmin:output_type -> glms.GetCourseMaterialResponse
-	180, // 223: glms.LmsService.GetCourseMaterialDetailAdmin:output_type -> glms.GetCourseMaterialDetailResponse
-	37,  // 224: glms.LmsService.ListCourseMaterialsAdmin:output_type -> glms.ListCourseMaterialsResponse
-	39,  // 225: glms.LmsService.ReorderCourseMaterialsAdmin:output_type -> glms.ReorderCourseMaterialsResponse
-	41,  // 226: glms.LmsService.CreateChapterAdmin:output_type -> glms.CreateChapterResponse
-	43,  // 227: glms.LmsService.UpdateChapterAdmin:output_type -> glms.UpdateChapterResponse
-	45,  // 228: glms.LmsService.DeleteChapterAdmin:output_type -> glms.DeleteChapterResponse
-	47,  // 229: glms.LmsService.GetChapterAdmin:output_type -> glms.GetChapterResponse
-	181, // 230: glms.LmsService.GetChapterDetailAdmin:output_type -> glms.GetChapterDetailResponse
-	49,  // 231: glms.LmsService.ListChaptersAdmin:output_type -> glms.ListChaptersResponse
-	51,  // 232: glms.LmsService.ReorderChaptersAdmin:output_type -> glms.ReorderChaptersResponse
-	53,  // 233: glms.LmsService.CreateLessonAdmin:output_type -> glms.CreateLessonResponse
-	55,  // 234: glms.LmsService.UpdateLessonAdmin:output_type -> glms.UpdateLessonResponse
-	57,  // 235: glms.LmsService.DeleteLessonAdmin:output_type -> glms.DeleteLessonResponse
-	59,  // 236: glms.LmsService.GetLessonAdmin:output_type -> glms.GetLessonResponse
-	182, // 237: glms.LmsService.GetLessonDetailAdmin:output_type -> glms.GetLessonDetailResponse
-	61,  // 238: glms.LmsService.ListLessonsAdmin:output_type -> glms.ListLessonsResponse
-	63,  // 239: glms.LmsService.ReorderLessonsAdmin:output_type -> glms.ReorderLessonsResponse
-	213, // 240: glms.LmsService.ListLessonsByCourseAdmin:output_type -> glms.ListLessonsByCourseResponse
-	65,  // 241: glms.LmsService.CreatePrerequisiteAdmin:output_type -> glms.CreatePrerequisiteResponse
-	67,  // 242: glms.LmsService.UpdatePrerequisiteAdmin:output_type -> glms.UpdatePrerequisiteResponse
-	69,  // 243: glms.LmsService.DeletePrerequisiteAdmin:output_type -> glms.DeletePrerequisiteResponse
-	71,  // 244: glms.LmsService.GetPrerequisiteAdmin:output_type -> glms.GetPrerequisiteResponse
-	183, // 245: glms.LmsService.GetPrerequisiteDetailAdmin:output_type -> glms.GetPrerequisiteDetailResponse
-	73,  // 246: glms.LmsService.ListPrerequisitesAdmin:output_type -> glms.ListPrerequisitesResponse
-	211, // 247: glms.LmsService.ListPrerequisitesByRequiredEntityAdmin:output_type -> glms.ListPrerequisitesByRequiredEntityResponse
-	75,  // 248: glms.LmsService.CreateQuizAdmin:output_type -> glms.CreateQuizResponse
-	77,  // 249: glms.LmsService.UpdateQuizAdmin:output_type -> glms.UpdateQuizResponse
-	79,  // 250: glms.LmsService.DeleteQuizAdmin:output_type -> glms.DeleteQuizResponse
-	81,  // 251: glms.LmsService.GetQuizAdmin:output_type -> glms.GetQuizResponse
-	185, // 252: glms.LmsService.GetQuizDetailAdmin:output_type -> glms.GetQuizDetailResponse
-	83,  // 253: glms.LmsService.ListQuizzesAdmin:output_type -> glms.ListQuizzesResponse
-	85,  // 254: glms.LmsService.CreateQuizQuestionAdmin:output_type -> glms.CreateQuizQuestionResponse
-	87,  // 255: glms.LmsService.UpdateQuizQuestionAdmin:output_type -> glms.UpdateQuizQuestionResponse
-	89,  // 256: glms.LmsService.DeleteQuizQuestionAdmin:output_type -> glms.DeleteQuizQuestionResponse
-	91,  // 257: glms.LmsService.GetQuizQuestionAdmin:output_type -> glms.GetQuizQuestionResponse
-	186, // 258: glms.LmsService.GetQuizQuestionDetailAdmin:output_type -> glms.GetQuizQuestionDetailResponse
-	93,  // 259: glms.LmsService.ListQuizQuestionsAdmin:output_type -> glms.ListQuizQuestionsResponse
-	95,  // 260: glms.LmsService.ReorderQuizQuestionsAdmin:output_type -> glms.ReorderQuizQuestionsResponse
-	97,  // 261: glms.LmsService.CreateQuizOptionAdmin:output_type -> glms.CreateQuizOptionResponse
-	99,  // 262: glms.LmsService.UpdateQuizOptionAdmin:output_type -> glms.UpdateQuizOptionResponse
-	101, // 263: glms.LmsService.DeleteQuizOptionAdmin:output_type -> glms.DeleteQuizOptionResponse
-	103, // 264: glms.LmsService.GetQuizOptionAdmin:output_type -> glms.GetQuizOptionResponse
-	187, // 265: glms.LmsService.GetQuizOptionDetailAdmin:output_type -> glms.GetQuizOptionDetailResponse
-	105, // 266: glms.LmsService.ListQuizOptionsAdmin:output_type -> glms.ListQuizOptionsResponse
-	107, // 267: glms.LmsService.ReorderQuizOptionsAdmin:output_type -> glms.ReorderQuizOptionsResponse
-	165, // 268: glms.LmsService.ImportQuizAdmin:output_type -> glms.ImportQuizResponse
-	167, // 269: glms.LmsService.ImportCourseAdmin:output_type -> glms.ImportCourseResponse
-	109, // 270: glms.LmsService.ListObjectsAdmin:output_type -> glms.ListObjectsResponse
-	111, // 271: glms.LmsService.CreateUploadURLAdmin:output_type -> glms.CreateUploadURLResponse
-	163, // 272: glms.LmsService.ListBrokenAssetsAdmin:output_type -> glms.ListBrokenAssetsResponse
-	119, // 273: glms.LmsService.EnrollCandidateCourseAdmin:output_type -> glms.EnrollCandidateCourseResponse
-	122, // 274: glms.LmsService.BatchEnrollCandidateCoursesAdmin:output_type -> glms.BatchEnrollCandidateCoursesResponse
-	115, // 275: glms.LmsService.GrantCourseAccessPermissionAdmin:output_type -> glms.GrantCourseAccessPermissionAdminResponse
-	117, // 276: glms.LmsService.RevokeCourseAccessPermissionAdmin:output_type -> glms.RevokeCourseAccessPermissionAdminResponse
-	190, // 277: glms.LmsService.ListLessonProgressAdmin:output_type -> glms.ListLessonProgressResponse
-	192, // 278: glms.LmsService.GetLessonProgressDetailAdmin:output_type -> glms.GetLessonProgressDetailResponse
-	195, // 279: glms.LmsService.ListQuizAttemptsAdmin:output_type -> glms.ListQuizAttemptsResponse
-	198, // 280: glms.LmsService.GetQuizAttemptDetailAdmin:output_type -> glms.GetQuizAttemptDetailResponse
-	201, // 281: glms.LmsService.ListChapterProgressAdmin:output_type -> glms.ListChapterProgressResponse
-	203, // 282: glms.LmsService.GetChapterProgressDetailAdmin:output_type -> glms.GetChapterProgressDetailResponse
-	206, // 283: glms.LmsService.ListCourseAssetsAdmin:output_type -> glms.ListCourseAssetsResponse
-	208, // 284: glms.LmsService.GetCourseAssetDetailAdmin:output_type -> glms.GetCourseAssetDetailResponse
-	215, // 285: glms.LmsService.ListCourseEnrollmentsAdmin:output_type -> glms.ListCourseEnrollmentsResponse
-	218, // 286: glms.LmsService.GetCourseEnrollmentDetailAdmin:output_type -> glms.GetCourseEnrollmentDetailResponse
-	132, // 287: glms.LmsService.ListCourseEnrollmentsForAdmin:output_type -> glms.ListCourseEnrollmentsForAdminResponse
-	134, // 288: glms.LmsService.GetCandidateProgressForAdmin:output_type -> glms.GetCandidateProgressForAdminResponse
-	222, // 289: glms.LmsService.SyncCourseProgressAdmin:output_type -> glms.SyncCourseProgressResponse
-	143, // 290: glms.LmsService.GetCompleteCourseAdmin:output_type -> glms.GetCompleteCourseResponse
-	113, // 291: glms.LmsService.CreateViewURLAdmin:output_type -> glms.CreateViewURLResponse
-	145, // 292: glms.LmsService.CreateCourseSupplementaryMaterialAdmin:output_type -> glms.CreateCourseSupplementaryMaterialResponse
-	147, // 293: glms.LmsService.UpdateCourseSupplementaryMaterialAdmin:output_type -> glms.UpdateCourseSupplementaryMaterialResponse
-	149, // 294: glms.LmsService.DeleteCourseSupplementaryMaterialAdmin:output_type -> glms.DeleteCourseSupplementaryMaterialResponse
-	151, // 295: glms.LmsService.GetCourseSupplementaryMaterialAdmin:output_type -> glms.GetCourseSupplementaryMaterialResponse
-	168, // 296: glms.LmsService.GetCourseSummary:output_type -> glms.GetCourseSummaryResponse
-	179, // 297: glms.LmsService.GetCourseDetail:output_type -> glms.GetCourseDetailResponse
-	25,  // 298: glms.LmsService.ListCourses:output_type -> glms.ListCoursesResponse
-	35,  // 299: glms.LmsService.GetCourseMaterial:output_type -> glms.GetCourseMaterialResponse
-	180, // 300: glms.LmsService.GetCourseMaterialDetail:output_type -> glms.GetCourseMaterialDetailResponse
-	37,  // 301: glms.LmsService.ListCourseMaterials:output_type -> glms.ListCourseMaterialsResponse
-	47,  // 302: glms.LmsService.GetChapter:output_type -> glms.GetChapterResponse
-	181, // 303: glms.LmsService.GetChapterDetail:output_type -> glms.GetChapterDetailResponse
-	49,  // 304: glms.LmsService.ListChapters:output_type -> glms.ListChaptersResponse
-	59,  // 305: glms.LmsService.GetLesson:output_type -> glms.GetLessonResponse
-	182, // 306: glms.LmsService.GetLessonDetail:output_type -> glms.GetLessonDetailResponse
-	61,  // 307: glms.LmsService.ListLessons:output_type -> glms.ListLessonsResponse
-	213, // 308: glms.LmsService.ListLessonsByCourse:output_type -> glms.ListLessonsByCourseResponse
-	143, // 309: glms.LmsService.GetCompleteCourse:output_type -> glms.GetCompleteCourseResponse
-	81,  // 310: glms.LmsService.GetQuiz:output_type -> glms.GetQuizResponse
-	83,  // 311: glms.LmsService.ListQuizzes:output_type -> glms.ListQuizzesResponse
-	113, // 312: glms.LmsService.CreateViewURL:output_type -> glms.CreateViewURLResponse
-	124, // 313: glms.LmsService.CompleteLessonLearning:output_type -> glms.CompleteLessonLearningResponse
-	153, // 314: glms.LmsService.TakeQuiz:output_type -> glms.TakeQuizResponse
-	157, // 315: glms.LmsService.GetCandidateQuizPaper:output_type -> glms.GetCandidateQuizPaperResponse
-	160, // 316: glms.LmsService.SubmitQuiz:output_type -> glms.SubmitQuizResponse
-	127, // 317: glms.LmsService.ListCandidateEnrollments:output_type -> glms.ListCandidateEnrollmentsResponse
-	129, // 318: glms.LmsService.GetCandidateEnrollmentDetail:output_type -> glms.GetCandidateEnrollmentDetailResponse
-	212, // [212:319] is the sub-list for method output_type
-	105, // [105:212] is the sub-list for method input_type
-	105, // [105:105] is the sub-list for extension type_name
-	105, // [105:105] is the sub-list for extension extendee
-	0,   // [0:105] is the sub-list for field type_name
+	258, // 105: glms.ListResourcePacksResponse.packs:type_name -> glms.ResourcePack
+	6,   // 106: glms.CreateResourcePackFileRequest.file_type:type_name -> glms.ResourcePackFileType
+	6,   // 107: glms.UpdateResourcePackFileRequest.file_type:type_name -> glms.ResourcePackFileType
+	259, // 108: glms.ListResourcePackFilesResponse.files:type_name -> glms.ResourcePackFile
+	6,   // 109: glms.ResourcePackFile.file_type:type_name -> glms.ResourcePackFileType
+	18,  // 110: glms.LmsService.CreateCourseDraftAdmin:input_type -> glms.CreateCourseDraftRequest
+	19,  // 111: glms.LmsService.UpdateCourseAdmin:input_type -> glms.UpdateCourseRequest
+	21,  // 112: glms.LmsService.DeleteCourseAdmin:input_type -> glms.DeleteCourseRequest
+	27,  // 113: glms.LmsService.PublishCourseAdmin:input_type -> glms.PublishCourseRequest
+	23,  // 114: glms.LmsService.GetCourseSummaryAdmin:input_type -> glms.GetCourseRequest
+	179, // 115: glms.LmsService.GetCourseDetailAdmin:input_type -> glms.GetCourseDetailRequest
+	25,  // 116: glms.LmsService.ListCoursesAdmin:input_type -> glms.ListCoursesRequest
+	29,  // 117: glms.LmsService.CreateCourseMaterialAdmin:input_type -> glms.CreateCourseMaterialRequest
+	31,  // 118: glms.LmsService.UpdateCourseMaterialAdmin:input_type -> glms.UpdateCourseMaterialRequest
+	33,  // 119: glms.LmsService.DeleteCourseMaterialAdmin:input_type -> glms.DeleteCourseMaterialRequest
+	35,  // 120: glms.LmsService.GetCourseMaterialAdmin:input_type -> glms.GetCourseMaterialRequest
+	35,  // 121: glms.LmsService.GetCourseMaterialDetailAdmin:input_type -> glms.GetCourseMaterialRequest
+	37,  // 122: glms.LmsService.ListCourseMaterialsAdmin:input_type -> glms.ListCourseMaterialsRequest
+	39,  // 123: glms.LmsService.ReorderCourseMaterialsAdmin:input_type -> glms.ReorderCourseMaterialsRequest
+	41,  // 124: glms.LmsService.CreateChapterAdmin:input_type -> glms.CreateChapterRequest
+	43,  // 125: glms.LmsService.UpdateChapterAdmin:input_type -> glms.UpdateChapterRequest
+	45,  // 126: glms.LmsService.DeleteChapterAdmin:input_type -> glms.DeleteChapterRequest
+	47,  // 127: glms.LmsService.GetChapterAdmin:input_type -> glms.GetChapterRequest
+	47,  // 128: glms.LmsService.GetChapterDetailAdmin:input_type -> glms.GetChapterRequest
+	49,  // 129: glms.LmsService.ListChaptersAdmin:input_type -> glms.ListChaptersRequest
+	51,  // 130: glms.LmsService.ReorderChaptersAdmin:input_type -> glms.ReorderChaptersRequest
+	53,  // 131: glms.LmsService.CreateLessonAdmin:input_type -> glms.CreateLessonRequest
+	55,  // 132: glms.LmsService.UpdateLessonAdmin:input_type -> glms.UpdateLessonRequest
+	57,  // 133: glms.LmsService.DeleteLessonAdmin:input_type -> glms.DeleteLessonRequest
+	59,  // 134: glms.LmsService.GetLessonAdmin:input_type -> glms.GetLessonRequest
+	59,  // 135: glms.LmsService.GetLessonDetailAdmin:input_type -> glms.GetLessonRequest
+	61,  // 136: glms.LmsService.ListLessonsAdmin:input_type -> glms.ListLessonsRequest
+	63,  // 137: glms.LmsService.ReorderLessonsAdmin:input_type -> glms.ReorderLessonsRequest
+	213, // 138: glms.LmsService.ListLessonsByCourseAdmin:input_type -> glms.ListLessonsByCourseRequest
+	65,  // 139: glms.LmsService.CreatePrerequisiteAdmin:input_type -> glms.CreatePrerequisiteRequest
+	67,  // 140: glms.LmsService.UpdatePrerequisiteAdmin:input_type -> glms.UpdatePrerequisiteRequest
+	69,  // 141: glms.LmsService.DeletePrerequisiteAdmin:input_type -> glms.DeletePrerequisiteRequest
+	71,  // 142: glms.LmsService.GetPrerequisiteAdmin:input_type -> glms.GetPrerequisiteRequest
+	71,  // 143: glms.LmsService.GetPrerequisiteDetailAdmin:input_type -> glms.GetPrerequisiteRequest
+	73,  // 144: glms.LmsService.ListPrerequisitesAdmin:input_type -> glms.ListPrerequisitesRequest
+	211, // 145: glms.LmsService.ListPrerequisitesByRequiredEntityAdmin:input_type -> glms.ListPrerequisitesByRequiredEntityRequest
+	75,  // 146: glms.LmsService.CreateQuizAdmin:input_type -> glms.CreateQuizRequest
+	77,  // 147: glms.LmsService.UpdateQuizAdmin:input_type -> glms.UpdateQuizRequest
+	79,  // 148: glms.LmsService.DeleteQuizAdmin:input_type -> glms.DeleteQuizRequest
+	81,  // 149: glms.LmsService.GetQuizAdmin:input_type -> glms.GetQuizRequest
+	185, // 150: glms.LmsService.GetQuizDetailAdmin:input_type -> glms.GetQuizDetailRequest
+	83,  // 151: glms.LmsService.ListQuizzesAdmin:input_type -> glms.ListQuizzesRequest
+	85,  // 152: glms.LmsService.CreateQuizQuestionAdmin:input_type -> glms.CreateQuizQuestionRequest
+	87,  // 153: glms.LmsService.UpdateQuizQuestionAdmin:input_type -> glms.UpdateQuizQuestionRequest
+	89,  // 154: glms.LmsService.DeleteQuizQuestionAdmin:input_type -> glms.DeleteQuizQuestionRequest
+	91,  // 155: glms.LmsService.GetQuizQuestionAdmin:input_type -> glms.GetQuizQuestionRequest
+	91,  // 156: glms.LmsService.GetQuizQuestionDetailAdmin:input_type -> glms.GetQuizQuestionRequest
+	93,  // 157: glms.LmsService.ListQuizQuestionsAdmin:input_type -> glms.ListQuizQuestionsRequest
+	95,  // 158: glms.LmsService.ReorderQuizQuestionsAdmin:input_type -> glms.ReorderQuizQuestionsRequest
+	97,  // 159: glms.LmsService.CreateQuizOptionAdmin:input_type -> glms.CreateQuizOptionRequest
+	99,  // 160: glms.LmsService.UpdateQuizOptionAdmin:input_type -> glms.UpdateQuizOptionRequest
+	101, // 161: glms.LmsService.DeleteQuizOptionAdmin:input_type -> glms.DeleteQuizOptionRequest
+	103, // 162: glms.LmsService.GetQuizOptionAdmin:input_type -> glms.GetQuizOptionRequest
+	103, // 163: glms.LmsService.GetQuizOptionDetailAdmin:input_type -> glms.GetQuizOptionRequest
+	105, // 164: glms.LmsService.ListQuizOptionsAdmin:input_type -> glms.ListQuizOptionsRequest
+	107, // 165: glms.LmsService.ReorderQuizOptionsAdmin:input_type -> glms.ReorderQuizOptionsRequest
+	165, // 166: glms.LmsService.ImportQuizAdmin:input_type -> glms.ImportQuizRequest
+	167, // 167: glms.LmsService.ImportCourseAdmin:input_type -> glms.ImportCourseRequest
+	109, // 168: glms.LmsService.ListObjectsAdmin:input_type -> glms.ListObjectsRequest
+	111, // 169: glms.LmsService.CreateUploadURLAdmin:input_type -> glms.CreateUploadURLRequest
+	163, // 170: glms.LmsService.ListBrokenAssetsAdmin:input_type -> glms.ListBrokenAssetsRequest
+	119, // 171: glms.LmsService.EnrollCandidateCourseAdmin:input_type -> glms.EnrollCandidateCourseRequest
+	121, // 172: glms.LmsService.BatchEnrollCandidateCoursesAdmin:input_type -> glms.BatchEnrollCandidateCoursesRequest
+	115, // 173: glms.LmsService.GrantCourseAccessPermissionAdmin:input_type -> glms.GrantCourseAccessPermissionAdminRequest
+	117, // 174: glms.LmsService.RevokeCourseAccessPermissionAdmin:input_type -> glms.RevokeCourseAccessPermissionAdminRequest
+	189, // 175: glms.LmsService.ListLessonProgressAdmin:input_type -> glms.ListLessonProgressRequest
+	192, // 176: glms.LmsService.GetLessonProgressDetailAdmin:input_type -> glms.GetLessonProgressDetailRequest
+	194, // 177: glms.LmsService.ListQuizAttemptsAdmin:input_type -> glms.ListQuizAttemptsRequest
+	197, // 178: glms.LmsService.GetQuizAttemptDetailAdmin:input_type -> glms.GetQuizAttemptDetailRequest
+	200, // 179: glms.LmsService.ListChapterProgressAdmin:input_type -> glms.ListChapterProgressRequest
+	203, // 180: glms.LmsService.GetChapterProgressDetailAdmin:input_type -> glms.GetChapterProgressDetailRequest
+	205, // 181: glms.LmsService.ListCourseAssetsAdmin:input_type -> glms.ListCourseAssetsRequest
+	208, // 182: glms.LmsService.GetCourseAssetDetailAdmin:input_type -> glms.GetCourseAssetDetailRequest
+	215, // 183: glms.LmsService.ListCourseEnrollmentsAdmin:input_type -> glms.ListCourseEnrollmentsRequest
+	218, // 184: glms.LmsService.GetCourseEnrollmentDetailAdmin:input_type -> glms.GetCourseEnrollmentDetailRequest
+	131, // 185: glms.LmsService.ListCourseEnrollmentsForAdmin:input_type -> glms.ListCourseEnrollmentsForAdminRequest
+	134, // 186: glms.LmsService.GetCandidateProgressForAdmin:input_type -> glms.GetCandidateProgressForAdminRequest
+	222, // 187: glms.LmsService.SyncCourseProgressAdmin:input_type -> glms.SyncCourseProgressRequest
+	143, // 188: glms.LmsService.GetCompleteCourseAdmin:input_type -> glms.GetCompleteCourseRequest
+	113, // 189: glms.LmsService.CreateViewURLAdmin:input_type -> glms.CreateViewURLRequest
+	145, // 190: glms.LmsService.CreateCourseSupplementaryMaterialAdmin:input_type -> glms.CreateCourseSupplementaryMaterialRequest
+	147, // 191: glms.LmsService.UpdateCourseSupplementaryMaterialAdmin:input_type -> glms.UpdateCourseSupplementaryMaterialRequest
+	149, // 192: glms.LmsService.DeleteCourseSupplementaryMaterialAdmin:input_type -> glms.DeleteCourseSupplementaryMaterialRequest
+	151, // 193: glms.LmsService.GetCourseSupplementaryMaterialAdmin:input_type -> glms.GetCourseSupplementaryMaterialRequest
+	240, // 194: glms.LmsService.CreateResourcePackAdmin:input_type -> glms.CreateResourcePackRequest
+	241, // 195: glms.LmsService.UpdateResourcePackAdmin:input_type -> glms.UpdateResourcePackRequest
+	242, // 196: glms.LmsService.DeleteResourcePackAdmin:input_type -> glms.DeleteResourcePackRequest
+	244, // 197: glms.LmsService.GetResourcePackAdmin:input_type -> glms.GetResourcePackRequest
+	245, // 198: glms.LmsService.ListResourcePacksAdmin:input_type -> glms.ListResourcePacksRequest
+	247, // 199: glms.LmsService.CreateResourcePackFileAdmin:input_type -> glms.CreateResourcePackFileRequest
+	248, // 200: glms.LmsService.UpdateResourcePackFileAdmin:input_type -> glms.UpdateResourcePackFileRequest
+	249, // 201: glms.LmsService.DeleteResourcePackFileAdmin:input_type -> glms.DeleteResourcePackFileRequest
+	251, // 202: glms.LmsService.GetResourcePackFileAdmin:input_type -> glms.GetResourcePackFileRequest
+	252, // 203: glms.LmsService.ListResourcePackFilesAdmin:input_type -> glms.ListResourcePackFilesRequest
+	224, // 204: glms.LmsService.GetCourseSummary:input_type -> glms.GetCourseSummaryCandidateRequest
+	225, // 205: glms.LmsService.GetCourseDetail:input_type -> glms.GetCourseDetailCandidateRequest
+	226, // 206: glms.LmsService.ListCourses:input_type -> glms.ListCoursesCandidateRequest
+	227, // 207: glms.LmsService.GetCourseMaterial:input_type -> glms.GetCourseMaterialCandidateRequest
+	227, // 208: glms.LmsService.GetCourseMaterialDetail:input_type -> glms.GetCourseMaterialCandidateRequest
+	228, // 209: glms.LmsService.ListCourseMaterials:input_type -> glms.ListCourseMaterialsCandidateRequest
+	229, // 210: glms.LmsService.GetChapter:input_type -> glms.GetChapterCandidateRequest
+	230, // 211: glms.LmsService.GetChapterDetail:input_type -> glms.GetChapterDetailCandidateRequest
+	231, // 212: glms.LmsService.ListChapters:input_type -> glms.ListChaptersCandidateRequest
+	232, // 213: glms.LmsService.GetLesson:input_type -> glms.GetLessonCandidateRequest
+	233, // 214: glms.LmsService.GetLessonDetail:input_type -> glms.GetLessonDetailCandidateRequest
+	234, // 215: glms.LmsService.ListLessons:input_type -> glms.ListLessonsCandidateRequest
+	235, // 216: glms.LmsService.ListLessonsByCourse:input_type -> glms.ListLessonsByCourseCandidateRequest
+	236, // 217: glms.LmsService.GetCompleteCourse:input_type -> glms.GetCompleteCourseCandidateRequest
+	237, // 218: glms.LmsService.GetQuiz:input_type -> glms.GetQuizCandidateRequest
+	238, // 219: glms.LmsService.ListQuizzes:input_type -> glms.ListQuizzesCandidateRequest
+	239, // 220: glms.LmsService.CreateViewURL:input_type -> glms.CreateViewURLCandidateRequest
+	254, // 221: glms.LmsService.GetLessonVideoPlayURL:input_type -> glms.GetLessonVideoPlayURLRequest
+	256, // 222: glms.LmsService.GetResourcePackFileViewURL:input_type -> glms.GetResourcePackFileViewURLRequest
+	260, // 223: glms.LmsService.ListResourcePacks:input_type -> glms.ListResourcePacksCandidateRequest
+	261, // 224: glms.LmsService.ListResourcePackFiles:input_type -> glms.ListResourcePackFilesCandidateRequest
+	124, // 225: glms.LmsService.CompleteLessonLearning:input_type -> glms.CompleteLessonLearningRequest
+	153, // 226: glms.LmsService.TakeQuiz:input_type -> glms.TakeQuizRequest
+	157, // 227: glms.LmsService.GetCandidateQuizPaper:input_type -> glms.GetCandidateQuizPaperRequest
+	160, // 228: glms.LmsService.SubmitQuiz:input_type -> glms.SubmitQuizRequest
+	126, // 229: glms.LmsService.ListCandidateEnrollments:input_type -> glms.ListCandidateEnrollmentsRequest
+	129, // 230: glms.LmsService.GetCandidateEnrollmentDetail:input_type -> glms.GetCandidateEnrollmentDetailRequest
+	8,   // 231: glms.LmsService.CreateCourseDraftAdmin:output_type -> glms.Course
+	20,  // 232: glms.LmsService.UpdateCourseAdmin:output_type -> glms.UpdateCourseResponse
+	22,  // 233: glms.LmsService.DeleteCourseAdmin:output_type -> glms.DeleteCourseResponse
+	28,  // 234: glms.LmsService.PublishCourseAdmin:output_type -> glms.PublishCourseResponse
+	169, // 235: glms.LmsService.GetCourseSummaryAdmin:output_type -> glms.GetCourseSummaryResponse
+	180, // 236: glms.LmsService.GetCourseDetailAdmin:output_type -> glms.GetCourseDetailResponse
+	26,  // 237: glms.LmsService.ListCoursesAdmin:output_type -> glms.ListCoursesResponse
+	30,  // 238: glms.LmsService.CreateCourseMaterialAdmin:output_type -> glms.CreateCourseMaterialResponse
+	32,  // 239: glms.LmsService.UpdateCourseMaterialAdmin:output_type -> glms.UpdateCourseMaterialResponse
+	34,  // 240: glms.LmsService.DeleteCourseMaterialAdmin:output_type -> glms.DeleteCourseMaterialResponse
+	36,  // 241: glms.LmsService.GetCourseMaterialAdmin:output_type -> glms.GetCourseMaterialResponse
+	181, // 242: glms.LmsService.GetCourseMaterialDetailAdmin:output_type -> glms.GetCourseMaterialDetailResponse
+	38,  // 243: glms.LmsService.ListCourseMaterialsAdmin:output_type -> glms.ListCourseMaterialsResponse
+	40,  // 244: glms.LmsService.ReorderCourseMaterialsAdmin:output_type -> glms.ReorderCourseMaterialsResponse
+	42,  // 245: glms.LmsService.CreateChapterAdmin:output_type -> glms.CreateChapterResponse
+	44,  // 246: glms.LmsService.UpdateChapterAdmin:output_type -> glms.UpdateChapterResponse
+	46,  // 247: glms.LmsService.DeleteChapterAdmin:output_type -> glms.DeleteChapterResponse
+	48,  // 248: glms.LmsService.GetChapterAdmin:output_type -> glms.GetChapterResponse
+	182, // 249: glms.LmsService.GetChapterDetailAdmin:output_type -> glms.GetChapterDetailResponse
+	50,  // 250: glms.LmsService.ListChaptersAdmin:output_type -> glms.ListChaptersResponse
+	52,  // 251: glms.LmsService.ReorderChaptersAdmin:output_type -> glms.ReorderChaptersResponse
+	54,  // 252: glms.LmsService.CreateLessonAdmin:output_type -> glms.CreateLessonResponse
+	56,  // 253: glms.LmsService.UpdateLessonAdmin:output_type -> glms.UpdateLessonResponse
+	58,  // 254: glms.LmsService.DeleteLessonAdmin:output_type -> glms.DeleteLessonResponse
+	60,  // 255: glms.LmsService.GetLessonAdmin:output_type -> glms.GetLessonResponse
+	183, // 256: glms.LmsService.GetLessonDetailAdmin:output_type -> glms.GetLessonDetailResponse
+	62,  // 257: glms.LmsService.ListLessonsAdmin:output_type -> glms.ListLessonsResponse
+	64,  // 258: glms.LmsService.ReorderLessonsAdmin:output_type -> glms.ReorderLessonsResponse
+	214, // 259: glms.LmsService.ListLessonsByCourseAdmin:output_type -> glms.ListLessonsByCourseResponse
+	66,  // 260: glms.LmsService.CreatePrerequisiteAdmin:output_type -> glms.CreatePrerequisiteResponse
+	68,  // 261: glms.LmsService.UpdatePrerequisiteAdmin:output_type -> glms.UpdatePrerequisiteResponse
+	70,  // 262: glms.LmsService.DeletePrerequisiteAdmin:output_type -> glms.DeletePrerequisiteResponse
+	72,  // 263: glms.LmsService.GetPrerequisiteAdmin:output_type -> glms.GetPrerequisiteResponse
+	184, // 264: glms.LmsService.GetPrerequisiteDetailAdmin:output_type -> glms.GetPrerequisiteDetailResponse
+	74,  // 265: glms.LmsService.ListPrerequisitesAdmin:output_type -> glms.ListPrerequisitesResponse
+	212, // 266: glms.LmsService.ListPrerequisitesByRequiredEntityAdmin:output_type -> glms.ListPrerequisitesByRequiredEntityResponse
+	76,  // 267: glms.LmsService.CreateQuizAdmin:output_type -> glms.CreateQuizResponse
+	78,  // 268: glms.LmsService.UpdateQuizAdmin:output_type -> glms.UpdateQuizResponse
+	80,  // 269: glms.LmsService.DeleteQuizAdmin:output_type -> glms.DeleteQuizResponse
+	82,  // 270: glms.LmsService.GetQuizAdmin:output_type -> glms.GetQuizResponse
+	186, // 271: glms.LmsService.GetQuizDetailAdmin:output_type -> glms.GetQuizDetailResponse
+	84,  // 272: glms.LmsService.ListQuizzesAdmin:output_type -> glms.ListQuizzesResponse
+	86,  // 273: glms.LmsService.CreateQuizQuestionAdmin:output_type -> glms.CreateQuizQuestionResponse
+	88,  // 274: glms.LmsService.UpdateQuizQuestionAdmin:output_type -> glms.UpdateQuizQuestionResponse
+	90,  // 275: glms.LmsService.DeleteQuizQuestionAdmin:output_type -> glms.DeleteQuizQuestionResponse
+	92,  // 276: glms.LmsService.GetQuizQuestionAdmin:output_type -> glms.GetQuizQuestionResponse
+	187, // 277: glms.LmsService.GetQuizQuestionDetailAdmin:output_type -> glms.GetQuizQuestionDetailResponse
+	94,  // 278: glms.LmsService.ListQuizQuestionsAdmin:output_type -> glms.ListQuizQuestionsResponse
+	96,  // 279: glms.LmsService.ReorderQuizQuestionsAdmin:output_type -> glms.ReorderQuizQuestionsResponse
+	98,  // 280: glms.LmsService.CreateQuizOptionAdmin:output_type -> glms.CreateQuizOptionResponse
+	100, // 281: glms.LmsService.UpdateQuizOptionAdmin:output_type -> glms.UpdateQuizOptionResponse
+	102, // 282: glms.LmsService.DeleteQuizOptionAdmin:output_type -> glms.DeleteQuizOptionResponse
+	104, // 283: glms.LmsService.GetQuizOptionAdmin:output_type -> glms.GetQuizOptionResponse
+	188, // 284: glms.LmsService.GetQuizOptionDetailAdmin:output_type -> glms.GetQuizOptionDetailResponse
+	106, // 285: glms.LmsService.ListQuizOptionsAdmin:output_type -> glms.ListQuizOptionsResponse
+	108, // 286: glms.LmsService.ReorderQuizOptionsAdmin:output_type -> glms.ReorderQuizOptionsResponse
+	166, // 287: glms.LmsService.ImportQuizAdmin:output_type -> glms.ImportQuizResponse
+	168, // 288: glms.LmsService.ImportCourseAdmin:output_type -> glms.ImportCourseResponse
+	110, // 289: glms.LmsService.ListObjectsAdmin:output_type -> glms.ListObjectsResponse
+	112, // 290: glms.LmsService.CreateUploadURLAdmin:output_type -> glms.CreateUploadURLResponse
+	164, // 291: glms.LmsService.ListBrokenAssetsAdmin:output_type -> glms.ListBrokenAssetsResponse
+	120, // 292: glms.LmsService.EnrollCandidateCourseAdmin:output_type -> glms.EnrollCandidateCourseResponse
+	123, // 293: glms.LmsService.BatchEnrollCandidateCoursesAdmin:output_type -> glms.BatchEnrollCandidateCoursesResponse
+	116, // 294: glms.LmsService.GrantCourseAccessPermissionAdmin:output_type -> glms.GrantCourseAccessPermissionAdminResponse
+	118, // 295: glms.LmsService.RevokeCourseAccessPermissionAdmin:output_type -> glms.RevokeCourseAccessPermissionAdminResponse
+	191, // 296: glms.LmsService.ListLessonProgressAdmin:output_type -> glms.ListLessonProgressResponse
+	193, // 297: glms.LmsService.GetLessonProgressDetailAdmin:output_type -> glms.GetLessonProgressDetailResponse
+	196, // 298: glms.LmsService.ListQuizAttemptsAdmin:output_type -> glms.ListQuizAttemptsResponse
+	199, // 299: glms.LmsService.GetQuizAttemptDetailAdmin:output_type -> glms.GetQuizAttemptDetailResponse
+	202, // 300: glms.LmsService.ListChapterProgressAdmin:output_type -> glms.ListChapterProgressResponse
+	204, // 301: glms.LmsService.GetChapterProgressDetailAdmin:output_type -> glms.GetChapterProgressDetailResponse
+	207, // 302: glms.LmsService.ListCourseAssetsAdmin:output_type -> glms.ListCourseAssetsResponse
+	209, // 303: glms.LmsService.GetCourseAssetDetailAdmin:output_type -> glms.GetCourseAssetDetailResponse
+	216, // 304: glms.LmsService.ListCourseEnrollmentsAdmin:output_type -> glms.ListCourseEnrollmentsResponse
+	219, // 305: glms.LmsService.GetCourseEnrollmentDetailAdmin:output_type -> glms.GetCourseEnrollmentDetailResponse
+	133, // 306: glms.LmsService.ListCourseEnrollmentsForAdmin:output_type -> glms.ListCourseEnrollmentsForAdminResponse
+	135, // 307: glms.LmsService.GetCandidateProgressForAdmin:output_type -> glms.GetCandidateProgressForAdminResponse
+	223, // 308: glms.LmsService.SyncCourseProgressAdmin:output_type -> glms.SyncCourseProgressResponse
+	144, // 309: glms.LmsService.GetCompleteCourseAdmin:output_type -> glms.GetCompleteCourseResponse
+	114, // 310: glms.LmsService.CreateViewURLAdmin:output_type -> glms.CreateViewURLResponse
+	146, // 311: glms.LmsService.CreateCourseSupplementaryMaterialAdmin:output_type -> glms.CreateCourseSupplementaryMaterialResponse
+	148, // 312: glms.LmsService.UpdateCourseSupplementaryMaterialAdmin:output_type -> glms.UpdateCourseSupplementaryMaterialResponse
+	150, // 313: glms.LmsService.DeleteCourseSupplementaryMaterialAdmin:output_type -> glms.DeleteCourseSupplementaryMaterialResponse
+	152, // 314: glms.LmsService.GetCourseSupplementaryMaterialAdmin:output_type -> glms.GetCourseSupplementaryMaterialResponse
+	258, // 315: glms.LmsService.CreateResourcePackAdmin:output_type -> glms.ResourcePack
+	258, // 316: glms.LmsService.UpdateResourcePackAdmin:output_type -> glms.ResourcePack
+	243, // 317: glms.LmsService.DeleteResourcePackAdmin:output_type -> glms.DeleteResourcePackResponse
+	258, // 318: glms.LmsService.GetResourcePackAdmin:output_type -> glms.ResourcePack
+	246, // 319: glms.LmsService.ListResourcePacksAdmin:output_type -> glms.ListResourcePacksResponse
+	259, // 320: glms.LmsService.CreateResourcePackFileAdmin:output_type -> glms.ResourcePackFile
+	259, // 321: glms.LmsService.UpdateResourcePackFileAdmin:output_type -> glms.ResourcePackFile
+	250, // 322: glms.LmsService.DeleteResourcePackFileAdmin:output_type -> glms.DeleteResourcePackFileResponse
+	259, // 323: glms.LmsService.GetResourcePackFileAdmin:output_type -> glms.ResourcePackFile
+	253, // 324: glms.LmsService.ListResourcePackFilesAdmin:output_type -> glms.ListResourcePackFilesResponse
+	169, // 325: glms.LmsService.GetCourseSummary:output_type -> glms.GetCourseSummaryResponse
+	180, // 326: glms.LmsService.GetCourseDetail:output_type -> glms.GetCourseDetailResponse
+	26,  // 327: glms.LmsService.ListCourses:output_type -> glms.ListCoursesResponse
+	36,  // 328: glms.LmsService.GetCourseMaterial:output_type -> glms.GetCourseMaterialResponse
+	181, // 329: glms.LmsService.GetCourseMaterialDetail:output_type -> glms.GetCourseMaterialDetailResponse
+	38,  // 330: glms.LmsService.ListCourseMaterials:output_type -> glms.ListCourseMaterialsResponse
+	48,  // 331: glms.LmsService.GetChapter:output_type -> glms.GetChapterResponse
+	182, // 332: glms.LmsService.GetChapterDetail:output_type -> glms.GetChapterDetailResponse
+	50,  // 333: glms.LmsService.ListChapters:output_type -> glms.ListChaptersResponse
+	60,  // 334: glms.LmsService.GetLesson:output_type -> glms.GetLessonResponse
+	183, // 335: glms.LmsService.GetLessonDetail:output_type -> glms.GetLessonDetailResponse
+	62,  // 336: glms.LmsService.ListLessons:output_type -> glms.ListLessonsResponse
+	214, // 337: glms.LmsService.ListLessonsByCourse:output_type -> glms.ListLessonsByCourseResponse
+	144, // 338: glms.LmsService.GetCompleteCourse:output_type -> glms.GetCompleteCourseResponse
+	82,  // 339: glms.LmsService.GetQuiz:output_type -> glms.GetQuizResponse
+	84,  // 340: glms.LmsService.ListQuizzes:output_type -> glms.ListQuizzesResponse
+	114, // 341: glms.LmsService.CreateViewURL:output_type -> glms.CreateViewURLResponse
+	255, // 342: glms.LmsService.GetLessonVideoPlayURL:output_type -> glms.GetLessonVideoPlayURLResponse
+	257, // 343: glms.LmsService.GetResourcePackFileViewURL:output_type -> glms.GetResourcePackFileViewURLResponse
+	246, // 344: glms.LmsService.ListResourcePacks:output_type -> glms.ListResourcePacksResponse
+	253, // 345: glms.LmsService.ListResourcePackFiles:output_type -> glms.ListResourcePackFilesResponse
+	125, // 346: glms.LmsService.CompleteLessonLearning:output_type -> glms.CompleteLessonLearningResponse
+	154, // 347: glms.LmsService.TakeQuiz:output_type -> glms.TakeQuizResponse
+	158, // 348: glms.LmsService.GetCandidateQuizPaper:output_type -> glms.GetCandidateQuizPaperResponse
+	161, // 349: glms.LmsService.SubmitQuiz:output_type -> glms.SubmitQuizResponse
+	128, // 350: glms.LmsService.ListCandidateEnrollments:output_type -> glms.ListCandidateEnrollmentsResponse
+	130, // 351: glms.LmsService.GetCandidateEnrollmentDetail:output_type -> glms.GetCandidateEnrollmentDetailResponse
+	231, // [231:352] is the sub-list for method output_type
+	110, // [110:231] is the sub-list for method input_type
+	110, // [110:110] is the sub-list for extension type_name
+	110, // [110:110] is the sub-list for extension extendee
+	0,   // [0:110] is the sub-list for field type_name
 }
 
 func init() { file_lms_proto_init() }
@@ -17607,8 +19494,8 @@ func file_lms_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lms_proto_rawDesc), len(file_lms_proto_rawDesc)),
-			NumEnums:      7,
-			NumMessages:   233,
+			NumEnums:      8,
+			NumMessages:   255,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

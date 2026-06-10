@@ -2160,27 +2160,27 @@ func (x *CreateUploadURLResponse) GetSignedHeaders() map[string]string {
 	return nil
 }
 
-type CreateViewURLRequest struct {
+type GetPublicURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ObjectKey     string                 `protobuf:"bytes,1,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"` // S3对象key [required]
+	PipelineId    string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"` // 认证管线ID [required]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateViewURLRequest) Reset() {
-	*x = CreateViewURLRequest{}
+func (x *GetPublicURLRequest) Reset() {
+	*x = GetPublicURLRequest{}
 	mi := &file_cc_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateViewURLRequest) String() string {
+func (x *GetPublicURLRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateViewURLRequest) ProtoMessage() {}
+func (*GetPublicURLRequest) ProtoMessage() {}
 
-func (x *CreateViewURLRequest) ProtoReflect() protoreflect.Message {
+func (x *GetPublicURLRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_cc_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2192,42 +2192,39 @@ func (x *CreateViewURLRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateViewURLRequest.ProtoReflect.Descriptor instead.
-func (*CreateViewURLRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetPublicURLRequest.ProtoReflect.Descriptor instead.
+func (*GetPublicURLRequest) Descriptor() ([]byte, []int) {
 	return file_cc_proto_rawDescGZIP(), []int{27}
 }
 
-func (x *CreateViewURLRequest) GetObjectKey() string {
+func (x *GetPublicURLRequest) GetPipelineId() string {
 	if x != nil {
-		return x.ObjectKey
+		return x.PipelineId
 	}
 	return ""
 }
 
-type CreateViewURLResponse struct {
+type GetPublicURLResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	BucketName    string                 `protobuf:"bytes,1,opt,name=bucket_name,json=bucketName,proto3" json:"bucket_name,omitempty"` // 存储桶名称
-	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`    // 对象key
-	ViewUrl       string                 `protobuf:"bytes,3,opt,name=view_url,json=viewUrl,proto3" json:"view_url,omitempty"`          // 预签名查看/下载URL（15分钟有效）
-	ExpiresAt     string                 `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`    // 过期时间 (UTC, RFC3339)
+	PublicUrl     string                 `protobuf:"bytes,1,opt,name=public_url,json=publicUrl,proto3" json:"public_url,omitempty"` // 认证管线封面公开URL
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateViewURLResponse) Reset() {
-	*x = CreateViewURLResponse{}
+func (x *GetPublicURLResponse) Reset() {
+	*x = GetPublicURLResponse{}
 	mi := &file_cc_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateViewURLResponse) String() string {
+func (x *GetPublicURLResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateViewURLResponse) ProtoMessage() {}
+func (*GetPublicURLResponse) ProtoMessage() {}
 
-func (x *CreateViewURLResponse) ProtoReflect() protoreflect.Message {
+func (x *GetPublicURLResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_cc_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2239,35 +2236,14 @@ func (x *CreateViewURLResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateViewURLResponse.ProtoReflect.Descriptor instead.
-func (*CreateViewURLResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use GetPublicURLResponse.ProtoReflect.Descriptor instead.
+func (*GetPublicURLResponse) Descriptor() ([]byte, []int) {
 	return file_cc_proto_rawDescGZIP(), []int{28}
 }
 
-func (x *CreateViewURLResponse) GetBucketName() string {
+func (x *GetPublicURLResponse) GetPublicUrl() string {
 	if x != nil {
-		return x.BucketName
-	}
-	return ""
-}
-
-func (x *CreateViewURLResponse) GetObjectKey() string {
-	if x != nil {
-		return x.ObjectKey
-	}
-	return ""
-}
-
-func (x *CreateViewURLResponse) GetViewUrl() string {
-	if x != nil {
-		return x.ViewUrl
-	}
-	return ""
-}
-
-func (x *CreateViewURLResponse) GetExpiresAt() string {
-	if x != nil {
-		return x.ExpiresAt
+		return x.PublicUrl
 	}
 	return ""
 }
@@ -2495,18 +2471,13 @@ const file_cc_proto_rawDesc = "" +
 	"\x0esigned_headers\x18\x05 \x03(\v2/.gcc.CreateUploadURLResponse.SignedHeadersEntryR\rsignedHeaders\x1a@\n" +
 	"\x12SignedHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"5\n" +
-	"\x14CreateViewURLRequest\x12\x1d\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"6\n" +
+	"\x13GetPublicURLRequest\x12\x1f\n" +
+	"\vpipeline_id\x18\x01 \x01(\tR\n" +
+	"pipelineId\"5\n" +
+	"\x14GetPublicURLResponse\x12\x1d\n" +
 	"\n" +
-	"object_key\x18\x01 \x01(\tR\tobjectKey\"\x91\x01\n" +
-	"\x15CreateViewURLResponse\x12\x1f\n" +
-	"\vbucket_name\x18\x01 \x01(\tR\n" +
-	"bucketName\x12\x1d\n" +
-	"\n" +
-	"object_key\x18\x02 \x01(\tR\tobjectKey\x12\x19\n" +
-	"\bview_url\x18\x03 \x01(\tR\aviewUrl\x12\x1d\n" +
-	"\n" +
-	"expires_at\x18\x04 \x01(\tR\texpiresAt2\xd4\b\n" +
+	"public_url\x18\x01 \x01(\tR\tpublicUrl2\xd1\b\n" +
 	"\tCCService\x12K\n" +
 	"\x13CreatePipelineDraft\x12\x1f.gcc.CreatePipelineDraftRequest\x1a\x13.gcc.PipelineConfig\x12S\n" +
 	"\x17UpdatePipelineStructure\x12#.gcc.UpdatePipelineStructureRequest\x1a\x13.gcc.PipelineConfig\x12C\n" +
@@ -2522,8 +2493,8 @@ const file_cc_proto_rawDesc = "" +
 	"\x0eGetStageDetail\x12\x1a.gcc.GetStageDetailRequest\x1a\x10.gcc.StageConfig\x12:\n" +
 	"\tListUnits\x12\x15.gcc.ListUnitsRequest\x1a\x16.gcc.ListUnitsResponse\x12;\n" +
 	"\rGetUnitDetail\x12\x19.gcc.GetUnitDetailRequest\x1a\x0f.gcc.UnitConfig\x12L\n" +
-	"\x0fCreateUploadURL\x12\x1b.gcc.CreateUploadURLRequest\x1a\x1c.gcc.CreateUploadURLResponse\x12F\n" +
-	"\rCreateViewURL\x12\x19.gcc.CreateViewURLRequest\x1a\x1a.gcc.CreateViewURLResponseB\n" +
+	"\x0fCreateUploadURL\x12\x1b.gcc.CreateUploadURLRequest\x1a\x1c.gcc.CreateUploadURLResponse\x12C\n" +
+	"\fGetPublicURL\x12\x18.gcc.GetPublicURLRequest\x1a\x19.gcc.GetPublicURLResponseB\n" +
 	"Z\bcftp/gccb\x06proto3"
 
 var (
@@ -2567,8 +2538,8 @@ var file_cc_proto_goTypes = []any{
 	(*ListUnitsResponse)(nil),                   // 24: gcc.ListUnitsResponse
 	(*CreateUploadURLRequest)(nil),              // 25: gcc.CreateUploadURLRequest
 	(*CreateUploadURLResponse)(nil),             // 26: gcc.CreateUploadURLResponse
-	(*CreateViewURLRequest)(nil),                // 27: gcc.CreateViewURLRequest
-	(*CreateViewURLResponse)(nil),               // 28: gcc.CreateViewURLResponse
+	(*GetPublicURLRequest)(nil),                 // 27: gcc.GetPublicURLRequest
+	(*GetPublicURLResponse)(nil),                // 28: gcc.GetPublicURLResponse
 	nil,                                         // 29: gcc.CreateUploadURLResponse.SignedHeadersEntry
 	(*emptypb.Empty)(nil),                       // 30: google.protobuf.Empty
 }
@@ -2603,7 +2574,7 @@ var file_cc_proto_depIdxs = []int32{
 	23, // 27: gcc.CCService.ListUnits:input_type -> gcc.ListUnitsRequest
 	19, // 28: gcc.CCService.GetUnitDetail:input_type -> gcc.GetUnitDetailRequest
 	25, // 29: gcc.CCService.CreateUploadURL:input_type -> gcc.CreateUploadURLRequest
-	27, // 30: gcc.CCService.CreateViewURL:input_type -> gcc.CreateViewURLRequest
+	27, // 30: gcc.CCService.GetPublicURL:input_type -> gcc.GetPublicURLRequest
 	0,  // 31: gcc.CCService.CreatePipelineDraft:output_type -> gcc.PipelineConfig
 	0,  // 32: gcc.CCService.UpdatePipelineStructure:output_type -> gcc.PipelineConfig
 	0,  // 33: gcc.CCService.PublishPipeline:output_type -> gcc.PipelineConfig
@@ -2618,7 +2589,7 @@ var file_cc_proto_depIdxs = []int32{
 	24, // 42: gcc.CCService.ListUnits:output_type -> gcc.ListUnitsResponse
 	2,  // 43: gcc.CCService.GetUnitDetail:output_type -> gcc.UnitConfig
 	26, // 44: gcc.CCService.CreateUploadURL:output_type -> gcc.CreateUploadURLResponse
-	28, // 45: gcc.CCService.CreateViewURL:output_type -> gcc.CreateViewURLResponse
+	28, // 45: gcc.CCService.GetPublicURL:output_type -> gcc.GetPublicURLResponse
 	31, // [31:46] is the sub-list for method output_type
 	16, // [16:31] is the sub-list for method input_type
 	16, // [16:16] is the sub-list for extension type_name

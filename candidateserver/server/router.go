@@ -106,6 +106,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Route("/{examId}", func(r chi.Router) {
 				r.Get("/schedule-url", h.GetScheduleURL)
 				r.Get("/result", h.GetExamResult)
+				r.Get("/schedule-callback/{urlType}", h.TermUrlRedirectCallback)
 				r.Post("/schedule-callback", h.TermUrlCallback)
 			})
 		})

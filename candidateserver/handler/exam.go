@@ -202,6 +202,24 @@ func (h *Handler) TermUrlCallback(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// TermUrlRedirectCallback GET /api/exams/{examId}/schedule-callback/{urlType}
+func (h *Handler) TermUrlRedirectCallback(w http.ResponseWriter, r *http.Request) {
+	examID := strings.TrimSpace(chi.URLParam(r, "examId"))
+	urlType := strings.TrimSpace(chi.URLParam(r, "urlType"))
+	if examID != "" && urlType != "" {
+		callbackBody := r.URL.RawQuery
+		if callbackBody == "" {
+			callbackBody = "{}"
+		}
+		_, _ = h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
+			ExamId:       examID,
+			UrlType:      urlType,
+			CallbackBody: callbackBody,
+		})
+	}
+	http.Redirect(w, r, "/exams?schedule_return=1", http.StatusFound)
+}
+
 // ApplyExemption POST /api/exams/units/{courseUnitUlid}/exemption
 func (h *Handler) ApplyExemption(w http.ResponseWriter, r *http.Request) {
 	// TODO(microservice-missing-api): gprog has not exposed candidate exemption application yet.

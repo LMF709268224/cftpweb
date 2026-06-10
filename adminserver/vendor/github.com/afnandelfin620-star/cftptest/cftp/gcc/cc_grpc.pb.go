@@ -34,7 +34,7 @@ const (
 	CCService_ListUnits_FullMethodName                   = "/gcc.CCService/ListUnits"
 	CCService_GetUnitDetail_FullMethodName               = "/gcc.CCService/GetUnitDetail"
 	CCService_CreateUploadURL_FullMethodName             = "/gcc.CCService/CreateUploadURL"
-	CCService_CreateViewURL_FullMethodName               = "/gcc.CCService/CreateViewURL"
+	CCService_GetPublicURL_FullMethodName                = "/gcc.CCService/GetPublicURL"
 )
 
 // CCServiceClient is the client API for CCService service.
@@ -61,7 +61,7 @@ type CCServiceClient interface {
 	GetUnitDetail(ctx context.Context, in *GetUnitDetailRequest, opts ...grpc.CallOption) (*UnitConfig, error)
 	// --- S3 预签名 URL 接口 ---
 	CreateUploadURL(ctx context.Context, in *CreateUploadURLRequest, opts ...grpc.CallOption) (*CreateUploadURLResponse, error)
-	CreateViewURL(ctx context.Context, in *CreateViewURLRequest, opts ...grpc.CallOption) (*CreateViewURLResponse, error)
+	GetPublicURL(ctx context.Context, in *GetPublicURLRequest, opts ...grpc.CallOption) (*GetPublicURLResponse, error)
 }
 
 type cCServiceClient struct {
@@ -212,10 +212,10 @@ func (c *cCServiceClient) CreateUploadURL(ctx context.Context, in *CreateUploadU
 	return out, nil
 }
 
-func (c *cCServiceClient) CreateViewURL(ctx context.Context, in *CreateViewURLRequest, opts ...grpc.CallOption) (*CreateViewURLResponse, error) {
+func (c *cCServiceClient) GetPublicURL(ctx context.Context, in *GetPublicURLRequest, opts ...grpc.CallOption) (*GetPublicURLResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateViewURLResponse)
-	err := c.cc.Invoke(ctx, CCService_CreateViewURL_FullMethodName, in, out, cOpts...)
+	out := new(GetPublicURLResponse)
+	err := c.cc.Invoke(ctx, CCService_GetPublicURL_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +246,7 @@ type CCServiceServer interface {
 	GetUnitDetail(context.Context, *GetUnitDetailRequest) (*UnitConfig, error)
 	// --- S3 预签名 URL 接口 ---
 	CreateUploadURL(context.Context, *CreateUploadURLRequest) (*CreateUploadURLResponse, error)
-	CreateViewURL(context.Context, *CreateViewURLRequest) (*CreateViewURLResponse, error)
+	GetPublicURL(context.Context, *GetPublicURLRequest) (*GetPublicURLResponse, error)
 	mustEmbedUnimplementedCCServiceServer()
 }
 
@@ -299,8 +299,8 @@ func (UnimplementedCCServiceServer) GetUnitDetail(context.Context, *GetUnitDetai
 func (UnimplementedCCServiceServer) CreateUploadURL(context.Context, *CreateUploadURLRequest) (*CreateUploadURLResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateUploadURL not implemented")
 }
-func (UnimplementedCCServiceServer) CreateViewURL(context.Context, *CreateViewURLRequest) (*CreateViewURLResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateViewURL not implemented")
+func (UnimplementedCCServiceServer) GetPublicURL(context.Context, *GetPublicURLRequest) (*GetPublicURLResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPublicURL not implemented")
 }
 func (UnimplementedCCServiceServer) mustEmbedUnimplementedCCServiceServer() {}
 func (UnimplementedCCServiceServer) testEmbeddedByValue()                   {}
@@ -575,20 +575,20 @@ func _CCService_CreateUploadURL_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _CCService_CreateViewURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateViewURLRequest)
+func _CCService_GetPublicURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPublicURLRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CCServiceServer).CreateViewURL(ctx, in)
+		return srv.(CCServiceServer).GetPublicURL(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: CCService_CreateViewURL_FullMethodName,
+		FullMethod: CCService_GetPublicURL_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CCServiceServer).CreateViewURL(ctx, req.(*CreateViewURLRequest))
+		return srv.(CCServiceServer).GetPublicURL(ctx, req.(*GetPublicURLRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -657,8 +657,8 @@ var CCService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CCService_CreateUploadURL_Handler,
 		},
 		{
-			MethodName: "CreateViewURL",
-			Handler:    _CCService_CreateViewURL_Handler,
+			MethodName: "GetPublicURL",
+			Handler:    _CCService_GetPublicURL_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

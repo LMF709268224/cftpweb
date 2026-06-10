@@ -103,6 +103,16 @@ const (
 	LmsService_UpdateCourseSupplementaryMaterialAdmin_FullMethodName = "/glms.LmsService/UpdateCourseSupplementaryMaterialAdmin"
 	LmsService_DeleteCourseSupplementaryMaterialAdmin_FullMethodName = "/glms.LmsService/DeleteCourseSupplementaryMaterialAdmin"
 	LmsService_GetCourseSupplementaryMaterialAdmin_FullMethodName    = "/glms.LmsService/GetCourseSupplementaryMaterialAdmin"
+	LmsService_CreateResourcePackAdmin_FullMethodName                = "/glms.LmsService/CreateResourcePackAdmin"
+	LmsService_UpdateResourcePackAdmin_FullMethodName                = "/glms.LmsService/UpdateResourcePackAdmin"
+	LmsService_DeleteResourcePackAdmin_FullMethodName                = "/glms.LmsService/DeleteResourcePackAdmin"
+	LmsService_GetResourcePackAdmin_FullMethodName                   = "/glms.LmsService/GetResourcePackAdmin"
+	LmsService_ListResourcePacksAdmin_FullMethodName                 = "/glms.LmsService/ListResourcePacksAdmin"
+	LmsService_CreateResourcePackFileAdmin_FullMethodName            = "/glms.LmsService/CreateResourcePackFileAdmin"
+	LmsService_UpdateResourcePackFileAdmin_FullMethodName            = "/glms.LmsService/UpdateResourcePackFileAdmin"
+	LmsService_DeleteResourcePackFileAdmin_FullMethodName            = "/glms.LmsService/DeleteResourcePackFileAdmin"
+	LmsService_GetResourcePackFileAdmin_FullMethodName               = "/glms.LmsService/GetResourcePackFileAdmin"
+	LmsService_ListResourcePackFilesAdmin_FullMethodName             = "/glms.LmsService/ListResourcePackFilesAdmin"
 	LmsService_GetCourseSummary_FullMethodName                       = "/glms.LmsService/GetCourseSummary"
 	LmsService_GetCourseDetail_FullMethodName                        = "/glms.LmsService/GetCourseDetail"
 	LmsService_ListCourses_FullMethodName                            = "/glms.LmsService/ListCourses"
@@ -120,6 +130,10 @@ const (
 	LmsService_GetQuiz_FullMethodName                                = "/glms.LmsService/GetQuiz"
 	LmsService_ListQuizzes_FullMethodName                            = "/glms.LmsService/ListQuizzes"
 	LmsService_CreateViewURL_FullMethodName                          = "/glms.LmsService/CreateViewURL"
+	LmsService_GetLessonVideoPlayURL_FullMethodName                  = "/glms.LmsService/GetLessonVideoPlayURL"
+	LmsService_GetResourcePackFileViewURL_FullMethodName             = "/glms.LmsService/GetResourcePackFileViewURL"
+	LmsService_ListResourcePacks_FullMethodName                      = "/glms.LmsService/ListResourcePacks"
+	LmsService_ListResourcePackFiles_FullMethodName                  = "/glms.LmsService/ListResourcePackFiles"
 	LmsService_CompleteLessonLearning_FullMethodName                 = "/glms.LmsService/CompleteLessonLearning"
 	LmsService_TakeQuiz_FullMethodName                               = "/glms.LmsService/TakeQuiz"
 	LmsService_GetCandidateQuizPaper_FullMethodName                  = "/glms.LmsService/GetCandidateQuizPaper"
@@ -219,6 +233,16 @@ type LmsServiceClient interface {
 	UpdateCourseSupplementaryMaterialAdmin(ctx context.Context, in *UpdateCourseSupplementaryMaterialRequest, opts ...grpc.CallOption) (*UpdateCourseSupplementaryMaterialResponse, error)
 	DeleteCourseSupplementaryMaterialAdmin(ctx context.Context, in *DeleteCourseSupplementaryMaterialRequest, opts ...grpc.CallOption) (*DeleteCourseSupplementaryMaterialResponse, error)
 	GetCourseSupplementaryMaterialAdmin(ctx context.Context, in *GetCourseSupplementaryMaterialRequest, opts ...grpc.CallOption) (*GetCourseSupplementaryMaterialResponse, error)
+	CreateResourcePackAdmin(ctx context.Context, in *CreateResourcePackRequest, opts ...grpc.CallOption) (*ResourcePack, error)
+	UpdateResourcePackAdmin(ctx context.Context, in *UpdateResourcePackRequest, opts ...grpc.CallOption) (*ResourcePack, error)
+	DeleteResourcePackAdmin(ctx context.Context, in *DeleteResourcePackRequest, opts ...grpc.CallOption) (*DeleteResourcePackResponse, error)
+	GetResourcePackAdmin(ctx context.Context, in *GetResourcePackRequest, opts ...grpc.CallOption) (*ResourcePack, error)
+	ListResourcePacksAdmin(ctx context.Context, in *ListResourcePacksRequest, opts ...grpc.CallOption) (*ListResourcePacksResponse, error)
+	CreateResourcePackFileAdmin(ctx context.Context, in *CreateResourcePackFileRequest, opts ...grpc.CallOption) (*ResourcePackFile, error)
+	UpdateResourcePackFileAdmin(ctx context.Context, in *UpdateResourcePackFileRequest, opts ...grpc.CallOption) (*ResourcePackFile, error)
+	DeleteResourcePackFileAdmin(ctx context.Context, in *DeleteResourcePackFileRequest, opts ...grpc.CallOption) (*DeleteResourcePackFileResponse, error)
+	GetResourcePackFileAdmin(ctx context.Context, in *GetResourcePackFileRequest, opts ...grpc.CallOption) (*ResourcePackFile, error)
+	ListResourcePackFilesAdmin(ctx context.Context, in *ListResourcePackFilesRequest, opts ...grpc.CallOption) (*ListResourcePackFilesResponse, error)
 	// ==========================================
 	// 2. 考生端接口 (Candidate-facing APIs - check candidateUlid & Casdoor permissions)
 	// ==========================================
@@ -239,6 +263,10 @@ type LmsServiceClient interface {
 	GetQuiz(ctx context.Context, in *GetQuizCandidateRequest, opts ...grpc.CallOption) (*GetQuizResponse, error)
 	ListQuizzes(ctx context.Context, in *ListQuizzesCandidateRequest, opts ...grpc.CallOption) (*ListQuizzesResponse, error)
 	CreateViewURL(ctx context.Context, in *CreateViewURLCandidateRequest, opts ...grpc.CallOption) (*CreateViewURLResponse, error)
+	GetLessonVideoPlayURL(ctx context.Context, in *GetLessonVideoPlayURLRequest, opts ...grpc.CallOption) (*GetLessonVideoPlayURLResponse, error)
+	GetResourcePackFileViewURL(ctx context.Context, in *GetResourcePackFileViewURLRequest, opts ...grpc.CallOption) (*GetResourcePackFileViewURLResponse, error)
+	ListResourcePacks(ctx context.Context, in *ListResourcePacksCandidateRequest, opts ...grpc.CallOption) (*ListResourcePacksResponse, error)
+	ListResourcePackFiles(ctx context.Context, in *ListResourcePackFilesCandidateRequest, opts ...grpc.CallOption) (*ListResourcePackFilesResponse, error)
 	// 考生作答与交互型接口 (已经带 candidate_id，仅需补充 Casdoor / 选课校验)
 	CompleteLessonLearning(ctx context.Context, in *CompleteLessonLearningRequest, opts ...grpc.CallOption) (*CompleteLessonLearningResponse, error)
 	TakeQuiz(ctx context.Context, in *TakeQuizRequest, opts ...grpc.CallOption) (*TakeQuizResponse, error)
@@ -1096,6 +1124,106 @@ func (c *lmsServiceClient) GetCourseSupplementaryMaterialAdmin(ctx context.Conte
 	return out, nil
 }
 
+func (c *lmsServiceClient) CreateResourcePackAdmin(ctx context.Context, in *CreateResourcePackRequest, opts ...grpc.CallOption) (*ResourcePack, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResourcePack)
+	err := c.cc.Invoke(ctx, LmsService_CreateResourcePackAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) UpdateResourcePackAdmin(ctx context.Context, in *UpdateResourcePackRequest, opts ...grpc.CallOption) (*ResourcePack, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResourcePack)
+	err := c.cc.Invoke(ctx, LmsService_UpdateResourcePackAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) DeleteResourcePackAdmin(ctx context.Context, in *DeleteResourcePackRequest, opts ...grpc.CallOption) (*DeleteResourcePackResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteResourcePackResponse)
+	err := c.cc.Invoke(ctx, LmsService_DeleteResourcePackAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) GetResourcePackAdmin(ctx context.Context, in *GetResourcePackRequest, opts ...grpc.CallOption) (*ResourcePack, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResourcePack)
+	err := c.cc.Invoke(ctx, LmsService_GetResourcePackAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) ListResourcePacksAdmin(ctx context.Context, in *ListResourcePacksRequest, opts ...grpc.CallOption) (*ListResourcePacksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListResourcePacksResponse)
+	err := c.cc.Invoke(ctx, LmsService_ListResourcePacksAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) CreateResourcePackFileAdmin(ctx context.Context, in *CreateResourcePackFileRequest, opts ...grpc.CallOption) (*ResourcePackFile, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResourcePackFile)
+	err := c.cc.Invoke(ctx, LmsService_CreateResourcePackFileAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) UpdateResourcePackFileAdmin(ctx context.Context, in *UpdateResourcePackFileRequest, opts ...grpc.CallOption) (*ResourcePackFile, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResourcePackFile)
+	err := c.cc.Invoke(ctx, LmsService_UpdateResourcePackFileAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) DeleteResourcePackFileAdmin(ctx context.Context, in *DeleteResourcePackFileRequest, opts ...grpc.CallOption) (*DeleteResourcePackFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteResourcePackFileResponse)
+	err := c.cc.Invoke(ctx, LmsService_DeleteResourcePackFileAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) GetResourcePackFileAdmin(ctx context.Context, in *GetResourcePackFileRequest, opts ...grpc.CallOption) (*ResourcePackFile, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResourcePackFile)
+	err := c.cc.Invoke(ctx, LmsService_GetResourcePackFileAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) ListResourcePackFilesAdmin(ctx context.Context, in *ListResourcePackFilesRequest, opts ...grpc.CallOption) (*ListResourcePackFilesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListResourcePackFilesResponse)
+	err := c.cc.Invoke(ctx, LmsService_ListResourcePackFilesAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *lmsServiceClient) GetCourseSummary(ctx context.Context, in *GetCourseSummaryCandidateRequest, opts ...grpc.CallOption) (*GetCourseSummaryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetCourseSummaryResponse)
@@ -1266,6 +1394,46 @@ func (c *lmsServiceClient) CreateViewURL(ctx context.Context, in *CreateViewURLC
 	return out, nil
 }
 
+func (c *lmsServiceClient) GetLessonVideoPlayURL(ctx context.Context, in *GetLessonVideoPlayURLRequest, opts ...grpc.CallOption) (*GetLessonVideoPlayURLResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetLessonVideoPlayURLResponse)
+	err := c.cc.Invoke(ctx, LmsService_GetLessonVideoPlayURL_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) GetResourcePackFileViewURL(ctx context.Context, in *GetResourcePackFileViewURLRequest, opts ...grpc.CallOption) (*GetResourcePackFileViewURLResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetResourcePackFileViewURLResponse)
+	err := c.cc.Invoke(ctx, LmsService_GetResourcePackFileViewURL_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) ListResourcePacks(ctx context.Context, in *ListResourcePacksCandidateRequest, opts ...grpc.CallOption) (*ListResourcePacksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListResourcePacksResponse)
+	err := c.cc.Invoke(ctx, LmsService_ListResourcePacks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) ListResourcePackFiles(ctx context.Context, in *ListResourcePackFilesCandidateRequest, opts ...grpc.CallOption) (*ListResourcePackFilesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListResourcePackFilesResponse)
+	err := c.cc.Invoke(ctx, LmsService_ListResourcePackFiles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *lmsServiceClient) CompleteLessonLearning(ctx context.Context, in *CompleteLessonLearningRequest, opts ...grpc.CallOption) (*CompleteLessonLearningResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CompleteLessonLearningResponse)
@@ -1417,6 +1585,16 @@ type LmsServiceServer interface {
 	UpdateCourseSupplementaryMaterialAdmin(context.Context, *UpdateCourseSupplementaryMaterialRequest) (*UpdateCourseSupplementaryMaterialResponse, error)
 	DeleteCourseSupplementaryMaterialAdmin(context.Context, *DeleteCourseSupplementaryMaterialRequest) (*DeleteCourseSupplementaryMaterialResponse, error)
 	GetCourseSupplementaryMaterialAdmin(context.Context, *GetCourseSupplementaryMaterialRequest) (*GetCourseSupplementaryMaterialResponse, error)
+	CreateResourcePackAdmin(context.Context, *CreateResourcePackRequest) (*ResourcePack, error)
+	UpdateResourcePackAdmin(context.Context, *UpdateResourcePackRequest) (*ResourcePack, error)
+	DeleteResourcePackAdmin(context.Context, *DeleteResourcePackRequest) (*DeleteResourcePackResponse, error)
+	GetResourcePackAdmin(context.Context, *GetResourcePackRequest) (*ResourcePack, error)
+	ListResourcePacksAdmin(context.Context, *ListResourcePacksRequest) (*ListResourcePacksResponse, error)
+	CreateResourcePackFileAdmin(context.Context, *CreateResourcePackFileRequest) (*ResourcePackFile, error)
+	UpdateResourcePackFileAdmin(context.Context, *UpdateResourcePackFileRequest) (*ResourcePackFile, error)
+	DeleteResourcePackFileAdmin(context.Context, *DeleteResourcePackFileRequest) (*DeleteResourcePackFileResponse, error)
+	GetResourcePackFileAdmin(context.Context, *GetResourcePackFileRequest) (*ResourcePackFile, error)
+	ListResourcePackFilesAdmin(context.Context, *ListResourcePackFilesRequest) (*ListResourcePackFilesResponse, error)
 	// ==========================================
 	// 2. 考生端接口 (Candidate-facing APIs - check candidateUlid & Casdoor permissions)
 	// ==========================================
@@ -1437,6 +1615,10 @@ type LmsServiceServer interface {
 	GetQuiz(context.Context, *GetQuizCandidateRequest) (*GetQuizResponse, error)
 	ListQuizzes(context.Context, *ListQuizzesCandidateRequest) (*ListQuizzesResponse, error)
 	CreateViewURL(context.Context, *CreateViewURLCandidateRequest) (*CreateViewURLResponse, error)
+	GetLessonVideoPlayURL(context.Context, *GetLessonVideoPlayURLRequest) (*GetLessonVideoPlayURLResponse, error)
+	GetResourcePackFileViewURL(context.Context, *GetResourcePackFileViewURLRequest) (*GetResourcePackFileViewURLResponse, error)
+	ListResourcePacks(context.Context, *ListResourcePacksCandidateRequest) (*ListResourcePacksResponse, error)
+	ListResourcePackFiles(context.Context, *ListResourcePackFilesCandidateRequest) (*ListResourcePackFilesResponse, error)
 	// 考生作答与交互型接口 (已经带 candidate_id，仅需补充 Casdoor / 选课校验)
 	CompleteLessonLearning(context.Context, *CompleteLessonLearningRequest) (*CompleteLessonLearningResponse, error)
 	TakeQuiz(context.Context, *TakeQuizRequest) (*TakeQuizResponse, error)
@@ -1706,6 +1888,36 @@ func (UnimplementedLmsServiceServer) DeleteCourseSupplementaryMaterialAdmin(cont
 func (UnimplementedLmsServiceServer) GetCourseSupplementaryMaterialAdmin(context.Context, *GetCourseSupplementaryMaterialRequest) (*GetCourseSupplementaryMaterialResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCourseSupplementaryMaterialAdmin not implemented")
 }
+func (UnimplementedLmsServiceServer) CreateResourcePackAdmin(context.Context, *CreateResourcePackRequest) (*ResourcePack, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateResourcePackAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) UpdateResourcePackAdmin(context.Context, *UpdateResourcePackRequest) (*ResourcePack, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateResourcePackAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) DeleteResourcePackAdmin(context.Context, *DeleteResourcePackRequest) (*DeleteResourcePackResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteResourcePackAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) GetResourcePackAdmin(context.Context, *GetResourcePackRequest) (*ResourcePack, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetResourcePackAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) ListResourcePacksAdmin(context.Context, *ListResourcePacksRequest) (*ListResourcePacksResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListResourcePacksAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) CreateResourcePackFileAdmin(context.Context, *CreateResourcePackFileRequest) (*ResourcePackFile, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateResourcePackFileAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) UpdateResourcePackFileAdmin(context.Context, *UpdateResourcePackFileRequest) (*ResourcePackFile, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateResourcePackFileAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) DeleteResourcePackFileAdmin(context.Context, *DeleteResourcePackFileRequest) (*DeleteResourcePackFileResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteResourcePackFileAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) GetResourcePackFileAdmin(context.Context, *GetResourcePackFileRequest) (*ResourcePackFile, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetResourcePackFileAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) ListResourcePackFilesAdmin(context.Context, *ListResourcePackFilesRequest) (*ListResourcePackFilesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListResourcePackFilesAdmin not implemented")
+}
 func (UnimplementedLmsServiceServer) GetCourseSummary(context.Context, *GetCourseSummaryCandidateRequest) (*GetCourseSummaryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCourseSummary not implemented")
 }
@@ -1756,6 +1968,18 @@ func (UnimplementedLmsServiceServer) ListQuizzes(context.Context, *ListQuizzesCa
 }
 func (UnimplementedLmsServiceServer) CreateViewURL(context.Context, *CreateViewURLCandidateRequest) (*CreateViewURLResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateViewURL not implemented")
+}
+func (UnimplementedLmsServiceServer) GetLessonVideoPlayURL(context.Context, *GetLessonVideoPlayURLRequest) (*GetLessonVideoPlayURLResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetLessonVideoPlayURL not implemented")
+}
+func (UnimplementedLmsServiceServer) GetResourcePackFileViewURL(context.Context, *GetResourcePackFileViewURLRequest) (*GetResourcePackFileViewURLResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetResourcePackFileViewURL not implemented")
+}
+func (UnimplementedLmsServiceServer) ListResourcePacks(context.Context, *ListResourcePacksCandidateRequest) (*ListResourcePacksResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListResourcePacks not implemented")
+}
+func (UnimplementedLmsServiceServer) ListResourcePackFiles(context.Context, *ListResourcePackFilesCandidateRequest) (*ListResourcePackFilesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListResourcePackFiles not implemented")
 }
 func (UnimplementedLmsServiceServer) CompleteLessonLearning(context.Context, *CompleteLessonLearningRequest) (*CompleteLessonLearningResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CompleteLessonLearning not implemented")
@@ -3308,6 +3532,186 @@ func _LmsService_GetCourseSupplementaryMaterialAdmin_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LmsService_CreateResourcePackAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateResourcePackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).CreateResourcePackAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_CreateResourcePackAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).CreateResourcePackAdmin(ctx, req.(*CreateResourcePackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_UpdateResourcePackAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateResourcePackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).UpdateResourcePackAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_UpdateResourcePackAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).UpdateResourcePackAdmin(ctx, req.(*UpdateResourcePackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_DeleteResourcePackAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteResourcePackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).DeleteResourcePackAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_DeleteResourcePackAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).DeleteResourcePackAdmin(ctx, req.(*DeleteResourcePackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_GetResourcePackAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetResourcePackRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).GetResourcePackAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_GetResourcePackAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).GetResourcePackAdmin(ctx, req.(*GetResourcePackRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_ListResourcePacksAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListResourcePacksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).ListResourcePacksAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_ListResourcePacksAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).ListResourcePacksAdmin(ctx, req.(*ListResourcePacksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_CreateResourcePackFileAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateResourcePackFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).CreateResourcePackFileAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_CreateResourcePackFileAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).CreateResourcePackFileAdmin(ctx, req.(*CreateResourcePackFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_UpdateResourcePackFileAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateResourcePackFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).UpdateResourcePackFileAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_UpdateResourcePackFileAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).UpdateResourcePackFileAdmin(ctx, req.(*UpdateResourcePackFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_DeleteResourcePackFileAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteResourcePackFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).DeleteResourcePackFileAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_DeleteResourcePackFileAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).DeleteResourcePackFileAdmin(ctx, req.(*DeleteResourcePackFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_GetResourcePackFileAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetResourcePackFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).GetResourcePackFileAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_GetResourcePackFileAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).GetResourcePackFileAdmin(ctx, req.(*GetResourcePackFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_ListResourcePackFilesAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListResourcePackFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).ListResourcePackFilesAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_ListResourcePackFilesAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).ListResourcePackFilesAdmin(ctx, req.(*ListResourcePackFilesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _LmsService_GetCourseSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCourseSummaryCandidateRequest)
 	if err := dec(in); err != nil {
@@ -3610,6 +4014,78 @@ func _LmsService_CreateViewURL_Handler(srv interface{}, ctx context.Context, dec
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LmsServiceServer).CreateViewURL(ctx, req.(*CreateViewURLCandidateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_GetLessonVideoPlayURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetLessonVideoPlayURLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).GetLessonVideoPlayURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_GetLessonVideoPlayURL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).GetLessonVideoPlayURL(ctx, req.(*GetLessonVideoPlayURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_GetResourcePackFileViewURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetResourcePackFileViewURLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).GetResourcePackFileViewURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_GetResourcePackFileViewURL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).GetResourcePackFileViewURL(ctx, req.(*GetResourcePackFileViewURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_ListResourcePacks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListResourcePacksCandidateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).ListResourcePacks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_ListResourcePacks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).ListResourcePacks(ctx, req.(*ListResourcePacksCandidateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_ListResourcePackFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListResourcePackFilesCandidateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).ListResourcePackFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_ListResourcePackFiles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).ListResourcePackFiles(ctx, req.(*ListResourcePackFilesCandidateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -4066,6 +4542,46 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _LmsService_GetCourseSupplementaryMaterialAdmin_Handler,
 		},
 		{
+			MethodName: "CreateResourcePackAdmin",
+			Handler:    _LmsService_CreateResourcePackAdmin_Handler,
+		},
+		{
+			MethodName: "UpdateResourcePackAdmin",
+			Handler:    _LmsService_UpdateResourcePackAdmin_Handler,
+		},
+		{
+			MethodName: "DeleteResourcePackAdmin",
+			Handler:    _LmsService_DeleteResourcePackAdmin_Handler,
+		},
+		{
+			MethodName: "GetResourcePackAdmin",
+			Handler:    _LmsService_GetResourcePackAdmin_Handler,
+		},
+		{
+			MethodName: "ListResourcePacksAdmin",
+			Handler:    _LmsService_ListResourcePacksAdmin_Handler,
+		},
+		{
+			MethodName: "CreateResourcePackFileAdmin",
+			Handler:    _LmsService_CreateResourcePackFileAdmin_Handler,
+		},
+		{
+			MethodName: "UpdateResourcePackFileAdmin",
+			Handler:    _LmsService_UpdateResourcePackFileAdmin_Handler,
+		},
+		{
+			MethodName: "DeleteResourcePackFileAdmin",
+			Handler:    _LmsService_DeleteResourcePackFileAdmin_Handler,
+		},
+		{
+			MethodName: "GetResourcePackFileAdmin",
+			Handler:    _LmsService_GetResourcePackFileAdmin_Handler,
+		},
+		{
+			MethodName: "ListResourcePackFilesAdmin",
+			Handler:    _LmsService_ListResourcePackFilesAdmin_Handler,
+		},
+		{
 			MethodName: "GetCourseSummary",
 			Handler:    _LmsService_GetCourseSummary_Handler,
 		},
@@ -4132,6 +4648,22 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateViewURL",
 			Handler:    _LmsService_CreateViewURL_Handler,
+		},
+		{
+			MethodName: "GetLessonVideoPlayURL",
+			Handler:    _LmsService_GetLessonVideoPlayURL_Handler,
+		},
+		{
+			MethodName: "GetResourcePackFileViewURL",
+			Handler:    _LmsService_GetResourcePackFileViewURL_Handler,
+		},
+		{
+			MethodName: "ListResourcePacks",
+			Handler:    _LmsService_ListResourcePacks_Handler,
+		},
+		{
+			MethodName: "ListResourcePackFiles",
+			Handler:    _LmsService_ListResourcePackFiles_Handler,
 		},
 		{
 			MethodName: "CompleteLessonLearning",

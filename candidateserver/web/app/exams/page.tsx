@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { useTranslation } from "@/lib/useLanguage"
 import { Sidebar } from "@/components/sidebar"
@@ -95,12 +96,19 @@ const emptyCopy: Record<TabId, { titleKey: string; descriptionKey: string; icon:
 
 export default function ExamsPage() {
   const { t } = useTranslation()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<TabId>("current")
   const [loading, setLoading] = useState(false)
   const [scheduleLoadingExamId, setScheduleLoadingExamId] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [exams, setExams] = useState<ExamItem[]>([])
   const [total, setTotal] = useState(0)
+
+  useEffect(() => {
+    if (searchParams.get("schedule_return") === "1") {
+      toast.success(t.examsPage.scheduleReturnToast)
+    }
+  }, [searchParams, t.examsPage.scheduleReturnToast])
 
   const loadExams = async (tab = activeTab, keyword = search) => {
     setLoading(true)
@@ -129,7 +137,7 @@ export default function ExamsPage() {
     if (!exam.exam_id || scheduleLoadingExamId) return
     setScheduleLoadingExamId(exam.exam_id)
     try {
-      const termUrlBase = window.location.origin + "/exams"
+      const termUrlBase = window.location.origin + `/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-callback`
       const params = new URLSearchParams({
         url_type: "schd",
         term_url_base: termUrlBase,
