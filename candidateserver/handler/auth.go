@@ -1,0 +1,187 @@
+package handler
+
+import (
+	"fmt"
+	"log/slog"
+	"net/http"
+	"net/url"
+	"time"
+
+	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
+
+	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
+)
+
+func setTokenCookies(w http.ResponseWriter, accessToken, refreshToken string, expiresAt time.Time) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    accessToken,
+		Expires:  expiresAt,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Expires:  expiresAt.AddDate(0, 1, 0), // arbitrarily 1 month
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	})
+}
+
+// GetLoginURL handles GET /api/auth/login-url.
+func (h *Handler) GetLoginURL(w http.ResponseWriter, r *http.Request) {
+	redirectSigninURL := r.URL.Query().Get("callback")
+	signinURL := casdoorsdk.GetSigninUrl(redirectSigninURL)
+
+	if h.CasdoorEndpoint != "" {
+		if parsedURL, err := url.Parse(signinURL); err == nil {
+			if parsedPublic, err := url.Parse(h.CasdoorEndpoint); err == nil {
+				parsedURL.Scheme = parsedPublic.Scheme
+				parsedURL.Host = parsedPublic.Host
+				signinURL = parsedURL.String()
+			}
+		}
+	}
+
+	WriteJSON(w, http.StatusOK, AuthURLRsp{URL: signinURL})
+}
+
+// Login handles POST /auth/login.
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var input LoginInput
+	if err := ReadJSON(r, &input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
+		return
+	}
+
+	if input.Code == "" || input.State == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "code and state are required")
+		return
+	}
+
+	token, err := casdoorsdk.GetOAuthToken(input.Code, input.State)
+	if err != nil {
+		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "failed to exchange token: "+err.Error())
+		return
+	}
+
+	claims, err := casdoorsdk.ParseJwtToken(token.AccessToken)
+	if err != nil {
+		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "failed to parse token: "+err.Error())
+		return
+	}
+
+	if _, err = h.resolveCandidateId(r, claims.User.Id); err != nil {
+		slog.Error("Failed to resolve user ULID", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal error")
+		return
+	}
+
+	setTokenCookies(w, token.AccessToken, token.RefreshToken, token.Expiry)
+
+	WriteJSON(w, http.StatusOK, LoginRsp{
+		Token: token.AccessToken,
+		User: UserInfo{
+			Name: claims.User.Name,
+		},
+	})
+}
+
+// RefreshToken handles POST /auth/refresh.
+func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := ReadJSON(r, &input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
+		return
+	}
+
+	if input.RefreshToken == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "refresh_token is required")
+		return
+	}
+
+	token, err := casdoorsdk.RefreshOAuthToken(input.RefreshToken)
+	if err != nil {
+		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "failed to refresh token: "+err.Error())
+		return
+	}
+
+	claims, err := casdoorsdk.ParseJwtToken(token.AccessToken)
+	if err != nil {
+		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "failed to parse token: "+err.Error())
+		return
+	}
+
+	if _, err = h.resolveCandidateId(r, claims.User.Id); err != nil {
+		slog.Error("Failed to resolve user ULID", "error", err)
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal error")
+		return
+	}
+
+	setTokenCookies(w, token.AccessToken, token.RefreshToken, token.Expiry)
+
+	WriteJSON(w, http.StatusOK, LoginRsp{
+		Token: token.AccessToken,
+		User: UserInfo{
+			Name: claims.User.Name,
+		},
+	})
+}
+
+func (h *Handler) resolveCandidateId(r *http.Request, casdoorUserId string) (string, error) {
+	if casdoorUserId == "" {
+		return "", fmt.Errorf("casdoor user id is required")
+	}
+
+	slog.Info("resolveCandidateId: starting ID resolution", "casdoor_user_id", casdoorUserId)
+	resp, err := h.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
+		UserUuid: casdoorUserId,
+	})
+	if err != nil {
+		slog.Warn("resolveCandidateId: failed to resolve user ULID from gmid", "casdoor_user_id", casdoorUserId, "error", err)
+		return "", err
+	}
+
+	if resp.UserUlid == "" {
+		err := fmt.Errorf("gmid returned empty user_ulid for user_uuid %q", casdoorUserId)
+		slog.Warn("resolveCandidateId: empty user ULID from gmid", "casdoor_user_id", casdoorUserId)
+		return "", err
+	}
+
+	slog.Info("resolveCandidateId: found existing mapping in gmid", "casdoor_user_id", casdoorUserId, "candidate_id", resp.UserUlid)
+	return resp.UserUlid, nil
+}
+
+func clearTokenCookies(w http.ResponseWriter) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Expires:  time.Now().Add(-1 * time.Hour),
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+	})
+}
+
+// Logout handles POST /api/auth/logout.
+func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+	clearTokenCookies(w)
+	WriteJSON(w, http.StatusOK, BaseRsp{Code: 200, Msg: "logout success"})
+}
