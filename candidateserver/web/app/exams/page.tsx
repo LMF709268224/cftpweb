@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import { useTranslation } from "@/lib/useLanguage"
 import { Sidebar } from "@/components/sidebar"
 import { apiClient } from "@/lib/apiClient"
@@ -18,6 +19,7 @@ import {
   ExternalLink,
   Filter,
   History,
+  Loader2,
   Search,
   ShieldCheck,
 } from "lucide-react"
@@ -72,6 +74,11 @@ const hasAppointmentDetails = (exam: ExamItem) =>
   hasText(exam.appointment_start_time) ||
   hasText(exam.appointment_end_time)
 
+const canScheduleExam = (exam: ExamItem) => {
+  const status = normalizedExamStatus(exam.exam_status)
+  return Boolean(exam.exam_id && status && status.includes("OPEN"))
+}
+
 const tabs: Array<{ id: TabId; icon: React.ComponentType<{ className?: string }>; labelKey: keyof any }> = [
   { id: "current", icon: CalendarClock, labelKey: "currentTab" },
   { id: "history", icon: History, labelKey: "historyTab" },
@@ -90,6 +97,7 @@ export default function ExamsPage() {
   const { t } = useTranslation()
   const [activeTab, setActiveTab] = useState<TabId>("current")
   const [loading, setLoading] = useState(false)
+  const [scheduleLoadingExamId, setScheduleLoadingExamId] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [exams, setExams] = useState<ExamItem[]>([])
   const [total, setTotal] = useState(0)
@@ -114,6 +122,29 @@ export default function ExamsPage() {
       setTotal(0)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleScheduleExam = async (exam: ExamItem) => {
+    if (!exam.exam_id || scheduleLoadingExamId) return
+    setScheduleLoadingExamId(exam.exam_id)
+    try {
+      const termUrlBase = window.location.origin + "/exams"
+      const params = new URLSearchParams({
+        url_type: "schd",
+        term_url_base: termUrlBase,
+      })
+      const res = await apiClient(`/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-url?${params.toString()}`)
+      if (res?.url) {
+        toast.info(t.examsPage.scheduleRedirecting)
+        window.location.href = res.url
+      } else {
+        toast.error(t.examsPage.scheduleURLMissing)
+      }
+    } catch {
+      toast.error(t.examsPage.scheduleFailed)
+    } finally {
+      setScheduleLoadingExamId(null)
     }
   }
 
@@ -292,6 +323,20 @@ export default function ExamsPage() {
                           </div>
                         </div>
                         <div className="flex flex-wrap gap-2">
+                          {canScheduleExam(exam) && exam.exam_id && (
+                            <Button
+                              className="gap-2"
+                              disabled={scheduleLoadingExamId === exam.exam_id}
+                              onClick={() => void handleScheduleExam(exam)}
+                            >
+                              {scheduleLoadingExamId === exam.exam_id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <ExternalLink className="h-4 w-4" />
+                              )}
+                              {t.learning.actionScheduleExam}
+                            </Button>
+                          )}
                           {hasExamResult(exam) && exam.exam_id && (
                             <Button variant="outline" asChild>
                               <Link href={`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`}>

@@ -89,6 +89,7 @@ func (h *Handler) ApplyRetake(w http.ResponseWriter, r *http.Request) {
 // GetScheduleURL GET /api/exams/{examId}/schedule-url
 func (h *Handler) GetScheduleURL(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
+	examID := strings.TrimSpace(chi.URLParam(r, "examId"))
 	pipelineULID := strings.TrimSpace(r.URL.Query().Get("pipeline_ulid"))
 	courseULID := strings.TrimSpace(r.URL.Query().Get("course_ulid"))
 	termURLBase := strings.TrimSpace(r.URL.Query().Get("term_url_base"))
@@ -96,6 +97,24 @@ func (h *Handler) GetScheduleURL(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if pipelineULID == "" && courseULID == "" {
+		if !requireRequestFields(w, candidateID, "candidate_id", examID, "exam_id", termURLBase, "term_url_base") {
+			return
+		}
+		resp, err := h.Gexam.GetScheduleURL(r.Context(), &gexampb.GetURLRequest{
+			ExamId:      examID,
+			TermUrlBase: termURLBase,
+			UrlType:     examURLTypeForGexam(urlType),
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+
+		WriteJSON(w, http.StatusOK, GetScheduleURLRsp{URL: resp.GetUrl()})
+		return
+	}
+
 	if !requireRequestFields(w, candidateID, "candidate_id", pipelineULID, "pipeline_ulid", courseULID, "course_ulid", termURLBase, "term_url_base") {
 		return
 	}
@@ -167,7 +186,7 @@ func (h *Handler) TermUrlCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.Gprog.ExamUrlCallback(r.Context(), &gprog.ExamUrlCallbackReq{
+	resp, err := h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
 		ExamId:       examID,
 		UrlType:      input.URLType,
 		CallbackBody: input.CallbackBody,
@@ -214,8 +233,8 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &gexampb.ListExamsRequest{
-		Page:      page,
-		PageSize:  pageSize,
+		Page:     page,
+		PageSize: pageSize,
 	}
 	if status != "" {
 		req.Status = &status
@@ -293,10 +312,37 @@ func parseExamURLType(w http.ResponseWriter, raw string) (gprog.ExamURLType, boo
 		}
 	}
 	normalized := strings.ToUpper(strings.ReplaceAll(value, "-", "_"))
+	aliases := map[string]gprog.ExamURLType{
+		"SCHD":         gprog.ExamURLType_OFFLINE_SCHED,
+		"RESCHD":       gprog.ExamURLType_OFFLINE_RESCH,
+		"PROCTORSCH":   gprog.ExamURLType_ONLINE_SCHED,
+		"PROCTORRESCH": gprog.ExamURLType_ONLINE_RESCH,
+		"CANCEL":       gprog.ExamURLType_CANCEL,
+	}
+	if urlType, ok := aliases[normalized]; ok {
+		return urlType, true
+	}
 	enumValue, ok := gprog.ExamURLType_value[normalized]
 	if !ok || enumValue == int32(gprog.ExamURLType_EXAM_URL_TYPE_UNKNOWN) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "url_type is invalid")
 		return gprog.ExamURLType_EXAM_URL_TYPE_UNKNOWN, false
 	}
 	return gprog.ExamURLType(enumValue), true
+}
+
+func examURLTypeForGexam(urlType gprog.ExamURLType) string {
+	switch urlType {
+	case gprog.ExamURLType_OFFLINE_SCHED:
+		return "schd"
+	case gprog.ExamURLType_OFFLINE_RESCH:
+		return "reschd"
+	case gprog.ExamURLType_ONLINE_SCHED:
+		return "proctorsch"
+	case gprog.ExamURLType_ONLINE_RESCH:
+		return "proctorresch"
+	case gprog.ExamURLType_CANCEL:
+		return "cancel"
+	default:
+		return ""
+	}
 }
