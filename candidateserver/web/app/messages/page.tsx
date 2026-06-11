@@ -339,7 +339,7 @@ export default function MessagesPage() {
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold mb-2">
-              {selectedMessageDetail?.title || "系统通知"}
+              {selectedMessageDetail?.title || t.messagesPage.systemNotice}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               {selectedMessageDetail?.time}

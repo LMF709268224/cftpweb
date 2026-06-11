@@ -30,7 +30,7 @@ export const clearPendingMallPayment = () => {
 }
 
 export function PaymentReturnHandler() {
-  const { lang } = useTranslation()
+  const { t, lang } = useTranslation()
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -41,18 +41,7 @@ export function PaymentReturnHandler() {
     // The courses page has extra refresh/tab handling, so leave that route to its page-level handler.
     if (url.pathname === "/courses") return
 
-    const copy = {
-      purchaseSuccess: lang === "zh" ? "购买成功，课程列表已刷新。" : "Purchase successful. The course list has been refreshed.",
-      unlockSuccess: lang === "zh" ? "解锁成功，课程列表已刷新。" : "Unlock successful. The course list has been refreshed.",
-      cancelled: lang === "zh" ? "支付已取消，你可以稍后继续处理订单。" : "Payment cancelled. You can continue the order later.",
-      failed: lang === "zh" ? "支付失败，请稍后重试或联系管理员。" : "Payment failed. Please try again later or contact support.",
-      stillPending: lang === "zh"
-        ? "支付尚未完成，订单仍在处理中。请回到认证中心继续支付或重新检查状态。"
-        : "Payment is not complete yet. Go back to Certifications to continue payment or recheck the order.",
-      unknownReturn: lang === "zh"
-        ? "支付流程已返回，但没有收到支付结果。请回到认证中心重新检查订单状态。"
-        : "The payment flow returned without a result. Go back to Certifications and recheck the order status.",
-    }
+    const copy = t.paymentReturnHandler
 
     if (paymentStatus) {
       const paymentAction = url.searchParams.get("payment_action")
@@ -78,7 +67,7 @@ export function PaymentReturnHandler() {
         try {
           const pending = JSON.parse(pendingRaw) as PendingMallPayment
           if (!pending.pipelineId) {
-            toast.warning(copy.unknownReturn)
+            toast.warning(copy.unknownDesc)
             return
           }
 
@@ -87,12 +76,12 @@ export function PaymentReturnHandler() {
           if (blockers.some((blocker: EligibilityBlocker) => blocker?.blocker_type === "ALREADY_PURCHASED")) {
             toast.success(pending.action === "unlock" ? copy.unlockSuccess : copy.purchaseSuccess)
           } else if (blockers.some((blocker: EligibilityBlocker) => blocker?.blocker_type === "IN_PROGRESS_PURCHASE")) {
-            toast.warning(copy.stillPending)
+            toast.warning(copy.inProgressDesc)
           } else {
-            toast.warning(copy.unknownReturn)
+            toast.warning(copy.unknownDesc)
           }
         } catch {
-          toast.warning(copy.unknownReturn)
+          toast.warning(copy.unknownDesc)
         } finally {
           clearPendingMallPayment()
         }

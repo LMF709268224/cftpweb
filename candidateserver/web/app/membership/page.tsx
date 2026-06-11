@@ -62,9 +62,7 @@ export default function MembershipPage() {
       name: t.membership.levelsTitle.basic,
       englishName: t.membership.levelsEnglishName.basic,
       price: t.membership.priceFree,
-      features: lang === "zh" 
-        ? ["基础课程访问", "社区论坛参与", "月度通讯订阅"]
-        : ["Basic course access", "Community forum access", "Monthly newsletter"],
+      features: t.membership.basicBenefits,
       current: false,
     },
     {
@@ -72,9 +70,7 @@ export default function MembershipPage() {
       name: t.membership.levelsTitle.certified,
       englishName: t.membership.levelsEnglishName.certified,
       price: t.membership.priceYearly1999,
-      features: lang === "zh"
-        ? ["全部课程访问", "Webinar 录播", "资料下载", "CFtP 称号使用", "课程折扣 20%"]
-        : ["Full course access", "Webinar replays", "Material downloads", "CFtP Designation", "20% course discount"],
+      features: t.membership.certifiedBenefits,
       highlight: true,
     },
     {
@@ -82,9 +78,7 @@ export default function MembershipPage() {
       name: t.membership.levelsTitle.premium,
       englishName: t.membership.levelsEnglishName.premium,
       price: t.membership.priceYearly4999,
-      features: lang === "zh"
-        ? ["全部持证会员权益", "1对1 导师辅导", "线下活动优先", "企业培训折扣", "定制学习计划"]
-        : ["All certified benefits", "1-on-1 mentoring", "Priority offline events", "Corporate discount", "Custom study plan"],
+      features: t.membership.premiumBenefits,
       current: false,
     },
   ]

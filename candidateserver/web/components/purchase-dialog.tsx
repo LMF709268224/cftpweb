@@ -118,50 +118,7 @@ export function PurchaseDialog({
   const cannotContinue = Boolean(eligibility && !canPurchase && !canUnlock)
   const hasInProgressOrder = blockers.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE")
 
-  const copy = {
-    title: lang === "zh" ? "认证购买状态" : "Certification purchase status",
-    checking: lang === "zh" ? "正在检查你是否可以购买或解锁..." : "Checking whether you can buy or unlock this pipeline...",
-    canPurchaseTitle: lang === "zh" ? "可以购买认证" : "Ready to purchase",
-    canPurchaseDesc: lang === "zh" ? "你已满足购买条件，可以创建购买订单并查看价格。" : "You meet the requirements. Create an order to preview the price.",
-    canUnlockTitle: lang === "zh" ? "需要先解锁认证" : "Unlock required first",
-    canUnlockDesc: lang === "zh" ? "这个认证需要先解锁。解锁完成后，系统会重新检查，然后才可以购买认证。" : "This certification must be unlocked before purchase. After unlocking, we will check again before purchase.",
-    blockedTitle: lang === "zh" ? "暂时不能购买或解锁" : "Action unavailable",
-    blockedDesc: lang === "zh" ? "请先处理下面的阻塞原因。" : "Resolve the blockers below first.",
-    blockersTitle: lang === "zh" ? "阻塞原因" : "Blockers",
-    requiredItems: lang === "zh" ? "需要完成" : "Required",
-    missingQualification: lang === "zh" ? "缺少解锁资格" : "Missing unlock qualification",
-    alreadyPurchased: lang === "zh" ? "你已经购买过该认证" : "You have already purchased this certification",
-    inProgressPurchase: lang === "zh" ? "已有未完成的购买订单" : "Purchase already in progress",
-    inProgressPurchaseDesc: lang === "zh" ? "你已有未完成订单，可以继续查看价格并完成支付。" : "You have an unfinished order. Continue to review the price and complete payment.",
-    pipelineNotFound: lang === "zh" ? "该认证已不可用" : "This certification is no longer available",
-    unknownBlocker: lang === "zh" ? "暂时不能继续" : "Unable to continue",
-    createPurchaseOrder: lang === "zh" ? "创建购买订单" : "Create purchase order",
-    createUnlockOrder: lang === "zh" ? "创建解锁订单" : "Create unlock order",
-    refreshEligibility: lang === "zh" ? "重新检查状态" : "Recheck status",
-    pricePreviewTitle: lang === "zh" ? "价格预览" : "Price preview",
-    pricePreviewFailed: lang === "zh" ? "暂时无法获取价格预览，请稍后重试。价格未确认前不能发起支付。" : "Price preview is temporarily unavailable. Payment cannot be started until the price is confirmed.",
-    retryPreview: lang === "zh" ? "重新获取价格" : "Retry price preview",
-    orderCreated: lang === "zh" ? "订单已创建" : "Order created",
-    activeOrder: lang === "zh" ? "未完成订单" : "Unfinished order",
-    unlockCompleted: lang === "zh" ? "解锁已完成，请重新检查购买状态。" : "Unlock completed. Recheck purchase status.",
-    subtotal: lang === "zh" ? "原价" : "Subtotal",
-    discount: lang === "zh" ? "优惠" : "Discount",
-    tax: lang === "zh" ? "税费" : "Tax",
-    total: lang === "zh" ? "应付合计" : "Total due",
-    stripe: lang === "zh" ? "Stripe 在线支付" : "Stripe online payment",
-    bank: lang === "zh" ? "银行转账" : "Bank transfer",
-    payNow: lang === "zh" ? "去支付" : "Pay now",
-    embeddedCheckoutTitle: lang === "zh" ? "请在下方完成支付" : "Complete payment below",
-    embeddedCheckoutDesc: lang === "zh" ? "支付会话已创建。支付完成后，Stripe 会返回认证中心并刷新订单状态。" : "The payment session is ready. After payment, Stripe will return you to Certifications and refresh the order status.",
-    embeddedCheckoutLoading: lang === "zh" ? "正在加载 Stripe 支付组件..." : "Loading Stripe checkout...",
-    stripePublishableKeyMissing: lang === "zh" ? "缺少 Stripe Publishable Key，请配置 STRIPE_PUBLISHABLE_KEY。" : "Missing Stripe publishable key. Configure STRIPE_PUBLISHABLE_KEY.",
-    stripeEmbeddedFailed: lang === "zh" ? "支付组件加载失败，请刷新后重试。" : "Failed to load the payment component. Please refresh and try again.",
-    paymentSessionFailed: lang === "zh" ? "支付会话创建失败，请稍后重试。" : "Payment session could not be created. Please try again later.",
-    unsupportedPaymentKey: lang === "zh" ? "暂不支持的支付凭证类型，请稍后重试。" : "Unsupported payment credential type. Please try again later.",
-    purchaseCompleted: lang === "zh" ? "购买成功，认证已开通。" : "Purchase successful. The certification is now active.",
-    purchaseFailed: lang === "zh" ? "购买失败，请稍后重试或联系管理员。" : "Purchase failed. Please try again later or contact support.",
-    unlockFailed: lang === "zh" ? "解锁失败，请稍后重试或联系管理员。" : "Unlock failed. Please try again later or contact support.",
-  }
+  const copy = t.purchaseDialog
 
   const blockerTitle = (blocker: EligibilityBlocker) => {
     if (blocker.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return copy.missingQualification

@@ -16,36 +16,39 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { statusBadgeClassFromTone } from "@cftpweb/shared"
+import { useTranslation } from "@/lib/useLanguage"
 
 type RecordItem = {
   id: string
   title: string
   institution: string
   date: string
-  status: keyof typeof statusConfig
+  status: keyof ReturnType<typeof getStatusConfig>
 }
 
 const records: RecordItem[] = []
 
-const statusConfig = {
+const getStatusConfig = (t: any) => ({
   verified: {
-    label: "已认证",
+    label: t.recordsPage.verified,
     icon: CheckCircle2,
     tone: "success" as const,
   },
   pending: {
-    label: "审核中",
+    label: t.recordsPage.pending,
     icon: Clock,
     tone: "warning" as const,
   },
   rejected: {
-    label: "已驳回",
+    label: t.recordsPage.rejected,
     icon: AlertCircle,
     tone: "danger" as const,
   },
-}
+})
 
 export default function RecordsPage() {
+  const { t } = useTranslation()
+  const statusConfig = getStatusConfig(t)
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -55,12 +58,12 @@ export default function RecordsPage() {
           {/* Header */}
           <div className="mb-8 flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground">档案中心</h1>
-              <p className="mt-1 text-muted-foreground">管理您的学历、证书和工作经历档案</p>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">{t.recordsPage.title}</h1>
+              <p className="mt-1 text-muted-foreground">{t.recordsPage.subtitle}</p>
             </div>
             <Button className="gap-2" disabled>
               <Plus className="h-4 w-4" />
-              上传新档案
+              {t.recordsPage.uploadNew}
             </Button>
           </div>
 
@@ -101,7 +104,7 @@ export default function RecordsPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                 <GraduationCap className="h-4 w-4 text-primary" />
               </div>
-              <h2 className="font-semibold text-card-foreground">我的档案</h2>
+              <h2 className="font-semibold text-card-foreground">{t.recordsPage.myRecords}</h2>
             </div>
             
             {records.length === 0 ? (
@@ -109,9 +112,9 @@ export default function RecordsPage() {
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
                   <FileText className="h-7 w-7 text-muted-foreground" />
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-foreground">暂无档案记录</h3>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">{t.recordsPage.noRecords}</h3>
                 <p className="max-w-md text-sm text-muted-foreground">
-                  档案上传和审核接口接入后，这里会展示真实的学历、证书和工作经历记录。
+                  {t.recordsPage.noRecordsDesc}
                 </p>
               </div>
             ) : (

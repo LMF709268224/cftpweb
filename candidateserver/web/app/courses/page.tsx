@@ -115,12 +115,7 @@ export default function CoursesPage() {
     const paymentAction = url.searchParams.get("payment_action")
     const purchasedPipelineId = url.searchParams.get("pipeline_id")
     const isUnlock = paymentAction === "unlock"
-    const copy = {
-      purchaseSuccess: lang === "zh" ? "购买成功，课程列表已刷新。" : "Purchase successful. The course list has been refreshed.",
-      unlockSuccess: lang === "zh" ? "解锁成功，课程列表已刷新。" : "Unlock successful. The course list has been refreshed.",
-      cancelled: lang === "zh" ? "支付已取消，你可以稍后继续处理订单。" : "Payment cancelled. You can continue the order later.",
-      failed: lang === "zh" ? "支付失败，请稍后重试或联系管理员。" : "Payment failed. Please try again later or contact support.",
-    }
+    const copy = t.paymentReturnHandler
 
     if (paymentStatus === "success") {
       toast.success(isUnlock ? copy.unlockSuccess : copy.purchaseSuccess)
@@ -226,7 +221,7 @@ export default function CoursesPage() {
     }
 
     fetchData()
-  }, [activeTab, refreshKey])
+  }, [activeTab, refreshKey, lang])
 
   const tabs = [
     { id: "all", label: t.courses.tabs.all },
@@ -344,7 +339,7 @@ export default function CoursesPage() {
               {loading && myCourses.length === 0 && (
                 <div className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-12 text-muted-foreground">
                   <Clock className="h-5 w-5 animate-spin" />
-                  <span>{lang === "zh" ? "正在刷新我的认证..." : "Refreshing my certifications..."}</span>
+                  <span>{t.common.loading}</span>
                 </div>
               )}
 

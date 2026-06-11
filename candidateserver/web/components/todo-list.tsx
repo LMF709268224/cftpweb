@@ -53,13 +53,13 @@ export function TodoList({ items, className }: TodoListProps) {
           <h3 className="font-semibold text-card-foreground">{t.home.pendingTasks}</h3>
         </div>
         <Badge variant="secondary" className="bg-amber-500/10 text-amber-700 hover:bg-amber-500/20">
-          {items.length} {lang === "zh" ? "项" : "Items"}
+          {items.length} {t.todoList.items}
         </Badge>
       </div>
       <div className="divide-y divide-border">
         {items.length === 0 ? (
           <div className="px-6 py-10 text-center text-sm text-muted-foreground">
-            {lang === "zh" ? "暂无待处理事项" : "No pending tasks"}
+            {t.todoList.noPendingTasks}
           </div>
         ) : items.map((item) => {
           const Icon = iconMap[item.icon]
