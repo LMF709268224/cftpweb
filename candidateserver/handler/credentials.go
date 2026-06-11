@@ -17,7 +17,20 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, res)
+	details := make([]*gcredspb.CredentialDefinition, 0, len(res.Definitions))
+	for _, def := range res.Definitions {
+		detailReq := &gcredspb.GetCredentialDefinitionDetailRequest{
+			CredDefId: def.CredDefId,
+		}
+		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
+		if err == nil && detailRes != nil {
+			details = append(details, detailRes)
+		}
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"definitions": details,
+	})
 }
 
 // ListCandidateApplications GET /api/credentials/applications

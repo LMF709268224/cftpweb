@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	github.com/afnandelfin620-star/cftptest v0.0.0-20260611004315-c9602bf78373 // indirect
 	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect

@@ -106,7 +106,7 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		}
 
 		// 验证是否是管理员
-		if !claims.User.IsAdmin {
+		if !handler.IsCftpAdmin(&claims.User) {
 			slog.Warn("authMiddleware: user is not an admin", "casdoor_user_id", claims.User.Id)
 			handler.WriteError(w, http.StatusForbidden, handler.ErrUnauthorized, "admin privileges required")
 			return

@@ -332,7 +332,7 @@ export default function CredentialsPage() {
             </div>
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => setIsApplyOpen(false)}>{t.common.cancel}</Button>
-              <Button onClick={handleSubmitApplication} disabled={isSubmitting}>
+              <Button onClick={handleSubmitApplication} disabled={isSubmitting || !(selectedDef?.file_constraints?.every((c: any) => !c.is_required || uploadedFiles[c.name]) && selectedDef?.file_constraints?.length > 0)}>
                 {isSubmitting ? t.credentialsPage.submitting : t.credentialsPage.submitApplication}
               </Button>
             </div>

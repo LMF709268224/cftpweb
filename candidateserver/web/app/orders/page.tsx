@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useState } from "react"
 
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import { useTranslation } from "@/lib/useLanguage"
 import { statusBadgeClassForStatusValue } from "@cftpweb/shared"
+import { apiClient } from "@/lib/apiClient"
 
 type OrderItem = {
   id: string
@@ -23,8 +24,6 @@ type OrderItem = {
   status: keyof typeof statusConfig
   paymentMethod: string
 }
-
-const orders: OrderItem[] = []
 
 const statusConfig = {
   completed: {
@@ -42,14 +41,60 @@ const statusConfig = {
     icon: Package,
     statusValue: "PROCESSING",
   },
+  cancelled: {
+    labelKey: "statusCancelled",
+    icon: Package,
+    statusValue: "CANCEL",
+  },
 } as const
+
+type BackendOrderListRsp = {
+  total_orders: number
+  completed: number
+  total_amount: number
+  orders: {
+    order_id: string
+    product_name: string
+    status: string
+    created_at: string
+    payment_method: string
+    amount: number
+  }[]
+}
 
 export default function OrdersPage() {
   const { t } = useTranslation()
-  const totalSpent = orders.reduce((sum, order) => {
-    const amount = parseFloat(order.amount.replace(/[¥,]/g, ""))
-    return sum + amount
-  }, 0)
+  const [orders, setOrders] = useState<OrderItem[]>([])
+  const [totalSpent, setTotalSpent] = useState(0)
+  const [completedCount, setCompletedCount] = useState(0)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const res: BackendOrderListRsp = await apiClient("/api/orders")
+        setTotalSpent(res.total_amount || 0)
+        setCompletedCount(res.completed || 0)
+        
+        if (res.orders && Array.isArray(res.orders)) {
+          const mappedOrders: OrderItem[] = res.orders.map((o) => ({
+            id: o.order_id,
+            items: [o.product_name],
+            date: o.created_at,
+            amount: o.amount > 0 ? `¥${o.amount.toLocaleString()}` : "-",
+            status: (o.status in statusConfig ? o.status : "pending") as keyof typeof statusConfig,
+            paymentMethod: o.payment_method,
+          }))
+          setOrders(mappedOrders)
+        }
+      } catch (err) {
+        console.error("Failed to fetch orders:", err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchOrders()
+  }, [])
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,7 +125,7 @@ export default function OrdersPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-card-foreground">
-                  {orders.filter((o) => o.status === "completed").length}
+                  {completedCount}
                 </p>
                 <p className="text-sm text-muted-foreground">{t.orders.completed}</p>
               </div>
@@ -107,7 +152,12 @@ export default function OrdersPage() {
               <h2 className="font-semibold text-card-foreground">{t.orders.orderHistory}</h2>
             </div>
             
-            {orders.length === 0 ? (
+            {loading ? (
+              <div className="flex items-center justify-center py-20 text-muted-foreground">
+                <Clock className="mr-2 h-5 w-5 animate-spin" />
+                加载中...
+              </div>
+            ) : orders.length === 0 ? (
               <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
                 <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
                   <Package className="h-7 w-7 text-muted-foreground" />
@@ -122,7 +172,7 @@ export default function OrdersPage() {
             ) : (
               <div className="divide-y divide-border">
                 {orders.map((order) => {
-                const config = statusConfig[order.status as keyof typeof statusConfig]
+                const config = statusConfig[order.status as keyof typeof statusConfig] || statusConfig.pending
                 return (
                   <div
                     key={order.id}
@@ -137,18 +187,18 @@ export default function OrdersPage() {
                           <h3 className="font-medium text-card-foreground">
                             {order.items.join(", ")}
                           </h3>
-                          <Badge className={statusBadgeClassForStatusValue(config.statusValue)}>
-                            {t.orders[config.labelKey]}
-                          </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {order.id} · {order.date} · {order.paymentMethod}
+                          {order.date}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <p className="font-semibold text-card-foreground">{order.amount}</p>
+                    <div className="flex items-center gap-6">
+                      <Badge className={statusBadgeClassForStatusValue(config.statusValue)}>
+                        {(t.orders as any)[config.labelKey] || order.status}
+                      </Badge>
+                      <div className="text-right min-w-[80px]">
+                        <p className="font-semibold text-lg text-card-foreground">{order.amount}</p>
                       </div>
                       <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
                     </div>

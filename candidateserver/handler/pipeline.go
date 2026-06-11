@@ -295,9 +295,37 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	quizProgress := h.quizProgressByCourse(r, candidateID, resp.GetCompleteCourse())
+	completeCourse := resp.GetCompleteCourse()
+
+	if len(completeCourse.GetMaterials()) == 0 {
+		matResp, err := h.Lms.ListCourseMaterials(r.Context(), &lmspb.ListCourseMaterialsCandidateRequest{
+			CandidateId: candidateID,
+			CourseId:    courseID,
+		})
+		if err == nil && matResp != nil {
+			var materials []*lmspb.CourseMaterial
+			for _, summary := range matResp.GetMaterials() {
+				materials = append(materials, &lmspb.CourseMaterial{
+					MaterialId:    summary.GetMaterialId(),
+					CourseId:      summary.GetCourseId(),
+					Title:         summary.GetTitle(),
+					MaterialType:  summary.GetMaterialType(),
+					FileObjectKey: summary.GetFileObjectKey(),
+					FileSize:      summary.GetFileSize(),
+					SortOrder:     summary.GetSortOrder(),
+					Version:       summary.GetVersion(),
+					CreatedAt:     summary.GetCreatedAt(),
+					UpdatedAt:     summary.GetUpdatedAt(),
+					FileHash:      summary.GetFileHash(),
+				})
+			}
+			completeCourse.Materials = materials
+		}
+	}
+
+	quizProgress := h.quizProgressByCourse(r, candidateID, completeCourse)
 	WriteJSON(w, http.StatusOK, PipelineCourseRsp{
-		CompleteCourse: resp.GetCompleteCourse(),
+		CompleteCourse: completeCourse,
 		QuizProgress:   quizProgress,
 	})
 }

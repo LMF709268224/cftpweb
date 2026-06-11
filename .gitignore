@@ -16,6 +16,7 @@ build/
 *.swp
 *.swo
 *.tsbuildinfo
+*.exe
 ztest/
 CLAUDE.md
 deployment/

@@ -79,8 +79,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !claims.User.IsAdmin {
-		WriteError(w, http.StatusForbidden, ErrAuthFailed, "only admins are allowed to login")
+	if !IsCftpAdmin(&claims.User) {
+		WriteError(w, http.StatusForbidden, ErrAuthFailed, "only cftp admins are allowed to login")
 		return
 	}
 
@@ -122,8 +122,8 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !claims.User.IsAdmin {
-		WriteError(w, http.StatusForbidden, ErrAuthFailed, "only admins are allowed to login")
+	if !IsCftpAdmin(&claims.User) {
+		WriteError(w, http.StatusForbidden, ErrAuthFailed, "only cftp admins are allowed to login")
 		return
 	}
 
@@ -164,4 +164,16 @@ func clearTokenCookies(w http.ResponseWriter) {
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	clearTokenCookies(w)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 200, Msg: "logout success"})
+}
+
+func IsCftpAdmin(user *casdoorsdk.User) bool {
+	if user == nil {
+		return false
+	}
+	for _, role := range user.Roles {
+		if role.Name == "role_admin" {
+			return true
+		}
+	}
+	return false
 }
