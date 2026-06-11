@@ -111,6 +111,12 @@ export default function ExamsPage() {
   }, [searchParams, t.examsPage.scheduleReturnToast])
 
   const loadExams = async (tab = activeTab, keyword = search) => {
+    if (tab === "exemption" || tab === "records") {
+      setExams([])
+      setTotal(0)
+      return
+    }
+
     setLoading(true)
     try {
       const params = new URLSearchParams()
@@ -145,7 +151,7 @@ export default function ExamsPage() {
       const res = await apiClient(`/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-url?${params.toString()}`)
       if (res?.url) {
         toast.info(t.examsPage.scheduleRedirecting)
-        window.location.href = res.url
+        window.open(res.url, "_blank", "noopener,noreferrer")
       } else {
         toast.error(t.examsPage.scheduleURLMissing)
       }
