@@ -2822,7 +2822,7 @@ export default function LmsCoursesPage() {
                         {selectedLessonId && (
                           <div className="border-t pt-4">
                             <QuizManager 
-                              quizzableType={3} 
+                              quizzableType={1} 
                               quizzableId={selectedLessonId} 
                               disabled={selectedCoursePublished} 
                               apiClient={apiClient} 
@@ -2856,7 +2856,7 @@ export default function LmsCoursesPage() {
               <div className="rounded-lg border bg-card">
                 <div className="p-4">
                   <QuizManager 
-                    quizzableType={1} 
+                    quizzableType={3} 
                     quizzableId={selectedCourse.course_id} 
                     disabled={selectedCoursePublished} 
                     apiClient={apiClient} 
