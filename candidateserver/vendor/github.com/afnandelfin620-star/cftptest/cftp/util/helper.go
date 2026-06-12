@@ -13,6 +13,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"time"
+	gmid "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 
 	"github.com/oklog/ulid/v2"
 	"google.golang.org/grpc"
@@ -219,4 +220,18 @@ func isClientOrExpectedGrpcCode(code codes.Code) bool {
 	default:
 		return false
 	}
+}
+
+// IsTesterCandidate checks if a candidate is a tester via the gmid service.
+func IsTesterCandidate(ctx context.Context, client gmid.MidServiceClient, candidateULID string) (bool, error) {
+	if candidateULID == "" {
+		return false, nil
+	}
+	resp, err := client.CheckTesterStatus(ctx, &gmid.CheckTesterStatusRequest{
+		CandidateUlid: candidateULID,
+	})
+	if err != nil {
+		return false, WrapGrpcError("gmid", err)
+	}
+	return resp.GetIsTester(), nil
 }

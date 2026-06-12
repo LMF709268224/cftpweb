@@ -17,7 +17,7 @@ import (
 // ListPipelines  GET /api/mall/pipelines
 func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.ListPipelines(r.Context(), &gccpb.ListPipelinesRequest{
-		OnlyCurrent: true,
+		CandidateUlid: CandidateID(r),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

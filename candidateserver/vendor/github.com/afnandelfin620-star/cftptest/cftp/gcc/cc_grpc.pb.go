@@ -23,12 +23,14 @@ const (
 	CCService_CreatePipelineDraft_FullMethodName         = "/gcc.CCService/CreatePipelineDraft"
 	CCService_UpdatePipelineStructure_FullMethodName     = "/gcc.CCService/UpdatePipelineStructure"
 	CCService_PublishPipeline_FullMethodName             = "/gcc.CCService/PublishPipeline"
+	CCService_DeprecatePipeline_FullMethodName           = "/gcc.CCService/DeprecatePipeline"
 	CCService_DeletePipeline_FullMethodName              = "/gcc.CCService/DeletePipeline"
 	CCService_UpdatePipelineMetadata_FullMethodName      = "/gcc.CCService/UpdatePipelineMetadata"
 	CCService_GetPipeline_FullMethodName                 = "/gcc.CCService/GetPipeline"
 	CCService_GetPipelineDetail_FullMethodName           = "/gcc.CCService/GetPipelineDetail"
 	CCService_GetPipelineFinalEligibility_FullMethodName = "/gcc.CCService/GetPipelineFinalEligibility"
 	CCService_ListPipelines_FullMethodName               = "/gcc.CCService/ListPipelines"
+	CCService_ListPipelinesAdmin_FullMethodName          = "/gcc.CCService/ListPipelinesAdmin"
 	CCService_ListStages_FullMethodName                  = "/gcc.CCService/ListStages"
 	CCService_GetStageDetail_FullMethodName              = "/gcc.CCService/GetStageDetail"
 	CCService_ListUnits_FullMethodName                   = "/gcc.CCService/ListUnits"
@@ -47,6 +49,8 @@ type CCServiceClient interface {
 	UpdatePipelineStructure(ctx context.Context, in *UpdatePipelineStructureRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
 	// 发布新版本 (全量锁定快照，is_current 置为 1，版本号 +1)
 	PublishPipeline(ctx context.Context, in *PublishPipelineRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
+	// 废弃管线 (仅限 Active 状态，将其置为 Deprecated 以停止购买)
+	DeprecatePipeline(ctx context.Context, in *DeprecatePipelineRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 删除管线草稿 (仅限草稿态)
 	DeletePipeline(ctx context.Context, in *DeletePipelineRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// 更新描述性信息 (实时生效，不产生新版本)
@@ -55,6 +59,7 @@ type CCServiceClient interface {
 	GetPipelineDetail(ctx context.Context, in *GetPipelineDetailRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
 	GetPipelineFinalEligibility(ctx context.Context, in *GetPipelineFinalEligibilityRequest, opts ...grpc.CallOption) (*GetPipelineFinalEligibilityResponse, error)
 	ListPipelines(ctx context.Context, in *ListPipelinesRequest, opts ...grpc.CallOption) (*ListPipelinesResponse, error)
+	ListPipelinesAdmin(ctx context.Context, in *ListPipelinesAdminRequest, opts ...grpc.CallOption) (*ListPipelinesResponse, error)
 	ListStages(ctx context.Context, in *ListStagesRequest, opts ...grpc.CallOption) (*ListStagesResponse, error)
 	GetStageDetail(ctx context.Context, in *GetStageDetailRequest, opts ...grpc.CallOption) (*StageConfig, error)
 	ListUnits(ctx context.Context, in *ListUnitsRequest, opts ...grpc.CallOption) (*ListUnitsResponse, error)
@@ -96,6 +101,16 @@ func (c *cCServiceClient) PublishPipeline(ctx context.Context, in *PublishPipeli
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PipelineConfig)
 	err := c.cc.Invoke(ctx, CCService_PublishPipeline_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cCServiceClient) DeprecatePipeline(ctx context.Context, in *DeprecatePipelineRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, CCService_DeprecatePipeline_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +171,16 @@ func (c *cCServiceClient) ListPipelines(ctx context.Context, in *ListPipelinesRe
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListPipelinesResponse)
 	err := c.cc.Invoke(ctx, CCService_ListPipelines_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cCServiceClient) ListPipelinesAdmin(ctx context.Context, in *ListPipelinesAdminRequest, opts ...grpc.CallOption) (*ListPipelinesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListPipelinesResponse)
+	err := c.cc.Invoke(ctx, CCService_ListPipelinesAdmin_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -232,6 +257,8 @@ type CCServiceServer interface {
 	UpdatePipelineStructure(context.Context, *UpdatePipelineStructureRequest) (*PipelineConfig, error)
 	// 发布新版本 (全量锁定快照，is_current 置为 1，版本号 +1)
 	PublishPipeline(context.Context, *PublishPipelineRequest) (*PipelineConfig, error)
+	// 废弃管线 (仅限 Active 状态，将其置为 Deprecated 以停止购买)
+	DeprecatePipeline(context.Context, *DeprecatePipelineRequest) (*emptypb.Empty, error)
 	// 删除管线草稿 (仅限草稿态)
 	DeletePipeline(context.Context, *DeletePipelineRequest) (*emptypb.Empty, error)
 	// 更新描述性信息 (实时生效，不产生新版本)
@@ -240,6 +267,7 @@ type CCServiceServer interface {
 	GetPipelineDetail(context.Context, *GetPipelineDetailRequest) (*PipelineConfig, error)
 	GetPipelineFinalEligibility(context.Context, *GetPipelineFinalEligibilityRequest) (*GetPipelineFinalEligibilityResponse, error)
 	ListPipelines(context.Context, *ListPipelinesRequest) (*ListPipelinesResponse, error)
+	ListPipelinesAdmin(context.Context, *ListPipelinesAdminRequest) (*ListPipelinesResponse, error)
 	ListStages(context.Context, *ListStagesRequest) (*ListStagesResponse, error)
 	GetStageDetail(context.Context, *GetStageDetailRequest) (*StageConfig, error)
 	ListUnits(context.Context, *ListUnitsRequest) (*ListUnitsResponse, error)
@@ -266,6 +294,9 @@ func (UnimplementedCCServiceServer) UpdatePipelineStructure(context.Context, *Up
 func (UnimplementedCCServiceServer) PublishPipeline(context.Context, *PublishPipelineRequest) (*PipelineConfig, error) {
 	return nil, status.Error(codes.Unimplemented, "method PublishPipeline not implemented")
 }
+func (UnimplementedCCServiceServer) DeprecatePipeline(context.Context, *DeprecatePipelineRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeprecatePipeline not implemented")
+}
 func (UnimplementedCCServiceServer) DeletePipeline(context.Context, *DeletePipelineRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeletePipeline not implemented")
 }
@@ -283,6 +314,9 @@ func (UnimplementedCCServiceServer) GetPipelineFinalEligibility(context.Context,
 }
 func (UnimplementedCCServiceServer) ListPipelines(context.Context, *ListPipelinesRequest) (*ListPipelinesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListPipelines not implemented")
+}
+func (UnimplementedCCServiceServer) ListPipelinesAdmin(context.Context, *ListPipelinesAdminRequest) (*ListPipelinesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListPipelinesAdmin not implemented")
 }
 func (UnimplementedCCServiceServer) ListStages(context.Context, *ListStagesRequest) (*ListStagesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListStages not implemented")
@@ -373,6 +407,24 @@ func _CCService_PublishPipeline_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CCServiceServer).PublishPipeline(ctx, req.(*PublishPipelineRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CCService_DeprecatePipeline_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeprecatePipelineRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCServiceServer).DeprecatePipeline(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCService_DeprecatePipeline_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCServiceServer).DeprecatePipeline(ctx, req.(*DeprecatePipelineRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -481,6 +533,24 @@ func _CCService_ListPipelines_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CCServiceServer).ListPipelines(ctx, req.(*ListPipelinesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CCService_ListPipelinesAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListPipelinesAdminRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCServiceServer).ListPipelinesAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCService_ListPipelinesAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCServiceServer).ListPipelinesAdmin(ctx, req.(*ListPipelinesAdminRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -613,6 +683,10 @@ var CCService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _CCService_PublishPipeline_Handler,
 		},
 		{
+			MethodName: "DeprecatePipeline",
+			Handler:    _CCService_DeprecatePipeline_Handler,
+		},
+		{
 			MethodName: "DeletePipeline",
 			Handler:    _CCService_DeletePipeline_Handler,
 		},
@@ -635,6 +709,10 @@ var CCService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListPipelines",
 			Handler:    _CCService_ListPipelines_Handler,
+		},
+		{
+			MethodName: "ListPipelinesAdmin",
+			Handler:    _CCService_ListPipelinesAdmin_Handler,
 		},
 		{
 			MethodName: "ListStages",

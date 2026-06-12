@@ -24,6 +24,7 @@ const (
 	MidService_GetFullIds_FullMethodName         = "/gmid.MidService/GetFullIds"
 	MidService_GetStudentNoByUlid_FullMethodName = "/gmid.MidService/GetStudentNoByUlid"
 	MidService_FetchCandidateInfo_FullMethodName = "/gmid.MidService/FetchCandidateInfo"
+	MidService_CheckTesterStatus_FullMethodName  = "/gmid.MidService/CheckTesterStatus"
 )
 
 // MidServiceClient is the client API for MidService service.
@@ -40,6 +41,8 @@ type MidServiceClient interface {
 	GetStudentNoByUlid(ctx context.Context, in *GetStudentNoByUlidRequest, opts ...grpc.CallOption) (*GetStudentNoByUlidResponse, error)
 	// 获取候选人（用户）基础信息
 	FetchCandidateInfo(ctx context.Context, in *FetchCandidateInfoRequest, opts ...grpc.CallOption) (*FetchCandidateInfoResponse, error)
+	// 检查是否为测试账号 (包含角色 'tester-pipeline')
+	CheckTesterStatus(ctx context.Context, in *CheckTesterStatusRequest, opts ...grpc.CallOption) (*CheckTesterStatusResponse, error)
 }
 
 type midServiceClient struct {
@@ -100,6 +103,16 @@ func (c *midServiceClient) FetchCandidateInfo(ctx context.Context, in *FetchCand
 	return out, nil
 }
 
+func (c *midServiceClient) CheckTesterStatus(ctx context.Context, in *CheckTesterStatusRequest, opts ...grpc.CallOption) (*CheckTesterStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckTesterStatusResponse)
+	err := c.cc.Invoke(ctx, MidService_CheckTesterStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MidServiceServer is the server API for MidService service.
 // All implementations must embed UnimplementedMidServiceServer
 // for forward compatibility.
@@ -114,6 +127,8 @@ type MidServiceServer interface {
 	GetStudentNoByUlid(context.Context, *GetStudentNoByUlidRequest) (*GetStudentNoByUlidResponse, error)
 	// 获取候选人（用户）基础信息
 	FetchCandidateInfo(context.Context, *FetchCandidateInfoRequest) (*FetchCandidateInfoResponse, error)
+	// 检查是否为测试账号 (包含角色 'tester-pipeline')
+	CheckTesterStatus(context.Context, *CheckTesterStatusRequest) (*CheckTesterStatusResponse, error)
 	mustEmbedUnimplementedMidServiceServer()
 }
 
@@ -138,6 +153,9 @@ func (UnimplementedMidServiceServer) GetStudentNoByUlid(context.Context, *GetStu
 }
 func (UnimplementedMidServiceServer) FetchCandidateInfo(context.Context, *FetchCandidateInfoRequest) (*FetchCandidateInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method FetchCandidateInfo not implemented")
+}
+func (UnimplementedMidServiceServer) CheckTesterStatus(context.Context, *CheckTesterStatusRequest) (*CheckTesterStatusResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckTesterStatus not implemented")
 }
 func (UnimplementedMidServiceServer) mustEmbedUnimplementedMidServiceServer() {}
 func (UnimplementedMidServiceServer) testEmbeddedByValue()                    {}
@@ -250,6 +268,24 @@ func _MidService_FetchCandidateInfo_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MidService_CheckTesterStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckTesterStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MidServiceServer).CheckTesterStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MidService_CheckTesterStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MidServiceServer).CheckTesterStatus(ctx, req.(*CheckTesterStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MidService_ServiceDesc is the grpc.ServiceDesc for MidService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -276,6 +312,10 @@ var MidService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FetchCandidateInfo",
 			Handler:    _MidService_FetchCandidateInfo_Handler,
+		},
+		{
+			MethodName: "CheckTesterStatus",
+			Handler:    _MidService_CheckTesterStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

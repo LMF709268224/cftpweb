@@ -45,6 +45,8 @@ type CreateExamRequest struct {
 	CandidateCity       string `protobuf:"bytes,18,opt,name=candidate_city,json=candidateCity,proto3" json:"candidate_city,omitempty"`                     // [required] 考生城市
 	CandidateAddress    string `protobuf:"bytes,19,opt,name=candidate_address,json=candidateAddress,proto3" json:"candidate_address,omitempty"`            // [required] 考生地址
 	CandidatePostalCode string `protobuf:"bytes,20,opt,name=candidate_postal_code,json=candidatePostalCode,proto3" json:"candidate_postal_code,omitempty"` // [required] 考生邮编
+	PipelineUlid        string `protobuf:"bytes,21,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`                        // [optional] 所属 pipeline 实例 ULID
+	CertificationName   string `protobuf:"bytes,22,opt,name=certification_name,json=certificationName,proto3" json:"certification_name,omitempty"`         // [optional] 项目/认证名称
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -215,6 +217,20 @@ func (x *CreateExamRequest) GetCandidateAddress() string {
 func (x *CreateExamRequest) GetCandidatePostalCode() string {
 	if x != nil {
 		return x.CandidatePostalCode
+	}
+	return ""
+}
+
+func (x *CreateExamRequest) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *CreateExamRequest) GetCertificationName() string {
+	if x != nil {
+		return x.CertificationName
 	}
 	return ""
 }
@@ -1238,6 +1254,8 @@ type ExamDetail struct {
 	Version              uint32 `protobuf:"varint,43,opt,name=version,proto3" json:"version,omitempty"`
 	CreatedAt            string `protobuf:"bytes,44,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt            string `protobuf:"bytes,45,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	PipelineUlid         string `protobuf:"bytes,46,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`
+	CertificationName    string `protobuf:"bytes,47,opt,name=certification_name,json=certificationName,proto3" json:"certification_name,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -1583,6 +1601,20 @@ func (x *ExamDetail) GetCreatedAt() string {
 func (x *ExamDetail) GetUpdatedAt() string {
 	if x != nil {
 		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetPipelineUlid() string {
+	if x != nil {
+		return x.PipelineUlid
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetCertificationName() string {
+	if x != nil {
+		return x.CertificationName
 	}
 	return ""
 }
@@ -2536,7 +2568,7 @@ var File_exam_proto protoreflect.FileDescriptor
 const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"exam.proto\x12\x05gexam\"\xde\x06\n" +
+	"exam.proto\x12\x05gexam\"\xb2\a\n" +
 	"\x11CreateExamRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12#\n" +
 	"\rbusiness_unit\x18\x02 \x01(\tR\fbusinessUnit\x12(\n" +
@@ -2558,7 +2590,9 @@ const file_exam_proto_rawDesc = "" +
 	"\x12candidate_province\x18\x11 \x01(\tR\x11candidateProvince\x12%\n" +
 	"\x0ecandidate_city\x18\x12 \x01(\tR\rcandidateCity\x12+\n" +
 	"\x11candidate_address\x18\x13 \x01(\tR\x10candidateAddress\x122\n" +
-	"\x15candidate_postal_code\x18\x14 \x01(\tR\x13candidatePostalCode\")\n" +
+	"\x15candidate_postal_code\x18\x14 \x01(\tR\x13candidatePostalCode\x12#\n" +
+	"\rpipeline_ulid\x18\x15 \x01(\tR\fpipelineUlid\x12-\n" +
+	"\x12certification_name\x18\x16 \x01(\tR\x11certificationName\")\n" +
 	"\x0eGetExamRequest\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\"g\n" +
 	"\rGetURLRequest\x12\x17\n" +
@@ -2642,7 +2676,7 @@ const file_exam_proto_rawDesc = "" +
 	"\x11_course_unit_ulid\"P\n" +
 	"\x11ListExamsResponse\x12%\n" +
 	"\x05exams\x18\x01 \x03(\v2\x0f.gexam.ExamInfoR\x05exams\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\rR\x05total\"\xbd\x0e\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"\x91\x0f\n" +
 	"\n" +
 	"ExamDetail\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12#\n" +
@@ -2695,7 +2729,9 @@ const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18, \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18- \x01(\tR\tupdatedAt\"\xa3\x02\n" +
+	"updated_at\x18- \x01(\tR\tupdatedAt\x12#\n" +
+	"\rpipeline_ulid\x18. \x01(\tR\fpipelineUlid\x12-\n" +
+	"\x12certification_name\x18/ \x01(\tR\x11certificationName\"\xa3\x02\n" +
 	"\x18ListAuditMessagesRequest\x12.\n" +
 	"\x10processed_status\x18\x01 \x01(\tH\x00R\x0fprocessedStatus\x88\x01\x01\x12\"\n" +
 	"\n" +

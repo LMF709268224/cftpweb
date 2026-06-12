@@ -11,14 +11,14 @@ import (
 
 // ListPipelines GET /api/pipelines
 func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
-	req := &gccpb.ListPipelinesRequest{
+	req := &gccpb.ListPipelinesAdminRequest{
 		CategoryTips: r.URL.Query().Get("category_tips"),
 		OnlyCurrent:  r.URL.Query().Get("only_current") == "true",
 		Limit:        int32(parseUint32Query(r, "limit")),
 		Offset:       int32(parseUint32Query(r, "offset")),
 	}
 
-	resp, err := h.Gcc.ListPipelines(r.Context(), req)
+	resp, err := h.Gcc.ListPipelinesAdmin(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -38,7 +38,7 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 	if req.FromPipelineGuid == "" && req.PipelineGuid == "" {
 		req.PipelineGuid = newLmsID()
 	}
-	if !requireRequestFields(w, req.CategoryTips, "category_tips", req.Name, "name") {
+	if !requireRequestFields(w, req.CategoryTips, "category_tips", req.Name, "name", req.Respath, "respath") {
 		return
 	}
 

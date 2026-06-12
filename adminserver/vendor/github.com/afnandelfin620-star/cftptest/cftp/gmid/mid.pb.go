@@ -509,6 +509,94 @@ func (x *FetchCandidateInfoResponse) GetName() string {
 	return ""
 }
 
+type CheckTesterStatusRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	CandidateUlid string                 `protobuf:"bytes,1,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"` // 候选人 ULID [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckTesterStatusRequest) Reset() {
+	*x = CheckTesterStatusRequest{}
+	mi := &file_mid_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckTesterStatusRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckTesterStatusRequest) ProtoMessage() {}
+
+func (x *CheckTesterStatusRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mid_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckTesterStatusRequest.ProtoReflect.Descriptor instead.
+func (*CheckTesterStatusRequest) Descriptor() ([]byte, []int) {
+	return file_mid_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *CheckTesterStatusRequest) GetCandidateUlid() string {
+	if x != nil {
+		return x.CandidateUlid
+	}
+	return ""
+}
+
+type CheckTesterStatusResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IsTester      bool                   `protobuf:"varint,1,opt,name=is_tester,json=isTester,proto3" json:"is_tester,omitempty"` // 是否为测试账号
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckTesterStatusResponse) Reset() {
+	*x = CheckTesterStatusResponse{}
+	mi := &file_mid_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckTesterStatusResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckTesterStatusResponse) ProtoMessage() {}
+
+func (x *CheckTesterStatusResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mid_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckTesterStatusResponse.ProtoReflect.Descriptor instead.
+func (*CheckTesterStatusResponse) Descriptor() ([]byte, []int) {
+	return file_mid_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CheckTesterStatusResponse) GetIsTester() bool {
+	if x != nil {
+		return x.IsTester
+	}
+	return false
+}
+
 var File_mid_proto protoreflect.FileDescriptor
 
 const file_mid_proto_rawDesc = "" +
@@ -540,7 +628,11 @@ const file_mid_proto_rawDesc = "" +
 	"\x1aFetchCandidateInfoResponse\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x12\n" +
-	"\x04name\x18\x03 \x01(\tR\x04name2\x93\x03\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"A\n" +
+	"\x18CheckTesterStatusRequest\x12%\n" +
+	"\x0ecandidate_ulid\x18\x01 \x01(\tR\rcandidateUlid\"8\n" +
+	"\x19CheckTesterStatusResponse\x12\x1b\n" +
+	"\tis_tester\x18\x01 \x01(\bR\bisTester2\xe9\x03\n" +
 	"\n" +
 	"MidService\x12H\n" +
 	"\rGetUlidByUUID\x12\x1a.gmid.GetUlidByUUIDRequest\x1a\x1b.gmid.GetUlidByUUIDResponse\x12H\n" +
@@ -548,7 +640,8 @@ const file_mid_proto_rawDesc = "" +
 	"\n" +
 	"GetFullIds\x12\x17.gmid.GetFullIdsRequest\x1a\x18.gmid.GetFullIdsResponse\x12W\n" +
 	"\x12GetStudentNoByUlid\x12\x1f.gmid.GetStudentNoByUlidRequest\x1a .gmid.GetStudentNoByUlidResponse\x12W\n" +
-	"\x12FetchCandidateInfo\x12\x1f.gmid.FetchCandidateInfoRequest\x1a .gmid.FetchCandidateInfoResponseB\vZ\tcftp/gmidb\x06proto3"
+	"\x12FetchCandidateInfo\x12\x1f.gmid.FetchCandidateInfoRequest\x1a .gmid.FetchCandidateInfoResponse\x12T\n" +
+	"\x11CheckTesterStatus\x12\x1e.gmid.CheckTesterStatusRequest\x1a\x1f.gmid.CheckTesterStatusResponseB\vZ\tcftp/gmidb\x06proto3"
 
 var (
 	file_mid_proto_rawDescOnce sync.Once
@@ -562,7 +655,7 @@ func file_mid_proto_rawDescGZIP() []byte {
 	return file_mid_proto_rawDescData
 }
 
-var file_mid_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_mid_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_mid_proto_goTypes = []any{
 	(*GetUlidByUUIDRequest)(nil),       // 0: gmid.GetUlidByUUIDRequest
 	(*GetUlidByUUIDResponse)(nil),      // 1: gmid.GetUlidByUUIDResponse
@@ -574,23 +667,27 @@ var file_mid_proto_goTypes = []any{
 	(*GetStudentNoByUlidResponse)(nil), // 7: gmid.GetStudentNoByUlidResponse
 	(*FetchCandidateInfoRequest)(nil),  // 8: gmid.FetchCandidateInfoRequest
 	(*FetchCandidateInfoResponse)(nil), // 9: gmid.FetchCandidateInfoResponse
+	(*CheckTesterStatusRequest)(nil),   // 10: gmid.CheckTesterStatusRequest
+	(*CheckTesterStatusResponse)(nil),  // 11: gmid.CheckTesterStatusResponse
 }
 var file_mid_proto_depIdxs = []int32{
-	0, // 0: gmid.MidService.GetUlidByUUID:input_type -> gmid.GetUlidByUUIDRequest
-	2, // 1: gmid.MidService.GetUUIDByUlid:input_type -> gmid.GetUUIDByUlidRequest
-	4, // 2: gmid.MidService.GetFullIds:input_type -> gmid.GetFullIdsRequest
-	6, // 3: gmid.MidService.GetStudentNoByUlid:input_type -> gmid.GetStudentNoByUlidRequest
-	8, // 4: gmid.MidService.FetchCandidateInfo:input_type -> gmid.FetchCandidateInfoRequest
-	1, // 5: gmid.MidService.GetUlidByUUID:output_type -> gmid.GetUlidByUUIDResponse
-	3, // 6: gmid.MidService.GetUUIDByUlid:output_type -> gmid.GetUUIDByUlidResponse
-	5, // 7: gmid.MidService.GetFullIds:output_type -> gmid.GetFullIdsResponse
-	7, // 8: gmid.MidService.GetStudentNoByUlid:output_type -> gmid.GetStudentNoByUlidResponse
-	9, // 9: gmid.MidService.FetchCandidateInfo:output_type -> gmid.FetchCandidateInfoResponse
-	5, // [5:10] is the sub-list for method output_type
-	0, // [0:5] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0,  // 0: gmid.MidService.GetUlidByUUID:input_type -> gmid.GetUlidByUUIDRequest
+	2,  // 1: gmid.MidService.GetUUIDByUlid:input_type -> gmid.GetUUIDByUlidRequest
+	4,  // 2: gmid.MidService.GetFullIds:input_type -> gmid.GetFullIdsRequest
+	6,  // 3: gmid.MidService.GetStudentNoByUlid:input_type -> gmid.GetStudentNoByUlidRequest
+	8,  // 4: gmid.MidService.FetchCandidateInfo:input_type -> gmid.FetchCandidateInfoRequest
+	10, // 5: gmid.MidService.CheckTesterStatus:input_type -> gmid.CheckTesterStatusRequest
+	1,  // 6: gmid.MidService.GetUlidByUUID:output_type -> gmid.GetUlidByUUIDResponse
+	3,  // 7: gmid.MidService.GetUUIDByUlid:output_type -> gmid.GetUUIDByUlidResponse
+	5,  // 8: gmid.MidService.GetFullIds:output_type -> gmid.GetFullIdsResponse
+	7,  // 9: gmid.MidService.GetStudentNoByUlid:output_type -> gmid.GetStudentNoByUlidResponse
+	9,  // 10: gmid.MidService.FetchCandidateInfo:output_type -> gmid.FetchCandidateInfoResponse
+	11, // 11: gmid.MidService.CheckTesterStatus:output_type -> gmid.CheckTesterStatusResponse
+	6,  // [6:12] is the sub-list for method output_type
+	0,  // [0:6] is the sub-list for method input_type
+	0,  // [0:0] is the sub-list for extension type_name
+	0,  // [0:0] is the sub-list for extension extendee
+	0,  // [0:0] is the sub-list for field type_name
 }
 
 func init() { file_mid_proto_init() }
@@ -604,7 +701,7 @@ func file_mid_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mid_proto_rawDesc), len(file_mid_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
