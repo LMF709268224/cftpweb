@@ -562,6 +562,7 @@ export default function LmsCoursesPage() {
   const [lessonForm, setLessonForm] = useState(emptyLessonForm)
   const [lessonSaving, setLessonSaving] = useState(false)
   const [lessonsLoading, setLessonsLoading] = useState(false)
+  const [selectedLessonId, setSelectedLessonId] = useState("")
   const [quizzes, setQuizzes] = useState<Quiz[]>([])
   const [selectedQuizId, setSelectedQuizId] = useState("")
   const [quizForm, setQuizForm] = useState(emptyQuizForm)
@@ -573,6 +574,7 @@ export default function LmsCoursesPage() {
   const [questionSaving, setQuestionSaving] = useState(false)
   const [questionsLoading, setQuestionsLoading] = useState(false)
   const [options, setOptions] = useState<QuizOption[]>([])
+  const [selectedOptionId, setSelectedOptionId] = useState("")
   const [optionForm, setOptionForm] = useState(emptyOptionForm)
   const [optionSaving, setOptionSaving] = useState(false)
   const [optionsLoading, setOptionsLoading] = useState(false)
@@ -612,6 +614,11 @@ export default function LmsCoursesPage() {
     [chapters, selectedChapterId]
   )
 
+  const selectedLesson = useMemo(
+    () => lessons.find((lesson) => lesson.lesson_id === selectedLessonId) || null,
+    [lessons, selectedLessonId]
+  )
+
   const selectedQuiz = useMemo(
     () => quizzes.find((quiz) => quiz.quiz_id === selectedQuizId) || null,
     [quizzes, selectedQuizId]
@@ -620,6 +627,11 @@ export default function LmsCoursesPage() {
   const selectedQuestion = useMemo(
     () => questions.find((question) => question.question_id === selectedQuestionId) || null,
     [questions, selectedQuestionId]
+  )
+
+  const selectedOption = useMemo(
+    () => options.find((option) => option.option_id === selectedOptionId) || null,
+    [options, selectedOptionId]
   )
 
   const selectedMaterial = useMemo(
@@ -658,6 +670,7 @@ export default function LmsCoursesPage() {
     setSelectedChapterId("")
     setChapterForm(emptyChapterForm)
     setLessons([])
+    setSelectedLessonId("")
     setLessonForm(emptyLessonForm)
     setQuizzes([])
     setSelectedQuizId("")
@@ -853,7 +866,7 @@ export default function LmsCoursesPage() {
     try {
       let targetCourse = selectedCourse
       if (selectedCourse) {
-        targetCourse = selectedCoursePublished ? await clonePublishedCourseDraft(selectedCourse) : selectedCourse
+        targetCourse = selectedCourse
         await apiClient(`/api/lms/courses/${targetCourse.course_id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -1147,8 +1160,7 @@ export default function LmsCoursesPage() {
   }
 
   const persistCourse = async (nextForm: CourseForm, course: LmsCourse) => {
-    const clonedPublishedCourse = course.is_published || course.status?.toLowerCase() === "active"
-    const targetCourse = clonedPublishedCourse ? await clonePublishedCourseDraft(course) : course
+    const targetCourse = course
     await apiClient(`/api/lms/courses/${targetCourse.course_id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -1156,9 +1168,6 @@ export default function LmsCoursesPage() {
     })
     setSelectedId(targetCourse.course_id)
     setForm(nextForm)
-    if (clonedPublishedCourse) {
-      await loadChapters(targetCourse.course_id)
-    }
     return targetCourse
   }
 
@@ -1392,20 +1401,37 @@ export default function LmsCoursesPage() {
 
     setChapterSaving(true)
     try {
-      await apiClient(`/api/lms/courses/${selectedCourse.course_id}/chapters`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: chapterForm.title.trim(),
-          sort_order: Number(chapterForm.sort_order || (chapters.length + 1) * 1000),
-        }),
-      })
-      toast.success(page.chapterCreateSuccess)
-      setChapterForm(emptyChapterForm)
+      const isEditing = Boolean(selectedChapterId)
+      const payload = {
+        title: chapterForm.title.trim(),
+        sort_order: Number(chapterForm.sort_order || (chapters.length + 1) * 1000),
+      }
+
+      if (isEditing) {
+        await apiClient(`/api/lms/chapters/${selectedChapterId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, version: selectedChapter?.version || 0 }),
+        })
+        toast.success(page.chapterCreateSuccess) // TODO: update string to chapterUpdateSuccess if available
+      } else {
+        await apiClient(`/api/lms/courses/${selectedCourse.course_id}/chapters`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        toast.success(page.chapterCreateSuccess)
+        setChapterForm(emptyChapterForm)
+      }
       await loadChapters(selectedCourse.course_id)
     } finally {
       setChapterSaving(false)
     }
+  }
+
+  const resetChapterForm = () => {
+    setSelectedChapterId("")
+    setChapterForm(emptyChapterForm)
   }
 
   const selectChapter = async (chapter: Chapter) => {
@@ -1416,6 +1442,20 @@ export default function LmsCoursesPage() {
     setSelectedQuestionId("")
     setOptions([])
     await Promise.all([loadLessons(chapter.chapter_id), loadQuizzes(chapter.chapter_id)])
+  }
+
+  const resetLessonForm = () => {
+    setLessonForm(emptyLessonForm)
+    setSelectedLessonId("")
+  }
+
+  const selectLesson = (lesson: Lesson) => {
+    setSelectedLessonId(lesson.lesson_id)
+    setLessonForm({
+      title: lesson.title || "",
+      body: lesson.body || "",
+      sort_order: String(lesson.sort_order || 0),
+    })
   }
 
   const loadLessons = async (chapterId = selectedChapterId) => {
@@ -1442,19 +1482,34 @@ export default function LmsCoursesPage() {
 
     setLessonSaving(true)
     try {
-      await apiClient(`/api/lms/chapters/${selectedChapter.chapter_id}/lessons`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: lessonForm.title.trim(),
-          body: lessonForm.body.trim(),
-          sort_order: Number(lessonForm.sort_order || (lessons.length + 1) * 1000),
-          lesson_type: 2,
-          meta_json: "{}",
-        }),
-      })
-      toast.success(page.lessonCreateSuccess)
+      const isEditing = Boolean(selectedLessonId)
+      const payload = {
+        title: lessonForm.title.trim(),
+        body: lessonForm.body.trim(),
+        sort_order: Number(lessonForm.sort_order || (lessons.length + 1) * 1000),
+        lesson_type: 2,
+        meta_json: "{}",
+      }
+
+      let nextLessonId = selectedLessonId
+      if (isEditing) {
+        await apiClient(`/api/lms/lessons/${selectedLessonId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, version: selectedLesson?.version || 0 }),
+        })
+        toast.success(page.lessonCreateSuccess) // TODO: map to update success string if available
+      } else {
+        const res = await apiClient(`/api/lms/chapters/${selectedChapter.chapter_id}/lessons`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        toast.success(page.lessonCreateSuccess)
+        nextLessonId = res?.lesson_id || ""
+      }
       setLessonForm(emptyLessonForm)
+      setSelectedLessonId(nextLessonId)
       await loadLessons(selectedChapter.chapter_id)
     } finally {
       setLessonSaving(false)
@@ -1585,21 +1640,35 @@ export default function LmsCoursesPage() {
 
     setQuestionSaving(true)
     try {
-      const res = await apiClient(`/api/lms/quizzes/${selectedQuiz.quiz_id}/questions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question_text: questionForm.question_text.trim(),
-          question_type: Number(questionForm.question_type),
-          points: Number(questionForm.points || 1),
-          sort_order: Number(questionForm.sort_order || (questions.length + 1) * 1000),
-          is_required: questionForm.is_required,
-          media_items_json: "[]",
-        }),
-      })
-      toast.success(page.questionCreateSuccess)
+      const isEditing = Boolean(selectedQuestionId)
+      const payload = {
+        question_text: questionForm.question_text.trim(),
+        question_type: Number(questionForm.question_type),
+        points: Number(questionForm.points || 1),
+        sort_order: Number(questionForm.sort_order || (questions.length + 1) * 1000),
+        is_required: questionForm.is_required,
+        media_items_json: "[]",
+      }
+
+      let nextQuestionId = selectedQuestionId
+      if (isEditing) {
+        await apiClient(`/api/lms/questions/${selectedQuestionId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, version: selectedQuestion?.version || 0 }),
+        })
+        toast.success(page.questionCreateSuccess) // TODO: update string
+      } else {
+        const res = await apiClient(`/api/lms/quizzes/${selectedQuiz.quiz_id}/questions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        toast.success(page.questionCreateSuccess)
+        nextQuestionId = res?.question_id || ""
+      }
       setQuestionForm(emptyQuestionForm)
-      setSelectedQuestionId(res?.question_id || "")
+      setSelectedQuestionId(nextQuestionId)
       await loadQuestions(selectedQuiz.quiz_id)
     } finally {
       setQuestionSaving(false)
@@ -1609,6 +1678,20 @@ export default function LmsCoursesPage() {
   const selectQuestion = async (question: QuizQuestion) => {
     setSelectedQuestionId(question.question_id)
     await loadOptions(question.question_id)
+  }
+
+  const resetOptionForm = () => {
+    setOptionForm(emptyOptionForm)
+    setSelectedOptionId("")
+  }
+
+  const selectOption = (option: QuizOption) => {
+    setSelectedOptionId(option.option_id)
+    setOptionForm({
+      option_text: option.option_text || "",
+      sort_order: String(option.sort_order || 0),
+      is_correct: option.is_correct || false,
+    })
   }
 
   const loadOptions = async (questionId = selectedQuestionId) => {
@@ -1631,17 +1714,32 @@ export default function LmsCoursesPage() {
 
     setOptionSaving(true)
     try {
-      await apiClient(`/api/lms/questions/${selectedQuestion.question_id}/options`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          option_text: optionForm.option_text.trim(),
-          sort_order: Number(optionForm.sort_order || (options.length + 1) * 1000),
-          is_correct: optionForm.is_correct,
-        }),
-      })
-      toast.success(page.optionCreateSuccess)
+      const isEditing = Boolean(selectedOptionId)
+      const payload = {
+        option_text: optionForm.option_text.trim(),
+        sort_order: Number(optionForm.sort_order || (options.length + 1) * 1000),
+        is_correct: optionForm.is_correct,
+      }
+
+      let nextOptionId = selectedOptionId
+      if (isEditing) {
+        await apiClient(`/api/lms/options/${selectedOptionId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, version: selectedOption?.version || 0 }),
+        })
+        toast.success(page.optionCreateSuccess)
+      } else {
+        const res = await apiClient(`/api/lms/questions/${selectedQuestion.question_id}/options`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+        toast.success(page.optionCreateSuccess)
+        nextOptionId = res?.option_id || ""
+      }
       setOptionForm(emptyOptionForm)
+      setSelectedOptionId(nextOptionId)
       await loadOptions(selectedQuestion.question_id)
     } finally {
       setOptionSaving(false)
@@ -2157,6 +2255,7 @@ export default function LmsCoursesPage() {
                   </div>
                   <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
                     <Checkbox
+                      disabled={selectedCoursePublished}
                       checked={form.certification_enabled}
                       onCheckedChange={(checked) =>
                         setForm({
@@ -2172,7 +2271,7 @@ export default function LmsCoursesPage() {
                     <Label htmlFor="certificationDefId">{page.certificationDefId}</Label>
                     <Select
                       value={form.certification_def_id || "none"}
-                      disabled={!form.certification_enabled}
+                      disabled={!form.certification_enabled || selectedCoursePublished}
                       onValueChange={(value) => setForm({ ...form, certification_def_id: value === "none" ? "" : value })}
                     >
                       <SelectTrigger id="certificationDefId" className="w-full">
@@ -2206,10 +2305,10 @@ export default function LmsCoursesPage() {
                 )}
 
                 <div className="flex justify-end border-t px-4 py-3">
-                  <ProtectedButton onClick={saveCourse} disabled={saving || selectedCoursePublished} isPublished={selectedCoursePublished}>
+                  <Button onClick={saveCourse} disabled={saving}>
                     {selectedCourse ? <Save className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
                     {selectedCourse ? page.saveCourse : page.createCourse}
-                  </ProtectedButton>
+                  </Button>
                 </div>
               </div>
 
@@ -2257,7 +2356,7 @@ export default function LmsCoursesPage() {
                         </div>
                         <ProtectedButton
                           size="sm"
-                          onClick={createChapter}
+                          onClick={() => { setSelectedChapterId(""); createChapter(); }}
                           disabled={chapterSaving || selectedCourse.is_published}
                           isPublished={selectedCourse.is_published}
                         >
@@ -2296,7 +2395,28 @@ export default function LmsCoursesPage() {
                           <DialogHeader className="shrink-0">
                             <DialogTitle>{selectedChapter ? getChapterName(selectedChapter) : page.selectChapterHint}</DialogTitle>
                           </DialogHeader>
-                          <div className="space-y-4 flex-1 overflow-y-auto">
+                          <div className="space-y-4 flex-1 overflow-y-auto px-1">
+                            {selectedChapter && (
+                              <div className="rounded-md border p-3 bg-muted/10">
+                                <h3 className="mb-2 text-sm font-medium">{page.chapterTitle}</h3>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <Input 
+                                    className="max-w-sm"
+                                    value={chapterForm.title} 
+                                    disabled={!selectedChapter}
+                                    onChange={(e) => setChapterForm({ ...chapterForm, title: e.target.value })} 
+                                  />
+                                  <Button 
+                                    size="sm" 
+                                    onClick={createChapter} 
+                                    disabled={chapterSaving || !chapterForm.title.trim()} 
+                                  >
+                                    <Save className="mr-2 h-4 w-4" />
+                                    {t.common.save}
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
                           <div className="space-y-2">
                             <Label htmlFor="lessonTitle">{page.lessonTitle}</Label>
@@ -2346,13 +2466,24 @@ export default function LmsCoursesPage() {
                         ) : (
                           <div className="overflow-hidden rounded-md border">
                             {lessons.map((lesson) => (
-                              <div key={lesson.lesson_id} className="border-b px-3 py-3 text-sm last:border-b-0">
+                              <button
+                                key={lesson.lesson_id}
+                                type="button"
+                                onClick={() => selectLesson(lesson)}
+                                className={cn(
+                                  "block w-full border-b px-3 py-3 text-left text-sm last:border-b-0 hover:bg-muted/60",
+                                  selectedLessonId === lesson.lesson_id && "bg-muted"
+                                )}
+                              >
                                 <div className="flex items-center justify-between gap-3">
                                   <div className="truncate font-medium">{lesson.title || lesson.lesson_id}</div>
                                   <Badge variant="outline">{page.textLesson}</Badge>
                                 </div>
-                                <div className="mt-1 truncate text-xs text-muted-foreground">{lesson.lesson_id}</div>
-                              </div>
+                                <div className="mt-1 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                                  <span className="truncate">{lesson.lesson_id}</span>
+                                  <span>{lesson.sort_order || 0}</span>
+                                </div>
+                              </button>
                             ))}
                           </div>
                         )}
@@ -2636,13 +2767,24 @@ export default function LmsCoursesPage() {
                                 <div className="px-3 py-6 text-center text-sm text-muted-foreground">{page.noOptions}</div>
                               ) : (
                                 options.map((option) => (
-                                  <div key={option.option_id} className="flex items-center justify-between gap-3 border-b px-3 py-3 text-sm last:border-b-0">
+                                  <button
+                                    key={option.option_id}
+                                    type="button"
+                                    onClick={() => selectOption(option)}
+                                    className={cn(
+                                      "flex w-full items-center justify-between gap-3 border-b px-3 py-3 text-left text-sm last:border-b-0 hover:bg-muted/60",
+                                      selectedOptionId === option.option_id && "bg-muted"
+                                    )}
+                                  >
                                     <div className="min-w-0">
                                       <div className="truncate font-medium">{option.option_text || option.option_id}</div>
-                                      <div className="truncate text-xs text-muted-foreground">{option.option_id}</div>
+                                      <div className="mt-1 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                                        <span className="truncate">{option.option_id}</span>
+                                        <span>{option.sort_order || 0}</span>
+                                      </div>
                                     </div>
                                     <Badge variant={option.is_correct ? "default" : "outline"}>{option.is_correct ? page.correct : page.incorrect}</Badge>
-                                  </div>
+                                  </button>
                                 ))
                               )}
                             </div>
@@ -2757,15 +2899,15 @@ export default function LmsCoursesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 pt-2">
-                      <ProtectedButton onClick={saveSupplementaryMaterial} disabled={supplementaryMaterialSaving || !selectedCourse || selectedCoursePublished} isPublished={selectedCoursePublished}>
+                      <Button onClick={saveSupplementaryMaterial} disabled={supplementaryMaterialSaving || !selectedCourse}>
                         <Save className="mr-2 h-4 w-4" />
                         {t.common.save || '保存'}
-                      </ProtectedButton>
+                      </Button>
                       {supplementaryMaterial?.material_id && (
-                        <ProtectedButton variant="destructive" onClick={deleteSupplementaryMaterial} disabled={supplementaryMaterialSaving || selectedCoursePublished} isPublished={selectedCoursePublished}>
+                        <Button variant="destructive" onClick={deleteSupplementaryMaterial} disabled={supplementaryMaterialSaving}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           {page.delete || '删除'}
-                        </ProtectedButton>
+                        </Button>
                       )}
                     </div>
                   </div>
