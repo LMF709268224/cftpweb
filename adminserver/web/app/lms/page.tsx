@@ -667,7 +667,6 @@ export default function LmsCoursesPage() {
     setQuestionForm(emptyQuestionForm)
     setOptions([])
     setOptionForm(emptyOptionForm)
-    setChapterModalOpen(true)
     setMaterials([])
     setSupplementaryMaterial(null)
     setSupplementaryMaterialForm({ material_id: "", kind: "", data_json: "" })
@@ -1410,6 +1409,7 @@ export default function LmsCoursesPage() {
   }
 
   const selectChapter = async (chapter: Chapter) => {
+    setChapterModalOpen(true)
     setSelectedChapterId(chapter.chapter_id)
     setSelectedQuizId("")
     setQuestions([])
@@ -1642,7 +1642,6 @@ export default function LmsCoursesPage() {
       })
       toast.success(page.optionCreateSuccess)
       setOptionForm(emptyOptionForm)
-    setChapterModalOpen(true)
       await loadOptions(selectedQuestion.question_id)
     } finally {
       setOptionSaving(false)
