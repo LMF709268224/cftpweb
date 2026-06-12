@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { AlertTriangle, BookOpen, CheckCircle2, ClipboardList, Eye, FileJson, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
+import { AlertTriangle, ArrowLeft, BookOpen, CheckCircle2, ClipboardList, Eye, FileJson, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 
 import { Sidebar } from "@/components/sidebar"
@@ -484,6 +485,29 @@ function formToPayload(form: CourseForm, version?: number) {
   }
 }
 
+function ProtectedButton({ disabled, isPublished, tooltipText, children, className, ...props }: any) {
+  if (!disabled) {
+    return <Button disabled={false} className={className} {...props}>{children}</Button>
+  }
+  let hint = tooltipText || "前置条件不足或正在处理"
+  if (isPublished) hint = "已发布的课程无法进行修改或删除。若需操作，请基于此版本新建草稿。"
+  
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0} className="inline-block cursor-not-allowed">
+          <Button disabled={true} className={cn("pointer-events-none", className)} {...props}>
+            {children}
+          </Button>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side="top">
+        <p>{hint}</p>
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 export default function LmsCoursesPage() {
   const { t } = useTranslation()
   const page = t.lmsCoursesPage
@@ -567,6 +591,9 @@ export default function LmsCoursesPage() {
   const [importCategoryTips, setImportCategoryTips] = useState("")
   const [importJson, setImportJson] = useState("")
   const [importing, setImporting] = useState(false)
+  const [chapterModalOpen, setChapterModalOpen] = useState(false)
+  const [materialModalOpen, setMaterialModalOpen] = useState(false)
+  const [suppMaterialModalOpen, setSuppMaterialModalOpen] = useState(false)
 
   const selectedCourse = useMemo(
     () => courses.find((course) => course.course_id === selectedId) || null,
@@ -640,6 +667,7 @@ export default function LmsCoursesPage() {
     setQuestionForm(emptyQuestionForm)
     setOptions([])
     setOptionForm(emptyOptionForm)
+    setChapterModalOpen(true)
     setMaterials([])
     setSupplementaryMaterial(null)
     setSupplementaryMaterialForm({ material_id: "", kind: "", data_json: "" })
@@ -1614,6 +1642,7 @@ export default function LmsCoursesPage() {
       })
       toast.success(page.optionCreateSuccess)
       setOptionForm(emptyOptionForm)
+    setChapterModalOpen(true)
       await loadOptions(selectedQuestion.question_id)
     } finally {
       setOptionSaving(false)
@@ -1984,7 +2013,8 @@ export default function LmsCoursesPage() {
             </label>
           </div>
 
-          <div className="grid gap-4 xl:grid-cols-[420px_minmax(0,1fr)]">
+          <div>
+            {!selectedCourse ? (
             <section className="rounded-lg border bg-card">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <h2 className="font-semibold">{page.courseList}</h2>
@@ -2032,8 +2062,14 @@ export default function LmsCoursesPage() {
                 </div>
               )}
             </section>
-
+            ) : (
             <section className="space-y-4">
+              <div className="mb-2">
+                <Button variant="ghost" onClick={() => setSelectedId("")}>
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  {t.common.back || "返回"}
+                </Button>
+              </div>
               <div className="rounded-lg border bg-card">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
                   <h2 className="font-semibold">{page.courseEditor}</h2>
@@ -2050,10 +2086,10 @@ export default function LmsCoursesPage() {
                           {page.publish}
                         </Button>
                       )}
-                      <Button variant="destructive" size="sm" onClick={deleteCourse} disabled={selectedCoursePublished}>
+                      <ProtectedButton variant="destructive" size="sm" onClick={deleteCourse} disabled={selectedCoursePublished} isPublished={selectedCoursePublished}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         {page.delete}
-                      </Button>
+                      </ProtectedButton>
                     </div>
                   )}
                 </div>
@@ -2189,7 +2225,7 @@ export default function LmsCoursesPage() {
                     {page.loadChapters}
                   </Button>
                 </div>
-                <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <div className="p-4">
                   {!selectedCourse ? (
                     <div className="xl:col-span-2 flex items-center gap-2 text-sm text-muted-foreground">
                       <BookOpen className="h-4 w-4" />
@@ -2220,14 +2256,15 @@ export default function LmsCoursesPage() {
                             />
                           </div>
                         </div>
-                        <Button
+                        <ProtectedButton
                           size="sm"
                           onClick={createChapter}
                           disabled={chapterSaving || selectedCourse.is_published}
+                          isPublished={selectedCourse.is_published}
                         >
                           <Plus className="mr-2 h-4 w-4" />
                           {page.createChapter}
-                        </Button>
+                        </ProtectedButton>
                         {selectedCourse.is_published && <div className="text-xs text-muted-foreground">{page.publishedContentLocked}</div>}
 
                         <div className="overflow-hidden rounded-md border">
@@ -2255,11 +2292,12 @@ export default function LmsCoursesPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="rounded-md border bg-muted/40 px-3 py-2 text-sm">
-                          <span className="text-muted-foreground">{page.currentChapter}: </span>
-                          <span className="font-medium">{selectedChapter ? getChapterName(selectedChapter) : page.selectChapterHint}</span>
-                        </div>
+                      <Dialog open={chapterModalOpen} onOpenChange={setChapterModalOpen}>
+                        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto flex flex-col">
+                          <DialogHeader className="shrink-0">
+                            <DialogTitle>{selectedChapter ? getChapterName(selectedChapter) : page.selectChapterHint}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4 flex-1 overflow-y-auto">
                         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_120px]">
                           <div className="space-y-2">
                             <Label htmlFor="lessonTitle">{page.lessonTitle}</Label>
@@ -2292,14 +2330,15 @@ export default function LmsCoursesPage() {
                             onChange={(event) => setLessonForm({ ...lessonForm, body: event.target.value })}
                           />
                         </div>
-                        <Button
+                        <ProtectedButton
                           size="sm"
                           onClick={createTextLesson}
                           disabled={!selectedChapter || lessonSaving || lessonsLoading || selectedCourse.is_published}
+                          isPublished={selectedCourse.is_published}
                         >
                           <FileText className="mr-2 h-4 w-4" />
                           {page.createTextLesson}
-                        </Button>
+                        </ProtectedButton>
 
                         {!selectedChapter ? (
                           <div className="rounded-md border px-3 py-6 text-center text-sm text-muted-foreground">{page.selectChapterHint}</div>
@@ -2396,14 +2435,15 @@ export default function LmsCoursesPage() {
                               />
                               {page.randomizeQuestions}
                             </label>
-                            <Button
+                            <ProtectedButton
                               size="sm"
                               onClick={createQuiz}
                               disabled={!selectedChapter || quizSaving || selectedCourse.is_published}
+                              isPublished={selectedCourse.is_published}
                             >
                               <ClipboardList className="mr-2 h-4 w-4" />
                               {selectedQuiz ? (page.updateQuiz || page.createQuiz) : page.createQuiz}
-                            </Button>
+                            </ProtectedButton>
                             {selectedQuiz && (
                               <Button variant="outline" size="sm" onClick={resetQuizForm} disabled={!selectedChapter}>
                                 {t.common.cancel}
@@ -2508,10 +2548,10 @@ export default function LmsCoursesPage() {
                                 />
                                 {page.requiredQuestion}
                               </label>
-                              <Button size="sm" onClick={createQuestion} disabled={!selectedQuiz || questionSaving || selectedCourse.is_published}>
+                              <ProtectedButton size="sm" onClick={createQuestion} disabled={!selectedQuiz || questionSaving || selectedCourse.is_published} isPublished={selectedCourse.is_published}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 {page.createQuestion}
-                              </Button>
+                              </ProtectedButton>
                             </div>
 
                             <div className="mt-3 overflow-hidden rounded-md border">
@@ -2586,10 +2626,10 @@ export default function LmsCoursesPage() {
                                 />
                                 {page.correctOption}
                               </label>
-                              <Button size="sm" onClick={createOption} disabled={!selectedQuestion || optionSaving || selectedCourse.is_published}>
+                              <ProtectedButton size="sm" onClick={createOption} disabled={!selectedQuestion || optionSaving || selectedCourse.is_published} isPublished={selectedCourse.is_published}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 {page.createOption}
-                              </Button>
+                              </ProtectedButton>
                             </div>
 
                             <div className="mt-3 overflow-hidden rounded-md border">
@@ -2608,8 +2648,9 @@ export default function LmsCoursesPage() {
                               )}
                             </div>
                           </div>
-                        </div>
-                      </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
                     </>
                   )}
                 </div>
@@ -2678,9 +2719,21 @@ export default function LmsCoursesPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="grid gap-4 p-4 xl:grid-cols-[340px_minmax(0,1fr)]">
-                  <div className="space-y-3">
-                    <div className="grid gap-3">
+                <div className="p-4">
+                  <div className="mb-4">
+                    <Button onClick={() => setSuppMaterialModalOpen(true)} disabled={!selectedCourse}>
+                      {page.materialEditMode || "编辑补充资料"}
+                    </Button>
+                  </div>
+                  
+                  <Dialog open={suppMaterialModalOpen} onOpenChange={setSuppMaterialModalOpen}>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{page.materialEditMode || "编辑补充资料"}</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 md:grid-cols-[340px_minmax(0,1fr)]">
+                        <div className="space-y-3">
+                          <div className="grid gap-3">
                       <div className="space-y-2">
                         <Label htmlFor="suppKind">{'类型 (Kind)'}</Label>
                         <Input
@@ -2738,9 +2791,22 @@ export default function LmsCoursesPage() {
                     </Button>
                   </div>
                 </div>
-                <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_340px]">
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                <div className="p-4">
+                  <div className="mb-4">
+                    <Button onClick={() => { resetMaterialForm(); setMaterialModalOpen(true); }} disabled={!selectedCourse || selectedCoursePublished}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      {page.materialCreate || "新增资料"}
+                    </Button>
+                  </div>
+                  
+                  <Dialog open={materialModalOpen} onOpenChange={setMaterialModalOpen}>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{selectedMaterial ? page.materialEditMode : page.materialCreateMode}</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_300px]">
+                        <div className="space-y-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
                       <span>{selectedMaterial ? page.materialEditMode : page.materialCreateMode}</span>
                       {selectedMaterial && (
                         <span className="truncate">{selectedMaterial.material_id}</span>
@@ -2834,28 +2900,58 @@ export default function LmsCoursesPage() {
                           }}
                         />
                       </label>
-                      <Button size="sm" onClick={createMaterial} disabled={!selectedCourse || materialSaving || selectedCoursePublished}>
+                      <ProtectedButton size="sm" onClick={createMaterial} disabled={!selectedCourse || materialSaving || selectedCoursePublished} isPublished={selectedCoursePublished}>
                         <FileText className="mr-2 h-4 w-4" />
                         {selectedMaterial ? page.materialUpdate : page.materialCreate}
-                      </Button>
+                      </ProtectedButton>
                       <Button variant="outline" size="sm" onClick={resetMaterialForm} disabled={!selectedCourse}>
                         {t.common.cancel}
                       </Button>
                       {selectedMaterial && (
-                        <Button
+                        <ProtectedButton
                           variant="destructive"
                           size="sm"
                           onClick={deleteMaterial}
                           disabled={!selectedCourse || materialSaving || selectedCoursePublished}
+                          isPublished={selectedCoursePublished}
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
                           {page.materialDelete}
-                        </Button>
+                        </ProtectedButton>
                       )}
                     </div>
 
-                    <div className="overflow-hidden rounded-md border">
-                      {materialsLoading ? (
+                        </div>
+                        <div className="rounded-md border bg-muted/20 p-4">
+                          {selectedMaterial ? (
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <h3 className="text-sm font-semibold">{page.materialPreview}</h3>
+                                  <p className="mt-1 text-xs text-muted-foreground">{selectedMaterial.title || selectedMaterial.material_id}</p>
+                                </div>
+                                <Badge variant="outline">{materialTypeLabel(selectedMaterial.material_type)}</Badge>
+                              </div>
+                              <div className="grid gap-2 text-sm text-muted-foreground">
+                                <div>{page.materialFileKey}: {selectedMaterial.file_object_key || t.common.na}</div>
+                                <div>{page.materialFileHash}: {selectedMaterial.file_hash || t.common.na}</div>
+                                <div>{page.materialFileSize}: {selectedMaterial.file_size || 0}</div>
+                                <div>{page.materialSortOrder}: {selectedMaterial.sort_order || 0}</div>
+                                <div>{page.version}: {selectedMaterial.version || 0}</div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">
+                              {page.noMaterials}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <div className="overflow-hidden rounded-md border">
+                    {materialsLoading ? (
                         <div className="px-3 py-6 text-center text-sm text-muted-foreground">{t.common.loading}</div>
                       ) : materials.length === 0 ? (
                         <div className="px-3 py-6 text-center text-sm text-muted-foreground">{page.noMaterials}</div>
@@ -2885,30 +2981,6 @@ export default function LmsCoursesPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-md border bg-muted/20 p-4">
-                    {selectedMaterial ? (
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <h3 className="text-sm font-semibold">{page.materialPreview}</h3>
-                            <p className="mt-1 text-xs text-muted-foreground">{selectedMaterial.title || selectedMaterial.material_id}</p>
-                          </div>
-                          <Badge variant="outline">{materialTypeLabel(selectedMaterial.material_type)}</Badge>
-                        </div>
-                        <div className="grid gap-2 text-sm text-muted-foreground">
-                          <div>{page.materialFileKey}: {selectedMaterial.file_object_key || t.common.na}</div>
-                          <div>{page.materialFileHash}: {selectedMaterial.file_hash || t.common.na}</div>
-                          <div>{page.materialFileSize}: {selectedMaterial.file_size || 0}</div>
-                          <div>{page.materialSortOrder}: {selectedMaterial.sort_order || 0}</div>
-                          <div>{page.version}: {selectedMaterial.version || 0}</div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex min-h-[220px] items-center justify-center text-sm text-muted-foreground">
-                        {page.noMaterials}
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
 
@@ -3265,6 +3337,7 @@ export default function LmsCoursesPage() {
                 </div>
               </div>
             </section>
+            )}
           </div>
         </div>
       </main>
