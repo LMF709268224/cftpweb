@@ -925,7 +925,7 @@ export default function LmsCoursesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-      toast.success(page.saveSuccess || "保存成功")
+      toast.success((page as any).saveSuccess || "保存成功" || "保存成功")
       await loadSupplementaryMaterial(selectedCourse.course_id)
     } finally {
       setSupplementaryMaterialSaving(false)
@@ -2067,7 +2067,7 @@ export default function LmsCoursesPage() {
               <div className="mb-2">
                 <Button variant="ghost" onClick={() => setSelectedId("")}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  {t.common.back || "返回"}
+                  {(t.common as any).back || "返回"}
                 </Button>
               </div>
               <div className="rounded-lg border bg-card">
@@ -2649,6 +2649,7 @@ export default function LmsCoursesPage() {
                             </div>
                           </div>
                           </div>
+                          </div>
                         </DialogContent>
                       </Dialog>
                     </>
@@ -2759,7 +2760,7 @@ export default function LmsCoursesPage() {
                     <div className="flex items-center gap-2 pt-2">
                       <Button onClick={saveSupplementaryMaterial} disabled={supplementaryMaterialSaving || !selectedCourse}>
                         <Save className="mr-2 h-4 w-4" />
-                        {page.save || '保存'}
+                        {t.common.save || '保存'}
                       </Button>
                       {supplementaryMaterial?.material_id && (
                         <Button variant="destructive" onClick={deleteSupplementaryMaterial} disabled={supplementaryMaterialSaving}>
@@ -2776,9 +2777,19 @@ export default function LmsCoursesPage() {
                      </pre>
                   </div>
                 </div>
-              </div>
+              </DialogContent>
+            </Dialog>
 
-              <div className="rounded-lg border bg-card">
+            <div className="mt-4 flex flex-col gap-3 rounded-md border bg-muted/20 p-4">
+              <h3 className="text-sm font-medium">{'当前补充资料数据预览'}</h3>
+              <pre className="max-h-60 overflow-auto rounded bg-muted/50 p-2 text-xs text-muted-foreground">
+                {supplementaryMaterial ? JSON.stringify(supplementaryMaterial, null, 2) : '暂无数据'}
+              </pre>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
                   <div>
                     <h2 className="font-semibold">{page.materialsTitle}</h2>
@@ -2979,7 +2990,6 @@ export default function LmsCoursesPage() {
                         ))
                       )}
                     </div>
-                  </div>
 
                 </div>
               </div>
