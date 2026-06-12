@@ -1773,6 +1773,11 @@ export default function LmsCoursesPage() {
       toast.error(page.fillCandidateId)
       return
     }
+    
+    if (!window.confirm(`确定要将考生 ${candidateId} 选入当前课程《${selectedCourse.title || selectedCourse.course_id}》吗？\n(Are you sure you want to enroll candidate ${candidateId} in the current course "${selectedCourse.title || selectedCourse.course_id}"?)`)) {
+      return
+    }
+
     setBatchEnrolling(true)
     try {
       await apiClient("/api/lms/enrollments/batch", {
