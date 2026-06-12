@@ -214,6 +214,8 @@ export const en: AppTranslations = {
     loadCourseDetail: "Load Course Stats",
     selectCourseHint: "Select a course on the left to edit",
     titleLabel: "Course Title",
+    respathLabel: "Respath",
+    fillRespath: "Please fill in Respath",
     description: "Description",
     thumbnailObjectKey: "Thumbnail Object Key",
     durationMin: "Duration (min)",

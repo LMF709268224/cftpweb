@@ -58,6 +58,7 @@ type CourseForm = {
   duration_min: string
   certification_enabled: boolean
   certification_def_id: string
+  respath: string
 }
 
 type CatalogOption = {
@@ -384,6 +385,7 @@ const emptyForm: CourseForm = {
   duration_min: "",
   certification_enabled: false,
   certification_def_id: "",
+  respath: "",
 }
 
 const emptyChapterForm = {
@@ -468,6 +470,7 @@ function formFromCourse(course: LmsCourse | null): CourseForm {
     duration_min: course.duration_min ? String(course.duration_min) : "",
     certification_enabled: Boolean(course.certification_enabled),
     certification_def_id: course.certification_def_id || "",
+    respath: course.respath || "",
   }
 }
 
@@ -481,6 +484,7 @@ function formToPayload(form: CourseForm, version?: number) {
     duration_min: Number(form.duration_min || 0),
     certification_enabled: form.certification_enabled,
     certification_def_id: form.certification_enabled ? form.certification_def_id.trim() : "",
+    respath: form.respath.trim(),
     version: version || 0,
   }
 }
@@ -855,6 +859,10 @@ export default function LmsCoursesPage() {
   const saveCourse = async () => {
     if (!form.title.trim()) {
       toast.error(page.fillRequired)
+      return
+    }
+    if (!form.respath.trim()) {
+      toast.error(page.fillRespath)
       return
     }
     if (form.certification_enabled && !form.certification_def_id.trim()) {
@@ -2199,9 +2207,13 @@ export default function LmsCoursesPage() {
                 <div className="border-b bg-muted/40 px-4 py-3 text-sm text-muted-foreground">{page.courseFlowHint}</div>
 
                 <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-                  <div className="space-y-2">
+                  <div className="space-y-2 lg:col-span-2">
                     <Label htmlFor="title">{page.titleLabel}</Label>
                     <Input id="title" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="respath">{page.respathLabel}</Label>
+                    <Input id="respath" disabled={selectedCoursePublished} value={form.respath} onChange={(event) => setForm({ ...form, respath: event.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="duration">{page.durationMin}</Label>

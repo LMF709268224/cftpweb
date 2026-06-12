@@ -212,6 +212,8 @@ export const zh = {
     loadCourseDetail: "加载课程统计",
     selectCourseHint: "选择左侧课程后编辑",
     titleLabel: "课程标题",
+    respathLabel: "Respath (Casdoor 资源路径)",
+    fillRespath: "请填写 Respath",
     description: "描述",
     thumbnailObjectKey: "封面 Object Key",
     durationMin: "时长(分钟)",
