@@ -214,6 +214,7 @@ export const zh = {
     titleLabel: "课程标题",
     respathLabel: "Respath (Casdoor 资源路径)",
     fillRespath: "请填写 Respath",
+    respathTooltip: "配置此课程对应的 Casdoor 资源路径（如 /courses/cfta），用于精确控制课程及视频的访问权限。已发布的课程不可修改。",
     description: "描述",
     thumbnailObjectKey: "封面 Object Key",
     durationMin: "时长(分钟)",

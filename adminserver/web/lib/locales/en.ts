@@ -216,6 +216,7 @@ export const en: AppTranslations = {
     titleLabel: "Course Title",
     respathLabel: "Respath",
     fillRespath: "Please fill in Respath",
+    respathTooltip: "Configure the Casdoor resource path (e.g. /courses/cfta) to precisely control access to this course and its videos. Cannot be modified once published.",
     description: "Description",
     thumbnailObjectKey: "Thumbnail Object Key",
     durationMin: "Duration (min)",

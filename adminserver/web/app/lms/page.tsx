@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { AlertTriangle, ArrowLeft, BookOpen, CheckCircle2, ClipboardList, Eye, FileJson, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users } from "lucide-react"
+import { AlertTriangle, ArrowLeft, BookOpen, CheckCircle2, ClipboardList, Eye, FileJson, FileText, Plus, RefreshCw, Save, Trash2, UploadCloud, Users, Info } from "lucide-react"
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip"
 import { toast } from "sonner"
 
@@ -40,6 +40,7 @@ type LmsCourse = {
   duration_min?: number
   certification_enabled?: boolean
   certification_def_id?: string
+  respath?: string
   is_published?: boolean
   published_at?: string
   version?: number
@@ -710,7 +711,7 @@ export default function LmsCoursesPage() {
       setCourses((prevCourses) => {
         const mergedCourses = pageToken ? [...prevCourses, ...nextCourses] : nextCourses
         const currentSelectedId = selectedIdRef.current
-        if (!pageToken && currentSelectedId && !mergedCourses.some((course: LmsCourse) => course.course_id === currentSelectedId)) {
+        if (!pageToken && currentSelectedId && currentSelectedId !== "new" && !mergedCourses.some((course: LmsCourse) => course.course_id === currentSelectedId)) {
           setSelectedId("")
           setForm(emptyForm)
           resetCourseInspectionState()
@@ -752,7 +753,7 @@ export default function LmsCoursesPage() {
   }
 
   const startNewCourse = () => {
-    setSelectedId("")
+    setSelectedId("new")
     setForm(emptyForm)
     resetCourseInspectionState()
     resetCourseContentState()
@@ -2223,7 +2224,17 @@ export default function LmsCoursesPage() {
                     <Input id="title" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="respath">{page.respathLabel}</Label>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="respath">{page.respathLabel}</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 cursor-pointer text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p className="max-w-xs">{page.respathTooltip}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                     <Input id="respath" disabled={selectedCoursePublished} value={form.respath} onChange={(event) => setForm({ ...form, respath: event.target.value })} />
                   </div>
                   <div className="space-y-2">
