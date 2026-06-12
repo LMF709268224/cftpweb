@@ -1445,6 +1445,10 @@ export default function LmsCoursesPage() {
   const selectChapter = async (chapter: Chapter) => {
     setChapterModalOpen(true)
     setSelectedChapterId(chapter.chapter_id)
+    setChapterForm({
+      title: chapter.title || "",
+      sort_order: String(chapter.sort_order || 0),
+    })
     setSelectedQuizId("")
     setQuestions([])
     setSelectedQuestionId("")
@@ -1685,6 +1689,13 @@ export default function LmsCoursesPage() {
 
   const selectQuestion = async (question: QuizQuestion) => {
     setSelectedQuestionId(question.question_id)
+    setQuestionForm({
+      question_text: question.question_text || "",
+      question_type: String(question.question_type || 1),
+      points: String(question.points || 1),
+      sort_order: String(question.sort_order || 0),
+      is_required: question.is_required ?? true,
+    })
     await loadOptions(question.question_id)
   }
 
