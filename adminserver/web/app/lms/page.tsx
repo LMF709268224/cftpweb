@@ -2206,10 +2206,10 @@ export default function LmsCoursesPage() {
                 )}
 
                 <div className="flex justify-end border-t px-4 py-3">
-                  <Button onClick={saveCourse} disabled={saving}>
+                  <ProtectedButton onClick={saveCourse} disabled={saving || selectedCoursePublished} isPublished={selectedCoursePublished}>
                     {selectedCourse ? <Save className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
                     {selectedCourse ? page.saveCourse : page.createCourse}
-                  </Button>
+                  </ProtectedButton>
                 </div>
               </div>
 
@@ -2757,15 +2757,15 @@ export default function LmsCoursesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 pt-2">
-                      <Button onClick={saveSupplementaryMaterial} disabled={supplementaryMaterialSaving || !selectedCourse}>
+                      <ProtectedButton onClick={saveSupplementaryMaterial} disabled={supplementaryMaterialSaving || !selectedCourse || selectedCoursePublished} isPublished={selectedCoursePublished}>
                         <Save className="mr-2 h-4 w-4" />
                         {t.common.save || '保存'}
-                      </Button>
+                      </ProtectedButton>
                       {supplementaryMaterial?.material_id && (
-                        <Button variant="destructive" onClick={deleteSupplementaryMaterial} disabled={supplementaryMaterialSaving}>
+                        <ProtectedButton variant="destructive" onClick={deleteSupplementaryMaterial} disabled={supplementaryMaterialSaving || selectedCoursePublished} isPublished={selectedCoursePublished}>
                           <Trash2 className="mr-2 h-4 w-4" />
                           {page.delete || '删除'}
-                        </Button>
+                        </ProtectedButton>
                       )}
                     </div>
                   </div>
