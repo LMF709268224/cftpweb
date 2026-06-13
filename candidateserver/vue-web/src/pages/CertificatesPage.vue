@@ -39,10 +39,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppShell content-class="px-4 py-4">
-    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
-      <div class="bg-[#eef8fa] p-4">
-        <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
+  <AppShell content-class="p-4">
+    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+      <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
+        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
           <Award class="h-3.5 w-3.5" />
           {{ t.sidebar.certificates }}
         </div>
@@ -51,12 +51,12 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-16 text-muted-foreground shadow-sm">
+    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[22px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
     </div>
     <div v-else class="grid gap-4 lg:grid-cols-2">
-      <div v-for="cert in certificates" :key="cert.id" class="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10">
+      <div v-for="cert in certificates" :key="cert.id" class="group relative overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div class="relative bg-primary p-4 text-white">
           <div class="relative flex items-start justify-between">
             <div>
@@ -91,7 +91,7 @@ onMounted(async () => {
           </div>
         </div>
       </div>
-      <div class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card p-4 py-14 text-center shadow-sm">
+      <div class="flex flex-col items-center justify-center rounded-[22px] bg-white p-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"><Award class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.certificatesPage.keepLearningTitle }}</h3>
         <p class="mb-4 text-sm text-muted-foreground">{{ t.certificatesPage.keepLearningDesc }}</p>

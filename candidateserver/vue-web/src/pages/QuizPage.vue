@@ -73,7 +73,7 @@ onMounted(loadPaper)
 </script>
 
 <template>
-  <AppShell>
+  <AppShell content-class="p-4">
     <div v-if="loading" class="flex min-h-[60vh] items-center justify-center">
       <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
     </div>
@@ -106,7 +106,7 @@ onMounted(loadPaper)
     </div>
 
     <div v-else class="mx-auto max-w-3xl space-y-8">
-      <div class="rounded-2xl border bg-card p-6 shadow-sm sm:p-8">
+      <div class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:p-8">
         <button class="btn btn-ghost -ml-2 mb-4 text-muted-foreground" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
         <div class="flex items-start justify-between gap-4">
           <div>
@@ -120,7 +120,7 @@ onMounted(loadPaper)
       </div>
 
       <div class="space-y-6">
-        <div v-for="(question, index) in questions" :key="question.question_id" class="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm transition-all hover:border-primary/20 hover:shadow-md">
+        <div v-for="(question, index) in questions" :key="question.question_id" class="overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:shadow-md">
           <div class="flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
             <span>{{ formatQuizQuestionCount(Number(index) + 1, questions.length) }}</span>
             <span class="rounded border bg-background px-2 py-0.5 text-xs">{{ question.points || 0 }} {{ t.learning?.quizPts }}</span>
@@ -135,7 +135,7 @@ onMounted(loadPaper)
                   'flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all',
                   (answers[question.question_id] || []).includes(option.option_id)
                     ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                    : 'border-border hover:border-border/80 hover:bg-muted/50',
+                    : 'border-border hover:border-border/80 hover:bg-primary/10',
                 ]"
                 @click="handleSelectOption(question.question_id, option.option_id, question.question_type === 2)"
               >
@@ -153,7 +153,7 @@ onMounted(loadPaper)
         </div>
       </div>
 
-      <div class="sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-2xl border bg-card/80 p-4 shadow-lg backdrop-blur-md sm:flex-row sm:p-6">
+      <div class="sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-[22px] bg-white/90 p-4 shadow-lg backdrop-blur-md sm:flex-row sm:p-6">
         <div class="text-sm text-muted-foreground">{{ formatQuizAnsweredCount(Object.keys(answers).length, questions.length) }}</div>
         <button class="btn btn-primary w-full px-8 sm:w-auto" :disabled="submitting || !allAnswered" @click="submitQuiz">
           <span v-if="submitting" class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-r-transparent" />

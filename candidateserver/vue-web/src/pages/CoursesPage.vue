@@ -213,10 +213,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppShell content-class="px-4 py-4">
-    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
-      <div class="bg-[#eef8fa] p-4">
-        <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
+  <AppShell content-class="p-4">
+    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+      <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
+        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
           <BookOpen class="h-3.5 w-3.5" />
           {{ t.sidebar.courses }}
         </div>
@@ -225,7 +225,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="mb-4 flex flex-col gap-4 rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50 sm:flex-row sm:items-center sm:justify-between">
+    <div class="mb-4 flex flex-col gap-4 rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
       <div class="relative flex-1 sm:max-w-md">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="searchQuery" class="input pl-10" :placeholder="t.courses.searchPlaceholder" />
@@ -243,7 +243,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <div class="mb-4 flex w-fit gap-1 rounded-2xl bg-card p-1 shadow-sm ring-1 ring-border/50">
+    <div class="mb-4 flex w-fit gap-1 rounded-[22px] bg-white p-1 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <button
         v-for="tab in tabs"
         :key="tab.id"
@@ -255,13 +255,13 @@ onMounted(() => {
     </div>
 
     <div v-if="activeTab === 'all'">
-      <div v-if="loading && allCourses.length === 0" class="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-14 text-muted-foreground shadow-sm">
+      <div v-if="loading && allCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[22px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
       </div>
       <div v-else-if="filteredCourses.length > 0" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <CourseCard v-for="course in filteredCourses" :key="`${course.id}-${course.eligibilityRefreshKey || 0}`" v-bind="course" />
       </div>
-      <div v-else class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card py-16 text-center shadow-sm">
+      <div v-else class="flex flex-col items-center justify-center rounded-[22px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <Search class="h-8 w-8 text-primary" />
         </div>
@@ -270,10 +270,10 @@ onMounted(() => {
     </div>
 
     <div v-if="activeTab === 'my'" class="space-y-4">
-      <div v-if="loading && myCourses.length === 0" class="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-14 text-muted-foreground shadow-sm">
+      <div v-if="loading && myCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[22px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
       </div>
-      <div v-for="course in myCourses" :key="course.id" class="group relative overflow-hidden rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50 transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+      <div v-for="course in myCourses" :key="course.id" class="group relative overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
         <div class="flex gap-4">
           <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -310,7 +310,7 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      <div v-if="!loading && myCourses.length === 0" class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card py-16 text-center shadow-sm">
+      <div v-if="!loading && myCourses.length === 0" class="flex flex-col items-center justify-center rounded-[22px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <BookOpen class="h-8 w-8 text-primary" />
         </div>
@@ -324,7 +324,7 @@ onMounted(() => {
       <div
         v-for="resource in filteredResources"
         :key="resource.id"
-        class="group relative cursor-pointer overflow-hidden rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50 transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10"
+        class="group relative cursor-pointer overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10"
         @click="openResource(resource)"
       >
         <div class="flex items-center gap-4">
@@ -360,7 +360,7 @@ onMounted(() => {
           <button class="btn btn-ghost px-2" @click.stop><Bookmark class="h-4 w-4" /></button>
         </div>
       </div>
-      <div v-if="filteredResources.length === 0" class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card py-16 text-center shadow-sm">
+      <div v-if="filteredResources.length === 0" class="flex flex-col items-center justify-center rounded-[22px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <FileText class="h-8 w-8 text-primary" />
         </div>

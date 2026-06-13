@@ -70,30 +70,30 @@ async function handleLogout() {
 <template>
   <aside
     :class="[
-      'fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar/95 shadow-[8px_0_28px_rgba(10,122,138,0.06)] backdrop-blur transition-all duration-300',
+      'fixed left-0 top-0 z-40 flex h-screen flex-col bg-white shadow-[10px_0_30px_rgba(15,74,82,0.05)] transition-all duration-300',
       collapsed ? 'w-[72px]' : 'w-64',
     ]"
   >
-    <div class="flex h-18 items-center gap-3 border-b border-sidebar-border px-4 py-4">
-      <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+    <div class="flex h-20 items-center gap-3 px-4 py-4">
+      <div class="flex h-11 w-11 items-center justify-center rounded-[18px] bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(10,122,138,0.18)]">
         <GraduationCap class="h-5 w-5" />
       </div>
       <div v-if="!collapsed" class="flex flex-col">
-        <span class="text-base font-semibold tracking-tight text-sidebar-foreground">{{ t.sidebar.systemBrand }}</span>
+        <span class="text-xl font-black tracking-tight text-primary">{{ t.sidebar.systemBrand }}</span>
         <span class="text-xs text-muted-foreground">{{ t.sidebar.systemName }}</span>
       </div>
     </div>
 
-    <nav class="flex-1 space-y-1.5 overflow-y-auto px-3 py-5">
+    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
       <RouterLink
         v-for="item in navItems"
         :key="item.href"
         :to="item.href"
         :class="[
-          'group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200',
+          'group relative flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all duration-200',
           route.path === item.href
-            ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
-            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            ? 'bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(10,122,138,0.18)]'
+            : 'text-sidebar-foreground hover:bg-[#edf8f9] hover:text-primary',
         ]"
       >
         <component :is="item.icon" :class="['h-5 w-5 shrink-0', collapsed && 'mx-auto']" />
@@ -118,12 +118,12 @@ async function handleLogout() {
       </RouterLink>
     </nav>
 
-    <div class="relative border-t border-sidebar-border bg-[#f7fbfc] p-3">
+    <div class="relative bg-[#f7fbfc] p-3">
       <button
-        :class="['flex w-full items-center gap-3 rounded-2xl border border-transparent px-3 py-2.5 text-left transition-colors hover:border-sidebar-border hover:bg-white', collapsed && 'justify-center px-0']"
+        :class="['flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-white', collapsed && 'justify-center px-0']"
         @click="menuOpen = !menuOpen"
       >
-        <div class="flex h-10 w-10 items-center justify-center rounded-full border border-primary/20 bg-primary/10 font-semibold text-primary">
+        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
           {{ userName.charAt(0) }}
         </div>
         <div v-if="!collapsed" class="flex-1 overflow-hidden">
@@ -132,7 +132,7 @@ async function handleLogout() {
         </div>
       </button>
 
-      <div v-if="menuOpen && !collapsed" class="absolute bottom-[76px] right-3 z-50 w-56 overflow-hidden rounded-2xl border bg-card p-1.5 shadow-lg shadow-slate-900/10">
+      <div v-if="menuOpen && !collapsed" class="absolute bottom-[76px] right-3 z-50 w-56 overflow-hidden rounded-2xl bg-card p-1.5 shadow-lg shadow-slate-900/10">
         <RouterLink to="/settings?tab=profile" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-muted">
           <User class="h-4 w-4" /> {{ t.sidebar.profile }}
         </RouterLink>
@@ -150,7 +150,7 @@ async function handleLogout() {
     </div>
 
     <button
-      class="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+      class="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full bg-white text-muted-foreground shadow-md transition-colors hover:bg-accent hover:text-accent-foreground"
       @click="collapsed = !collapsed"
     >
       <ChevronRight v-if="collapsed" class="h-3 w-3" />

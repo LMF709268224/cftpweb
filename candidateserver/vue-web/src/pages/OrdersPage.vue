@@ -51,10 +51,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppShell>
-    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
-      <div class="bg-[#eef8fa] p-4">
-        <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
+  <AppShell content-class="p-4">
+    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+      <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
+        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
           <ShoppingCart class="h-3.5 w-3.5" />
           {{ t.sidebar.orders }}
         </div>
@@ -64,21 +64,21 @@ onMounted(async () => {
     </div>
 
     <div class="mb-4 grid gap-4 sm:grid-cols-3">
-      <div class="group relative overflow-hidden rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50 transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+      <div class="group relative overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-transform group-hover:scale-105"><ShoppingCart class="h-6 w-6 text-primary" /></div>
           <div><p class="text-2xl font-bold text-card-foreground">{{ orders.length }}</p><p class="text-sm text-muted-foreground">{{ t.orders.totalOrders }}</p></div>
         </div>
       </div>
-      <div class="group relative overflow-hidden rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50 transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+      <div class="group relative overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div class="absolute left-0 top-0 h-full w-1 bg-emerald-500/60" />
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 transition-transform group-hover:scale-105"><CheckCircle2 class="h-6 w-6 text-emerald-600" /></div>
           <div><p class="text-2xl font-bold text-card-foreground">{{ completedCount }}</p><p class="text-sm text-muted-foreground">{{ t.orders.completed }}</p></div>
         </div>
       </div>
-      <div class="group relative overflow-hidden rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50 transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+      <div class="group relative overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div class="absolute left-0 top-0 h-full w-1 bg-amber-500/60" />
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 transition-transform group-hover:scale-105"><Receipt class="h-6 w-6 text-amber-600" /></div>
@@ -87,8 +87,8 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div class="flex items-center gap-3 border-b border-border bg-[#f7fbfc] px-4 py-4">
+    <div class="overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div class="flex items-center gap-3 bg-white px-4 py-4">
         <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10"><Receipt class="h-4 w-4 text-primary" /></div>
         <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
       </div>
@@ -98,8 +98,8 @@ onMounted(async () => {
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.orders.noOrders }}</h3>
         <p class="max-w-md text-sm text-muted-foreground">{{ t.orders.noOrdersDesc }}</p>
       </div>
-      <div v-else class="divide-y divide-border">
-        <div v-for="order in orders" :key="order.id" class="group flex items-center justify-between px-4 py-4 transition-colors hover:bg-muted/50">
+      <div v-else class="space-y-2">
+        <div v-for="order in orders" :key="order.id" class="group flex items-center justify-between px-4 py-4 transition-colors hover:bg-primary/10">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
             <div><h3 class="mb-1 font-medium text-card-foreground">{{ order.items.join(", ") }}</h3><p class="text-sm text-muted-foreground">{{ order.date }}</p></div>

@@ -82,7 +82,7 @@ const accessState = computed(() => {
   <component
     :is="effectivePurchased ? RouterLink : 'div'"
     :to="effectivePurchased ? `/courses/detail?id=${encodeURIComponent(id)}` : undefined"
-    class="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10"
+    class="group block overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="!effectivePurchased && (showPurchaseDialog = true)"
   >

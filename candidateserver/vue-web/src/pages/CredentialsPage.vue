@@ -127,10 +127,10 @@ onMounted(fetchData)
 </script>
 
 <template>
-  <AppShell content-class="px-4 py-4">
-    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
-      <div class="bg-[#eef8fa] p-4">
-        <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
+  <AppShell content-class="p-4">
+    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+      <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
+        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
           <Award class="h-3.5 w-3.5" />
           {{ t.sidebar.credentials }}
         </div>
@@ -139,20 +139,20 @@ onMounted(fetchData)
       </div>
     </div>
 
-    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-16 text-muted-foreground shadow-sm">
+    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[22px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
     </div>
     <div v-else class="space-y-4">
       <section>
-        <div class="mb-4 flex items-center gap-3 rounded-2xl bg-card px-4 py-4 shadow-sm ring-1 ring-border/50">
+        <div class="mb-4 flex items-center gap-3 rounded-[22px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Award class="h-4 w-4" />
           </div>
           <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.availableQualifications }}</h2>
         </div>
         <div class="grid gap-4 md:grid-cols-3">
-          <div v-for="def in definitions" :key="def.cred_def_id" class="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-[#fbfefe] text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
+          <div v-for="def in definitions" :key="def.cred_def_id" class="group relative flex flex-col overflow-hidden rounded-[22px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
             <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
             <div class="flex flex-col space-y-3 p-4">
               <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
@@ -170,21 +170,21 @@ onMounted(fetchData)
       </section>
 
       <section>
-        <div class="mb-4 flex items-center gap-3 rounded-2xl bg-card px-4 py-4 shadow-sm ring-1 ring-border/50">
+        <div class="mb-4 flex items-center gap-3 rounded-[22px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <FileText class="h-4 w-4" />
           </div>
           <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.myApplications }}</h2>
         </div>
-        <div v-if="applications.length === 0" class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-14 text-center shadow-sm">
+        <div v-if="applications.length === 0" class="flex flex-col items-center justify-center rounded-[22px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
             <FileText class="h-8 w-8 text-primary" />
           </div>
           <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.credentialsPage.noApplications }}</h3>
         </div>
-        <div v-else class="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-          <div class="divide-y divide-border">
-            <div v-for="app in applications" :key="app.app_id" class="grid grid-cols-[minmax(180px,1.5fr)_minmax(220px,2fr)_minmax(120px,1fr)_auto] items-center gap-4 px-4 py-4 text-sm transition-colors hover:bg-muted/50">
+        <div v-else class="overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <div class="space-y-2">
+            <div v-for="app in applications" :key="app.app_id" class="grid grid-cols-[minmax(180px,1.5fr)_minmax(220px,2fr)_minmax(120px,1fr)_auto] items-center gap-4 px-4 py-4 text-sm transition-colors hover:bg-primary/10">
               <div class="min-w-0">
                 <div class="truncate font-medium text-foreground">{{ definitions.find((d) => d.cred_def_id === app.cred_def_id)?.name || t.common.unknown }}</div>
                 <div class="truncate text-xs text-muted-foreground">{{ app.app_id }}</div>
@@ -203,7 +203,7 @@ onMounted(fetchData)
     </div>
 
     <div v-if="isApplyOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="isApplyOpen = false">
-      <div class="w-full max-w-md rounded-2xl border border-border bg-card p-4 shadow-lg shadow-slate-900/20">
+      <div class="w-full max-w-md rounded-[22px] bg-white p-4 shadow-lg shadow-slate-900/20">
         <div class="flex items-start justify-between gap-4">
           <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
           <button class="text-xl leading-none text-muted-foreground transition-colors hover:text-foreground" @click="isApplyOpen = false">x</button>

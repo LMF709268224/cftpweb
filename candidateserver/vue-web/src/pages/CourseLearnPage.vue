@@ -682,17 +682,17 @@ watch(selectedMaterial, () => {
 </script>
 
 <template>
-  <AppShell>
+  <AppShell content-class="p-4">
     <RouterLink :to="pipelineId ? `/courses/detail?id=${encodeURIComponent(pipelineId)}` : '/courses'" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
       <ArrowLeft class="h-4 w-4" />
       {{ t.learning.backToCourse }}
     </RouterLink>
 
     <div v-if="loading" class="text-muted-foreground">{{ t.common.loading }}</div>
-    <div v-else-if="!course" class="rounded-lg border bg-card p-8 text-center text-muted-foreground">{{ t.common.na }}</div>
+    <div v-else-if="!course" class="rounded-[22px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">{{ t.common.na }}</div>
     <div v-else class="grid gap-6 lg:grid-cols-[340px_1fr]">
       <aside class="space-y-4">
-        <div class="rounded-2xl border bg-card p-6 shadow-sm">
+        <div class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="mb-3 flex flex-wrap gap-2">
             <span class="badge border-0 bg-primary/10 text-primary">{{ t.learning.title }}</span>
             <span v-if="course.category_tips" class="badge">{{ course.category_tips }}</span>
@@ -724,7 +724,7 @@ watch(selectedMaterial, () => {
             <RouterLink to="/exams" class="btn btn-outline py-1.5 text-xs">{{ t.learning.goToExams }}</RouterLink>
           </div>
 
-          <div class="mt-4 rounded-xl border bg-muted/20 p-4">
+          <div class="mt-4 rounded-xl bg-muted/20 p-4">
             <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
               <Sparkles class="h-4 w-4 text-primary" />
               {{ t.learning.statusSummaryTitle }}
@@ -778,11 +778,11 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div class="rounded-2xl border bg-card shadow-sm">
-          <div class="border-b px-5 py-4">
+        <div class="rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <div class="px-5 py-4">
             <h2 class="text-sm font-semibold text-foreground">{{ t.learning.chapters }}</h2>
           </div>
-          <div class="divide-y">
+          <div class="space-y-2">
             <div
               v-for="(chapter, chapterIndex) in chapters"
               :key="chapter.chapter?.chapter_id || chapterIndex"
@@ -844,7 +844,7 @@ watch(selectedMaterial, () => {
           </button>
         </div>
 
-        <div v-if="courseQuizTasks.length > 0 || visibleChapterAndLessonQuizTasks.length > 0" class="rounded-2xl border bg-card p-6 shadow-sm">
+        <div v-if="courseQuizTasks.length > 0 || visibleChapterAndLessonQuizTasks.length > 0" class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div class="mb-2 flex items-center gap-2">
@@ -858,7 +858,7 @@ watch(selectedMaterial, () => {
           </div>
 
           <div class="grid gap-4 xl:grid-cols-2">
-            <div class="rounded-xl border bg-primary/5 p-4">
+            <div class="rounded-xl bg-primary/5 p-4">
               <div class="mb-3 flex items-center justify-between gap-3">
                 <h3 class="font-semibold text-foreground">{{ t.learning.courseQuizzesTitle }}</h3>
                 <span class="badge">{{ courseQuizTasks.filter((task) => task.completed).length }}/{{ courseQuizTasks.length }}</span>
@@ -867,7 +867,7 @@ watch(selectedMaterial, () => {
                 {{ t.learning.noCourseQuizzes }}
               </div>
               <div v-else class="space-y-2">
-                <div v-for="(task, index) in courseQuizTasks" :key="task.key" class="rounded-lg border bg-background p-3">
+                <div v-for="(task, index) in courseQuizTasks" :key="task.key" class="rounded-lg bg-background p-3 shadow-sm">
                   <div class="mb-2 flex flex-wrap items-center gap-2">
                     <span class="badge">{{ task.scopeLabel }}</span>
                     <span v-if="task.completed" class="badge border-emerald-200 bg-emerald-50 text-emerald-700">
@@ -884,7 +884,7 @@ watch(selectedMaterial, () => {
               </div>
             </div>
 
-            <div class="rounded-xl border bg-muted/20 p-4">
+            <div class="rounded-xl bg-muted/20 p-4">
               <div class="mb-3 flex items-center justify-between gap-3">
                 <h3 class="font-semibold text-foreground">{{ t.learning.chapterQuizzesTitle }}</h3>
                 <span class="badge">{{ visibleChapterAndLessonQuizTasks.filter((task) => task.completed).length }}/{{ visibleChapterAndLessonQuizTasks.length }}</span>
@@ -893,7 +893,7 @@ watch(selectedMaterial, () => {
                 {{ t.learning.noChapterQuizzes }}
               </div>
               <div v-else class="space-y-2">
-                <div v-for="(task, index) in visibleChapterAndLessonQuizTasks" :key="task.key" class="rounded-lg border bg-background p-3">
+                <div v-for="(task, index) in visibleChapterAndLessonQuizTasks" :key="task.key" class="rounded-lg bg-background p-3 shadow-sm">
                   <div class="mb-2 flex flex-wrap items-center gap-2">
                     <span class="badge">{{ task.scopeLabel }}</span>
                     <span v-if="task.chapterTitle" class="badge">{{ t.learning.chapters }}: {{ task.chapterTitle }}</span>
@@ -914,7 +914,7 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div id="lesson-detail" class="rounded-2xl border bg-card p-6 shadow-sm">
+        <div id="lesson-detail" class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
             <div class="flex flex-wrap items-center gap-2">
               <span class="badge border-0 bg-primary/10 text-primary">{{ lessonTypeLabel(lesson?.lesson_type) }}</span>
@@ -948,9 +948,9 @@ watch(selectedMaterial, () => {
             </button>
 
             <div v-if="lessonContentExpanded" class="mt-3">
-              <div v-if="lesson?.video_embed_code" class="overflow-hidden rounded-xl border bg-muted" v-html="lesson.video_embed_code" />
+              <div v-if="lesson?.video_embed_code" class="overflow-hidden rounded-xl bg-muted" v-html="lesson.video_embed_code" />
               <div v-else-if="lesson?.external_url" class="space-y-4">
-                <div class="rounded-xl border bg-muted/30 p-4 text-sm text-muted-foreground">{{ t.learning.noLessonBody }}</div>
+                <div class="rounded-xl bg-muted/30 p-4 text-sm text-muted-foreground">{{ t.learning.noLessonBody }}</div>
                 <button class="btn btn-primary" @click="openExternalLesson">
                   <ExternalLink class="h-4 w-4" />
                   {{ t.learning.openExternalLesson }}
@@ -958,13 +958,13 @@ watch(selectedMaterial, () => {
               </div>
               <div v-else class="prose max-w-none text-sm text-foreground">
                 <div v-if="lesson?.body" v-html="lesson.body" />
-                <div v-else class="rounded-xl border bg-muted/30 p-4 text-muted-foreground">{{ t.learning.noLessonBody }}</div>
+                <div v-else class="rounded-xl bg-muted/30 p-4 text-muted-foreground">{{ t.learning.noLessonBody }}</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="rounded-2xl border bg-card p-6 shadow-sm">
+        <div class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div class="mb-2 flex items-center gap-2">
@@ -976,12 +976,12 @@ watch(selectedMaterial, () => {
             <span class="badge">{{ materials.length }} {{ t.learning.materialsCountSuffix }}</span>
           </div>
 
-          <div v-if="materials.length === 0" class="rounded-xl border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+          <div v-if="materials.length === 0" class="rounded-xl bg-muted/30 p-6 text-center text-sm text-muted-foreground">
             {{ t.learning.materialsEmpty }}
             <div class="mt-2 text-xs text-muted-foreground">{{ t.learning.materialsEmptyHint }}</div>
           </div>
           <div v-else class="grid gap-4 xl:grid-cols-[240px_1fr]">
-            <div class="rounded-xl border bg-muted/20 p-3">
+            <div class="rounded-xl bg-muted/20 p-3">
               <div class="mb-3 flex flex-wrap gap-2">
                 <button :class="['btn py-1.5 text-xs', activeMaterialGroup === 'all' ? 'btn-primary' : 'btn-outline']" @click="activeMaterialGroup = 'all'">
                   {{ t.learning.materialGroupAll }}
@@ -1016,7 +1016,7 @@ watch(selectedMaterial, () => {
               </div>
             </div>
 
-            <div class="rounded-xl border bg-background p-5">
+            <div class="rounded-xl bg-background p-5 shadow-sm">
               <div v-if="selectedMaterial" class="space-y-5">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="badge">{{ materialTypeLabel(selectedMaterial.material_type) }}</span>
@@ -1028,17 +1028,17 @@ watch(selectedMaterial, () => {
                 </div>
 
                 <div class="grid gap-3 sm:grid-cols-2">
-                  <div class="rounded-lg border bg-muted/20 p-4">
+                  <div class="rounded-lg bg-muted/20 p-4">
                     <div class="text-xs text-muted-foreground">{{ t.learning.materialSizeLabel }}</div>
                     <div class="mt-1 text-sm font-medium text-foreground">{{ formatFileSize(selectedMaterial.file_size) || t.learning.materialSizeUnknown }}</div>
                   </div>
-                  <div class="rounded-lg border bg-muted/20 p-4">
+                  <div class="rounded-lg bg-muted/20 p-4">
                     <div class="text-xs text-muted-foreground">{{ t.learning.materialHashLabel }}</div>
                     <div class="mt-1 break-all text-sm font-medium text-foreground">{{ selectedMaterial.file_hash || t.learning.materialHashUnknown }}</div>
                   </div>
                 </div>
 
-                <div class="rounded-xl border bg-muted/20 p-4">
+                <div class="rounded-xl bg-muted/20 p-4">
                   <div class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.learning.materialPreviewLabel }}</div>
                   <div class="flex min-h-[240px] items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center text-sm text-muted-foreground">
                     <div class="space-y-3">

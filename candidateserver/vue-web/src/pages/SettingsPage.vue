@@ -85,7 +85,7 @@ async function handleUpdatePassword() {
 </script>
 
 <template>
-  <AppShell>
+  <AppShell content-class="p-4">
     <div class="mb-4 flex items-center justify-between space-y-2">
       <h1 class="text-3xl font-bold tracking-tight">{{ t.settings.title }}</h1>
     </div>

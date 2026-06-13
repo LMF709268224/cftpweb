@@ -331,14 +331,14 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
 </script>
 
 <template>
-  <AppShell>
+  <AppShell content-class="p-4">
     <RouterLink to="/courses" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
       <ArrowLeft class="h-4 w-4" />
       {{ t.courses.backToPipelines }}
     </RouterLink>
 
     <div v-if="loading" class="text-muted-foreground">{{ t.common.loading }}</div>
-    <div v-else-if="!pipeline" class="rounded-lg border bg-card p-8 text-center text-muted-foreground">{{ t.common.na }}</div>
+    <div v-else-if="!pipeline" class="rounded-[22px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">{{ t.common.na }}</div>
     <template v-else>
       <div :class="['mb-8 grid gap-8', firstCourseThumbnail && 'lg:grid-cols-[380px_1fr]']">
         <div v-if="firstCourseThumbnail" class="relative flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-muted">
@@ -380,7 +380,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
             </button>
           </div>
 
-          <div v-if="purchased && nextStepAction" class="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+          <div v-if="purchased && nextStepAction" class="mt-6 rounded-[22px] bg-primary/5 p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
             <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
               <Sparkles class="h-4 w-4" />
               {{ t.learning.nextStepTitle }}
@@ -415,7 +415,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
             </div>
           </div>
 
-          <div v-if="purchased" class="mt-4 rounded-2xl border bg-card p-4">
+          <div v-if="purchased" class="mt-4 rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
             <div class="flex items-center justify-between gap-3">
               <div>
                 <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -441,17 +441,17 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
           <span class="badge">{{ stages.length }} {{ t.courses.stages }} / {{ totalUnits }} {{ t.courses.units }}</span>
         </div>
 
-        <div v-if="stages.length === 0" class="rounded-lg border bg-card p-8 text-center text-muted-foreground">{{ t.common.na }}</div>
+        <div v-if="stages.length === 0" class="rounded-[22px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">{{ t.common.na }}</div>
         <div
           v-for="(stage, stageIndex) in stages"
           v-else
           :key="stage.stage_id || stageIndex"
           :class="[
-            'overflow-hidden rounded-2xl border bg-card shadow-sm',
+            'overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]',
             stageIndex === activeStageIndex ? 'border-primary/30 ring-1 ring-primary/15' : '',
           ]"
         >
-          <div class="flex flex-col gap-4 border-b px-5 py-4 md:flex-row md:items-center md:justify-between">
+          <div class="flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
               <div
                 :class="[
@@ -474,7 +474,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
             </div>
           </div>
 
-          <div class="divide-y">
+          <div class="space-y-2">
             <component
               :is="purchased && unit.glms_course_id && (stageIndex <= activeStageIndex || activeStageIndex >= stages.length) ? RouterLink : 'div'"
               v-for="(unit, unitIndex) in stage.units || []"
@@ -483,7 +483,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               :class="[
                 'flex items-center justify-between gap-4 px-5 py-3',
                 purchased && unit.glms_course_id && (stageIndex <= activeStageIndex || activeStageIndex >= stages.length)
-                  ? 'transition-colors hover:bg-muted/50'
+                  ? 'transition-colors hover:bg-primary/10'
                   : 'opacity-75',
               ]"
             >

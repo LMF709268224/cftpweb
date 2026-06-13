@@ -87,7 +87,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <AppShell>
+  <AppShell content-class="p-4">
     <RouterLink :to="backLink" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
       <ArrowLeft class="h-4 w-4" /> {{ t.examSignup.backToCourse }}
     </RouterLink>
@@ -95,7 +95,7 @@ async function handleSubmit() {
       <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examSignup.title }}</h1>
       <p class="mt-2 text-muted-foreground">{{ t.examSignup.subtitle }}</p>
     </div>
-    <div class="max-w-2xl rounded-2xl border border-border bg-card p-6 shadow-sm">
+    <div class="max-w-2xl rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <form class="space-y-6" @submit.prevent="handleSubmit">
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formFirstName }} *</span><input v-model="formData.first_name" class="input" required /></label>
