@@ -26,7 +26,7 @@ const variantStyles = {
   <component
     :is="props.href ? RouterLink : 'div'"
     :to="props.href"
-    :class="['group relative block overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10', props.href && 'cursor-pointer']"
+    :class="['group relative block overflow-hidden rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/60 transition-all duration-300 hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10', props.href && 'cursor-pointer']"
   >
     <div :class="['absolute left-0 top-0 h-full w-1', variantStyles[variant].accent]" />
     <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

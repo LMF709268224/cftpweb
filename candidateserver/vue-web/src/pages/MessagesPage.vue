@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Megaphone, MessageSquare, MoreHorizontal, Trash2 } from "lucide-vue-next"
@@ -36,11 +36,11 @@ function unreadCountText() {
 }
 
 function markReadMenuLabel() {
-  return lang.value === "zh" ? "标记为已读" : "Mark as read"
+  return lang.value === "zh" ? "\u6807\u8bb0\u4e3a\u5df2\u8bfb" : "Mark as read"
 }
 
 function deleteMenuLabel() {
-  return lang.value === "zh" ? "删除" : "Delete"
+  return lang.value === "zh" ? "\u5220\u9664" : "Delete"
 }
 
 async function fetchMessages() {
@@ -126,7 +126,7 @@ onMounted(fetchMessages)
 
 <template>
   <AppShell>
-    <div class="mb-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
       <div class="flex flex-col gap-4 bg-[#eef8fa] p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
@@ -140,7 +140,7 @@ onMounted(fetchMessages)
       </div>
     </div>
 
-    <div class="mb-4 flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
+    <div class="mb-4 flex flex-wrap gap-2 rounded-2xl bg-card p-2 shadow-sm ring-1 ring-border/50">
       <button :class="['rounded-xl px-4 py-2 text-sm font-medium transition-all', selectedType === null ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']" @click="selectedType = null">
         {{ t.messagesPage.all }} <span class="ml-2 rounded-full bg-card/30 px-1.5">{{ messageList.length }}</span>
       </button>

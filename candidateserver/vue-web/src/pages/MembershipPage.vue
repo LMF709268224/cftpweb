@@ -33,7 +33,7 @@ const membershipLevels = computed(() => [
 
 <template>
   <AppShell content-class="px-4 py-4">
-    <div class="mb-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
       <div class="bg-[#eef8fa] p-4">
         <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
           <Crown class="h-3.5 w-3.5" />
@@ -44,7 +44,7 @@ const membershipLevels = computed(() => [
       </div>
     </div>
 
-    <div class="mb-4 rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div class="mb-4 rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50">
       <div class="flex items-center gap-3">
         <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
           <Crown class="h-5 w-5" />
@@ -56,13 +56,13 @@ const membershipLevels = computed(() => [
       </div>
     </div>
 
-    <div class="mb-4 flex w-fit gap-1 overflow-x-auto rounded-2xl border border-border bg-card p-1 shadow-sm">
+    <div class="mb-4 flex w-fit gap-1 overflow-x-auto rounded-2xl bg-card p-1 shadow-sm ring-1 ring-border/50">
       <button v-for="tab in tabs" :key="tab.id" :class="['whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200', activeTab === tab.id ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']" @click="activeTab = tab.id">
         {{ tab.label }}
       </button>
     </div>
 
-    <div v-if="activeTab === 'benefits'" class="rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div v-if="activeTab === 'benefits'" class="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50">
       <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.currentBenefits }}</h2>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div v-for="benefit in benefits" :key="benefit.title" class="group flex gap-4 rounded-2xl border border-border bg-white p-4 transition-all hover:border-primary/25 hover:shadow-md hover:shadow-primary/10">
@@ -98,12 +98,12 @@ const membershipLevels = computed(() => [
       </div>
     </div>
 
-    <div v-if="activeTab === 'intro'" class="rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div v-if="activeTab === 'intro'" class="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50">
       <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.introTitle }}</h2>
       <p class="leading-relaxed text-muted-foreground">{{ t.membership.introDesc }}</p>
     </div>
 
-    <div v-if="activeTab === 'settings' || activeTab === 'orders'" class="rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div v-if="activeTab === 'settings' || activeTab === 'orders'" class="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50">
       <div class="flex flex-col items-center justify-center py-12 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
           <Crown class="h-8 w-8 text-primary" />

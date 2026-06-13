@@ -19,7 +19,7 @@ function recordStatusConfig(status: keyof typeof statusConfig) {
 
 <template>
   <AppShell content-class="px-4 py-4">
-    <div class="mb-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
       <div class="flex flex-col gap-4 bg-[#eef8fa] p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
@@ -34,7 +34,7 @@ function recordStatusConfig(status: keyof typeof statusConfig) {
     </div>
 
     <div class="mb-4 grid gap-4 sm:grid-cols-3">
-      <div v-for="(config, status) in statusConfig" :key="status" class="group relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10">
+      <div v-for="(config, status) in statusConfig" :key="status" class="group relative overflow-hidden rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50 transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div :class="['absolute left-0 top-0 h-full w-1', status === 'verified' ? 'bg-primary' : status === 'pending' ? 'bg-amber-500' : 'bg-red-500']" />
         <div class="flex items-center gap-4">
           <div :class="['flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105', status === 'verified' ? 'bg-primary/10' : status === 'pending' ? 'bg-amber-100' : 'bg-red-100']">

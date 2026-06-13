@@ -123,7 +123,7 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="px-4 py-4">
-    <div class="mb-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
       <div class="flex flex-col gap-4 bg-[#eef8fa] p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
@@ -137,7 +137,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="mb-4 flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <div class="mb-4 flex flex-col gap-4 rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50 sm:flex-row sm:items-center sm:justify-between">
       <div class="relative flex-1 sm:max-w-md">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="search" class="input pl-10" :placeholder="t.examsPage.searchPlaceholder" />
@@ -145,13 +145,13 @@ onMounted(() => {
       <button class="btn btn-outline rounded-xl" @click="loadExams"><Filter class="h-4 w-4" /> {{ t.examsPage.refresh }}</button>
     </div>
 
-    <div class="mb-4 flex w-fit gap-1 overflow-x-auto rounded-2xl border border-border bg-card p-1 shadow-sm">
+    <div class="mb-4 flex w-fit gap-1 overflow-x-auto rounded-2xl bg-card p-1 shadow-sm ring-1 ring-border/50">
       <button v-for="tab in tabs" :key="tab.id" :class="['inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200', activeTab === tab.id ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']" @click="activeTab = tab.id">
         <component :is="tab.icon" class="h-4 w-4" /> {{ tab.label }}
       </button>
     </div>
 
-    <div class="rounded-2xl border border-border bg-card p-4 shadow-sm">
+    <div class="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50">
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
         <Loader2 class="h-5 w-5 animate-spin" />
         <span>{{ t.common.loading }}</span>

@@ -58,7 +58,7 @@ onMounted(async () => {
 
 <template>
   <AppShell content-class="px-4 py-4">
-    <div class="mb-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
       <div class="bg-[#eef8fa] p-4">
         <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
           <GraduationCap class="h-3.5 w-3.5" />

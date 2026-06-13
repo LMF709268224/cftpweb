@@ -128,7 +128,7 @@ onMounted(fetchData)
 
 <template>
   <AppShell content-class="px-4 py-4">
-    <div class="mb-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+    <div class="mb-4 overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border/50">
       <div class="bg-[#eef8fa] p-4">
         <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
           <Award class="h-3.5 w-3.5" />
@@ -145,7 +145,7 @@ onMounted(fetchData)
     </div>
     <div v-else class="space-y-4">
       <section>
-        <div class="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 shadow-sm">
+        <div class="mb-4 flex items-center gap-3 rounded-2xl bg-card px-4 py-4 shadow-sm ring-1 ring-border/50">
           <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <Award class="h-4 w-4" />
           </div>
@@ -170,7 +170,7 @@ onMounted(fetchData)
       </section>
 
       <section>
-        <div class="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 shadow-sm">
+        <div class="mb-4 flex items-center gap-3 rounded-2xl bg-card px-4 py-4 shadow-sm ring-1 ring-border/50">
           <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <FileText class="h-4 w-4" />
           </div>
