@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue"
-import { useRoute } from "vue-router"
+import { onMounted, reactive, ref, watch } from "vue"
+import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { Loader2 } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
@@ -9,12 +9,26 @@ import { getMessage } from "@/lib/messages"
 import { useTranslation } from "@/lib/language"
 
 const route = useRoute()
+const router = useRouter()
 const { t, lang } = useTranslation()
 const activeTab = ref(String(route.query.tab || "profile"))
 const profile = reactive({ name: "", displayName: "", email: "", affiliation: "", title: "", realName: "", bio: "", gender: "", birthday: "", education: "" })
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
 const isProfileLoading = ref(false)
 const isPasswordLoading = ref(false)
+
+watch(
+  () => route.query.tab,
+  (tab) => {
+    activeTab.value = tab === "account" ? "account" : "profile"
+  },
+  { immediate: true },
+)
+
+function setActiveTab(tab: "profile" | "account") {
+  activeTab.value = tab
+  void router.replace({ query: { ...route.query, tab } })
+}
 
 onMounted(async () => {
   try {
@@ -94,14 +108,14 @@ async function handleUpdatePassword() {
         <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
           <button
             :class="['relative cursor-pointer px-1 pb-7 text-base font-medium transition-colors duration-200', activeTab === 'profile' ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-            @click="activeTab = 'profile'"
+            @click="setActiveTab('profile')"
           >
             {{ t.settings.profileTab }}
             <span v-if="activeTab === 'profile'" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
           </button>
           <button
             :class="['relative cursor-pointer px-1 pb-7 text-base font-medium transition-colors duration-200', activeTab === 'account' ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-            @click="activeTab = 'account'"
+            @click="setActiveTab('account')"
           >
             {{ t.settings.accountTab }}
             <span v-if="activeTab === 'account'" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />

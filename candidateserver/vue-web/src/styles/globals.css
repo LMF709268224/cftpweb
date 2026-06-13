@@ -120,6 +120,7 @@
   }
 
   .app-side-card {
+    max-height: calc(100vh - 122px);
     scrollbar-width: thin;
     scrollbar-color: #d7dce2 transparent;
   }
