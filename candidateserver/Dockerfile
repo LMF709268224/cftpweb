@@ -3,17 +3,19 @@
 # ==========================================
 FROM docker.io/library/node:20-alpine AS frontend-builder
 COPY shared/ /shared/
-WORKDIR /app/web
-# 这里的 web 目录将在你后续创建 React 项目时出现
-# 如果为了防止还没建好 web 目录导致构建报错，可以先用 COPY . . 兜底
-COPY candidateserver/web/ ./
+WORKDIR /app/vue-web
+# 这里的 vue-web 目录将在你后续创建 Vue 项目时出现
+# 如果为了防止还没建好 vue-web 目录导致构建报错，可以先用 COPY . . 兜底
+COPY candidateserver/vue-web/ ./
 # 如果检测到 package.json 存在，就执行依赖安装和编译 (支持 pnpm / npm)
-RUN if [ -f pnpm-lock.yaml ]; then \
+# 强制删除可能被意外拷入的 node_modules，避免本地路径缓存毒化导致 clsx 等模块找不到
+RUN rm -rf node_modules && \
+    if [ -f pnpm-lock.yaml ]; then \
         npm install -g pnpm && pnpm install && pnpm run build; \
     elif [ -f package.json ]; then \
         npm install && npm run build; \
     else \
-        mkdir -p build; \
+        mkdir -p dist; \
     fi
 
 # ==========================================
@@ -41,8 +43,8 @@ WORKDIR /app
 COPY --from=backend-builder /app/candidateserver .
 RUN chmod +x candidateserver
 
-# 拷贝阶段1编译好的前端静态文件 (挂载到 web/build 目录下)
-COPY --from=frontend-builder /app/web/build ./web/build
+# 拷贝阶段1编译好的前端静态文件 (挂载到 vue-web/dist 目录下)
+COPY --from=frontend-builder /app/vue-web/dist ./vue-web/dist
 
 EXPOSE 8080
 CMD ["./candidateserver"]

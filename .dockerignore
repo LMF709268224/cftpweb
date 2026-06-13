@@ -1,0 +1,17 @@
+**/node_modules
+**/.git
+**/.vscode
+**/.idea
+scratch/
+ztest/
+CLAUDE.md
+*.exe
+*.swp
+*.swo
+*.tsbuildinfo
+candidateserver/vue-web/dist/
+adminserver/vue-web/dist/
+candidateserver/web/build/
+adminserver/web/build/
+candidateserver/web/out/
+adminserver/web/out/
