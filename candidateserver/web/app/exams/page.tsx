@@ -143,7 +143,7 @@ export default function ExamsPage() {
     if (!exam.exam_id || scheduleLoadingExamId) return
     setScheduleLoadingExamId(exam.exam_id)
     try {
-      const termUrlBase = window.location.origin + `/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-callback`
+      const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
       const params = new URLSearchParams({
         url_type: "schd",
         term_url_base: termUrlBase,

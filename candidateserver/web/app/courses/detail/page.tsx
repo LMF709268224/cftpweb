@@ -221,7 +221,7 @@ function CourseDetailContent() {
     if (!nextStep?.exam_id || !targetPipelineUlid) return
     setScheduleLoading(true)
     try {
-      const termUrlBase = window.location.origin + "/exams"
+      const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
       const res = await apiClient(`/api/exams/${encodeURIComponent((nextStep as any).exam_id)}/schedule-url?pipeline_ulid=${encodeURIComponent(targetPipelineUlid)}&course_ulid=${encodeURIComponent(nextStep.course_unit_ulid || "")}&url_type=1&term_url_base=${encodeURIComponent(termUrlBase)}`)
       if (res?.url) {
         window.open(res.url, "_blank", "noopener,noreferrer")

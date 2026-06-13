@@ -34,6 +34,10 @@ const (
 	GExamService_GetWebhookMessageDetail_FullMethodName   = "/gexam.GExamService/GetWebhookMessageDetail"
 	GExamService_ListExamStatusTransitions_FullMethodName = "/gexam.GExamService/ListExamStatusTransitions"
 	GExamService_ReprocessWebhookMessage_FullMethodName   = "/gexam.GExamService/ReprocessWebhookMessage"
+	GExamService_ListReminderMails_FullMethodName         = "/gexam.GExamService/ListReminderMails"
+	GExamService_RetryReminderMail_FullMethodName         = "/gexam.GExamService/RetryReminderMail"
+	GExamService_IgnoreReminderMail_FullMethodName        = "/gexam.GExamService/IgnoreReminderMail"
+	GExamService_GetReminderMailDetail_FullMethodName     = "/gexam.GExamService/GetReminderMailDetail"
 )
 
 // GExamServiceClient is the client API for GExamService service.
@@ -71,6 +75,11 @@ type GExamServiceClient interface {
 	ListExamStatusTransitions(ctx context.Context, in *ListExamStatusTransitionsRequest, opts ...grpc.CallOption) (*ListExamStatusTransitionsResponse, error)
 	// 管理端：触发重新处理 Webhook 消息 (支持按 msg_fp 或直接输入原始 payload)
 	ReprocessWebhookMessage(ctx context.Context, in *ReprocessWebhookMessageRequest, opts ...grpc.CallOption) (*ReprocessWebhookMessageResponse, error)
+	// 提醒邮件管理接口
+	ListReminderMails(ctx context.Context, in *ListReminderMailsRequest, opts ...grpc.CallOption) (*ListReminderMailsResponse, error)
+	RetryReminderMail(ctx context.Context, in *RetryReminderMailRequest, opts ...grpc.CallOption) (*RetryReminderMailResponse, error)
+	IgnoreReminderMail(ctx context.Context, in *IgnoreReminderMailRequest, opts ...grpc.CallOption) (*IgnoreReminderMailResponse, error)
+	GetReminderMailDetail(ctx context.Context, in *GetReminderMailDetailRequest, opts ...grpc.CallOption) (*GetReminderMailDetailResponse, error)
 }
 
 type gExamServiceClient struct {
@@ -231,6 +240,46 @@ func (c *gExamServiceClient) ReprocessWebhookMessage(ctx context.Context, in *Re
 	return out, nil
 }
 
+func (c *gExamServiceClient) ListReminderMails(ctx context.Context, in *ListReminderMailsRequest, opts ...grpc.CallOption) (*ListReminderMailsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListReminderMailsResponse)
+	err := c.cc.Invoke(ctx, GExamService_ListReminderMails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gExamServiceClient) RetryReminderMail(ctx context.Context, in *RetryReminderMailRequest, opts ...grpc.CallOption) (*RetryReminderMailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RetryReminderMailResponse)
+	err := c.cc.Invoke(ctx, GExamService_RetryReminderMail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gExamServiceClient) IgnoreReminderMail(ctx context.Context, in *IgnoreReminderMailRequest, opts ...grpc.CallOption) (*IgnoreReminderMailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IgnoreReminderMailResponse)
+	err := c.cc.Invoke(ctx, GExamService_IgnoreReminderMail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gExamServiceClient) GetReminderMailDetail(ctx context.Context, in *GetReminderMailDetailRequest, opts ...grpc.CallOption) (*GetReminderMailDetailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetReminderMailDetailResponse)
+	err := c.cc.Invoke(ctx, GExamService_GetReminderMailDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GExamServiceServer is the server API for GExamService service.
 // All implementations must embed UnimplementedGExamServiceServer
 // for forward compatibility.
@@ -266,6 +315,11 @@ type GExamServiceServer interface {
 	ListExamStatusTransitions(context.Context, *ListExamStatusTransitionsRequest) (*ListExamStatusTransitionsResponse, error)
 	// 管理端：触发重新处理 Webhook 消息 (支持按 msg_fp 或直接输入原始 payload)
 	ReprocessWebhookMessage(context.Context, *ReprocessWebhookMessageRequest) (*ReprocessWebhookMessageResponse, error)
+	// 提醒邮件管理接口
+	ListReminderMails(context.Context, *ListReminderMailsRequest) (*ListReminderMailsResponse, error)
+	RetryReminderMail(context.Context, *RetryReminderMailRequest) (*RetryReminderMailResponse, error)
+	IgnoreReminderMail(context.Context, *IgnoreReminderMailRequest) (*IgnoreReminderMailResponse, error)
+	GetReminderMailDetail(context.Context, *GetReminderMailDetailRequest) (*GetReminderMailDetailResponse, error)
 	mustEmbedUnimplementedGExamServiceServer()
 }
 
@@ -320,6 +374,18 @@ func (UnimplementedGExamServiceServer) ListExamStatusTransitions(context.Context
 }
 func (UnimplementedGExamServiceServer) ReprocessWebhookMessage(context.Context, *ReprocessWebhookMessageRequest) (*ReprocessWebhookMessageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReprocessWebhookMessage not implemented")
+}
+func (UnimplementedGExamServiceServer) ListReminderMails(context.Context, *ListReminderMailsRequest) (*ListReminderMailsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListReminderMails not implemented")
+}
+func (UnimplementedGExamServiceServer) RetryReminderMail(context.Context, *RetryReminderMailRequest) (*RetryReminderMailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RetryReminderMail not implemented")
+}
+func (UnimplementedGExamServiceServer) IgnoreReminderMail(context.Context, *IgnoreReminderMailRequest) (*IgnoreReminderMailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method IgnoreReminderMail not implemented")
+}
+func (UnimplementedGExamServiceServer) GetReminderMailDetail(context.Context, *GetReminderMailDetailRequest) (*GetReminderMailDetailResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetReminderMailDetail not implemented")
 }
 func (UnimplementedGExamServiceServer) mustEmbedUnimplementedGExamServiceServer() {}
 func (UnimplementedGExamServiceServer) testEmbeddedByValue()                      {}
@@ -612,6 +678,78 @@ func _GExamService_ReprocessWebhookMessage_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GExamService_ListReminderMails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListReminderMailsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).ListReminderMails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_ListReminderMails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).ListReminderMails(ctx, req.(*ListReminderMailsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GExamService_RetryReminderMail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetryReminderMailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).RetryReminderMail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_RetryReminderMail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).RetryReminderMail(ctx, req.(*RetryReminderMailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GExamService_IgnoreReminderMail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IgnoreReminderMailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).IgnoreReminderMail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_IgnoreReminderMail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).IgnoreReminderMail(ctx, req.(*IgnoreReminderMailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GExamService_GetReminderMailDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReminderMailDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GExamServiceServer).GetReminderMailDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GExamService_GetReminderMailDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GExamServiceServer).GetReminderMailDetail(ctx, req.(*GetReminderMailDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GExamService_ServiceDesc is the grpc.ServiceDesc for GExamService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -678,6 +816,22 @@ var GExamService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReprocessWebhookMessage",
 			Handler:    _GExamService_ReprocessWebhookMessage_Handler,
+		},
+		{
+			MethodName: "ListReminderMails",
+			Handler:    _GExamService_ListReminderMails_Handler,
+		},
+		{
+			MethodName: "RetryReminderMail",
+			Handler:    _GExamService_RetryReminderMail_Handler,
+		},
+		{
+			MethodName: "IgnoreReminderMail",
+			Handler:    _GExamService_IgnoreReminderMail_Handler,
+		},
+		{
+			MethodName: "GetReminderMailDetail",
+			Handler:    _GExamService_GetReminderMailDetail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

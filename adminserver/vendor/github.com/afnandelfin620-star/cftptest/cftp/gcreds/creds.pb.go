@@ -1796,16 +1796,17 @@ func (x *RevokeCredentialRequest) GetReason() string {
 }
 
 type PdfTemplateDetail struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TemplateId    string                 `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`       // 模板ID ULID [required]
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                     // 模板名称 [required]
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                       // 模板用途描述 [optional]
-	HtmlTemplate  string                 `protobuf:"bytes,4,opt,name=html_template,json=htmlTemplate,proto3" json:"html_template,omitempty"` // HTML证书模板 (Go html/template) [required]
-	Version       uint32                 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`                              // 乐观锁版本号 [required]
-	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`          // 创建时间 RFC3339 [optional]
-	UpdatedAt     string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`          // 最后修改时间 RFC3339 [optional]
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TemplateId      string                 `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`                // 模板ID ULID [required]
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                              // 模板名称 [required]
+	Description     string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                                // 模板用途描述 [optional]
+	HtmlTemplate    string                 `protobuf:"bytes,4,opt,name=html_template,json=htmlTemplate,proto3" json:"html_template,omitempty"`          // HTML证书模板 (Go html/template) [required]
+	Version         uint32                 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`                                       // 乐观锁版本号 [required]
+	CreatedAt       string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                   // 创建时间 RFC3339 [optional]
+	UpdatedAt       string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                   // 最后修改时间 RFC3339 [optional]
+	ParameterSchema string                 `protobuf:"bytes,8,opt,name=parameter_schema,json=parameterSchema,proto3" json:"parameter_schema,omitempty"` // 参数模式定义 JSON Schema [optional]
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *PdfTemplateDetail) Reset() {
@@ -1887,14 +1888,22 @@ func (x *PdfTemplateDetail) GetUpdatedAt() string {
 	return ""
 }
 
+func (x *PdfTemplateDetail) GetParameterSchema() string {
+	if x != nil {
+		return x.ParameterSchema
+	}
+	return ""
+}
+
 type CreatePdfTemplateRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TemplateId    string                 `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`       // 模板ID ULID [required]
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                     // 模板名称 [required]
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                       // 模板用途描述 [optional]
-	HtmlTemplate  string                 `protobuf:"bytes,4,opt,name=html_template,json=htmlTemplate,proto3" json:"html_template,omitempty"` // HTML证书模板 (Go html/template) [required]
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TemplateId      string                 `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`                // 模板ID ULID [required]
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                              // 模板名称 [required]
+	Description     string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                                // 模板用途描述 [optional]
+	HtmlTemplate    string                 `protobuf:"bytes,4,opt,name=html_template,json=htmlTemplate,proto3" json:"html_template,omitempty"`          // HTML证书模板 (Go html/template) [required]
+	ParameterSchema string                 `protobuf:"bytes,5,opt,name=parameter_schema,json=parameterSchema,proto3" json:"parameter_schema,omitempty"` // 参数模式定义 JSON Schema [optional]
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreatePdfTemplateRequest) Reset() {
@@ -1955,14 +1964,22 @@ func (x *CreatePdfTemplateRequest) GetHtmlTemplate() string {
 	return ""
 }
 
+func (x *CreatePdfTemplateRequest) GetParameterSchema() string {
+	if x != nil {
+		return x.ParameterSchema
+	}
+	return ""
+}
+
 type UpdatePdfTemplateRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TemplateId    string                 `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`       // 模板ID ULID [required]
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                     // 模板名称 [required]
-	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                       // 模板用途描述 [optional]
-	HtmlTemplate  string                 `protobuf:"bytes,4,opt,name=html_template,json=htmlTemplate,proto3" json:"html_template,omitempty"` // HTML证书模板 (Go html/template) [required]
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	TemplateId      string                 `protobuf:"bytes,1,opt,name=template_id,json=templateId,proto3" json:"template_id,omitempty"`                // 模板ID ULID [required]
+	Name            string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                              // 模板名称 [required]
+	Description     string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`                                // 模板用途描述 [optional]
+	HtmlTemplate    string                 `protobuf:"bytes,4,opt,name=html_template,json=htmlTemplate,proto3" json:"html_template,omitempty"`          // HTML证书模板 (Go html/template) [required]
+	ParameterSchema string                 `protobuf:"bytes,5,opt,name=parameter_schema,json=parameterSchema,proto3" json:"parameter_schema,omitempty"` // 参数模式定义 JSON Schema [optional]
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UpdatePdfTemplateRequest) Reset() {
@@ -2019,6 +2036,13 @@ func (x *UpdatePdfTemplateRequest) GetDescription() string {
 func (x *UpdatePdfTemplateRequest) GetHtmlTemplate() string {
 	if x != nil {
 		return x.HtmlTemplate
+	}
+	return ""
+}
+
+func (x *UpdatePdfTemplateRequest) GetParameterSchema() string {
+	if x != nil {
+		return x.ParameterSchema
 	}
 	return ""
 }
@@ -3992,7 +4016,7 @@ const file_creds_proto_rawDesc = "" +
 	"\vcred_def_id\x18\x02 \x01(\tR\tcredDefId\x12\x1d\n" +
 	"\n" +
 	"auditor_id\x18\x03 \x01(\tR\tauditorId\x12\x16\n" +
-	"\x06reason\x18\x04 \x01(\tR\x06reason\"\xe7\x01\n" +
+	"\x06reason\x18\x04 \x01(\tR\x06reason\"\x92\x02\n" +
 	"\x11PdfTemplateDetail\x12\x1f\n" +
 	"\vtemplate_id\x18\x01 \x01(\tR\n" +
 	"templateId\x12\x12\n" +
@@ -4003,19 +4027,22 @@ const file_creds_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\tR\tupdatedAt\"\x96\x01\n" +
+	"updated_at\x18\a \x01(\tR\tupdatedAt\x12)\n" +
+	"\x10parameter_schema\x18\b \x01(\tR\x0fparameterSchema\"\xc1\x01\n" +
 	"\x18CreatePdfTemplateRequest\x12\x1f\n" +
 	"\vtemplate_id\x18\x01 \x01(\tR\n" +
 	"templateId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12#\n" +
-	"\rhtml_template\x18\x04 \x01(\tR\fhtmlTemplate\"\x96\x01\n" +
+	"\rhtml_template\x18\x04 \x01(\tR\fhtmlTemplate\x12)\n" +
+	"\x10parameter_schema\x18\x05 \x01(\tR\x0fparameterSchema\"\xc1\x01\n" +
 	"\x18UpdatePdfTemplateRequest\x12\x1f\n" +
 	"\vtemplate_id\x18\x01 \x01(\tR\n" +
 	"templateId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12#\n" +
-	"\rhtml_template\x18\x04 \x01(\tR\fhtmlTemplate\"8\n" +
+	"\rhtml_template\x18\x04 \x01(\tR\fhtmlTemplate\x12)\n" +
+	"\x10parameter_schema\x18\x05 \x01(\tR\x0fparameterSchema\"8\n" +
 	"\x15GetPdfTemplateRequest\x12\x1f\n" +
 	"\vtemplate_id\x18\x01 \x01(\tR\n" +
 	"templateId\"\x19\n" +

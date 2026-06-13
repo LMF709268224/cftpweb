@@ -364,3 +364,69 @@ func examURLTypeForGexam(urlType gprog.ExamURLType) string {
 		return ""
 	}
 }
+
+// ThirdPartyExamCallback POST /api/public/webhooks/exams/callback/{urlType}/{examId}
+func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request) {
+	urlType := chi.URLParam(r, "urlType")
+	examId := chi.URLParam(r, "examId")
+
+	// Helper function for rendering auto-closing HTML
+	renderCloseHTML := func(success bool, errMsg string) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if success {
+			w.Write([]byte(`
+				<html><body>
+					<h3>Appointment status synced successfully!</h3>
+					<p>You can now close this window and return to your learning portal.</p>
+					<script>
+						if (window.opener) { window.opener.postMessage("schedule_success", "*"); }
+						setTimeout(function() { window.close(); }, 3000);
+					</script>
+				</body></html>
+			`))
+		} else {
+			w.Write([]byte(`
+				<html><body>
+					<h3 style="color:red;">Failed to sync appointment status</h3>
+					<p>Error details: ` + errMsg + `</p>
+					<p>Please close this window and try again.</p>
+				</body></html>
+			`))
+		}
+	}
+
+	// 1. 解析 Form 数据
+	if err := r.ParseForm(); err != nil {
+		renderCloseHTML(false, "parse form error: "+err.Error())
+		return
+	}
+
+	// 2. 提取 apptdata 字段
+	apptDataRaw := r.FormValue("apptdata")
+	if apptDataRaw == "" {
+		renderCloseHTML(false, "empty apptdata")
+		return
+	}
+
+	// 3. 包装成 JSON 字符串，满足 gexam 对 callback_body 必须是合法 JSON 的要求
+	bodyMap := map[string]string{"raw_xml": apptDataRaw}
+	bodyJson, err := json.Marshal(bodyMap)
+	if err != nil {
+		renderCloseHTML(false, "json marshal error")
+		return
+	}
+
+	// 4. 将结果发送给 gprog 的 ExamUrlCallback
+	_, err = h.Gprog.ExamUrlCallback(r.Context(), &gprog.ExamUrlCallbackReq{
+		ExamId:       examId,
+		UrlType:      urlType,
+		CallbackBody: string(bodyJson),
+	})
+	if err != nil {
+		renderCloseHTML(false, "backend processing failed: "+err.Error())
+		return
+	}
+
+	// 5. 成功后返回自动关闭窗口的 HTML
+	renderCloseHTML(true, "")
+}

@@ -629,3 +629,14 @@ type QuestionSubmissionInput struct {
 	QuestionId        string   `json:"question_id"`
 	SelectedOptionIds []string `json:"selected_option_ids"`
 }
+
+// AppointmentResponse 第三方考试系统回调的XML解析结构
+type AppointmentResponse struct {
+	Appointments []Appointment `xml:"Appointment"`
+}
+
+type Appointment struct {
+	Outcome            string `xml:"Outcome"`
+	ConfirmationNumber string `xml:"ConfirmationNumber"`
+	StartDateTime      string `xml:"StartDateTime"`
+}

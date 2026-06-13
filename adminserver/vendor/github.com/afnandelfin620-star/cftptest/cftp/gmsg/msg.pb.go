@@ -365,16 +365,17 @@ func (x *Message) GetUpdatedAt() string {
 }
 
 type Template struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"` // 模板路径，唯一标识
-	TitleTpl      string                 `protobuf:"bytes,2,opt,name=title_tpl,json=titleTpl,proto3" json:"title_tpl,omitempty"`
-	ContentTpl    string                 `protobuf:"bytes,3,opt,name=content_tpl,json=contentTpl,proto3" json:"content_tpl,omitempty"`
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Version       uint32                 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
-	CreatedAt     string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Path            string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"` // 模板路径，唯一标识
+	TitleTpl        string                 `protobuf:"bytes,2,opt,name=title_tpl,json=titleTpl,proto3" json:"title_tpl,omitempty"`
+	ContentTpl      string                 `protobuf:"bytes,3,opt,name=content_tpl,json=contentTpl,proto3" json:"content_tpl,omitempty"`
+	Description     string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Version         uint32                 `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`
+	CreatedAt       string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt       string                 `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	ParameterSchema string                 `protobuf:"bytes,8,opt,name=parameter_schema,json=parameterSchema,proto3" json:"parameter_schema,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Template) Reset() {
@@ -452,6 +453,13 @@ func (x *Template) GetCreatedAt() string {
 func (x *Template) GetUpdatedAt() string {
 	if x != nil {
 		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *Template) GetParameterSchema() string {
+	if x != nil {
+		return x.ParameterSchema
 	}
 	return ""
 }
@@ -1014,13 +1022,14 @@ func (x *RevokeMessageRequest) GetAdminId() string {
 }
 
 type CreateTemplateRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`                               // 模板路径 [required]
-	TitleTpl      string                 `protobuf:"bytes,2,opt,name=title_tpl,json=titleTpl,proto3" json:"title_tpl,omitempty"`       // 标题模板 [required]
-	ContentTpl    string                 `protobuf:"bytes,3,opt,name=content_tpl,json=contentTpl,proto3" json:"content_tpl,omitempty"` // 正文模板 [required]
-	Description   string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                 // 模板描述 [optional]
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Path            string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`                                              // 模板路径 [required]
+	TitleTpl        string                 `protobuf:"bytes,2,opt,name=title_tpl,json=titleTpl,proto3" json:"title_tpl,omitempty"`                      // 标题模板 [required]
+	ContentTpl      string                 `protobuf:"bytes,3,opt,name=content_tpl,json=contentTpl,proto3" json:"content_tpl,omitempty"`                // 正文模板 [required]
+	Description     string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                                // 模板描述 [optional]
+	ParameterSchema string                 `protobuf:"bytes,5,opt,name=parameter_schema,json=parameterSchema,proto3" json:"parameter_schema,omitempty"` // JSON Schema [required]
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateTemplateRequest) Reset() {
@@ -1081,6 +1090,13 @@ func (x *CreateTemplateRequest) GetDescription() string {
 	return ""
 }
 
+func (x *CreateTemplateRequest) GetParameterSchema() string {
+	if x != nil {
+		return x.ParameterSchema
+	}
+	return ""
+}
+
 type GetTemplateRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"` // 模板路径 [required]
@@ -1126,14 +1142,15 @@ func (x *GetTemplateRequest) GetPath() string {
 }
 
 type UpdateTemplateRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Path           string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`                                            // 模板路径 [required]
-	TitleTpl       string                 `protobuf:"bytes,2,opt,name=title_tpl,json=titleTpl,proto3" json:"title_tpl,omitempty"`                    // 标题模板 [required]
-	ContentTpl     string                 `protobuf:"bytes,3,opt,name=content_tpl,json=contentTpl,proto3" json:"content_tpl,omitempty"`              // 正文模板 [required]
-	Description    string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                              // 模板描述 [optional]
-	CurrentVersion uint32                 `protobuf:"varint,5,opt,name=current_version,json=currentVersion,proto3" json:"current_version,omitempty"` // 当前版本号 [required]
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Path            string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`                                              // 模板路径 [required]
+	TitleTpl        string                 `protobuf:"bytes,2,opt,name=title_tpl,json=titleTpl,proto3" json:"title_tpl,omitempty"`                      // 标题模板 [required]
+	ContentTpl      string                 `protobuf:"bytes,3,opt,name=content_tpl,json=contentTpl,proto3" json:"content_tpl,omitempty"`                // 正文模板 [required]
+	Description     string                 `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`                                // 模板描述 [optional]
+	CurrentVersion  uint32                 `protobuf:"varint,5,opt,name=current_version,json=currentVersion,proto3" json:"current_version,omitempty"`   // 当前版本号 [required]
+	ParameterSchema string                 `protobuf:"bytes,6,opt,name=parameter_schema,json=parameterSchema,proto3" json:"parameter_schema,omitempty"` // JSON Schema [required]
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UpdateTemplateRequest) Reset() {
@@ -1199,6 +1216,13 @@ func (x *UpdateTemplateRequest) GetCurrentVersion() uint32 {
 		return x.CurrentVersion
 	}
 	return 0
+}
+
+func (x *UpdateTemplateRequest) GetParameterSchema() string {
+	if x != nil {
+		return x.ParameterSchema
+	}
+	return ""
 }
 
 type ListTemplatesRequest struct {
@@ -2057,7 +2081,7 @@ const file_msg_proto_rawDesc = "" +
 	" \x01(\tR\tcreatedAt\x12\x18\n" +
 	"\aversion\x18\v \x01(\rR\aversion\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\f \x01(\tR\tupdatedAt\"\xd6\x01\n" +
+	"updated_at\x18\f \x01(\tR\tupdatedAt\"\x81\x02\n" +
 	"\bTemplate\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
 	"\ttitle_tpl\x18\x02 \x01(\tR\btitleTpl\x12\x1f\n" +
@@ -2068,7 +2092,8 @@ const file_msg_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\tR\tupdatedAt\"\x9f\x01\n" +
+	"updated_at\x18\a \x01(\tR\tupdatedAt\x12)\n" +
+	"\x10parameter_schema\x18\b \x01(\tR\x0fparameterSchema\"\x9f\x01\n" +
 	"\x0fTemplateSummary\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x18\n" +
@@ -2113,22 +2138,24 @@ const file_msg_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x02 \x01(\tR\tmessageId\x12\x19\n" +
-	"\badmin_id\x18\x03 \x01(\tR\aadminId\"\x8b\x01\n" +
+	"\badmin_id\x18\x03 \x01(\tR\aadminId\"\xb6\x01\n" +
 	"\x15CreateTemplateRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
 	"\ttitle_tpl\x18\x02 \x01(\tR\btitleTpl\x12\x1f\n" +
 	"\vcontent_tpl\x18\x03 \x01(\tR\n" +
 	"contentTpl\x12 \n" +
-	"\vdescription\x18\x04 \x01(\tR\vdescription\"(\n" +
+	"\vdescription\x18\x04 \x01(\tR\vdescription\x12)\n" +
+	"\x10parameter_schema\x18\x05 \x01(\tR\x0fparameterSchema\"(\n" +
 	"\x12GetTemplateRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xb4\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xdf\x01\n" +
 	"\x15UpdateTemplateRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
 	"\ttitle_tpl\x18\x02 \x01(\tR\btitleTpl\x12\x1f\n" +
 	"\vcontent_tpl\x18\x03 \x01(\tR\n" +
 	"contentTpl\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12'\n" +
-	"\x0fcurrent_version\x18\x05 \x01(\rR\x0ecurrentVersion\"a\n" +
+	"\x0fcurrent_version\x18\x05 \x01(\rR\x0ecurrentVersion\x12)\n" +
+	"\x10parameter_schema\x18\x06 \x01(\tR\x0fparameterSchema\"a\n" +
 	"\x14ListTemplatesRequest\x12\x18\n" +
 	"\akeyword\x18\x01 \x01(\tR\akeyword\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
