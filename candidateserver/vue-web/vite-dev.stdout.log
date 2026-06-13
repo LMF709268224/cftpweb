@@ -13,3 +13,7 @@ Port 8081 is in use, trying another one...
   [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.15:[1m8082[22m/[39m
 [2m14:35:55[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
 [2m14:35:55[22m [36m[1m[vite][22m[39m server restarted.
+[2m17:50:41[22m [36m[1m[vite][22m[39m [32mvite.config.ts changed, restarting server...[39m
+[2m17:50:41[22m [36m[1m[vite][22m[39m server restarted.
+[2m17:52:58[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m17:52:58[22m [36m[1m[vite][22m[39m server restarted.
