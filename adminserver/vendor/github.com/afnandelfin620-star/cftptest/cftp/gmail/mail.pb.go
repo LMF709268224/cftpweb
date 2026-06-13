@@ -25,26 +25,32 @@ type BuiltInMailPathType int32
 
 const (
 	BuiltInMailPathType_UNKNOWN_MAIL_PATH            BuiltInMailPathType = 0
-	BuiltInMailPathType_GCREDS_NEW_APPLICATION_AUDIT BuiltInMailPathType = 1 // "/mail/gcreds/new-application-audit"
-	BuiltInMailPathType_PIPELINE_STAGE_ORDER_CREATED BuiltInMailPathType = 2 // "/mail/pipeline/stage-order-created"
-	BuiltInMailPathType_GPROG_CERTIFICATE_ISSUED     BuiltInMailPathType = 3 // "/mail/gprog/certificate-issued"
-	BuiltInMailPathType_PIPELINE_PAYMENT             BuiltInMailPathType = 4 // "/mail/pipeline/pipeline-payment"
-	BuiltInMailPathType_EXAM_RETAKE                  BuiltInMailPathType = 5 // "/mail/pipeline/exam-retake"
-	BuiltInMailPathType_UNLOCK_PAYMENT               BuiltInMailPathType = 6 // "/mail/pipeline/unlock-payment"
-	BuiltInMailPathType_CREDENTIAL_APPLICATION       BuiltInMailPathType = 7 // "/mail/pipeline/credential-application"
+	BuiltInMailPathType_GCREDS_NEW_APPLICATION_AUDIT BuiltInMailPathType = 1  // "/mail/gcreds/new-application-audit"
+	BuiltInMailPathType_PIPELINE_STAGE_ORDER_CREATED BuiltInMailPathType = 2  // "/mail/pipeline/stage-order-created"
+	BuiltInMailPathType_GPROG_CERTIFICATE_ISSUED     BuiltInMailPathType = 3  // "/mail/gprog/certificate-issued"
+	BuiltInMailPathType_PIPELINE_PAYMENT             BuiltInMailPathType = 4  // "/mail/pipeline/pipeline-payment"
+	BuiltInMailPathType_EXAM_RETAKE                  BuiltInMailPathType = 5  // "/mail/pipeline/exam-retake"
+	BuiltInMailPathType_UNLOCK_PAYMENT               BuiltInMailPathType = 6  // "/mail/pipeline/unlock-payment"
+	BuiltInMailPathType_CREDENTIAL_APPLICATION       BuiltInMailPathType = 7  // "/mail/pipeline/credential-application"
+	BuiltInMailPathType_EXAM_REMINDER_ONE_WEEK       BuiltInMailPathType = 8  // "/mail/exam/reminder-one-week"
+	BuiltInMailPathType_EXAM_REMINDER_ONE_DAY        BuiltInMailPathType = 9  // "/mail/exam/reminder-one-day"
+	BuiltInMailPathType_EXAM_REMINDER_ONE_HOUR       BuiltInMailPathType = 10 // "/mail/exam/reminder-one-hour"
 )
 
 // Enum value maps for BuiltInMailPathType.
 var (
 	BuiltInMailPathType_name = map[int32]string{
-		0: "UNKNOWN_MAIL_PATH",
-		1: "GCREDS_NEW_APPLICATION_AUDIT",
-		2: "PIPELINE_STAGE_ORDER_CREATED",
-		3: "GPROG_CERTIFICATE_ISSUED",
-		4: "PIPELINE_PAYMENT",
-		5: "EXAM_RETAKE",
-		6: "UNLOCK_PAYMENT",
-		7: "CREDENTIAL_APPLICATION",
+		0:  "UNKNOWN_MAIL_PATH",
+		1:  "GCREDS_NEW_APPLICATION_AUDIT",
+		2:  "PIPELINE_STAGE_ORDER_CREATED",
+		3:  "GPROG_CERTIFICATE_ISSUED",
+		4:  "PIPELINE_PAYMENT",
+		5:  "EXAM_RETAKE",
+		6:  "UNLOCK_PAYMENT",
+		7:  "CREDENTIAL_APPLICATION",
+		8:  "EXAM_REMINDER_ONE_WEEK",
+		9:  "EXAM_REMINDER_ONE_DAY",
+		10: "EXAM_REMINDER_ONE_HOUR",
 	}
 	BuiltInMailPathType_value = map[string]int32{
 		"UNKNOWN_MAIL_PATH":            0,
@@ -55,6 +61,9 @@ var (
 		"EXAM_RETAKE":                  5,
 		"UNLOCK_PAYMENT":               6,
 		"CREDENTIAL_APPLICATION":       7,
+		"EXAM_REMINDER_ONE_WEEK":       8,
+		"EXAM_REMINDER_ONE_DAY":        9,
+		"EXAM_REMINDER_ONE_HOUR":       10,
 	}
 )
 
@@ -87,16 +96,17 @@ func (BuiltInMailPathType) EnumDescriptor() ([]byte, []int) {
 
 type Template struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
-	Path            string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`                                              // 模板路径，唯一标识 [required]
-	BusinessUnit    string                 `protobuf:"bytes,2,opt,name=business_unit,json=businessUnit,proto3" json:"business_unit,omitempty"`          // 所属业务系统 [required]
-	Name            string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                              // 模板名称 [required]
-	SubjectTemplate string                 `protobuf:"bytes,4,opt,name=subject_template,json=subjectTemplate,proto3" json:"subject_template,omitempty"` // 主题模板 [required]
-	HtmlBody        string                 `protobuf:"bytes,5,opt,name=html_body,json=htmlBody,proto3" json:"html_body,omitempty"`                      // HTML 内容 [required]
-	PlainBody       string                 `protobuf:"bytes,6,opt,name=plain_body,json=plainBody,proto3" json:"plain_body,omitempty"`                   // 纯文本内容 [required]
-	Description     string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`                                // 描述
-	Version         uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`                                       // 版本号
-	CreatedAt       string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                   // 创建时间
-	UpdatedAt       string                 `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                  // 更新时间
+	Path            string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`                                               // 模板路径，唯一标识 [required]
+	BusinessUnit    string                 `protobuf:"bytes,2,opt,name=business_unit,json=businessUnit,proto3" json:"business_unit,omitempty"`           // 所属业务系统 [required]
+	Name            string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                               // 模板名称 [required]
+	SubjectTemplate string                 `protobuf:"bytes,4,opt,name=subject_template,json=subjectTemplate,proto3" json:"subject_template,omitempty"`  // 主题模板 [required]
+	HtmlBody        string                 `protobuf:"bytes,5,opt,name=html_body,json=htmlBody,proto3" json:"html_body,omitempty"`                       // HTML 内容 [required]
+	PlainBody       string                 `protobuf:"bytes,6,opt,name=plain_body,json=plainBody,proto3" json:"plain_body,omitempty"`                    // 纯文本内容 [required]
+	Description     string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`                                 // 描述
+	Version         uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`                                        // 版本号
+	CreatedAt       string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                    // 创建时间
+	UpdatedAt       string                 `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                   // 更新时间
+	ParameterSchema string                 `protobuf:"bytes,11,opt,name=parameter_schema,json=parameterSchema,proto3" json:"parameter_schema,omitempty"` // 参数模式定义 JSON Schema [optional]
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -201,6 +211,13 @@ func (x *Template) GetUpdatedAt() string {
 	return ""
 }
 
+func (x *Template) GetParameterSchema() string {
+	if x != nil {
+		return x.ParameterSchema
+	}
+	return ""
+}
+
 type CreateTemplateRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Path            string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`                                              // 模板路径 [required]
@@ -210,6 +227,7 @@ type CreateTemplateRequest struct {
 	HtmlBody        string                 `protobuf:"bytes,5,opt,name=html_body,json=htmlBody,proto3" json:"html_body,omitempty"`                      // HTML 内容 [required]
 	PlainBody       string                 `protobuf:"bytes,6,opt,name=plain_body,json=plainBody,proto3" json:"plain_body,omitempty"`                   // 纯文本内容 [required]
 	Description     string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`                                // 描述 [optional]
+	ParameterSchema string                 `protobuf:"bytes,8,opt,name=parameter_schema,json=parameterSchema,proto3" json:"parameter_schema,omitempty"` // 参数模式定义 JSON Schema [optional]
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -293,6 +311,13 @@ func (x *CreateTemplateRequest) GetDescription() string {
 	return ""
 }
 
+func (x *CreateTemplateRequest) GetParameterSchema() string {
+	if x != nil {
+		return x.ParameterSchema
+	}
+	return ""
+}
+
 type CreateTemplateResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"` // 模板路径 [required]
@@ -346,6 +371,7 @@ type UpdateTemplateRequest struct {
 	HtmlBody        string                 `protobuf:"bytes,5,opt,name=html_body,json=htmlBody,proto3" json:"html_body,omitempty"`                      // HTML 内容 [required]
 	PlainBody       string                 `protobuf:"bytes,6,opt,name=plain_body,json=plainBody,proto3" json:"plain_body,omitempty"`                   // 纯文本内容 [required]
 	Description     string                 `protobuf:"bytes,7,opt,name=description,proto3" json:"description,omitempty"`                                // 描述 [optional]
+	ParameterSchema string                 `protobuf:"bytes,8,opt,name=parameter_schema,json=parameterSchema,proto3" json:"parameter_schema,omitempty"` // 参数模式定义 JSON Schema [optional]
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -425,6 +451,13 @@ func (x *UpdateTemplateRequest) GetPlainBody() string {
 func (x *UpdateTemplateRequest) GetDescription() string {
 	if x != nil {
 		return x.Description
+	}
+	return ""
+}
+
+func (x *UpdateTemplateRequest) GetParameterSchema() string {
+	if x != nil {
+		return x.ParameterSchema
 	}
 	return ""
 }
@@ -2867,7 +2900,7 @@ var File_mail_proto protoreflect.FileDescriptor
 const file_mail_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"mail.proto\x12\x05gmail\"\xb8\x02\n" +
+	"mail.proto\x12\x05gmail\"\xe3\x02\n" +
 	"\bTemplate\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12#\n" +
 	"\rbusiness_unit\x18\x02 \x01(\tR\fbusinessUnit\x12\x12\n" +
@@ -2882,7 +2915,8 @@ const file_mail_proto_rawDesc = "" +
 	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
 	"updated_at\x18\n" +
-	" \x01(\tR\tupdatedAt\"\xed\x01\n" +
+	" \x01(\tR\tupdatedAt\x12)\n" +
+	"\x10parameter_schema\x18\v \x01(\tR\x0fparameterSchema\"\x98\x02\n" +
 	"\x15CreateTemplateRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12#\n" +
 	"\rbusiness_unit\x18\x02 \x01(\tR\fbusinessUnit\x12\x12\n" +
@@ -2891,9 +2925,10 @@ const file_mail_proto_rawDesc = "" +
 	"\thtml_body\x18\x05 \x01(\tR\bhtmlBody\x12\x1d\n" +
 	"\n" +
 	"plain_body\x18\x06 \x01(\tR\tplainBody\x12 \n" +
-	"\vdescription\x18\a \x01(\tR\vdescription\",\n" +
+	"\vdescription\x18\a \x01(\tR\vdescription\x12)\n" +
+	"\x10parameter_schema\x18\b \x01(\tR\x0fparameterSchema\",\n" +
 	"\x16CreateTemplateResponse\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xed\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x98\x02\n" +
 	"\x15UpdateTemplateRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12#\n" +
 	"\rbusiness_unit\x18\x02 \x01(\tR\fbusinessUnit\x12\x12\n" +
@@ -2902,7 +2937,8 @@ const file_mail_proto_rawDesc = "" +
 	"\thtml_body\x18\x05 \x01(\tR\bhtmlBody\x12\x1d\n" +
 	"\n" +
 	"plain_body\x18\x06 \x01(\tR\tplainBody\x12 \n" +
-	"\vdescription\x18\a \x01(\tR\vdescription\"2\n" +
+	"\vdescription\x18\a \x01(\tR\vdescription\x12)\n" +
+	"\x10parameter_schema\x18\b \x01(\tR\x0fparameterSchema\"2\n" +
 	"\x16UpdateTemplateResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"=\n" +
 	"\x16GetTemplateListRequest\x12#\n" +
@@ -3109,7 +3145,7 @@ const file_mail_proto_rawDesc = "" +
 	"\x04info\x18\x01 \x01(\v2\x16.gmail.BuiltInPathInfoR\x04info\"\x1b\n" +
 	"\x19GetAllBuiltInPathsRequest\"J\n" +
 	"\x1aGetAllBuiltInPathsResponse\x12,\n" +
-	"\x05paths\x18\x01 \x03(\v2\x16.gmail.BuiltInPathInfoR\x05paths*\xe5\x01\n" +
+	"\x05paths\x18\x01 \x03(\v2\x16.gmail.BuiltInPathInfoR\x05paths*\xb8\x02\n" +
 	"\x13BuiltInMailPathType\x12\x15\n" +
 	"\x11UNKNOWN_MAIL_PATH\x10\x00\x12 \n" +
 	"\x1cGCREDS_NEW_APPLICATION_AUDIT\x10\x01\x12 \n" +
@@ -3118,7 +3154,11 @@ const file_mail_proto_rawDesc = "" +
 	"\x10PIPELINE_PAYMENT\x10\x04\x12\x0f\n" +
 	"\vEXAM_RETAKE\x10\x05\x12\x12\n" +
 	"\x0eUNLOCK_PAYMENT\x10\x06\x12\x1a\n" +
-	"\x16CREDENTIAL_APPLICATION\x10\a2\xd0\n" +
+	"\x16CREDENTIAL_APPLICATION\x10\a\x12\x1a\n" +
+	"\x16EXAM_REMINDER_ONE_WEEK\x10\b\x12\x19\n" +
+	"\x15EXAM_REMINDER_ONE_DAY\x10\t\x12\x1a\n" +
+	"\x16EXAM_REMINDER_ONE_HOUR\x10\n" +
+	"2\xd0\n" +
 	"\n" +
 	"\vMailService\x12A\n" +
 	"\n" +

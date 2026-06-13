@@ -28,6 +28,11 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		handler.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
+	// Public Webhooks (No Candidate Auth)
+	r.Route("/api/public/webhooks", func(r chi.Router) {
+		r.Post("/exams/callback/{urlType}/{examId}", h.ThirdPartyExamCallback)
+	})
+
 	r.Get("/api/public/config", h.GetPublicConfig)
 
 	r.Route("/api/auth", func(r chi.Router) {

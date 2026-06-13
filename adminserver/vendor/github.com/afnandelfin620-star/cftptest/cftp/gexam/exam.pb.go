@@ -2563,6 +2563,610 @@ func (x *ListExamStatusTransitionsResponse) GetTotal() uint32 {
 	return 0
 }
 
+type ListReminderMailsRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ExamId         *string                `protobuf:"bytes,1,opt,name=exam_id,json=examId,proto3,oneof" json:"exam_id,omitempty"`
+	TaskStatus     *string                `protobuf:"bytes,2,opt,name=task_status,json=taskStatus,proto3,oneof" json:"task_status,omitempty"`
+	DeliveryStatus *string                `protobuf:"bytes,3,opt,name=delivery_status,json=deliveryStatus,proto3,oneof" json:"delivery_status,omitempty"`
+	CandidateEmail *string                `protobuf:"bytes,4,opt,name=candidate_email,json=candidateEmail,proto3,oneof" json:"candidate_email,omitempty"`
+	Page           uint32                 `protobuf:"varint,5,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize       uint32                 `protobuf:"varint,6,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	ReminderType   *string                `protobuf:"bytes,7,opt,name=reminder_type,json=reminderType,proto3,oneof" json:"reminder_type,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ListReminderMailsRequest) Reset() {
+	*x = ListReminderMailsRequest{}
+	mi := &file_exam_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListReminderMailsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListReminderMailsRequest) ProtoMessage() {}
+
+func (x *ListReminderMailsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListReminderMailsRequest.ProtoReflect.Descriptor instead.
+func (*ListReminderMailsRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ListReminderMailsRequest) GetExamId() string {
+	if x != nil && x.ExamId != nil {
+		return *x.ExamId
+	}
+	return ""
+}
+
+func (x *ListReminderMailsRequest) GetTaskStatus() string {
+	if x != nil && x.TaskStatus != nil {
+		return *x.TaskStatus
+	}
+	return ""
+}
+
+func (x *ListReminderMailsRequest) GetDeliveryStatus() string {
+	if x != nil && x.DeliveryStatus != nil {
+		return *x.DeliveryStatus
+	}
+	return ""
+}
+
+func (x *ListReminderMailsRequest) GetCandidateEmail() string {
+	if x != nil && x.CandidateEmail != nil {
+		return *x.CandidateEmail
+	}
+	return ""
+}
+
+func (x *ListReminderMailsRequest) GetPage() uint32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListReminderMailsRequest) GetPageSize() uint32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListReminderMailsRequest) GetReminderType() string {
+	if x != nil && x.ReminderType != nil {
+		return *x.ReminderType
+	}
+	return ""
+}
+
+type ReminderMailItem struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	MailId         string                 `protobuf:"bytes,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	ExamId         string                 `protobuf:"bytes,2,opt,name=exam_id,json=examId,proto3" json:"exam_id,omitempty"`
+	ReminderType   string                 `protobuf:"bytes,3,opt,name=reminder_type,json=reminderType,proto3" json:"reminder_type,omitempty"`
+	ToEmail        string                 `protobuf:"bytes,4,opt,name=to_email,json=toEmail,proto3" json:"to_email,omitempty"`
+	ToName         string                 `protobuf:"bytes,5,opt,name=to_name,json=toName,proto3" json:"to_name,omitempty"`
+	Subject        string                 `protobuf:"bytes,6,opt,name=subject,proto3" json:"subject,omitempty"`
+	ScheduledAt    string                 `protobuf:"bytes,7,opt,name=scheduled_at,json=scheduledAt,proto3" json:"scheduled_at,omitempty"`
+	TaskStatus     string                 `protobuf:"bytes,8,opt,name=task_status,json=taskStatus,proto3" json:"task_status,omitempty"`
+	DeliveryStatus string                 `protobuf:"bytes,9,opt,name=delivery_status,json=deliveryStatus,proto3" json:"delivery_status,omitempty"`
+	ErrorMessage   string                 `protobuf:"bytes,10,opt,name=error_message,json=errorMessage,proto3" json:"error_message,omitempty"`
+	RetryCount     int32                  `protobuf:"varint,11,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"`
+	CreatedAt      string                 `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt      string                 `protobuf:"bytes,13,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	ManualBy       string                 `protobuf:"bytes,22,opt,name=manual_by,json=manualBy,proto3" json:"manual_by,omitempty"`
+	ErrorCode      string                 `protobuf:"bytes,23,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ReminderMailItem) Reset() {
+	*x = ReminderMailItem{}
+	mi := &file_exam_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReminderMailItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReminderMailItem) ProtoMessage() {}
+
+func (x *ReminderMailItem) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReminderMailItem.ProtoReflect.Descriptor instead.
+func (*ReminderMailItem) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ReminderMailItem) GetMailId() string {
+	if x != nil {
+		return x.MailId
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetExamId() string {
+	if x != nil {
+		return x.ExamId
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetReminderType() string {
+	if x != nil {
+		return x.ReminderType
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetToEmail() string {
+	if x != nil {
+		return x.ToEmail
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetToName() string {
+	if x != nil {
+		return x.ToName
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetSubject() string {
+	if x != nil {
+		return x.Subject
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetScheduledAt() string {
+	if x != nil {
+		return x.ScheduledAt
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetTaskStatus() string {
+	if x != nil {
+		return x.TaskStatus
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetDeliveryStatus() string {
+	if x != nil {
+		return x.DeliveryStatus
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetErrorMessage() string {
+	if x != nil {
+		return x.ErrorMessage
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetRetryCount() int32 {
+	if x != nil {
+		return x.RetryCount
+	}
+	return 0
+}
+
+func (x *ReminderMailItem) GetCreatedAt() string {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetUpdatedAt() string {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetManualBy() string {
+	if x != nil {
+		return x.ManualBy
+	}
+	return ""
+}
+
+func (x *ReminderMailItem) GetErrorCode() string {
+	if x != nil {
+		return x.ErrorCode
+	}
+	return ""
+}
+
+type ListReminderMailsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Mails         []*ReminderMailItem    `protobuf:"bytes,1,rep,name=mails,proto3" json:"mails,omitempty"`
+	Total         uint32                 `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListReminderMailsResponse) Reset() {
+	*x = ListReminderMailsResponse{}
+	mi := &file_exam_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListReminderMailsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListReminderMailsResponse) ProtoMessage() {}
+
+func (x *ListReminderMailsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListReminderMailsResponse.ProtoReflect.Descriptor instead.
+func (*ListReminderMailsResponse) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ListReminderMailsResponse) GetMails() []*ReminderMailItem {
+	if x != nil {
+		return x.Mails
+	}
+	return nil
+}
+
+func (x *ListReminderMailsResponse) GetTotal() uint32 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type RetryReminderMailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MailId        string                 `protobuf:"bytes,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	AdminId       string                 `protobuf:"bytes,2,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetryReminderMailRequest) Reset() {
+	*x = RetryReminderMailRequest{}
+	mi := &file_exam_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetryReminderMailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetryReminderMailRequest) ProtoMessage() {}
+
+func (x *RetryReminderMailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetryReminderMailRequest.ProtoReflect.Descriptor instead.
+func (*RetryReminderMailRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *RetryReminderMailRequest) GetMailId() string {
+	if x != nil {
+		return x.MailId
+	}
+	return ""
+}
+
+func (x *RetryReminderMailRequest) GetAdminId() string {
+	if x != nil {
+		return x.AdminId
+	}
+	return ""
+}
+
+type RetryReminderMailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	NewMailId     string                 `protobuf:"bytes,1,opt,name=new_mail_id,json=newMailId,proto3" json:"new_mail_id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RetryReminderMailResponse) Reset() {
+	*x = RetryReminderMailResponse{}
+	mi := &file_exam_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RetryReminderMailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RetryReminderMailResponse) ProtoMessage() {}
+
+func (x *RetryReminderMailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RetryReminderMailResponse.ProtoReflect.Descriptor instead.
+func (*RetryReminderMailResponse) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *RetryReminderMailResponse) GetNewMailId() string {
+	if x != nil {
+		return x.NewMailId
+	}
+	return ""
+}
+
+func (x *RetryReminderMailResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type GetReminderMailDetailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MailId        string                 `protobuf:"bytes,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetReminderMailDetailRequest) Reset() {
+	*x = GetReminderMailDetailRequest{}
+	mi := &file_exam_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetReminderMailDetailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetReminderMailDetailRequest) ProtoMessage() {}
+
+func (x *GetReminderMailDetailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetReminderMailDetailRequest.ProtoReflect.Descriptor instead.
+func (*GetReminderMailDetailRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *GetReminderMailDetailRequest) GetMailId() string {
+	if x != nil {
+		return x.MailId
+	}
+	return ""
+}
+
+type GetReminderMailDetailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Mail          *ReminderMailItem      `protobuf:"bytes,1,opt,name=mail,proto3" json:"mail,omitempty"`
+	PayloadJson   string                 `protobuf:"bytes,2,opt,name=payload_json,json=payloadJson,proto3" json:"payload_json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetReminderMailDetailResponse) Reset() {
+	*x = GetReminderMailDetailResponse{}
+	mi := &file_exam_proto_msgTypes[34]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetReminderMailDetailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetReminderMailDetailResponse) ProtoMessage() {}
+
+func (x *GetReminderMailDetailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[34]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetReminderMailDetailResponse.ProtoReflect.Descriptor instead.
+func (*GetReminderMailDetailResponse) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{34}
+}
+
+func (x *GetReminderMailDetailResponse) GetMail() *ReminderMailItem {
+	if x != nil {
+		return x.Mail
+	}
+	return nil
+}
+
+func (x *GetReminderMailDetailResponse) GetPayloadJson() string {
+	if x != nil {
+		return x.PayloadJson
+	}
+	return ""
+}
+
+type IgnoreReminderMailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MailId        string                 `protobuf:"bytes,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	AdminId       string                 `protobuf:"bytes,2,opt,name=admin_id,json=adminId,proto3" json:"admin_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IgnoreReminderMailRequest) Reset() {
+	*x = IgnoreReminderMailRequest{}
+	mi := &file_exam_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IgnoreReminderMailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IgnoreReminderMailRequest) ProtoMessage() {}
+
+func (x *IgnoreReminderMailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IgnoreReminderMailRequest.ProtoReflect.Descriptor instead.
+func (*IgnoreReminderMailRequest) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{35}
+}
+
+func (x *IgnoreReminderMailRequest) GetMailId() string {
+	if x != nil {
+		return x.MailId
+	}
+	return ""
+}
+
+func (x *IgnoreReminderMailRequest) GetAdminId() string {
+	if x != nil {
+		return x.AdminId
+	}
+	return ""
+}
+
+type IgnoreReminderMailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MailId        string                 `protobuf:"bytes,1,opt,name=mail_id,json=mailId,proto3" json:"mail_id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IgnoreReminderMailResponse) Reset() {
+	*x = IgnoreReminderMailResponse{}
+	mi := &file_exam_proto_msgTypes[36]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IgnoreReminderMailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IgnoreReminderMailResponse) ProtoMessage() {}
+
+func (x *IgnoreReminderMailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_exam_proto_msgTypes[36]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IgnoreReminderMailResponse.ProtoReflect.Descriptor instead.
+func (*IgnoreReminderMailResponse) Descriptor() ([]byte, []int) {
+	return file_exam_proto_rawDescGZIP(), []int{36}
+}
+
+func (x *IgnoreReminderMailResponse) GetMailId() string {
+	if x != nil {
+		return x.MailId
+	}
+	return ""
+}
+
+func (x *IgnoreReminderMailResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 var File_exam_proto protoreflect.FileDescriptor
 
 const file_exam_proto_rawDesc = "" +
@@ -2841,7 +3445,64 @@ const file_exam_proto_rawDesc = "" +
 	"\f_status_type\"x\n" +
 	"!ListExamStatusTransitionsResponse\x12=\n" +
 	"\vtransitions\x18\x01 \x03(\v2\x1b.gexam.ExamStatusTransitionR\vtransitions\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\rR\x05total2\xb7\t\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"\xeb\x02\n" +
+	"\x18ListReminderMailsRequest\x12\x1c\n" +
+	"\aexam_id\x18\x01 \x01(\tH\x00R\x06examId\x88\x01\x01\x12$\n" +
+	"\vtask_status\x18\x02 \x01(\tH\x01R\n" +
+	"taskStatus\x88\x01\x01\x12,\n" +
+	"\x0fdelivery_status\x18\x03 \x01(\tH\x02R\x0edeliveryStatus\x88\x01\x01\x12,\n" +
+	"\x0fcandidate_email\x18\x04 \x01(\tH\x03R\x0ecandidateEmail\x88\x01\x01\x12\x12\n" +
+	"\x04page\x18\x05 \x01(\rR\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x06 \x01(\rR\bpageSize\x12(\n" +
+	"\rreminder_type\x18\a \x01(\tH\x04R\freminderType\x88\x01\x01B\n" +
+	"\n" +
+	"\b_exam_idB\x0e\n" +
+	"\f_task_statusB\x12\n" +
+	"\x10_delivery_statusB\x12\n" +
+	"\x10_candidate_emailB\x10\n" +
+	"\x0e_reminder_type\"\xe4\x03\n" +
+	"\x10ReminderMailItem\x12\x17\n" +
+	"\amail_id\x18\x01 \x01(\tR\x06mailId\x12\x17\n" +
+	"\aexam_id\x18\x02 \x01(\tR\x06examId\x12#\n" +
+	"\rreminder_type\x18\x03 \x01(\tR\freminderType\x12\x19\n" +
+	"\bto_email\x18\x04 \x01(\tR\atoEmail\x12\x17\n" +
+	"\ato_name\x18\x05 \x01(\tR\x06toName\x12\x18\n" +
+	"\asubject\x18\x06 \x01(\tR\asubject\x12!\n" +
+	"\fscheduled_at\x18\a \x01(\tR\vscheduledAt\x12\x1f\n" +
+	"\vtask_status\x18\b \x01(\tR\n" +
+	"taskStatus\x12'\n" +
+	"\x0fdelivery_status\x18\t \x01(\tR\x0edeliveryStatus\x12#\n" +
+	"\rerror_message\x18\n" +
+	" \x01(\tR\ferrorMessage\x12\x1f\n" +
+	"\vretry_count\x18\v \x01(\x05R\n" +
+	"retryCount\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\f \x01(\tR\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\r \x01(\tR\tupdatedAt\x12\x1b\n" +
+	"\tmanual_by\x18\x16 \x01(\tR\bmanualBy\x12\x1d\n" +
+	"\n" +
+	"error_code\x18\x17 \x01(\tR\terrorCode\"`\n" +
+	"\x19ListReminderMailsResponse\x12-\n" +
+	"\x05mails\x18\x01 \x03(\v2\x17.gexam.ReminderMailItemR\x05mails\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"N\n" +
+	"\x18RetryReminderMailRequest\x12\x17\n" +
+	"\amail_id\x18\x01 \x01(\tR\x06mailId\x12\x19\n" +
+	"\badmin_id\x18\x02 \x01(\tR\aadminId\"S\n" +
+	"\x19RetryReminderMailResponse\x12\x1e\n" +
+	"\vnew_mail_id\x18\x01 \x01(\tR\tnewMailId\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status\"7\n" +
+	"\x1cGetReminderMailDetailRequest\x12\x17\n" +
+	"\amail_id\x18\x01 \x01(\tR\x06mailId\"o\n" +
+	"\x1dGetReminderMailDetailResponse\x12+\n" +
+	"\x04mail\x18\x01 \x01(\v2\x17.gexam.ReminderMailItemR\x04mail\x12!\n" +
+	"\fpayload_json\x18\x02 \x01(\tR\vpayloadJson\"O\n" +
+	"\x19IgnoreReminderMailRequest\x12\x17\n" +
+	"\amail_id\x18\x01 \x01(\tR\x06mailId\x12\x19\n" +
+	"\badmin_id\x18\x02 \x01(\tR\aadminId\"M\n" +
+	"\x1aIgnoreReminderMailResponse\x12\x17\n" +
+	"\amail_id\x18\x01 \x01(\tR\x06mailId\x12\x16\n" +
+	"\x06status\x18\x02 \x01(\tR\x06status2\xa6\f\n" +
 	"\fGExamService\x12A\n" +
 	"\n" +
 	"CreateExam\x12\x18.gexam.CreateExamRequest\x1a\x19.gexam.CreateExamResponse\x121\n" +
@@ -2858,7 +3519,11 @@ const file_exam_proto_rawDesc = "" +
 	"\x13ListWebhookMessages\x12!.gexam.ListWebhookMessagesRequest\x1a\".gexam.ListWebhookMessagesResponse\x12]\n" +
 	"\x17GetWebhookMessageDetail\x12%.gexam.GetWebhookMessageDetailRequest\x1a\x1b.gexam.WebhookMessageDetail\x12n\n" +
 	"\x19ListExamStatusTransitions\x12'.gexam.ListExamStatusTransitionsRequest\x1a(.gexam.ListExamStatusTransitionsResponse\x12h\n" +
-	"\x17ReprocessWebhookMessage\x12%.gexam.ReprocessWebhookMessageRequest\x1a&.gexam.ReprocessWebhookMessageResponseB\fZ\n" +
+	"\x17ReprocessWebhookMessage\x12%.gexam.ReprocessWebhookMessageRequest\x1a&.gexam.ReprocessWebhookMessageResponse\x12V\n" +
+	"\x11ListReminderMails\x12\x1f.gexam.ListReminderMailsRequest\x1a .gexam.ListReminderMailsResponse\x12V\n" +
+	"\x11RetryReminderMail\x12\x1f.gexam.RetryReminderMailRequest\x1a .gexam.RetryReminderMailResponse\x12Y\n" +
+	"\x12IgnoreReminderMail\x12 .gexam.IgnoreReminderMailRequest\x1a!.gexam.IgnoreReminderMailResponse\x12b\n" +
+	"\x15GetReminderMailDetail\x12#.gexam.GetReminderMailDetailRequest\x1a$.gexam.GetReminderMailDetailResponseB\fZ\n" +
 	"cftp/gexamb\x06proto3"
 
 var (
@@ -2873,7 +3538,7 @@ func file_exam_proto_rawDescGZIP() []byte {
 	return file_exam_proto_rawDescData
 }
 
-var file_exam_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_exam_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_exam_proto_goTypes = []any{
 	(*CreateExamRequest)(nil),                 // 0: gexam.CreateExamRequest
 	(*GetExamRequest)(nil),                    // 1: gexam.GetExamRequest
@@ -2903,6 +3568,15 @@ var file_exam_proto_goTypes = []any{
 	(*WebhookMessageDetail)(nil),              // 25: gexam.WebhookMessageDetail
 	(*ListExamStatusTransitionsRequest)(nil),  // 26: gexam.ListExamStatusTransitionsRequest
 	(*ListExamStatusTransitionsResponse)(nil), // 27: gexam.ListExamStatusTransitionsResponse
+	(*ListReminderMailsRequest)(nil),          // 28: gexam.ListReminderMailsRequest
+	(*ReminderMailItem)(nil),                  // 29: gexam.ReminderMailItem
+	(*ListReminderMailsResponse)(nil),         // 30: gexam.ListReminderMailsResponse
+	(*RetryReminderMailRequest)(nil),          // 31: gexam.RetryReminderMailRequest
+	(*RetryReminderMailResponse)(nil),         // 32: gexam.RetryReminderMailResponse
+	(*GetReminderMailDetailRequest)(nil),      // 33: gexam.GetReminderMailDetailRequest
+	(*GetReminderMailDetailResponse)(nil),     // 34: gexam.GetReminderMailDetailResponse
+	(*IgnoreReminderMailRequest)(nil),         // 35: gexam.IgnoreReminderMailRequest
+	(*IgnoreReminderMailResponse)(nil),        // 36: gexam.IgnoreReminderMailResponse
 }
 var file_exam_proto_depIdxs = []int32{
 	9,  // 0: gexam.ExamStatusTransitionsResponse.transitions:type_name -> gexam.ExamStatusTransition
@@ -2910,41 +3584,51 @@ var file_exam_proto_depIdxs = []int32{
 	18, // 2: gexam.ListAuditMessagesResponse.audit_messages:type_name -> gexam.AuditMessageSummary
 	23, // 3: gexam.ListWebhookMessagesResponse.webhook_messages:type_name -> gexam.WebhookMessageSummary
 	9,  // 4: gexam.ListExamStatusTransitionsResponse.transitions:type_name -> gexam.ExamStatusTransition
-	0,  // 5: gexam.GExamService.CreateExam:input_type -> gexam.CreateExamRequest
-	1,  // 6: gexam.GExamService.GetExam:input_type -> gexam.GetExamRequest
-	1,  // 7: gexam.GExamService.GetExamResultDetail:input_type -> gexam.GetExamRequest
-	2,  // 8: gexam.GExamService.GetScheduleURL:input_type -> gexam.GetURLRequest
-	3,  // 9: gexam.GExamService.TermUrlCallback:input_type -> gexam.TermUrlCallbackRequest
-	1,  // 10: gexam.GExamService.GetExamStatusTransitions:input_type -> gexam.GetExamRequest
-	1,  // 11: gexam.GExamService.SyncExamResult:input_type -> gexam.GetExamRequest
-	13, // 12: gexam.GExamService.ListExams:input_type -> gexam.ListExamsRequest
-	1,  // 13: gexam.GExamService.GetExamDetail:input_type -> gexam.GetExamRequest
-	16, // 14: gexam.GExamService.ListAuditMessages:input_type -> gexam.ListAuditMessagesRequest
-	19, // 15: gexam.GExamService.GetAuditMessageDetail:input_type -> gexam.GetAuditMessageDetailRequest
-	21, // 16: gexam.GExamService.ListWebhookMessages:input_type -> gexam.ListWebhookMessagesRequest
-	24, // 17: gexam.GExamService.GetWebhookMessageDetail:input_type -> gexam.GetWebhookMessageDetailRequest
-	26, // 18: gexam.GExamService.ListExamStatusTransitions:input_type -> gexam.ListExamStatusTransitionsRequest
-	11, // 19: gexam.GExamService.ReprocessWebhookMessage:input_type -> gexam.ReprocessWebhookMessageRequest
-	5,  // 20: gexam.GExamService.CreateExam:output_type -> gexam.CreateExamResponse
-	6,  // 21: gexam.GExamService.GetExam:output_type -> gexam.ExamInfo
-	7,  // 22: gexam.GExamService.GetExamResultDetail:output_type -> gexam.ExamResultDetail
-	8,  // 23: gexam.GExamService.GetScheduleURL:output_type -> gexam.URLResponse
-	4,  // 24: gexam.GExamService.TermUrlCallback:output_type -> gexam.TermUrlCallbackResponse
-	10, // 25: gexam.GExamService.GetExamStatusTransitions:output_type -> gexam.ExamStatusTransitionsResponse
-	7,  // 26: gexam.GExamService.SyncExamResult:output_type -> gexam.ExamResultDetail
-	14, // 27: gexam.GExamService.ListExams:output_type -> gexam.ListExamsResponse
-	15, // 28: gexam.GExamService.GetExamDetail:output_type -> gexam.ExamDetail
-	17, // 29: gexam.GExamService.ListAuditMessages:output_type -> gexam.ListAuditMessagesResponse
-	20, // 30: gexam.GExamService.GetAuditMessageDetail:output_type -> gexam.AuditMessageDetail
-	22, // 31: gexam.GExamService.ListWebhookMessages:output_type -> gexam.ListWebhookMessagesResponse
-	25, // 32: gexam.GExamService.GetWebhookMessageDetail:output_type -> gexam.WebhookMessageDetail
-	27, // 33: gexam.GExamService.ListExamStatusTransitions:output_type -> gexam.ListExamStatusTransitionsResponse
-	12, // 34: gexam.GExamService.ReprocessWebhookMessage:output_type -> gexam.ReprocessWebhookMessageResponse
-	20, // [20:35] is the sub-list for method output_type
-	5,  // [5:20] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	29, // 5: gexam.ListReminderMailsResponse.mails:type_name -> gexam.ReminderMailItem
+	29, // 6: gexam.GetReminderMailDetailResponse.mail:type_name -> gexam.ReminderMailItem
+	0,  // 7: gexam.GExamService.CreateExam:input_type -> gexam.CreateExamRequest
+	1,  // 8: gexam.GExamService.GetExam:input_type -> gexam.GetExamRequest
+	1,  // 9: gexam.GExamService.GetExamResultDetail:input_type -> gexam.GetExamRequest
+	2,  // 10: gexam.GExamService.GetScheduleURL:input_type -> gexam.GetURLRequest
+	3,  // 11: gexam.GExamService.TermUrlCallback:input_type -> gexam.TermUrlCallbackRequest
+	1,  // 12: gexam.GExamService.GetExamStatusTransitions:input_type -> gexam.GetExamRequest
+	1,  // 13: gexam.GExamService.SyncExamResult:input_type -> gexam.GetExamRequest
+	13, // 14: gexam.GExamService.ListExams:input_type -> gexam.ListExamsRequest
+	1,  // 15: gexam.GExamService.GetExamDetail:input_type -> gexam.GetExamRequest
+	16, // 16: gexam.GExamService.ListAuditMessages:input_type -> gexam.ListAuditMessagesRequest
+	19, // 17: gexam.GExamService.GetAuditMessageDetail:input_type -> gexam.GetAuditMessageDetailRequest
+	21, // 18: gexam.GExamService.ListWebhookMessages:input_type -> gexam.ListWebhookMessagesRequest
+	24, // 19: gexam.GExamService.GetWebhookMessageDetail:input_type -> gexam.GetWebhookMessageDetailRequest
+	26, // 20: gexam.GExamService.ListExamStatusTransitions:input_type -> gexam.ListExamStatusTransitionsRequest
+	11, // 21: gexam.GExamService.ReprocessWebhookMessage:input_type -> gexam.ReprocessWebhookMessageRequest
+	28, // 22: gexam.GExamService.ListReminderMails:input_type -> gexam.ListReminderMailsRequest
+	31, // 23: gexam.GExamService.RetryReminderMail:input_type -> gexam.RetryReminderMailRequest
+	35, // 24: gexam.GExamService.IgnoreReminderMail:input_type -> gexam.IgnoreReminderMailRequest
+	33, // 25: gexam.GExamService.GetReminderMailDetail:input_type -> gexam.GetReminderMailDetailRequest
+	5,  // 26: gexam.GExamService.CreateExam:output_type -> gexam.CreateExamResponse
+	6,  // 27: gexam.GExamService.GetExam:output_type -> gexam.ExamInfo
+	7,  // 28: gexam.GExamService.GetExamResultDetail:output_type -> gexam.ExamResultDetail
+	8,  // 29: gexam.GExamService.GetScheduleURL:output_type -> gexam.URLResponse
+	4,  // 30: gexam.GExamService.TermUrlCallback:output_type -> gexam.TermUrlCallbackResponse
+	10, // 31: gexam.GExamService.GetExamStatusTransitions:output_type -> gexam.ExamStatusTransitionsResponse
+	7,  // 32: gexam.GExamService.SyncExamResult:output_type -> gexam.ExamResultDetail
+	14, // 33: gexam.GExamService.ListExams:output_type -> gexam.ListExamsResponse
+	15, // 34: gexam.GExamService.GetExamDetail:output_type -> gexam.ExamDetail
+	17, // 35: gexam.GExamService.ListAuditMessages:output_type -> gexam.ListAuditMessagesResponse
+	20, // 36: gexam.GExamService.GetAuditMessageDetail:output_type -> gexam.AuditMessageDetail
+	22, // 37: gexam.GExamService.ListWebhookMessages:output_type -> gexam.ListWebhookMessagesResponse
+	25, // 38: gexam.GExamService.GetWebhookMessageDetail:output_type -> gexam.WebhookMessageDetail
+	27, // 39: gexam.GExamService.ListExamStatusTransitions:output_type -> gexam.ListExamStatusTransitionsResponse
+	12, // 40: gexam.GExamService.ReprocessWebhookMessage:output_type -> gexam.ReprocessWebhookMessageResponse
+	30, // 41: gexam.GExamService.ListReminderMails:output_type -> gexam.ListReminderMailsResponse
+	32, // 42: gexam.GExamService.RetryReminderMail:output_type -> gexam.RetryReminderMailResponse
+	36, // 43: gexam.GExamService.IgnoreReminderMail:output_type -> gexam.IgnoreReminderMailResponse
+	34, // 44: gexam.GExamService.GetReminderMailDetail:output_type -> gexam.GetReminderMailDetailResponse
+	26, // [26:45] is the sub-list for method output_type
+	7,  // [7:26] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_exam_proto_init() }
@@ -2956,13 +3640,14 @@ func file_exam_proto_init() {
 	file_exam_proto_msgTypes[16].OneofWrappers = []any{}
 	file_exam_proto_msgTypes[21].OneofWrappers = []any{}
 	file_exam_proto_msgTypes[26].OneofWrappers = []any{}
+	file_exam_proto_msgTypes[28].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_exam_proto_rawDesc), len(file_exam_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   28,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
