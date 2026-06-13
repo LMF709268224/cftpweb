@@ -1,0 +1,23 @@
+# Node dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+.pnp
+.pnp.js
+
+# Next.js build output
+.next/
+out/
+build/
+dist/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tsbuildinfo
+*.exe
+ztest/
+CLAUDE.md
+deployment/
