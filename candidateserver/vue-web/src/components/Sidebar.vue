@@ -1,43 +1,27 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import {
-  Award,
-  BookOpen,
-  ChevronLeft,
-  ChevronRight,
-  Crown,
-  FileText,
-  Globe,
-  GraduationCap,
-  Home,
-  LogOut,
-  MessageSquare,
-  Settings,
-  ShoppingCart,
-  User,
-} from "lucide-vue-next"
+import { LogOut } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { getCachedDashboard } from "@/lib/dashboardCache"
 import { useTranslation } from "@/lib/language"
 
 const { t, lang, changeLanguage } = useTranslation()
 const route = useRoute()
-const collapsed = ref(false)
 const userName = ref(t.value.common.user)
 const unreadCount = ref(0)
 const menuOpen = ref(false)
 
 const navItems = computed(() => [
-  { href: "/", icon: Home, label: t.value.sidebar.home },
-  { href: "/courses", icon: BookOpen, label: t.value.sidebar.courses },
-  { href: "/membership", icon: Crown, label: t.value.sidebar.membership },
-  { href: "/exams", icon: FileText, label: t.value.sidebar.exams },
-  { href: "/records", icon: GraduationCap, label: t.value.sidebar.records },
-  { href: "/credentials", icon: Award, label: t.value.sidebar.credentials },
-  { href: "/certificates", icon: Crown, label: t.value.sidebar.certificates },
-  { href: "/orders", icon: ShoppingCart, label: t.value.sidebar.orders },
-  { href: "/messages", icon: MessageSquare, label: t.value.sidebar.messages, badge: unreadCount.value > 0 ? unreadCount.value : undefined },
+  { href: "/", label: t.value.sidebar.home },
+  { href: "/courses", label: t.value.sidebar.courses },
+  { href: "/membership", label: t.value.sidebar.membership },
+  { href: "/exams", label: t.value.sidebar.exams },
+  { href: "/records", label: t.value.sidebar.records },
+  { href: "/credentials", label: t.value.sidebar.credentials },
+  { href: "/certificates", label: t.value.sidebar.certificates },
+  { href: "/orders", label: t.value.sidebar.orders },
+  { href: "/messages", label: t.value.sidebar.messages, badge: unreadCount.value > 0 ? unreadCount.value : undefined },
 ])
 
 onMounted(async () => {
@@ -68,93 +52,59 @@ async function handleLogout() {
 </script>
 
 <template>
-  <aside
-    :class="[
-      'fixed left-0 top-0 z-40 flex h-screen flex-col bg-white shadow-[10px_0_30px_rgba(15,74,82,0.05)] transition-all duration-300',
-      collapsed ? 'w-[72px]' : 'w-64',
-    ]"
-  >
-    <div class="flex h-20 items-center gap-3 px-4 py-4">
-      <div class="flex h-11 w-11 items-center justify-center rounded-[18px] bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(10,122,138,0.18)]">
-        <GraduationCap class="h-5 w-5" />
-      </div>
-      <div v-if="!collapsed" class="flex flex-col">
-        <span class="text-xl font-black tracking-tight text-primary">{{ t.sidebar.systemBrand }}</span>
-        <span class="text-xs text-muted-foreground">{{ t.sidebar.systemName }}</span>
+  <header class="fixed left-0 right-0 top-0 z-40 flex h-[84px] items-center bg-white shadow-[0_1px_0_rgba(15,23,42,0.06)]">
+    <div class="mx-auto flex w-full max-w-[1280px] items-center justify-between px-4">
+      <RouterLink to="/" class="flex h-9 w-14 items-center justify-center rounded-md bg-primary text-xl font-black tracking-tight text-white shadow-sm">
+        CFtP
+      </RouterLink>
+
+      <nav class="ml-auto flex items-center gap-10 text-sm text-[#606975]">
+        <RouterLink to="/settings?tab=profile" class="transition-colors hover:text-primary">{{ t.sidebar.profile }}</RouterLink>
+        <RouterLink to="/settings?tab=account" class="transition-colors hover:text-primary">{{ t.sidebar.settings }}</RouterLink>
+        <button class="transition-colors hover:text-primary" @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')">{{ t.sidebar.switchLang }}</button>
+      </nav>
+
+      <div class="relative ml-8">
+        <button class="flex h-10 w-10 items-center justify-center rounded-full bg-[#fff4ed] text-lg font-black text-primary transition-transform hover:scale-105" @click="menuOpen = !menuOpen">
+          {{ userName.charAt(0).toUpperCase() }}
+        </button>
+        <div v-if="menuOpen" class="absolute right-0 top-12 z-50 w-32 rounded-xl bg-white p-1.5 shadow-lg shadow-slate-900/10">
+          <button class="flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-muted" @click="handleLogout">
+            <LogOut class="h-4 w-4" />
+            {{ t.sidebar.logout }}
+          </button>
+        </div>
       </div>
     </div>
+  </header>
 
-    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+  <aside class="app-side-card fixed top-[106px] z-30 hidden w-[220px] rounded-md bg-white lg:block">
+    <div class="px-8 pb-9 pt-8 text-center">
+      <div class="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#fff4ed] text-3xl font-black text-primary">
+        {{ userName.charAt(0).toUpperCase() }}
+      </div>
+      <h2 class="mt-4 truncate text-base font-bold text-[#111827]">{{ userName }}</h2>
+      <p class="mt-3 whitespace-nowrap text-sm text-[#6b7280]">
+        {{ lang === 'zh' ? '会员：' : 'Member: ' }}{{ t.common.certifiedMember }}
+      </p>
+    </div>
+
+    <div class="h-px bg-[#f0f1f3]" />
+
+    <nav class="py-6 text-center text-base text-[#111827]">
       <RouterLink
         v-for="item in navItems"
         :key="item.href"
         :to="item.href"
         :class="[
-          'group relative flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all duration-200',
-          route.path === item.href
-            ? 'bg-primary text-primary-foreground shadow-[0_8px_18px_rgba(10,122,138,0.18)]'
-            : 'text-sidebar-foreground hover:bg-[#edf8f9] hover:text-primary',
+          'relative block py-2.5 transition-colors hover:text-primary',
+          route.path === item.href ? 'font-medium text-primary' : '',
         ]"
       >
-        <component :is="item.icon" :class="['h-5 w-5 shrink-0', collapsed && 'mx-auto']" />
-        <template v-if="!collapsed">
-          <span>{{ item.label }}</span>
-          <span
-            v-if="item.badge"
-            :class="[
-              'ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs',
-              route.path === item.href ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-primary/10 text-primary',
-            ]"
-          >
-            {{ item.badge }}
-          </span>
-        </template>
-        <span
-          v-else-if="item.badge"
-          class="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground"
-        >
-          {{ item.badge }}
-        </span>
+        <span v-if="route.path === item.href" class="absolute left-0 top-1/2 h-8 w-0.5 -translate-y-1/2 bg-primary" />
+        {{ item.label }}
+        <span v-if="item.badge" class="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">{{ item.badge }}</span>
       </RouterLink>
     </nav>
-
-    <div class="relative bg-[#f7fbfc] p-3">
-      <button
-        :class="['flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors hover:bg-white', collapsed && 'justify-center px-0']"
-        @click="menuOpen = !menuOpen"
-      >
-        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-          {{ userName.charAt(0) }}
-        </div>
-        <div v-if="!collapsed" class="flex-1 overflow-hidden">
-          <p class="truncate text-sm font-medium text-sidebar-foreground">{{ userName }}</p>
-          <p class="truncate text-xs text-muted-foreground">{{ t.common.certifiedMember }}</p>
-        </div>
-      </button>
-
-      <div v-if="menuOpen && !collapsed" class="absolute bottom-[76px] right-3 z-50 w-56 overflow-hidden rounded-2xl bg-card p-1.5 shadow-lg shadow-slate-900/10">
-        <RouterLink to="/settings?tab=profile" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-muted">
-          <User class="h-4 w-4" /> {{ t.sidebar.profile }}
-        </RouterLink>
-        <RouterLink to="/settings?tab=account" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-muted">
-          <Settings class="h-4 w-4" /> {{ t.sidebar.settings }}
-        </RouterLink>
-        <button class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm hover:bg-muted" @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')">
-          <Globe class="h-4 w-4" /> {{ t.sidebar.switchLang }}
-        </button>
-        <div class="my-1 h-px bg-border" />
-        <button class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-destructive hover:bg-muted" @click="handleLogout">
-          <LogOut class="h-4 w-4" /> {{ t.sidebar.logout }}
-        </button>
-      </div>
-    </div>
-
-    <button
-      class="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full bg-white text-muted-foreground shadow-md transition-colors hover:bg-accent hover:text-accent-foreground"
-      @click="collapsed = !collapsed"
-    >
-      <ChevronRight v-if="collapsed" class="h-3 w-3" />
-      <ChevronLeft v-else class="h-3 w-3" />
-    </button>
   </aside>
 </template>

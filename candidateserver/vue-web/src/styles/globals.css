@@ -10,24 +10,24 @@
   --card-foreground: #102a2f;
   --popover: oklch(1 0 0);
   --popover-foreground: #102a2f;
-  --primary: #0A7A8A;
+  --primary: #f63232;
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: #e8f4f6;
-  --secondary-foreground: #17444b;
+  --secondary: #fff1f1;
+  --secondary-foreground: #8f1d1d;
   --muted: #eaf1f3;
   --muted-foreground: #5c7277;
-  --accent: #d9eef1;
-  --accent-foreground: #0a5965;
+  --accent: #ffe4e4;
+  --accent-foreground: #b91c1c;
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.99 0 0);
   --border: #d6e2e5;
   --input: #d6e2e5;
-  --ring: #0A7A8A;
+  --ring: #f63232;
   --radius: 0.75rem;
   --sidebar: #ffffff;
   --sidebar-foreground: #16373d;
-  --sidebar-accent: #e8f4f6;
-  --sidebar-accent-foreground: #0A7A8A;
+  --sidebar-accent: #fff1f1;
+  --sidebar-accent-foreground: #f63232;
   --sidebar-border: #d9e6e9;
 }
 
@@ -115,7 +115,21 @@
   }
 
   .page-main {
-    @apply pl-64 transition-all duration-300;
+    @apply pt-[90px] transition-all duration-300;
+    width: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    .page-main {
+      max-width: 1280px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 236px;
+    }
+
+    .app-side-card {
+      left: max(0px, calc((100vw - 1280px) / 2));
+    }
   }
 
   .line-clamp-1 {
