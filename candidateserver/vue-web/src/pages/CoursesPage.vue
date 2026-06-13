@@ -213,35 +213,41 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppShell>
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.courses.title }}</h1>
-      <p class="mt-1 text-muted-foreground">{{ t.courses.subtitle }}</p>
+  <AppShell content-class="px-4 py-4">
+    <div class="mb-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+      <div class="bg-[#eef8fa] p-4">
+        <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
+          <BookOpen class="h-3.5 w-3.5" />
+          {{ t.sidebar.courses }}
+        </div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.courses.title }}</h1>
+        <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
+      </div>
     </div>
 
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-      <div class="relative max-w-md flex-1">
+    <div class="mb-4 flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+      <div class="relative flex-1 sm:max-w-md">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="searchQuery" class="input pl-10" :placeholder="t.courses.searchPlaceholder" />
       </div>
-      <div v-if="activeTab === 'resources'" class="flex gap-2">
-        <button v-for="filter in resourceFilters" :key="filter" :class="['btn', resourceFilter === filter ? 'btn-primary' : 'btn-outline']" @click="setResourceFilter(filter)">
+      <div v-if="activeTab === 'resources'" class="flex flex-wrap gap-2">
+        <button v-for="filter in resourceFilters" :key="filter" :class="['btn rounded-xl', resourceFilter === filter ? 'btn-primary shadow-sm shadow-primary/20' : 'btn-outline']" @click="setResourceFilter(filter)">
           <Video v-if="filter === 'video'" class="h-3.5 w-3.5" />
           <FileText v-if="filter === 'pdf'" class="h-3.5 w-3.5" />
           <FileIcon v-if="filter === 'document'" class="h-3.5 w-3.5" />
           {{ filter === 'all' ? t.messagesPage.all : courseTypeLabel(filter) }}
         </button>
       </div>
-      <button v-else class="btn btn-outline">
+      <button v-else class="btn btn-outline rounded-xl">
         <SlidersHorizontal class="h-4 w-4" /> {{ t.courses.filterBtn }}
       </button>
     </div>
 
-    <div class="mb-8 flex w-fit gap-1 rounded-xl bg-muted p-1">
+    <div class="mb-4 flex w-fit gap-1 rounded-2xl border border-border bg-card p-1 shadow-sm">
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200', activeTab === tab.id ? 'bg-card text-card-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground']"
+        :class="['rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200', activeTab === tab.id ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']"
         @click="activeTab = tab.id"
       >
         {{ tab.label }}
@@ -249,32 +255,33 @@ onMounted(() => {
     </div>
 
     <div v-if="activeTab === 'all'">
-      <div v-if="loading && allCourses.length === 0" class="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-12 text-muted-foreground">
+      <div v-if="loading && allCourses.length === 0" class="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-14 text-muted-foreground shadow-sm">
         <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
       </div>
-      <div v-else-if="filteredCourses.length > 0" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div v-else-if="filteredCourses.length > 0" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <CourseCard v-for="course in filteredCourses" :key="`${course.id}-${course.eligibilityRefreshKey || 0}`" v-bind="course" />
       </div>
-      <div v-else class="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <Search class="h-8 w-8 text-muted-foreground" />
+      <div v-else class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card py-16 text-center shadow-sm">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+          <Search class="h-8 w-8 text-primary" />
         </div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">暂无数据</h3>
       </div>
     </div>
 
     <div v-if="activeTab === 'my'" class="space-y-4">
-      <div v-if="loading && myCourses.length === 0" class="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-12 text-muted-foreground">
+      <div v-if="loading && myCourses.length === 0" class="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-14 text-muted-foreground shadow-sm">
         <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
       </div>
-      <div v-for="course in myCourses" :key="course.id" class="group relative overflow-hidden rounded-xl border border-border bg-card p-6 transition-all duration-300 hover:border-primary/20 hover:shadow-lg">
-        <div class="flex gap-5">
-          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+      <div v-for="course in myCourses" :key="course.id" class="group relative overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10">
+        <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
+        <div class="flex gap-4">
+          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
             <BookOpen class="h-7 w-7" />
           </div>
           <div class="flex flex-1 flex-col justify-between">
             <div>
-              <div class="flex items-start justify-between">
+              <div class="flex items-start justify-between gap-4">
                 <h3 class="text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ course.title || t.common.unknownCourse }}</h3>
                 <span :class="['badge', timelineStatusBadgeClassForStatus('PIPELINE', course.statusValue)]">
                   {{ statusLabel(t, CANDIDATE_PIPELINE_STATUS_LABELS, course.statusValue) }}
@@ -297,27 +304,27 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex flex-col items-end justify-between">
-            <RouterLink :to="`/courses/detail?id=${encodeURIComponent(course.id)}`" class="btn btn-primary">
+            <RouterLink :to="`/courses/detail?id=${encodeURIComponent(course.id)}`" class="btn btn-primary rounded-xl shadow-sm shadow-primary/20">
               {{ t.courses.viewDetails }} <ChevronRight class="h-4 w-4" />
             </RouterLink>
           </div>
         </div>
       </div>
-      <div v-if="!loading && myCourses.length === 0" class="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <BookOpen class="h-8 w-8 text-muted-foreground" />
+      <div v-if="!loading && myCourses.length === 0" class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card py-16 text-center shadow-sm">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+          <BookOpen class="h-8 w-8 text-primary" />
         </div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.courses.noCourses }}</h3>
         <p class="mb-4 text-muted-foreground">{{ t.courses.noCoursesDesc }}</p>
-        <button class="btn btn-primary" @click="activeTab = 'all'">{{ t.courses.browseCoursesBtn }}</button>
+        <button class="btn btn-primary rounded-xl shadow-sm shadow-primary/20" @click="activeTab = 'all'">{{ t.courses.browseCoursesBtn }}</button>
       </div>
     </div>
 
-    <div v-if="activeTab === 'resources'" class="space-y-3">
+    <div v-if="activeTab === 'resources'" class="space-y-4">
       <div
         v-for="resource in filteredResources"
         :key="resource.id"
-        class="group relative cursor-pointer overflow-hidden rounded-xl border border-border bg-card p-4 transition-all duration-300 hover:border-primary/20 hover:shadow-md"
+        class="group relative cursor-pointer overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm transition-all duration-300 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10"
         @click="openResource(resource)"
       >
         <div class="flex items-center gap-4">
@@ -344,7 +351,7 @@ onMounted(() => {
             </div>
             <span class="w-10 text-right text-muted-foreground">{{ resource.progress }}%</span>
           </div>
-          <button class="btn btn-primary" @click.stop="openResource(resource)">
+          <button class="btn btn-primary rounded-xl shadow-sm shadow-primary/20" @click.stop="openResource(resource)">
             <Play v-if="resource.type === 'video'" class="h-3.5 w-3.5" />
             <Eye v-else class="h-3.5 w-3.5" />
             {{ resource.type === 'video' ? t.courses.watch : t.courses.read }}
@@ -353,14 +360,13 @@ onMounted(() => {
           <button class="btn btn-ghost px-2" @click.stop><Bookmark class="h-4 w-4" /></button>
         </div>
       </div>
-      <div v-if="filteredResources.length === 0" class="flex flex-col items-center justify-center rounded-xl border border-border bg-card py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-          <FileText class="h-8 w-8 text-muted-foreground" />
+      <div v-if="filteredResources.length === 0" class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card py-16 text-center shadow-sm">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+          <FileText class="h-8 w-8 text-primary" />
         </div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.courses.noResources }}</h3>
         <p class="text-muted-foreground">{{ t.courses.noResourcesDesc }}</p>
       </div>
     </div>
-
   </AppShell>
 </template>

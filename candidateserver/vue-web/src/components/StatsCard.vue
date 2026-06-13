@@ -14,11 +14,11 @@ const props = withDefaults(defineProps<{
 })
 
 const variantStyles = {
-  default: { iconBg: "bg-muted", iconColor: "text-muted-foreground" },
-  primary: { iconBg: "bg-primary/10", iconColor: "text-primary" },
-  success: { iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600" },
-  warning: { iconBg: "bg-amber-500/10", iconColor: "text-amber-600" },
-  info: { iconBg: "bg-blue-500/10", iconColor: "text-blue-600" },
+  default: { iconBg: "bg-muted", iconColor: "text-muted-foreground", accent: "bg-muted" },
+  primary: { iconBg: "bg-primary/10", iconColor: "text-primary", accent: "bg-primary" },
+  success: { iconBg: "bg-emerald-500/10", iconColor: "text-emerald-600", accent: "bg-emerald-500" },
+  warning: { iconBg: "bg-amber-500/10", iconColor: "text-amber-600", accent: "bg-amber-500" },
+  info: { iconBg: "bg-sky-500/10", iconColor: "text-sky-600", accent: "bg-sky-500" },
 }
 </script>
 
@@ -26,9 +26,10 @@ const variantStyles = {
   <component
     :is="props.href ? RouterLink : 'div'"
     :to="props.href"
-    :class="['group relative block overflow-hidden rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md', props.href && 'cursor-pointer']"
+    :class="['group relative block overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10', props.href && 'cursor-pointer']"
   >
-    <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+    <div :class="['absolute left-0 top-0 h-full w-1', variantStyles[variant].accent]" />
+    <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
     <div class="relative flex items-start justify-between">
       <div class="space-y-2">
         <p class="text-sm font-medium text-muted-foreground">{{ title }}</p>

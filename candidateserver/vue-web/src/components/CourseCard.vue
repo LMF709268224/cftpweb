@@ -82,42 +82,49 @@ const accessState = computed(() => {
   <component
     :is="effectivePurchased ? RouterLink : 'div'"
     :to="effectivePurchased ? `/courses/detail?id=${encodeURIComponent(id)}` : undefined"
-    class="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-lg"
+    class="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="!effectivePurchased && (showPurchaseDialog = true)"
   >
-    <div class="relative h-36 overflow-hidden bg-muted sm:h-40 xl:h-44">
+    <div class="relative h-36 overflow-hidden bg-[#eaf5f7] sm:h-40 xl:h-44">
       <template v-if="image">
         <img :src="image" :alt="title" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-slate-950/5 to-transparent" />
       </template>
-      <div v-else class="flex h-full items-center justify-center bg-muted">
-        <BookOpen class="h-14 w-14 text-muted-foreground/60" />
+      <div v-else class="flex h-full items-center justify-center bg-[#eaf5f7]">
+        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
+          <BookOpen class="h-9 w-9" />
+        </div>
       </div>
 
-      <span v-if="effectivePurchased" class="badge absolute right-3 top-3 gap-1 border-0 bg-emerald-500 text-white">
+      <span v-if="effectivePurchased" class="badge absolute right-3 top-3 gap-1 border-0 bg-emerald-500 text-white shadow-sm">
         <CheckCircle2 class="h-3 w-3" />
         {{ t.courses.purchased }}
       </span>
 
-      <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-primary shadow-lg backdrop-blur-sm transition-transform duration-300 group-hover:scale-110">
+      <div class="absolute inset-x-3 bottom-3 flex items-center justify-between">
+        <span v-if="versionLabel" class="badge border-white/70 bg-white/90 text-foreground shadow-sm backdrop-blur">
+          {{ versionLabel }}
+        </span>
+        <span v-else class="badge border-white/70 bg-white/90 text-primary shadow-sm backdrop-blur">
+          {{ t.courses.pipeline }}
+        </span>
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/95 text-primary shadow-sm backdrop-blur transition-transform duration-300 group-hover:scale-105">
           <Play v-if="effectivePurchased" class="h-4 w-4 fill-current" />
           <ShoppingCart v-else class="h-4 w-4" />
         </div>
       </div>
     </div>
 
-    <div class="p-4">
+    <div class="p-5">
       <h3 class="mb-2 line-clamp-1 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ title }}</h3>
-      <p class="mb-4 line-clamp-2 text-sm text-muted-foreground">{{ description }}</p>
+      <p class="mb-4 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{{ description }}</p>
 
-      <div v-if="resolvedStatusLabel || versionLabel" class="mb-4 flex flex-wrap gap-2">
-        <span v-if="resolvedStatusLabel" class="badge">{{ resolvedStatusLabel }}</span>
-        <span v-if="versionLabel" class="badge">{{ versionLabel }}</span>
+      <div v-if="resolvedStatusLabel" class="mb-4 flex flex-wrap gap-2">
+        <span class="badge border-primary/20 bg-primary/10 text-primary">{{ resolvedStatusLabel }}</span>
       </div>
 
-      <div v-if="accessState" :class="['mb-4 rounded-lg border px-3 py-2 text-xs', accessState.className]">
+      <div v-if="accessState" :class="['mb-4 rounded-xl border px-3 py-2 text-xs', accessState.className]">
         <div class="flex items-center gap-1.5 font-medium">
           <component :is="accessState.icon" class="h-3.5 w-3.5" />
           {{ accessState.label }}
@@ -135,7 +142,14 @@ const accessState = computed(() => {
         </div>
       </div>
 
-      <div v-if="duration || students !== undefined" class="flex items-center justify-between text-sm text-muted-foreground">
+      <div v-if="stats?.length" class="mb-4 grid grid-cols-3 gap-2 rounded-xl bg-[#f6fafb] p-2 text-center">
+        <div v-for="stat in stats" :key="stat.label" class="rounded-lg bg-white px-2 py-2">
+          <div class="text-sm font-semibold text-foreground">{{ stat.value }}</div>
+          <div class="truncate text-[11px] text-muted-foreground">{{ stat.label }}</div>
+        </div>
+      </div>
+
+      <div v-if="duration || students !== undefined" class="mb-4 flex items-center justify-between text-sm text-muted-foreground">
         <div class="flex items-center gap-4">
           <div v-if="duration" class="flex items-center gap-1.5">
             <Clock class="h-4 w-4" />
@@ -148,19 +162,12 @@ const accessState = computed(() => {
         </div>
       </div>
 
-      <div v-if="stats?.length" class="mt-4 grid grid-cols-3 gap-2 rounded-md bg-muted p-2 text-center">
-        <div v-for="stat in stats" :key="stat.label">
-          <div class="text-sm font-semibold text-foreground">{{ stat.value }}</div>
-          <div class="truncate text-[11px] text-muted-foreground">{{ stat.label }}</div>
+      <div class="flex items-center justify-between border-t border-border pt-4">
+        <div class="min-w-0 flex items-center gap-2">
+          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">CF</div>
+          <span class="truncate text-sm text-muted-foreground">{{ provider }}</span>
         </div>
-      </div>
-
-      <div class="mt-4 flex items-center justify-between border-t border-border pt-4">
-        <div class="flex items-center gap-2">
-          <div class="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">GF</div>
-          <span class="text-sm text-muted-foreground">{{ provider }}</span>
-        </div>
-        <ChevronRight class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+        <ChevronRight class="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
       </div>
     </div>
   </component>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue"
-import { AlertCircle, Award, CheckCircle, Clock, FileText, XCircle } from "lucide-vue-next"
+import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, XCircle } from "lucide-vue-next"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusBadgeClassForStatus, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -127,35 +127,64 @@ onMounted(fetchData)
 </script>
 
 <template>
-  <AppShell>
-    <div class="mb-8">
-      <h1 class="flex items-center gap-2 text-3xl font-bold tracking-tight text-foreground"><Award class="h-8 w-8 text-primary" /> {{ t.credentialsPage.title }}</h1>
-      <p class="mt-2 text-muted-foreground">{{ t.credentialsPage.subtitle }}</p>
+  <AppShell content-class="px-4 py-4">
+    <div class="mb-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+      <div class="bg-[#eef8fa] p-4">
+        <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
+          <Award class="h-3.5 w-3.5" />
+          {{ t.sidebar.credentials }}
+        </div>
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.credentialsPage.title }}</h1>
+        <p class="mt-2 text-muted-foreground">{{ t.credentialsPage.subtitle }}</p>
+      </div>
     </div>
-    <div v-if="loading">{{ t.common.loading }}</div>
-    <div v-else class="space-y-10">
+
+    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-16 text-muted-foreground shadow-sm">
+      <Loader2 class="h-5 w-5 animate-spin" />
+      <span>{{ t.common.loading }}</span>
+    </div>
+    <div v-else class="space-y-4">
       <section>
-        <h2 class="mb-4 flex items-center gap-2 text-xl font-semibold"><Award class="h-5 w-5" /> {{ t.credentialsPage.availableQualifications }}</h2>
-        <div class="grid gap-6 md:grid-cols-3">
-          <div v-for="def in definitions" :key="def.cred_def_id" class="flex flex-col rounded-xl border bg-card text-card-foreground shadow-sm">
-            <div class="flex flex-col space-y-1.5 p-6">
-              <h3 class="text-xl font-semibold leading-none tracking-tight">{{ def.name }}</h3>
-              <span class="badge w-fit border-transparent bg-secondary text-secondary-foreground">{{ def.category }}</span>
+        <div class="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 shadow-sm">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Award class="h-4 w-4" />
+          </div>
+          <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.availableQualifications }}</h2>
+        </div>
+        <div class="grid gap-4 md:grid-cols-3">
+          <div v-for="def in definitions" :key="def.cred_def_id" class="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-[#fbfefe] text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
+            <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
+            <div class="flex flex-col space-y-3 p-4">
+              <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
+                <Award class="h-5 w-5" />
+              </div>
+              <h3 class="text-xl font-semibold leading-tight tracking-tight">{{ def.name }}</h3>
+              <span class="badge w-fit border-primary/20 bg-primary/10 text-primary">{{ def.category }}</span>
             </div>
-            <div class="flex flex-1 flex-col p-6 pt-0">
-              <p class="mb-4 flex-1 text-sm text-muted-foreground">{{ def.description }}</p>
-              <button class="btn btn-primary mt-4 w-full" @click="handleApplyClick(def)">{{ t.credentialsPage.applyNow }}</button>
+            <div class="flex flex-1 flex-col p-4 pt-0">
+              <p class="flex-1 text-sm leading-6 text-muted-foreground">{{ def.description }}</p>
+              <button class="btn btn-primary mt-4 w-full rounded-xl shadow-sm shadow-primary/20" @click="handleApplyClick(def)">{{ t.credentialsPage.applyNow }}</button>
             </div>
           </div>
         </div>
       </section>
-      <hr />
+
       <section>
-        <h2 class="mb-4 flex items-center gap-2 text-xl font-semibold"><FileText class="h-5 w-5" /> {{ t.credentialsPage.myApplications }}</h2>
-        <div v-if="applications.length === 0" class="rounded-lg border border-dashed p-8 text-center text-muted-foreground">{{ t.credentialsPage.noApplications }}</div>
-        <div v-else class="overflow-hidden rounded-md border bg-card">
-          <div class="divide-y">
-            <div v-for="app in applications" :key="app.app_id" class="grid grid-cols-[minmax(180px,1.5fr)_minmax(220px,2fr)_minmax(120px,1fr)_auto] items-center gap-4 px-4 py-3 text-sm">
+        <div class="mb-4 flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 shadow-sm">
+          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <FileText class="h-4 w-4" />
+          </div>
+          <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.myApplications }}</h2>
+        </div>
+        <div v-if="applications.length === 0" class="flex flex-col items-center justify-center rounded-2xl border border-border bg-card px-4 py-14 text-center shadow-sm">
+          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+            <FileText class="h-8 w-8 text-primary" />
+          </div>
+          <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.credentialsPage.noApplications }}</h3>
+        </div>
+        <div v-else class="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+          <div class="divide-y divide-border">
+            <div v-for="app in applications" :key="app.app_id" class="grid grid-cols-[minmax(180px,1.5fr)_minmax(220px,2fr)_minmax(120px,1fr)_auto] items-center gap-4 px-4 py-4 text-sm transition-colors hover:bg-muted/50">
               <div class="min-w-0">
                 <div class="truncate font-medium text-foreground">{{ definitions.find((d) => d.cred_def_id === app.cred_def_id)?.name || t.common.unknown }}</div>
                 <div class="truncate text-xs text-muted-foreground">{{ app.app_id }}</div>
@@ -165,7 +194,7 @@ onMounted(fetchData)
                 <component :is="statusIcon(app.status)" class="h-5 w-5 text-black" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <button v-if="canResubmit(app.status)" class="btn btn-primary py-1 text-xs" @click="handleApplyClick(definitions.find((d) => d.cred_def_id === app.cred_def_id), app.app_id)">{{ t.credentialsPage.appStatusResubmit }}</button>
+              <button v-if="canResubmit(app.status)" class="btn btn-primary rounded-xl py-1 text-xs shadow-sm shadow-primary/20" @click="handleApplyClick(definitions.find((d) => d.cred_def_id === app.cred_def_id), app.app_id)">{{ t.credentialsPage.appStatusResubmit }}</button>
               <span v-else class="text-xs text-muted-foreground">{{ formatBackendDate(app.created_at).split(" ")[0] || t.common.na }}</span>
             </div>
           </div>
@@ -174,19 +203,22 @@ onMounted(fetchData)
     </div>
 
     <div v-if="isApplyOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="isApplyOpen = false">
-      <div class="w-full max-w-md rounded-xl border bg-card p-6 shadow-lg">
-        <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
+      <div class="w-full max-w-md rounded-2xl border border-border bg-card p-4 shadow-lg shadow-slate-900/20">
+        <div class="flex items-start justify-between gap-4">
+          <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
+          <button class="text-xl leading-none text-muted-foreground transition-colors hover:text-foreground" @click="isApplyOpen = false">x</button>
+        </div>
         <div class="space-y-4 py-4">
           <p class="text-sm text-muted-foreground">{{ t.credentialsPage.description }}: {{ selectedDef?.description }}</p>
-          <div class="space-y-4 border-t pt-4">
+          <div class="space-y-4 border-t border-border pt-4">
             <h4 class="text-sm font-semibold">{{ t.credentialsPage.uploadMaterials }}</h4>
-            <div v-for="constraint in selectedDef?.file_constraints || []" :key="constraint.name" class="space-y-2 rounded-lg bg-muted p-3">
+            <div v-for="constraint in selectedDef?.file_constraints || []" :key="constraint.name" class="space-y-2 rounded-xl bg-muted p-3">
               <div class="flex justify-between">
                 <span class="font-medium">{{ constraint.name }}</span>
                 <span :class="['badge border-transparent', constraint.is_required ? 'bg-destructive text-destructive-foreground' : 'bg-secondary text-secondary-foreground']">{{ constraint.is_required ? t.credentialsPage.required : t.credentialsPage.optional }}</span>
               </div>
               <div class="mt-2 flex items-center gap-2">
-                <button type="button" class="btn btn-outline px-3 py-1.5 text-xs hover:border-emerald-500 hover:bg-emerald-500 hover:text-white" @click="triggerFileInput(constraint.name)">
+                <button type="button" class="btn btn-outline rounded-xl px-3 py-1.5 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="triggerFileInput(constraint.name)">
                   {{ t.credentialsPage.chooseFile }}
                 </button>
                 <span class="max-w-[200px] truncate text-sm text-muted-foreground" :title="uploadedFiles[constraint.name] ? uploadedFiles[constraint.name].name : t.credentialsPage.noFileChosen">
@@ -199,8 +231,8 @@ onMounted(fetchData)
           </div>
         </div>
         <div class="flex justify-end gap-3">
-          <button class="btn btn-outline" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
-          <button class="btn btn-primary" :disabled="isSubmitting || !(selectedDef?.file_constraints?.every((c: any) => !c.is_required || uploadedFiles[c.name]) && selectedDef?.file_constraints?.length > 0)" @click="handleSubmitApplication">
+          <button class="btn btn-outline rounded-xl" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
+          <button class="btn btn-primary rounded-xl shadow-sm shadow-primary/20" :disabled="isSubmitting || !(selectedDef?.file_constraints?.every((c: any) => !c.is_required || uploadedFiles[c.name]) && selectedDef?.file_constraints?.length > 0)" @click="handleSubmitApplication">
             {{ isSubmitting ? t.credentialsPage.submitting : t.credentialsPage.submitApplication }}
           </button>
         </div>

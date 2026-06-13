@@ -9,7 +9,7 @@ import { useTranslation } from "@/lib/language"
 
 type Message = { id: string; type: string; title: string; content: string; time: string; isRead: boolean }
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const selectedType = ref<string | null>(null)
 const detailModalOpen = ref(false)
 const selectedMessageDetail = ref<any>(null)
@@ -33,6 +33,14 @@ function configFor(type: string) {
 
 function unreadCountText() {
   return t.value.messagesPage.unreadCount.replace("{{count}}", String(unreadCount.value))
+}
+
+function markReadMenuLabel() {
+  return lang.value === "zh" ? "标记为已读" : "Mark as read"
+}
+
+function deleteMenuLabel() {
+  return lang.value === "zh" ? "删除" : "Delete"
 }
 
 async function fetchMessages() {
@@ -118,22 +126,28 @@ onMounted(fetchMessages)
 
 <template>
   <AppShell>
-    <div class="mb-8 flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
-        <p class="mt-1 text-muted-foreground">{{ unreadCountText() }}</p>
+    <div class="mb-4 overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+      <div class="flex flex-col gap-4 bg-[#eef8fa] p-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div class="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white px-3 py-1 text-xs font-medium text-primary">
+            <MessageSquare class="h-3.5 w-3.5" />
+            {{ t.sidebar.messages }}
+          </div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
+          <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
+        </div>
+        <button v-if="unreadCount > 0" class="btn btn-outline rounded-xl bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="markAllAsRead"><CheckCheck class="h-4 w-4" /> {{ t.messagesPage.markAllAsRead }}</button>
       </div>
-      <button v-if="unreadCount > 0" class="btn btn-outline" @click="markAllAsRead"><CheckCheck class="h-4 w-4" /> {{ t.messagesPage.markAllAsRead }}</button>
     </div>
 
-    <div class="mb-6 flex flex-wrap gap-2">
-      <button :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', selectedType === null ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground']" @click="selectedType = null">
+    <div class="mb-4 flex flex-wrap gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
+      <button :class="['rounded-xl px-4 py-2 text-sm font-medium transition-all', selectedType === null ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']" @click="selectedType = null">
         {{ t.messagesPage.all }} <span class="ml-2 rounded-full bg-card/30 px-1.5">{{ messageList.length }}</span>
       </button>
       <button
         v-for="(config, type) in typeConfig"
         :key="type"
-        :class="['flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all', selectedType === type ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground']"
+        :class="['flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all', selectedType === type ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']"
         @click="selectedType = type"
       >
         <component :is="config.icon" class="h-4 w-4" />
@@ -143,8 +157,8 @@ onMounted(fetchMessages)
     </div>
 
     <div class="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div v-if="filteredMessages.length === 0" class="flex flex-col items-center justify-center py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted"><MessageSquare class="h-8 w-8 text-muted-foreground" /></div>
+      <div v-if="filteredMessages.length === 0" class="flex flex-col items-center justify-center px-4 py-16 text-center">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"><MessageSquare class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.messagesPage.noMessages }}</h3>
         <p class="text-muted-foreground">{{ t.messagesPage.noMessagesDesc }}</p>
       </div>
@@ -152,7 +166,7 @@ onMounted(fetchMessages)
         <div
           v-for="message in filteredMessages"
           :key="message.id"
-          :class="['group flex cursor-pointer items-start gap-4 p-6 transition-colors hover:bg-muted/50', !message.isRead && 'bg-primary/5']"
+          :class="['group flex cursor-pointer items-start gap-4 px-4 py-4 transition-colors hover:bg-muted/50', !message.isRead && 'bg-primary/5']"
           @click="handleViewDetail(message)"
         >
           <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', configFor(message.type).iconBg]">
@@ -169,17 +183,17 @@ onMounted(fetchMessages)
           </div>
           <div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
             <div class="relative">
-              <button class="btn btn-ghost h-8 px-2" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
+              <button class="btn btn-ghost h-8 rounded-xl px-2" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
                 <MoreHorizontal class="h-4 w-4" />
               </button>
-              <div v-if="openMenuId === message.id" class="absolute right-0 top-9 z-50 min-w-36 overflow-hidden rounded-md border bg-card p-1 shadow-md" @click.stop>
-                <button v-if="!message.isRead" class="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-muted" @click="markAsRead(message.id)">
+              <div v-if="openMenuId === message.id" class="absolute right-0 top-9 z-50 min-w-36 overflow-hidden rounded-xl border border-border bg-card p-1 shadow-md" @click.stop>
+                <button v-if="!message.isRead" class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm hover:bg-muted" @click="markAsRead(message.id)">
                   <CheckCheck class="mr-2 h-4 w-4" />
-                  标记为已读
+                  {{ markReadMenuLabel() }}
                 </button>
-                <button class="flex w-full items-center rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-muted" @click="deleteMessage(message.id)">
+                <button class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm text-destructive hover:bg-muted" @click="deleteMessage(message.id)">
                   <Trash2 class="mr-2 h-4 w-4" />
-                  删除
+                  {{ deleteMenuLabel() }}
                 </button>
               </div>
             </div>
@@ -190,9 +204,14 @@ onMounted(fetchMessages)
     </div>
 
     <div v-if="detailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="detailModalOpen = false">
-      <div class="w-full max-w-xl rounded-2xl bg-card p-6 shadow-2xl">
-        <h2 class="mb-2 text-xl font-semibold">{{ selectedMessageDetail?.title || t.messagesPage.systemNotice }}</h2>
-        <p class="text-sm text-muted-foreground">{{ selectedMessageDetail?.time }}</p>
+      <div class="w-full max-w-xl rounded-2xl border border-border bg-card p-4 shadow-2xl">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="mb-2 text-xl font-semibold">{{ selectedMessageDetail?.title || t.messagesPage.systemNotice }}</h2>
+            <p class="text-sm text-muted-foreground">{{ selectedMessageDetail?.time }}</p>
+          </div>
+          <button class="text-xl leading-none text-muted-foreground transition-colors hover:text-foreground" @click="detailModalOpen = false">x</button>
+        </div>
         <div class="mt-4 border-t border-border pt-4 text-sm leading-relaxed text-foreground" v-html="selectedMessageDetail?.content || ''" />
       </div>
     </div>

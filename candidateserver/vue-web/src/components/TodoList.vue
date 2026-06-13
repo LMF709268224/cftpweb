@@ -29,21 +29,21 @@ const todoCopy = computed(() => ({
 </script>
 
 <template>
-  <div class="rounded-2xl border border-border bg-card shadow-sm">
-    <div class="flex items-center justify-between border-b border-border px-6 py-4">
+  <div class="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+    <div class="flex items-center justify-between border-b border-border bg-[#f7fbfc] px-4 py-4">
       <div class="flex items-center gap-3">
-        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10">
-          <Clock class="h-4 w-4 text-amber-600" />
+        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
+          <Clock class="h-4 w-4 text-primary" />
         </div>
         <h3 class="font-semibold text-card-foreground">{{ t.home.pendingTasks }}</h3>
       </div>
-      <span class="badge border-amber-200 bg-amber-500/10 text-amber-700">{{ items.length }} {{ todoCopy.items }}</span>
+      <span class="badge border-primary/20 bg-primary/10 text-primary">{{ items.length }} {{ todoCopy.items }}</span>
     </div>
     <div class="divide-y divide-border">
-      <div v-if="items.length === 0" class="px-6 py-10 text-center text-sm text-muted-foreground">
+      <div v-if="items.length === 0" class="px-4 py-10 text-center text-sm text-muted-foreground">
         {{ todoCopy.noPendingTasks }}
       </div>
-      <div v-for="item in items" :key="item.id" class="group flex items-center justify-between px-6 py-4 transition-colors hover:bg-muted/50">
+      <div v-for="item in items" :key="item.id" class="group flex items-center justify-between px-4 py-4 transition-colors hover:bg-muted/50">
         <div class="flex items-center gap-4">
           <div :class="['flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-105', iconStyles[item.icon]]">
             <component :is="iconMap[item.icon]" class="h-5 w-5" />
