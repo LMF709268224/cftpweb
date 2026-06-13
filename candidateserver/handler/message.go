@@ -161,6 +161,7 @@ func (h *Handler) GetMessageDetail(w http.ResponseWriter, r *http.Request) {
 		"created_at":  msg.GetCreatedAt(),
 		"title":       title,
 		"content":     content,
+		"payload":     msg.GetPayload(),
 	}
 	WriteJSON(w, http.StatusOK, out)
 }

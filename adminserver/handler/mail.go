@@ -345,3 +345,23 @@ func (h *Handler) HasMailTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 	WriteJSON(w, http.StatusOK, resp)
 }
+
+func (h *Handler) GetMailStats(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Gmail.GetMailStats(r.Context(), &gmailpb.GetMailStatsRequest{})
+	if err != nil {
+		slog.Error("GetMailStats failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GetAllBuiltInPaths(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Gmail.GetAllBuiltInPaths(r.Context(), &gmailpb.GetAllBuiltInPathsRequest{})
+	if err != nil {
+		slog.Error("GetAllBuiltInPaths failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}

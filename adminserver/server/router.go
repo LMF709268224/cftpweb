@@ -203,11 +203,13 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/", h.GetMail)
 			r.Get("/status", h.GetMailStatus)
 			r.Post("/cancel", h.CancelMail)
+			r.Get("/stats", h.GetMailStats)
 
 			r.Route("/templates", func(r chi.Router) {
 				r.Get("/", h.ListMailTemplates)
 				r.Get("/detail", h.GetMailTemplate)
 				r.Get("/exists", h.HasMailTemplate)
+				r.Get("/builtin-paths", h.GetAllBuiltInPaths)
 				r.Post("/render", h.RenderMailTemplate)
 				r.Post("/", h.CreateMailTemplate)
 				r.Put("/", h.UpdateMailTemplate)
