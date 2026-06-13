@@ -683,19 +683,26 @@ watch(selectedMaterial, () => {
 
 <template>
   <AppShell content-class="p-4">
-    <RouterLink :to="pipelineId ? `/courses/detail?id=${encodeURIComponent(pipelineId)}` : '/courses'" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-      <ArrowLeft class="h-4 w-4" />
-      {{ t.learning.backToCourse }}
-    </RouterLink>
+    <div class="mb-6 flex items-center justify-between gap-4">
+      <RouterLink :to="pipelineId ? `/courses/detail?id=${encodeURIComponent(pipelineId)}` : '/courses'" class="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+        <ArrowLeft class="h-4 w-4" />
+        {{ t.learning.backToCourse }}
+      </RouterLink>
+      <button v-if="course" class="btn btn-outline rounded-lg py-1.5 text-xs" :disabled="syncing" @click="refreshProgress(true)">
+        <Loader2 v-if="syncing" class="h-4 w-4 animate-spin" />
+        <RefreshCw v-else class="h-4 w-4" />
+        {{ t.learning.syncProgress }}
+      </button>
+    </div>
 
     <div v-if="loading" class="text-muted-foreground">{{ t.common.loading }}</div>
-    <div v-else-if="!course" class="rounded-[22px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">{{ t.common.na }}</div>
+    <div v-else-if="!course" class="rounded-md bg-white p-8 text-center text-muted-foreground">{{ t.common.na }}</div>
     <div v-else class="grid gap-6 lg:grid-cols-[340px_1fr]">
       <aside class="space-y-4">
-        <div class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div class="rounded-md bg-white p-6">
           <div class="mb-3 flex flex-wrap gap-2">
-            <span class="badge border-0 bg-primary/10 text-primary">{{ t.learning.title }}</span>
-            <span v-if="course.category_tips" class="badge">{{ course.category_tips }}</span>
+            <span class="badge border-primary/15 bg-primary/10 text-primary">{{ t.learning.title }}</span>
+            <span v-if="course.category_tips" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ course.category_tips }}</span>
           </div>
           <h1 class="text-2xl font-bold text-foreground">{{ course.title || t.common.unknownCourse }}</h1>
           <p class="mt-2 text-sm text-muted-foreground">{{ course.description || t.common.na }}</p>
@@ -714,9 +721,9 @@ watch(selectedMaterial, () => {
               <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${Math.max(0, Math.min(100, progressPercentage))}%` }" />
             </div>
             <div class="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span class="badge">{{ t.learning.completedLessonsBadge }} {{ completedLessonsCount }}</span>
-              <span class="badge">{{ t.learning.passedQuizBadge }} {{ passedQuizzesCount }}</span>
-              <span v-if="syncState?.course_status" class="badge">{{ t.learning.courseStatusLabel }}: {{ courseStatusLabel(syncState.course_status) }}</span>
+              <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.completedLessonsBadge }} {{ completedLessonsCount }}</span>
+              <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.passedQuizBadge }} {{ passedQuizzesCount }}</span>
+              <span v-if="syncState?.course_status" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.courseStatusLabel }}: {{ courseStatusLabel(syncState.course_status) }}</span>
             </div>
           </div>
 
@@ -724,7 +731,7 @@ watch(selectedMaterial, () => {
             <RouterLink to="/exams" class="btn btn-outline py-1.5 text-xs">{{ t.learning.goToExams }}</RouterLink>
           </div>
 
-          <div class="mt-4 rounded-xl bg-muted/20 p-4">
+          <div class="mt-4 rounded-md bg-slate-50 p-4">
             <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
               <Sparkles class="h-4 w-4 text-primary" />
               {{ t.learning.statusSummaryTitle }}
@@ -734,7 +741,7 @@ watch(selectedMaterial, () => {
               <span :class="['badge', timelineStatusBadgeClassForStatus('PIPELINE', pipelineStatus)]">
                 {{ t.learning.pipelineStatusLabel }}: {{ pipelineStatusLabel(pipelineStatus) }}
               </span>
-              <span v-if="!isPipelineTerminal && currentStageName" class="badge">{{ t.learning.currentStageNameLabel }}: {{ currentStageName }}</span>
+              <span v-if="!isPipelineTerminal && currentStageName" class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.currentStageNameLabel }}: {{ currentStageName }}</span>
               <span
                 v-if="!isPipelineTerminal && currentStageStatus !== undefined && currentStageStatus !== ''"
                 :class="['badge', timelineStatusBadgeClassForStatus('STAGE', currentStageStatus)]"
@@ -747,30 +754,32 @@ watch(selectedMaterial, () => {
               >
                 {{ t.learning.unitStatusLabel }}: {{ courseUnitStatusLabel(currentUnitStatus) }}
               </span>
-              <span class="badge">{{ t.learning.nextStepActionLabel }}: {{ nextStepState.label }}</span>
+              <span class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.nextStepActionLabel }}: {{ nextStepState.label }}</span>
             </div>
           </div>
 
-          <div v-if="nextStepState.action || nextUnitStatus" class="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
-            <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
-              <Sparkles class="h-4 w-4" />
-              {{ t.learning.nextStepTitle }}
-            </div>
-            <div class="text-sm text-muted-foreground">{{ nextStepState.desc }}</div>
-            <div class="mt-3 flex items-center justify-between gap-3">
-              <button v-if="nextStepState.action === 'schedule_exam'" class="btn btn-primary py-1.5 text-xs" :disabled="scheduleLoading" @click="handleScheduleExam">
+          <div v-if="nextStepState.action || nextUnitStatus" class="mt-4 rounded-md bg-slate-50 p-4">
+            <div class="flex flex-col gap-3">
+              <div>
+                <div class="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <Sparkles class="h-4 w-4 text-primary" />
+                  {{ t.learning.nextStepTitle }}
+                </div>
+                <div class="text-sm text-muted-foreground">{{ nextStepState.desc }}</div>
+              </div>
+              <button v-if="nextStepState.action === 'schedule_exam'" class="btn btn-primary w-fit rounded-lg py-1.5 text-xs" :disabled="scheduleLoading" @click="handleScheduleExam">
                 {{ nextStepState.label }}
                 <ArrowRight class="ml-1 h-4 w-4" />
               </button>
-              <button v-else-if="nextStepState.action === 'take_quiz'" class="btn btn-primary py-1.5 text-xs" @click="scrollToBottom">
+              <button v-else-if="nextStepState.action === 'take_quiz'" class="btn btn-primary w-fit rounded-lg py-1.5 text-xs" @click="scrollToBottom">
                 {{ nextStepState.label }}
                 <ArrowRight class="ml-1 h-4 w-4" />
               </button>
-              <button v-else-if="nextStepState.action === 'wait_sync'" class="btn btn-primary py-1.5 text-xs" :disabled="syncing" @click="refreshProgress(true)">
+              <button v-else-if="nextStepState.action === 'wait_sync'" class="btn btn-primary w-fit rounded-lg py-1.5 text-xs" :disabled="syncing" @click="refreshProgress(true)">
                 <Loader2 v-if="syncing" class="mr-1 h-4 w-4 animate-spin" />
                 {{ nextStepState.label }}
               </button>
-              <RouterLink v-else :to="nextStepLink()" class="btn btn-primary py-1.5 text-xs">
+              <RouterLink v-else :to="nextStepLink()" class="btn btn-primary w-fit rounded-lg py-1.5 text-xs">
                 {{ nextStepState.label }}
                 <ArrowRight class="ml-1 h-4 w-4" />
               </RouterLink>
@@ -778,15 +787,15 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div class="rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="px-5 py-4">
+        <div class="rounded-md bg-white p-6">
+          <div class="mb-4 flex items-center justify-between">
             <h2 class="text-sm font-semibold text-foreground">{{ t.learning.chapters }}</h2>
           </div>
-          <div class="space-y-2">
+          <div class="rounded-md bg-slate-50 p-3">
             <div
               v-for="(chapter, chapterIndex) in chapters"
               :key="chapter.chapter?.chapter_id || chapterIndex"
-              :class="['px-5 py-4', (chapter.chapter?.chapter_id || `chapter-${chapterIndex}`) === activeChapterId ? 'bg-primary/5' : '']"
+              :class="['rounded-md px-3 py-4', chapterIndex > 0 ? 'mt-2' : '']"
             >
               <button
                 type="button"
@@ -816,8 +825,8 @@ watch(selectedMaterial, () => {
                   :key="lessonDetail.lesson?.lesson_id || lessonDetail.lesson?.title"
                   type="button"
                   :class="[
-                    'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors',
-                    lessonDetail.lesson?.lesson_id === activeLessonId ? 'bg-primary/10 text-primary' : 'hover:bg-muted',
+                    'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors',
+                    lessonDetail.lesson?.lesson_id === activeLessonId ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100',
                   ]"
                   @click="selectLesson(lessonDetail.lesson?.lesson_id, chapter.chapter?.chapter_id || `chapter-${chapterIndex}`)"
                 >
@@ -836,15 +845,7 @@ watch(selectedMaterial, () => {
       </aside>
 
       <section class="space-y-4">
-        <div class="flex justify-end">
-          <button class="btn btn-outline py-1.5 text-xs" :disabled="syncing" @click="refreshProgress(true)">
-            <Loader2 v-if="syncing" class="h-4 w-4 animate-spin" />
-            <RefreshCw v-else class="h-4 w-4" />
-            {{ t.learning.syncProgress }}
-          </button>
-        </div>
-
-        <div v-if="courseQuizTasks.length > 0 || visibleChapterAndLessonQuizTasks.length > 0" class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div v-if="courseQuizTasks.length > 0 || visibleChapterAndLessonQuizTasks.length > 0" class="rounded-md bg-white p-6">
           <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div class="mb-2 flex items-center gap-2">
@@ -852,31 +853,31 @@ watch(selectedMaterial, () => {
                 <h2 class="text-xl font-semibold text-foreground">{{ t.learning.allQuizzesTitle }}</h2>
               </div>
             </div>
-            <span class="badge">
+            <span class="badge border-slate-200 bg-slate-50 text-slate-700">
               {{ courseQuizTasks.filter((task) => task.completed).length + visibleChapterAndLessonQuizTasks.filter((task) => task.completed).length }}/{{ courseQuizTasks.length + visibleChapterAndLessonQuizTasks.length }}
             </span>
           </div>
 
           <div class="grid gap-4 xl:grid-cols-2">
-            <div class="rounded-xl bg-primary/5 p-4">
+            <div class="rounded-md bg-slate-50 p-4">
               <div class="mb-3 flex items-center justify-between gap-3">
                 <h3 class="font-semibold text-foreground">{{ t.learning.courseQuizzesTitle }}</h3>
-                <span class="badge">{{ courseQuizTasks.filter((task) => task.completed).length }}/{{ courseQuizTasks.length }}</span>
+                <span class="badge border-slate-200 bg-white text-slate-700">{{ courseQuizTasks.filter((task) => task.completed).length }}/{{ courseQuizTasks.length }}</span>
               </div>
-              <div v-if="courseQuizTasks.length === 0" class="rounded-lg border border-dashed bg-background p-4 text-sm text-muted-foreground">
+              <div v-if="courseQuizTasks.length === 0" class="rounded-md border border-dashed border-slate-200 bg-white p-4 text-sm text-muted-foreground">
                 {{ t.learning.noCourseQuizzes }}
               </div>
               <div v-else class="space-y-2">
-                <div v-for="(task, index) in courseQuizTasks" :key="task.key" class="rounded-lg bg-background p-3 shadow-sm">
+                <div v-for="(task, index) in courseQuizTasks" :key="task.key" class="rounded-md border border-slate-100 bg-white p-3">
                   <div class="mb-2 flex flex-wrap items-center gap-2">
-                    <span class="badge">{{ task.scopeLabel }}</span>
+                    <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ task.scopeLabel }}</span>
                     <span v-if="task.completed" class="badge border-emerald-200 bg-emerald-50 text-emerald-700">
                       <CheckCircle2 class="mr-1 h-3.5 w-3.5" />{{ t.learning.completedTag }}
                     </span>
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
                   <div class="mt-3">
-                    <button class="btn btn-primary py-1.5 text-xs" :disabled="!task.quizId || task.completed" @click="startQuiz(task.quizId)">
+                    <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed" @click="startQuiz(task.quizId)">
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
                   </div>
@@ -884,27 +885,27 @@ watch(selectedMaterial, () => {
               </div>
             </div>
 
-            <div class="rounded-xl bg-muted/20 p-4">
+            <div class="rounded-md bg-slate-50 p-4">
               <div class="mb-3 flex items-center justify-between gap-3">
                 <h3 class="font-semibold text-foreground">{{ t.learning.chapterQuizzesTitle }}</h3>
-                <span class="badge">{{ visibleChapterAndLessonQuizTasks.filter((task) => task.completed).length }}/{{ visibleChapterAndLessonQuizTasks.length }}</span>
+                <span class="badge border-slate-200 bg-white text-slate-700">{{ visibleChapterAndLessonQuizTasks.filter((task) => task.completed).length }}/{{ visibleChapterAndLessonQuizTasks.length }}</span>
               </div>
-              <div v-if="visibleChapterAndLessonQuizTasks.length === 0" class="rounded-lg border border-dashed bg-background p-4 text-sm text-muted-foreground">
+              <div v-if="visibleChapterAndLessonQuizTasks.length === 0" class="rounded-md border border-dashed border-slate-200 bg-white p-4 text-sm text-muted-foreground">
                 {{ t.learning.noChapterQuizzes }}
               </div>
               <div v-else class="space-y-2">
-                <div v-for="(task, index) in visibleChapterAndLessonQuizTasks" :key="task.key" class="rounded-lg bg-background p-3 shadow-sm">
+                <div v-for="(task, index) in visibleChapterAndLessonQuizTasks" :key="task.key" class="rounded-md border border-slate-100 bg-white p-3">
                   <div class="mb-2 flex flex-wrap items-center gap-2">
-                    <span class="badge">{{ task.scopeLabel }}</span>
-                    <span v-if="task.chapterTitle" class="badge">{{ t.learning.chapters }}: {{ task.chapterTitle }}</span>
-                    <span v-if="task.lessonTitle" class="badge">{{ task.lessonTitle }}</span>
+                    <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ task.scopeLabel }}</span>
+                    <span v-if="task.chapterTitle" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.chapters }}: {{ task.chapterTitle }}</span>
+                    <span v-if="task.lessonTitle" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ task.lessonTitle }}</span>
                     <span v-if="task.completed" class="badge border-emerald-200 bg-emerald-50 text-emerald-700">
                       <CheckCircle2 class="mr-1 h-3.5 w-3.5" />{{ t.learning.completedTag }}
                     </span>
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
                   <div class="mt-3">
-                    <button class="btn btn-primary py-1.5 text-xs" :disabled="!task.quizId || task.completed" @click="startQuiz(task.quizId)">
+                    <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed" @click="startQuiz(task.quizId)">
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
                   </div>
@@ -914,18 +915,18 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div id="lesson-detail" class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div id="lesson-detail" class="rounded-md bg-white p-6">
           <div class="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
             <div class="flex flex-wrap items-center gap-2">
-              <span class="badge border-0 bg-primary/10 text-primary">{{ lessonTypeLabel(lesson?.lesson_type) }}</span>
-              <span v-if="activeLesson?.chapterTitle" class="badge">{{ activeLesson.chapterTitle }}</span>
+              <span class="badge border-primary/15 bg-primary/10 text-primary">{{ lessonTypeLabel(lesson?.lesson_type) }}</span>
+              <span v-if="activeLesson?.chapterTitle" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ activeLesson.chapterTitle }}</span>
             </div>
             <h2 class="text-center text-2xl font-bold text-foreground">{{ lesson?.title || t.common.unknownCourse }}</h2>
             <div class="flex justify-start gap-2 lg:justify-end">
               <button
                 :class="[
                   'btn',
-                  currentLessonCompleted ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 disabled:opacity-100' : 'btn-primary shadow-md shadow-primary/20',
+                  currentLessonCompleted ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 disabled:opacity-100' : 'btn-primary',
                 ]"
                 :disabled="currentLessonCompleted"
                 @click="markCompleted"
@@ -948,23 +949,23 @@ watch(selectedMaterial, () => {
             </button>
 
             <div v-if="lessonContentExpanded" class="mt-3">
-              <div v-if="lesson?.video_embed_code" class="overflow-hidden rounded-xl bg-muted" v-html="lesson.video_embed_code" />
+              <div v-if="lesson?.video_embed_code" class="overflow-hidden rounded-md bg-muted" v-html="lesson.video_embed_code" />
               <div v-else-if="lesson?.external_url" class="space-y-4">
-                <div class="rounded-xl bg-muted/30 p-4 text-sm text-muted-foreground">{{ t.learning.noLessonBody }}</div>
-                <button class="btn btn-primary" @click="openExternalLesson">
+                <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">{{ t.learning.noLessonBody }}</div>
+                <button class="btn btn-primary rounded-lg" @click="openExternalLesson">
                   <ExternalLink class="h-4 w-4" />
                   {{ t.learning.openExternalLesson }}
                 </button>
               </div>
               <div v-else class="prose max-w-none text-sm text-foreground">
                 <div v-if="lesson?.body" v-html="lesson.body" />
-                <div v-else class="rounded-xl bg-muted/30 p-4 text-muted-foreground">{{ t.learning.noLessonBody }}</div>
+                <div v-else class="rounded-md bg-slate-50 p-4 text-muted-foreground">{{ t.learning.noLessonBody }}</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div class="rounded-md bg-white p-6">
           <div class="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div class="mb-2 flex items-center gap-2">
@@ -973,15 +974,15 @@ watch(selectedMaterial, () => {
               </div>
               <p class="text-sm text-muted-foreground">{{ t.learning.materialsDesc }}</p>
             </div>
-            <span class="badge">{{ materials.length }} {{ t.learning.materialsCountSuffix }}</span>
+            <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ materials.length }} {{ t.learning.materialsCountSuffix }}</span>
           </div>
 
-          <div v-if="materials.length === 0" class="rounded-xl bg-muted/30 p-6 text-center text-sm text-muted-foreground">
+          <div v-if="materials.length === 0" class="rounded-md bg-slate-50 p-6 text-center text-sm text-muted-foreground">
             {{ t.learning.materialsEmpty }}
             <div class="mt-2 text-xs text-muted-foreground">{{ t.learning.materialsEmptyHint }}</div>
           </div>
           <div v-else class="grid gap-4 xl:grid-cols-[240px_1fr]">
-            <div class="rounded-xl bg-muted/20 p-3">
+            <div class="rounded-md bg-slate-50 p-3">
               <div class="mb-3 flex flex-wrap gap-2">
                 <button :class="['btn py-1.5 text-xs', activeMaterialGroup === 'all' ? 'btn-primary' : 'btn-outline']" @click="activeMaterialGroup = 'all'">
                   {{ t.learning.materialGroupAll }}
@@ -1002,13 +1003,13 @@ watch(selectedMaterial, () => {
                   :key="material.material_id || material.title"
                   type="button"
                   :class="[
-                    'w-full rounded-lg border px-3 py-3 text-left transition-colors',
-                    material.material_id === selectedMaterialId ? 'border-primary bg-primary/5' : 'bg-background hover:bg-muted/60',
+                    'w-full rounded-md border px-3 py-3 text-left transition-colors',
+                    material.material_id === selectedMaterialId ? 'border-primary bg-white' : 'border-slate-100 bg-white hover:bg-slate-100',
                   ]"
                   @click="selectedMaterialId = material.material_id || ''"
                 >
                   <div class="mb-1 flex items-center gap-2">
-                    <span class="badge">{{ materialTypeLabel(material.material_type) }}</span>
+                    <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ materialTypeLabel(material.material_type) }}</span>
                   </div>
                   <div class="line-clamp-2 text-sm font-medium text-foreground">{{ material.title || t.learning.unknownMaterial }}</div>
                   <div class="mt-1 text-xs text-muted-foreground">{{ formatFileSize(material.file_size) || t.learning.materialSizeUnknown }}</div>
@@ -1016,7 +1017,7 @@ watch(selectedMaterial, () => {
               </div>
             </div>
 
-            <div class="rounded-xl bg-background p-5 shadow-sm">
+            <div class="rounded-md bg-slate-50 p-5">
               <div v-if="selectedMaterial" class="space-y-5">
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="badge">{{ materialTypeLabel(selectedMaterial.material_type) }}</span>
