@@ -160,7 +160,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		})
 	})
 
-	serveSPA(r, "web/build")
+	serveSPA(r, "vue-web/dist")
 	return r
 }
 
@@ -202,7 +202,7 @@ func serveSPA(r *chi.Mux, publicDir string) {
 }
 
 func serveStaticFile(w http.ResponseWriter, r *http.Request, filename string) {
-	if strings.HasPrefix(r.URL.Path, "/_next/static/") {
+	if strings.HasPrefix(r.URL.Path, "/_next/static/") || strings.HasPrefix(r.URL.Path, "/assets/") {
 		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 	} else {
 		w.Header().Set("Cache-Control", "public, max-age=86400")
