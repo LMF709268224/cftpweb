@@ -1,7 +1,7 @@
-node_modules/
-.git/
-.vscode/
-.idea/
+**/node_modules
+**/.git
+**/.vscode
+**/.idea
 scratch/
 ztest/
 CLAUDE.md
