@@ -315,7 +315,7 @@ async function handleScheduleExam() {
   if (!nextStep.value?.exam_id || !instancePipelineId.value) return
   scheduleLoading.value = true
   try {
-    const termUrlBase = window.location.origin + "/exams"
+    const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
     const res = await apiClient(`/api/exams/${encodeURIComponent(nextStep.value.exam_id)}/schedule-url?pipeline_ulid=${encodeURIComponent(instancePipelineId.value)}&course_ulid=${encodeURIComponent(nextStep.value.course_unit_ulid || "")}&url_type=1&term_url_base=${encodeURIComponent(termUrlBase)}`)
     if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
     else toast.error(t.value.common.error)

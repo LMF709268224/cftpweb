@@ -98,7 +98,7 @@ async function handleScheduleExam(exam: any) {
   if (!exam.exam_id || scheduleLoadingExamId.value) return
   scheduleLoadingExamId.value = exam.exam_id
   try {
-    const termUrlBase = window.location.origin + `/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-callback`
+    const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
     const params = new URLSearchParams({ url_type: "schd", term_url_base: termUrlBase })
     const res = await apiClient(`/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-url?${params.toString()}`)
     if (res?.url) {
