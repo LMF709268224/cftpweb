@@ -70,8 +70,8 @@ function noResultLabel() {
   return (t.value.examsPage as any).statusNoResult || t.value.examsPage.statusPending
 }
 
-async function loadExams() {
-  if (activeTab.value === "exemption" || activeTab.value === "records") {
+async function loadExams(tab: TabId = activeTab.value, keyword = search.value) {
+  if (tab === "exemption" || tab === "records") {
     exams.value = []
     total.value = 0
     return
@@ -81,8 +81,8 @@ async function loadExams() {
     const params = new URLSearchParams()
     params.set("page", "1")
     params.set("page_size", "50")
-    if (activeTab.value === "history") params.set("result_status", "DONE")
-    if (search.value.trim()) params.set("confirmation_number", search.value.trim())
+    if (tab === "history") params.set("result_status", "DONE")
+    if (keyword.trim()) params.set("confirmation_number", keyword.trim())
     const res = await apiClient(`/api/exams?${params.toString()}`)
     exams.value = res?.exams || []
     total.value = res?.total || 0
@@ -114,7 +114,9 @@ async function handleScheduleExam(exam: any) {
   }
 }
 
-watch(activeTab, loadExams)
+watch(activeTab, (tab) => {
+  void loadExams(tab, search.value)
+})
 onMounted(() => {
   if (route.query.schedule_return === "1") toast.success(t.value.examsPage.scheduleReturnToast)
   void loadExams()
@@ -142,7 +144,7 @@ onMounted(() => {
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="search" class="input pl-10" :placeholder="t.examsPage.searchPlaceholder" />
       </div>
-      <button class="btn btn-outline rounded-xl" @click="loadExams"><Filter class="h-4 w-4" /> {{ t.examsPage.refresh }}</button>
+      <button class="btn btn-outline rounded-xl" @click="() => void loadExams()"><Filter class="h-4 w-4" /> {{ t.examsPage.refresh }}</button>
     </div>
 
     <div class="mb-4 flex w-fit gap-1 overflow-x-auto rounded-2xl bg-card p-1 shadow-sm ring-1 ring-border/50">
