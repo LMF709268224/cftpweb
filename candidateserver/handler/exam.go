@@ -92,13 +92,20 @@ func (h *Handler) GetScheduleURL(w http.ResponseWriter, r *http.Request) {
 	examID := strings.TrimSpace(chi.URLParam(r, "examId"))
 	pipelineULID := strings.TrimSpace(r.URL.Query().Get("pipeline_ulid"))
 	courseULID := strings.TrimSpace(r.URL.Query().Get("course_ulid"))
-	termURLBase := strings.TrimSpace(r.URL.Query().Get("term_url_base"))
 	urlType, ok := parseExamURLType(w, r.URL.Query().Get("url_type"))
 	if !ok {
 		return
 	}
+
+	// 后端自行构建回调基准地址，不再依赖前端传入，提升安全性和整洁度
+	scheme := "https"
+	if r.Header.Get("X-Forwarded-Proto") == "http" || (r.TLS == nil && r.Header.Get("X-Forwarded-Proto") == "") {
+		scheme = "http"
+	}
+	termURLBase := scheme + "://" + r.Host + "/api/public/webhooks/exams/callback"
+
 	if pipelineULID == "" && courseULID == "" {
-		if !requireRequestFields(w, candidateID, "candidate_id", examID, "exam_id", termURLBase, "term_url_base") {
+		if !requireRequestFields(w, candidateID, "candidate_id", examID, "exam_id") {
 			return
 		}
 		resp, err := h.Gexam.GetScheduleURL(r.Context(), &gexampb.GetURLRequest{
@@ -115,7 +122,7 @@ func (h *Handler) GetScheduleURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !requireRequestFields(w, candidateID, "candidate_id", pipelineULID, "pipeline_ulid", courseULID, "course_ulid", termURLBase, "term_url_base") {
+	if !requireRequestFields(w, candidateID, "candidate_id", pipelineULID, "pipeline_ulid", courseULID, "course_ulid") {
 		return
 	}
 
