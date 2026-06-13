@@ -9,12 +9,14 @@ import { useTranslation } from "@/lib/language"
 
 const { t } = useTranslation()
 const certificates = ref<any[]>([])
+const loading = ref(false)
 
 function openCertificate(url?: string) {
   if (url) window.open(url, "_blank")
 }
 
 onMounted(async () => {
+  loading.value = true
   try {
     const res = await apiClient("/api/certificates")
     if (res?.certificates) {
@@ -30,6 +32,8 @@ onMounted(async () => {
     }
   } catch (e) {
     console.error(e)
+  } finally {
+    loading.value = false
   }
 })
 </script>
@@ -40,10 +44,12 @@ onMounted(async () => {
       <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.certificatesPage.title }}</h1>
       <p class="mt-1 text-muted-foreground">{{ t.certificatesPage.subtitle }}</p>
     </div>
-    <div class="grid gap-6 lg:grid-cols-2">
+    <div v-if="loading" class="text-muted-foreground">{{ t.common.loading }}</div>
+    <div v-else class="grid gap-6 lg:grid-cols-2">
       <div v-for="cert in certificates" :key="cert.id" class="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <div class="relative bg-gradient-to-br from-primary via-primary/90 to-primary p-6 text-white">
           <div class="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
+          <div class="absolute -bottom-4 -left-4 h-24 w-24 rounded-full bg-white/5" />
           <div class="relative flex items-start justify-between">
             <div>
               <span class="badge mb-3 border-0 bg-white/20 text-white"><CheckCircle2 class="mr-1 h-3 w-3" /> {{ t.certificatesPage.active }}</span>

@@ -14,6 +14,7 @@ const selectedType = ref<string | null>(null)
 const detailModalOpen = ref(false)
 const selectedMessageDetail = ref<any>(null)
 const messageList = ref<Message[]>([])
+const openMenuId = ref<string | null>(null)
 
 const typeConfig = computed(() => ({
   system: { icon: Bell, iconBg: "bg-primary/10", iconColor: "text-primary", label: t.value.messagesPage.systemNotice },
@@ -84,6 +85,7 @@ async function markAsRead(id: string) {
   try {
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: [id] }) })
     messageList.value = messageList.value.map((m) => (m.id === id ? { ...m, isRead: true } : m))
+    openMenuId.value = null
     toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
     // apiClient handles toast.
@@ -94,6 +96,7 @@ async function deleteMessage(id: string) {
   try {
     await apiClient("/api/messages/delete", { method: "POST", body: JSON.stringify({ message_ids: [id] }) })
     messageList.value = messageList.value.filter((m) => m.id !== id)
+    openMenuId.value = null
     toast.success(t.value.messagesPage.deleteSuccess)
   } catch {
     // apiClient handles toast.
@@ -165,11 +168,21 @@ onMounted(fetchMessages)
             <span class="text-xs text-muted-foreground">{{ message.time }}</span>
           </div>
           <div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-            <button class="btn btn-ghost px-2" @click.stop="!message.isRead ? markAsRead(message.id) : deleteMessage(message.id)">
-              <MoreHorizontal v-if="message.isRead" class="h-4 w-4" />
-              <CheckCheck v-else class="h-4 w-4" />
-            </button>
-            <button class="btn btn-ghost px-2 text-destructive" @click.stop="deleteMessage(message.id)"><Trash2 class="h-4 w-4" /></button>
+            <div class="relative">
+              <button class="btn btn-ghost h-8 px-2" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
+                <MoreHorizontal class="h-4 w-4" />
+              </button>
+              <div v-if="openMenuId === message.id" class="absolute right-0 top-9 z-50 min-w-36 overflow-hidden rounded-md border bg-card p-1 shadow-md" @click.stop>
+                <button v-if="!message.isRead" class="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-muted" @click="markAsRead(message.id)">
+                  <CheckCheck class="mr-2 h-4 w-4" />
+                  标记为已读
+                </button>
+                <button class="flex w-full items-center rounded-sm px-2 py-1.5 text-sm text-destructive hover:bg-muted" @click="deleteMessage(message.id)">
+                  <Trash2 class="mr-2 h-4 w-4" />
+                  删除
+                </button>
+              </div>
+            </div>
             <ChevronRight class="h-5 w-5 text-muted-foreground" />
           </div>
         </div>

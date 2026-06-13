@@ -86,18 +86,21 @@ async function handleUpdatePassword() {
 
 <template>
   <AppShell>
-    <div class="mb-4 flex items-center justify-between">
+    <div class="mb-4 flex items-center justify-between space-y-2">
       <h1 class="text-3xl font-bold tracking-tight">{{ t.settings.title }}</h1>
     </div>
     <div class="space-y-4">
       <div class="flex w-fit gap-1 rounded-xl bg-muted p-1">
-        <button :class="['rounded-lg px-4 py-2 text-sm font-medium', activeTab === 'profile' ? 'bg-card shadow-sm' : 'text-muted-foreground']" @click="activeTab = 'profile'">{{ t.settings.profileTab }}</button>
-        <button :class="['rounded-lg px-4 py-2 text-sm font-medium', activeTab === 'account' ? 'bg-card shadow-sm' : 'text-muted-foreground']" @click="activeTab = 'account'">{{ t.settings.accountTab }}</button>
+        <button :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'profile' ? 'bg-card text-card-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground']" @click="activeTab = 'profile'">{{ t.settings.profileTab }}</button>
+        <button :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'account' ? 'bg-card text-card-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground']" @click="activeTab = 'account'">{{ t.settings.accountTab }}</button>
       </div>
-      <div v-if="activeTab === 'profile'" class="card p-6">
-        <h2 class="text-xl font-semibold">{{ t.settings.profileTab }}</h2>
-        <p class="mt-1 text-sm text-muted-foreground">{{ t.settings.profileDesc }}</p>
-        <form class="mt-6 max-w-2xl space-y-4" @submit.prevent="handleUpdateProfile">
+      <div v-if="activeTab === 'profile'" class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="flex flex-col space-y-1.5 p-6">
+          <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.profileTab }}</h2>
+          <p class="text-sm text-muted-foreground">{{ t.settings.profileDesc }}</p>
+        </div>
+        <div class="p-6 pt-0">
+        <form class="max-w-2xl space-y-4" @submit.prevent="handleUpdateProfile">
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.loginId }}</span><input v-model="profile.name" class="input bg-muted" disabled /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.email }}</span><input v-model="profile.email" class="input bg-muted" disabled /></label>
@@ -112,16 +115,21 @@ async function handleUpdatePassword() {
           </div>
           <button class="btn btn-primary" :disabled="isProfileLoading"><Loader2 v-if="isProfileLoading" class="h-4 w-4 animate-spin" /> {{ t.common.save }}</button>
         </form>
+        </div>
       </div>
-      <div v-if="activeTab === 'account'" class="card p-6">
-        <h2 class="text-xl font-semibold">{{ t.settings.updatePassword }}</h2>
-        <p class="mt-1 text-sm text-muted-foreground">{{ t.settings.updatePasswordDesc }}</p>
-        <form class="mt-6 max-w-xl space-y-4" @submit.prevent="handleUpdatePassword">
+      <div v-if="activeTab === 'account'" class="rounded-xl border bg-card text-card-foreground shadow-sm">
+        <div class="flex flex-col space-y-1.5 p-6">
+          <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.updatePassword }}</h2>
+          <p class="text-sm text-muted-foreground">{{ t.settings.updatePasswordDesc }}</p>
+        </div>
+        <div class="p-6 pt-0">
+        <form class="max-w-xl space-y-4" @submit.prevent="handleUpdatePassword">
           <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.currentPassword }}</span><input v-model="password.oldPassword" class="input" type="password" required /></label>
           <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.newPassword }}</span><input v-model="password.newPassword" class="input" type="password" required /></label>
           <label class="block space-y-2"><span class="text-sm font-medium">{{ t.settings.confirmNewPassword }}</span><input v-model="password.confirmPassword" class="input" type="password" required /></label>
           <button class="btn btn-primary" :disabled="isPasswordLoading"><Loader2 v-if="isPasswordLoading" class="h-4 w-4 animate-spin" /> {{ t.settings.updatePasswordBtn }}</button>
         </form>
+        </div>
       </div>
     </div>
   </AppShell>

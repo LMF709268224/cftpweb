@@ -174,9 +174,21 @@ function handlePaymentReturn() {
   if (!paymentStatus) return
 
   const paymentAction = url.searchParams.get("payment_action")
+  const purchasedPipelineId = url.searchParams.get("pipeline_id")
   const isUnlock = paymentAction === "unlock"
   const copy = t.value.paymentReturnHandler || {}
-  if (paymentStatus === "success") toast.success(isUnlock ? copy.unlockSuccess : copy.purchaseSuccess)
+  if (paymentStatus === "success") {
+    toast.success(isUnlock ? copy.unlockSuccess : copy.purchaseSuccess)
+    if (!isUnlock && purchasedPipelineId) {
+      void apiClient(`/api/mall/pipelines/${encodeURIComponent(purchasedPipelineId)}/eligibility`)
+        .then(() => {
+          allCourses.value = allCourses.value.map((course) =>
+            course.id === purchasedPipelineId ? { ...course, eligibilityRefreshKey: Date.now() } : course,
+          )
+        })
+        .catch((error) => console.error(error))
+    }
+  }
   else if (paymentStatus === "cancelled") toast.warning(copy.cancelled)
   else if (paymentStatus === "failed") toast.error(copy.failed)
 

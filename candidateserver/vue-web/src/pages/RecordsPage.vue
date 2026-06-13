@@ -29,7 +29,15 @@ function recordStatusConfig(status: keyof typeof statusConfig) {
     <div class="mb-8 grid gap-4 sm:grid-cols-3">
       <div v-for="(config, status) in statusConfig" :key="status" class="flex items-center gap-4 rounded-xl border border-border bg-card p-4">
         <div :class="['flex h-10 w-10 items-center justify-center rounded-lg', status === 'verified' ? 'bg-blue-100' : status === 'pending' ? 'bg-yellow-100' : 'bg-red-100']">
-          <component :is="config.icon" class="h-5 w-5 text-black" />
+          <component
+            :is="config.icon"
+            :class="[
+              'h-5 w-5',
+              config.tone === 'success' && 'text-blue-600',
+              config.tone === 'warning' && 'text-yellow-600',
+              config.tone === 'danger' && 'text-red-600',
+            ]"
+          />
         </div>
         <div><p class="text-2xl font-bold text-card-foreground">0</p><p class="text-sm text-muted-foreground">{{ config.label }}</p></div>
       </div>

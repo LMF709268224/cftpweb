@@ -95,8 +95,8 @@ const accessState = computed(() => {
         <BookOpen class="h-14 w-14 text-muted-foreground/60" />
       </div>
 
-      <span v-if="effectivePurchased" class="badge absolute right-3 top-3 border-0 bg-emerald-500 text-white">
-        <CheckCircle2 class="mr-1 h-3 w-3" />
+      <span v-if="effectivePurchased" class="badge absolute right-3 top-3 gap-1 border-0 bg-emerald-500 text-white">
+        <CheckCircle2 class="h-3 w-3" />
         {{ t.courses.purchased }}
       </span>
 

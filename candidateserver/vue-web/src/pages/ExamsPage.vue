@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, Filter, History, Search, ShieldCheck } from "lucide-vue-next"
+import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, Filter, History, Loader2, Search, ShieldCheck } from "lucide-vue-next"
 import { EXAM_STATUS_LABELS, normalizeEnumValueUpper, statusBadgeClassForStatusValue, statusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -174,8 +174,13 @@ onMounted(() => {
                   <div v-if="hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
                   <div v-if="hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
                   <div v-if="!hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
-                    <div class="font-medium text-blue-800">{{ t.examsPage.notScheduledTitle }}</div>
-                    <div class="mt-1 text-xs">{{ t.examsPage.notScheduledDesc }}</div>
+                    <div class="flex items-start gap-2">
+                      <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
+                      <div>
+                        <div class="font-medium text-blue-800">{{ t.examsPage.notScheduledTitle }}</div>
+                        <div class="mt-1 text-xs">{{ t.examsPage.notScheduledDesc }}</div>
+                      </div>
+                    </div>
                   </div>
                   <div><span class="font-medium text-foreground">{{ t.examsPage.candidate }}:</span> {{ [exam.candidate_first_name, exam.candidate_last_name].filter(Boolean).join(" ") || exam.candidate_email || t.common.unknown }}</div>
                   <div v-if="hasExamResult(exam)"><span class="font-medium text-foreground">{{ t.examsPage.score }}:</span> {{ typeof exam.total_score === 'number' ? exam.total_score.toFixed(2) : t.common.unknown }}</div>
@@ -183,7 +188,9 @@ onMounted(() => {
               </div>
               <div class="flex flex-wrap gap-2">
                 <button v-if="canScheduleExam(exam)" class="btn btn-primary" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleScheduleExam(exam)">
-                  <ExternalLink class="h-4 w-4" /> {{ t.learning.actionScheduleExam }}
+                  <Loader2 v-if="scheduleLoadingExamId === exam.exam_id" class="h-4 w-4 animate-spin" />
+                  <ExternalLink v-else class="h-4 w-4" />
+                  {{ t.learning.actionScheduleExam }}
                 </button>
                 <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-outline">{{ t.examsPage.viewResult }}</RouterLink>
               </div>

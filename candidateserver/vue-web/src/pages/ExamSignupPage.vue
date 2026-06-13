@@ -119,7 +119,10 @@ async function handleSubmit() {
           <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formHomePhone }} *</span><input v-model="formData.home_phone" class="input" type="tel" required /></label>
         </div>
         <div class="flex justify-end pt-4">
-          <button class="btn btn-primary w-full sm:w-auto" :disabled="loading"><Send class="h-4 w-4" /> {{ loading ? t.examSignup.submitting : t.examSignup.submit }}</button>
+          <button class="btn btn-primary w-full sm:w-auto" :disabled="loading">
+            <template v-if="loading">{{ t.examSignup.submitting }}</template>
+            <template v-else><Send class="mr-2 h-4 w-4" /> {{ t.examSignup.submit }}</template>
+          </button>
         </div>
       </form>
     </div>
