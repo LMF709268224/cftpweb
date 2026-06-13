@@ -163,7 +163,7 @@ onMounted(fetchData)
             </div>
             <div class="flex flex-1 flex-col p-4 pt-0">
               <p class="flex-1 text-sm leading-6 text-muted-foreground">{{ def.description }}</p>
-              <button class="btn btn-primary mt-4 w-full rounded-xl shadow-sm shadow-primary/20" @click="handleApplyClick(def)">{{ t.credentialsPage.applyNow }}</button>
+              <button class="btn btn-primary mt-4 w-full cursor-pointer rounded-xl shadow-sm shadow-primary/20" @click="handleApplyClick(def)">{{ t.credentialsPage.applyNow }}</button>
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ onMounted(fetchData)
                 <component :is="statusIcon(app.status)" class="h-5 w-5 text-black" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <button v-if="canResubmit(app.status)" class="btn btn-primary rounded-xl py-1 text-xs shadow-sm shadow-primary/20" @click="handleApplyClick(definitions.find((d) => d.cred_def_id === app.cred_def_id), app.app_id)">{{ t.credentialsPage.appStatusResubmit }}</button>
+              <button v-if="canResubmit(app.status)" class="btn btn-primary cursor-pointer rounded-xl py-1 text-xs shadow-sm shadow-primary/20" @click="handleApplyClick(definitions.find((d) => d.cred_def_id === app.cred_def_id), app.app_id)">{{ t.credentialsPage.appStatusResubmit }}</button>
               <span v-else class="text-xs text-muted-foreground">{{ formatBackendDate(app.created_at).split(" ")[0] || t.common.na }}</span>
             </div>
           </div>
@@ -206,7 +206,7 @@ onMounted(fetchData)
       <div class="w-full max-w-md rounded-[22px] bg-white p-4 shadow-lg shadow-slate-900/20">
         <div class="flex items-start justify-between gap-4">
           <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
-          <button class="text-xl leading-none text-muted-foreground transition-colors hover:text-foreground" @click="isApplyOpen = false">x</button>
+          <button class="cursor-pointer text-xl leading-none text-muted-foreground transition-colors hover:text-foreground" @click="isApplyOpen = false">x</button>
         </div>
         <div class="space-y-4 py-4">
           <p class="text-sm text-muted-foreground">{{ t.credentialsPage.description }}: {{ selectedDef?.description }}</p>
@@ -218,7 +218,7 @@ onMounted(fetchData)
                 <span :class="['badge border-transparent', constraint.is_required ? 'bg-destructive text-destructive-foreground' : 'bg-secondary text-secondary-foreground']">{{ constraint.is_required ? t.credentialsPage.required : t.credentialsPage.optional }}</span>
               </div>
               <div class="mt-2 flex items-center gap-2">
-                <button type="button" class="btn btn-outline rounded-xl px-3 py-1.5 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="triggerFileInput(constraint.name)">
+                <button type="button" class="btn btn-outline cursor-pointer rounded-xl px-3 py-1.5 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="triggerFileInput(constraint.name)">
                   {{ t.credentialsPage.chooseFile }}
                 </button>
                 <span class="max-w-[200px] truncate text-sm text-muted-foreground" :title="uploadedFiles[constraint.name] ? uploadedFiles[constraint.name].name : t.credentialsPage.noFileChosen">
@@ -231,8 +231,8 @@ onMounted(fetchData)
           </div>
         </div>
         <div class="flex justify-end gap-3">
-          <button class="btn btn-outline rounded-xl" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
-          <button class="btn btn-primary rounded-xl shadow-sm shadow-primary/20" :disabled="isSubmitting || !(selectedDef?.file_constraints?.every((c: any) => !c.is_required || uploadedFiles[c.name]) && selectedDef?.file_constraints?.length > 0)" @click="handleSubmitApplication">
+          <button class="btn btn-outline cursor-pointer rounded-xl" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
+          <button class="btn btn-primary cursor-pointer rounded-xl shadow-sm shadow-primary/20 disabled:cursor-not-allowed" :disabled="isSubmitting || !(selectedDef?.file_constraints?.every((c: any) => !c.is_required || uploadedFiles[c.name]) && selectedDef?.file_constraints?.length > 0)" @click="handleSubmitApplication">
             {{ isSubmitting ? t.credentialsPage.submitting : t.credentialsPage.submitApplication }}
           </button>
         </div>

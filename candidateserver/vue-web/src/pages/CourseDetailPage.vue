@@ -419,7 +419,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
             </div>
           </div>
 
-          <div v-if="purchased" class="mt-4 rounded-md bg-slate-50 p-4">
+          <div v-if="false && purchased" class="mt-4 rounded-md bg-slate-50 p-4">
             <div class="flex items-center justify-between gap-3">
               <div>
                 <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
