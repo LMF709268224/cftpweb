@@ -8,10 +8,9 @@ WORKDIR /app/vue-web
 # 如果为了防止还没建好 vue-web 目录导致构建报错，可以先用 COPY . . 兜底
 COPY candidateserver/vue-web/ ./
 # 如果检测到 package.json 存在，就执行依赖安装和编译 (支持 pnpm / npm)
-# 在 CI/Docker 环境下，使用 npm ci 能够保证严格按照 package-lock.json 安装，且自动清理不一致的依赖
-RUN if [ -f package-lock.json ]; then \
-        npm ci && npm run build; \
-    elif [ -f package.json ]; then \
+# 强制删除可能被意外拷入的 node_modules 和所有 lock 文件，确保在 Alpine 环境下纯净重新解析依赖树 (避免跨系统 lockfile 毒化导致 clsx 等包丢失)
+RUN rm -rf node_modules package-lock.json pnpm-lock.yaml && \
+    if [ -f package.json ]; then \
         npm install && npm run build; \
     else \
         mkdir -p dist; \
