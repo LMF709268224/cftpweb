@@ -6,10 +6,11 @@ COPY shared/ /shared/
 WORKDIR /app/vue-web
 COPY adminserver/vue-web/ ./
 # 如果检测到 package.json 存在，就执行依赖安装和编译 (支持 pnpm / npm)
-# 强制删除可能被意外拷入的 node_modules 和所有 lock 文件，确保在 Alpine 环境下纯净重新解析依赖树
+# 强制删除可能被意外拷入的 node_modules 和所有 lock 文件
+# 使用 pnpm 代替 npm 以彻底解决 npm 在跨系统无 lockfile 时丢包和缓存毒化的世纪大坑
 RUN rm -rf node_modules package-lock.json pnpm-lock.yaml && \
     if [ -f package.json ]; then \
-        npm install && npm run build; \
+        npm install -g pnpm && pnpm config set store-dir /.pnpm-store && pnpm install --no-frozen-lockfile && pnpm run build; \
     else \
         mkdir -p dist; \
     fi
