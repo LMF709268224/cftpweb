@@ -140,20 +140,27 @@ onMounted(fetchMessages)
       </div>
     </div>
 
-    <div class="mb-4 flex flex-wrap gap-2 rounded-[22px] bg-white p-2 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <button :class="['rounded-xl px-4 py-2 text-sm font-medium transition-all', selectedType === null ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']" @click="selectedType = null">
-        {{ t.messagesPage.all }} <span class="ml-2 rounded-full bg-card/30 px-1.5">{{ messageList.length }}</span>
-      </button>
-      <button
-        v-for="(config, type) in typeConfig"
-        :key="type"
-        :class="['flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all', selectedType === type ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']"
-        @click="selectedType = type"
-      >
-        <component :is="config.icon" class="h-4 w-4" />
-        {{ config.label }}
-        <span class="rounded-full bg-card/30 px-1.5">{{ messageList.filter((m) => m.type === type).length }}</span>
-      </button>
+    <div class="mb-4 rounded-md bg-white px-8 pt-6">
+      <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
+        <button
+          :class="['relative cursor-pointer whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === null ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+          @click="selectedType = null"
+        >
+          {{ t.messagesPage.all }} <span class="ml-2 text-sm text-muted-foreground">{{ messageList.length }}</span>
+          <span v-if="selectedType === null" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+        </button>
+        <button
+          v-for="(config, type) in typeConfig"
+          :key="type"
+          :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === type ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+          @click="selectedType = type"
+        >
+          <component :is="config.icon" class="h-4 w-4" />
+          {{ config.label }}
+          <span class="text-sm text-muted-foreground">{{ messageList.filter((m) => m.type === type).length }}</span>
+          <span v-if="selectedType === type" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+        </button>
+      </div>
     </div>
 
     <div class="overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">

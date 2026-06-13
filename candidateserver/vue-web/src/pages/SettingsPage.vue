@@ -90,11 +90,25 @@ async function handleUpdatePassword() {
       <h1 class="text-3xl font-bold tracking-tight">{{ t.settings.title }}</h1>
     </div>
     <div class="space-y-4">
-      <div class="flex w-fit gap-1 rounded-xl bg-muted p-1">
-        <button :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'profile' ? 'bg-card text-card-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground']" @click="activeTab = 'profile'">{{ t.settings.profileTab }}</button>
-        <button :class="['rounded-lg px-4 py-2 text-sm font-medium transition-all', activeTab === 'account' ? 'bg-card text-card-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground']" @click="activeTab = 'account'">{{ t.settings.accountTab }}</button>
+      <div class="rounded-md bg-white px-8 pt-6">
+        <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
+          <button
+            :class="['relative cursor-pointer px-1 pb-7 text-base font-medium transition-colors duration-200', activeTab === 'profile' ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            @click="activeTab = 'profile'"
+          >
+            {{ t.settings.profileTab }}
+            <span v-if="activeTab === 'profile'" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+          </button>
+          <button
+            :class="['relative cursor-pointer px-1 pb-7 text-base font-medium transition-colors duration-200', activeTab === 'account' ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            @click="activeTab = 'account'"
+          >
+            {{ t.settings.accountTab }}
+            <span v-if="activeTab === 'account'" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+          </button>
+        </div>
       </div>
-      <div v-if="activeTab === 'profile'" class="rounded-xl border bg-card text-card-foreground shadow-sm">
+      <div v-if="activeTab === 'profile'" class="rounded-md bg-white text-card-foreground">
         <div class="flex flex-col space-y-1.5 p-6">
           <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.profileTab }}</h2>
           <p class="text-sm text-muted-foreground">{{ t.settings.profileDesc }}</p>
@@ -117,7 +131,7 @@ async function handleUpdatePassword() {
         </form>
         </div>
       </div>
-      <div v-if="activeTab === 'account'" class="rounded-xl border bg-card text-card-foreground shadow-sm">
+      <div v-if="activeTab === 'account'" class="rounded-md bg-white text-card-foreground">
         <div class="flex flex-col space-y-1.5 p-6">
           <h2 class="text-xl font-semibold leading-none tracking-tight">{{ t.settings.updatePassword }}</h2>
           <p class="text-sm text-muted-foreground">{{ t.settings.updatePasswordDesc }}</p>

@@ -147,10 +147,18 @@ onMounted(() => {
       <button class="btn btn-outline rounded-xl" @click="() => void loadExams()"><Filter class="h-4 w-4" /> {{ t.examsPage.refresh }}</button>
     </div>
 
-    <div class="mb-4 flex w-fit gap-1 overflow-x-auto rounded-[22px] bg-white p-1 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <button v-for="tab in tabs" :key="tab.id" :class="['inline-flex items-center gap-2 whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200', activeTab === tab.id ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']" @click="activeTab = tab.id">
-        <component :is="tab.icon" class="h-4 w-4" /> {{ tab.label }}
-      </button>
+    <div class="mb-4 rounded-md bg-white px-8 pt-6">
+      <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+          @click="activeTab = tab.id"
+        >
+          <component :is="tab.icon" class="h-4 w-4" /> {{ tab.label }}
+          <span v-if="activeTab === tab.id" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+        </button>
+      </div>
     </div>
 
     <div class="rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">

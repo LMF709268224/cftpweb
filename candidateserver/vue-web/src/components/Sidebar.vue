@@ -78,7 +78,7 @@ async function handleLogout() {
     </div>
   </header>
 
-  <aside class="app-side-card fixed top-[106px] z-30 hidden w-[220px] rounded-md bg-white lg:block">
+  <aside class="app-side-card fixed top-[106px] z-30 hidden max-h-[calc(100vh-122px)] w-[220px] overflow-y-auto rounded-md bg-white lg:block">
     <div class="px-8 pb-9 pt-8 text-center">
       <div class="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#fff4ed] text-3xl font-black text-primary">
         {{ userName.charAt(0).toUpperCase() }}

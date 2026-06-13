@@ -119,6 +119,24 @@
     width: 100%;
   }
 
+  .app-side-card {
+    scrollbar-width: thin;
+    scrollbar-color: #d7dce2 transparent;
+  }
+
+  .app-side-card::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .app-side-card::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .app-side-card::-webkit-scrollbar-thumb {
+    background: #d7dce2;
+    border-radius: 999px;
+  }
+
   @media (min-width: 1024px) {
     .page-main {
       max-width: 1280px;

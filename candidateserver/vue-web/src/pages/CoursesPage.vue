@@ -243,15 +243,18 @@ onMounted(() => {
       </button>
     </div>
 
-    <div class="mb-4 flex w-fit gap-1 rounded-[22px] bg-white p-1 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div class="mb-4 rounded-md bg-white px-8 pt-6">
+      <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        :class="['rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200', activeTab === tab.id ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-primary/10 hover:text-primary']"
+        :class="['relative cursor-pointer px-1 pb-7 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
         @click="activeTab = tab.id"
       >
         {{ tab.label }}
+        <span v-if="activeTab === tab.id" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
       </button>
+      </div>
     </div>
 
     <div v-if="activeTab === 'all'">
