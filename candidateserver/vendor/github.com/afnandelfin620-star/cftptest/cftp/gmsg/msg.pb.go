@@ -185,21 +185,66 @@ type BuiltInMsgPathType int32
 
 const (
 	BuiltInMsgPathType_UNKNOWN_MSG_PATH                   BuiltInMsgPathType = 0
-	BuiltInMsgPathType_GCREDS_NEW_APPLICATION_AUDIT       BuiltInMsgPathType = 1 // "/msg/gcreds/new-application-audit"
-	BuiltInMsgPathType_PIPELINE_STAGE_ORDER_CREATED_GPROG BuiltInMsgPathType = 2 // "/msg/pipeline/stage-order-created/gprog"
+	BuiltInMsgPathType_GCREDS_NEW_APPLICATION_AUDIT       BuiltInMsgPathType = 1  // "/msg/gcreds/new-application-audit"
+	BuiltInMsgPathType_PIPELINE_STAGE_ORDER_CREATED_GPROG BuiltInMsgPathType = 2  // "/msg/pipeline/stage-order-created/gprog"
+	BuiltInMsgPathType_GPROG_PIPELINE_STARTED             BuiltInMsgPathType = 3  // "/msg/pipeline/started/gprog"
+	BuiltInMsgPathType_GPROG_PIPELINE_COMPLETED           BuiltInMsgPathType = 4  // "/msg/pipeline/completed/gprog"
+	BuiltInMsgPathType_GPROG_STAGE_STARTED                BuiltInMsgPathType = 5  // "/msg/stage/started/gprog"
+	BuiltInMsgPathType_GPROG_STAGE_COMPLETED              BuiltInMsgPathType = 6  // "/msg/stage/completed/gprog"
+	BuiltInMsgPathType_GPROG_COURSE_STARTED               BuiltInMsgPathType = 7  // "/msg/course/started/gprog"
+	BuiltInMsgPathType_GPROG_COURSE_COMPLETED             BuiltInMsgPathType = 8  // "/msg/course/completed/gprog"
+	BuiltInMsgPathType_GMALL_PIPELINE_PAYMENT_PAID        BuiltInMsgPathType = 9  // "/msg/pipeline/payment-paid/gmall"
+	BuiltInMsgPathType_GMALL_STAGE_PAYMENT_PAID           BuiltInMsgPathType = 10 // "/msg/stage/payment-paid/gmall"
+	BuiltInMsgPathType_GMALL_RETAKE_PAYMENT_PAID          BuiltInMsgPathType = 11 // "/msg/retake/payment-paid/gmall"
+	BuiltInMsgPathType_GMALL_UNLOCK_PAYMENT_PAID          BuiltInMsgPathType = 12 // "/msg/unlock/payment-paid/gmall"
+	BuiltInMsgPathType_GMALL_CREDENTIAL_PAYMENT_PAID      BuiltInMsgPathType = 13 // "/msg/credential/payment-paid/gmall"
+	BuiltInMsgPathType_GMALL_PAYMENT_FAILED               BuiltInMsgPathType = 14 // "/msg/payment/failed/gmall"
+	BuiltInMsgPathType_GCREDS_APPLICATION_APPROVED        BuiltInMsgPathType = 15 // "/msg/gcreds/application-approved"
+	BuiltInMsgPathType_GCREDS_APPLICATION_REJECTED        BuiltInMsgPathType = 16 // "/msg/gcreds/application-rejected"
+	BuiltInMsgPathType_GCREDS_APPLICATION_REUPLOAD        BuiltInMsgPathType = 17 // "/msg/gcreds/application-reupload"
 )
 
 // Enum value maps for BuiltInMsgPathType.
 var (
 	BuiltInMsgPathType_name = map[int32]string{
-		0: "UNKNOWN_MSG_PATH",
-		1: "GCREDS_NEW_APPLICATION_AUDIT",
-		2: "PIPELINE_STAGE_ORDER_CREATED_GPROG",
+		0:  "UNKNOWN_MSG_PATH",
+		1:  "GCREDS_NEW_APPLICATION_AUDIT",
+		2:  "PIPELINE_STAGE_ORDER_CREATED_GPROG",
+		3:  "GPROG_PIPELINE_STARTED",
+		4:  "GPROG_PIPELINE_COMPLETED",
+		5:  "GPROG_STAGE_STARTED",
+		6:  "GPROG_STAGE_COMPLETED",
+		7:  "GPROG_COURSE_STARTED",
+		8:  "GPROG_COURSE_COMPLETED",
+		9:  "GMALL_PIPELINE_PAYMENT_PAID",
+		10: "GMALL_STAGE_PAYMENT_PAID",
+		11: "GMALL_RETAKE_PAYMENT_PAID",
+		12: "GMALL_UNLOCK_PAYMENT_PAID",
+		13: "GMALL_CREDENTIAL_PAYMENT_PAID",
+		14: "GMALL_PAYMENT_FAILED",
+		15: "GCREDS_APPLICATION_APPROVED",
+		16: "GCREDS_APPLICATION_REJECTED",
+		17: "GCREDS_APPLICATION_REUPLOAD",
 	}
 	BuiltInMsgPathType_value = map[string]int32{
 		"UNKNOWN_MSG_PATH":                   0,
 		"GCREDS_NEW_APPLICATION_AUDIT":       1,
 		"PIPELINE_STAGE_ORDER_CREATED_GPROG": 2,
+		"GPROG_PIPELINE_STARTED":             3,
+		"GPROG_PIPELINE_COMPLETED":           4,
+		"GPROG_STAGE_STARTED":                5,
+		"GPROG_STAGE_COMPLETED":              6,
+		"GPROG_COURSE_STARTED":               7,
+		"GPROG_COURSE_COMPLETED":             8,
+		"GMALL_PIPELINE_PAYMENT_PAID":        9,
+		"GMALL_STAGE_PAYMENT_PAID":           10,
+		"GMALL_RETAKE_PAYMENT_PAID":          11,
+		"GMALL_UNLOCK_PAYMENT_PAID":          12,
+		"GMALL_CREDENTIAL_PAYMENT_PAID":      13,
+		"GMALL_PAYMENT_FAILED":               14,
+		"GCREDS_APPLICATION_APPROVED":        15,
+		"GCREDS_APPLICATION_REJECTED":        16,
+		"GCREDS_APPLICATION_REUPLOAD":        17,
 	}
 )
 
@@ -2230,11 +2275,27 @@ const file_msg_proto_rawDesc = "" +
 	"\tMsgSource\x12\x12\n" +
 	"\x0eUNKNOWN_SOURCE\x10\x00\x12\x0f\n" +
 	"\vAUTO_SYSTEM\x10\x01\x12\x10\n" +
-	"\fMANUAL_ADMIN\x10\x02*t\n" +
+	"\fMANUAL_ADMIN\x10\x02*\xb5\x04\n" +
 	"\x12BuiltInMsgPathType\x12\x14\n" +
 	"\x10UNKNOWN_MSG_PATH\x10\x00\x12 \n" +
 	"\x1cGCREDS_NEW_APPLICATION_AUDIT\x10\x01\x12&\n" +
-	"\"PIPELINE_STAGE_ORDER_CREATED_GPROG\x10\x022\xfd\b\n" +
+	"\"PIPELINE_STAGE_ORDER_CREATED_GPROG\x10\x02\x12\x1a\n" +
+	"\x16GPROG_PIPELINE_STARTED\x10\x03\x12\x1c\n" +
+	"\x18GPROG_PIPELINE_COMPLETED\x10\x04\x12\x17\n" +
+	"\x13GPROG_STAGE_STARTED\x10\x05\x12\x19\n" +
+	"\x15GPROG_STAGE_COMPLETED\x10\x06\x12\x18\n" +
+	"\x14GPROG_COURSE_STARTED\x10\a\x12\x1a\n" +
+	"\x16GPROG_COURSE_COMPLETED\x10\b\x12\x1f\n" +
+	"\x1bGMALL_PIPELINE_PAYMENT_PAID\x10\t\x12\x1c\n" +
+	"\x18GMALL_STAGE_PAYMENT_PAID\x10\n" +
+	"\x12\x1d\n" +
+	"\x19GMALL_RETAKE_PAYMENT_PAID\x10\v\x12\x1d\n" +
+	"\x19GMALL_UNLOCK_PAYMENT_PAID\x10\f\x12!\n" +
+	"\x1dGMALL_CREDENTIAL_PAYMENT_PAID\x10\r\x12\x18\n" +
+	"\x14GMALL_PAYMENT_FAILED\x10\x0e\x12\x1f\n" +
+	"\x1bGCREDS_APPLICATION_APPROVED\x10\x0f\x12\x1f\n" +
+	"\x1bGCREDS_APPLICATION_REJECTED\x10\x10\x12\x1f\n" +
+	"\x1bGCREDS_APPLICATION_REUPLOAD\x10\x112\xfd\b\n" +
 	"\x0eMessageService\x12E\n" +
 	"\fListMessages\x12\x19.gmsg.ListMessagesRequest\x1a\x1a.gmsg.ListMessagesResponse\x12;\n" +
 	"\n" +
