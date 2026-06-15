@@ -14,8 +14,12 @@ let objectUrl = ""
 const title = computed(() => String(route.query.title || "PDF Preview"))
 const source = computed(() => {
   const lessonId = String(route.query.lessonId || "")
-  if (!lessonId) return ""
-  return `/api/pipeline/lessons/${encodeURIComponent(lessonId)}/preview`
+  if (lessonId) return `/api/pipeline/lessons/${encodeURIComponent(lessonId)}/preview`
+
+  const src = String(route.query.src || "")
+  if (src) return `/api/pipeline/resource-preview?src=${encodeURIComponent(src)}`
+
+  return ""
 })
 
 const viewerConfig = computed(() => ({
@@ -37,7 +41,7 @@ async function loadPdf() {
   errorMessage.value = ""
 
   if (!source.value) {
-    errorMessage.value = "未找到可预览的 PDF 课时"
+    errorMessage.value = "No PDF resource found for preview."
     return
   }
 
@@ -53,7 +57,9 @@ async function loadPdf() {
     })
 
     if (!res.ok) {
-      errorMessage.value = res.status === 401 ? "登录已过期或没有权限，请重新登录后再试。" : "PDF 加载失败，请稍后重试。"
+      errorMessage.value = res.status === 401
+        ? "Your session has expired or you do not have permission. Please sign in and try again."
+        : "PDF preview failed. Please try again later."
       return
     }
 
@@ -61,7 +67,7 @@ async function loadPdf() {
     objectUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
     viewerSrc.value = objectUrl
   } catch {
-    errorMessage.value = "PDF 加载失败，请检查网络后重试。"
+    errorMessage.value = "PDF preview failed. Please check your network and try again."
   } finally {
     loading.value = false
   }
@@ -87,7 +93,7 @@ onBeforeUnmount(cleanupObjectUrl)
     <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
       <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100" @click="goBack">
         <ArrowLeft class="h-4 w-4" />
-        返回课程
+        Back to Course
       </button>
       <div class="min-w-0 flex-1 px-4 text-center">
         <div class="inline-flex max-w-full items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-slate-900">
@@ -105,16 +111,16 @@ onBeforeUnmount(cleanupObjectUrl)
       <div v-else class="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white text-sm text-slate-500">
         <div v-if="loading" class="flex items-center gap-2">
           <Loader2 class="h-5 w-5 animate-spin text-emerald-500" />
-          正在加载 PDF 预览...
+          Loading PDF preview...
         </div>
         <div v-else class="flex max-w-md flex-col items-center gap-3 text-center">
           <div class="rounded-full bg-rose-50 p-4 text-rose-500">
             <AlertTriangle class="h-8 w-8" />
           </div>
-          <div class="text-base font-semibold text-slate-900">PDF 加载失败</div>
-          <p>{{ errorMessage || "未找到可预览的 PDF 课时" }}</p>
+          <div class="text-base font-semibold text-slate-900">PDF preview failed</div>
+          <p>{{ errorMessage || "No PDF resource found for preview." }}</p>
           <button class="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600" @click="loadPdf">
-            重新加载
+            Reload
           </button>
         </div>
       </div>

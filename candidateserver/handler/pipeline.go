@@ -482,6 +482,50 @@ func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
+	if !requireRequestFields(w, candidateID, "candidate_id", resourceURL, "src") {
+		return
+	}
+
+	parsed, err := url.Parse(resourceURL)
+	if err != nil || parsed == nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid resource url")
+		return
+	}
+
+	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, resourceURL, nil)
+	if err != nil {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "invalid resource url")
+		return
+	}
+	if rangeHeader := strings.TrimSpace(r.Header.Get("Range")); rangeHeader != "" {
+		proxyReq.Header.Set("Range", rangeHeader)
+	}
+
+	proxyResp, err := http.DefaultClient.Do(proxyReq)
+	if err != nil {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "failed to open resource preview")
+		return
+	}
+	defer proxyResp.Body.Close()
+
+	copyPreviewHeaders(w.Header(), proxyResp.Header)
+	contentType := strings.TrimSpace(proxyResp.Header.Get("Content-Type"))
+	if contentType == "" || contentType == "application/octet-stream" {
+		contentType = "application/pdf"
+	}
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Disposition", `inline; filename="resource.pdf"`)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(proxyResp.StatusCode)
+
+	if _, err := io.Copy(w, proxyResp.Body); err != nil {
+		slog.Warn("failed to stream resource preview", "error", err, "resource_url", resourceURL)
+	}
+}
+
 func (h *Handler) lessonViewURL(ctx context.Context, candidateID, lessonID string) (*lmspb.CreateViewURLResponse, *lmspb.Lesson, error) {
 	lessonResp, err := h.Lms.GetLessonDetail(ctx, &lmspb.GetLessonDetailCandidateRequest{
 		CandidateId: candidateID,

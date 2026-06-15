@@ -38,7 +38,7 @@ export function parseSupplementaryMaterialItems(materials: SupplementaryMaterial
       const description = stringFromRecord(record, ["description", "desc", "summary", "detail", "content"])
       const type = stringFromRecord(record, ["type", "material_type", "resource_type", "kind"]) || "Material"
       const chapter = stringFromRecord(record, ["chapter", "chapter_title", "chapterTitle", "section"]) || fallbackChapter
-      const url = stringFromRecord(record, ["url", "link", "href", "external_url", "externalUrl"])
+      const url = stringFromRecord(record, ["resource_link", "resourceLink", "url", "link", "href", "external_url", "externalUrl"])
       const materialId = material.material_id || material.materialId || "supplementary"
       const fallbackKey = `${materialId}-${materialIndex}-${recordIndex}`
 

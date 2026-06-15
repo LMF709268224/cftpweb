@@ -13,7 +13,6 @@ import {
   Download,
   ExternalLink,
   FileText,
-  List,
   Loader2,
   Play,
   RefreshCw,
@@ -486,12 +485,37 @@ function materialTypeLabel(materialType?: number) {
   }
 }
 
-function openSupplementaryMaterials() {
-  const params = new URLSearchParams()
-  if (courseId.value) params.set("courseId", courseId.value)
-  if (pipelineId.value) params.set("pipelineId", pipelineId.value)
-  if (course.value?.title) params.set("title", course.value.title)
-  window.open(`/courses/supplementary?${params.toString()}`, "_blank", "noopener,noreferrer")
+function supplementaryChapterLabel(item: SupplementaryMaterialItem, index: number) {
+  return supplementaryMaterialItems.value[index - 1]?.chapter === item.chapter ? "" : item.chapter
+}
+
+function supplementaryTypeLabel(type: string) {
+  const normalized = type.trim().toLowerCase()
+  if (normalized === "article") return "Article"
+  if (normalized === "video") return "Video"
+  if (normalized === "pdf") return "PDF"
+  if (normalized === "link") return "Link"
+  return type || t.value.learning.materialTypeUnknown
+}
+
+function supplementaryTypeClass(type: string) {
+  const normalized = type.trim().toLowerCase()
+  if (normalized === "video") return "border-violet-200 bg-violet-100 text-violet-700"
+  if (normalized === "article" || normalized === "pdf") return "border-blue-200 bg-blue-100 text-blue-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
+function supplementaryTypeIcon(type: string) {
+  return type.trim().toLowerCase() === "video" ? Play : FileText
+}
+
+function openSupplementaryPreview(item: SupplementaryMaterialItem) {
+  if (!item.url) return
+  const params = new URLSearchParams({
+    src: item.url,
+    title: item.title || "Supplementary Material",
+  })
+  window.open(`/pdf-preview?${params.toString()}`, "_blank", "noopener,noreferrer")
 }
 
 async function loadCourse() {
@@ -1042,19 +1066,55 @@ watch(selectedMaterial, () => {
           </div>
           <div v-else class="space-y-4">
             <div v-if="supplementaryMaterialItems.length > 0" class="rounded-md border border-slate-100 bg-slate-50 p-4">
-              <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <BookOpen class="h-4 w-4 text-primary" />
-                    <span>Supplementary Materials</span>
-                    <span class="badge border-slate-200 bg-white text-slate-700">{{ supplementaryMaterialItems.length }} {{ t.learning.materialsCountSuffix }}</span>
-                  </div>
-                  <p class="mt-1 text-xs text-muted-foreground">Additional learning resources organized by chapter</p>
+              <div class="border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <BookOpen class="h-4 w-4 text-primary" />
+                  <span>Supplementary Materials</span>
+                  <span class="badge border-slate-200 bg-white text-slate-700">{{ supplementaryMaterialItems.length }} {{ t.learning.materialsCountSuffix }}</span>
                 </div>
-                <button class="btn btn-primary rounded-lg" @click="openSupplementaryMaterials">
-                  <List class="h-4 w-4" />
-                  View Supplementary Materials
-                </button>
+                <p class="mt-1 text-xs text-muted-foreground">Additional learning resources organized by chapter</p>
+              </div>
+
+              <div class="hidden grid-cols-[minmax(160px,0.9fr)_120px_minmax(260px,1.4fr)_180px] border-b border-slate-100 px-3 py-3 text-sm font-medium text-muted-foreground md:grid">
+                <div>Chapter</div>
+                <div>Type</div>
+                <div>Title & Description</div>
+                <div>Resource Link</div>
+              </div>
+
+              <div class="divide-y divide-slate-100">
+                <div
+                  v-for="(item, index) in supplementaryMaterialItems"
+                  :key="item.key"
+                  class="grid gap-3 px-3 py-4 text-sm md:grid-cols-[minmax(160px,0.9fr)_120px_minmax(260px,1.4fr)_180px]"
+                >
+                  <div class="font-medium text-foreground">
+                    <span class="md:hidden text-xs text-muted-foreground">Chapter: </span>
+                    {{ supplementaryChapterLabel(item, index) }}
+                  </div>
+                  <div>
+                    <span class="badge gap-1 border text-xs" :class="supplementaryTypeClass(item.type)">
+                      <component :is="supplementaryTypeIcon(item.type)" class="h-3 w-3" />
+                      {{ supplementaryTypeLabel(item.type) }}
+                    </span>
+                  </div>
+                  <div>
+                    <div class="font-semibold text-foreground">{{ item.title }}</div>
+                    <p v-if="item.description" class="mt-1 text-xs leading-relaxed text-muted-foreground">{{ item.description }}</p>
+                  </div>
+                  <div class="min-w-0">
+                    <button
+                      v-if="item.url"
+                      class="inline-flex max-w-full items-center gap-1 rounded-lg border border-primary/20 bg-white px-3 py-2 text-left text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                      :title="item.url"
+                      @click="openSupplementaryPreview(item)"
+                    >
+                      <ExternalLink class="h-3.5 w-3.5 shrink-0" />
+                      <span class="truncate">{{ item.url }}</span>
+                    </button>
+                    <span v-else class="text-xs text-muted-foreground">No resource_link</span>
+                  </div>
+                </div>
               </div>
             </div>
 
