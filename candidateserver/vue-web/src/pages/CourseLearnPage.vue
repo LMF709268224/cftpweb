@@ -617,7 +617,7 @@ async function openMaterial(material: CourseMaterialSummary) {
   try {
     const res = await apiClient(`/api/pipeline/materials/${material.material_id}/url`)
     if (res?.url) {
-      if (material.type === 2) {
+      if (material.material_type === 3) {
         await openInlinePdf(res.url)
       } else {
         window.open(res.url, "_blank", "noopener,noreferrer")
