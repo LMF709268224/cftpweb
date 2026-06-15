@@ -504,16 +504,10 @@ export default function PipelinesPage() {
                 {
                   name: "",
                   glms_course_id: "",
-                  has_learning: true,
-                  has_exam: false,
-                  learning_minutes: 0,
-                  program_code: "",
-                  exam_code: "",
-                  exam_form: "",
-                  base_fee: 0,
+                  program: "",
+                  exam_id: "",
+                  form_code: "",
                   allow_retake: false,
-                  retake_fee: 0,
-                  exemption_audit_fee: 0,
                   exemption_quals: [],
                 },
               ],
@@ -823,73 +817,27 @@ export default function PipelinesPage() {
                                   </div>
                                 </div>
                                 <div className="mt-3 rounded-md border bg-muted/20 p-3">
-                                  <div className="mb-3 flex flex-wrap items-center gap-4">
-                                    <label className="flex items-center gap-2 text-sm font-medium">
-                                      <Checkbox
-                                        checked={unit.has_learning ?? true}
-                                        onCheckedChange={(checked) => updateUnit(stageIndex, unitIndex, { has_learning: Boolean(checked) })}
-                                        disabled={published}
-                                      />
-                                      Has Learning
-                                    </label>
-                                    <label className="flex items-center gap-2 text-sm font-medium">
-                                      <Checkbox
-                                        checked={Boolean(unit.has_exam)}
-                                        onCheckedChange={(checked) => updateUnit(stageIndex, unitIndex, { has_exam: Boolean(checked) })}
-                                        disabled={published}
-                                      />
-                                      Has Exam
-                                    </label>
+                                  <div className="mb-3">
+                                    <div className="text-sm font-semibold">Exam</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">Program, Exam ID, and Form Code come from the pipeline unit config. Leave them empty if this unit has no formal exam.</p>
                                   </div>
                                   <div className="grid gap-3 md:grid-cols-3">
                                     <Input
-                                      placeholder="Learning Minutes"
-                                      type="number"
-                                      min="0"
-                                      value={unit.learning_minutes ?? 0}
-                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { learning_minutes: Number(event.target.value || 0) })}
+                                      placeholder="Program"
+                                      value={unit.program || ""}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { program: event.target.value })}
                                       disabled={published}
                                     />
                                     <Input
-                                      placeholder="Program Code"
-                                      value={unit.program_code || ""}
-                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { program_code: event.target.value })}
-                                      disabled={published || !unit.has_exam}
+                                      placeholder="Exam ID"
+                                      value={unit.exam_id || ""}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exam_id: event.target.value })}
+                                      disabled={published}
                                     />
                                     <Input
-                                      placeholder="Exam Code"
-                                      value={unit.exam_code || ""}
-                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exam_code: event.target.value })}
-                                      disabled={published || !unit.has_exam}
-                                    />
-                                    <Input
-                                      placeholder="Exam Form"
-                                      value={unit.exam_form || ""}
-                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exam_form: event.target.value })}
-                                      disabled={published || !unit.has_exam}
-                                    />
-                                    <Input
-                                      placeholder="Base Fee (minor units)"
-                                      type="number"
-                                      min="0"
-                                      value={unit.base_fee ?? 0}
-                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { base_fee: Number(event.target.value || 0) })}
-                                      disabled={published || !unit.has_exam}
-                                    />
-                                    <Input
-                                      placeholder="Retake Fee (minor units)"
-                                      type="number"
-                                      min="0"
-                                      value={unit.retake_fee ?? 0}
-                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { retake_fee: Number(event.target.value || 0) })}
-                                      disabled={published || !unit.has_exam || !unit.allow_retake}
-                                    />
-                                    <Input
-                                      placeholder="Exemption Audit Fee (minor units)"
-                                      type="number"
-                                      min="0"
-                                      value={unit.exemption_audit_fee ?? 0}
-                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exemption_audit_fee: Number(event.target.value || 0) })}
+                                      placeholder="Form Code"
+                                      value={unit.form_code || ""}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { form_code: event.target.value })}
                                       disabled={published}
                                     />
                                   </div>
@@ -929,26 +877,22 @@ export default function PipelinesPage() {
                         <div className="mt-2 space-y-3 text-sm text-muted-foreground">
                           {stage.units.map((unit, unitIndex) => {
                             const detail = lmsCourseDetails[unit.glms_course_id]
+                            const hasExam = Boolean((unit.program || unit.exam_id || "").trim())
                             return (
                               <div key={unit.unit_id || unitIndex} className="rounded-md border bg-background p-3 shadow-sm">
                                 <div className="flex items-center gap-2 mb-3">
                                   <CheckCircle2 className="h-4 w-4 text-primary" />
                                   <span className="font-semibold text-foreground">{lmsCourseName(unit.glms_course_id)}</span>
                                   {unit.stripe_price_id && <Badge variant="outline">{unit.stripe_price_id}</Badge>}
-                                  {unit.has_exam && <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">Exam</Badge>}
+                                  {hasExam && <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">Exam</Badge>}
                                 </div>
                                 <div className="mb-3 grid gap-2 rounded-md bg-muted/40 p-3 text-xs md:grid-cols-3">
-                                  <div>Has Learning: {unit.has_learning ?? true ? "Yes" : "No"}</div>
-                                  <div>Learning Minutes: {unit.learning_minutes ?? 0}</div>
-                                  <div>Has Exam: {unit.has_exam ? "Yes" : "No"}</div>
-                                  {unit.has_exam && (
+                                  <div>Exam: {hasExam ? "Yes" : "No"}</div>
+                                  {hasExam && (
                                     <>
-                                      <div>Program Code: {unit.program_code || t.common.na}</div>
-                                      <div>Exam Code: {unit.exam_code || t.common.na}</div>
-                                      <div>Exam Form: {unit.exam_form || t.common.na}</div>
-                                      <div>Base Fee: {unit.base_fee ?? 0}</div>
-                                      <div>Retake Fee: {unit.retake_fee ?? 0}</div>
-                                      <div>Exemption Audit Fee: {unit.exemption_audit_fee ?? 0}</div>
+                                      <div>Program: {unit.program || t.common.na}</div>
+                                      <div>Exam ID: {unit.exam_id || t.common.na}</div>
+                                      <div>Form Code: {unit.form_code || t.common.na}</div>
                                     </>
                                   )}
                                 </div>
