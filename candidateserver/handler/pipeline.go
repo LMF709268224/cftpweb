@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"slices"
@@ -13,6 +14,8 @@ import (
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	gprog "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // GetPipelineTimeline GET /api/mall/pipelines/{pipelineId}/timeline
@@ -405,28 +408,7 @@ func (h *Handler) GetLessonURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lessonResp, err := h.Lms.GetLessonDetail(r.Context(), &lmspb.GetLessonDetailCandidateRequest{
-		CandidateId: candidateID,
-		LessonId:    lessonID,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-	lesson := lessonResp.GetLesson()
-	if lesson == nil {
-		WriteError(w, http.StatusNotFound, ErrNotFound, "lesson not found")
-		return
-	}
-	if lesson.GetMediaObjectKey() == "" {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "lesson has no media object key")
-		return
-	}
-
-	viewResp, err := h.Lms.CreateViewURL(r.Context(), &lmspb.CreateViewURLCandidateRequest{
-		CandidateId: candidateID,
-		ObjectKey:   lesson.GetMediaObjectKey(),
-	})
+	viewResp, _, err := h.lessonViewURL(r.Context(), candidateID, lessonID)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -436,6 +418,84 @@ func (h *Handler) GetLessonURL(w http.ResponseWriter, r *http.Request) {
 		URL:       viewResp.GetViewUrl(),
 		ExpiresAt: viewResp.GetExpiresAt(),
 	})
+}
+
+func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
+	if !requireRequestFields(w, candidateID, "candidate_id", lessonID, "lesson_id") {
+		return
+	}
+
+	viewResp, lesson, err := h.lessonViewURL(r.Context(), candidateID, lessonID)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	if strings.TrimSpace(viewResp.GetViewUrl()) == "" {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "empty view url")
+		return
+	}
+
+	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, viewResp.GetViewUrl(), nil)
+	if err != nil {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "invalid view url")
+		return
+	}
+	if rangeHeader := strings.TrimSpace(r.Header.Get("Range")); rangeHeader != "" {
+		proxyReq.Header.Set("Range", rangeHeader)
+	}
+
+	proxyResp, err := http.DefaultClient.Do(proxyReq)
+	if err != nil {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "failed to open lesson preview")
+		return
+	}
+	defer proxyResp.Body.Close()
+
+	copyPreviewHeaders(w.Header(), proxyResp.Header)
+	w.Header().Set("Content-Type", "application/pdf")
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, sanitizeFilename(lesson.GetTitle())+".pdf"))
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(proxyResp.StatusCode)
+
+	if _, err := io.Copy(w, proxyResp.Body); err != nil {
+		slog.Warn("failed to stream lesson preview", "error", err, "lesson_id", lessonID)
+	}
+}
+
+func (h *Handler) lessonViewURL(ctx context.Context, candidateID, lessonID string) (*lmspb.CreateViewURLResponse, *lmspb.Lesson, error) {
+	lessonResp, err := h.Lms.GetLessonDetail(ctx, &lmspb.GetLessonDetailCandidateRequest{
+		CandidateId: candidateID,
+		LessonId:    lessonID,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	lesson := lessonResp.GetLesson()
+	if lesson == nil {
+		return nil, nil, status.Error(codes.NotFound, "lesson not found")
+	}
+	if lesson.GetMediaObjectKey() == "" {
+		return nil, nil, status.Error(codes.InvalidArgument, "lesson has no media object key")
+	}
+
+	viewResp, err := h.Lms.CreateViewURL(ctx, &lmspb.CreateViewURLCandidateRequest{
+		CandidateId: candidateID,
+		ObjectKey:   lesson.GetMediaObjectKey(),
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return viewResp, lesson, nil
+}
+
+func copyPreviewHeaders(dst, src http.Header) {
+	for _, key := range []string{"Accept-Ranges", "Content-Length", "Content-Range", "Last-Modified", "ETag"} {
+		if value := src.Get(key); value != "" {
+			dst.Set(key, value)
+		}
+	}
 }
 
 func (h *Handler) GetCandidateEnrollmentDetail(w http.ResponseWriter, r *http.Request) {

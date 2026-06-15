@@ -703,14 +703,8 @@ async function markCompleted() {
 
 async function openLessonPdf() {
   if (!lesson.value?.lesson_id) return
-  try {
-    const res = await apiClient(`/api/pipeline/lessons/${lesson.value.lesson_id}/url`)
-    if (res?.url) {
-      await openInlinePdf(res.url)
-    } else toast.error(t.value.common.error)
-  } catch {
-    // apiClient handles localized errors.
-  }
+  const previewUrl = `/api/pipeline/lessons/${encodeURIComponent(lesson.value.lesson_id)}/preview`
+  window.open(previewUrl, "_blank", "noopener,noreferrer")
 }
 
 async function openInlinePdf(url: string) {
