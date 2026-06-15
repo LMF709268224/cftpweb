@@ -207,6 +207,18 @@ const currentUnitStatus = computed(() => runtime.value?.current_unit_status)
 const nextUnitStatus = computed(() => nextStep.value?.status || currentUnitStatus.value)
 const currentLessonRawCompleted = computed(() => Boolean(lesson.value?.lesson_id && completedLessonIds.value.has(lesson.value.lesson_id)))
 
+const courseHasExam = computed(() => {
+  const stages = runtime.value?.config?.stages || []
+  for (const stage of stages) {
+    for (const unit of stage.units || []) {
+      if (unit.glms_course_id === courseId.value || unit.course_id === courseId.value) {
+        return Boolean(unit.exam_id)
+      }
+    }
+  }
+  return false
+})
+
 const totalQuizzesCount = computed(() => {
   let count = courseQuizzes.value.length
   for (const chapter of chapters.value) {
@@ -784,6 +796,8 @@ watch(selectedMaterial, () => {
             <span class="inline-flex items-center gap-1.5"><BookOpen class="h-4 w-4" />{{ chapters.length }} {{ t.learning.chapters }}</span>
             <span class="inline-flex items-center gap-1.5"><Clock class="h-4 w-4" />{{ lessons.length }} {{ t.learning.lessons }}</span>
             <span class="inline-flex items-center gap-1.5 text-primary"><CheckCircle2 class="h-4 w-4" />{{ progressPercentage }}%</span>
+            <span v-if="courseHasExam" class="inline-flex items-center gap-1.5 text-amber-600"><FileText class="h-4 w-4" />包含认证考试</span>
+            <span v-else class="inline-flex items-center gap-1.5 text-slate-500"><FileText class="h-4 w-4" />仅需学习</span>
           </div>
 
           <div class="mt-4 space-y-3">
