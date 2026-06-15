@@ -61,7 +61,7 @@ onMounted(async () => {
 <template>
   <AppShell content-class="p-4">
     <div class="space-y-4">
-      <section class="overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+      <section class="overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
         <div class="relative flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 md:flex-row md:items-center md:justify-between">
           <div class="absolute right-8 top-0 h-24 w-24 rounded-full bg-primary/10 blur-3xl" />
           <div class="relative">
@@ -74,11 +74,11 @@ onMounted(async () => {
           </div>
 
           <div class="relative grid grid-cols-2 gap-4 sm:min-w-[340px]">
-            <RouterLink to="/courses" class="rounded-2xl bg-white/85 px-4 py-3 shadow-sm transition-colors hover:bg-white">
+            <RouterLink to="/courses" class="rounded-xl bg-white/85 px-4 py-3 shadow-sm transition-colors hover:bg-white">
               <p class="text-xs text-muted-foreground">{{ t.home.courseInProgress }}</p>
               <p class="mt-1 text-2xl font-bold text-foreground">{{ stats.courses_in_progress || 0 }}</p>
             </RouterLink>
-            <RouterLink to="/messages" class="rounded-2xl bg-white/85 px-4 py-3 shadow-sm transition-colors hover:bg-white">
+            <RouterLink to="/messages" class="rounded-xl bg-white/85 px-4 py-3 shadow-sm transition-colors hover:bg-white">
               <p class="text-xs text-muted-foreground">{{ t.home.unreadMessages }}</p>
               <p class="mt-1 text-2xl font-bold text-primary">{{ unreadCount }}</p>
             </RouterLink>
@@ -86,7 +86,7 @@ onMounted(async () => {
         </div>
       </section>
 
-      <section class="rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <section class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard :title="t.home.courseInProgress" :value="String(stats.courses_in_progress || 0)" :icon="BookOpen" variant="primary" :description="t.courses.tabs.my" href="/courses" />
           <StatsCard :title="t.home.certified" :value="String(stats.certifications_earned || 0)" :icon="CheckCircle2" variant="success" :description="t.sidebar.certificates" href="/certificates" />

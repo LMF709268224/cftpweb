@@ -126,7 +126,7 @@ onMounted(fetchMessages)
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
       <div class="flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -136,7 +136,7 @@ onMounted(fetchMessages)
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
         </div>
-        <button v-if="unreadCount > 0" class="btn btn-outline rounded-xl bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="markAllAsRead"><CheckCheck class="h-4 w-4" /> {{ t.messagesPage.markAllAsRead }}</button>
+        <button v-if="unreadCount > 0" class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="markAllAsRead"><CheckCheck class="h-4 w-4" /> {{ t.messagesPage.markAllAsRead }}</button>
       </div>
     </div>
 
@@ -163,9 +163,9 @@ onMounted(fetchMessages)
       </div>
     </div>
 
-    <div class="overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div v-if="filteredMessages.length === 0" class="flex flex-col items-center justify-center px-4 py-16 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"><MessageSquare class="h-8 w-8 text-primary" /></div>
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><MessageSquare class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.messagesPage.noMessages }}</h3>
         <p class="text-muted-foreground">{{ t.messagesPage.noMessagesDesc }}</p>
       </div>
@@ -176,7 +176,7 @@ onMounted(fetchMessages)
           :class="['group flex cursor-pointer items-start gap-4 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead && 'bg-primary/5']"
           @click="handleViewDetail(message)"
         >
-          <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-xl', configFor(message.type).iconBg]">
+          <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', configFor(message.type).iconBg]">
             <component :is="configFor(message.type).icon" :class="['h-5 w-5', configFor(message.type).iconColor]" />
           </div>
           <div class="min-w-0 flex-1">
@@ -190,10 +190,10 @@ onMounted(fetchMessages)
           </div>
           <div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
             <div class="relative">
-              <button class="btn btn-ghost h-8 rounded-xl px-2" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
+              <button class="btn btn-ghost h-8 rounded-lg px-2" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
                 <MoreHorizontal class="h-4 w-4" />
               </button>
-              <div v-if="openMenuId === message.id" class="absolute right-0 top-9 z-50 min-w-36 overflow-hidden rounded-xl bg-white p-1 shadow-md" @click.stop>
+              <div v-if="openMenuId === message.id" class="absolute right-0 top-9 z-50 min-w-36 overflow-hidden rounded-lg bg-white p-1 shadow-md" @click.stop>
                 <button v-if="!message.isRead" class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm hover:bg-muted" @click="markAsRead(message.id)">
                   <CheckCheck class="mr-2 h-4 w-4" />
                   {{ markReadMenuLabel() }}
@@ -211,7 +211,7 @@ onMounted(fetchMessages)
     </div>
 
     <div v-if="detailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="detailModalOpen = false">
-      <div class="w-full max-w-xl rounded-[22px] bg-white p-4 shadow-2xl">
+      <div class="w-full max-w-xl rounded-[16px] bg-white p-4 shadow-2xl">
         <div class="flex items-start justify-between gap-4">
           <div>
             <h2 class="mb-2 text-xl font-semibold">{{ selectedMessageDetail?.title || t.messagesPage.systemNotice }}</h2>

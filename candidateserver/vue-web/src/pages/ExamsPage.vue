@@ -125,7 +125,7 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
       <div class="flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -135,16 +135,16 @@ onMounted(() => {
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
         </div>
-        <RouterLink to="/courses" class="btn btn-outline rounded-xl bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary">{{ t.courses.browseCoursesBtn }} <ExternalLink class="h-4 w-4" /></RouterLink>
+        <RouterLink to="/courses" class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary">{{ t.courses.browseCoursesBtn }} <ExternalLink class="h-4 w-4" /></RouterLink>
       </div>
     </div>
 
-    <div class="mb-4 flex flex-col gap-4 rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
+    <div class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
       <div class="relative flex-1 sm:max-w-md">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="search" class="input pl-10" :placeholder="t.examsPage.searchPlaceholder" />
       </div>
-      <button class="btn btn-outline rounded-xl bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="() => void loadExams()">
+      <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="() => void loadExams()">
         <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
         {{ t.examsPage.refresh }}
       </button>
@@ -164,13 +164,13 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
         <Loader2 class="h-5 w-5 animate-spin" />
         <span>{{ t.common.loading }}</span>
       </div>
       <div v-else-if="filtered.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
           <component :is="emptyCopy[activeTab].icon" class="h-8 w-8 text-primary" />
         </div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ emptyCopy[activeTab].title }}</h3>
@@ -182,7 +182,7 @@ onMounted(() => {
           <span>{{ activeTab === 'history' ? t.examsPage.historyFilterHint : t.examsPage.visibleRecordsHint }}</span>
         </div>
         <div class="grid gap-4">
-          <div v-for="exam in filtered" :key="exam.exam_id" class="relative overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:shadow-md hover:shadow-primary/10">
+          <div v-for="exam in filtered" :key="exam.exam_id" class="relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:shadow-md hover:shadow-primary/10">
             <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div class="space-y-2">
@@ -199,7 +199,7 @@ onMounted(() => {
                   <div v-if="hasText(exam.site_name)"><span class="font-medium text-foreground">{{ t.examsPage.site }}:</span> {{ exam.site_name }}</div>
                   <div v-if="hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
                   <div v-if="hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
-                  <div v-if="!hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
+                  <div v-if="!hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
                     <div class="flex items-start gap-2">
                       <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
                       <div>
@@ -213,12 +213,12 @@ onMounted(() => {
                 </div>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button v-if="canScheduleExam(exam)" class="btn btn-primary rounded-xl shadow-sm shadow-primary/20" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleScheduleExam(exam)">
+                <button v-if="canScheduleExam(exam)" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleScheduleExam(exam)">
                   <Loader2 v-if="scheduleLoadingExamId === exam.exam_id" class="h-4 w-4 animate-spin" />
                   <ExternalLink v-else class="h-4 w-4" />
                   {{ t.learning.actionScheduleExam }}
                 </button>
-                <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-outline rounded-xl">{{ t.examsPage.viewResult }}</RouterLink>
+                <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-outline rounded-lg">{{ t.examsPage.viewResult }}</RouterLink>
               </div>
             </div>
           </div>

@@ -51,7 +51,7 @@ onMounted(loadTimeline)
       {{ t.learning.timelineBackToCourseDetails || t.common.back }}
     </RouterLink>
 
-    <div class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div v-if="loading" class="py-16 text-center text-muted-foreground">{{ t.common.loading }}</div>
       <div v-else-if="logs.length === 0" class="flex flex-col items-center justify-center py-14 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
@@ -61,7 +61,7 @@ onMounted(loadTimeline)
         <p class="max-w-md text-muted-foreground">{{ t.learning.pipelineTimelineEmptyHint || t.common.na }}</p>
       </div>
       <div v-else class="space-y-4">
-        <div v-for="log in logs" :key="log.transition_ulid || `${log.entity_type}-${log.created_at}`" class="rounded-xl bg-background p-4 shadow-sm">
+        <div v-for="log in logs" :key="log.transition_ulid || `${log.entity_type}-${log.created_at}`" class="rounded-lg bg-background p-4 shadow-sm">
           <div class="mb-2 flex flex-wrap items-center gap-2">
             <span class="badge">{{ log.entity_type || t.common.unknown }}</span>
             <span class="badge border-0 bg-primary/10 text-primary">{{ log.event_type || t.common.unknown }}</span>

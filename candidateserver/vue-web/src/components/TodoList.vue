@@ -29,7 +29,7 @@ const todoCopy = computed(() => ({
 </script>
 
 <template>
-  <div class="overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+  <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
     <div class="flex items-center justify-between bg-white px-5 py-4">
       <div class="flex items-center gap-3">
         <div class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
@@ -40,12 +40,12 @@ const todoCopy = computed(() => ({
       <span class="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{{ items.length }} {{ todoCopy.items }}</span>
     </div>
     <div class="px-5 pb-5">
-      <div v-if="items.length === 0" class="rounded-2xl bg-[#f7fbfb] px-4 py-10 text-center text-sm text-muted-foreground">
+      <div v-if="items.length === 0" class="rounded-xl bg-[#f7fbfb] px-4 py-10 text-center text-sm text-muted-foreground">
         {{ todoCopy.noPendingTasks }}
       </div>
-      <div v-for="item in items" :key="item.id" class="group flex items-center justify-between rounded-2xl bg-[#f7fbfb] px-4 py-4 transition-colors hover:bg-primary/10">
+      <div v-for="item in items" :key="item.id" class="group flex items-center justify-between rounded-xl bg-[#f7fbfb] px-4 py-4 transition-colors hover:bg-primary/10">
         <div class="flex items-center gap-4">
-          <div :class="['flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-105', iconStyles[item.icon]]">
+          <div :class="['flex h-10 w-10 items-center justify-center rounded-lg transition-transform group-hover:scale-105', iconStyles[item.icon]]">
             <component :is="iconMap[item.icon]" class="h-5 w-5" />
           </div>
           <div>

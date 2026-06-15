@@ -82,7 +82,7 @@ const accessState = computed(() => {
   <component
     :is="effectivePurchased ? RouterLink : 'div'"
     :to="effectivePurchased ? `/courses/detail?id=${encodeURIComponent(id)}` : undefined"
-    class="group flex h-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
+    class="group flex h-full flex-col overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="!effectivePurchased && (showPurchaseDialog = true)"
   >
@@ -92,7 +92,7 @@ const accessState = computed(() => {
         <div class="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-slate-950/5 to-transparent" />
       </template>
       <div v-else class="flex h-full items-center justify-center bg-[#eaf5f7]">
-        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">
+        <div class="flex h-16 w-16 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
           <BookOpen class="h-9 w-9" />
         </div>
       </div>
@@ -109,7 +109,7 @@ const accessState = computed(() => {
         <span v-else class="badge border-white/70 bg-white/90 text-primary shadow-sm backdrop-blur">
           {{ t.courses.pipeline }}
         </span>
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/95 text-primary shadow-sm backdrop-blur transition-transform duration-300 group-hover:scale-105">
+        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/95 text-primary shadow-sm backdrop-blur transition-transform duration-300 group-hover:scale-105">
           <Play v-if="effectivePurchased" class="h-4 w-4 fill-current" />
           <ShoppingCart v-else class="h-4 w-4" />
         </div>
@@ -125,7 +125,7 @@ const accessState = computed(() => {
           <span class="badge border-primary/20 bg-primary/10 text-primary">{{ resolvedStatusLabel }}</span>
         </div>
 
-        <div v-if="accessState" :class="['rounded-xl border px-3 py-2 text-xs', accessState.className]">
+        <div v-if="accessState" :class="['rounded-lg border px-3 py-2 text-xs', accessState.className]">
           <div class="flex items-center gap-1.5 font-medium">
             <component :is="accessState.icon" class="h-3.5 w-3.5" />
             {{ accessState.label }}
@@ -144,7 +144,7 @@ const accessState = computed(() => {
         </div>
       </div>
 
-      <div v-if="stats?.length" class="mb-4 grid grid-cols-3 gap-2 rounded-xl bg-[#f6fafb] p-2 text-center">
+      <div v-if="stats?.length" class="mb-4 grid grid-cols-3 gap-2 rounded-lg bg-[#f6fafb] p-2 text-center">
         <div v-for="stat in stats" :key="stat.label" class="rounded-lg bg-white px-2 py-2">
           <div class="text-sm font-semibold text-foreground">{{ stat.value }}</div>
           <div class="truncate text-[11px] text-muted-foreground">{{ stat.label }}</div>
