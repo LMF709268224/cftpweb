@@ -597,19 +597,7 @@ async function openLessonPdf() {
 }
 
 async function openInlinePdf(url: string) {
-  const loadingId = toast.loading(t.value.common.loading, { duration: 20000 })
-  try {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error("fetch failed")
-    const blob = await response.blob()
-    const blobUrl = URL.createObjectURL(blob)
-    window.open(blobUrl, "_blank", "noopener,noreferrer")
-    toast.dismiss(loadingId)
-  } catch (err) {
-    // Fallback to direct URL if fetch fails (e.g., CORS)
-    window.open(url, "_blank", "noopener,noreferrer")
-    toast.dismiss(loadingId)
-  }
+  window.open(url, "_blank", "noopener,noreferrer")
 }
 
 async function openMaterial(material: CourseMaterialSummary) {
