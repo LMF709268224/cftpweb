@@ -172,17 +172,20 @@ onMounted(() => {
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
             <div><h3 class="mb-1 font-medium text-card-foreground">{{ order.items.join(", ") }}</h3><p class="text-sm text-muted-foreground">{{ order.date }}</p></div>
           </div>
-          <div class="flex items-center gap-4">
-            <span class="badge text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', order.rawStatus)">
-              {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.rawStatus) }}
-            </span>
-            <div class="min-w-[80px] text-right"><p class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p></div>
+          <div class="grid shrink-0 grid-cols-[96px_86px_36px_20px] items-center gap-3">
+            <div class="flex justify-center">
+              <span class="badge text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', order.rawStatus)">
+                {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.rawStatus) }}
+              </span>
+            </div>
+            <div class="text-right"><p class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p></div>
             
             <button v-if="order.status === 'completed'" @click.stop="viewInvoice(order.id)" class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground" title="查看发票 / View Invoice">
               <Loader2 v-if="invoiceLoading === order.id" class="h-4 w-4 animate-spin text-primary" />
               <FileText v-else class="h-4 w-4" />
             </button>
-            
+            <span v-else class="h-9 w-9" />
+
             <ChevronRight class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
           </div>
         </div>
