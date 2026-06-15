@@ -13,6 +13,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  List,
   Loader2,
   Play,
   RefreshCw,
@@ -31,6 +32,12 @@ import {
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
+import {
+  normalizeSupplementaryMaterials,
+  parseSupplementaryMaterialItems,
+  type SupplementaryMaterial,
+  type SupplementaryMaterialItem,
+} from "@/lib/supplementaryMaterials"
 
 type CourseCompleteResponse = {
   complete_course?: CompleteCourse
@@ -91,27 +98,6 @@ type CourseMaterialSummary = {
   file_size?: number
   sort_order?: number
   file_hash?: string
-}
-
-type SupplementaryMaterial = {
-  material_id?: string
-  course_id?: string
-  kind?: string
-  data_json?: string | unknown[] | Record<string, unknown>
-  dataJson?: string | unknown[] | Record<string, unknown>
-  version?: number
-  created_at?: string
-  updated_at?: string
-}
-
-type SupplementaryMaterialItem = {
-  key: string
-  chapter: string
-  type: string
-  title: string
-  description: string
-  url: string
-  sourceKind: string
 }
 
 type QuizProgressItem = {
@@ -182,7 +168,7 @@ const supplementaryMaterials = computed<SupplementaryMaterial[]>(() => {
   return normalizeSupplementaryMaterials(raw)
 })
 const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() =>
-  supplementaryMaterials.value.flatMap((material, materialIndex) => parseSupplementaryMaterialItems(material, materialIndex)),
+  parseSupplementaryMaterialItems(supplementaryMaterials.value, t.value.learning.chapters),
 )
 const totalMaterialCount = computed(() => materials.value.length + supplementaryMaterialItems.value.length)
 const courseQuizzes = computed<any[]>(() => completeCourse.value?.quizzes || [])
@@ -500,84 +486,6 @@ function materialTypeLabel(materialType?: number) {
   }
 }
 
-function parseSupplementaryMaterialItems(material: SupplementaryMaterial, materialIndex: number): SupplementaryMaterialItem[] {
-  const data = parseSupplementaryJson(material.data_json ?? material.dataJson)
-  const records = supplementaryRecordsFromData(data)
-
-  return records.map((record, recordIndex) => {
-    const title = stringFromRecord(record, ["title", "name", "label", "heading"])
-    const description = stringFromRecord(record, ["description", "desc", "summary", "detail", "content"])
-    const type = stringFromRecord(record, ["type", "material_type", "resource_type", "kind"]) || t.value.learning.materialTypeUnknown
-    const chapter = stringFromRecord(record, ["chapter", "chapter_title", "chapterTitle", "section"]) || t.value.learning.chapters
-    const url = stringFromRecord(record, ["url", "link", "href", "external_url", "externalUrl"])
-    const fallbackKey = `${material.material_id || "supplementary"}-${materialIndex}-${recordIndex}`
-
-    return {
-      key: stringFromRecord(record, ["id", "material_id", "resource_id", "key"]) || fallbackKey,
-      chapter,
-      type,
-      title: title || t.value.learning.unknownMaterial,
-      description,
-      url,
-      sourceKind: material.kind || "",
-    }
-  })
-}
-
-function normalizeSupplementaryMaterials(raw: SupplementaryMaterial | SupplementaryMaterial[] | unknown): SupplementaryMaterial[] {
-  if (!raw) return []
-  if (Array.isArray(raw)) return raw.filter(isRecord) as SupplementaryMaterial[]
-  if (isRecord(raw)) return [raw as SupplementaryMaterial]
-  return []
-}
-
-function parseSupplementaryJson(dataJson: SupplementaryMaterial["data_json"]) {
-  if (!dataJson) return null
-  if (typeof dataJson !== "string") return dataJson
-
-  const trimmed = dataJson.trim()
-  if (!trimmed) return null
-
-  try {
-    const parsed = JSON.parse(trimmed)
-    if (typeof parsed === "string" && parsed.trim()) return parseSupplementaryJson(parsed)
-    return parsed
-  } catch {
-    return null
-  }
-}
-
-function supplementaryRecordsFromData(data: unknown): Record<string, unknown>[] {
-  if (Array.isArray(data)) return data.filter(isRecord)
-  if (!isRecord(data)) return []
-
-  for (const key of ["items", "resources", "materials", "data", "data_json", "dataJson", "list"]) {
-    const value = data[key]
-    if (Array.isArray(value)) return value.filter(isRecord)
-    const parsed = parseSupplementaryJson(value as SupplementaryMaterial["data_json"])
-    if (Array.isArray(parsed)) return parsed.filter(isRecord)
-  }
-
-  return [data]
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value))
-}
-
-function stringFromRecord(record: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    const value = record[key]
-    if (typeof value === "string" && value.trim()) return value.trim()
-    if (typeof value === "number" && Number.isFinite(value)) return String(value)
-  }
-  return ""
-}
-
-function supplementaryChapterLabel(item: SupplementaryMaterialItem, index: number) {
-  return supplementaryMaterialItems.value[index - 1]?.chapter === item.chapter ? "" : item.chapter
-}
-
 function supplementaryTypeLabel(type: string) {
   const normalized = type.trim().toLowerCase()
   if (normalized === "article") return "Article"
@@ -596,6 +504,14 @@ function supplementaryTypeClass(type: string) {
 
 function supplementaryTypeIcon(type: string) {
   return type.trim().toLowerCase() === "video" ? Play : FileText
+}
+
+function openSupplementaryMaterials() {
+  const params = new URLSearchParams()
+  if (courseId.value) params.set("courseId", courseId.value)
+  if (pipelineId.value) params.set("pipelineId", pipelineId.value)
+  if (course.value?.title) params.set("title", course.value.title)
+  window.open(`/courses/supplementary?${params.toString()}`, "_blank", "noopener,noreferrer")
 }
 
 async function loadCourse() {
@@ -1145,51 +1061,39 @@ watch(selectedMaterial, () => {
             <div class="mt-2 text-xs text-muted-foreground">{{ t.learning.materialsEmptyHint }}</div>
           </div>
           <div v-else class="space-y-4">
-            <div v-if="supplementaryMaterialItems.length > 0" class="overflow-hidden rounded-md border border-slate-100 bg-white">
-              <div class="border-b border-slate-100 bg-slate-50 px-4 py-3">
-                <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <BookOpen class="h-4 w-4 text-primary" />
-                  <span>Supplementary Materials</span>
-                  <span class="badge border-slate-200 bg-white text-slate-700">{{ supplementaryMaterialItems.length }} {{ t.learning.materialsCountSuffix }}</span>
+            <div v-if="supplementaryMaterialItems.length > 0" class="rounded-md border border-slate-100 bg-slate-50 p-4">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
+                    <BookOpen class="h-4 w-4 text-primary" />
+                    <span>Supplementary Materials</span>
+                    <span class="badge border-slate-200 bg-white text-slate-700">{{ supplementaryMaterialItems.length }} {{ t.learning.materialsCountSuffix }}</span>
+                  </div>
+                  <p class="mt-1 text-xs text-muted-foreground">Additional learning resources organized by chapter</p>
                 </div>
-                <p class="mt-1 text-xs text-muted-foreground">Additional learning resources organized by chapter</p>
+                <button class="btn btn-primary rounded-lg" @click="openSupplementaryMaterials">
+                  <List class="h-4 w-4" />
+                  查看补充资料
+                </button>
               </div>
-
-              <div class="hidden grid-cols-[minmax(180px,0.9fr)_120px_minmax(260px,2fr)] border-b border-slate-100 bg-white px-4 py-3 text-sm font-medium text-muted-foreground md:grid">
-                <div>Chapter</div>
-                <div>Type</div>
-                <div>Title & Description</div>
-              </div>
-
-              <div class="divide-y divide-slate-100">
-                <div
-                  v-for="(item, index) in supplementaryMaterialItems"
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span
+                  v-for="item in supplementaryMaterialItems.slice(0, 4)"
                   :key="item.key"
-                  class="grid gap-2 px-4 py-3 text-sm md:grid-cols-[minmax(180px,0.9fr)_120px_minmax(260px,2fr)]"
+                  class="badge gap-1 border text-xs"
+                  :class="supplementaryTypeClass(item.type)"
                 >
-                  <div class="font-medium text-slate-700">
-                    <span class="md:hidden text-xs text-muted-foreground">Chapter: </span>
-                    {{ supplementaryChapterLabel(item, index) }}
-                  </div>
-                  <div>
-                    <span class="badge gap-1 border text-xs" :class="supplementaryTypeClass(item.type)">
-                      <component :is="supplementaryTypeIcon(item.type)" class="h-3 w-3" />
-                      {{ supplementaryTypeLabel(item.type) }}
-                    </span>
-                  </div>
-                  <div>
-                    <a
-                      v-if="item.url"
-                      :href="item.url"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="font-semibold text-foreground transition-colors hover:text-primary"
-                    >
-                      {{ item.title }}
-                    </a>
-                    <div v-else class="font-semibold text-foreground">{{ item.title }}</div>
-                    <p v-if="item.description" class="mt-1 text-xs leading-relaxed text-muted-foreground">{{ item.description }}</p>
-                  </div>
+                  <component :is="supplementaryTypeIcon(item.type)" class="h-3 w-3" />
+                  {{ supplementaryTypeLabel(item.type) }}
+                </span>
+                <span v-if="supplementaryMaterialItems.length > 4" class="badge border-slate-200 bg-white text-slate-700">
+                  +{{ supplementaryMaterialItems.length - 4 }}
+                </span>
+              </div>
+              <div class="mt-3 grid gap-2 md:grid-cols-2">
+                <div v-for="item in supplementaryMaterialItems.slice(0, 2)" :key="item.key" class="rounded-lg bg-white p-3">
+                  <div class="line-clamp-2 text-sm font-semibold text-foreground">{{ item.title }}</div>
+                  <div class="mt-1 text-xs text-muted-foreground">{{ item.chapter }}</div>
                 </div>
               </div>
             </div>

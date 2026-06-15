@@ -5,6 +5,7 @@ import CallbackPage from "@/pages/CallbackPage.vue"
 import CoursesPage from "@/pages/CoursesPage.vue"
 import CourseDetailPage from "@/pages/CourseDetailPage.vue"
 import CourseLearnPage from "@/pages/CourseLearnPage.vue"
+import CourseSupplementaryPage from "@/pages/CourseSupplementaryPage.vue"
 import CourseTimelinePage from "@/pages/CourseTimelinePage.vue"
 import MembershipPage from "@/pages/MembershipPage.vue"
 import ExamsPage from "@/pages/ExamsPage.vue"
@@ -30,6 +31,7 @@ export const router = createRouter({
     { path: "/courses", component: CoursesPage },
     { path: "/courses/detail", component: CourseDetailPage },
     { path: "/courses/learn", component: CourseLearnPage },
+    { path: "/courses/supplementary", component: CourseSupplementaryPage },
     { path: "/courses/timeline", component: CourseTimelinePage },
     { path: "/membership", component: MembershipPage },
     { path: "/exams", component: ExamsPage },
