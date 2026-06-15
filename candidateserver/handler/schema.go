@@ -470,13 +470,13 @@ type CancelPaymentRsp struct {
 // ===================== 閸欐垹銈?(Invoices) =====================
 
 type QueryInvoiceRsp struct {
-	InvoiceID     string  `json:"invoice_id"`
-	PaymentID     string  `json:"payment_id"`
-	RequestStatus string  `json:"request_status"`
+	InvoiceNumber string  `json:"invoice_number"`
+	Status        string  `json:"status"`
 	SubTotal      float64 `json:"sub_total"`
 	TotalTax      float64 `json:"total_tax"`
 	Total         float64 `json:"total"`
-	ErrorMsg      string  `json:"error_msg"`
+	Currency      string  `json:"currency"`
+	InvoiceUrl    string  `json:"invoice_url"`
 }
 
 // ===================== 鐠併垹宕?(Orders) =====================
