@@ -206,7 +206,7 @@ onMounted(fetchData)
       <div class="w-full max-w-md rounded-[16px] bg-white p-4 shadow-lg shadow-slate-900/20">
         <div class="flex items-start justify-between gap-4">
           <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
-          <button class="cursor-pointer text-xl leading-none text-muted-foreground transition-colors hover:text-foreground" @click="isApplyOpen = false">x</button>
+          <button class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-base leading-none text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" @click="isApplyOpen = false">X</button>
         </div>
         <div class="space-y-4 py-4">
           <p class="text-sm text-muted-foreground">{{ t.credentialsPage.description }}: {{ selectedDef?.description }}</p>
