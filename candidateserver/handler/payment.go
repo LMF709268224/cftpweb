@@ -32,6 +32,19 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 // ListOrders GET /api/orders
 func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
+	bizType := r.URL.Query().Get("biz_type")
+
+	if bizType != "" && bizType != "PIPELINE_PAYMENT" {
+		// Currently only PIPELINE_PAYMENT is implemented to fetch names and details.
+		// Return empty for other types until their respective detail fetchers are added.
+		WriteJSON(w, http.StatusOK, OrderListRsp{
+			TotalOrders: 0,
+			Completed:   0,
+			TotalAmount: 0.0,
+			Orders:      []OrderItem{},
+		})
+		return
+	}
 
 	mallResp, err := h.Mall.ListPipelineOrders(r.Context(), &mallpb.ListPipelineOrdersRequest{
 		CandidateUlid: candidateID,
@@ -75,16 +88,23 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		amount := 0.0
-		// Try to get amount from PreviewPayment
-		previewResp, err := h.Mall.PreviewPayment(r.Context(), &mallpb.PreviewPaymentRequest{
+		// 获取真实的支付订单来拿正确的金额 (Total Amount)
+		listOrdersResp, err := h.Mall.ListOrders(r.Context(), &mallpb.ListOrdersRequest{
 			BizType:    "PIPELINE_PAYMENT",
 			BizRefUlid: item.GetPipelineOrderUlid(),
+			Limit:      1,
 		})
-		if err == nil && previewResp != nil {
-			amount = float64(previewResp.GetTotal()) / 100.0
-		} else if status == "completed" {
-			// Actually for completed orders PreviewPayment might fail or we may need another way.
-			// Currently we leave it as 0 if we can't get it.
+		if err == nil && listOrdersResp != nil && len(listOrdersResp.GetItems()) > 0 {
+			amount = float64(listOrdersResp.GetItems()[0].GetAmountMinor()) / 100.0
+		} else {
+			// 如果由于某种原因真实支付订单还未生成（比如刚创建还在 pending），回退使用 PreviewPayment
+			previewResp, err := h.Mall.PreviewPayment(r.Context(), &mallpb.PreviewPaymentRequest{
+				BizType:    "PIPELINE_PAYMENT",
+				BizRefUlid: item.GetPipelineOrderUlid(),
+			})
+			if err == nil && previewResp != nil {
+				amount = float64(previewResp.GetTotal()) / 100.0
+			}
 		}
 
 		if status == "completed" {

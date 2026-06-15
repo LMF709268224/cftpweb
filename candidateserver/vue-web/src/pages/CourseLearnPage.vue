@@ -588,10 +588,27 @@ async function openLessonPdf() {
   if (!lesson.value?.lesson_id) return
   try {
     const res = await apiClient(`/api/pipeline/lessons/${lesson.value.lesson_id}/url`)
-    if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
-    else toast.error(t.value.common.error)
+    if (res?.url) {
+      await openInlinePdf(res.url)
+    } else toast.error(t.value.common.error)
   } catch {
     // apiClient handles localized errors.
+  }
+}
+
+async function openInlinePdf(url: string) {
+  const loadingId = toast.loading(t.value.common.loading, { duration: 20000 })
+  try {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error("fetch failed")
+    const blob = await response.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    window.open(blobUrl, "_blank", "noopener,noreferrer")
+    toast.dismiss(loadingId)
+  } catch (err) {
+    // Fallback to direct URL if fetch fails (e.g., CORS)
+    window.open(url, "_blank", "noopener,noreferrer")
+    toast.dismiss(loadingId)
   }
 }
 
@@ -599,8 +616,13 @@ async function openMaterial(material: CourseMaterialSummary) {
   if (!material.material_id) return
   try {
     const res = await apiClient(`/api/pipeline/materials/${material.material_id}/url`)
-    if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
-    else toast.error(t.value.common.error)
+    if (res?.url) {
+      if (material.type === 2) {
+        await openInlinePdf(res.url)
+      } else {
+        window.open(res.url, "_blank", "noopener,noreferrer")
+      }
+    } else toast.error(t.value.common.error)
   } catch {
     // apiClient handles localized errors.
   }
@@ -963,17 +985,23 @@ watch(selectedMaterial, () => {
             <div v-if="lessonContentExpanded" class="mt-3">
               <div v-if="lesson?.video_embed_code" class="overflow-hidden rounded-md bg-muted" v-html="lesson.video_embed_code" />
               <div v-else-if="lesson?.lesson_type === 3" class="space-y-4">
-                <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">{{ t.learning.lessonPdfHint }}</div>
+                <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">
+                  <div v-if="lesson?.body" class="prose max-w-none text-sm text-foreground" v-html="lesson.body" />
+                  <p v-else>{{ t.learning.lessonPdfHint }}</p>
+                </div>
                 <button class="btn btn-primary rounded-lg" @click="openLessonPdf">
                   <FileText class="mr-2 h-4 w-4" />
-                  {{ t.learning.openLessonPdf }}
+                  {{ t.learning.openLessonPdf }} <span v-if="lesson?.title" class="ml-1 font-normal opacity-90">- {{ lesson.title }}</span>
                 </button>
               </div>
               <div v-else-if="lesson?.external_url" class="space-y-4">
-                <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">{{ t.learning.noLessonBody }}</div>
+                <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">
+                  <div v-if="lesson?.body" class="prose max-w-none text-sm text-foreground" v-html="lesson.body" />
+                  <p v-else>{{ t.learning.noLessonBody }}</p>
+                </div>
                 <button class="btn btn-primary rounded-lg" @click="openExternalLesson">
-                  <ExternalLink class="h-4 w-4" />
-                  {{ t.learning.openExternalLesson }}
+                  <ExternalLink class="mr-2 h-4 w-4" />
+                  {{ t.learning.openExternalLesson }} <span v-if="lesson?.title" class="ml-1 font-normal opacity-90">- {{ lesson.title }}</span>
                 </button>
               </div>
               <div v-else class="prose max-w-none text-sm text-foreground">

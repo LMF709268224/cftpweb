@@ -15,6 +15,23 @@ function openCertificate(url?: string) {
   if (url) window.open(url, "_blank")
 }
 
+async function previewCertificate(url?: string) {
+  if (!url) return
+  if (loading.value) return
+  loading.value = true
+  try {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error("fetch failed")
+    const blob = await response.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    window.open(blobUrl, "_blank")
+  } catch (err) {
+    window.open(url, "_blank")
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -87,7 +104,7 @@ onMounted(async () => {
               <Download class="h-4 w-4" /> {{ cert.pdfUrl ? t.certificatesPage.downloadCertificate : t.certificatesPage.certificateGenerating }}
             </button>
             <button class="btn btn-outline rounded-lg px-3" disabled><Share2 class="h-4 w-4" /></button>
-            <button class="btn btn-outline rounded-lg px-3" :disabled="!cert.pdfUrl" @click="openCertificate(cert.pdfUrl)"><Eye class="h-4 w-4" /></button>
+            <button class="btn btn-outline rounded-lg px-3" :disabled="!cert.pdfUrl" @click="previewCertificate(cert.pdfUrl)"><Eye class="h-4 w-4" /></button>
           </div>
         </div>
       </div>

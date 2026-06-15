@@ -1,10 +1,11 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
+	"github.com/go-chi/chi/v5"
 )
 
 // QueryInvoice  GET /api/invoices/{orderId}
@@ -17,6 +18,7 @@ func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	if err != nil {
+		slog.Error("Failed to GetInvoice", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
