@@ -80,7 +80,7 @@ async function handleLogout() {
       </nav>
 
       <div class="relative ml-8">
-        <button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-red-50 text-lg font-black text-primary transition-transform hover:scale-105" @click="menuOpen = !menuOpen">
+        <button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-primary/10 text-lg font-black text-primary transition-transform hover:scale-105" @click="menuOpen = !menuOpen">
           {{ userName.charAt(0).toUpperCase() }}
         </button>
         <div v-if="menuOpen" class="absolute right-0 top-12 z-50 w-32 rounded-lg bg-white p-1.5 shadow-lg shadow-slate-900/10">
@@ -95,7 +95,7 @@ async function handleLogout() {
 
   <aside class="app-side-card fixed top-[106px] z-30 hidden w-[220px] overflow-y-auto rounded-md bg-white lg:block">
     <div class="px-8 pb-9 pt-8 text-center">
-      <div class="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-red-50 text-3xl font-black text-primary">
+      <div class="mx-auto flex h-[72px] w-[72px] items-center justify-center rounded-full bg-primary/10 text-3xl font-black text-primary">
         {{ userName.charAt(0).toUpperCase() }}
       </div>
       <h2 class="mt-4 truncate text-base font-bold text-slate-950">{{ userName }}</h2>
