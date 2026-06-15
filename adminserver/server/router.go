@@ -283,7 +283,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 	// ---------- SPA 闈欐€佹枃浠舵湇鍔?----------
 	// 褰撹姹傛病鏈夊尮閰嶅埌浠讳綍浠ヤ笂鐨?API 璺敱鏃讹紝杩涘叆姝ら€昏緫
-	serveSPA(r, "vue-web/dist")
+	serveSPA(r, "web/build")
 
 	return r
 }
