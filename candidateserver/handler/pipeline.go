@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"slices"
 	"strconv"
 	"strings"
@@ -408,14 +409,20 @@ func (h *Handler) GetLessonURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	viewResp, _, err := h.lessonViewURL(r.Context(), candidateID, lessonID)
+	viewResp, lesson, err := h.lessonViewURL(r.Context(), candidateID, lessonID)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
+	params := url.Values{}
+	params.Set("lessonId", lessonID)
+	if title := strings.TrimSpace(lesson.GetTitle()); title != "" {
+		params.Set("title", title)
+	}
+
 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
-		URL:       viewResp.GetViewUrl(),
+		URL:       "/pdf-preview?" + params.Encode(),
 		ExpiresAt: viewResp.GetExpiresAt(),
 	})
 }
