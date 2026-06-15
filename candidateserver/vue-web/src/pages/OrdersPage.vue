@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { CheckCircle2, ChevronRight, Loader2, Package, Receipt, ShoppingCart, FileText } from "lucide-vue-next"
 import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
@@ -16,11 +16,20 @@ const statusConfig = {
   cancelled: { labelKey: "statusCancelled", statusValue: "CANCEL" },
 } as const
 
+const orderTypes = [
+  { value: "ALL", label: "全部订单" },
+  { value: "PIPELINE_PAYMENT", label: "认证订单 (Pipeline)" },
+  { value: "STAGE_PAYMENT", label: "阶段订单 (Stage)" },
+  { value: "COURSE_RETAKE_PAYMENT", label: "课时重修订单 (Retake)" },
+  { value: "CREDENTIAL_APPLICATION_ORDER", label: "证书申请订单 (Credential)" },
+]
+
 const { t } = useTranslation()
 const orders = ref<OrderItem[]>([])
 const totalSpent = ref(0)
 const completedCount = ref(0)
 const loading = ref(true)
+const selectedOrderType = ref("ALL")
 const totalSpentLabel = computed(() => `¥${totalSpent.value.toLocaleString()}`)
 
 import { useRouter } from "vue-router"
@@ -60,9 +69,11 @@ async function viewInvoice(orderId: string) {
   }
 }
 
-onMounted(async () => {
+async function fetchOrders() {
+  loading.value = true
   try {
-    const res = await apiClient("/api/orders")
+    const url = selectedOrderType.value === "ALL" ? "/api/orders" : `/api/orders?biz_type=${selectedOrderType.value}`
+    const res = await apiClient(url)
     totalSpent.value = res.total_amount || 0
     completedCount.value = res.completed || 0
     if (Array.isArray(res.orders)) {
@@ -76,12 +87,23 @@ onMounted(async () => {
         pipelineId: o.pipeline_id,
         paymentMethod: o.payment_method,
       }))
+    } else {
+      orders.value = []
     }
   } catch (err) {
     console.error("Failed to fetch orders:", err)
+    orders.value = []
   } finally {
     loading.value = false
   }
+}
+
+watch(selectedOrderType, () => {
+  fetchOrders()
+})
+
+onMounted(() => {
+  fetchOrders()
 })
 </script>
 
@@ -123,9 +145,20 @@ onMounted(async () => {
     </div>
 
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="flex items-center gap-3 bg-white px-4 py-4">
-        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10"><Receipt class="h-4 w-4 text-primary" /></div>
-        <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
+      <div class="flex flex-col gap-3 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-3">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10"><Receipt class="h-4 w-4 text-primary" /></div>
+          <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm font-medium text-muted-foreground whitespace-nowrap">订单类型</label>
+          <select 
+            v-model="selectedOrderType"
+            class="h-9 rounded-md border border-slate-200 bg-white px-3 py-1 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option v-for="opt in orderTypes" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
       </div>
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground"><Loader2 class="h-5 w-5 animate-spin" /> {{ t.common.loading }}</div>
       <div v-else-if="orders.length === 0" class="flex flex-col items-center justify-center px-4 py-14 text-center">
