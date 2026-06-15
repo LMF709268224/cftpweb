@@ -76,61 +76,64 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
-    <section class="overflow-hidden rounded-[28px] bg-gradient-to-br from-[#09302f] via-[#0f4a52] to-[#d87b4a] p-6 text-white shadow-[0_24px_60px_rgba(15,74,82,0.22)]">
-      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <section class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+      <div class="flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div class="mb-4 inline-flex items-center gap-2 rounded-full bg-white/14 px-3 py-1 text-xs font-semibold">
+          <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <Archive class="h-3.5 w-3.5" />
             {{ filteredPacks.length }} {{ copy.count }}
           </div>
-          <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
-          <p class="mt-3 max-w-2xl text-sm leading-6 text-white/78">{{ copy.subtitle }}</p>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
+          <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
         </div>
-        <button class="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-[#0f4a52] shadow-lg shadow-black/10" @click="loadPacks()">
+        <button class="btn btn-outline rounded-xl bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="loadPacks()">
           <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
           {{ copy.refresh }}
         </button>
       </div>
     </section>
 
-    <section class="mt-5 rounded-[24px] bg-white p-4 shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+    <section class="mb-4 rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="relative">
         <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input v-model="search" class="input h-12 rounded-2xl pl-11" :placeholder="copy.search" />
+        <input v-model="search" class="input pl-11" :placeholder="copy.search" />
       </div>
     </section>
 
-    <section v-if="filteredPacks.length" class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <section v-if="filteredPacks.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       <RouterLink
         v-for="pack in filteredPacks"
         :key="pack.pack_id"
-        class="group rounded-[24px] border border-slate-100 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.06)] transition hover:-translate-y-1 hover:shadow-[0_18px_44px_rgba(15,74,82,0.12)]"
+        class="group relative overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
         :to="`/resource-packs/detail?id=${encodeURIComponent(pack.pack_id || '')}`"
       >
-        <div class="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#e7f6f1] text-[#0f766e]">
+        <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
+        <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
           <PackageOpen class="h-6 w-6" />
         </div>
-        <h2 class="line-clamp-2 text-lg font-black text-slate-950">{{ pack.title || pack.pack_id }}</h2>
-        <p class="mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-slate-500">{{ pack.description || copy.emptyDesc }}</p>
-        <div class="mt-5 space-y-2 text-xs text-slate-500">
-          <p v-if="pack.respath">{{ copy.path }}: <span class="font-semibold text-slate-700">{{ pack.respath }}</span></p>
+        <h2 class="line-clamp-2 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ pack.title || pack.pack_id }}</h2>
+        <p class="mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-muted-foreground">{{ pack.description || copy.emptyDesc }}</p>
+        <div class="mt-4 space-y-2 text-xs text-muted-foreground">
+          <p v-if="pack.respath">{{ copy.path }}: <span class="font-medium text-card-foreground">{{ pack.respath }}</span></p>
           <p v-if="pack.updated_at">{{ copy.updated }}: {{ pack.updated_at }}</p>
         </div>
-        <div class="mt-5 inline-flex items-center gap-1 text-sm font-bold text-[#0f766e]">
+        <div class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary">
           {{ copy.open }}
           <ChevronRight class="h-4 w-4 transition group-hover:translate-x-1" />
         </div>
       </RouterLink>
     </section>
 
-    <section v-else class="mt-5 rounded-[24px] border border-dashed border-slate-200 bg-white p-10 text-center">
-      <PackageOpen class="mx-auto h-12 w-12 text-slate-300" />
-      <h2 class="mt-4 text-lg font-black text-slate-950">{{ loading ? "Loading..." : copy.emptyTitle }}</h2>
-      <p class="mt-2 text-sm text-slate-500">{{ copy.emptyDesc }}</p>
+    <section v-else class="rounded-[22px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+        <PackageOpen class="h-8 w-8 text-primary" />
+      </div>
+      <h2 class="mt-4 text-lg font-semibold text-foreground">{{ loading ? "Loading..." : copy.emptyTitle }}</h2>
+      <p class="mt-2 text-sm text-muted-foreground">{{ copy.emptyDesc }}</p>
     </section>
 
-    <div v-if="nextPageToken" class="mt-5 text-center">
-      <button class="btn btn-outline rounded-2xl" :disabled="loading" @click="loadPacks(nextPageToken)">
+    <div v-if="nextPageToken" class="mt-4 text-center">
+      <button class="btn btn-outline rounded-xl" :disabled="loading" @click="loadPacks(nextPageToken)">
         {{ loading ? "Loading..." : "Load more" }}
       </button>
     </div>
