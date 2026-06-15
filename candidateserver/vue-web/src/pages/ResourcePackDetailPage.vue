@@ -102,23 +102,7 @@ async function openFile(file: ResourcePackFile) {
     toast.error("No view URL")
     return
   }
-  
-  if (Number(file.file_type) === 2) {
-    const loadingId = toast.loading(lang.value === 'zh' ? "加载中..." : "Loading...", { duration: 20000 })
-    try {
-      const response = await fetch(url)
-      if (!response.ok) throw new Error("fetch failed")
-      const blob = await response.blob()
-      const blobUrl = URL.createObjectURL(blob)
-      window.open(blobUrl, "_blank", "noopener,noreferrer")
-      toast.dismiss(loadingId)
-    } catch (err) {
-      window.open(url, "_blank", "noopener,noreferrer")
-      toast.dismiss(loadingId)
-    }
-  } else {
-    window.open(url, "_blank", "noopener,noreferrer")
-  }
+  window.open(url, "_blank", "noopener,noreferrer")
 }
 
 watch(packId, () => {
