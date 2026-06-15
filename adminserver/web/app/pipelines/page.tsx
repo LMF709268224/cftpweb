@@ -294,7 +294,12 @@ export default function PipelinesPage() {
       })
       toast.success(page.createSuccess)
       setSelectedId(res?.pipeline_id || "")
-      setForm(pipelineToForm(res))
+      try {
+        const detail = await apiClient(`/api/pipelines/${res?.pipeline_id}`)
+        setForm(pipelineToForm(detail))
+      } catch {
+        setForm(pipelineToForm(res))
+      }
       await loadPipelines()
     } finally {
       setCreating(false)
@@ -425,7 +430,12 @@ export default function PipelinesPage() {
       })
       toast.success(page.createSuccess)
       setSelectedId(res?.pipeline_id || "")
-      setForm(pipelineToForm(res))
+      try {
+        const detail = await apiClient(`/api/pipelines/${res?.pipeline_id}`)
+        setForm(pipelineToForm(detail))
+      } catch {
+        setForm(pipelineToForm(res))
+      }
       await loadPipelines()
     } finally {
       setCreating(false)
