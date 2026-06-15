@@ -444,10 +444,18 @@ export default function PipelinesPage() {
           from_pipeline_guid: selectedPipeline.pipeline_guid,
         }),
       })
+      const newPipelineId = res?.pipeline_id || ""
+      if (newPipelineId && form.stages.length > 0) {
+        await apiClient(`/api/pipelines/${newPipelineId}/structure`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cleanFormForStructure(form)),
+        })
+      }
       toast.success(page.createSuccess)
-      setSelectedId(res?.pipeline_id || "")
+      setSelectedId(newPipelineId)
       try {
-        const detail = await apiClient(`/api/pipelines/${res?.pipeline_id}`)
+        const detail = await apiClient(`/api/pipelines/${newPipelineId}`)
         setForm(pipelineToForm(detail))
       } catch {
         setForm(pipelineToForm(res))
