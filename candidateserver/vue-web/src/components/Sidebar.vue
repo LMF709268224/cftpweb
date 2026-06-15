@@ -20,6 +20,7 @@ const navItems = computed(() => [
   { href: "/membership", label: t.value.sidebar.membership },
   { href: "/exams", label: t.value.sidebar.exams },
   { href: "/records", label: t.value.sidebar.records },
+  { href: "/resource-packs", label: lang.value === "zh" ? "资源包" : "Resources" },
   { href: "/credentials", label: t.value.sidebar.credentials },
   { href: "/certificates", label: t.value.sidebar.certificates },
   { href: "/orders", label: t.value.sidebar.orders },

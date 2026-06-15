@@ -28,6 +28,9 @@ const (
 	// CASDOOR_PUBLIC_ENDPOINT  Casdoor 公网访问地址，用于前端跳转
 	EnvCasdoorPublicEndpoint = "CASDOOR_PUBLIC_ENDPOINT"
 
+	// ROLE_ADMIN_BASIC 管理员基础角色名，默认为 "role_admin_basic"
+	EnvRoleAdminBasic = "ROLE_ADMIN_BASIC"
+
 
 	// ── 下游微服务 gRPC 地址 ──
 	// 每个变量对应一个下游服务，
