@@ -60,22 +60,22 @@ async function handleLogout() {
         CFtP
       </RouterLink>
 
-      <nav class="ml-auto flex items-center gap-10 text-sm text-slate-500">
+      <nav class="ml-auto flex h-10 items-center gap-8 text-sm text-slate-500">
         <RouterLink
           to="/settings?tab=profile"
-          :class="['flex flex-col items-center gap-1 px-1 transition-colors hover:text-primary', route.path === '/settings' && activeSettingsTab === 'profile' ? 'text-primary' : '']"
+          :class="['relative flex h-10 items-center px-1 transition-colors hover:text-primary', route.path === '/settings' && activeSettingsTab === 'profile' ? 'text-primary' : '']"
         >
           <span>{{ t.sidebar.profile }}</span>
-          <span :class="['h-0.5 w-6 rounded-full', route.path === '/settings' && activeSettingsTab === 'profile' ? 'bg-primary' : 'bg-transparent']" />
+          <span v-if="route.path === '/settings' && activeSettingsTab === 'profile'" class="absolute bottom-1 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary" />
         </RouterLink>
         <RouterLink
           to="/settings?tab=account"
-          :class="['flex flex-col items-center gap-1 px-1 transition-colors hover:text-primary', route.path === '/settings' && activeSettingsTab === 'account' ? 'text-primary' : '']"
+          :class="['relative flex h-10 items-center px-1 transition-colors hover:text-primary', route.path === '/settings' && activeSettingsTab === 'account' ? 'text-primary' : '']"
         >
           <span>{{ t.sidebar.settings }}</span>
-          <span :class="['h-0.5 w-6 rounded-full', route.path === '/settings' && activeSettingsTab === 'account' ? 'bg-primary' : 'bg-transparent']" />
+          <span v-if="route.path === '/settings' && activeSettingsTab === 'account'" class="absolute bottom-1 left-1/2 h-0.5 w-6 -translate-x-1/2 rounded-full bg-primary" />
         </RouterLink>
-        <button class="transition-colors hover:text-primary" @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')">{{ t.sidebar.switchLang }}</button>
+        <button class="flex h-10 cursor-pointer items-center px-1 transition-colors hover:text-primary" @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')">{{ t.sidebar.switchLang }}</button>
       </nav>
 
       <div class="relative ml-8">
