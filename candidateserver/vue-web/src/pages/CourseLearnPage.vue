@@ -486,26 +486,6 @@ function materialTypeLabel(materialType?: number) {
   }
 }
 
-function supplementaryTypeLabel(type: string) {
-  const normalized = type.trim().toLowerCase()
-  if (normalized === "article") return "Article"
-  if (normalized === "video") return "Video"
-  if (normalized === "pdf") return "PDF"
-  if (normalized === "link") return "Link"
-  return type || t.value.learning.materialTypeUnknown
-}
-
-function supplementaryTypeClass(type: string) {
-  const normalized = type.trim().toLowerCase()
-  if (normalized === "video") return "border-violet-200 bg-violet-100 text-violet-700"
-  if (normalized === "article" || normalized === "pdf") return "border-blue-200 bg-blue-100 text-blue-700"
-  return "border-slate-200 bg-slate-100 text-slate-700"
-}
-
-function supplementaryTypeIcon(type: string) {
-  return type.trim().toLowerCase() === "video" ? Play : FileText
-}
-
 function openSupplementaryMaterials() {
   const params = new URLSearchParams()
   if (courseId.value) params.set("courseId", courseId.value)
@@ -1073,28 +1053,8 @@ watch(selectedMaterial, () => {
                 </div>
                 <button class="btn btn-primary rounded-lg" @click="openSupplementaryMaterials">
                   <List class="h-4 w-4" />
-                  查看补充资料
+                  View Supplementary Materials
                 </button>
-              </div>
-              <div class="mt-3 flex flex-wrap gap-2">
-                <span
-                  v-for="item in supplementaryMaterialItems.slice(0, 4)"
-                  :key="item.key"
-                  class="badge gap-1 border text-xs"
-                  :class="supplementaryTypeClass(item.type)"
-                >
-                  <component :is="supplementaryTypeIcon(item.type)" class="h-3 w-3" />
-                  {{ supplementaryTypeLabel(item.type) }}
-                </span>
-                <span v-if="supplementaryMaterialItems.length > 4" class="badge border-slate-200 bg-white text-slate-700">
-                  +{{ supplementaryMaterialItems.length - 4 }}
-                </span>
-              </div>
-              <div class="mt-3 grid gap-2 md:grid-cols-2">
-                <div v-for="item in supplementaryMaterialItems.slice(0, 2)" :key="item.key" class="rounded-lg bg-white p-3">
-                  <div class="line-clamp-2 text-sm font-semibold text-foreground">{{ item.title }}</div>
-                  <div class="mt-1 text-xs text-muted-foreground">{{ item.chapter }}</div>
-                </div>
               </div>
             </div>
 

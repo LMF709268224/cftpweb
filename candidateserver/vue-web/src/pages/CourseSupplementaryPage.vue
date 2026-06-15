@@ -104,26 +104,26 @@ onMounted(loadCourse)
       <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
         <button class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900" @click="goBack">
           <ArrowLeft class="h-4 w-4" />
-          返回课程
+          Back to Course
         </button>
         <div class="min-w-0 flex-1 text-center">
           <div class="truncate text-sm text-slate-500">{{ courseTitle }}</div>
           <h1 class="truncate text-lg font-bold text-slate-950">Supplementary Materials</h1>
         </div>
-        <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ items.length }} 条资料</span>
+        <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ items.length }} materials</span>
       </div>
     </header>
 
     <main class="mx-auto max-w-6xl px-4 py-6">
       <div v-if="loading" class="flex items-center justify-center gap-2 rounded-2xl bg-white py-16 text-slate-500">
         <Loader2 class="h-5 w-5 animate-spin text-emerald-500" />
-        正在加载补充资料...
+        Loading supplementary materials...
       </div>
 
       <div v-else-if="items.length === 0" class="flex flex-col items-center justify-center gap-3 rounded-2xl bg-white py-16 text-center text-slate-500">
         <AlertTriangle class="h-10 w-10 text-amber-500" />
-        <div class="text-base font-semibold text-slate-900">暂无补充资料</div>
-        <p class="text-sm">当前课程没有配置 supplementary_material.data_json。</p>
+        <div class="text-base font-semibold text-slate-900">No supplementary materials</div>
+        <p class="text-sm">This course has no supplementary_material.data_json configured.</p>
       </div>
 
       <div v-else class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,74,82,0.08)]">
@@ -132,7 +132,7 @@ onMounted(loadCourse)
             <BookOpen class="h-5 w-5 text-emerald-500" />
             Supplementary Materials
           </div>
-          <p class="mt-1 text-sm text-slate-500">Additional learning resources organized by chapter. 点击带链接的资料可打开新标签预览。</p>
+          <p class="mt-1 text-sm text-slate-500">Additional learning resources organized by chapter. Click Preview to open the material URL in a new tab.</p>
         </div>
 
         <div class="hidden grid-cols-[minmax(180px,0.9fr)_120px_minmax(260px,2fr)_120px] border-b border-slate-100 px-5 py-3 text-sm font-medium text-slate-500 md:grid">
@@ -170,9 +170,9 @@ onMounted(loadCourse)
                 @click="openResource(item)"
               >
                 <ExternalLink class="h-3.5 w-3.5" />
-                预览
+                Preview
               </button>
-              <span v-else class="text-xs text-slate-400">无链接</span>
+              <span v-else class="text-xs text-slate-400">No URL</span>
             </div>
           </div>
         </div>
