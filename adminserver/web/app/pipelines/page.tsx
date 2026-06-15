@@ -128,6 +128,7 @@ function cleanFormForStructure(form: PipelineForm) {
       sort_order: Number(stage.sort_order || 0),
       units: stage.units.map((unit) => ({
         unit_id: unit.unit_id || "",
+        name: (unit.name || "").trim(),
         glms_course_id: unit.glms_course_id.trim(),
         stripe_product_id: (unit.stripe_product_id || "").trim(),
         stripe_price_id: (unit.stripe_price_id || "").trim(),
