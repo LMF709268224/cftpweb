@@ -953,6 +953,22 @@ export default function PipelinesPage() {
                                   <CheckCircle2 className="h-4 w-4 text-primary" />
                                   <span className="font-semibold text-foreground">{lmsCourseName(unit.glms_course_id)}</span>
                                   {unit.stripe_price_id && <Badge variant="outline">{unit.stripe_price_id}</Badge>}
+                                  {unit.has_exam && <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">Exam</Badge>}
+                                </div>
+                                <div className="mb-3 grid gap-2 rounded-md bg-muted/40 p-3 text-xs md:grid-cols-3">
+                                  <div>Has Learning: {unit.has_learning ?? true ? "Yes" : "No"}</div>
+                                  <div>Learning Minutes: {unit.learning_minutes ?? 0}</div>
+                                  <div>Has Exam: {unit.has_exam ? "Yes" : "No"}</div>
+                                  {unit.has_exam && (
+                                    <>
+                                      <div>Program Code: {unit.program_code || t.common.na}</div>
+                                      <div>Exam Code: {unit.exam_code || t.common.na}</div>
+                                      <div>Exam Form: {unit.exam_form || t.common.na}</div>
+                                      <div>Base Fee: {unit.base_fee ?? 0}</div>
+                                      <div>Retake Fee: {unit.retake_fee ?? 0}</div>
+                                      <div>Exemption Audit Fee: {unit.exemption_audit_fee ?? 0}</div>
+                                    </>
+                                  )}
                                 </div>
                                 {detail && (
                                   <div className="ml-6 space-y-4 border-l-2 pl-4">

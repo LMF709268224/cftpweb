@@ -2854,6 +2854,15 @@ export default function LmsCoursesPage() {
 
               
               <div className="rounded-lg border bg-card">
+                <div className="border-b px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-semibold">{page.courseQuizzes}</h2>
+                    <Badge variant="outline">quizzable_type = 3</Badge>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {page.courseQuizzesDesc}
+                  </p>
+                </div>
                 <div className="p-4">
                   <QuizManager 
                     quizzableType={3} 
@@ -2861,8 +2870,8 @@ export default function LmsCoursesPage() {
                     disabled={selectedCoursePublished} 
                     apiClient={apiClient} 
                     page={page} 
-                    title={page.courseQuizzes}
-                    description={page.courseQuizzesDesc}
+                    title="Course-level Quiz"
+                    description="This quiz is attached directly to the course. It is not the external pipeline Exam."
                   />
                 </div>
               </div>
