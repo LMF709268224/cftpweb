@@ -583,6 +583,18 @@ async function markCompleted() {
   }
 }
 
+
+async function openLessonPdf() {
+  if (!lesson.value?.lesson_id) return
+  try {
+    const res = await apiClient(`/api/pipeline/lessons/${lesson.value.lesson_id}/url`)
+    if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
+    else toast.error(t.value.common.error)
+  } catch {
+    // apiClient handles localized errors.
+  }
+}
+
 async function openMaterial(material: CourseMaterialSummary) {
   if (!material.material_id) return
   try {
@@ -950,6 +962,13 @@ watch(selectedMaterial, () => {
 
             <div v-if="lessonContentExpanded" class="mt-3">
               <div v-if="lesson?.video_embed_code" class="overflow-hidden rounded-md bg-muted" v-html="lesson.video_embed_code" />
+              <div v-else-if="lesson?.lesson_type === 3" class="space-y-4">
+                <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">{{ t.learning.lessonPdfHint }}</div>
+                <button class="btn btn-primary rounded-lg" @click="openLessonPdf">
+                  <FileText class="mr-2 h-4 w-4" />
+                  {{ t.learning.openLessonPdf }}
+                </button>
+              </div>
               <div v-else-if="lesson?.external_url" class="space-y-4">
                 <div class="rounded-md bg-slate-50 p-4 text-sm text-muted-foreground">{{ t.learning.noLessonBody }}</div>
                 <button class="btn btn-primary rounded-lg" @click="openExternalLesson">

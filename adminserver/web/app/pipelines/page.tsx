@@ -374,7 +374,48 @@ export default function PipelinesPage() {
     }
   }
 
+
+  const deprecatePipeline = async () => {
+    if (!selectedPipeline) return
+    if (!window.confirm("Confirm deprecate?")) return
+    setSaving(true)
+    try {
+      await apiClient(`/api/pipelines/${selectedPipeline.pipeline_id}/deprecate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      })
+      toast.success(t.common.success)
+      await loadPipelines()
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const clonePipeline = async () => {
+    if (!selectedPipeline) return
+    setCreating(true)
+    try {
+      const res = await apiClient("/api/pipelines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name.trim() + " (Copy)",
+          category_tips: form.category_tips.trim(),
+          from_pipeline_guid: selectedPipeline.pipeline_guid,
+        }),
+      })
+      toast.success(page.createSuccess)
+      setSelectedId(res?.pipeline_id || "")
+      setForm(pipelineToForm(res))
+      await loadPipelines()
+    } finally {
+      setCreating(false)
+    }
+  }
+
   const deletePipeline = async () => {
+
     if (!selectedPipeline) return
     if (published) {
       toast.error(page.deletePublishedBlocked)
@@ -538,14 +579,29 @@ export default function PipelinesPage() {
                         <Save className="h-4 w-4" />
                         {page.saveName}
                       </Button>
-                      <Button variant="outline" size="sm" onClick={publishPipeline} disabled={saving || published}>
-                        <Send className="h-4 w-4" />
-                        {page.publish}
-                      </Button>
-                      <Button variant="destructive" size="sm" onClick={deletePipeline} disabled={saving || published}>
-                        <Trash2 className="h-4 w-4" />
-                        {page.delete}
-                      </Button>
+                      {!published && (
+                        <Button variant="outline" size="sm" onClick={publishPipeline} disabled={saving}>
+                          <Send className="h-4 w-4" />
+                          {page.publish}
+                        </Button>
+                      )}
+                      {published && selectedPipeline.status?.toLowerCase() !== "deprecated" && (
+                        <Button variant="outline" size="sm" onClick={deprecatePipeline} disabled={saving}>
+                          {page.deprecate}
+                        </Button>
+                      )}
+                      {selectedPipeline.pipeline_guid && (
+                        <Button variant="outline" size="sm" onClick={clonePipeline} disabled={creating}>
+                          <Copy className="h-4 w-4" />
+                          {page.cloneAsDraft}
+                        </Button>
+                      )}
+                      {!published && (
+                        <Button variant="destructive" size="sm" onClick={deletePipeline} disabled={saving}>
+                          <Trash2 className="h-4 w-4" />
+                          {page.delete}
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

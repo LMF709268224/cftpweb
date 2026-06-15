@@ -129,6 +129,24 @@ func (h *Handler) PublishPipeline(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+// DeprecatePipeline POST /api/pipelines/{pipeline_id}/deprecate
+func (h *Handler) DeprecatePipeline(w http.ResponseWriter, r *http.Request) {
+	id, ok := requiredURLParam(w, r, "pipeline_id")
+	if !ok {
+		return
+	}
+
+	resp, err := h.Gcc.DeprecatePipeline(r.Context(), &gccpb.DeprecatePipelineRequest{
+		PipelineId: id,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 // DeletePipeline DELETE /api/pipelines/{pipeline_id}
 func (h *Handler) DeletePipeline(w http.ResponseWriter, r *http.Request) {
 	id, ok := requiredURLParam(w, r, "pipeline_id")

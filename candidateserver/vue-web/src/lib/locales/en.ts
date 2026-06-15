@@ -242,6 +242,8 @@ export const en: AppTranslations = {
     lessonContentTitle: "Lesson content",
     noLessonBody: "This lesson has no text content yet. You can open its external link or media resource directly.",
     openExternalLesson: "Open External Lesson",
+    lessonPdfHint: "This lesson is a PDF document, please open it to read and study.",
+    openLessonPdf: "View PDF Lesson",
     completeLesson: "Mark as completed",
     lessonQuizzes: "Lesson Quizzes",
     takeQuiz: "Start Quiz",

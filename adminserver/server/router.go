@@ -58,6 +58,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Put("/{pipeline_id}/structure", h.UpdatePipelineStructure)
 			r.Put("/{pipeline_id}/metadata", h.UpdatePipelineMetadata)
 			r.Post("/{pipeline_id}/publish", h.PublishPipeline)
+			r.Post("/{pipeline_id}/deprecate", h.DeprecatePipeline)
 			r.Delete("/{pipeline_id}", h.DeletePipeline)
 		})
 

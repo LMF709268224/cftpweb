@@ -77,6 +77,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/materials/{materialId}/url", h.GetAccessURL)
 			r.Get("/courses/{courseId}/complete", h.GetPipelineCourse)
 			r.Get("/lessons/{lessonId}", h.GetPipelineLessonDetail)
+			r.Get("/lessons/{lessonId}/url", h.GetLessonURL)
 			r.Post("/lessons/{lessonId}/complete", h.CompletePipelineLesson)
 			r.Get("/{pipelineUlid}/certificate-url", h.GetPipelineCertificateViewURL)
 		})

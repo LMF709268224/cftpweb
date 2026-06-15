@@ -398,6 +398,46 @@ func (h *Handler) GetPipelineLessonDetail(w http.ResponseWriter, r *http.Request
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+func (h *Handler) GetLessonURL(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
+	if !requireRequestFields(w, candidateID, "candidate_id", lessonID, "lesson_id") {
+		return
+	}
+
+	lessonResp, err := h.Lms.GetLessonDetail(r.Context(), &lmspb.GetLessonDetailCandidateRequest{
+		CandidateId: candidateID,
+		LessonId:    lessonID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	lesson := lessonResp.GetLesson()
+	if lesson == nil {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "lesson not found")
+		return
+	}
+	if lesson.GetMediaObjectKey() == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "lesson has no media object key")
+		return
+	}
+
+	viewResp, err := h.Lms.CreateViewURL(r.Context(), &lmspb.CreateViewURLCandidateRequest{
+		CandidateId: candidateID,
+		ObjectKey:   lesson.GetMediaObjectKey(),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
+		URL:       viewResp.GetViewUrl(),
+		ExpiresAt: viewResp.GetExpiresAt(),
+	})
+}
+
 func (h *Handler) GetCandidateEnrollmentDetail(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	enrollmentID := strings.TrimSpace(chi.URLParam(r, "enrollmentId"))

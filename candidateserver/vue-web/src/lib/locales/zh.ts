@@ -240,6 +240,8 @@ export const zh = {
     lessonContentTitle: "课时内容",
     noLessonBody: "该课时暂无正文内容，可以直接打开外部链接或媒体资源。",
     openExternalLesson: "打开外部课时",
+    lessonPdfHint: "该课时为 PDF 资料文件，请打开以阅读和学习。",
+    openLessonPdf: "查看 PDF 课时",
     completeLesson: "标记为已完成",
     lessonQuizzes: "课时测验",
     takeQuiz: "开始测验",
@@ -491,7 +493,8 @@ export const zh = {
     keepLearningTitle: "继续学习，获得更多认证",
     keepLearningDesc: "完成更多课程模块以获得额外的专业认证",
     browseCourses: "浏览课程",
-  },
+  }
+,
 
   todoList: {
     items: "项",
