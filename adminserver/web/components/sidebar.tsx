@@ -51,6 +51,7 @@ export function Sidebar() {
     { href: "/messages", icon: MessageSquare, label: t.sidebar.messages },
     { href: "/mails", icon: Mail, label: t.sidebar.mails },
     { href: "/orders", icon: ShoppingCart, label: t.sidebar.orders },
+    { href: "/invoices", icon: FileText, label: t.sidebar.invoices || "发票管理" },
     { href: "/credentials", icon: Award, label: t.sidebar.credentials },
     { href: "/applications", icon: FileText, label: t.sidebar.applications },
     { href: "/pdf-templates", icon: BookOpen, label: t.sidebar.pdfTemplates },

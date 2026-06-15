@@ -10,11 +10,12 @@ import (
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
-	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
-	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
-	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
-	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
+	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
+	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -32,6 +33,7 @@ type GrpcClientPool struct {
 	gexamConn *grpc.ClientConn
 	gmidConn  *grpc.ClientConn
 	gmailConn *grpc.ClientConn
+	gpayConn  *grpc.ClientConn
 
 	// gRPC 客户端
 	Mall  mallpb.MallServiceClient
@@ -43,6 +45,7 @@ type GrpcClientPool struct {
 	Gexam gexampb.GExamServiceClient
 	Gmid  gmidpb.MidServiceClient
 	Gmail gmailpb.MailServiceClient
+	Gpay  gpaypb.PayServiceClient
 }
 
 // dialGrpc 建立 gRPC 连接
@@ -149,6 +152,15 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 	}
 	pool.Gmail = gmailpb.NewMailServiceClient(pool.gmailConn)
 
+	// --- gpay ---
+	addr = grpcAddr(config.EnvGpayGrpcAddr, "gpay")
+	pool.gpayConn, err = dialGrpc(addr, creds)
+	if err != nil {
+		slog.Error("Failed to create gRPC client", "service", "gpay", "addr", addr, "error", err)
+		return nil, err
+	}
+	pool.Gpay = gpaypb.NewPayServiceClient(pool.gpayConn)
+
 	return pool, nil
 }
 
@@ -156,7 +168,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 func (p *GrpcClientPool) Close() {
 	conns := []*grpc.ClientConn{
 		p.mallConn, p.lmsConn, p.gccConn, p.gprogConn, p.gmsgConn,
-		p.credsConn, p.gexamConn, p.gmidConn, p.gmailConn,
+		p.credsConn, p.gexamConn, p.gmidConn, p.gmailConn, p.gpayConn,
 	}
 	for _, c := range conns {
 		if c != nil {

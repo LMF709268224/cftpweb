@@ -43,6 +43,7 @@ export const en: AppTranslations = {
     pdfTemplates: "PDF Templates",
     pdfRequests: "PDF Requests",
     orders: "Orders",
+    invoices: "Invoices",
     webhooks: "Audit Webhooks",
     permissions: "Candidate Permissions",
     profile: "Profile",
@@ -684,6 +685,10 @@ export const en: AppTranslations = {
     totalCount: "Total {{total}} Records",
     prevPage: "Prev",
     nextPage: "Next"
+  },
+  adminInvoicesPage: {
+    title: "Invoices Management",
+    subtitle: "View all generated invoices across the system",
   },
   auditWebhooksPage: {
     title: "Audit Webhooks",

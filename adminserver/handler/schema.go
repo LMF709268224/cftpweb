@@ -162,27 +162,27 @@ type PipelineCreateRsp struct {
 type AdminTerminatePipelineRsp struct {
 	PipelineUlid   string                 `json:"pipeline_ulid,omitempty"`   // pipeline 实例 ULID [required]
 	PipelineStatus gprogpb.PipelineStatus `json:"pipeline_status,omitempty"` // pipeline 当前状态 [required]
-	Message        string                 `json:"message,omitempty"`        // 人类可读说明 [required]
+	Message        string                 `json:"message,omitempty"`         // 人类可读说明 [required]
 }
 
 type AdminTriggerProgNextStageRsp struct {
-	PipelineUlid       string              `json:"pipeline_ulid,omitempty"`       // pipeline 实例 ULID [required]
-	PipelineStatus     gprogpb.PipelineStatus `json:"pipeline_status,omitempty"`    // pipeline 当前状态 [required]
-	CurrentStageUlid   string              `json:"current_stage_ulid,omitempty"`   // 当前 stage 实例 ULID [required]
-	CurrentStageStatus gprogpb.StageStatus  `json:"current_stage_status,omitempty"` // 当前 stage 状态 [required]
-	Message            string              `json:"message,omitempty"`              // 人类可读说明 [required]
+	PipelineUlid       string                 `json:"pipeline_ulid,omitempty"`        // pipeline 实例 ULID [required]
+	PipelineStatus     gprogpb.PipelineStatus `json:"pipeline_status,omitempty"`      // pipeline 当前状态 [required]
+	CurrentStageUlid   string                 `json:"current_stage_ulid,omitempty"`   // 当前 stage 实例 ULID [required]
+	CurrentStageStatus gprogpb.StageStatus    `json:"current_stage_status,omitempty"` // 当前 stage 状态 [required]
+	Message            string                 `json:"message,omitempty"`              // 人类可读说明 [required]
 }
 
 type AdminForceCourseCompletedRsp struct {
-	CourseUnitUlid   string                 `json:"course_unit_ulid,omitempty"`   // course unit 实例 ULID [required]
+	CourseUnitUlid   string                   `json:"course_unit_ulid,omitempty"`   // course unit 实例 ULID [required]
 	CourseUnitStatus gprogpb.CourseUnitStatus `json:"course_unit_status,omitempty"` // course unit 当前状态 [required]
-	Message          string                 `json:"message,omitempty"`            // 人类可读说明 [required]
+	Message          string                   `json:"message,omitempty"`            // 人类可读说明 [required]
 }
 
 type AdminForceCourseSignupExamRsp struct {
-	CourseUnitUlid   string                 `json:"course_unit_ulid,omitempty"`   // course unit 实例 ULID [required]
+	CourseUnitUlid   string                   `json:"course_unit_ulid,omitempty"`   // course unit 实例 ULID [required]
 	CourseUnitStatus gprogpb.CourseUnitStatus `json:"course_unit_status,omitempty"` // course unit 当前状态 [required]
-	Message          string                 `json:"message,omitempty"`            // 人类可读说明 [required]
+	Message          string                   `json:"message,omitempty"`            // 人类可读说明 [required]
 }
 
 type PurchasePipelineInput struct {

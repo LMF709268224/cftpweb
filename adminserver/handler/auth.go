@@ -170,7 +170,7 @@ func IsCftpAdmin(user *casdoorsdk.User) bool {
 	if user == nil {
 		return false
 	}
-	
+
 	adminRole := os.Getenv(config.EnvRoleAdminBasic)
 	if adminRole == "" {
 		adminRole = "role_admin_basic"

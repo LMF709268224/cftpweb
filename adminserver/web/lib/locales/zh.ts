@@ -41,6 +41,7 @@ export const zh = {
     pdfTemplates: "PDF 模板配置",
     pdfRequests: "证书生成流水",
     orders: "订单管理",
+    invoices: "发票管理",
     webhooks: "Webhook 审计",
     permissions: "考生权限管理",
     profile: "个人资料",
@@ -682,6 +683,10 @@ export const zh = {
     totalCount: "共 {{total}} 条记录",
     prevPage: "上一页",
     nextPage: "下一页"
+  },
+  adminInvoicesPage: {
+    title: "发票管理",
+    subtitle: "查看系统内所有产生的发票",
   },
   auditWebhooksPage: {
     title: "Webhook 审计",
