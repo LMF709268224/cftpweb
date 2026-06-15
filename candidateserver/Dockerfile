@@ -12,7 +12,10 @@ COPY candidateserver/vue-web/ ./
 # 强制删除可能被意外拷入的 node_modules 和所有 lock 文件
 RUN rm -rf node_modules && \
     if [ -f package.json ]; then \
-        npm ci && npm run build; \
+        npm ci && \
+        npm install --no-save @embedpdf/vue-pdf-viewer@2.14.4 && \
+        node -e "require.resolve('@embedpdf/vue-pdf-viewer')" && \
+        npm run build; \
     else \
         mkdir -p dist; \
     fi
