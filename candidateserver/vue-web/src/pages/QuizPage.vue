@@ -91,7 +91,7 @@ onMounted(loadPaper)
         </div>
         <h1 class="text-2xl font-bold">{{ t.learning?.quizCompleted }}</h1>
         <p class="mt-2 text-muted-foreground">{{ t.learning?.quizSubmittedDesc }}</p>
-        <div class="my-6 rounded-xl border bg-card p-6 shadow-sm">
+        <div class="my-6 rounded-lg border bg-card p-6 shadow-sm">
           <span class="text-sm font-medium text-muted-foreground">{{ t.learning?.quizScore }}</span>
           <div class="mt-2 flex items-baseline justify-center gap-2">
             <span class="text-4xl font-bold text-foreground">{{ result.score || 0 }}</span>

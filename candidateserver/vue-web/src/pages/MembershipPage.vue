@@ -33,7 +33,7 @@ const membershipLevels = computed(() => [
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
       <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
         <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
           <Crown class="h-3.5 w-3.5" />
@@ -44,9 +44,9 @@ const membershipLevels = computed(() => [
       </div>
     </div>
 
-    <div class="mb-4 rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div class="mb-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="flex items-center gap-3">
-        <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
           <Crown class="h-5 w-5" />
         </div>
         <div>
@@ -70,11 +70,11 @@ const membershipLevels = computed(() => [
       </div>
     </div>
 
-    <div v-if="activeTab === 'benefits'" class="rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div v-if="activeTab === 'benefits'" class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.currentBenefits }}</h2>
       <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div v-for="benefit in benefits" :key="benefit.title" class="group flex gap-4 rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:shadow-md hover:shadow-primary/10">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
+        <div v-for="benefit in benefits" :key="benefit.title" class="group flex gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:shadow-md hover:shadow-primary/10">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
             <component :is="benefit.icon" class="h-5 w-5" />
           </div>
           <div>
@@ -86,10 +86,10 @@ const membershipLevels = computed(() => [
     </div>
 
     <div v-if="activeTab === 'levels'" class="grid gap-4 md:grid-cols-3">
-      <div v-for="level in membershipLevels" :key="level.id" :class="['relative overflow-hidden rounded-[22px] p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md', level.highlight ? 'bg-primary/5 shadow-primary/10' : 'bg-white']">
+      <div v-for="level in membershipLevels" :key="level.id" :class="['relative overflow-hidden rounded-[16px] p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md', level.highlight ? 'bg-primary/5 shadow-primary/10' : 'bg-white']">
         <div :class="['absolute left-0 top-0 h-full w-1', level.highlight ? 'bg-primary' : level.id === 'premium' ? 'bg-amber-500' : 'bg-slate-300']" />
         <div class="mb-4 text-center">
-          <div :class="['mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl', level.id === 'basic' ? 'bg-slate-100 text-slate-600' : level.id === 'certified' ? 'bg-primary/10 text-primary' : 'bg-amber-100 text-amber-600']">
+          <div :class="['mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl', level.id === 'basic' ? 'bg-slate-100 text-slate-600' : level.id === 'certified' ? 'bg-primary/10 text-primary' : 'bg-amber-100 text-amber-600']">
             <Star v-if="level.id === 'basic'" class="h-7 w-7" />
             <Crown v-else class="h-7 w-7" />
           </div>
@@ -106,14 +106,14 @@ const membershipLevels = computed(() => [
       </div>
     </div>
 
-    <div v-if="activeTab === 'intro'" class="rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div v-if="activeTab === 'intro'" class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.introTitle }}</h2>
       <p class="leading-relaxed text-muted-foreground">{{ t.membership.introDesc }}</p>
     </div>
 
-    <div v-if="activeTab === 'settings' || activeTab === 'orders'" class="rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div v-if="activeTab === 'settings' || activeTab === 'orders'" class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="flex flex-col items-center justify-center py-12 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
           <Crown class="h-8 w-8 text-primary" />
         </div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ activeTab === 'settings' ? t.membership.tabs.settings : t.membership.tabs.orders }}</h3>

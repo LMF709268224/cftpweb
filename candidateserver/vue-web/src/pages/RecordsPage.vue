@@ -19,7 +19,7 @@ function recordStatusConfig(status: keyof typeof statusConfig) {
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
       <div class="flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -29,15 +29,15 @@ function recordStatusConfig(status: keyof typeof statusConfig) {
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.recordsPage.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.recordsPage.subtitle }}</p>
         </div>
-        <button class="btn btn-primary rounded-xl shadow-sm shadow-primary/20" disabled><Plus class="h-4 w-4" /> {{ t.recordsPage.uploadNew }}</button>
+        <button class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" disabled><Plus class="h-4 w-4" /> {{ t.recordsPage.uploadNew }}</button>
       </div>
     </div>
 
     <div class="mb-4 grid gap-4 sm:grid-cols-3">
-      <div v-for="(config, status) in statusConfig" :key="status" class="group relative overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+      <div v-for="(config, status) in statusConfig" :key="status" class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div :class="['absolute left-0 top-0 h-full w-1', status === 'verified' ? 'bg-primary' : status === 'pending' ? 'bg-amber-500' : 'bg-red-500']" />
         <div class="flex items-center gap-4">
-          <div :class="['flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105', status === 'verified' ? 'bg-primary/10' : status === 'pending' ? 'bg-amber-100' : 'bg-red-100']">
+          <div :class="['flex h-11 w-11 items-center justify-center rounded-lg transition-transform group-hover:scale-105', status === 'verified' ? 'bg-primary/10' : status === 'pending' ? 'bg-amber-100' : 'bg-red-100']">
             <component
               :is="config.icon"
               :class="[
@@ -56,13 +56,13 @@ function recordStatusConfig(status: keyof typeof statusConfig) {
       </div>
     </div>
 
-    <div class="overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="flex items-center gap-3 bg-white px-4 py-4">
-        <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10"><GraduationCap class="h-4 w-4 text-primary" /></div>
+        <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10"><GraduationCap class="h-4 w-4 text-primary" /></div>
         <h2 class="font-semibold text-card-foreground">{{ t.recordsPage.myRecords }}</h2>
       </div>
       <div v-if="records.length === 0" class="flex flex-col items-center justify-center px-4 py-14 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"><FileText class="h-8 w-8 text-primary" /></div>
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><FileText class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.recordsPage.noRecords }}</h3>
         <p class="max-w-md text-sm text-muted-foreground">{{ t.recordsPage.noRecordsDesc }}</p>
       </div>

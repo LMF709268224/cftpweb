@@ -26,7 +26,7 @@ const variantStyles = {
   <component
     :is="props.href ? RouterLink : 'div'"
     :to="props.href"
-    :class="['group relative block overflow-hidden rounded-[18px] bg-[#f8fcfc] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_10px_22px_rgba(15,74,82,0.08)]', props.href && 'cursor-pointer']"
+    :class="['group relative block overflow-hidden rounded-[14px] bg-[#f8fcfc] p-4 transition-all duration-300 hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_10px_22px_rgba(15,74,82,0.08)]', props.href && 'cursor-pointer']"
   >
     <div :class="['absolute bottom-0 left-4 right-4 h-1 rounded-full opacity-70', variantStyles[variant].accent]" />
     <div class="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-primary/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -36,7 +36,7 @@ const variantStyles = {
         <p class="text-3xl font-bold tracking-tight text-card-foreground">{{ value }}</p>
         <p v-if="description" class="text-xs text-muted-foreground">{{ description }}</p>
       </div>
-      <div :class="['flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-300 group-hover:scale-110', variantStyles[variant].iconBg]">
+      <div :class="['flex h-12 w-12 shrink-0 items-center justify-center rounded-lg transition-transform duration-300 group-hover:scale-110', variantStyles[variant].iconBg]">
         <component :is="icon" :class="['h-6 w-6', variantStyles[variant].iconColor]" />
       </div>
     </div>

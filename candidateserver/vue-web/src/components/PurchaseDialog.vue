@@ -288,7 +288,7 @@ async function mountStripeCheckout(clientSecret: string) {
       toast.error(copy.value.stripePublishableKeyMissing || "Missing Stripe publishable key")
       return
     }
-    
+
     await nextTick()
     const stripe = window.Stripe(pk)
     const checkout = await stripe.initEmbeddedCheckout({
@@ -359,7 +359,7 @@ async function initiatePayment() {
 
 <template>
   <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="close">
-    <div class="max-h-[86vh] w-full max-w-[620px] overflow-hidden rounded-2xl bg-card shadow-2xl">
+    <div class="max-h-[86vh] w-full max-w-[620px] overflow-hidden rounded-xl bg-card shadow-2xl">
       <div class="border-b border-border px-6 pb-4 pt-6">
         <h2 class="text-xl font-semibold">{{ copy.title }}: {{ courseName }}</h2>
       </div>
@@ -370,30 +370,30 @@ async function initiatePayment() {
           <span class="text-sm font-medium text-foreground">{{ courseName }}</span>
         </div>
 
-        <div v-if="eligibilityLoading && !eligibility" class="rounded-xl border border-border bg-muted/30 p-4">
+        <div v-if="eligibilityLoading && !eligibility" class="rounded-lg border border-border bg-muted/30 p-4">
           <div class="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 class="h-4 w-4 animate-spin" />
             {{ copy.checking }}
           </div>
         </div>
-        <div v-else-if="canPurchase" class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <div v-else-if="canPurchase" class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-emerald-900"><CheckCircle2 class="h-4 w-4" />{{ copy.canPurchaseTitle }}</div>
           <p class="mt-2 text-sm text-emerald-800">{{ copy.canPurchaseDesc }}</p>
         </div>
-        <div v-else-if="canUnlock" class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+        <div v-else-if="canUnlock" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-blue-900"><Lock class="h-4 w-4" />{{ copy.canUnlockTitle }}</div>
           <p class="mt-2 text-sm text-blue-800">{{ copy.canUnlockDesc }}</p>
         </div>
-        <div v-else-if="cannotContinue && hasInProgressOrder" class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+        <div v-else-if="cannotContinue && hasInProgressOrder" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-blue-900"><CreditCard class="h-4 w-4" />{{ copy.inProgressPurchase }}</div>
           <p class="mt-2 text-sm text-blue-800">{{ copy.inProgressPurchaseDesc }}</p>
         </div>
-        <div v-else-if="cannotContinue" class="rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div v-else-if="cannotContinue" class="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-amber-900"><AlertCircle class="h-4 w-4" />{{ copy.blockedTitle }}</div>
           <p class="mt-2 text-sm text-amber-800">{{ copy.blockedDesc }}</p>
         </div>
 
-        <div v-if="blockers.length > 0" class="rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+        <div v-if="blockers.length > 0" class="rounded-lg border border-amber-200 bg-amber-50/70 p-4">
           <div class="mb-3 text-sm font-semibold text-amber-950">{{ copy.blockersTitle }}</div>
           <ul class="space-y-2">
             <li v-for="(blocker, index) in blockers" :key="`${blocker.blocker_type || 'blocker'}-${index}`" class="rounded-lg border border-amber-200 bg-white/80 p-3">
@@ -411,7 +411,7 @@ async function initiatePayment() {
           </ul>
         </div>
 
-        <div v-if="activeOrder" class="rounded-xl border border-border bg-muted/30 p-4">
+        <div v-if="activeOrder" class="rounded-lg border border-border bg-muted/30 p-4">
           <div class="mb-2 flex items-center justify-between gap-3">
             <div class="text-sm font-semibold text-foreground">{{ activeOrder.message === copy.inProgressPurchaseDesc ? copy.activeOrder : copy.orderCreated }}</div>
             <span v-if="activeOrder.status" class="badge text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', activeOrder.status)">
@@ -422,7 +422,7 @@ async function initiatePayment() {
           <p v-if="activeOrder.message" class="mt-2 text-sm text-muted-foreground">{{ activeOrder.message }}</p>
         </div>
 
-        <div v-if="paymentPreview" class="rounded-xl border border-border bg-muted/30 p-4">
+        <div v-if="paymentPreview" class="rounded-lg border border-border bg-muted/30 p-4">
           <div class="mb-3 text-sm font-semibold text-foreground">{{ copy.pricePreviewTitle }}</div>
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
@@ -444,17 +444,17 @@ async function initiatePayment() {
           </div>
         </div>
 
-        <div v-if="activeOrder && previewError" class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div v-if="activeOrder && previewError" class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <div class="flex items-center gap-2 font-semibold"><AlertCircle class="h-4 w-4" />{{ copy.pricePreviewTitle }}</div>
           <p class="mt-2">{{ previewError }}</p>
         </div>
 
         <div v-if="embeddedClientSecret" class="space-y-3">
-          <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+          <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
             <div class="flex items-center gap-2 font-semibold"><CreditCard class="h-4 w-4" />{{ copy.embeddedCheckoutTitle }}</div>
             <p class="mt-2">{{ copy.embeddedCheckoutDesc }}</p>
           </div>
-          <div class="rounded-xl border bg-white p-4 text-sm text-muted-foreground min-h-[400px]">
+          <div class="rounded-lg border bg-white p-4 text-sm text-muted-foreground min-h-[400px]">
             <div id="checkout"></div>
           </div>
         </div>
@@ -465,7 +465,7 @@ async function initiatePayment() {
             <button
               type="button"
               :class="[
-                'flex w-full items-center gap-3 rounded-xl border p-3 transition-all',
+                'flex w-full items-center gap-3 rounded-lg border p-3 transition-all',
                 paymentMethod === 'stripe' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50',
               ]"
               @click="paymentMethod = 'stripe'"
@@ -480,7 +480,7 @@ async function initiatePayment() {
             <button
               type="button"
               :class="[
-                'flex w-full items-center gap-3 rounded-xl border p-3 transition-all',
+                'flex w-full items-center gap-3 rounded-lg border p-3 transition-all',
                 paymentMethod === 'bank' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50',
               ]"
               @click="paymentMethod = 'bank'"

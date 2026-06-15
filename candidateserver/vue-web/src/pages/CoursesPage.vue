@@ -214,7 +214,7 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
       <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
         <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
           <BookOpen class="h-3.5 w-3.5" />
@@ -225,20 +225,20 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="mb-4 flex flex-col gap-4 rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
+    <div class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
       <div class="relative flex-1 sm:max-w-md">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="searchQuery" class="input pl-10" :placeholder="t.courses.searchPlaceholder" />
       </div>
       <div v-if="activeTab === 'resources'" class="flex flex-wrap gap-2">
-        <button v-for="filter in resourceFilters" :key="filter" :class="['btn rounded-xl', resourceFilter === filter ? 'btn-primary shadow-sm shadow-primary/20' : 'btn-outline']" @click="setResourceFilter(filter)">
+        <button v-for="filter in resourceFilters" :key="filter" :class="['btn rounded-lg', resourceFilter === filter ? 'btn-primary shadow-sm shadow-primary/20' : 'btn-outline']" @click="setResourceFilter(filter)">
           <Video v-if="filter === 'video'" class="h-3.5 w-3.5" />
           <FileText v-if="filter === 'pdf'" class="h-3.5 w-3.5" />
           <FileIcon v-if="filter === 'document'" class="h-3.5 w-3.5" />
           {{ filter === 'all' ? t.messagesPage.all : courseTypeLabel(filter) }}
         </button>
       </div>
-      <button v-else class="btn btn-outline rounded-xl">
+      <button v-else class="btn btn-outline rounded-lg">
         <SlidersHorizontal class="h-4 w-4" /> {{ t.courses.filterBtn }}
       </button>
     </div>
@@ -258,14 +258,14 @@ onMounted(() => {
     </div>
 
     <div v-if="activeTab === 'all'">
-      <div v-if="loading && allCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[22px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div v-if="loading && allCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
       </div>
       <div v-else-if="filteredCourses.length > 0" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <CourseCard v-for="course in filteredCourses" :key="`${course.id}-${course.eligibilityRefreshKey || 0}`" v-bind="course" />
       </div>
-      <div v-else class="flex flex-col items-center justify-center rounded-[22px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+      <div v-else class="flex flex-col items-center justify-center rounded-[16px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
           <Search class="h-8 w-8 text-primary" />
         </div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">暂无数据</h3>
@@ -273,13 +273,13 @@ onMounted(() => {
     </div>
 
     <div v-if="activeTab === 'my'" class="space-y-4">
-      <div v-if="loading && myCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[22px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div v-if="loading && myCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
       </div>
-      <div v-for="course in myCourses" :key="course.id" class="group relative overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+      <div v-for="course in myCourses" :key="course.id" class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
         <div class="flex gap-4">
-          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <BookOpen class="h-7 w-7" />
           </div>
           <div class="flex flex-1 flex-col justify-between">
@@ -307,19 +307,19 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex flex-col items-end justify-between">
-            <RouterLink :to="`/courses/detail?id=${encodeURIComponent(course.id)}`" class="btn btn-primary rounded-xl shadow-sm shadow-primary/20">
+            <RouterLink :to="`/courses/detail?id=${encodeURIComponent(course.id)}`" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20">
               {{ t.courses.viewDetails }} <ChevronRight class="h-4 w-4" />
             </RouterLink>
           </div>
         </div>
       </div>
-      <div v-if="!loading && myCourses.length === 0" class="flex flex-col items-center justify-center rounded-[22px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+      <div v-if="!loading && myCourses.length === 0" class="flex flex-col items-center justify-center rounded-[16px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
           <BookOpen class="h-8 w-8 text-primary" />
         </div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.courses.noCourses }}</h3>
         <p class="mb-4 text-muted-foreground">{{ t.courses.noCoursesDesc }}</p>
-        <button class="btn btn-primary rounded-xl shadow-sm shadow-primary/20" @click="activeTab = 'all'">{{ t.courses.browseCoursesBtn }}</button>
+        <button class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" @click="activeTab = 'all'">{{ t.courses.browseCoursesBtn }}</button>
       </div>
     </div>
 
@@ -327,11 +327,11 @@ onMounted(() => {
       <div
         v-for="resource in filteredResources"
         :key="resource.id"
-        class="group relative cursor-pointer overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10"
+        class="group relative cursor-pointer overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10"
         @click="openResource(resource)"
       >
         <div class="flex items-center gap-4">
-          <div :class="['flex h-12 w-12 shrink-0 items-center justify-center rounded-xl', resource.type === 'video' ? 'bg-red-100 text-red-600' : resource.type === 'pdf' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600']">
+          <div :class="['flex h-12 w-12 shrink-0 items-center justify-center rounded-lg', resource.type === 'video' ? 'bg-red-100 text-red-600' : resource.type === 'pdf' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600']">
             <Video v-if="resource.type === 'video'" class="h-6 w-6" />
             <FileText v-else-if="resource.type === 'pdf'" class="h-6 w-6" />
             <FileIcon v-else class="h-6 w-6" />
@@ -354,7 +354,7 @@ onMounted(() => {
             </div>
             <span class="w-10 text-right text-muted-foreground">{{ resource.progress }}%</span>
           </div>
-          <button class="btn btn-primary rounded-xl shadow-sm shadow-primary/20" @click.stop="openResource(resource)">
+          <button class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" @click.stop="openResource(resource)">
             <Play v-if="resource.type === 'video'" class="h-3.5 w-3.5" />
             <Eye v-else class="h-3.5 w-3.5" />
             {{ resource.type === 'video' ? t.courses.watch : t.courses.read }}
@@ -363,8 +363,8 @@ onMounted(() => {
           <button class="btn btn-ghost px-2" @click.stop><Bookmark class="h-4 w-4" /></button>
         </div>
       </div>
-      <div v-if="filteredResources.length === 0" class="flex flex-col items-center justify-center rounded-[22px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+      <div v-if="filteredResources.length === 0" class="flex flex-col items-center justify-center rounded-[16px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
           <FileText class="h-8 w-8 text-primary" />
         </div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.courses.noResources }}</h3>

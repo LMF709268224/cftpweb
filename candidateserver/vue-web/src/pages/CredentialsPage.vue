@@ -128,7 +128,7 @@ onMounted(fetchData)
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
       <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
         <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
           <Award class="h-3.5 w-3.5" />
@@ -139,23 +139,23 @@ onMounted(fetchData)
       </div>
     </div>
 
-    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[22px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
     </div>
     <div v-else class="space-y-4">
       <section>
-        <div class="mb-4 flex items-center gap-3 rounded-[22px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div class="mb-4 flex items-center gap-3 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Award class="h-4 w-4" />
           </div>
           <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.availableQualifications }}</h2>
         </div>
         <div class="grid gap-4 md:grid-cols-3">
-          <div v-for="def in definitions" :key="def.cred_def_id" class="group relative flex flex-col overflow-hidden rounded-[22px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
+          <div v-for="def in definitions" :key="def.cred_def_id" class="group relative flex flex-col overflow-hidden rounded-[16px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
             <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
             <div class="flex flex-col space-y-3 p-4">
-              <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
+              <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
                 <Award class="h-5 w-5" />
               </div>
               <h3 class="text-xl font-semibold leading-tight tracking-tight">{{ def.name }}</h3>
@@ -163,26 +163,26 @@ onMounted(fetchData)
             </div>
             <div class="flex flex-1 flex-col p-4 pt-0">
               <p class="flex-1 text-sm leading-6 text-muted-foreground">{{ def.description }}</p>
-              <button class="btn btn-primary mt-4 w-full cursor-pointer rounded-xl shadow-sm shadow-primary/20" @click="handleApplyClick(def)">{{ t.credentialsPage.applyNow }}</button>
+              <button class="btn btn-primary mt-4 w-full cursor-pointer rounded-lg shadow-sm shadow-primary/20" @click="handleApplyClick(def)">{{ t.credentialsPage.applyNow }}</button>
             </div>
           </div>
         </div>
       </section>
 
       <section>
-        <div class="mb-4 flex items-center gap-3 rounded-[22px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div class="mb-4 flex items-center gap-3 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <FileText class="h-4 w-4" />
           </div>
           <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.myApplications }}</h2>
         </div>
-        <div v-if="applications.length === 0" class="flex flex-col items-center justify-center rounded-[22px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+        <div v-if="applications.length === 0" class="flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
             <FileText class="h-8 w-8 text-primary" />
           </div>
           <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.credentialsPage.noApplications }}</h3>
         </div>
-        <div v-else class="overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div v-else class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="space-y-2">
             <div v-for="app in applications" :key="app.app_id" class="grid grid-cols-[minmax(180px,1.5fr)_minmax(220px,2fr)_minmax(120px,1fr)_auto] items-center gap-4 px-4 py-4 text-sm transition-colors hover:bg-primary/10">
               <div class="min-w-0">
@@ -194,7 +194,7 @@ onMounted(fetchData)
                 <component :is="statusIcon(app.status)" class="h-5 w-5 text-black" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <button v-if="canResubmit(app.status)" class="btn btn-primary cursor-pointer rounded-xl py-1 text-xs shadow-sm shadow-primary/20" @click="handleApplyClick(definitions.find((d) => d.cred_def_id === app.cred_def_id), app.app_id)">{{ t.credentialsPage.appStatusResubmit }}</button>
+              <button v-if="canResubmit(app.status)" class="btn btn-primary cursor-pointer rounded-lg py-1 text-xs shadow-sm shadow-primary/20" @click="handleApplyClick(definitions.find((d) => d.cred_def_id === app.cred_def_id), app.app_id)">{{ t.credentialsPage.appStatusResubmit }}</button>
               <span v-else class="text-xs text-muted-foreground">{{ formatBackendDate(app.created_at).split(" ")[0] || t.common.na }}</span>
             </div>
           </div>
@@ -203,7 +203,7 @@ onMounted(fetchData)
     </div>
 
     <div v-if="isApplyOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="isApplyOpen = false">
-      <div class="w-full max-w-md rounded-[22px] bg-white p-4 shadow-lg shadow-slate-900/20">
+      <div class="w-full max-w-md rounded-[16px] bg-white p-4 shadow-lg shadow-slate-900/20">
         <div class="flex items-start justify-between gap-4">
           <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
           <button class="cursor-pointer text-xl leading-none text-muted-foreground transition-colors hover:text-foreground" @click="isApplyOpen = false">x</button>
@@ -212,13 +212,13 @@ onMounted(fetchData)
           <p class="text-sm text-muted-foreground">{{ t.credentialsPage.description }}: {{ selectedDef?.description }}</p>
           <div class="space-y-4 border-t border-border pt-4">
             <h4 class="text-sm font-semibold">{{ t.credentialsPage.uploadMaterials }}</h4>
-            <div v-for="constraint in selectedDef?.file_constraints || []" :key="constraint.name" class="space-y-2 rounded-xl bg-muted p-3">
+            <div v-for="constraint in selectedDef?.file_constraints || []" :key="constraint.name" class="space-y-2 rounded-lg bg-muted p-3">
               <div class="flex justify-between">
                 <span class="font-medium">{{ constraint.name }}</span>
                 <span :class="['badge border-transparent', constraint.is_required ? 'bg-destructive text-destructive-foreground' : 'bg-secondary text-secondary-foreground']">{{ constraint.is_required ? t.credentialsPage.required : t.credentialsPage.optional }}</span>
               </div>
               <div class="mt-2 flex items-center gap-2">
-                <button type="button" class="btn btn-outline cursor-pointer rounded-xl px-3 py-1.5 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="triggerFileInput(constraint.name)">
+                <button type="button" class="btn btn-outline cursor-pointer rounded-lg px-3 py-1.5 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="triggerFileInput(constraint.name)">
                   {{ t.credentialsPage.chooseFile }}
                 </button>
                 <span class="max-w-[200px] truncate text-sm text-muted-foreground" :title="uploadedFiles[constraint.name] ? uploadedFiles[constraint.name].name : t.credentialsPage.noFileChosen">
@@ -231,8 +231,8 @@ onMounted(fetchData)
           </div>
         </div>
         <div class="flex justify-end gap-3">
-          <button class="btn btn-outline cursor-pointer rounded-xl" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
-          <button class="btn btn-primary cursor-pointer rounded-xl shadow-sm shadow-primary/20 disabled:cursor-not-allowed" :disabled="isSubmitting || !(selectedDef?.file_constraints?.every((c: any) => !c.is_required || uploadedFiles[c.name]) && selectedDef?.file_constraints?.length > 0)" @click="handleSubmitApplication">
+          <button class="btn btn-outline cursor-pointer rounded-lg" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
+          <button class="btn btn-primary cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed" :disabled="isSubmitting || !(selectedDef?.file_constraints?.every((c: any) => !c.is_required || uploadedFiles[c.name]) && selectedDef?.file_constraints?.length > 0)" @click="handleSubmitApplication">
             {{ isSubmitting ? t.credentialsPage.submitting : t.credentialsPage.submitApplication }}
           </button>
         </div>

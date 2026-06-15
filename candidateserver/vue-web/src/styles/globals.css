@@ -119,7 +119,7 @@
   }
 
   .card {
-    @apply rounded-2xl border border-border bg-card shadow-sm;
+    @apply rounded-xl border border-border bg-card shadow-sm;
   }
 
   .page-main {

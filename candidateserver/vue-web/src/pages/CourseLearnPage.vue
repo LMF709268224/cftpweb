@@ -1039,7 +1039,7 @@ watch(selectedMaterial, () => {
                   </div>
                 </div>
 
-                <div class="rounded-xl bg-muted/20 p-4">
+                <div class="rounded-lg bg-muted/20 p-4">
                   <div class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.learning.materialPreviewLabel }}</div>
                   <div class="flex min-h-[240px] items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center text-sm text-muted-foreground">
                     <div class="space-y-3">
@@ -1062,7 +1062,7 @@ watch(selectedMaterial, () => {
                   </button>
                 </div>
               </div>
-              <div v-else class="flex min-h-[320px] items-center justify-center rounded-xl border border-dashed bg-muted/20 p-8 text-sm text-muted-foreground">
+              <div v-else class="flex min-h-[320px] items-center justify-center rounded-lg border border-dashed bg-muted/20 p-8 text-sm text-muted-foreground">
                 {{ t.learning.materialPreviewEmpty }}
               </div>
             </div>

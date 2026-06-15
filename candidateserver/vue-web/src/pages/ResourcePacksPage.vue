@@ -76,7 +76,7 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
-    <section class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+    <section class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
       <div class="flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
@@ -86,14 +86,14 @@ onMounted(() => {
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
           <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
         </div>
-        <button class="btn btn-outline rounded-xl bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="loadPacks()">
+        <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="loadPacks()">
           <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
           {{ copy.refresh }}
         </button>
       </div>
     </section>
 
-    <section class="mb-4 rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <section class="mb-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="relative">
         <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input v-model="search" class="input pl-11" :placeholder="copy.search" />
@@ -104,11 +104,11 @@ onMounted(() => {
       <RouterLink
         v-for="pack in filteredPacks"
         :key="pack.pack_id"
-        class="group relative overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
+        class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
         :to="`/resource-packs/detail?id=${encodeURIComponent(pack.pack_id || '')}`"
       >
         <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
-        <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
+        <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
           <PackageOpen class="h-6 w-6" />
         </div>
         <h2 class="line-clamp-2 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ pack.title || pack.pack_id }}</h2>
@@ -124,8 +124,8 @@ onMounted(() => {
       </RouterLink>
     </section>
 
-    <section v-else class="rounded-[22px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+    <section v-else class="rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
         <PackageOpen class="h-8 w-8 text-primary" />
       </div>
       <h2 class="mt-4 text-lg font-semibold text-foreground">{{ loading ? "Loading..." : copy.emptyTitle }}</h2>
@@ -133,7 +133,7 @@ onMounted(() => {
     </section>
 
     <div v-if="nextPageToken" class="mt-4 text-center">
-      <button class="btn btn-outline rounded-xl" :disabled="loading" @click="loadPacks(nextPageToken)">
+      <button class="btn btn-outline rounded-lg" :disabled="loading" @click="loadPacks(nextPageToken)">
         {{ loading ? "Loading..." : "Load more" }}
       </button>
     </div>

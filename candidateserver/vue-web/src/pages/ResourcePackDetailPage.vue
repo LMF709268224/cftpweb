@@ -117,7 +117,7 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
-    <section class="mb-4 overflow-hidden rounded-[22px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
+    <section class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
       <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
       <RouterLink to="/resource-packs" class="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
         <ArrowLeft class="h-4 w-4" />
@@ -132,7 +132,7 @@ onMounted(() => {
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
           <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
         </div>
-        <button class="btn btn-outline rounded-xl bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="!packId || loading" @click="loadFiles()">
+        <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="!packId || loading" @click="loadFiles()">
           <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
           {{ copy.refresh }}
         </button>
@@ -144,11 +144,11 @@ onMounted(() => {
       <article
         v-for="file in orderedFiles"
         :key="file.file_id"
-        class="group relative flex flex-col gap-4 overflow-hidden rounded-[22px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 md:flex-row md:items-center md:justify-between"
+        class="group relative flex flex-col gap-4 overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 md:flex-row md:items-center md:justify-between"
       >
         <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
         <div class="flex gap-4">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
             <component :is="fileIcon(file.file_type)" class="h-5 w-5" />
           </div>
           <div>
@@ -161,7 +161,7 @@ onMounted(() => {
             </div>
           </div>
         </div>
-        <button class="btn btn-primary shrink-0 rounded-xl shadow-sm shadow-primary/20" @click="openFile(file)">
+        <button class="btn btn-primary shrink-0 rounded-lg shadow-sm shadow-primary/20" @click="openFile(file)">
           <ExternalLink v-if="Number(file.file_type) === 1" class="h-4 w-4" />
           <Download v-else class="h-4 w-4" />
           {{ Number(file.file_type) === 1 ? copy.open : copy.download }}
@@ -169,8 +169,8 @@ onMounted(() => {
       </article>
     </section>
 
-    <section v-else class="rounded-[22px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+    <section v-else class="rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
         <FileArchive class="h-8 w-8 text-primary" />
       </div>
       <h2 class="mt-4 text-lg font-semibold text-foreground">{{ loading ? "Loading..." : copy.emptyTitle }}</h2>
@@ -178,7 +178,7 @@ onMounted(() => {
     </section>
 
     <div v-if="nextPageToken" class="mt-4 text-center">
-      <button class="btn btn-outline rounded-xl" :disabled="loading" @click="loadFiles(nextPageToken)">
+      <button class="btn btn-outline rounded-lg" :disabled="loading" @click="loadFiles(nextPageToken)">
         {{ loading ? "Loading..." : "Load more" }}
       </button>
     </div>
