@@ -376,13 +376,6 @@ func (h *Handler) PurchasePipeline(w http.ResponseWriter, r *http.Request) {
 }
 
 func formatPaymentKey(paymentKey string) string {
-	if strings.HasPrefix(paymentKey, "cs_") {
-		// If the key is a client_secret (legacy), strip the "_secret_" suffix to get the session ID
-		if idx := strings.Index(paymentKey, "_secret_"); idx != -1 {
-			paymentKey = paymentKey[:idx]
-		}
-		return "https://checkout.stripe.com/c/pay/" + paymentKey
-	}
 	return paymentKey
 }
 
