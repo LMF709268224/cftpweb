@@ -41,6 +41,7 @@ type CompleteCourse = {
   course?: Course
   chapters?: ChapterDetail[]
   materials?: CourseMaterialSummary[]
+  supplementary_material?: SupplementaryMaterial | SupplementaryMaterial[]
   quizzes?: any[]
 }
 
@@ -87,6 +88,26 @@ type CourseMaterialSummary = {
   file_size?: number
   sort_order?: number
   file_hash?: string
+}
+
+type SupplementaryMaterial = {
+  material_id?: string
+  course_id?: string
+  kind?: string
+  data_json?: string | unknown[] | Record<string, unknown>
+  version?: number
+  created_at?: string
+  updated_at?: string
+}
+
+type SupplementaryMaterialItem = {
+  key: string
+  chapter: string
+  type: string
+  title: string
+  description: string
+  url: string
+  sourceKind: string
 }
 
 type QuizProgressItem = {
@@ -148,6 +169,15 @@ const completeCourse = computed(() => payload.value?.complete_course)
 const course = computed<Course | undefined>(() => completeCourse.value?.course)
 const chapters = computed<ChapterDetail[]>(() => completeCourse.value?.chapters || [])
 const materials = computed<CourseMaterialSummary[]>(() => completeCourse.value?.materials || [])
+const supplementaryMaterials = computed<SupplementaryMaterial[]>(() => {
+  const raw = completeCourse.value?.supplementary_material
+  if (!raw) return []
+  return Array.isArray(raw) ? raw.filter(Boolean) : [raw]
+})
+const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() =>
+  supplementaryMaterials.value.flatMap((material, materialIndex) => parseSupplementaryMaterialItems(material, materialIndex)),
+)
+const totalMaterialCount = computed(() => materials.value.length + supplementaryMaterialItems.value.length)
 const courseQuizzes = computed<any[]>(() => completeCourse.value?.quizzes || [])
 const quizProgress = computed(() => payload.value?.quiz_progress || {})
 
@@ -461,6 +491,93 @@ function materialTypeLabel(materialType?: number) {
     default:
       return t.value.learning.materialTypeUnknown
   }
+}
+
+function parseSupplementaryMaterialItems(material: SupplementaryMaterial, materialIndex: number): SupplementaryMaterialItem[] {
+  const data = parseSupplementaryJson(material.data_json)
+  const records = supplementaryRecordsFromData(data)
+
+  return records.map((record, recordIndex) => {
+    const title = stringFromRecord(record, ["title", "name", "label", "heading"])
+    const description = stringFromRecord(record, ["description", "desc", "summary", "detail", "content"])
+    const type = stringFromRecord(record, ["type", "material_type", "resource_type", "kind"]) || t.value.learning.materialTypeUnknown
+    const chapter = stringFromRecord(record, ["chapter", "chapter_title", "chapterTitle", "section"]) || t.value.learning.chapters
+    const url = stringFromRecord(record, ["url", "link", "href", "external_url", "externalUrl"])
+    const fallbackKey = `${material.material_id || "supplementary"}-${materialIndex}-${recordIndex}`
+
+    return {
+      key: stringFromRecord(record, ["id", "material_id", "resource_id", "key"]) || fallbackKey,
+      chapter,
+      type,
+      title: title || t.value.learning.unknownMaterial,
+      description,
+      url,
+      sourceKind: material.kind || "",
+    }
+  })
+}
+
+function parseSupplementaryJson(dataJson: SupplementaryMaterial["data_json"]) {
+  if (!dataJson) return null
+  if (typeof dataJson !== "string") return dataJson
+
+  const trimmed = dataJson.trim()
+  if (!trimmed) return null
+
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    return null
+  }
+}
+
+function supplementaryRecordsFromData(data: unknown): Record<string, unknown>[] {
+  if (Array.isArray(data)) return data.filter(isRecord)
+  if (!isRecord(data)) return []
+
+  for (const key of ["items", "resources", "materials", "data", "list"]) {
+    const value = data[key]
+    if (Array.isArray(value)) return value.filter(isRecord)
+  }
+
+  return [data]
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value))
+}
+
+function stringFromRecord(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === "string" && value.trim()) return value.trim()
+    if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  }
+  return ""
+}
+
+function supplementaryChapterLabel(item: SupplementaryMaterialItem, index: number) {
+  return supplementaryMaterialItems.value[index - 1]?.chapter === item.chapter ? "" : item.chapter
+}
+
+function supplementaryTypeLabel(type: string) {
+  const normalized = type.trim().toLowerCase()
+  if (normalized === "article") return "Article"
+  if (normalized === "video") return "Video"
+  if (normalized === "pdf") return "PDF"
+  if (normalized === "link") return "Link"
+  return type || t.value.learning.materialTypeUnknown
+}
+
+function supplementaryTypeClass(type: string) {
+  const normalized = type.trim().toLowerCase()
+  if (normalized === "video") return "border-violet-200 bg-violet-100 text-violet-700"
+  if (normalized === "article" || normalized === "pdf") return "border-blue-200 bg-blue-100 text-blue-700"
+  return "border-slate-200 bg-slate-100 text-slate-700"
+}
+
+function supplementaryTypeIcon(type: string) {
+  return type.trim().toLowerCase() === "video" ? Play : FileText
 }
 
 async function loadCourse() {
@@ -1004,96 +1121,147 @@ watch(selectedMaterial, () => {
               </div>
               <p class="text-sm text-muted-foreground">{{ t.learning.materialsDesc }}</p>
             </div>
-            <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ materials.length }} {{ t.learning.materialsCountSuffix }}</span>
+            <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ totalMaterialCount }} {{ t.learning.materialsCountSuffix }}</span>
           </div>
 
-          <div v-if="materials.length === 0" class="rounded-md bg-slate-50 p-6 text-center text-sm text-muted-foreground">
+          <div v-if="totalMaterialCount === 0" class="rounded-md bg-slate-50 p-6 text-center text-sm text-muted-foreground">
             {{ t.learning.materialsEmpty }}
             <div class="mt-2 text-xs text-muted-foreground">{{ t.learning.materialsEmptyHint }}</div>
           </div>
-          <div v-else class="grid gap-4 xl:grid-cols-[240px_1fr]">
-            <div class="rounded-md bg-slate-50 p-3">
-              <div class="mb-3 flex flex-wrap gap-2">
-                <button :class="['btn py-1.5 text-xs', activeMaterialGroup === 'all' ? 'btn-primary' : 'btn-outline']" @click="activeMaterialGroup = 'all'">
-                  {{ t.learning.materialGroupAll }}
-                </button>
-                <button
-                  v-for="group in groupedMaterials"
-                  :key="group.key"
-                  :class="['btn py-1.5 text-xs', activeMaterialGroup === group.key ? 'btn-primary' : 'btn-outline']"
-                  @click="activeMaterialGroup = group.key"
-                >
-                  {{ group.label }}
-                </button>
+          <div v-else class="space-y-4">
+            <div v-if="supplementaryMaterialItems.length > 0" class="overflow-hidden rounded-md border border-slate-100 bg-white">
+              <div class="border-b border-slate-100 bg-slate-50 px-4 py-3">
+                <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
+                  <BookOpen class="h-4 w-4 text-primary" />
+                  <span>Supplementary Materials</span>
+                  <span class="badge border-slate-200 bg-white text-slate-700">{{ supplementaryMaterialItems.length }} {{ t.learning.materialsCountSuffix }}</span>
+                </div>
+                <p class="mt-1 text-xs text-muted-foreground">Additional learning resources organized by chapter</p>
               </div>
 
-              <div class="space-y-2">
-                <button
-                  v-for="material in filteredMaterials"
-                  :key="material.material_id || material.title"
-                  type="button"
-                  :class="[
-                    'w-full rounded-md border px-3 py-3 text-left transition-colors',
-                    material.material_id === selectedMaterialId ? 'border-primary bg-white' : 'border-slate-100 bg-white hover:bg-slate-100',
-                  ]"
-                  @click="selectedMaterialId = material.material_id || ''"
+              <div class="hidden grid-cols-[minmax(180px,0.9fr)_120px_minmax(260px,2fr)] border-b border-slate-100 bg-white px-4 py-3 text-sm font-medium text-muted-foreground md:grid">
+                <div>Chapter</div>
+                <div>Type</div>
+                <div>Title & Description</div>
+              </div>
+
+              <div class="divide-y divide-slate-100">
+                <div
+                  v-for="(item, index) in supplementaryMaterialItems"
+                  :key="item.key"
+                  class="grid gap-2 px-4 py-3 text-sm md:grid-cols-[minmax(180px,0.9fr)_120px_minmax(260px,2fr)]"
                 >
-                  <div class="mb-1 flex items-center gap-2">
-                    <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ materialTypeLabel(material.material_type) }}</span>
+                  <div class="font-medium text-slate-700">
+                    <span class="md:hidden text-xs text-muted-foreground">Chapter: </span>
+                    {{ supplementaryChapterLabel(item, index) }}
                   </div>
-                  <div class="line-clamp-2 text-sm font-medium text-foreground">{{ material.title || t.learning.unknownMaterial }}</div>
-                  <div class="mt-1 text-xs text-muted-foreground">{{ formatFileSize(material.file_size) || t.learning.materialSizeUnknown }}</div>
-                </button>
+                  <div>
+                    <span class="badge gap-1 border text-xs" :class="supplementaryTypeClass(item.type)">
+                      <component :is="supplementaryTypeIcon(item.type)" class="h-3 w-3" />
+                      {{ supplementaryTypeLabel(item.type) }}
+                    </span>
+                  </div>
+                  <div>
+                    <a
+                      v-if="item.url"
+                      :href="item.url"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="font-semibold text-foreground transition-colors hover:text-primary"
+                    >
+                      {{ item.title }}
+                    </a>
+                    <div v-else class="font-semibold text-foreground">{{ item.title }}</div>
+                    <p v-if="item.description" class="mt-1 text-xs leading-relaxed text-muted-foreground">{{ item.description }}</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div class="rounded-md bg-slate-50 p-5">
-              <div v-if="selectedMaterial" class="space-y-5">
-                <div class="flex flex-wrap items-center gap-2">
-                  <span class="badge">{{ materialTypeLabel(selectedMaterial.material_type) }}</span>
-                  <span v-if="selectedMaterial.sort_order !== undefined" class="badge">{{ t.learning.materialSortOrder }} {{ selectedMaterial.sort_order }}</span>
-                </div>
-                <div>
-                  <h4 class="text-xl font-semibold text-foreground">{{ selectedMaterial.title || t.learning.unknownMaterial }}</h4>
-                  <p class="mt-2 text-sm text-muted-foreground">{{ selectedMaterial.file_object_key || t.learning.materialFileKeyUnknown }}</p>
-                </div>
-
-                <div class="grid gap-3 sm:grid-cols-2">
-                  <div class="rounded-lg bg-muted/20 p-4">
-                    <div class="text-xs text-muted-foreground">{{ t.learning.materialSizeLabel }}</div>
-                    <div class="mt-1 text-sm font-medium text-foreground">{{ formatFileSize(selectedMaterial.file_size) || t.learning.materialSizeUnknown }}</div>
-                  </div>
-                  <div class="rounded-lg bg-muted/20 p-4">
-                    <div class="text-xs text-muted-foreground">{{ t.learning.materialHashLabel }}</div>
-                    <div class="mt-1 break-all text-sm font-medium text-foreground">{{ selectedMaterial.file_hash || t.learning.materialHashUnknown }}</div>
-                  </div>
-                </div>
-
-                <div class="rounded-lg bg-muted/20 p-4">
-                  <div class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.learning.materialPreviewLabel }}</div>
-                  <div class="flex min-h-[240px] items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center text-sm text-muted-foreground">
-                    <div class="space-y-3">
-                      <FileText v-if="selectedMaterial.material_type === 1 || selectedMaterial.material_type === 2" class="mx-auto h-10 w-10 text-primary" />
-                      <BookOpen v-else-if="selectedMaterial.material_type === 3" class="mx-auto h-10 w-10 text-primary" />
-                      <Video v-else class="mx-auto h-10 w-10 text-primary" />
-                      <div>{{ t.learning.materialPreviewHint }}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                  <button class="btn btn-primary" @click="openMaterial(selectedMaterial)">
-                    <Play class="h-4 w-4" />
-                    {{ t.learning.openMaterial }}
+            <div v-if="materials.length > 0" class="grid gap-4 xl:grid-cols-[240px_1fr]">
+              <div class="rounded-md bg-slate-50 p-3">
+                <div class="mb-3 flex flex-wrap gap-2">
+                  <button :class="['btn py-1.5 text-xs', activeMaterialGroup === 'all' ? 'btn-primary' : 'btn-outline']" @click="activeMaterialGroup = 'all'">
+                    {{ t.learning.materialGroupAll }}
                   </button>
-                  <button class="btn btn-outline" @click="downloadMaterial(selectedMaterial)">
-                    <Download class="h-4 w-4" />
-                    {{ t.learning.downloadMaterial }}
+                  <button
+                    v-for="group in groupedMaterials"
+                    :key="group.key"
+                    :class="['btn py-1.5 text-xs', activeMaterialGroup === group.key ? 'btn-primary' : 'btn-outline']"
+                    @click="activeMaterialGroup = group.key"
+                  >
+                    {{ group.label }}
+                  </button>
+                </div>
+
+                <div class="space-y-2">
+                  <button
+                    v-for="material in filteredMaterials"
+                    :key="material.material_id || material.title"
+                    type="button"
+                    :class="[
+                      'w-full rounded-md border px-3 py-3 text-left transition-colors',
+                      material.material_id === selectedMaterialId ? 'border-primary bg-white' : 'border-slate-100 bg-white hover:bg-slate-100',
+                    ]"
+                    @click="selectedMaterialId = material.material_id || ''"
+                  >
+                    <div class="mb-1 flex items-center gap-2">
+                      <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ materialTypeLabel(material.material_type) }}</span>
+                    </div>
+                    <div class="line-clamp-2 text-sm font-medium text-foreground">{{ material.title || t.learning.unknownMaterial }}</div>
+                    <div class="mt-1 text-xs text-muted-foreground">{{ formatFileSize(material.file_size) || t.learning.materialSizeUnknown }}</div>
                   </button>
                 </div>
               </div>
-              <div v-else class="flex min-h-[320px] items-center justify-center rounded-lg border border-dashed bg-muted/20 p-8 text-sm text-muted-foreground">
-                {{ t.learning.materialPreviewEmpty }}
+
+              <div class="rounded-md bg-slate-50 p-5">
+                <div v-if="selectedMaterial" class="space-y-5">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="badge">{{ materialTypeLabel(selectedMaterial.material_type) }}</span>
+                    <span v-if="selectedMaterial.sort_order !== undefined" class="badge">{{ t.learning.materialSortOrder }} {{ selectedMaterial.sort_order }}</span>
+                  </div>
+                  <div>
+                    <h4 class="text-xl font-semibold text-foreground">{{ selectedMaterial.title || t.learning.unknownMaterial }}</h4>
+                    <p class="mt-2 text-sm text-muted-foreground">{{ selectedMaterial.file_object_key || t.learning.materialFileKeyUnknown }}</p>
+                  </div>
+
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="rounded-lg bg-muted/20 p-4">
+                      <div class="text-xs text-muted-foreground">{{ t.learning.materialSizeLabel }}</div>
+                      <div class="mt-1 text-sm font-medium text-foreground">{{ formatFileSize(selectedMaterial.file_size) || t.learning.materialSizeUnknown }}</div>
+                    </div>
+                    <div class="rounded-lg bg-muted/20 p-4">
+                      <div class="text-xs text-muted-foreground">{{ t.learning.materialHashLabel }}</div>
+                      <div class="mt-1 break-all text-sm font-medium text-foreground">{{ selectedMaterial.file_hash || t.learning.materialHashUnknown }}</div>
+                    </div>
+                  </div>
+
+                  <div class="rounded-lg bg-muted/20 p-4">
+                    <div class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.learning.materialPreviewLabel }}</div>
+                    <div class="flex min-h-[240px] items-center justify-center rounded-lg border border-dashed bg-background p-6 text-center text-sm text-muted-foreground">
+                      <div class="space-y-3">
+                        <FileText v-if="selectedMaterial.material_type === 1 || selectedMaterial.material_type === 2" class="mx-auto h-10 w-10 text-primary" />
+                        <BookOpen v-else-if="selectedMaterial.material_type === 3" class="mx-auto h-10 w-10 text-primary" />
+                        <Video v-else class="mx-auto h-10 w-10 text-primary" />
+                        <div>{{ t.learning.materialPreviewHint }}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-wrap gap-2">
+                    <button class="btn btn-primary" @click="openMaterial(selectedMaterial)">
+                      <Play class="h-4 w-4" />
+                      {{ t.learning.openMaterial }}
+                    </button>
+                    <button class="btn btn-outline" @click="downloadMaterial(selectedMaterial)">
+                      <Download class="h-4 w-4" />
+                      {{ t.learning.downloadMaterial }}
+                    </button>
+                  </div>
+                </div>
+                <div v-else class="flex min-h-[320px] items-center justify-center rounded-lg border border-dashed bg-muted/20 p-8 text-sm text-muted-foreground">
+                  {{ t.learning.materialPreviewEmpty }}
+                </div>
               </div>
             </div>
           </div>
