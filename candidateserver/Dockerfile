@@ -2,6 +2,7 @@
 # 阶段 1: 前端编译 (Node)
 # ==========================================
 FROM docker.io/library/node:20-alpine AS frontend-builder
+
 COPY shared/ /shared/
 WORKDIR /app/vue-web
 # 这里的 vue-web 目录将在你后续创建 Vue 项目时出现
@@ -9,13 +10,12 @@ WORKDIR /app/vue-web
 COPY candidateserver/vue-web/ ./
 # 如果检测到 package.json 存在，就执行依赖安装和编译 (支持 pnpm / npm)
 # 强制删除可能被意外拷入的 node_modules 和所有 lock 文件
-RUN rm -rf node_modules && \
+RUN rm -rf node_modules package-lock.json && \
     if [ -f package.json ]; then \
         npm install && npm run build; \
     else \
         mkdir -p dist; \
     fi
-
 # ==========================================
 # 阶段 2: 后端编译 (Go)
 # ==========================================
