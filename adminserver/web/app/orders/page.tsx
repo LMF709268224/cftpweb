@@ -12,52 +12,153 @@ import { useTranslation } from "@/lib/useLanguage"
 import { statusBadgeClassForStatusValue } from "@cftpweb/shared"
 import { Input } from "@/components/ui/input"
 
+type AdminOrder = Record<string, any>
+type LabelOption = { value: string; zh: string; en: string }
+type Lang = "zh" | "en"
+
+const BIZ_TYPE_OPTIONS: LabelOption[] = [
+  { value: "PIPELINE_PAYMENT", zh: "\u7ba1\u7ebf\u8ba2\u5355", en: "Pipeline Order" },
+  { value: "STAGE_PAYMENT", zh: "\u9636\u6bb5\u8ba2\u5355", en: "Stage Order" },
+  { value: "COURSE_RETAKE_PAYMENT", zh: "\u91cd\u8003\u8ba2\u5355", en: "Retake Order" },
+  { value: "PIPELINE_UNLOCK", zh: "\u7ba1\u7ebf\u89e3\u9501\u8ba2\u5355", en: "Pipeline Unlock Order" },
+  { value: "CREDENTIAL_APPLICATION", zh: "\u8d44\u683c\u7533\u8bf7\u8ba2\u5355", en: "Credential Application Order" },
+]
+
+const ORDER_STATUS_OPTIONS: LabelOption[] = [
+  { value: "PENDING", zh: "\u5f85\u5904\u7406", en: "Pending" },
+  { value: "COMPLETED", zh: "\u5df2\u5b8c\u6210", en: "Completed" },
+  { value: "CANCELLED", zh: "\u5df2\u53d6\u6d88", en: "Cancelled" },
+  { value: "FAILED", zh: "\u5931\u8d25", en: "Failed" },
+  { value: "EXPIRED", zh: "\u5df2\u8fc7\u671f", en: "Expired" },
+]
+
+const PAYMENT_STATUS_OPTIONS: LabelOption[] = [
+  { value: "WAIT_PAY", zh: "\u5f85\u652f\u4ed8", en: "Waiting Payment" },
+  { value: "UNPAID", zh: "\u5f85\u652f\u4ed8", en: "Unpaid" },
+  { value: "PAID", zh: "\u5df2\u652f\u4ed8", en: "Paid" },
+  { value: "FAILED", zh: "\u652f\u4ed8\u5931\u8d25", en: "Failed" },
+  { value: "REFUNDED", zh: "\u5df2\u9000\u6b3e", en: "Refunded" },
+  { value: "CANCELLED", zh: "\u5df2\u53d6\u6d88", en: "Cancelled" },
+]
+
+const normalizeCode = (value: unknown) => String(value || "").trim().toUpperCase()
+
+const pickFirst = (order: AdminOrder, keys: string[]) => {
+  for (const key of keys) {
+    const value = order[key]
+    if (value !== undefined && value !== null && value !== "") {
+      return value
+    }
+  }
+  return undefined
+}
+
+const findLabel = (options: LabelOption[], value: unknown, lang: Lang) => {
+  const normalized = normalizeCode(value)
+  const option = options.find(item => item.value === normalized)
+  return option ? option[lang] : normalized || "-"
+}
+
+const getOrderUlid = (order: AdminOrder) => String(pickFirst(order, [
+  "order_ulid",
+  "orderUlid",
+  "logical_order_ulid",
+  "logicalOrderUlid",
+  "biz_order_ulid",
+  "bizOrderUlid",
+]) || "-")
+
+const getBizType = (order: AdminOrder) => pickFirst(order, ["biz_type", "bizType"])
+const getOrderStatus = (order: AdminOrder) => pickFirst(order, ["order_status", "orderStatus", "status"])
+const getPaymentStatus = (order: AdminOrder) => pickFirst(order, ["payment_status", "paymentStatus"])
+
+const getCurrency = (order: AdminOrder) => String(pickFirst(order, [
+  "currency_code",
+  "currencyCode",
+  "currency",
+]) || "")
+
+const getOrderAmount = (order: AdminOrder) => {
+  const directTotal = pickFirst(order, ["total", "total_amount", "totalAmount"])
+  if (directTotal !== undefined) {
+    const value = Number(directTotal)
+    return Number.isFinite(value) ? value : 0
+  }
+
+  const minorAmount = pickFirst(order, [
+    "amount_minor",
+    "amountMinor",
+    "total_amount_cents",
+    "totalAmountCents",
+  ])
+  if (minorAmount !== undefined) {
+    const value = Number(minorAmount)
+    return Number.isFinite(value) ? value / 100 : 0
+  }
+
+  const amount = Number(pickFirst(order, ["amount"]) || 0)
+  return Number.isFinite(amount) ? amount / 100 : 0
+}
+
+const formatOrderCreatedAt = (value: unknown) => {
+  if (typeof value === "number") {
+    const ms = value > 1_000_000_000_000 ? value : value * 1000
+    return formatBackendDate(new Date(ms).toISOString())
+  }
+  return formatBackendDate(value ? String(value) : "")
+}
+
 export default function AdminOrdersPage() {
-  const { t } = useTranslation()
-  const [orders, setOrders] = useState<any[]>([])
+  const { t, lang } = useTranslation()
+  const [orders, setOrders] = useState<AdminOrder[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Filters
   const [candidateUlid, setCandidateUlid] = useState("")
   const [bizType, setBizType] = useState("")
   const [orderStatus, setOrderStatus] = useState("")
   const [paymentStatus, setPaymentStatus] = useState("")
   const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize] = useState(20)
   const [totalCount, setTotalCount] = useState(0)
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (targetPage = page) => {
     setLoading(true)
     try {
-      let query = `/api/mall/orders?page=${page}&limit=${pageSize}&offset=${(page-1)*pageSize}`
-      if (candidateUlid) query += `&candidate_ulid=${candidateUlid}`
-      if (bizType) query += `&biz_type=${bizType}`
-      if (orderStatus) query += `&order_status=${orderStatus}`
-      if (paymentStatus) query += `&payment_status=${paymentStatus}`
+      let query = `/api/mall/orders?page=${targetPage}&limit=${pageSize}&offset=${(targetPage - 1) * pageSize}`
+      if (candidateUlid) query += `&candidate_ulid=${encodeURIComponent(candidateUlid)}`
+      if (bizType) query += `&biz_type=${encodeURIComponent(bizType)}`
+      if (orderStatus) query += `&order_status=${encodeURIComponent(orderStatus)}`
+      if (paymentStatus) query += `&payment_status=${encodeURIComponent(paymentStatus)}`
 
       const res = await apiClient(query)
-      if (res?.items) {
-        setOrders(res.items)
-        setTotalCount(res.total || 0)
-      } else {
-        setOrders([])
-        setTotalCount(0)
-      }
+      const items = Array.isArray(res?.items)
+        ? res.items
+        : Array.isArray(res?.orders)
+          ? res.orders
+          : []
+
+      setOrders(items)
+      setTotalCount(Number(res?.total ?? res?.total_count ?? res?.totalCount ?? items.length) || 0)
     } catch (e) {
       console.error(e)
+      setOrders([])
+      setTotalCount(0)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchOrders()
+    fetchOrders(page)
   }, [page, pageSize])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setPage(1)
-    fetchOrders()
+    if (page === 1) {
+      fetchOrders(1)
+    } else {
+      setPage(1)
+    }
   }
 
   return (
@@ -72,8 +173,8 @@ export default function AdminOrdersPage() {
             </h1>
             <p className="text-muted-foreground mt-2">{t.adminOrdersPage?.subtitle}</p>
           </div>
-          <Button onClick={fetchOrders} variant="outline" className="gap-2">
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          <Button onClick={() => fetchOrders(page)} variant="outline" className="gap-2">
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             {t.adminOrdersPage?.refresh}
           </Button>
         </div>
@@ -81,10 +182,10 @@ export default function AdminOrdersPage() {
         <form onSubmit={handleSearch} className="bg-card p-4 rounded-xl border mb-6 flex flex-wrap gap-4 items-end">
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">{t.adminOrdersPage?.userUlid}</label>
-            <Input 
-              placeholder="Candidate ULID" 
-              value={candidateUlid} 
-              onChange={e => setCandidateUlid(e.target.value)} 
+            <Input
+              placeholder="Candidate ULID"
+              value={candidateUlid}
+              onChange={e => setCandidateUlid(e.target.value)}
               className="h-9 w-64"
             />
           </div>
@@ -96,9 +197,11 @@ export default function AdminOrdersPage() {
               onChange={e => setBizType(e.target.value)}
             >
               <option value="">{t.adminOrdersPage?.allTypes}</option>
-              <option value="pipeline_enrollment">{t.adminOrdersPage?.pipelineOrder}</option>
-              <option value="stage_enrollment">{t.adminOrdersPage?.stageOrder}</option>
-              <option value="course_retake">{t.adminOrdersPage?.retakeOrder}</option>
+              {BIZ_TYPE_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option[lang]}
+                </option>
+              ))}
             </select>
           </div>
           <div className="space-y-1">
@@ -109,9 +212,11 @@ export default function AdminOrdersPage() {
               onChange={e => setOrderStatus(e.target.value)}
             >
               <option value="">{t.adminOrdersPage?.allStatus}</option>
-              <option value="PENDING">PENDING</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="CANCELLED">CANCELLED</option>
+              {ORDER_STATUS_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option[lang]}
+                </option>
+              ))}
             </select>
           </div>
           <div className="space-y-1">
@@ -122,9 +227,11 @@ export default function AdminOrdersPage() {
               onChange={e => setPaymentStatus(e.target.value)}
             >
               <option value="">{t.adminOrdersPage?.allPaymentStatus}</option>
-              <option value="UNPAID">UNPAID</option>
-              <option value="PAID">PAID</option>
-              <option value="REFUNDED">REFUNDED</option>
+              {PAYMENT_STATUS_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option[lang]}
+                </option>
+              ))}
             </select>
           </div>
           <Button type="submit" className="h-9">
@@ -134,17 +241,16 @@ export default function AdminOrdersPage() {
         </form>
 
         {loading ? (
-          <div>{t.common?.loading || "加载中..."}</div>
+          <div>{t.common?.loading || "Loading..."}</div>
         ) : (
           <div className="bg-card rounded-xl border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50 text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.bizOrderUlid}</th>
+                    <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u8ba2\u5355 ULID" : "Order ULID"}</th>
                     <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.bizType}</th>
-                    <th className="px-4 py-3 font-medium">BizRef</th>
-                    <th className="px-4 py-3 font-medium">Amount / Currency</th>
+                    <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u91d1\u989d / \u8d27\u5e01" : "Amount / Currency"}</th>
                     <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.status}</th>
                     <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.paymentStatus}</th>
                     <th className="px-4 py-3 font-medium">Created At</th>
@@ -152,28 +258,34 @@ export default function AdminOrdersPage() {
                 </thead>
                 <tbody>
                   {orders.length > 0 ? (
-                    orders.map((o) => (
-                      <tr key={o.logical_order_ulid} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                        <td className="px-4 py-3 font-medium text-xs font-mono">{o.logical_order_ulid}</td>
-                        <td className="px-4 py-3">{o.biz_type}</td>
-                        <td className="px-4 py-3 text-xs font-mono">{o.biz_ref_ulid}</td>
-                        <td className="px-4 py-3 font-medium">{o.total_amount_cents ? (o.total_amount_cents / 100).toFixed(2) : "0.00"} {o.currency}</td>
-                        <td className="px-4 py-3">
-                          <Badge variant="outline" className={statusBadgeClassForStatusValue(o.order_status)}>
-                            {o.order_status || t.common?.unknown}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3">
-                          <Badge variant="outline" className={statusBadgeClassForStatusValue(o.payment_status)}>
-                            {o.payment_status || t.common?.unknown}
-                          </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-xs">{formatBackendDate(o.created_at)}</td>
-                      </tr>
-                    ))
+                    orders.map((order, index) => {
+                      const orderUlid = getOrderUlid(order)
+                      const bizTypeValue = getBizType(order)
+                      const orderStatusValue = getOrderStatus(order)
+                      const paymentStatusValue = getPaymentStatus(order)
+
+                      return (
+                        <tr key={`${orderUlid}-${index}`} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
+                          <td className="px-4 py-3 font-medium text-xs font-mono">{orderUlid}</td>
+                          <td className="px-4 py-3">{findLabel(BIZ_TYPE_OPTIONS, bizTypeValue, lang)}</td>
+                          <td className="px-4 py-3 font-medium">{getOrderAmount(order).toFixed(2)} {getCurrency(order)}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant="outline" className={statusBadgeClassForStatusValue(orderStatusValue)}>
+                              {findLabel(ORDER_STATUS_OPTIONS, orderStatusValue, lang)}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Badge variant="outline" className={statusBadgeClassForStatusValue(paymentStatusValue)}>
+                              {findLabel(PAYMENT_STATUS_OPTIONS, paymentStatusValue, lang)}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-xs">{formatOrderCreatedAt(order.created_at ?? order.createdAt)}</td>
+                        </tr>
+                      )
+                    })
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
                         {t.adminOrdersPage?.noOrders}
                       </td>
                     </tr>
@@ -181,10 +293,12 @@ export default function AdminOrdersPage() {
                 </tbody>
               </table>
             </div>
-            
+
             <div className="flex items-center justify-between p-4 border-t">
               <div className="text-sm text-muted-foreground">
-                {t.adminOrdersPage?.totalCount ? t.adminOrdersPage.totalCount.replace("{{total}}", totalCount.toString()) : `共 ${totalCount} 条记录`}
+                {t.adminOrdersPage?.totalCount
+                  ? t.adminOrdersPage.totalCount.replace("{{total}}", totalCount.toString())
+                  : `Total ${totalCount} Records`}
               </div>
               <div className="flex gap-2">
                 <Button
