@@ -863,29 +863,29 @@ watch(selectedMaterial, () => {
 
       <section class="space-y-4">
         <div v-if="courseQuizTasks.length > 0 || visibleChapterAndLessonQuizTasks.length > 0" class="rounded-md bg-white p-6">
-          <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="mb-4 flex items-center justify-between gap-4">
             <div>
               <div class="mb-2 flex items-center gap-2">
                 <Target class="h-5 w-5 text-primary" />
                 <h2 class="text-xl font-semibold text-foreground">{{ t.learning.allQuizzesTitle }}</h2>
               </div>
             </div>
-            <span class="badge border-slate-200 bg-slate-50 text-slate-700">
+            <span class="badge shrink-0 border-slate-200 bg-slate-50 text-slate-700">
               {{ courseQuizTasks.filter((task) => task.completed).length + visibleChapterAndLessonQuizTasks.filter((task) => task.completed).length }}/{{ courseQuizTasks.length + visibleChapterAndLessonQuizTasks.length }}
             </span>
           </div>
 
-          <div class="grid gap-4 xl:grid-cols-2">
-            <div class="rounded-md bg-slate-50 p-4">
+          <div class="grid items-stretch gap-4 xl:grid-cols-2">
+            <div class="flex min-h-[214px] flex-col rounded-md bg-slate-50 p-4">
               <div class="mb-3 flex items-center justify-between gap-3">
                 <h3 class="font-semibold text-foreground">{{ t.learning.courseQuizzesTitle }}</h3>
-                <span class="badge border-slate-200 bg-white text-slate-700">{{ courseQuizTasks.filter((task) => task.completed).length }}/{{ courseQuizTasks.length }}</span>
+                <span class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ courseQuizTasks.filter((task) => task.completed).length }}/{{ courseQuizTasks.length }}</span>
               </div>
               <div v-if="courseQuizTasks.length === 0" class="rounded-md border border-dashed border-slate-200 bg-white p-4 text-sm text-muted-foreground">
                 {{ t.learning.noCourseQuizzes }}
               </div>
-              <div v-else class="space-y-2">
-                <div v-for="(task, index) in courseQuizTasks" :key="task.key" class="rounded-md border border-slate-100 bg-white p-3">
+              <div v-else class="flex flex-1 flex-col gap-2">
+                <div v-for="(task, index) in courseQuizTasks" :key="task.key" class="flex min-h-[142px] flex-1 flex-col rounded-md border border-slate-100 bg-white p-3">
                   <div class="mb-2 flex flex-wrap items-center gap-2">
                     <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ task.scopeLabel }}</span>
                     <span v-if="task.completed" class="badge border-emerald-200 bg-emerald-50 text-emerald-700">
@@ -893,7 +893,7 @@ watch(selectedMaterial, () => {
                     </span>
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
-                  <div class="mt-3">
+                  <div class="mt-auto pt-3">
                     <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed" @click="startQuiz(task.quizId)">
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
@@ -902,16 +902,16 @@ watch(selectedMaterial, () => {
               </div>
             </div>
 
-            <div class="rounded-md bg-slate-50 p-4">
+            <div class="flex min-h-[214px] flex-col rounded-md bg-slate-50 p-4">
               <div class="mb-3 flex items-center justify-between gap-3">
                 <h3 class="font-semibold text-foreground">{{ t.learning.chapterQuizzesTitle }}</h3>
-                <span class="badge border-slate-200 bg-white text-slate-700">{{ visibleChapterAndLessonQuizTasks.filter((task) => task.completed).length }}/{{ visibleChapterAndLessonQuizTasks.length }}</span>
+                <span class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ visibleChapterAndLessonQuizTasks.filter((task) => task.completed).length }}/{{ visibleChapterAndLessonQuizTasks.length }}</span>
               </div>
               <div v-if="visibleChapterAndLessonQuizTasks.length === 0" class="rounded-md border border-dashed border-slate-200 bg-white p-4 text-sm text-muted-foreground">
                 {{ t.learning.noChapterQuizzes }}
               </div>
-              <div v-else class="space-y-2">
-                <div v-for="(task, index) in visibleChapterAndLessonQuizTasks" :key="task.key" class="rounded-md border border-slate-100 bg-white p-3">
+              <div v-else class="flex flex-1 flex-col gap-2">
+                <div v-for="(task, index) in visibleChapterAndLessonQuizTasks" :key="task.key" class="flex min-h-[142px] flex-1 flex-col rounded-md border border-slate-100 bg-white p-3">
                   <div class="mb-2 flex flex-wrap items-center gap-2">
                     <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ task.scopeLabel }}</span>
                     <span v-if="task.chapterTitle" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.chapters }}: {{ task.chapterTitle }}</span>
@@ -921,7 +921,7 @@ watch(selectedMaterial, () => {
                     </span>
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
-                  <div class="mt-3">
+                  <div class="mt-auto pt-3">
                     <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed" @click="startQuiz(task.quizId)">
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
