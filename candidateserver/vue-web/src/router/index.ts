@@ -19,6 +19,7 @@ import SettingsPage from "@/pages/SettingsPage.vue"
 import QuizPage from "@/pages/QuizPage.vue"
 import ResourcePackDetailPage from "@/pages/ResourcePackDetailPage.vue"
 import ResourcePacksPage from "@/pages/ResourcePacksPage.vue"
+import PdfPreviewPage from "@/pages/PdfPreviewPage.vue"
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -43,5 +44,6 @@ export const router = createRouter({
     { path: "/messages", component: MessagesPage },
     { path: "/settings", component: SettingsPage },
     { path: "/quizzes", component: QuizPage },
+    { path: "/pdf-preview", component: PdfPreviewPage },
   ],
 })
