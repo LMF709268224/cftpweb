@@ -10,6 +10,7 @@ import {
   Clock,
   CreditCard,
   ExternalLink,
+  Loader2,
   Lock,
   Play,
   Sparkles,
@@ -337,7 +338,10 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
       {{ t.courses.backToPipelines }}
     </RouterLink>
 
-    <div v-if="loading" class="text-muted-foreground">{{ t.common.loading }}</div>
+    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <Loader2 class="h-5 w-5 animate-spin" />
+      <span>{{ t.common.loading }}</span>
+    </div>
     <div v-else-if="!pipeline" class="rounded-md bg-white p-8 text-center text-muted-foreground">{{ t.common.na }}</div>
     <template v-else>
       <div :class="['mb-4 rounded-md bg-white p-6', firstCourseThumbnail && 'grid gap-6 lg:grid-cols-[340px_1fr]']">
@@ -347,12 +351,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
         </div>
 
         <div>
-          <div class="mb-3 flex flex-wrap gap-2">
-            <span class="badge border-primary/15 bg-primary/10 text-primary">{{ t.courses.pipeline }}</span>
-            <span v-if="pipeline.category_tips" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ pipeline.category_tips }}</span>
-          </div>
           <h1 class="mb-2 text-2xl font-bold text-foreground">{{ pipeline.name || t.common.unknownCourse }}</h1>
-          <p class="mb-5 text-muted-foreground">{{ pipeline.category_tips || t.courses.certificationPath }}</p>
 
           <div class="mb-5 flex flex-wrap gap-6 text-sm text-muted-foreground">
             <div class="flex items-center gap-1.5">
@@ -366,56 +365,6 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
             <div class="flex items-center gap-1.5">
               <Award class="h-4 w-4" />
               <span>{{ pipeline.final_quals?.length || 0 }} {{ t.credentialsPage.availableQualifications }}</span>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap gap-2">
-            <button class="btn btn-primary rounded-lg" :disabled="!paymentConfigured || purchased" @click="!purchased && (purchaseOpen = true)">
-              <CreditCard class="h-4 w-4" />
-              {{ purchased ? t.courses.purchased : t.courses.purchasePipeline }}
-            </button>
-            <button v-if="purchased && instancePipelineId" class="btn btn-outline rounded-lg" :disabled="certificateLoading" @click="openCertificate">
-              <ExternalLink class="h-4 w-4" />
-              {{ t.courses.viewCertificate }}
-            </button>
-          </div>
-
-          <div v-if="purchased && nextStepAction" class="mt-6 rounded-md bg-slate-50 p-4">
-            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div class="min-w-0">
-                <div class="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Sparkles class="h-4 w-4 text-primary" />
-                  {{ t.learning.nextStepTitle }}
-                </div>
-                <div class="text-sm text-muted-foreground">{{ nextStepDescription() }}</div>
-              </div>
-              <button v-if="nextStepAction === 'schedule_exam'" class="btn btn-primary shrink-0 rounded-lg" :disabled="scheduleLoading" @click="handleScheduleExam">
-                {{ nextStepLabel() }}
-                <ArrowRight class="ml-1 h-4 w-4" />
-              </button>
-              <RouterLink v-else :to="nextStepHref()" class="btn btn-primary shrink-0 rounded-lg">
-                {{ nextStepLabel() }}
-                <ArrowRight class="ml-1 h-4 w-4" />
-              </RouterLink>
-            </div>
-            <div class="mt-4 flex flex-wrap items-center gap-2">
-              <span v-if="!isPipelineTerminal && currentStageName" class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.currentStageNameLabel }}: {{ currentStageName }}</span>
-              <span
-                v-if="!isPipelineTerminal && currentStageStatus !== undefined && currentStageStatus !== ''"
-                :class="['badge', timelineStatusBadgeClassForStatus('STAGE', currentStageStatus)]"
-              >
-                {{ t.learning.currentStageStatusLabel }}: {{ stageStatusLabel(currentStageStatus) }}
-              </span>
-              <span
-                v-if="!isPipelineTerminal && currentUnitStatus !== undefined && currentUnitStatus !== ''"
-                :class="['badge', timelineStatusBadgeClassForStatus('COURSE_UNIT', currentUnitStatus)]"
-              >
-                {{ t.learning.unitStatusLabel }}: {{ unitStatusLabel(currentUnitStatus) }}
-              </span>
-              <span v-if="nextStep.stage_name" class="badge border-slate-200 bg-white text-slate-700">{{ nextStep.stage_name }}</span>
-              <span v-if="nextStep.course_id && courseSummaries[nextStep.course_id]?.title" class="badge border-slate-200 bg-white text-slate-700">
-                {{ courseSummaries[nextStep.course_id]?.title }}
-              </span>
             </div>
           </div>
 
@@ -524,16 +473,6 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               </div>
               <div class="flex flex-wrap items-center justify-end gap-2">
                 <span :class="['badge', unitStateClass(unit)]">{{ t.learning.unitStatusLabel }}: {{ unitStateText(unit) }}</span>
-                <span v-if="unit.glms_course_id && courseSummaries[unit.glms_course_id]?.category_tips" class="badge border-slate-200 bg-slate-50 text-slate-700">
-                  {{ courseSummaries[unit.glms_course_id]?.category_tips }}
-                </span>
-                <span v-if="unit.allow_retake" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.courses.reviewCourse }}</span>
-                <span
-                  v-if="purchased && stageIndex === activeStageIndex && (!nextStep.course_id || unit.glms_course_id === nextStep.course_id)"
-                  class="badge border-primary bg-primary text-primary-foreground"
-                >
-                  {{ t.courses.currentLearningBadge }}
-                </span>
                 <span
                   v-if="purchased && unit.glms_course_id && (stageIndex <= activeStageIndex || activeStageIndex >= stages.length)"
                   class="badge border-primary bg-primary text-primary-foreground"

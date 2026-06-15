@@ -729,15 +729,14 @@ watch(selectedMaterial, () => {
       </button>
     </div>
 
-    <div v-if="loading" class="text-muted-foreground">{{ t.common.loading }}</div>
+    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <Loader2 class="h-5 w-5 animate-spin" />
+      <span>{{ t.common.loading }}</span>
+    </div>
     <div v-else-if="!course" class="rounded-md bg-white p-8 text-center text-muted-foreground">{{ t.common.na }}</div>
     <div v-else class="grid gap-6 lg:grid-cols-[340px_1fr]">
       <aside class="space-y-4">
         <div class="rounded-md bg-white p-6">
-          <div class="mb-3 flex flex-wrap gap-2">
-            <span class="badge border-primary/15 bg-primary/10 text-primary">{{ t.learning.title }}</span>
-            <span v-if="course.category_tips" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ course.category_tips }}</span>
-          </div>
           <h1 class="text-2xl font-bold text-foreground">{{ course.title || t.common.unknownCourse }}</h1>
           <p class="mt-2 text-sm text-muted-foreground">{{ course.description || t.common.na }}</p>
           <div class="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -759,10 +758,6 @@ watch(selectedMaterial, () => {
               <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.passedQuizBadge }} {{ passedQuizzesCount }}</span>
               <span v-if="syncState?.course_status" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.courseStatusLabel }}: {{ courseStatusLabel(syncState.course_status) }}</span>
             </div>
-          </div>
-
-          <div class="mt-4 flex flex-wrap gap-2">
-            <RouterLink to="/exams" class="btn btn-outline py-1.5 text-xs">{{ t.learning.goToExams }}</RouterLink>
           </div>
 
           <div class="mt-4 rounded-md bg-slate-50 p-4">
@@ -955,7 +950,7 @@ watch(selectedMaterial, () => {
               <span class="badge border-primary/15 bg-primary/10 text-primary">{{ lessonTypeLabel(lesson?.lesson_type) }}</span>
               <span v-if="activeLesson?.chapterTitle" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ activeLesson.chapterTitle }}</span>
             </div>
-            <h2 class="text-center text-2xl font-bold text-foreground">{{ lesson?.title || t.common.unknownCourse }}</h2>
+            <h2 class="text-center text-[20px] font-bold text-foreground">{{ lesson?.title || t.common.unknownCourse }}</h2>
             <div class="flex justify-start gap-2 lg:justify-end">
               <button
                 :class="[
