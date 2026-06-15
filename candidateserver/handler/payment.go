@@ -100,6 +100,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			OrderID:       item.GetPipelineOrderUlid(),
 			ProductName:   name,
 			Status:        status,
+			RawStatus:     item.GetOrderStatus(),
+			PipelineID:    pipelineUlid,
 			CreatedAt:     createdAt,
 			PaymentMethod: item.GetPaymentMode(),
 			Amount:        amount,

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { CheckCircle2, ChevronRight, Loader2, Package, Receipt, ShoppingCart, FileText } from "lucide-vue-next"
-import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
+import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
-type OrderItem = { id: string; items: string[]; date: string; amount: string; status: keyof typeof statusConfig; paymentMethod: string }
+type OrderItem = { id: string; items: string[]; date: string; amount: string; status: keyof typeof statusConfig; rawStatus: string; pipelineId: string; paymentMethod: string }
 
 const statusConfig = {
   completed: { labelKey: "statusCompleted", statusValue: "SUCCESS" },
@@ -22,9 +23,21 @@ const completedCount = ref(0)
 const loading = ref(true)
 const totalSpentLabel = computed(() => `¥${totalSpent.value.toLocaleString()}`)
 
-function orderStatusLabel(order: OrderItem) {
-  const labels = t.value.orders as Record<string, string>
-  return labels[statusConfig[order.status].labelKey] || order.status
+import { useRouter } from "vue-router"
+
+const showPurchaseDialog = ref(false)
+const selectedCourseName = ref("")
+const selectedPipelineId = ref("")
+const router = useRouter()
+
+function handleOrderClick(order: OrderItem) {
+  if (order.status !== "completed" && order.pipelineId) {
+    selectedCourseName.value = order.items.join(", ")
+    selectedPipelineId.value = order.pipelineId
+    showPurchaseDialog.value = true
+  } else if (order.status === "completed" && order.pipelineId) {
+    router.push(`/courses/detail?id=${encodeURIComponent(order.pipelineId)}`)
+  }
 }
 
 const invoiceLoading = ref<string | null>(null)
@@ -59,6 +72,8 @@ onMounted(async () => {
         date: o.created_at,
         amount: o.amount > 0 ? `¥${o.amount.toLocaleString()}` : "-",
         status: (o.status in statusConfig ? o.status : "pending") as keyof typeof statusConfig,
+        rawStatus: o.raw_status,
+        pipelineId: o.pipeline_id,
         paymentMethod: o.payment_method,
       }))
     }
@@ -119,13 +134,15 @@ onMounted(async () => {
         <p class="max-w-md text-sm text-muted-foreground">{{ t.orders.noOrdersDesc }}</p>
       </div>
       <div v-else class="space-y-2">
-        <div v-for="order in orders" :key="order.id" class="group flex items-center justify-between px-4 py-4 transition-colors hover:bg-primary/10">
+        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="group flex items-center justify-between px-4 py-4 transition-colors hover:bg-primary/10 cursor-pointer">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
             <div><h3 class="mb-1 font-medium text-card-foreground">{{ order.items.join(", ") }}</h3><p class="text-sm text-muted-foreground">{{ order.date }}</p></div>
           </div>
           <div class="flex items-center gap-4">
-            <span :class="['badge', statusBadgeClassForStatusValue(statusConfig[order.status].statusValue)]">{{ orderStatusLabel(order) }}</span>
+            <span class="badge text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', order.rawStatus)">
+              {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.rawStatus) }}
+            </span>
             <div class="min-w-[80px] text-right"><p class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p></div>
             
             <button v-if="order.status === 'completed'" @click.stop="viewInvoice(order.id)" class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground" title="查看发票 / View Invoice">
@@ -138,5 +155,12 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+    
+    <PurchaseDialog 
+      v-if="showPurchaseDialog"
+      v-model:open="showPurchaseDialog" 
+      :course-name="selectedCourseName" 
+      :pipeline-id="selectedPipelineId" 
+    />
   </AppShell>
 </template>

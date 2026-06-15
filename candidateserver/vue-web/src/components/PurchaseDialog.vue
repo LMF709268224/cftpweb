@@ -1,10 +1,16 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue"
+import { computed, ref, watch, nextTick } from "vue"
 import { toast } from "vue-sonner"
 import { AlertCircle, Building2, CheckCircle2, CreditCard, Lock, Loader2, ShoppingCart } from "lucide-vue-next"
 import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
+
+declare global {
+  interface Window {
+    Stripe: any;
+  }
+}
 
 type PaymentMethod = "stripe" | "bank"
 type MallAction = "purchase" | "unlock"
@@ -274,6 +280,27 @@ function rememberPendingMallPayment() {
   }))
 }
 
+async function mountStripeCheckout(clientSecret: string) {
+  try {
+    const configRes = await apiClient("/api/public/config")
+    const pk = configRes.stripe_publishable_key
+    if (!pk) {
+      toast.error(copy.value.stripePublishableKeyMissing || "Missing Stripe publishable key")
+      return
+    }
+
+    await nextTick()
+    const stripe = window.Stripe(pk)
+    const checkout = await stripe.initEmbeddedCheckout({
+      fetchClientSecret: async () => clientSecret
+    })
+    checkout.mount("#checkout")
+  } catch (err: any) {
+    console.error(err)
+    toast.error(err.message || String(err))
+  }
+}
+
 async function initiatePayment() {
   if (!activeOrder.value?.orderId) return
   const bizType = activeOrder.value.action === "unlock" ? "PIPELINE_UNLOCK" : "PIPELINE_PAYMENT"
@@ -318,6 +345,7 @@ async function initiatePayment() {
     if (paymentMethod.value === "stripe" && clientSecret) {
       rememberPendingMallPayment()
       embeddedClientSecret.value = clientSecret
+      mountStripeCheckout(clientSecret)
       return
     }
     toast.error(copy.value.unsupportedPaymentKey)
@@ -426,8 +454,8 @@ async function initiatePayment() {
             <div class="flex items-center gap-2 font-semibold"><CreditCard class="h-4 w-4" />{{ copy.embeddedCheckoutTitle }}</div>
             <p class="mt-2">{{ copy.embeddedCheckoutDesc }}</p>
           </div>
-          <div class="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
-            {{ copy.embeddedCheckoutLoading }}
+          <div class="rounded-lg border bg-white p-4 text-sm text-muted-foreground min-h-[400px]">
+            <div id="checkout"></div>
           </div>
         </div>
 
