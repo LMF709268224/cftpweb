@@ -81,7 +81,7 @@ onMounted(loadPaper)
     <div v-else-if="!paper" class="flex min-h-[60vh] flex-col items-center justify-center gap-4">
       <AlertCircle class="h-12 w-12 text-destructive" />
       <h2 class="text-lg font-semibold text-foreground">{{ t.learning?.quizNotFound }}</h2>
-      <button class="btn btn-primary" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.common.back }}</button>
+      <button class="btn btn-primary cursor-pointer" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.common.back }}</button>
     </div>
 
     <div v-else-if="result" class="mx-auto max-w-2xl py-12">
@@ -101,13 +101,13 @@ onMounted(loadPaper)
             {{ result.is_passed ? t.learning?.quizPassed : t.learning?.quizFailed }}
           </div>
         </div>
-        <button class="btn btn-primary px-8" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
+        <button class="btn btn-primary cursor-pointer px-8" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
       </div>
     </div>
 
     <div v-else class="mx-auto max-w-3xl space-y-8">
-      <div class="rounded-[22px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:p-8">
-        <button class="btn btn-ghost -ml-2 mb-4 text-muted-foreground" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
+      <div class="rounded-md bg-white p-6 sm:p-8">
+        <button class="btn btn-ghost -ml-2 mb-4 cursor-pointer text-muted-foreground" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
         <div class="flex items-start justify-between gap-4">
           <div>
             <h1 class="text-2xl font-bold text-foreground sm:text-3xl">{{ paper.title || t.learning?.quizPrefix }}</h1>
@@ -120,7 +120,7 @@ onMounted(loadPaper)
       </div>
 
       <div class="space-y-6">
-        <div v-for="(question, index) in questions" :key="question.question_id" class="overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:shadow-md">
+        <div v-for="(question, index) in questions" :key="question.question_id" class="overflow-hidden rounded-md bg-white">
           <div class="flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
             <span>{{ formatQuizQuestionCount(Number(index) + 1, questions.length) }}</span>
             <span class="rounded border bg-background px-2 py-0.5 text-xs">{{ question.points || 0 }} {{ t.learning?.quizPts }}</span>
@@ -132,19 +132,19 @@ onMounted(loadPaper)
                 v-for="option in question.options || []"
                 :key="option.option_id"
                 :class="[
-                  'flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all',
+                  'flex w-full cursor-pointer items-start gap-3 rounded-md border p-4 text-left transition-colors',
                   (answers[question.question_id] || []).includes(option.option_id)
-                    ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
-                    : 'border-border hover:border-border/80 hover:bg-primary/10',
+                    ? 'border-slate-200 bg-slate-50'
+                    : 'border-border hover:bg-slate-50',
                 ]"
                 @click="handleSelectOption(question.question_id, option.option_id, question.question_type === 2)"
               >
                 <div :class="[
                   'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border',
                   question.question_type === 2 ? 'rounded-md' : 'rounded-full',
-                  (answers[question.question_id] || []).includes(option.option_id) ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/30 bg-background',
+                  (answers[question.question_id] || []).includes(option.option_id) ? 'border-primary bg-white' : 'border-muted-foreground/30 bg-background',
                 ]">
-                  <CheckCircle2 v-if="(answers[question.question_id] || []).includes(option.option_id)" class="h-3.5 w-3.5" />
+                  <span v-if="(answers[question.question_id] || []).includes(option.option_id)" class="h-2.5 w-2.5 rounded-full bg-primary" />
                 </div>
                 <span :class="['text-sm', (answers[question.question_id] || []).includes(option.option_id) ? 'font-medium text-foreground' : 'text-muted-foreground']">{{ option.option_text }}</span>
               </button>
@@ -153,9 +153,9 @@ onMounted(loadPaper)
         </div>
       </div>
 
-      <div class="sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-[22px] bg-white/90 p-4 shadow-lg backdrop-blur-md sm:flex-row sm:p-6">
+      <div class="sticky bottom-4 flex flex-col items-center justify-between gap-4 rounded-md bg-white/95 p-4 shadow-sm backdrop-blur-md sm:flex-row sm:p-6">
         <div class="text-sm text-muted-foreground">{{ formatQuizAnsweredCount(Object.keys(answers).length, questions.length) }}</div>
-        <button class="btn btn-primary w-full px-8 sm:w-auto" :disabled="submitting || !allAnswered" @click="submitQuiz">
+        <button class="btn btn-primary w-full cursor-pointer px-8 disabled:cursor-not-allowed sm:w-auto" :disabled="submitting || !allAnswered" @click="submitQuiz">
           <span v-if="submitting" class="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-r-transparent" />
           <FileText v-else class="h-4 w-4" />
           {{ submitting ? t.common.loading : t.learning?.quizSubmit }}
