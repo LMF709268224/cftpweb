@@ -285,7 +285,7 @@ async function mountStripeCheckout(clientSecret: string) {
     const configRes = await apiClient("/api/public/config")
     const pk = configRes.stripe_publishable_key
     if (!pk) {
-      toast.error(t.value.stripePublishableKeyMissing || "Missing Stripe publishable key")
+      toast.error(copy.value.stripePublishableKeyMissing || "Missing Stripe publishable key")
       return
     }
     
