@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, Filter, History, Loader2, Search, ShieldCheck } from "lucide-vue-next"
+import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, History, Loader2, RefreshCw, Search, ShieldCheck } from "lucide-vue-next"
 import { EXAM_STATUS_LABELS, normalizeEnumValueUpper, statusBadgeClassForStatusValue, statusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -144,7 +144,10 @@ onMounted(() => {
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="search" class="input pl-10" :placeholder="t.examsPage.searchPlaceholder" />
       </div>
-      <button class="btn btn-outline rounded-xl" @click="() => void loadExams()"><Filter class="h-4 w-4" /> {{ t.examsPage.refresh }}</button>
+      <button class="btn btn-outline rounded-xl bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="() => void loadExams()">
+        <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
+        {{ t.examsPage.refresh }}
+      </button>
     </div>
 
     <div class="mb-4 rounded-md bg-white px-8 pt-6">

@@ -82,7 +82,7 @@ const accessState = computed(() => {
   <component
     :is="effectivePurchased ? RouterLink : 'div'"
     :to="effectivePurchased ? `/courses/detail?id=${encodeURIComponent(id)}` : undefined"
-    class="group block overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
+    class="group flex h-full flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="!effectivePurchased && (showPurchaseDialog = true)"
   >
@@ -116,29 +116,31 @@ const accessState = computed(() => {
       </div>
     </div>
 
-    <div class="p-5">
+    <div class="flex flex-1 flex-col p-5">
       <h3 class="mb-2 line-clamp-1 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ title }}</h3>
       <p class="mb-4 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{{ description }}</p>
 
-      <div v-if="resolvedStatusLabel" class="mb-4 flex flex-wrap gap-2">
-        <span class="badge border-primary/20 bg-primary/10 text-primary">{{ resolvedStatusLabel }}</span>
-      </div>
-
-      <div v-if="accessState" :class="['mb-4 rounded-xl border px-3 py-2 text-xs', accessState.className]">
-        <div class="flex items-center gap-1.5 font-medium">
-          <component :is="accessState.icon" class="h-3.5 w-3.5" />
-          {{ accessState.label }}
+      <div class="mb-4 min-h-[58px] space-y-3">
+        <div v-if="resolvedStatusLabel" class="flex flex-wrap gap-2">
+          <span class="badge border-primary/20 bg-primary/10 text-primary">{{ resolvedStatusLabel }}</span>
         </div>
-        <div v-if="accessState.hint" class="mt-1 text-[11px] opacity-80">{{ accessState.hint }}</div>
-      </div>
 
-      <div v-if="effectivePurchased && progress !== undefined" class="mb-4">
-        <div class="mb-1.5 flex items-center justify-between text-xs">
-          <span class="text-muted-foreground">{{ t.courses.courseProgress }}</span>
-          <span class="font-medium text-primary">{{ progress }}%</span>
+        <div v-if="accessState" :class="['rounded-xl border px-3 py-2 text-xs', accessState.className]">
+          <div class="flex items-center gap-1.5 font-medium">
+            <component :is="accessState.icon" class="h-3.5 w-3.5" />
+            {{ accessState.label }}
+          </div>
+          <div v-if="accessState.hint" class="mt-1 text-[11px] opacity-80">{{ accessState.hint }}</div>
         </div>
-        <div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-          <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${progress}%` }" />
+
+        <div v-if="effectivePurchased && progress !== undefined">
+          <div class="mb-1.5 flex items-center justify-between text-xs">
+            <span class="text-muted-foreground">{{ t.courses.courseProgress }}</span>
+            <span class="font-medium text-primary">{{ progress }}%</span>
+          </div>
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${progress}%` }" />
+          </div>
         </div>
       </div>
 
@@ -162,7 +164,7 @@ const accessState = computed(() => {
         </div>
       </div>
 
-      <div class="flex items-center justify-between border-t border-border pt-4">
+      <div class="mt-auto flex items-center justify-between border-t border-border pt-4">
         <div class="min-w-0 flex items-center gap-2">
           <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">CF</div>
           <span class="truncate text-sm text-muted-foreground">{{ provider }}</span>
