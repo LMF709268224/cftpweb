@@ -35,6 +35,9 @@ const (
 	BuiltInMailPathType_EXAM_REMINDER_ONE_WEEK       BuiltInMailPathType = 8  // "/mail/exam/reminder-one-week"
 	BuiltInMailPathType_EXAM_REMINDER_ONE_DAY        BuiltInMailPathType = 9  // "/mail/exam/reminder-one-day"
 	BuiltInMailPathType_EXAM_REMINDER_ONE_HOUR       BuiltInMailPathType = 10 // "/mail/exam/reminder-one-hour"
+	BuiltInMailPathType_GCREDS_APPLICATION_APPROVED  BuiltInMailPathType = 11 // "/mail/gcreds/application-approved"
+	BuiltInMailPathType_GCREDS_APPLICATION_REJECTED  BuiltInMailPathType = 12 // "/mail/gcreds/application-rejected"
+	BuiltInMailPathType_GCREDS_APPLICATION_REUPLOAD  BuiltInMailPathType = 13 // "/mail/gcreds/application-reupload"
 )
 
 // Enum value maps for BuiltInMailPathType.
@@ -51,6 +54,9 @@ var (
 		8:  "EXAM_REMINDER_ONE_WEEK",
 		9:  "EXAM_REMINDER_ONE_DAY",
 		10: "EXAM_REMINDER_ONE_HOUR",
+		11: "GCREDS_APPLICATION_APPROVED",
+		12: "GCREDS_APPLICATION_REJECTED",
+		13: "GCREDS_APPLICATION_REUPLOAD",
 	}
 	BuiltInMailPathType_value = map[string]int32{
 		"UNKNOWN_MAIL_PATH":            0,
@@ -64,6 +70,9 @@ var (
 		"EXAM_REMINDER_ONE_WEEK":       8,
 		"EXAM_REMINDER_ONE_DAY":        9,
 		"EXAM_REMINDER_ONE_HOUR":       10,
+		"GCREDS_APPLICATION_APPROVED":  11,
+		"GCREDS_APPLICATION_REJECTED":  12,
+		"GCREDS_APPLICATION_REUPLOAD":  13,
 	}
 )
 
@@ -3145,7 +3154,7 @@ const file_mail_proto_rawDesc = "" +
 	"\x04info\x18\x01 \x01(\v2\x16.gmail.BuiltInPathInfoR\x04info\"\x1b\n" +
 	"\x19GetAllBuiltInPathsRequest\"J\n" +
 	"\x1aGetAllBuiltInPathsResponse\x12,\n" +
-	"\x05paths\x18\x01 \x03(\v2\x16.gmail.BuiltInPathInfoR\x05paths*\xb8\x02\n" +
+	"\x05paths\x18\x01 \x03(\v2\x16.gmail.BuiltInPathInfoR\x05paths*\x9b\x03\n" +
 	"\x13BuiltInMailPathType\x12\x15\n" +
 	"\x11UNKNOWN_MAIL_PATH\x10\x00\x12 \n" +
 	"\x1cGCREDS_NEW_APPLICATION_AUDIT\x10\x01\x12 \n" +
@@ -3158,7 +3167,10 @@ const file_mail_proto_rawDesc = "" +
 	"\x16EXAM_REMINDER_ONE_WEEK\x10\b\x12\x19\n" +
 	"\x15EXAM_REMINDER_ONE_DAY\x10\t\x12\x1a\n" +
 	"\x16EXAM_REMINDER_ONE_HOUR\x10\n" +
-	"2\xd0\n" +
+	"\x12\x1f\n" +
+	"\x1bGCREDS_APPLICATION_APPROVED\x10\v\x12\x1f\n" +
+	"\x1bGCREDS_APPLICATION_REJECTED\x10\f\x12\x1f\n" +
+	"\x1bGCREDS_APPLICATION_REUPLOAD\x10\r2\xd0\n" +
 	"\n" +
 	"\vMailService\x12A\n" +
 	"\n" +

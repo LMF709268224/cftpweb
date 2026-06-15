@@ -357,7 +357,12 @@ type TermUrlCallbackRequest struct {
 	// 线上考试：proctorsch/ proctorresch
 	// 取消考试：cancel
 	UrlType string `protobuf:"bytes,2,opt,name=url_type,json=urlType,proto3" json:"url_type,omitempty"`
-	// [optional] callback body是完整的json
+	// [optional] callback body
+	// 详细说明：GEE(ProScheduler) 完成预约/改期/取消后的回调数据
+	// 从http post的form中提取，类似如下代码：
+	//
+	//	r.ParseForm()
+	//	callback_body := r.FormValue("apptdata")
 	CallbackBody  string `protobuf:"bytes,3,opt,name=callback_body,json=callbackBody,proto3" json:"callback_body,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1256,6 +1261,7 @@ type ExamDetail struct {
 	UpdatedAt            string `protobuf:"bytes,45,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	PipelineUlid         string `protobuf:"bytes,46,opt,name=pipeline_ulid,json=pipelineUlid,proto3" json:"pipeline_ulid,omitempty"`
 	CertificationName    string `protobuf:"bytes,47,opt,name=certification_name,json=certificationName,proto3" json:"certification_name,omitempty"`
+	LastTermurlBody      string `protobuf:"bytes,48,opt,name=last_termurl_body,json=lastTermurlBody,proto3" json:"last_termurl_body,omitempty"` // 最后一次TermUrl回调的原始body
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -1615,6 +1621,13 @@ func (x *ExamDetail) GetPipelineUlid() string {
 func (x *ExamDetail) GetCertificationName() string {
 	if x != nil {
 		return x.CertificationName
+	}
+	return ""
+}
+
+func (x *ExamDetail) GetLastTermurlBody() string {
+	if x != nil {
+		return x.LastTermurlBody
 	}
 	return ""
 }
@@ -3280,7 +3293,7 @@ const file_exam_proto_rawDesc = "" +
 	"\x11_course_unit_ulid\"P\n" +
 	"\x11ListExamsResponse\x12%\n" +
 	"\x05exams\x18\x01 \x03(\v2\x0f.gexam.ExamInfoR\x05exams\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\rR\x05total\"\x91\x0f\n" +
+	"\x05total\x18\x02 \x01(\rR\x05total\"\xbd\x0f\n" +
 	"\n" +
 	"ExamDetail\x12\x17\n" +
 	"\aexam_id\x18\x01 \x01(\tR\x06examId\x12#\n" +
@@ -3335,7 +3348,8 @@ const file_exam_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18- \x01(\tR\tupdatedAt\x12#\n" +
 	"\rpipeline_ulid\x18. \x01(\tR\fpipelineUlid\x12-\n" +
-	"\x12certification_name\x18/ \x01(\tR\x11certificationName\"\xa3\x02\n" +
+	"\x12certification_name\x18/ \x01(\tR\x11certificationName\x12*\n" +
+	"\x11last_termurl_body\x180 \x01(\tR\x0flastTermurlBody\"\xa3\x02\n" +
 	"\x18ListAuditMessagesRequest\x12.\n" +
 	"\x10processed_status\x18\x01 \x01(\tH\x00R\x0fprocessedStatus\x88\x01\x01\x12\"\n" +
 	"\n" +
