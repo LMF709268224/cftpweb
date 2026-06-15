@@ -485,6 +485,8 @@ type OrderItem struct {
 	OrderID       string  `json:"order_id"`
 	ProductName   string  `json:"product_name"`
 	Status        string  `json:"status"` // completed / pending / cancelled
+	RawStatus     string  `json:"raw_status"`
+	PipelineID    string  `json:"pipeline_id"`
 	CreatedAt     string  `json:"created_at"`
 	PaymentMethod string  `json:"payment_method"`
 	Amount        float64 `json:"amount"`
