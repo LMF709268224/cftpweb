@@ -10,10 +10,9 @@ WORKDIR /app/vue-web
 COPY candidateserver/vue-web/ ./
 # 如果检测到 package.json 存在，就执行依赖安装和编译 (支持 pnpm / npm)
 # 强制删除可能被意外拷入的 node_modules 和所有 lock 文件
-# Use package-lock.json with npm ci for reproducible frontend installs.
-RUN rm -rf node_modules && \
+RUN rm -rf node_modules package-lock.json && \
     if [ -f package.json ]; then \
-        npm ci && npm run build; \
+        yarn install && yarn build; \
     else \
         mkdir -p dist; \
     fi
