@@ -84,7 +84,7 @@ async function handleLogout() {
           {{ userName.charAt(0).toUpperCase() }}
         </button>
         <div v-if="menuOpen" class="absolute right-0 top-12 z-50 w-32 rounded-lg bg-white p-1.5 shadow-lg shadow-slate-900/10">
-          <button class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-primary hover:bg-primary/10" @click="handleLogout">
+          <button class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50" @click="handleLogout">
             <LogOut class="h-4 w-4" />
             {{ t.sidebar.logout }}
           </button>
