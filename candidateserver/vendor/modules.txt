@@ -8,6 +8,7 @@ github.com/afnandelfin620-star/cftptest/cftp/glms
 github.com/afnandelfin620-star/cftptest/cftp/gmall
 github.com/afnandelfin620-star/cftptest/cftp/gmid
 github.com/afnandelfin620-star/cftptest/cftp/gmsg
+github.com/afnandelfin620-star/cftptest/cftp/gpay
 github.com/afnandelfin620-star/cftptest/cftp/gprog
 github.com/afnandelfin620-star/cftptest/cftp/util
 # github.com/casdoor/casdoor-go-sdk v1.46.0

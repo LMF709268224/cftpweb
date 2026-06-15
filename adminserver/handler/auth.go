@@ -1,10 +1,12 @@
 package handler
 
 import (
-
 	"net/http"
 	"net/url"
+	"os"
 	"time"
+
+	"adminserver/config"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
@@ -137,8 +139,6 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-
-
 func clearTokenCookies(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "access_token",
@@ -170,8 +170,14 @@ func IsCftpAdmin(user *casdoorsdk.User) bool {
 	if user == nil {
 		return false
 	}
+	
+	adminRole := os.Getenv(config.EnvRoleAdminBasic)
+	if adminRole == "" {
+		adminRole = "role_admin_basic"
+	}
+
 	for _, role := range user.Roles {
-		if role.Name == "role_admin" {
+		if role.Name == adminRole {
 			return true
 		}
 	}

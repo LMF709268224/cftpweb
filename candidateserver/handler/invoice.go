@@ -2,29 +2,33 @@ package handler
 
 import (
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 )
 
 // QueryInvoice  GET /api/invoices/{orderId}
 func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
-	// candidateID := CandidateID(r)
+	orderID := chi.URLParam(r, "orderId")
 
-	//TODO
-	// resp, err := h.Invoice.QueryInvoice(r.Context(), &invoicepb.QueryInvoiceRequest{
-	// 	OrderId: orderID,
-	// })
-	// if err != nil {
-	// 	HandleGrpcError(w, err)
-	// 	return
-	// }
+	resp, err := h.Gpay.GetInvoice(r.Context(), &gpaypb.GetInvoiceRequest{
+		Lookup: &gpaypb.GetInvoiceRequest_OrderId{
+			OrderId: orderID,
+		},
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 
 	WriteJSON(w, http.StatusOK, QueryInvoiceRsp{
-		// InvoiceID:     resp.InvoiceId,
-		// PaymentID:     resp.PaymentId,
-		// RequestStatus: resp.RequestStatus,
-		// SubTotal:      resp.SubTotal,
-		// TotalTax:      resp.TotalTax,
-		// Total:         resp.Total,
-		// ErrorMsg:      resp.ErrorMsg,
+		InvoiceNumber: resp.InvoiceNumber,
+		Status:        resp.Status,
+		SubTotal:      float64(resp.Subtotal) / 100.0,
+		TotalTax:      float64(resp.Tax) / 100.0,
+		Total:         float64(resp.Total) / 100.0,
+		Currency:      resp.Currency,
+		InvoiceUrl:    resp.HostedInvoiceUrl,
 	})
 }
 

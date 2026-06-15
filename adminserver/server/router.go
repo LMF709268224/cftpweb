@@ -170,6 +170,22 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Delete("/{option_id}", h.DeleteLmsQuizOption)
 			})
 
+			r.Route("/resource-packs", func(r chi.Router) {
+				r.Get("/", h.ListLmsResourcePacks)
+				r.Post("/", h.CreateLmsResourcePack)
+				r.Get("/{pack_id}", h.GetLmsResourcePack)
+				r.Put("/{pack_id}", h.UpdateLmsResourcePack)
+				r.Delete("/{pack_id}", h.DeleteLmsResourcePack)
+				r.Get("/{pack_id}/files", h.ListLmsResourcePackFiles)
+				r.Post("/{pack_id}/files", h.CreateLmsResourcePackFile)
+			})
+
+			r.Route("/resource-pack-files", func(r chi.Router) {
+				r.Get("/{file_id}", h.GetLmsResourcePackFile)
+				r.Put("/{file_id}", h.UpdateLmsResourcePackFile)
+				r.Delete("/{file_id}", h.DeleteLmsResourcePackFile)
+			})
+
 			r.Get("/enrollments", h.ListLmsCourseEnrollments)
 			r.Post("/enrollments/batch", h.BatchEnrollLmsCandidateCourses)
 			r.Get("/enrollments/{enrollment_id}", h.GetLmsCourseEnrollmentDetail)

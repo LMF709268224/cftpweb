@@ -7,11 +7,11 @@ WORKDIR /app/web
 COPY adminserver/web/ ./
 # 如果检测到 package.json 存在，就执行依赖安装和编译 (支持 pnpm / npm)
 RUN if [ -f pnpm-lock.yaml ]; then \
-        npm install -g pnpm && pnpm install && pnpm run build; \
+    npm install -g pnpm && pnpm install && pnpm run build; \
     elif [ -f package.json ]; then \
-        npm install && npm run build; \
+    npm install && npm run build; \
     else \
-        mkdir -p build; \
+    mkdir -p build; \
     fi
 
 # ==========================================
@@ -39,7 +39,7 @@ WORKDIR /app
 COPY --from=backend-builder /app/adminserver .
 RUN chmod +x adminserver
 
-# 拷贝阶段1编译好的前端静态文件 (挂载到 web/build 目录下)
+# 拷贝阶段1编译好的前端静态文件 (挂载到 vue-web/dist 目录下)
 COPY --from=frontend-builder /app/web/build ./web/build
 
 EXPOSE 8080

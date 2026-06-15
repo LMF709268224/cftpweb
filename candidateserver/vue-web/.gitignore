@@ -19,6 +19,7 @@ dist/
 *.swp
 *.swo
 *.tsbuildinfo
+vite.config.js
 *.exe
 ztest/
 CLAUDE.md

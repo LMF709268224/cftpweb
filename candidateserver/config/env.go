@@ -51,6 +51,8 @@ const (
 	EnvGexamGrpcAddr = "GEXAM_GRPC_ADDR"
 	// GMID_GRPC_ADDR gmid ID映射服务地址
 	EnvGmidGrpcAddr = "GMID_GRPC_ADDR"
+	// GPAY_GRPC_ADDR gpay 支付服务地址
+	EnvGpayGrpcAddr = "GPAY_GRPC_ADDR"
 
 	// ── CORS ──
 	// CORS_ALLOWED_ORIGINS  允许的跨域来源，逗号分隔，默认 "*" 允许所有

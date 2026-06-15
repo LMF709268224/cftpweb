@@ -11,6 +11,7 @@ import (
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 )
 
@@ -36,6 +37,7 @@ type Handler struct {
 	Creds               gcredspb.CredentialServiceClient
 	Gexam               gexampb.GExamServiceClient
 	Gmid                gmidpb.MidServiceClient
+	Gpay                gpaypb.PayServiceClient
 	CasdoorEndpoint     string
 	CasdoorClientId     string
 	CasdoorClientSecret string
@@ -50,6 +52,7 @@ func New(
 	creds gcredspb.CredentialServiceClient,
 	gexam gexampb.GExamServiceClient,
 	gmid gmidpb.MidServiceClient,
+	gpay gpaypb.PayServiceClient,
 	casdoorEndpoint string,
 	casdoorClientId string,
 	casdoorClientSecret string,
@@ -63,6 +66,7 @@ func New(
 		Creds:               creds,
 		Gexam:               gexam,
 		Gmid:                gmid,
+		Gpay:                gpay,
 		CasdoorEndpoint:     casdoorEndpoint,
 		CasdoorClientId:     casdoorClientId,
 		CasdoorClientSecret: casdoorClientSecret,

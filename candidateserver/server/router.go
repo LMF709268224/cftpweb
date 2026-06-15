@@ -92,6 +92,15 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/{enrollmentId}", h.GetCandidateEnrollmentDetail)
 		})
 
+		r.Route("/resource-packs", func(r chi.Router) {
+			r.Get("/", h.ListResourcePacks)
+			r.Get("/{pack_id}/files", h.ListResourcePackFiles)
+		})
+
+		r.Route("/resource-pack-files", func(r chi.Router) {
+			r.Get("/{file_id}/view-url", h.GetResourcePackFileViewURL)
+		})
+
 		r.Route("/quizzes", func(r chi.Router) {
 			r.Post("/{quizId}/take", h.TakeQuiz)
 			r.Get("/attempts/{attemptId}/paper", h.GetQuizPaper)

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
-import { CheckCircle2, ChevronRight, Loader2, Package, Receipt, ShoppingCart } from "lucide-vue-next"
+import { CheckCircle2, ChevronRight, Loader2, Package, Receipt, ShoppingCart, FileText } from "lucide-vue-next"
 import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -25,6 +25,26 @@ const totalSpentLabel = computed(() => `¥${totalSpent.value.toLocaleString()}`)
 function orderStatusLabel(order: OrderItem) {
   const labels = t.value.orders as Record<string, string>
   return labels[statusConfig[order.status].labelKey] || order.status
+}
+
+const invoiceLoading = ref<string | null>(null)
+
+async function viewInvoice(orderId: string) {
+  if (invoiceLoading.value) return
+  try {
+    invoiceLoading.value = orderId
+    const res = await apiClient(`/api/invoices/${orderId}`)
+    if (res.invoice_url) {
+      window.open(res.invoice_url, '_blank')
+    } else {
+      alert("发票还在生成中或不可用 (Invoice not available yet)")
+    }
+  } catch (err) {
+    console.error("Failed to fetch invoice:", err)
+    alert("获取发票失败 (Failed to fetch invoice)")
+  } finally {
+    invoiceLoading.value = null
+  }
 }
 
 onMounted(async () => {
@@ -107,6 +127,12 @@ onMounted(async () => {
           <div class="flex items-center gap-4">
             <span :class="['badge', statusBadgeClassForStatusValue(statusConfig[order.status].statusValue)]">{{ orderStatusLabel(order) }}</span>
             <div class="min-w-[80px] text-right"><p class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p></div>
+            
+            <button v-if="order.status === 'completed'" @click.stop="viewInvoice(order.id)" class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground" title="查看发票 / View Invoice">
+              <Loader2 v-if="invoiceLoading === order.id" class="h-4 w-4 animate-spin text-primary" />
+              <FileText v-else class="h-4 w-4" />
+            </button>
+            
             <ChevronRight class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
           </div>
         </div>

@@ -55,6 +55,7 @@ func (s *Server) Run(ctx context.Context) error {
 		pool.Creds,
 		pool.Gexam,
 		pool.Gmid,
+		pool.Gpay,
 		os.Getenv(config.EnvCasdoorPublicEndpoint),
 		s.config.SecretConfig.Casdoor.ClientID,
 		s.config.SecretConfig.Casdoor.ClientSecret,

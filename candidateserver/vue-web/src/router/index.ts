@@ -17,6 +17,8 @@ import OrdersPage from "@/pages/OrdersPage.vue"
 import MessagesPage from "@/pages/MessagesPage.vue"
 import SettingsPage from "@/pages/SettingsPage.vue"
 import QuizPage from "@/pages/QuizPage.vue"
+import ResourcePackDetailPage from "@/pages/ResourcePackDetailPage.vue"
+import ResourcePacksPage from "@/pages/ResourcePacksPage.vue"
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -33,6 +35,8 @@ export const router = createRouter({
     { path: "/exams/result", component: ExamResultPage },
     { path: "/exams/signup", component: ExamSignupPage },
     { path: "/records", component: RecordsPage },
+    { path: "/resource-packs", component: ResourcePacksPage },
+    { path: "/resource-packs/detail", component: ResourcePackDetailPage },
     { path: "/credentials", component: CredentialsPage },
     { path: "/certificates", component: CertificatesPage },
     { path: "/orders", component: OrdersPage },

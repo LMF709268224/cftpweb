@@ -12,6 +12,7 @@ import (
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 
@@ -30,6 +31,7 @@ type GrpcClientPool struct {
 	credsConn *grpc.ClientConn
 	gexamConn *grpc.ClientConn
 	gmidConn  *grpc.ClientConn
+	gpayConn  *grpc.ClientConn
 
 	// gRPC 客户端
 	Mall  mallpb.MallServiceClient
@@ -40,6 +42,7 @@ type GrpcClientPool struct {
 	Creds gcredspb.CredentialServiceClient
 	Gexam gexampb.GExamServiceClient
 	Gmid  gmidpb.MidServiceClient
+	Gpay  gpaypb.PayServiceClient
 }
 
 // dialGrpc 建立 gRPC 连接
@@ -137,6 +140,15 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 	}
 	pool.Gmid = gmidpb.NewMidServiceClient(pool.gmidConn)
 
+	// --- gpay ---
+	addr = grpcAddr(config.EnvGpayGrpcAddr, "gpay")
+	pool.gpayConn, err = dialGrpc(addr, creds)
+	if err != nil {
+		slog.Error("Failed to create gRPC client", "service", "gpay", "addr", addr, "error", err)
+		return nil, err
+	}
+	pool.Gpay = gpaypb.NewPayServiceClient(pool.gpayConn)
+
 	return pool, nil
 }
 
@@ -144,7 +156,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 func (p *GrpcClientPool) Close() {
 	conns := []*grpc.ClientConn{
 		p.mallConn, p.lmsConn, p.gccConn, p.gprogConn, p.gmsgConn,
-		p.credsConn, p.gexamConn, p.gmidConn,
+		p.credsConn, p.gexamConn, p.gmidConn, p.gpayConn,
 	}
 	for _, c := range conns {
 		if c != nil {
