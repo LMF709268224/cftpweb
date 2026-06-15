@@ -168,6 +168,8 @@ export const timelineStatusLabel = (t: TranslationTree, entityType?: StatusValue
       return statusLabel(t, STAGE_STATUS_LABELS, status)
     case "COURSE_UNIT":
       return statusLabel(t, COURSE_UNIT_STATUS_LABELS, status)
+    case "MALL_ORDER":
+      return statusLabel(t, MALL_ORDER_STATUS_LABELS, status)
     default:
       return unknownLabel(t)
   }
@@ -189,6 +191,11 @@ const timelineStatusMapsForEntityType = (entityType?: StatusValue) => {
       return {
         labelMap: COURSE_UNIT_STATUS_LABELS,
         enumNameMap: COURSE_UNIT_STATUS_ENUM_NAMES,
+      }
+    case "MALL_ORDER":
+      return {
+        labelMap: MALL_ORDER_STATUS_LABELS,
+        enumNameMap: MALL_ORDER_STATUS_ENUM_NAMES,
       }
     default:
       return null
@@ -214,6 +221,30 @@ export const timelineStatusBadgeClassForStatus = (entityType?: StatusValue, stat
     return statusBadgeClassFromTone("neutral")
   }
   return statusBadgeClassForStatus(maps.enumNameMap, status)
+}
+
+export const MALL_ORDER_STATUS_LABELS: StatusLabelMap = {
+  "WAIT_PIPELINE_PAYMENT": "orders.statusWaitPayment",
+  "WAIT_PIPELINE_INSTANTIATE": "orders.statusWaitInstantiate",
+  "WAIT_EXEMPTION_REVIEW": "orders.statusWaitReview",
+  "WAIT_REVIEW_FEE_PAYMENT": "orders.statusWaitReviewFeePayment",
+  "COMPLETED": "orders.statusCompleted",
+  "FAILED": "orders.statusFailed",
+  "CANCELLED": "orders.statusCancelled",
+  "PENDING_CREATE": "orders.statusPendingCreate",
+  "PENDING_PAYMENT": "orders.statusPendingPayment",
+}
+
+export const MALL_ORDER_STATUS_ENUM_NAMES: StatusEnumNameMap = {
+  "WAIT_PIPELINE_PAYMENT": "WAIT",
+  "WAIT_PIPELINE_INSTANTIATE": "PROCESSING",
+  "WAIT_EXEMPTION_REVIEW": "REVIEW",
+  "WAIT_REVIEW_FEE_PAYMENT": "WAIT",
+  "COMPLETED": "COMPLETED",
+  "FAILED": "FAILED",
+  "CANCELLED": "CANCELLED",
+  "PENDING_CREATE": "PENDING",
+  "PENDING_PAYMENT": "PENDING",
 }
 
 export const CANDIDATE_PIPELINE_STATUS_LABELS: StatusLabelMap = {

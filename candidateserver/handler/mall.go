@@ -361,17 +361,25 @@ func (h *Handler) PurchasePipeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	paymentKey := formatPaymentKey(mallResp.GetPaymentKey())
 	// 3. Return response with PaymentUrl
 	WriteJSON(w, http.StatusCreated, PurchasePipelineRsp{
 		PipelineOrderUlid:    mallResp.GetPipelineOrderUlid(),
 		OrderStatus:          mallResp.GetOrderStatus(),
 		ReviewOrderUlid:      "",
 		PipelinePayOrderUlid: mallResp.GetPipelinePayOrderUlid(),
-		PaymentUrl:           mallResp.GetPaymentKey(),
-		PaymentKey:           mallResp.GetPaymentKey(),
+		PaymentUrl:           paymentKey,
+		PaymentKey:           paymentKey,
 		ReusedExisting:       mallResp.GetReusedExisting(),
 		Message:              mallResp.GetMessage(),
 	})
+}
+
+func formatPaymentKey(paymentKey string) string {
+	if strings.HasPrefix(paymentKey, "cs_") {
+		return "https://checkout.stripe.com/c/pay/" + paymentKey
+	}
+	return paymentKey
 }
 
 func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification) PipelineConfig {
@@ -758,6 +766,7 @@ func (h *Handler) UnlockPipeline(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+	resp.PaymentKey = formatPaymentKey(resp.GetPaymentKey())
 	WriteJSON(w, http.StatusCreated, resp)
 }
 
@@ -851,5 +860,6 @@ func (h *Handler) InitiatePayment(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+	resp.PaymentKey = formatPaymentKey(resp.GetPaymentKey())
 	WriteJSON(w, http.StatusOK, resp)
 }

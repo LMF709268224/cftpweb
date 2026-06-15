@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { AlertCircle, Building2, CheckCircle2, CreditCard, Lock, Loader2, ShoppingCart } from "lucide-vue-next"
+import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
@@ -385,7 +386,9 @@ async function initiatePayment() {
         <div v-if="activeOrder" class="rounded-xl border border-border bg-muted/30 p-4">
           <div class="mb-2 flex items-center justify-between gap-3">
             <div class="text-sm font-semibold text-foreground">{{ activeOrder.message === copy.inProgressPurchaseDesc ? copy.activeOrder : copy.orderCreated }}</div>
-            <span v-if="activeOrder.status" class="badge">{{ activeOrder.status }}</span>
+            <span v-if="activeOrder.status" class="badge text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', activeOrder.status)">
+              {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', activeOrder.status) }}
+            </span>
           </div>
           <div class="break-all text-xs text-muted-foreground">{{ activeOrder.orderId }}</div>
           <p v-if="activeOrder.message" class="mt-2 text-sm text-muted-foreground">{{ activeOrder.message }}</p>
