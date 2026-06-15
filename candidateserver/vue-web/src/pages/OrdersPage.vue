@@ -29,7 +29,7 @@ const orders = ref<OrderItem[]>([])
 const totalSpent = ref(0)
 const completedCount = ref(0)
 const loading = ref(true)
-const selectedOrderType = ref("ALL")
+const selectedOrderType = ref("PIPELINE_PAYMENT")
 const totalSpentLabel = computed(() => `¥${totalSpent.value.toLocaleString()}`)
 
 import { useRouter } from "vue-router"
@@ -72,7 +72,7 @@ async function viewInvoice(orderId: string) {
 async function fetchOrders() {
   loading.value = true
   try {
-    const url = selectedOrderType.value === "ALL" ? "/api/orders" : `/api/orders?biz_type=${selectedOrderType.value}`
+    const url = `/api/orders?biz_type=${selectedOrderType.value}`
     const res = await apiClient(url)
     totalSpent.value = res.total_amount || 0
     completedCount.value = res.completed || 0

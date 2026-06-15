@@ -12,6 +12,7 @@ import (
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 )
 
@@ -38,6 +39,7 @@ type Handler struct {
 	Gexam               gexampb.GExamServiceClient
 	Gmid                gmidpb.MidServiceClient
 	Gmail               gmailpb.MailServiceClient
+	Gpay                gpaypb.PayServiceClient
 	CasdoorEndpoint     string
 	CasdoorClientId     string
 	CasdoorClientSecret string
@@ -53,6 +55,7 @@ func New(
 	gexam gexampb.GExamServiceClient,
 	gmid gmidpb.MidServiceClient,
 	gmail gmailpb.MailServiceClient,
+	gpay gpaypb.PayServiceClient,
 	casdoorEndpoint string,
 	casdoorClientId string,
 	casdoorClientSecret string,
@@ -67,6 +70,7 @@ func New(
 		Gexam:               gexam,
 		Gmid:                gmid,
 		Gmail:               gmail,
+		Gpay:                gpay,
 		CasdoorEndpoint:     casdoorEndpoint,
 		CasdoorClientId:     casdoorClientId,
 		CasdoorClientSecret: casdoorClientSecret,

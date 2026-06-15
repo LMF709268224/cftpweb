@@ -263,6 +263,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/stages/{stage_ulid}/order-status", h.GetStageOrderStatus)
 			r.Get("/stage-orders", h.ListStageOrders)
 			r.Get("/orders", h.ListOrders)
+			r.Get("/invoices", h.ListInvoices)
 		})
 
 		// ===== Webhook 审计 (Exam Webhooks) =====

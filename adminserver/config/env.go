@@ -31,7 +31,6 @@ const (
 	// ROLE_ADMIN_BASIC 管理员基础角色名，默认为 "role_admin_basic"
 	EnvRoleAdminBasic = "ROLE_ADMIN_BASIC"
 
-
 	// ── 下游微服务 gRPC 地址 ──
 	// 每个变量对应一个下游服务，
 	// 未设置时自动拼接 K8s DNS 名: <service>.<ns>.svc.cluster.local:50051
@@ -54,6 +53,8 @@ const (
 	EnvGmidGrpcAddr = "GMID_GRPC_ADDR"
 	// GMAIL_GRPC_ADDR gmail 邮件服务地址
 	EnvGmailGrpcAddr = "GMAIL_GRPC_ADDR"
+	// GPAY_GRPC_ADDR gpay 支付服务地址
+	EnvGpayGrpcAddr = "GPAY_GRPC_ADDR"
 
 	// ── CORS ──
 	// CORS_ALLOWED_ORIGINS  允许的跨域来源，逗号分隔，默认 "*" 允许所有
