@@ -407,6 +407,10 @@ export default function PipelinesPage() {
 
   const clonePipeline = async () => {
     if (!selectedPipeline) return
+    if (!form.respath.trim()) {
+      toast.error("Please fill in respath")
+      return
+    }
     setCreating(true)
     try {
       const res = await apiClient("/api/pipelines", {
@@ -415,7 +419,7 @@ export default function PipelinesPage() {
         body: JSON.stringify({
           name: form.name.trim() + " (Copy)",
           category_tips: form.category_tips.trim(),
-          respath: selectedPipeline.respath || "",
+          respath: form.respath.trim(),
           from_pipeline_guid: selectedPipeline.pipeline_guid,
         }),
       })
