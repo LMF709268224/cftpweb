@@ -43,22 +43,16 @@ type UnitConfig = {
   unit_id?: string
   name?: string
   glms_course_id: string
-  has_learning?: boolean
-  has_exam?: boolean
-  learning_minutes?: number
-  program_code?: string
-  exam_code?: string
-  exam_form?: string
-  base_fee?: number
+  program?: string
+  exam_id?: string
+  form_code?: string
   stripe_product_id?: string
   stripe_price_id?: string
   exemption_stripe_product_id?: string
   exemption_stripe_price_id?: string
-  exemption_audit_fee?: number
   retake_stripe_product_id?: string
   retake_stripe_price_id?: string
   allow_retake?: boolean
-  retake_fee?: number
   exemption_quals?: string[]
 }
 
@@ -112,22 +106,16 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
         unit_id: unit.unit_id,
         name: unit.name || "",
         glms_course_id: unit.glms_course_id || "",
-        has_learning: unit.has_learning ?? true,
-        has_exam: Boolean(unit.has_exam),
-        learning_minutes: Number(unit.learning_minutes || 0),
-        program_code: unit.program_code || "",
-        exam_code: unit.exam_code || "",
-        exam_form: unit.exam_form || "",
-        base_fee: Number(unit.base_fee || 0),
+        program: unit.program || "",
+        exam_id: unit.exam_id || "",
+        form_code: unit.form_code || "",
         stripe_product_id: unit.stripe_product_id || "",
         stripe_price_id: unit.stripe_price_id || "",
         exemption_stripe_product_id: unit.exemption_stripe_product_id || "",
         exemption_stripe_price_id: unit.exemption_stripe_price_id || "",
-        exemption_audit_fee: Number(unit.exemption_audit_fee || 0),
         retake_stripe_product_id: unit.retake_stripe_product_id || "",
         retake_stripe_price_id: unit.retake_stripe_price_id || "",
         allow_retake: Boolean(unit.allow_retake),
-        retake_fee: Number(unit.retake_fee || 0),
         exemption_quals: unit.exemption_quals || [],
       })),
     })),
@@ -148,22 +136,16 @@ function cleanFormForStructure(form: PipelineForm) {
         unit_id: unit.unit_id || "",
         name: (unit.name || "").trim(),
         glms_course_id: unit.glms_course_id.trim(),
-        has_learning: unit.has_learning ?? true,
-        has_exam: Boolean(unit.has_exam),
-        learning_minutes: Number(unit.learning_minutes || 0),
-        program_code: (unit.program_code || "").trim(),
-        exam_code: (unit.exam_code || "").trim(),
-        exam_form: (unit.exam_form || "").trim(),
-        base_fee: Number(unit.base_fee || 0),
+        program: (unit.program || "").trim(),
+        exam_id: (unit.exam_id || "").trim(),
+        form_code: (unit.form_code || "").trim(),
         stripe_product_id: (unit.stripe_product_id || "").trim(),
         stripe_price_id: (unit.stripe_price_id || "").trim(),
         exemption_stripe_product_id: (unit.exemption_stripe_product_id || "").trim(),
         exemption_stripe_price_id: (unit.exemption_stripe_price_id || "").trim(),
-        exemption_audit_fee: Number(unit.exemption_audit_fee || 0),
         retake_stripe_product_id: (unit.retake_stripe_product_id || "").trim(),
         retake_stripe_price_id: (unit.retake_stripe_price_id || "").trim(),
         allow_retake: Boolean(unit.allow_retake),
-        retake_fee: Number(unit.retake_fee || 0),
         exemption_quals: unit.exemption_quals || [],
       })),
     })),

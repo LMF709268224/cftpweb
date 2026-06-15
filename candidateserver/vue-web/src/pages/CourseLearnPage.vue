@@ -212,7 +212,7 @@ const courseHasExam = computed(() => {
   for (const stage of stages) {
     for (const unit of stage.units || []) {
       if (unit.glms_course_id === courseId.value || unit.course_id === courseId.value) {
-        return Boolean(unit.exam_id)
+        return Boolean(unit.exam_id || unit.program)
       }
     }
   }
