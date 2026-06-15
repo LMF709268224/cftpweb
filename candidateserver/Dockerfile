@@ -11,7 +11,7 @@ COPY candidateserver/vue-web/ ./
 # 强制删除可能被意外拷入的 node_modules 和所有 lock 文件
 RUN rm -rf node_modules && \
     if [ -f package.json ]; then \
-        if [ -f package-lock.json ]; then npm ci && npm run build; else npm install && npm run build; fi; \
+        npm install && npm run build; \
     else \
         mkdir -p dist; \
     fi
