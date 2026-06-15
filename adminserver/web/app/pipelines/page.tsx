@@ -41,6 +41,7 @@ type StageConfig = {
 
 type UnitConfig = {
   unit_id?: string
+  name?: string
   glms_course_id: string
   stripe_product_id?: string
   stripe_price_id?: string
@@ -100,6 +101,7 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
       sort_order: Number(stage.sort_order || 0),
       units: (stage.units || []).map((unit) => ({
         unit_id: unit.unit_id,
+        name: unit.name || "",
         glms_course_id: unit.glms_course_id || "",
         stripe_product_id: unit.stripe_product_id || "",
         stripe_price_id: unit.stripe_price_id || "",
@@ -344,6 +346,10 @@ export default function PipelinesPage() {
       }
       for (let unitIndex = 0; unitIndex < stage.units.length; unitIndex += 1) {
         const unit = stage.units[unitIndex]
+        if (!unit.name?.trim()) {
+          toast.error(page.unitNameRequired.replace("{{stage}}", stage.name || String(stageIndex + 1)).replace("{{index}}", String(unitIndex + 1)))
+          return false
+        }
         if (!unit.glms_course_id.trim()) {
           toast.error(page.unitCourseRequired.replace("{{stage}}", stage.name || String(stageIndex + 1)).replace("{{index}}", String(unitIndex + 1)))
           return false
@@ -486,6 +492,7 @@ export default function PipelinesPage() {
               units: [
                 ...stage.units,
                 {
+                  name: "",
                   glms_course_id: "",
                   allow_retake: false,
                   exemption_quals: [],
@@ -737,10 +744,23 @@ export default function PipelinesPage() {
                           ) : (
                             stage.units.map((unit, unitIndex) => (
                               <div key={unit.unit_id || unitIndex} className="rounded-md border p-3">
+                                <div className="grid gap-3 lg:grid-cols-2 mb-3">
+                                  <div>
+                                    <Label>{page.unitName}</Label>
+                                    <Input value={unit.name || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { name: event.target.value })} disabled={published} />
+                                  </div>
+                                </div>
                                 <div className="grid gap-3 lg:grid-cols-[minmax(220px,1.2fr)_1fr_1fr_auto]">
                                   <div>
                                     <Label>{page.glmsCourse}</Label>
-                                    <Select value={unit.glms_course_id || "none"} onValueChange={(value) => updateUnit(stageIndex, unitIndex, { glms_course_id: value === "none" ? "" : value })} disabled={published}>
+                                    <Select value={unit.glms_course_id || "none"} onValueChange={(value) => {
+                                      const courseId = value === "none" ? "" : value
+                                      const courseName = courseId ? (lmsCourses.find(c => c.course_id === courseId)?.title || courseId) : ""
+                                      updateUnit(stageIndex, unitIndex, { 
+                                        glms_course_id: courseId,
+                                        name: unit.name ? unit.name : courseName
+                                      })
+                                    }} disabled={published}>
                                       <SelectTrigger className="w-full">
                                         <SelectValue placeholder={page.selectGlmsCourse} />
                                       </SelectTrigger>
