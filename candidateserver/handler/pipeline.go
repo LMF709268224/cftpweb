@@ -327,6 +327,17 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if completeCourse.GetSupplementaryMaterial() == nil {
+		suppResp, err := h.Lms.GetCourseSupplementaryMaterialAdmin(r.Context(), &lmspb.GetCourseSupplementaryMaterialRequest{
+			CourseId: courseID,
+		})
+		if err == nil && suppResp != nil && suppResp.GetMaterial() != nil {
+			completeCourse.SupplementaryMaterial = suppResp.GetMaterial()
+		} else if err != nil {
+			slog.Warn("failed to load candidate course supplementary material", "error", err, "course_id", courseID)
+		}
+	}
+
 	quizProgress := h.quizProgressByCourse(r, candidateID, completeCourse)
 	WriteJSON(w, http.StatusOK, PipelineCourseRsp{
 		CompleteCourse: completeCourse,

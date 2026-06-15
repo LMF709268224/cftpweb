@@ -34,6 +34,8 @@ import { useTranslation } from "@/lib/language"
 
 type CourseCompleteResponse = {
   complete_course?: CompleteCourse
+  supplementary_material?: SupplementaryMaterial | SupplementaryMaterial[]
+  supplementaryMaterial?: SupplementaryMaterial | SupplementaryMaterial[]
   quiz_progress?: Record<string, QuizProgressItem>
 }
 
@@ -42,6 +44,7 @@ type CompleteCourse = {
   chapters?: ChapterDetail[]
   materials?: CourseMaterialSummary[]
   supplementary_material?: SupplementaryMaterial | SupplementaryMaterial[]
+  supplementaryMaterial?: SupplementaryMaterial | SupplementaryMaterial[]
   quizzes?: any[]
 }
 
@@ -95,6 +98,7 @@ type SupplementaryMaterial = {
   course_id?: string
   kind?: string
   data_json?: string | unknown[] | Record<string, unknown>
+  dataJson?: string | unknown[] | Record<string, unknown>
   version?: number
   created_at?: string
   updated_at?: string
@@ -170,9 +174,12 @@ const course = computed<Course | undefined>(() => completeCourse.value?.course)
 const chapters = computed<ChapterDetail[]>(() => completeCourse.value?.chapters || [])
 const materials = computed<CourseMaterialSummary[]>(() => completeCourse.value?.materials || [])
 const supplementaryMaterials = computed<SupplementaryMaterial[]>(() => {
-  const raw = completeCourse.value?.supplementary_material
-  if (!raw) return []
-  return Array.isArray(raw) ? raw.filter(Boolean) : [raw]
+  const raw =
+    completeCourse.value?.supplementary_material ??
+    completeCourse.value?.supplementaryMaterial ??
+    payload.value?.supplementary_material ??
+    payload.value?.supplementaryMaterial
+  return normalizeSupplementaryMaterials(raw)
 })
 const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() =>
   supplementaryMaterials.value.flatMap((material, materialIndex) => parseSupplementaryMaterialItems(material, materialIndex)),
@@ -494,7 +501,7 @@ function materialTypeLabel(materialType?: number) {
 }
 
 function parseSupplementaryMaterialItems(material: SupplementaryMaterial, materialIndex: number): SupplementaryMaterialItem[] {
-  const data = parseSupplementaryJson(material.data_json)
+  const data = parseSupplementaryJson(material.data_json ?? material.dataJson)
   const records = supplementaryRecordsFromData(data)
 
   return records.map((record, recordIndex) => {
@@ -517,6 +524,13 @@ function parseSupplementaryMaterialItems(material: SupplementaryMaterial, materi
   })
 }
 
+function normalizeSupplementaryMaterials(raw: SupplementaryMaterial | SupplementaryMaterial[] | unknown): SupplementaryMaterial[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw.filter(isRecord) as SupplementaryMaterial[]
+  if (isRecord(raw)) return [raw as SupplementaryMaterial]
+  return []
+}
+
 function parseSupplementaryJson(dataJson: SupplementaryMaterial["data_json"]) {
   if (!dataJson) return null
   if (typeof dataJson !== "string") return dataJson
@@ -525,7 +539,9 @@ function parseSupplementaryJson(dataJson: SupplementaryMaterial["data_json"]) {
   if (!trimmed) return null
 
   try {
-    return JSON.parse(trimmed)
+    const parsed = JSON.parse(trimmed)
+    if (typeof parsed === "string" && parsed.trim()) return parseSupplementaryJson(parsed)
+    return parsed
   } catch {
     return null
   }
@@ -535,9 +551,11 @@ function supplementaryRecordsFromData(data: unknown): Record<string, unknown>[] 
   if (Array.isArray(data)) return data.filter(isRecord)
   if (!isRecord(data)) return []
 
-  for (const key of ["items", "resources", "materials", "data", "list"]) {
+  for (const key of ["items", "resources", "materials", "data", "data_json", "dataJson", "list"]) {
     const value = data[key]
     if (Array.isArray(value)) return value.filter(isRecord)
+    const parsed = parseSupplementaryJson(value as SupplementaryMaterial["data_json"])
+    if (Array.isArray(parsed)) return parsed.filter(isRecord)
   }
 
   return [data]
