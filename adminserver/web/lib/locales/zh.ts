@@ -454,6 +454,7 @@ export const zh = {
     delete: "删除",
     active: "已发布",
     draft: "草稿",
+    statusDeprecated: "已废弃",
     statusRunning: "运行中",
     statusWaitFinalElig: "等待最终资格",
     statusCompleted: "已完成",

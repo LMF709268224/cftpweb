@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ADMIN_PIPELINE_STATUS_LABELS, statusLabel } from "@cftpweb/shared"
+import { ADMIN_PIPELINE_STATUS_LABELS, LMS_COURSE_STATUS_LABELS, statusLabel } from "@cftpweb/shared"
 
 type Pipeline = {
   pipeline_id: string
@@ -28,6 +28,7 @@ type Pipeline = {
   unlock_stripe_price_id?: string
   package_stripe_product_id?: string
   package_stripe_price_id?: string
+  respath?: string
   stages?: StageConfig[]
 }
 
@@ -68,6 +69,7 @@ type PipelineForm = {
   unlock_stripe_price_id: string
   package_stripe_product_id: string
   package_stripe_price_id: string
+  respath: string
   stages: StageConfig[]
 }
 
@@ -78,6 +80,7 @@ const emptyForm: PipelineForm = {
   unlock_stripe_price_id: "",
   package_stripe_product_id: "",
   package_stripe_price_id: "",
+  respath: "",
   stages: [],
 }
 
@@ -90,6 +93,7 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
     unlock_stripe_price_id: pipeline.unlock_stripe_price_id || "",
     package_stripe_product_id: pipeline.package_stripe_product_id || "",
     package_stripe_price_id: pipeline.package_stripe_price_id || "",
+    respath: pipeline.respath || "",
     stages: (pipeline.stages || []).map((stage) => ({
       stage_id: stage.stage_id,
       name: stage.name || "",
@@ -137,7 +141,11 @@ function cleanFormForStructure(form: PipelineForm) {
 }
 
 function isPublished(pipeline: Pipeline | null) {
-  return Boolean(pipeline?.status?.toLowerCase() === "active" || pipeline?.is_current)
+  return Boolean(pipeline?.status?.toLowerCase() === "active" || (pipeline?.is_current && pipeline?.status?.toLowerCase() !== "deprecated"))
+}
+
+function isDeprecated(pipeline: Pipeline | null) {
+  return Boolean(pipeline?.status?.toLowerCase() === "deprecated")
 }
 
 export default function PipelinesPage() {
@@ -269,6 +277,10 @@ export default function PipelinesPage() {
       toast.error(page.fillCategoryTips)
       return
     }
+    if (!form.respath.trim()) {
+      toast.error("Please fill in respath")
+      return
+    }
     setCreating(true)
     try {
       const res = await apiClient("/api/pipelines", {
@@ -277,6 +289,7 @@ export default function PipelinesPage() {
         body: JSON.stringify({
           name: form.name.trim(),
           category_tips: form.category_tips.trim(),
+          respath: form.respath.trim(),
         }),
       })
       toast.success(page.createSuccess)
@@ -402,6 +415,7 @@ export default function PipelinesPage() {
         body: JSON.stringify({
           name: form.name.trim() + " (Copy)",
           category_tips: form.category_tips.trim(),
+          respath: selectedPipeline.respath || "",
           from_pipeline_guid: selectedPipeline.pipeline_guid,
         }),
       })
@@ -551,7 +565,7 @@ export default function PipelinesPage() {
                     >
                       <div className="flex items-center justify-between gap-3">
                         <span className="truncate font-medium">{pipeline.name || t.common.unknownCourse}</span>
-                        <Badge variant={isPublished(pipeline) ? "default" : "outline"}>{isPublished(pipeline) ? page.active : page.draft}</Badge>
+                        <Badge variant={isDeprecated(pipeline) ? "secondary" : isPublished(pipeline) ? "default" : "outline"}>{isDeprecated(pipeline) ? page.statusDeprecated : isPublished(pipeline) ? page.active : page.draft}</Badge>
                       </div>
                       <div className="mt-1 truncate text-xs text-muted-foreground">{pipeline.pipeline_id}</div>
                       <div className="mt-1 flex justify-between text-xs text-muted-foreground">
@@ -614,12 +628,16 @@ export default function PipelinesPage() {
                     <Label htmlFor="categoryTips">{page.categoryTips}</Label>
                     <Input id="categoryTips" value={form.category_tips} onChange={(event) => setForm({ ...form, category_tips: event.target.value })} disabled={Boolean(selectedPipeline)} />
                   </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="respath">Respath</Label>
+                    <Input id="respath" placeholder="e.g. /courses/cfta" value={form.respath} onChange={(event) => setForm({ ...form, respath: event.target.value })} disabled={Boolean(selectedPipeline)} />
+                  </div>
                   {selectedPipeline && (
                     <div className="md:col-span-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
                       <span>ID: {selectedPipeline.pipeline_id}</span>
                       <span>GUID: {selectedPipeline.pipeline_guid || t.common.na}</span>
                       <span>{page.version}: {selectedPipeline.version || 0}</span>
-                      <span>{statusLabel(t, ADMIN_PIPELINE_STATUS_LABELS, selectedPipeline.status)}</span>
+                      <span>{statusLabel(t, LMS_COURSE_STATUS_LABELS, selectedPipeline.status)}</span>
                     </div>
                   )}
                 </div>

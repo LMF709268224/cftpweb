@@ -456,6 +456,7 @@ export const en: AppTranslations = {
     delete: "Delete",
     active: "Published",
     draft: "Draft",
+    statusDeprecated: "Deprecated",
     statusRunning: "Running",
     statusWaitFinalElig: "Waiting for final eligibility",
     statusCompleted: "Completed",
