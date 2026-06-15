@@ -152,6 +152,20 @@ function cleanFormForStructure(form: PipelineForm) {
   }
 }
 
+function cloneForm(form: PipelineForm): PipelineForm {
+  return {
+    ...form,
+    stages: form.stages.map((stage) => ({
+      ...stage,
+      units: stage.units.map((unit) => ({ ...unit, exemption_quals: [...(unit.exemption_quals || [])] })),
+    })),
+  }
+}
+
+function extractCourseGuid(payload: any): string {
+  return payload?.course_guid || payload?.course?.course_guid || payload?.course_detail?.course?.course_guid || payload?.complete_course?.course?.course_guid || ""
+}
+
 function isPublished(pipeline: Pipeline | null) {
   return Boolean(pipeline?.status?.toLowerCase() === "active" || (pipeline?.is_current && pipeline?.status?.toLowerCase() !== "deprecated"))
 }
@@ -210,6 +224,42 @@ export default function PipelinesPage() {
     const course = lmsCourses.find((item) => item.course_id === courseId)
     return course?.title || courseId || t.common.na
   }
+
+  const resolveCurrentCourseId = useCallback(async (courseId: string) => {
+    if (!courseId) return ""
+    const direct = lmsCourses.find((course) => course.course_id === courseId)
+    if (direct?.is_published || direct?.is_current) return direct.course_id
+
+    try {
+      const summary = await apiClient(`/api/lms/courses/${courseId}`)
+      const courseGuid = extractCourseGuid(summary)
+      if (courseGuid) {
+        const current = lmsCourses.find((course) => course.course_guid === courseGuid && (course.is_published || course.is_current))
+        if (current?.course_id) return current.course_id
+      }
+    } catch (error) {
+      console.error("Failed to resolve current course for", courseId, error)
+    }
+
+    return courseId
+  }, [lmsCourses])
+
+  const resolveCloneForm = useCallback(async (source: PipelineForm) => {
+    const next = cloneForm(source)
+    const courseIds = Array.from(new Set(next.stages.flatMap((stage) => stage.units.map((unit) => unit.glms_course_id)).filter(Boolean)))
+    const pairs = await Promise.all(courseIds.map(async (courseId) => [courseId, await resolveCurrentCourseId(courseId)] as const))
+    const courseMap = new Map(pairs)
+
+    next.stages = next.stages.map((stage) => ({
+      ...stage,
+      units: stage.units.map((unit) => ({
+        ...unit,
+        glms_course_id: courseMap.get(unit.glms_course_id) || unit.glms_course_id,
+      })),
+    }))
+
+    return next
+  }, [resolveCurrentCourseId])
 
   const loadPipelines = useCallback(async () => {
     setLoading(true)
@@ -446,11 +496,21 @@ export default function PipelinesPage() {
       })
       const newPipelineId = res?.pipeline_id || ""
       if (newPipelineId && form.stages.length > 0) {
-        await apiClient(`/api/pipelines/${newPipelineId}/structure`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(cleanFormForStructure(form)),
-        })
+        try {
+          const structureForm = await resolveCloneForm(form)
+          await apiClient(`/api/pipelines/${newPipelineId}/structure`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(cleanFormForStructure(structureForm)),
+          })
+        } catch (error) {
+          try {
+            await apiClient(`/api/pipelines/${newPipelineId}`, { method: "DELETE" })
+          } catch (cleanupError) {
+            console.error("Failed to delete incomplete pipeline draft", cleanupError)
+          }
+          throw error
+        }
       }
       toast.success(page.createSuccess)
       setSelectedId(newPipelineId)
