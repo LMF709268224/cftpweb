@@ -840,6 +840,78 @@ export default function PipelinesPage() {
                                     </label>
                                   </div>
                                 </div>
+                                <div className="mt-3 rounded-md border bg-muted/20 p-3">
+                                  <div className="mb-3 flex flex-wrap items-center gap-4">
+                                    <label className="flex items-center gap-2 text-sm font-medium">
+                                      <Checkbox
+                                        checked={unit.has_learning ?? true}
+                                        onCheckedChange={(checked) => updateUnit(stageIndex, unitIndex, { has_learning: Boolean(checked) })}
+                                        disabled={published}
+                                      />
+                                      Has Learning
+                                    </label>
+                                    <label className="flex items-center gap-2 text-sm font-medium">
+                                      <Checkbox
+                                        checked={Boolean(unit.has_exam)}
+                                        onCheckedChange={(checked) => updateUnit(stageIndex, unitIndex, { has_exam: Boolean(checked) })}
+                                        disabled={published}
+                                      />
+                                      Has Exam
+                                    </label>
+                                  </div>
+                                  <div className="grid gap-3 md:grid-cols-3">
+                                    <Input
+                                      placeholder="Learning Minutes"
+                                      type="number"
+                                      min="0"
+                                      value={unit.learning_minutes ?? 0}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { learning_minutes: Number(event.target.value || 0) })}
+                                      disabled={published}
+                                    />
+                                    <Input
+                                      placeholder="Program Code"
+                                      value={unit.program_code || ""}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { program_code: event.target.value })}
+                                      disabled={published || !unit.has_exam}
+                                    />
+                                    <Input
+                                      placeholder="Exam Code"
+                                      value={unit.exam_code || ""}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exam_code: event.target.value })}
+                                      disabled={published || !unit.has_exam}
+                                    />
+                                    <Input
+                                      placeholder="Exam Form"
+                                      value={unit.exam_form || ""}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exam_form: event.target.value })}
+                                      disabled={published || !unit.has_exam}
+                                    />
+                                    <Input
+                                      placeholder="Base Fee (minor units)"
+                                      type="number"
+                                      min="0"
+                                      value={unit.base_fee ?? 0}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { base_fee: Number(event.target.value || 0) })}
+                                      disabled={published || !unit.has_exam}
+                                    />
+                                    <Input
+                                      placeholder="Retake Fee (minor units)"
+                                      type="number"
+                                      min="0"
+                                      value={unit.retake_fee ?? 0}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { retake_fee: Number(event.target.value || 0) })}
+                                      disabled={published || !unit.has_exam || !unit.allow_retake}
+                                    />
+                                    <Input
+                                      placeholder="Exemption Audit Fee (minor units)"
+                                      type="number"
+                                      min="0"
+                                      value={unit.exemption_audit_fee ?? 0}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exemption_audit_fee: Number(event.target.value || 0) })}
+                                      disabled={published}
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             ))
                           )}
