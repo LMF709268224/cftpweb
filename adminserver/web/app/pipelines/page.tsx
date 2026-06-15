@@ -157,7 +157,12 @@ function cloneForm(form: PipelineForm): PipelineForm {
     ...form,
     stages: form.stages.map((stage) => ({
       ...stage,
-      units: stage.units.map((unit) => ({ ...unit, exemption_quals: [...(unit.exemption_quals || [])] })),
+      stage_id: "",
+      units: stage.units.map((unit) => ({
+        ...unit,
+        unit_id: "",
+        exemption_quals: [...(unit.exemption_quals || [])],
+      })),
     })),
   }
 }
