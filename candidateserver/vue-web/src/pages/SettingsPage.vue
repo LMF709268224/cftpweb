@@ -181,6 +181,18 @@ function handleProvinceChange() {
   refreshCityOptions()
 }
 
+function normalizeInternationalPhone(value: string) {
+  const trimmed = value.trim()
+  const prefix = trimmed.includes("+") ? "+" : ""
+  const digits = trimmed.replace(/\D/g, "").slice(0, 15)
+  return `${prefix}${digits}`
+}
+
+function handlePhoneInput(field: "homePhone" | "workPhone", event: Event) {
+  const target = event.target as HTMLInputElement
+  profile[field] = normalizeInternationalPhone(target.value)
+}
+
 watch(
   () => route.query.tab,
   (tab) => {
@@ -331,8 +343,30 @@ async function handleUpdatePassword() {
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.lastName }}</span><input v-model="profile.lastName" class="input" :placeholder="t.settings.lastNamePlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.gender }}</span><input v-model="profile.gender" class="input" :placeholder="t.settings.genderPlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.birthday }}</span><input v-model="profile.birthday" class="input" type="date" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.homePhone }}</span><input v-model="profile.homePhone" class="input" type="tel" :placeholder="t.settings.homePhonePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.workPhone }}</span><input v-model="profile.workPhone" class="input" type="tel" :placeholder="t.settings.workPhonePlaceholder" /></label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium">{{ t.settings.homePhone }}</span>
+              <input
+                v-model="profile.homePhone"
+                class="input"
+                type="tel"
+                inputmode="tel"
+                maxlength="16"
+                :placeholder="t.settings.homePhonePlaceholder"
+                @input="handlePhoneInput('homePhone', $event)"
+              />
+            </label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium">{{ t.settings.workPhone }}</span>
+              <input
+                v-model="profile.workPhone"
+                class="input"
+                type="tel"
+                inputmode="tel"
+                maxlength="16"
+                :placeholder="t.settings.workPhonePlaceholder"
+                @input="handlePhoneInput('workPhone', $event)"
+              />
+            </label>
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.country }}</span>
               <select v-model="selectedCountryCode" class="input cursor-pointer" @change="handleCountryChange">

@@ -173,6 +173,18 @@ function handleProvinceChange() {
   refreshCityOptions()
 }
 
+function normalizeInternationalPhone(value: string) {
+  const trimmed = value.trim()
+  const prefix = trimmed.includes("+") ? "+" : ""
+  const digits = trimmed.replace(/\D/g, "").slice(0, 15)
+  return `${prefix}${digits}`
+}
+
+function handlePhoneInput(field: "home_phone" | "work_phone", event: Event) {
+  const target = event.target as HTMLInputElement
+  formData[field] = normalizeInternationalPhone(target.value)
+}
+
 function normalizeDate(value: unknown) {
   return typeof value === "string" ? value.split("T")[0] : ""
 }
@@ -374,11 +386,26 @@ async function handleSubmit() {
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
-            <input v-model="formData.work_phone" class="input" type="tel" />
+            <input
+              v-model="formData.work_phone"
+              class="input"
+              type="tel"
+              inputmode="tel"
+              maxlength="16"
+              @input="handlePhoneInput('work_phone', $event)"
+            />
           </label>
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formHomePhone }} *</span>
-            <input v-model="formData.home_phone" class="input" type="tel" required />
+            <input
+              v-model="formData.home_phone"
+              class="input"
+              type="tel"
+              inputmode="tel"
+              maxlength="16"
+              required
+              @input="handlePhoneInput('home_phone', $event)"
+            />
           </label>
         </div>
         <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 text-sm text-muted-foreground">
