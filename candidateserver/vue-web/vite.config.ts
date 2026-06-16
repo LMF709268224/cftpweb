@@ -15,6 +15,8 @@ export default defineConfig({
       "@vue/runtime-dom": fileURLToPath(new URL("./node_modules/@vue/runtime-dom/dist/runtime-dom.esm-bundler.js", import.meta.url)),
       "@vue/shared": fileURLToPath(new URL("./node_modules/@vue/shared/dist/shared.esm-bundler.js", import.meta.url)),
       "@vue/devtools-api": fileURLToPath(new URL("./node_modules/@vue/devtools-api/dist/index.js", import.meta.url)),
+      "@vue/devtools-kit": fileURLToPath(new URL("./node_modules/@vue/devtools-kit/dist/index.js", import.meta.url)),
+      "@vue/devtools-shared": fileURLToPath(new URL("./node_modules/@vue/devtools-shared/dist/index.js", import.meta.url)),
     },
   },
   server: {
