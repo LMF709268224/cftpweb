@@ -31,7 +31,6 @@ func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	if err != nil {
-		slog.Error("Failed to GetInvoice", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}

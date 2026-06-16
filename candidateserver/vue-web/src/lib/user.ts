@@ -1,5 +1,6 @@
 import { ref } from "vue"
 import { apiClient } from "./apiClient"
+import { getAccessToken } from "./authStorage"
 
 export interface UserProfile {
   id: string
@@ -19,6 +20,12 @@ export function useUser() {
   const fetchUser = async (force = false) => {
     if ((hasLoaded.value && !force) || isLoading.value) {
       return currentUser.value
+    }
+
+    if (!getAccessToken()) {
+      currentUser.value = null
+      hasLoaded.value = false
+      return null
     }
     
     isLoading.value = true

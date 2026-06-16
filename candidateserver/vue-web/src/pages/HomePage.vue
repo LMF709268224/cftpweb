@@ -6,6 +6,7 @@ import AppShell from "@/components/AppShell.vue"
 import StatsCard from "@/components/StatsCard.vue"
 import TodoList from "@/components/TodoList.vue"
 import { apiClient } from "@/lib/apiClient"
+import { getAccessToken } from "@/lib/authStorage"
 import { getCachedDashboard } from "@/lib/dashboardCache"
 import { useTranslation } from "@/lib/language"
 
@@ -53,6 +54,13 @@ function goToCourses() {
 }
 
 onMounted(async () => {
+  const token = getAccessToken()
+  if (!token) {
+    const localName = localStorage.getItem("user_name")
+    if (localName) userName.value = localName
+    return
+  }
+
   try {
     const payload = await apiClient("/api/user/me")
     const nameToSet = payload?.display_name || payload?.name

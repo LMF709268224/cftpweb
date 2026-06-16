@@ -26,10 +26,29 @@ type Pipeline = {
   created_at: string
   unlock_stripe_product_id?: string
   unlock_stripe_price_id?: string
+  unlock_quals?: Qualification[]
   package_stripe_product_id?: string
   package_stripe_price_id?: string
+  package_coupon?: string
   respath?: string
+  certs?: Qualification[]
+  certs_quals?: Qualification[]
+  cert_quals?: Qualification[]
+  final_quals?: Qualification[]
   stages?: StageConfig[]
+}
+
+type Qualification = {
+  qual_id?: string
+  name_hint?: string
+  name?: string
+  title?: string
+}
+
+type CredentialDefinition = {
+  cred_def_id: string
+  name?: string
+  category?: string
 }
 
 type StageConfig = {
@@ -71,9 +90,15 @@ type PipelineForm = {
   category_tips: string
   unlock_stripe_product_id: string
   unlock_stripe_price_id: string
+  unlock_quals: Qualification[]
   package_stripe_product_id: string
   package_stripe_price_id: string
+  package_coupon: string
   respath: string
+  certs: Qualification[]
+  certs_quals: Qualification[]
+  cert_quals: Qualification[]
+  final_quals: Qualification[]
   stages: StageConfig[]
 }
 
@@ -82,10 +107,20 @@ const emptyForm: PipelineForm = {
   category_tips: "",
   unlock_stripe_product_id: "",
   unlock_stripe_price_id: "",
+  unlock_quals: [],
   package_stripe_product_id: "",
   package_stripe_price_id: "",
+  package_coupon: "",
   respath: "",
+  certs: [],
+  certs_quals: [],
+  cert_quals: [],
+  final_quals: [],
   stages: [],
+}
+
+function normalizeQualifications(value: unknown): Qualification[] {
+  return Array.isArray(value) ? value.filter(Boolean) as Qualification[] : []
 }
 
 function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
@@ -95,9 +130,15 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
     category_tips: pipeline.category_tips || "",
     unlock_stripe_product_id: pipeline.unlock_stripe_product_id || "",
     unlock_stripe_price_id: pipeline.unlock_stripe_price_id || "",
+    unlock_quals: normalizeQualifications(pipeline.unlock_quals),
     package_stripe_product_id: pipeline.package_stripe_product_id || "",
     package_stripe_price_id: pipeline.package_stripe_price_id || "",
+    package_coupon: pipeline.package_coupon || "",
     respath: pipeline.respath || "",
+    certs: normalizeQualifications(pipeline.certs),
+    certs_quals: normalizeQualifications(pipeline.certs_quals),
+    cert_quals: normalizeQualifications(pipeline.cert_quals),
+    final_quals: normalizeQualifications(pipeline.final_quals),
     stages: (pipeline.stages || []).map((stage) => ({
       stage_id: stage.stage_id,
       name: stage.name || "",
@@ -126,8 +167,12 @@ function cleanFormForStructure(form: PipelineForm) {
   return {
     unlock_stripe_product_id: form.unlock_stripe_product_id.trim(),
     unlock_stripe_price_id: form.unlock_stripe_price_id.trim(),
+    unlock_quals: form.unlock_quals || [],
     package_stripe_product_id: form.package_stripe_product_id.trim(),
     package_stripe_price_id: form.package_stripe_price_id.trim(),
+    package_coupon: form.package_coupon.trim(),
+    certs: form.certs || [],
+    certs_quals: form.certs_quals || [],
     stages: form.stages.map((stage) => ({
       stage_id: stage.stage_id || "",
       name: stage.name.trim(),
@@ -160,11 +205,47 @@ function isDeprecated(pipeline: Pipeline | null) {
   return Boolean(pipeline?.status?.toLowerCase() === "deprecated")
 }
 
+function qualificationLabel(qualification: Qualification, fallback: string) {
+  return qualification.name_hint || qualification.name || qualification.title || qualification.qual_id || fallback
+}
+
+function qualificationKey(qualification: Qualification) {
+  return qualification.qual_id || qualification.name_hint || qualification.name || qualification.title || ""
+}
+
+function pipelineCertificateItems(form: PipelineForm) {
+  return normalizeQualifications(form.certs).filter((item, index, list) => {
+    const key = qualificationKey(item) || String(index)
+    return list.findIndex((candidate) => qualificationKey(candidate) === key) === index
+  })
+}
+
+function credentialToQualification(definition: CredentialDefinition): Qualification {
+  return {
+    qual_id: definition.cred_def_id,
+    name_hint: definition.name || definition.cred_def_id,
+  }
+}
+
+function hasQualification(list: Qualification[], qualId: string) {
+  return normalizeQualifications(list).some((item) => item.qual_id === qualId)
+}
+
+function toggleQualification(list: Qualification[], definition: CredentialDefinition, checked: boolean) {
+  const current = normalizeQualifications(list)
+  if (checked) {
+    if (hasQualification(current, definition.cred_def_id)) return current
+    return [...current, credentialToQualification(definition)]
+  }
+  return current.filter((item) => item.qual_id !== definition.cred_def_id)
+}
+
 export default function PipelinesPage() {
   const { t } = useTranslation()
   const page = t.pipelinesPage
   const [pipelines, setPipelines] = useState<Pipeline[]>([])
   const [lmsCourses, setLmsCourses] = useState<LmsCourse[]>([])
+  const [credentialDefinitions, setCredentialDefinitions] = useState<CredentialDefinition[]>([])
   const [selectedId, setSelectedId] = useState("")
   const [form, setForm] = useState<PipelineForm>(emptyForm)
   const [categoryFilter, setCategoryFilter] = useState("")
@@ -205,6 +286,12 @@ export default function PipelinesPage() {
     [pipelines, selectedId],
   )
   const published = isPublished(selectedPipeline)
+  const certificateItems = useMemo(() => pipelineCertificateItems(form), [form])
+  const hasCertificate = certificateItems.length > 0
+  const certificateNames = useMemo(
+    () => certificateItems.map((item, index) => qualificationLabel(item, `${page.certificate} ${index + 1}`)),
+    [certificateItems, page.certificate],
+  )
 
   const lmsCourseName = (courseId: string) => {
     const course = lmsCourses.find((item) => item.course_id === courseId)
@@ -239,6 +326,11 @@ export default function PipelinesPage() {
     setLmsCourses(res?.courses || [])
   }, [])
 
+  const loadCredentialDefinitions = useCallback(async () => {
+    const res = await apiClient("/api/credentials/definitions")
+    setCredentialDefinitions(res?.definitions || [])
+  }, [])
+
   useEffect(() => {
     loadPipelines()
   }, [loadPipelines])
@@ -246,6 +338,10 @@ export default function PipelinesPage() {
   useEffect(() => {
     loadLmsCourses().catch(() => toast.error(page.loadLmsFailed))
   }, [loadLmsCourses, page.loadLmsFailed])
+
+  useEffect(() => {
+    loadCredentialDefinitions().catch(() => toast.error(page.loadCredentialsFailed))
+  }, [loadCredentialDefinitions, page.loadCredentialsFailed])
 
   const selectPipeline = async (pipeline: Pipeline) => {
     setSelectedId(pipeline.pipeline_id)
@@ -441,6 +537,7 @@ export default function PipelinesPage() {
           name: form.name.trim() + " (Copy)",
           category_tips: form.category_tips.trim(),
           respath: form.respath.trim(),
+          from_pipeline_guid: selectedPipeline.pipeline_guid,
           from_pipeline_id: selectedPipeline.pipeline_id,
         }),
       })
@@ -544,6 +641,58 @@ export default function PipelinesPage() {
       package_stripe_product_id: prev.package_stripe_product_id || "prod_UZILCqUwUoOPMO",
       package_stripe_price_id: prev.package_stripe_price_id || "price_1Ta9kYCJWnR4MMON0jjPUI8P",
     }))
+  }
+
+  const updateQualificationField = (
+    field: "unlock_quals" | "certs_quals" | "certs",
+    definition: CredentialDefinition,
+    checked: boolean,
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: toggleQualification(prev[field], definition, checked),
+    }))
+  }
+
+  const renderQualificationSelector = (
+    field: "unlock_quals" | "certs_quals" | "certs",
+    label: string,
+    description: string,
+  ) => {
+    const selected = normalizeQualifications(form[field])
+    return (
+      <div className="rounded-md border bg-muted/20 p-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <Label>{label}</Label>
+            <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+          </div>
+          <Badge variant="outline">{selected.length}</Badge>
+        </div>
+        {credentialDefinitions.length === 0 ? (
+          <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">{page.noCredentialDefinitions}</div>
+        ) : (
+          <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {credentialDefinitions.map((definition) => {
+              const checked = hasQualification(selected, definition.cred_def_id)
+              return (
+                <label key={`${field}-${definition.cred_def_id}`} className="flex min-h-12 items-start gap-2 rounded-md border bg-background p-3 text-sm">
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(value) => updateQualificationField(field, definition, Boolean(value))}
+                    disabled={published}
+                  />
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{definition.name || definition.cred_def_id}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{definition.category || definition.cred_def_id}</span>
+                  </span>
+                </label>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -675,6 +824,24 @@ export default function PipelinesPage() {
                       <span>{statusLabel(t, LMS_COURSE_STATUS_LABELS, selectedPipeline.status)}</span>
                     </div>
                   )}
+                  <div className="md:col-span-2 rounded-md border bg-muted/30 p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold">{page.certificateAfterCompletion}</span>
+                      <Badge variant={hasCertificate ? "default" : "outline"} className={hasCertificate ? "bg-emerald-600" : ""}>
+                        {hasCertificate ? page.certificateYes : page.certificateNo}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{page.certificateHint}</span>
+                    </div>
+                    {hasCertificate ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {certificateNames.map((name, index) => (
+                          <Badge key={`${name}-${index}`} variant="secondary">{name}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-muted-foreground">{page.noCertificateConfigured}</p>
+                    )}
+                  </div>
                 </div>
                 <div className="border-t px-4 py-3 text-right">
                   {!selectedPipeline && (
@@ -711,6 +878,22 @@ export default function PipelinesPage() {
                     <Label htmlFor="packagePrice">{page.packagePriceId}</Label>
                     <Input id="packagePrice" value={form.package_stripe_price_id} onChange={(event) => setForm({ ...form, package_stripe_price_id: event.target.value })} disabled={published} />
                   </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="packageCoupon">{page.packageCoupon}</Label>
+                    <Input id="packageCoupon" value={form.package_coupon} onChange={(event) => setForm({ ...form, package_coupon: event.target.value })} disabled={published} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border bg-card">
+                <div className="border-b px-4 py-3">
+                  <h2 className="font-semibold">{page.qualificationConfig}</h2>
+                  <p className="text-xs text-muted-foreground">{page.qualificationConfigHint}</p>
+                </div>
+                <div className="space-y-3 p-4">
+                  {renderQualificationSelector("unlock_quals", page.unlockQuals, page.unlockQualsHint)}
+                  {renderQualificationSelector("certs_quals", page.certsQuals, page.certsQualsHint)}
+                  {renderQualificationSelector("certs", page.certs, page.certsHint)}
                 </div>
               </div>
 
@@ -866,6 +1049,16 @@ export default function PipelinesPage() {
                   <h2 className="font-semibold">{page.preview}</h2>
                 </div>
                 <div className="space-y-2 p-4">
+                  <div className="rounded-md border bg-background p-3">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-semibold">{page.certificateAfterCompletion}</span>
+                      <Badge variant={hasCertificate ? "default" : "outline"} className={hasCertificate ? "bg-emerald-600" : ""}>
+                        {hasCertificate ? page.certificateYes : page.certificateNo}
+                      </Badge>
+                      {hasCertificate && <span className="text-xs text-muted-foreground">{certificateNames.join(", ")}</span>}
+                    </div>
+                    {!hasCertificate && <p className="mt-1 text-xs text-muted-foreground">{page.noCertificateConfigured}</p>}
+                  </div>
                   {form.stages.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{page.noPreview}</div>
                   ) : (
