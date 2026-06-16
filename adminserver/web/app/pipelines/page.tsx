@@ -29,7 +29,18 @@ type Pipeline = {
   package_stripe_product_id?: string
   package_stripe_price_id?: string
   respath?: string
+  certs?: Qualification[]
+  certs_quals?: Qualification[]
+  cert_quals?: Qualification[]
+  final_quals?: Qualification[]
   stages?: StageConfig[]
+}
+
+type Qualification = {
+  qual_id?: string
+  name_hint?: string
+  name?: string
+  title?: string
 }
 
 type StageConfig = {
@@ -74,6 +85,10 @@ type PipelineForm = {
   package_stripe_product_id: string
   package_stripe_price_id: string
   respath: string
+  certs: Qualification[]
+  certs_quals: Qualification[]
+  cert_quals: Qualification[]
+  final_quals: Qualification[]
   stages: StageConfig[]
 }
 
@@ -85,7 +100,15 @@ const emptyForm: PipelineForm = {
   package_stripe_product_id: "",
   package_stripe_price_id: "",
   respath: "",
+  certs: [],
+  certs_quals: [],
+  cert_quals: [],
+  final_quals: [],
   stages: [],
+}
+
+function normalizeQualifications(value: unknown): Qualification[] {
+  return Array.isArray(value) ? value.filter(Boolean) as Qualification[] : []
 }
 
 function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
@@ -98,6 +121,10 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
     package_stripe_product_id: pipeline.package_stripe_product_id || "",
     package_stripe_price_id: pipeline.package_stripe_price_id || "",
     respath: pipeline.respath || "",
+    certs: normalizeQualifications(pipeline.certs),
+    certs_quals: normalizeQualifications(pipeline.certs_quals),
+    cert_quals: normalizeQualifications(pipeline.cert_quals),
+    final_quals: normalizeQualifications(pipeline.final_quals),
     stages: (pipeline.stages || []).map((stage) => ({
       stage_id: stage.stage_id,
       name: stage.name || "",
@@ -128,6 +155,8 @@ function cleanFormForStructure(form: PipelineForm) {
     unlock_stripe_price_id: form.unlock_stripe_price_id.trim(),
     package_stripe_product_id: form.package_stripe_product_id.trim(),
     package_stripe_price_id: form.package_stripe_price_id.trim(),
+    certs: form.certs || [],
+    certs_quals: form.certs_quals || [],
     stages: form.stages.map((stage) => ({
       stage_id: stage.stage_id || "",
       name: stage.name.trim(),
@@ -158,6 +187,17 @@ function isPublished(pipeline: Pipeline | null) {
 
 function isDeprecated(pipeline: Pipeline | null) {
   return Boolean(pipeline?.status?.toLowerCase() === "deprecated")
+}
+
+function qualificationLabel(qualification: Qualification, fallback: string) {
+  return qualification.name_hint || qualification.name || qualification.title || qualification.qual_id || fallback
+}
+
+function pipelineCertificateItems(form: PipelineForm) {
+  return normalizeQualifications(form.certs).filter((item, index, list) => {
+    const key = item.qual_id || item.name_hint || item.name || item.title || String(index)
+    return list.findIndex((candidate) => (candidate.qual_id || candidate.name_hint || candidate.name || candidate.title || "") === key) === index
+  })
 }
 
 export default function PipelinesPage() {
@@ -205,6 +245,12 @@ export default function PipelinesPage() {
     [pipelines, selectedId],
   )
   const published = isPublished(selectedPipeline)
+  const certificateItems = useMemo(() => pipelineCertificateItems(form), [form])
+  const hasCertificate = certificateItems.length > 0
+  const certificateNames = useMemo(
+    () => certificateItems.map((item, index) => qualificationLabel(item, `${page.certificate} ${index + 1}`)),
+    [certificateItems, page.certificate],
+  )
 
   const lmsCourseName = (courseId: string) => {
     const course = lmsCourses.find((item) => item.course_id === courseId)
@@ -675,6 +721,24 @@ export default function PipelinesPage() {
                       <span>{statusLabel(t, LMS_COURSE_STATUS_LABELS, selectedPipeline.status)}</span>
                     </div>
                   )}
+                  <div className="md:col-span-2 rounded-md border bg-muted/30 p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold">{page.certificateAfterCompletion}</span>
+                      <Badge variant={hasCertificate ? "default" : "outline"} className={hasCertificate ? "bg-emerald-600" : ""}>
+                        {hasCertificate ? page.certificateYes : page.certificateNo}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{page.certificateHint}</span>
+                    </div>
+                    {hasCertificate ? (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {certificateNames.map((name, index) => (
+                          <Badge key={`${name}-${index}`} variant="secondary">{name}</Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="mt-2 text-xs text-muted-foreground">{page.noCertificateConfigured}</p>
+                    )}
+                  </div>
                 </div>
                 <div className="border-t px-4 py-3 text-right">
                   {!selectedPipeline && (
@@ -866,6 +930,16 @@ export default function PipelinesPage() {
                   <h2 className="font-semibold">{page.preview}</h2>
                 </div>
                 <div className="space-y-2 p-4">
+                  <div className="rounded-md border bg-background p-3">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <span className="font-semibold">{page.certificateAfterCompletion}</span>
+                      <Badge variant={hasCertificate ? "default" : "outline"} className={hasCertificate ? "bg-emerald-600" : ""}>
+                        {hasCertificate ? page.certificateYes : page.certificateNo}
+                      </Badge>
+                      {hasCertificate && <span className="text-xs text-muted-foreground">{certificateNames.join(", ")}</span>}
+                    </div>
+                    {!hasCertificate && <p className="mt-1 text-xs text-muted-foreground">{page.noCertificateConfigured}</p>}
+                  </div>
                   {form.stages.length === 0 ? (
                     <div className="text-sm text-muted-foreground">{page.noPreview}</div>
                   ) : (

@@ -50,7 +50,7 @@ function clearRedirectTimer() {
 
 function openInvoiceNow() {
   if (!invoiceUrl.value) return
-  window.location.replace(invoiceUrl.value)
+  window.location.assign(invoiceUrl.value)
 }
 
 async function loadInvoice() {
@@ -109,14 +109,15 @@ onBeforeUnmount(clearRedirectTimer)
       </div>
 
       <div class="mt-7 flex flex-wrap justify-center gap-3">
-        <button
-          v-if="status === 'redirecting'"
+        <a
+          v-if="status === 'redirecting' && invoiceUrl"
+          :href="invoiceUrl"
           class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"
-          @click="openInvoiceNow"
+          rel="noopener noreferrer"
         >
           <ExternalLink class="h-4 w-4" />
           {{ copy.direct }}
-        </button>
+        </a>
         <button
           v-if="status === 'error'"
           class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-600"

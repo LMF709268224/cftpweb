@@ -3,14 +3,19 @@ import { Toaster } from "vue-sonner"
 import { useUser } from "@/lib/user"
 import { onErrorCaptured, onMounted, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
+import { getAccessToken } from "@/lib/authStorage"
 
 const { fetchUser } = useUser()
 const route = useRoute()
 const router = useRouter()
 const appError = ref("")
 
+function shouldFetchUser() {
+  return Boolean(getAccessToken()) && route.path !== "/login" && route.path !== "/callback"
+}
+
 onMounted(() => {
-  fetchUser()
+  if (shouldFetchUser()) void fetchUser()
 })
 
 onErrorCaptured((err) => {
@@ -23,6 +28,7 @@ watch(
   () => route.fullPath,
   () => {
     appError.value = ""
+    if (shouldFetchUser()) void fetchUser()
   },
 )
 
