@@ -13,8 +13,7 @@ COPY candidateserver/vue-web/ ./
 RUN rm -rf node_modules && \
     if [ -f package.json ]; then \
         npm ci && \
-        npm install --no-save @embedpdf/vue-pdf-viewer@2.14.4 && \
-        node -e "require.resolve('@embedpdf/vue-pdf-viewer')" && \
+        node -e "require.resolve('@embedpdf/vue-pdf-viewer'); require.resolve('@vue/devtools-api'); require.resolve('@vue/devtools-api', { paths: [require.resolve('vue-router')] }); console.log('frontend dependency check ok')" && \
         npm run build; \
     else \
         mkdir -p dist; \

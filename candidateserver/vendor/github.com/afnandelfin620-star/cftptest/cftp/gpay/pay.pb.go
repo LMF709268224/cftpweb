@@ -814,6 +814,8 @@ type CreateOrderRequest struct {
 	SuccessUrl    string                 `protobuf:"bytes,10,opt,name=success_url,json=successUrl,proto3" json:"success_url,omitempty"`                                                    // 支付成功后的跳转地址 (CHECKOUT_HOSTED/EMBEDDED 必填) [conditional]
 	CancelUrl     string                 `protobuf:"bytes,11,opt,name=cancel_url,json=cancelUrl,proto3" json:"cancel_url,omitempty"`                                                       // 用户取消支付后的跳转地址 (CHECKOUT_HOSTED 必填) [conditional]
 	CustomerName  string                 `protobuf:"bytes,12,opt,name=customer_name,json=customerName,proto3" json:"customer_name,omitempty"`                                              // 客户姓名，写入 Stripe Customer.name（首次创建时），便于 Dashboard 识别 [optional]
+	RefEntityType string                 `protobuf:"bytes,13,opt,name=ref_entity_type,json=refEntityType,proto3" json:"ref_entity_type,omitempty"`                                         // 关联实体类型 [optional]
+	RefEntityId   string                 `protobuf:"bytes,14,opt,name=ref_entity_id,json=refEntityId,proto3" json:"ref_entity_id,omitempty"`                                               // 关联实体 ID [optional]
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -928,6 +930,20 @@ func (x *CreateOrderRequest) GetCancelUrl() string {
 func (x *CreateOrderRequest) GetCustomerName() string {
 	if x != nil {
 		return x.CustomerName
+	}
+	return ""
+}
+
+func (x *CreateOrderRequest) GetRefEntityType() string {
+	if x != nil {
+		return x.RefEntityType
+	}
+	return ""
+}
+
+func (x *CreateOrderRequest) GetRefEntityId() string {
+	if x != nil {
+		return x.RefEntityId
 	}
 	return ""
 }
@@ -1180,6 +1196,8 @@ type GetOrderResponse struct {
 	PaymentMethodType    string                 `protobuf:"bytes,17,opt,name=payment_method_type,json=paymentMethodType,proto3" json:"payment_method_type,omitempty"`          // 支付方式: card/alipay/wechat_pay... [optional]
 	PaymentMethodLast4   string                 `protobuf:"bytes,18,opt,name=payment_method_last4,json=paymentMethodLast4,proto3" json:"payment_method_last4,omitempty"`       // 卡号末四位 [optional]
 	PaymentMethodBrand   string                 `protobuf:"bytes,19,opt,name=payment_method_brand,json=paymentMethodBrand,proto3" json:"payment_method_brand,omitempty"`       // 卡品牌: visa/mastercard/amex... [optional]
+	RefEntityType        string                 `protobuf:"bytes,20,opt,name=ref_entity_type,json=refEntityType,proto3" json:"ref_entity_type,omitempty"`                      // 关联实体类型 [optional]
+	RefEntityId          string                 `protobuf:"bytes,21,opt,name=ref_entity_id,json=refEntityId,proto3" json:"ref_entity_id,omitempty"`                            // 关联实体 ID [optional]
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -1343,6 +1361,20 @@ func (x *GetOrderResponse) GetPaymentMethodLast4() string {
 func (x *GetOrderResponse) GetPaymentMethodBrand() string {
 	if x != nil {
 		return x.PaymentMethodBrand
+	}
+	return ""
+}
+
+func (x *GetOrderResponse) GetRefEntityType() string {
+	if x != nil {
+		return x.RefEntityType
+	}
+	return ""
+}
+
+func (x *GetOrderResponse) GetRefEntityId() string {
+	if x != nil {
+		return x.RefEntityId
 	}
 	return ""
 }
@@ -4142,7 +4174,7 @@ const file_pay_proto_rawDesc = "" +
 	"\vdescription\x18\a \x01(\tR\vdescription\";\n" +
 	"\rInvalidCoupon\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"\xba\x04\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"\x86\x05\n" +
 	"\x12CreateOrderRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12#\n" +
 	"\rbusiness_unit\x18\x02 \x01(\tR\fbusinessUnit\x12\x1f\n" +
@@ -4161,7 +4193,9 @@ const file_pay_proto_rawDesc = "" +
 	"successUrl\x12\x1d\n" +
 	"\n" +
 	"cancel_url\x18\v \x01(\tR\tcancelUrl\x12#\n" +
-	"\rcustomer_name\x18\f \x01(\tR\fcustomerName\x1a;\n" +
+	"\rcustomer_name\x18\f \x01(\tR\fcustomerName\x12&\n" +
+	"\x0fref_entity_type\x18\r \x01(\tR\rrefEntityType\x12\"\n" +
+	"\rref_entity_id\x18\x0e \x01(\tR\vrefEntityId\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x9f\x03\n" +
@@ -4182,7 +4216,7 @@ const file_pay_proto_rawDesc = "" +
 	"\border_id\x18\x01 \x01(\tH\x00R\aorderId\x12,\n" +
 	"\x11stripe_session_id\x18\x02 \x01(\tH\x00R\x0fstripeSessionId\x12,\n" +
 	"\x11stripe_invoice_id\x18\x03 \x01(\tH\x00R\x0fstripeInvoiceIdB\b\n" +
-	"\x06lookup\"\x96\x06\n" +
+	"\x06lookup\"\xe2\x06\n" +
 	"\x10GetOrderResponse\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12)\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x11.gpay.OrderStatusR\x06status\x12.\n" +
@@ -4206,7 +4240,9 @@ const file_pay_proto_rawDesc = "" +
 	"receiptUrl\x12.\n" +
 	"\x13payment_method_type\x18\x11 \x01(\tR\x11paymentMethodType\x120\n" +
 	"\x14payment_method_last4\x18\x12 \x01(\tR\x12paymentMethodLast4\x120\n" +
-	"\x14payment_method_brand\x18\x13 \x01(\tR\x12paymentMethodBrand\"/\n" +
+	"\x14payment_method_brand\x18\x13 \x01(\tR\x12paymentMethodBrand\x12&\n" +
+	"\x0fref_entity_type\x18\x14 \x01(\tR\rrefEntityType\x12\"\n" +
+	"\rref_entity_id\x18\x15 \x01(\tR\vrefEntityId\"/\n" +
 	"\x12CancelOrderRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\"I\n" +
 	"\x13CancelOrderResponse\x12\x18\n" +

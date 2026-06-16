@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	gmid "github.com/afnandelfin620-star/cftptest/cftp/gmid"
+	gmid "cftp/gmid"
 
 	"github.com/oklog/ulid/v2"
 	"google.golang.org/grpc"

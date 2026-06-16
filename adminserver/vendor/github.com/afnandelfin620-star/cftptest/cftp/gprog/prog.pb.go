@@ -259,6 +259,8 @@ type PipelineCreateReq struct {
 	CourseSelectionJson string                 `protobuf:"bytes,4,opt,name=course_selection_json,json=courseSelectionJson,proto3" json:"course_selection_json,omitempty"` // 选课与免考信息 JSON [required]
 	SourceSystem        string                 `protobuf:"bytes,5,opt,name=source_system,json=sourceSystem,proto3" json:"source_system,omitempty"`                        // 请求来源系统，如 gmall [optional]
 	IdempotencyKey      string                 `protobuf:"bytes,6,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`                  // 调用侧请求幂等键 [optional]
+	RefEntityType       string                 `protobuf:"bytes,7,opt,name=ref_entity_type,json=refEntityType,proto3" json:"ref_entity_type,omitempty"`                   // 引用关联实体类型 [optional]
+	RefEntityId         string                 `protobuf:"bytes,8,opt,name=ref_entity_id,json=refEntityId,proto3" json:"ref_entity_id,omitempty"`                         // 引用关联实体ID [optional]
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -331,6 +333,20 @@ func (x *PipelineCreateReq) GetSourceSystem() string {
 func (x *PipelineCreateReq) GetIdempotencyKey() string {
 	if x != nil {
 		return x.IdempotencyKey
+	}
+	return ""
+}
+
+func (x *PipelineCreateReq) GetRefEntityType() string {
+	if x != nil {
+		return x.RefEntityType
+	}
+	return ""
+}
+
+func (x *PipelineCreateReq) GetRefEntityId() string {
+	if x != nil {
+		return x.RefEntityId
 	}
 	return ""
 }
@@ -5189,14 +5205,16 @@ var File_prog_proto protoreflect.FileDescriptor
 const file_prog_proto_rawDesc = "" +
 	"\n" +
 	"\n" +
-	"prog.proto\x12\x05gprog\"\x8b\x02\n" +
+	"prog.proto\x12\x05gprog\"\xd7\x02\n" +
 	"\x11PipelineCreateReq\x12#\n" +
 	"\rpipeline_ulid\x18\x01 \x01(\tR\fpipelineUlid\x12%\n" +
 	"\x0ecandidate_ulid\x18\x02 \x01(\tR\rcandidateUlid\x12(\n" +
 	"\x10pipeline_cc_ulid\x18\x03 \x01(\tR\x0epipelineCcUlid\x122\n" +
 	"\x15course_selection_json\x18\x04 \x01(\tR\x13courseSelectionJson\x12#\n" +
 	"\rsource_system\x18\x05 \x01(\tR\fsourceSystem\x12'\n" +
-	"\x0fidempotency_key\x18\x06 \x01(\tR\x0eidempotencyKey\"\x86\x02\n" +
+	"\x0fidempotency_key\x18\x06 \x01(\tR\x0eidempotencyKey\x12&\n" +
+	"\x0fref_entity_type\x18\a \x01(\tR\rrefEntityType\x12\"\n" +
+	"\rref_entity_id\x18\b \x01(\tR\vrefEntityId\"\x86\x02\n" +
 	"\x11PipelineCreateRsp\x12#\n" +
 	"\rpipeline_ulid\x18\x01 \x01(\tR\fpipelineUlid\x12>\n" +
 	"\x0fpipeline_status\x18\x02 \x01(\x0e2\x15.gprog.PipelineStatusR\x0epipelineStatus\x12,\n" +
