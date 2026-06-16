@@ -9,6 +9,7 @@ const route = useRoute()
 const router = useRouter()
 const viewerSrc = ref("")
 const loading = ref(false)
+const viewerPreparing = ref(false)
 const errorMessage = ref("")
 const viewerError = ref(false)
 
@@ -48,6 +49,7 @@ async function loadPdf() {
   }
 
   loading.value = true
+  viewerPreparing.value = false
   try {
     const res = await apiClient(source.value, { timeoutMs: 30000 })
     if (!res?.url) {
@@ -55,6 +57,10 @@ async function loadPdf() {
       return
     }
     viewerSrc.value = res.url
+    viewerPreparing.value = true
+    window.setTimeout(() => {
+      viewerPreparing.value = false
+    }, 1200)
   } catch (err) {
     errorMessage.value = "PDF preview failed. Please check your network and try again."
   } finally {
@@ -94,7 +100,7 @@ watch(source, loadPdf, { immediate: true })
     </header>
 
     <main class="min-h-0 flex-1 p-3">
-      <div v-if="viewerSrc" class="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,74,82,0.08)]">
+      <div v-if="viewerSrc" class="relative h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,74,82,0.08)]">
         <PDFViewer v-if="!viewerError" class="h-full w-full" :config="viewerConfig" />
         <iframe
           v-else
@@ -102,6 +108,12 @@ watch(source, loadPdf, { immediate: true })
           class="h-full w-full border-0"
           title="PDF preview fallback"
         />
+        <div v-if="viewerPreparing" class="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-slate-600 backdrop-blur-[1px]">
+          <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_16px_40px_rgba(15,74,82,0.12)]">
+            <Loader2 class="h-5 w-5 animate-spin text-emerald-500" />
+            Preparing PDF preview...
+          </div>
+        </div>
       </div>
       <div v-else class="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white text-sm text-slate-500">
         <div v-if="loading" class="flex items-center gap-2">
