@@ -42,6 +42,7 @@ const copy = computed(() => lang.value === "zh"
       missing: "缺少资源包 ID",
       loading: "加载中...",
       loadMore: "加载更多",
+      noViewUrl: "暂时无法打开文件，请稍后再试。",
     }
   : {
       title: "Resource Pack Detail",
@@ -57,6 +58,7 @@ const copy = computed(() => lang.value === "zh"
       missing: "Missing resource pack ID",
       loading: "Loading...",
       loadMore: "Load more",
+      noViewUrl: "Unable to open this file right now. Please try again later.",
     })
 
 const orderedFiles = computed(() =>
@@ -106,7 +108,7 @@ async function openFile(file: ResourcePackFile) {
     const resp = await apiClient(`/api/resource-pack-files/${encodeURIComponent(file.file_id)}/view-url`)
     const url = resp?.view_url
     if (!url) {
-      toast.error("No view URL")
+      toast.error(copy.value.noViewUrl)
       return
     }
     window.open(url, "_blank", "noopener,noreferrer")
@@ -186,7 +188,8 @@ onMounted(() => {
 
     <section v-else class="rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
-        <FileArchive class="h-8 w-8 text-primary" />
+        <RefreshCw v-if="loading" class="h-8 w-8 animate-spin text-primary" />
+        <FileArchive v-else class="h-8 w-8 text-primary" />
       </div>
       <h2 class="mt-4 text-lg font-semibold text-foreground">{{ loading ? copy.loading : copy.emptyTitle }}</h2>
       <p class="mt-2 text-sm text-muted-foreground">{{ copy.emptyDesc }}</p>

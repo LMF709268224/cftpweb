@@ -29,6 +29,9 @@ const copy = computed(() => lang.value === "zh"
       refresh: "刷新",
       emptyTitle: "暂无可访问资源包",
       emptyDesc: "当后台为你的资格或课程开放资源包后，会显示在这里。",
+      noSearchTitle: "没有匹配的资源包",
+      noSearchDesc: "换个关键词再试，或清空搜索查看全部可访问资源包。",
+      clearSearch: "清空搜索",
       open: "查看详情",
       path: "权限路径",
       updated: "更新于",
@@ -43,6 +46,9 @@ const copy = computed(() => lang.value === "zh"
       refresh: "Refresh",
       emptyTitle: "No resource packs yet",
       emptyDesc: "Accessible resource packs will appear here once enabled by admins.",
+      noSearchTitle: "No matching resource packs",
+      noSearchDesc: "Try another keyword or clear the search to view all accessible packs.",
+      clearSearch: "Clear search",
       open: "Open",
       path: "Access path",
       updated: "Updated",
@@ -128,8 +134,11 @@ onMounted(() => {
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
         <PackageOpen class="h-8 w-8 text-primary" />
       </div>
-      <h2 class="mt-4 text-lg font-semibold text-foreground">{{ copy.emptyTitle }}</h2>
-      <p class="mt-2 text-sm text-muted-foreground">{{ copy.emptyDesc }}</p>
+      <h2 class="mt-4 text-lg font-semibold text-foreground">{{ search.trim() ? copy.noSearchTitle : copy.emptyTitle }}</h2>
+      <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{{ search.trim() ? copy.noSearchDesc : copy.emptyDesc }}</p>
+      <button v-if="search.trim()" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="search = ''">
+        {{ copy.clearSearch }}
+      </button>
     </section>
 
     <div v-if="nextPageToken" class="mt-4 text-center">
