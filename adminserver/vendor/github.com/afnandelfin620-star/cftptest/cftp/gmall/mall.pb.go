@@ -2464,15 +2464,16 @@ func (x *ListPipelineOrdersResponse) GetTotal() int32 {
 }
 
 type PipelineOrderSummary struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	PipelineOrderUlid string                 `protobuf:"bytes,1,opt,name=pipeline_order_ulid,json=pipelineOrderUlid,proto3" json:"pipeline_order_ulid,omitempty"`
-	CandidateUlid     string                 `protobuf:"bytes,2,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"`
-	PipelineCcUlid    string                 `protobuf:"bytes,3,opt,name=pipeline_cc_ulid,json=pipelineCcUlid,proto3" json:"pipeline_cc_ulid,omitempty"`
-	PaymentMode       string                 `protobuf:"bytes,4,opt,name=payment_mode,json=paymentMode,proto3" json:"payment_mode,omitempty"`
-	OrderStatus       string                 `protobuf:"bytes,5,opt,name=order_status,json=orderStatus,proto3" json:"order_status,omitempty"`
-	CreatedAt         string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"open.v1"`
+	PipelineOrderUlid    string                 `protobuf:"bytes,1,opt,name=pipeline_order_ulid,json=pipelineOrderUlid,proto3" json:"pipeline_order_ulid,omitempty"`
+	CandidateUlid        string                 `protobuf:"bytes,2,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"`
+	PipelineCcUlid       string                 `protobuf:"bytes,3,opt,name=pipeline_cc_ulid,json=pipelineCcUlid,proto3" json:"pipeline_cc_ulid,omitempty"`
+	PaymentMode          string                 `protobuf:"bytes,4,opt,name=payment_mode,json=paymentMode,proto3" json:"payment_mode,omitempty"`
+	OrderStatus          string                 `protobuf:"bytes,5,opt,name=order_status,json=orderStatus,proto3" json:"order_status,omitempty"`
+	CreatedAt            string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	PipelinePayOrderUlid string                 `protobuf:"bytes,7,opt,name=pipeline_pay_order_ulid,json=pipelinePayOrderUlid,proto3" json:"pipeline_pay_order_ulid,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *PipelineOrderSummary) Reset() {
@@ -2543,6 +2544,13 @@ func (x *PipelineOrderSummary) GetOrderStatus() string {
 func (x *PipelineOrderSummary) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *PipelineOrderSummary) GetPipelinePayOrderUlid() string {
+	if x != nil {
+		return x.PipelinePayOrderUlid
 	}
 	return ""
 }
@@ -3009,15 +3017,16 @@ func (x *ListStageOrdersResponse) GetTotal() int32 {
 }
 
 type StageOrderSummary struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	StageOrderUlid string                 `protobuf:"bytes,1,opt,name=stage_order_ulid,json=stageOrderUlid,proto3" json:"stage_order_ulid,omitempty"`
-	CandidateUlid  string                 `protobuf:"bytes,2,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"`
-	PipelineCcUlid string                 `protobuf:"bytes,3,opt,name=pipeline_cc_ulid,json=pipelineCcUlid,proto3" json:"pipeline_cc_ulid,omitempty"`
-	StageCcUlid    string                 `protobuf:"bytes,4,opt,name=stage_cc_ulid,json=stageCcUlid,proto3" json:"stage_cc_ulid,omitempty"`
-	OrderStatus    string                 `protobuf:"bytes,5,opt,name=order_status,json=orderStatus,proto3" json:"order_status,omitempty"`
-	CreatedAt      string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	StageOrderUlid    string                 `protobuf:"bytes,1,opt,name=stage_order_ulid,json=stageOrderUlid,proto3" json:"stage_order_ulid,omitempty"`
+	CandidateUlid     string                 `protobuf:"bytes,2,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"`
+	PipelineCcUlid    string                 `protobuf:"bytes,3,opt,name=pipeline_cc_ulid,json=pipelineCcUlid,proto3" json:"pipeline_cc_ulid,omitempty"`
+	StageCcUlid       string                 `protobuf:"bytes,4,opt,name=stage_cc_ulid,json=stageCcUlid,proto3" json:"stage_cc_ulid,omitempty"`
+	OrderStatus       string                 `protobuf:"bytes,5,opt,name=order_status,json=orderStatus,proto3" json:"order_status,omitempty"`
+	CreatedAt         string                 `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	StagePayOrderUlid string                 `protobuf:"bytes,7,opt,name=stage_pay_order_ulid,json=stagePayOrderUlid,proto3" json:"stage_pay_order_ulid,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *StageOrderSummary) Reset() {
@@ -3088,6 +3097,13 @@ func (x *StageOrderSummary) GetOrderStatus() string {
 func (x *StageOrderSummary) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *StageOrderSummary) GetStagePayOrderUlid() string {
+	if x != nil {
+		return x.StagePayOrderUlid
 	}
 	return ""
 }
@@ -3562,6 +3578,7 @@ type CourseRetakeOrderSummary struct {
 	RetriedCount          uint32                 `protobuf:"varint,5,opt,name=retried_count,json=retriedCount,proto3" json:"retried_count,omitempty"`
 	OrderStatus           string                 `protobuf:"bytes,6,opt,name=order_status,json=orderStatus,proto3" json:"order_status,omitempty"`
 	CreatedAt             string                 `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	PayOrderUlid          string                 `protobuf:"bytes,8,opt,name=pay_order_ulid,json=payOrderUlid,proto3" json:"pay_order_ulid,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -3641,6 +3658,13 @@ func (x *CourseRetakeOrderSummary) GetOrderStatus() string {
 func (x *CourseRetakeOrderSummary) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *CourseRetakeOrderSummary) GetPayOrderUlid() string {
+	if x != nil {
+		return x.PayOrderUlid
 	}
 	return ""
 }
@@ -5715,6 +5739,7 @@ type PipelineUnlockOrderSummary struct {
 	PipelineCcUlid          string                 `protobuf:"bytes,3,opt,name=pipeline_cc_ulid,json=pipelineCcUlid,proto3" json:"pipeline_cc_ulid,omitempty"`
 	OrderStatus             string                 `protobuf:"bytes,4,opt,name=order_status,json=orderStatus,proto3" json:"order_status,omitempty"`
 	CreatedAt               string                 `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	PayOrderUlid            string                 `protobuf:"bytes,6,opt,name=pay_order_ulid,json=payOrderUlid,proto3" json:"pay_order_ulid,omitempty"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -5780,6 +5805,13 @@ func (x *PipelineUnlockOrderSummary) GetOrderStatus() string {
 func (x *PipelineUnlockOrderSummary) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *PipelineUnlockOrderSummary) GetPayOrderUlid() string {
+	if x != nil {
+		return x.PayOrderUlid
 	}
 	return ""
 }
@@ -6346,6 +6378,7 @@ type CredentialApplicationOrderSummary struct {
 	CandidateUlid        string                 `protobuf:"bytes,2,opt,name=candidate_ulid,json=candidateUlid,proto3" json:"candidate_ulid,omitempty"`
 	OrderStatus          string                 `protobuf:"bytes,3,opt,name=order_status,json=orderStatus,proto3" json:"order_status,omitempty"`
 	CreatedAt            string                 `protobuf:"bytes,4,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	PayOrderUlid         string                 `protobuf:"bytes,5,opt,name=pay_order_ulid,json=payOrderUlid,proto3" json:"pay_order_ulid,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -6404,6 +6437,13 @@ func (x *CredentialApplicationOrderSummary) GetOrderStatus() string {
 func (x *CredentialApplicationOrderSummary) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *CredentialApplicationOrderSummary) GetPayOrderUlid() string {
+	if x != nil {
+		return x.PayOrderUlid
 	}
 	return ""
 }
@@ -6892,7 +6932,7 @@ const file_mall_proto_rawDesc = "" +
 	"\fpayment_mode\x18\x06 \x01(\tR\vpaymentMode\"e\n" +
 	"\x1aListPipelineOrdersResponse\x121\n" +
 	"\x05items\x18\x01 \x03(\v2\x1b.gmall.PipelineOrderSummaryR\x05items\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xfc\x01\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xb3\x02\n" +
 	"\x14PipelineOrderSummary\x12.\n" +
 	"\x13pipeline_order_ulid\x18\x01 \x01(\tR\x11pipelineOrderUlid\x12%\n" +
 	"\x0ecandidate_ulid\x18\x02 \x01(\tR\rcandidateUlid\x12(\n" +
@@ -6900,7 +6940,8 @@ const file_mall_proto_rawDesc = "" +
 	"\fpayment_mode\x18\x04 \x01(\tR\vpaymentMode\x12!\n" +
 	"\forder_status\x18\x05 \x01(\tR\vorderStatus\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\tR\tcreatedAt\"\x94\x04\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\x125\n" +
+	"\x17pipeline_pay_order_ulid\x18\a \x01(\tR\x14pipelinePayOrderUlid\"\x94\x04\n" +
 	"\x13PipelineOrderDetail\x125\n" +
 	"\asummary\x18\x01 \x01(\v2\x1b.gmall.PipelineOrderSummaryR\asummary\x12\x1b\n" +
 	"\tstatus_at\x18\x02 \x01(\tR\bstatusAt\x125\n" +
@@ -6934,7 +6975,7 @@ const file_mall_proto_rawDesc = "" +
 	"\x13pipeline_order_ulid\x18\a \x01(\tR\x11pipelineOrderUlid\"_\n" +
 	"\x17ListStageOrdersResponse\x12.\n" +
 	"\x05items\x18\x01 \x03(\v2\x18.gmall.StageOrderSummaryR\x05items\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xf4\x01\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xa5\x02\n" +
 	"\x11StageOrderSummary\x12(\n" +
 	"\x10stage_order_ulid\x18\x01 \x01(\tR\x0estageOrderUlid\x12%\n" +
 	"\x0ecandidate_ulid\x18\x02 \x01(\tR\rcandidateUlid\x12(\n" +
@@ -6942,7 +6983,8 @@ const file_mall_proto_rawDesc = "" +
 	"\rstage_cc_ulid\x18\x04 \x01(\tR\vstageCcUlid\x12!\n" +
 	"\forder_status\x18\x05 \x01(\tR\vorderStatus\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\tR\tcreatedAt\"\x99\x04\n" +
+	"created_at\x18\x06 \x01(\tR\tcreatedAt\x12/\n" +
+	"\x14stage_pay_order_ulid\x18\a \x01(\tR\x11stagePayOrderUlid\"\x99\x04\n" +
 	"\x10StageOrderDetail\x122\n" +
 	"\asummary\x18\x01 \x01(\v2\x18.gmall.StageOrderSummaryR\asummary\x12.\n" +
 	"\x13pipeline_order_ulid\x18\x02 \x01(\tR\x11pipelineOrderUlid\x12\x1d\n" +
@@ -6977,7 +7019,7 @@ const file_mall_proto_rawDesc = "" +
 	"\x06offset\x18\x06 \x01(\x05R\x06offset\"m\n" +
 	"\x1eListCourseRetakeOrdersResponse\x125\n" +
 	"\x05items\x18\x01 \x03(\v2\x1f.gmall.CourseRetakeOrderSummaryR\x05items\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xba\x02\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xe0\x02\n" +
 	"\x18CourseRetakeOrderSummary\x127\n" +
 	"\x18course_retake_order_ulid\x18\x01 \x01(\tR\x15courseRetakeOrderUlid\x12(\n" +
 	"\x10course_unit_ulid\x18\x02 \x01(\tR\x0ecourseUnitUlid\x12-\n" +
@@ -6986,7 +7028,8 @@ const file_mall_proto_rawDesc = "" +
 	"\rretried_count\x18\x05 \x01(\rR\fretriedCount\x12!\n" +
 	"\forder_status\x18\x06 \x01(\tR\vorderStatus\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\tR\tcreatedAt\"\xcc\x02\n" +
+	"created_at\x18\a \x01(\tR\tcreatedAt\x12$\n" +
+	"\x0epay_order_ulid\x18\b \x01(\tR\fpayOrderUlid\"\xcc\x02\n" +
 	"\x17CourseRetakeOrderDetail\x129\n" +
 	"\asummary\x18\x01 \x01(\v2\x1f.gmall.CourseRetakeOrderSummaryR\asummary\x12\x1b\n" +
 	"\tstatus_at\x18\x02 \x01(\tR\bstatusAt\x12$\n" +
@@ -7154,14 +7197,15 @@ const file_mall_proto_rawDesc = "" +
 	"\x06offset\x18\x05 \x01(\x05R\x06offset\"q\n" +
 	" ListPipelineUnlockOrdersResponse\x127\n" +
 	"\x05items\x18\x01 \x03(\v2!.gmall.PipelineUnlockOrderSummaryR\x05items\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xec\x01\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\x92\x02\n" +
 	"\x1aPipelineUnlockOrderSummary\x12;\n" +
 	"\x1apipeline_unlock_order_ulid\x18\x01 \x01(\tR\x17pipelineUnlockOrderUlid\x12%\n" +
 	"\x0ecandidate_ulid\x18\x02 \x01(\tR\rcandidateUlid\x12(\n" +
 	"\x10pipeline_cc_ulid\x18\x03 \x01(\tR\x0epipelineCcUlid\x12!\n" +
 	"\forder_status\x18\x04 \x01(\tR\vorderStatus\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\tR\tcreatedAt\"\xd0\x02\n" +
+	"created_at\x18\x05 \x01(\tR\tcreatedAt\x12$\n" +
+	"\x0epay_order_ulid\x18\x06 \x01(\tR\fpayOrderUlid\"\xd0\x02\n" +
 	"\x19PipelineUnlockOrderDetail\x12;\n" +
 	"\asummary\x18\x01 \x01(\v2!.gmall.PipelineUnlockOrderSummaryR\asummary\x12\x1b\n" +
 	"\tstatus_at\x18\x02 \x01(\tR\bstatusAt\x12$\n" +
@@ -7201,13 +7245,14 @@ const file_mall_proto_rawDesc = "" +
 	"\x06offset\x18\x04 \x01(\x05R\x06offset\"\x7f\n" +
 	"'ListCredentialApplicationOrdersResponse\x12>\n" +
 	"\x05items\x18\x01 \x03(\v2(.gmall.CredentialApplicationOrderSummaryR\x05items\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xc2\x01\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xe8\x01\n" +
 	"!CredentialApplicationOrderSummary\x124\n" +
 	"\x16application_order_ulid\x18\x01 \x01(\tR\x14applicationOrderUlid\x12%\n" +
 	"\x0ecandidate_ulid\x18\x02 \x01(\tR\rcandidateUlid\x12!\n" +
 	"\forder_status\x18\x03 \x01(\tR\vorderStatus\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x04 \x01(\tR\tcreatedAt\"\xe7\x02\n" +
+	"created_at\x18\x04 \x01(\tR\tcreatedAt\x12$\n" +
+	"\x0epay_order_ulid\x18\x05 \x01(\tR\fpayOrderUlid\"\xe7\x02\n" +
 	" CredentialApplicationOrderDetail\x12B\n" +
 	"\asummary\x18\x01 \x01(\v2(.gmall.CredentialApplicationOrderSummaryR\asummary\x12\x1b\n" +
 	"\tstatus_at\x18\x02 \x01(\tR\bstatusAt\x12$\n" +

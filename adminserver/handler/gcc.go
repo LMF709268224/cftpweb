@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -30,18 +31,62 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 // CreatePipelineDraft POST /api/pipelines
 func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		gccpb.CreatePipelineDraftRequest
-		FromPipelineId string `json:"from_pipeline_id"`
+		CategoryTips       string `json:"category_tips"`
+		Name               string `json:"name"`
+		PipelineId         string `json:"pipeline_id"`
+		PipelineGuid       string `json:"pipeline_guid"`
+		Respath            string `json:"respath"`
+		ThumbnailObjectKey string `json:"thumbnail_object_key"`
+		ThumbnailFileHash  string `json:"thumbnail_file_hash"`
+		FromPipelineId     string `json:"from_pipeline_id"`
+		FromPipelineGuid   string `json:"from_pipeline_guid"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	if strings.TrimSpace(input.FromPipelineId) != "" {
+
+	fromPipelineID := strings.TrimSpace(input.FromPipelineId)
+	if fromPipelineID == "" {
+		fromPipelineID = strings.TrimSpace(r.URL.Query().Get("from_pipeline_id"))
+	}
+	fromPipelineGUID := strings.TrimSpace(input.FromPipelineGuid)
+	if fromPipelineGUID == "" {
+		fromPipelineGUID = strings.TrimSpace(r.URL.Query().Get("from_pipeline_guid"))
+	}
+
+	if fromPipelineID == "" && fromPipelineGUID != "" {
+		resp, err := h.Gcc.ListPipelinesAdmin(r.Context(), &gccpb.ListPipelinesAdminRequest{
+			Limit:  500,
+			Offset: 0,
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		candidates := make([]*gccpb.PipelineSummary, 0)
+		for _, pipeline := range resp.GetPipelines() {
+			if pipeline.GetPipelineGuid() == fromPipelineGUID {
+				candidates = append(candidates, pipeline)
+			}
+		}
+		sort.SliceStable(candidates, func(i, j int) bool {
+			return candidates[i].GetVersion() > candidates[j].GetVersion()
+		})
+		if len(candidates) > 0 {
+			fromPipelineID = candidates[0].GetPipelineId()
+		}
+		if fromPipelineID == "" {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "from_pipeline_guid was not found")
+			return
+		}
+	}
+
+	if fromPipelineID != "" {
 		req := &gccpb.DuplicatePipelineDraftRequest{
-			FromPipelineId: strings.TrimSpace(input.FromPipelineId),
+			FromPipelineId: fromPipelineID,
 			PipelineId:     newLmsID(),
-			Name:           input.Name,
+			Name:           strings.TrimSpace(input.Name),
 		}
 		if !requireRequestFields(w, req.FromPipelineId, "from_pipeline_id", req.Name, "name") {
 			return
@@ -55,9 +100,19 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := input.CreatePipelineDraftRequest
-	req.PipelineId = newLmsID()
-	if req.PipelineGuid == "" {
+	req := gccpb.CreatePipelineDraftRequest{
+		CategoryTips:       strings.TrimSpace(input.CategoryTips),
+		Name:               strings.TrimSpace(input.Name),
+		PipelineId:         strings.TrimSpace(input.PipelineId),
+		PipelineGuid:       strings.TrimSpace(input.PipelineGuid),
+		Respath:            strings.TrimSpace(input.Respath),
+		ThumbnailObjectKey: strings.TrimSpace(input.ThumbnailObjectKey),
+		ThumbnailFileHash:  strings.TrimSpace(input.ThumbnailFileHash),
+	}
+	if req.PipelineId == "" {
+		req.PipelineId = newLmsID()
+	}
+	if strings.TrimSpace(req.PipelineGuid) == "" {
 		req.PipelineGuid = newLmsID()
 	}
 	if !requireRequestFields(w, req.CategoryTips, "category_tips", req.Name, "name", req.Respath, "respath") {
