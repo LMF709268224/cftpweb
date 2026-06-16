@@ -33,6 +33,8 @@ const copy = computed(() => lang.value === "zh"
       path: "权限路径",
       updated: "更新于",
       count: "个资源包",
+      loading: "加载中...",
+      loadMore: "加载更多",
     }
   : {
       title: "Resource Packs",
@@ -45,6 +47,8 @@ const copy = computed(() => lang.value === "zh"
       path: "Access path",
       updated: "Updated",
       count: "packs",
+      loading: "Loading...",
+      loadMore: "Load more",
     })
 
 const filteredPacks = computed(() => {
@@ -118,7 +122,7 @@ onMounted(() => {
 
     <section v-else-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <RefreshCw class="h-5 w-5 animate-spin" />
-      <span>Loading...</span>
+      <span>{{ copy.loading }}</span>
     </section>
 
     <section v-else class="rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
@@ -131,7 +135,7 @@ onMounted(() => {
 
     <div v-if="nextPageToken" class="mt-4 text-center">
       <button class="btn btn-outline rounded-lg" :disabled="loading" @click="loadPacks(nextPageToken)">
-        {{ loading ? "Loading..." : "Load more" }}
+        {{ loading ? copy.loading : copy.loadMore }}
       </button>
     </div>
   </AppShell>
