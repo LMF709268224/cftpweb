@@ -460,6 +460,18 @@ function uploadHeaders(signedHeaders?: Record<string, string>) {
   return new Headers(signedHeaders || {})
 }
 
+const UPLOAD_TIMEOUT_MS = 30000
+
+async function uploadWithTimeout(url: string, init: RequestInit) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 function formFromCourse(course: LmsCourse | null): CourseForm {
   if (!course) return emptyForm
   return {
@@ -1621,7 +1633,7 @@ export default function LmsCoursesPage() {
         }),
       })
 
-      const uploadRes = await fetch(upload.upload_url, {
+      const uploadRes = await uploadWithTimeout(upload.upload_url, {
         method: "PUT",
         headers: uploadHeaders(upload.signed_headers),
         body: file,
@@ -1752,7 +1764,7 @@ export default function LmsCoursesPage() {
         }),
       })
 
-      const uploadRes = await fetch(upload.upload_url, {
+      const uploadRes = await uploadWithTimeout(upload.upload_url, {
         method: "PUT",
         headers: uploadHeaders(upload.signed_headers),
         body: file,

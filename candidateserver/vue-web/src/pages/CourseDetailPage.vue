@@ -282,19 +282,8 @@ async function loadFirstCourseThumbnail() {
     return
   }
   try {
-    const headers = new Headers()
-    const token = localStorage.getItem("access_token")
-    if (token) headers.set("Authorization", `Bearer ${token}`)
-    const response = await fetch(`/api/mall/courses/${encodeURIComponent(firstCourseId.value)}/thumbnail-url`, {
-      credentials: "include",
-      headers,
-    })
-    if (!response.ok) {
-      firstCourseThumbnail.value = ""
-      return
-    }
-    const data = await response.json()
-    firstCourseThumbnail.value = typeof data?.data?.url === "string" ? data.data.url : ""
+    const data = await apiClient(`/api/mall/courses/${encodeURIComponent(firstCourseId.value)}/thumbnail-url`)
+    firstCourseThumbnail.value = typeof data?.url === "string" ? data.url : ""
   } catch {
     firstCourseThumbnail.value = ""
   }

@@ -34,6 +34,7 @@ import { useTranslation } from "@/lib/language"
 import {
   normalizeSupplementaryMaterials,
   parseSupplementaryMaterialItems,
+  isPdfResourceUrl,
   type SupplementaryMaterial,
   type SupplementaryMaterialItem,
 } from "@/lib/supplementaryMaterials"
@@ -523,6 +524,11 @@ function supplementaryTypeIcon(type: string) {
 
 function openSupplementaryPreview(item: SupplementaryMaterialItem) {
   if (!item.url) return
+  if (!isPdfResourceUrl(item.url)) {
+    window.open(item.url, "_blank", "noopener,noreferrer")
+    return
+  }
+
   const params = new URLSearchParams({
     src: item.url,
     title: item.title || "Supplementary Material",

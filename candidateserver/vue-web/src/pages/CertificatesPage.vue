@@ -10,6 +10,7 @@ import { useTranslation } from "@/lib/language"
 const { t } = useTranslation()
 const certificates = ref<any[]>([])
 const loading = ref(false)
+const CERTIFICATE_PREVIEW_TIMEOUT_MS = 20000
 
 function openCertificate(url?: string) {
   if (url) window.open(url, "_blank")
@@ -19,8 +20,10 @@ async function previewCertificate(url?: string) {
   if (!url) return
   if (loading.value) return
   loading.value = true
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), CERTIFICATE_PREVIEW_TIMEOUT_MS)
   try {
-    const response = await fetch(url)
+    const response = await fetch(url, { signal: controller.signal })
     if (!response.ok) throw new Error("fetch failed")
     const blob = await response.blob()
     const blobUrl = URL.createObjectURL(blob)
@@ -28,6 +31,7 @@ async function previewCertificate(url?: string) {
   } catch (err) {
     window.open(url, "_blank")
   } finally {
+    window.clearTimeout(timeoutId)
     loading.value = false
   }
 }

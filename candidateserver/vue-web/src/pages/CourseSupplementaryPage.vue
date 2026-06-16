@@ -6,6 +6,7 @@ import { apiClient } from "@/lib/apiClient"
 import {
   normalizeSupplementaryMaterials,
   parseSupplementaryMaterialItems,
+  isPdfResourceUrl,
   type SupplementaryMaterial,
   type SupplementaryMaterialItem,
 } from "@/lib/supplementaryMaterials"
@@ -82,6 +83,15 @@ function goBack() {
 
 function openResource(item: SupplementaryMaterialItem) {
   if (!item.url) return
+  if (isPdfResourceUrl(item.url)) {
+    const params = new URLSearchParams({
+      src: item.url,
+      title: item.title || "Supplementary Material",
+    })
+    window.open(`/pdf-preview?${params.toString()}`, "_blank", "noopener,noreferrer")
+    return
+  }
+
   window.open(item.url, "_blank", "noopener,noreferrer")
 }
 
