@@ -461,7 +461,7 @@ func (h *Handler) GetLessonPreviewURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expiresAt := time.Now().Add(time.Hour).Unix()
+	expiresAt := time.Now().Add(time.Hour * 24).Unix()
 	filename := sanitizeFilename(lesson.GetTitle()) + ".pdf"
 	token := h.signPDFPreviewToken(candidateID, "lesson", lessonID, viewURL, filename, expiresAt)
 	params := url.Values{}
