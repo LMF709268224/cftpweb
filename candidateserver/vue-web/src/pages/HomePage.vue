@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import { useRouter } from "vue-router"
 import { BookOpen, CheckCircle2, MessageSquare } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import StatsCard from "@/components/StatsCard.vue"
@@ -16,6 +17,7 @@ type DashboardStats = {
 }
 
 const { t, lang } = useTranslation()
+const router = useRouter()
 const userName = ref("...")
 const unreadCount = ref(0)
 const stats = ref<DashboardStats>({})
@@ -25,10 +27,12 @@ const guideCopy = computed(() => lang.value === "zh"
   ? {
       title: "新手引导",
       subtitle: "欢迎来到 CFtP。你的第一步是进入认证中心，选择并购买适合自己的认证课程；完成学习后，再按流程提交资格材料、预约考试，最终在证书中心查看认证结果。",
+      buyCourses: "购买课程",
     }
   : {
       title: "Getting Started",
       subtitle: "Welcome to CFtP. Your first step is to enter the certification center and choose the right certification path. After learning, submit qualification files, schedule exams, and review your certificate result.",
+      buyCourses: "Buy Courses",
     },
 )
 const todoItems = computed(() =>
@@ -43,6 +47,10 @@ const todoItems = computed(() =>
       ]
     : [],
 )
+
+function goToCourses() {
+  void router.push("/courses")
+}
 
 onMounted(async () => {
   try {
@@ -75,9 +83,15 @@ onMounted(async () => {
         <p class="mt-2 text-muted-foreground">{{ t.home.welcomeBack }}{{ welcomeSeparator }}{{ userName }}</p>
       </div>
 
-      <section class="rounded-[16px] bg-white px-4 py-6 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:px-8 md:py-8">
+      <section class="relative rounded-[16px] bg-white px-4 py-6 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:px-8 md:py-8">
         <h2 class="text-2xl font-bold tracking-tight text-primary md:text-3xl">{{ guideCopy.title }}</h2>
         <p class="mx-auto mt-3 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">{{ guideCopy.subtitle }}</p>
+        <button
+          class="mt-5 inline-flex h-9 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90 md:absolute md:right-6 md:top-6 md:mt-0"
+          @click="goToCourses"
+        >
+          {{ guideCopy.buyCourses }}
+        </button>
       </section>
 
       <section class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">

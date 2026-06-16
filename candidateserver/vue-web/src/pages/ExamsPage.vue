@@ -129,7 +129,7 @@ onMounted(() => {
       <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
       <p class="mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
       <div class="mt-4 flex justify-end">
-        <RouterLink to="/courses" class="inline-flex items-center gap-2 rounded-md bg-[#2563eb] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#1d4ed8]">
+        <RouterLink to="/courses" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90">
           {{ t.courses.browseCoursesBtn }} <ExternalLink class="h-4 w-4" />
         </RouterLink>
       </div>
