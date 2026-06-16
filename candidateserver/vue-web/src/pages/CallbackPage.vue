@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router"
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
 import { getErrorMessage } from "@/lib/errorCodes"
 import { apiClient } from "@/lib/apiClient"
+import { setAccessToken } from "@/lib/authStorage"
 
 const route = useRoute()
 const router = useRouter()
@@ -28,7 +29,7 @@ onMounted(async () => {
       body: JSON.stringify({ code, state }),
     })
     if (payload.user) localStorage.setItem("user_name", payload.user.name)
-    if (payload.token) localStorage.setItem("access_token", payload.token)
+    if (payload.token) setAccessToken(payload.token)
     localStorage.setItem("is_authenticated", "true")
     status.value = "success"
     setTimeout(() => router.push("/"), 1000)

@@ -1,4 +1,5 @@
 import { toast } from "vue-sonner"
+import { clearAccessToken, getAccessToken } from "./authStorage"
 import { getErrorMessage, localizeApiErrorMessage } from "./errorCodes"
 
 type ApiClientOptions = RequestInit & {
@@ -11,7 +12,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
   const { timeoutMs = DEFAULT_API_TIMEOUT_MS, signal, ...fetchOptions } = options
   const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
   const headers = new Headers(options.headers)
-  const token = localStorage.getItem("access_token")
+  const token = getAccessToken()
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
 
@@ -52,6 +53,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
   }
 
   if (res.status === 401) {
+    clearAccessToken()
     localStorage.removeItem("is_authenticated")
     localStorage.removeItem("user_name")
     toast.error(getErrorMessage("UNAUTHORIZED", currentLang))

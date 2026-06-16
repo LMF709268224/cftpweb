@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onErrorCaptured, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { PDFViewer } from "@embedpdf/vue-pdf-viewer"
 import { AlertTriangle, ArrowLeft, FileText, Loader2 } from "lucide-vue-next"
+import { getAccessToken } from "@/lib/authStorage"
 
 const route = useRoute()
 const router = useRouter()
@@ -54,7 +55,7 @@ async function loadPdf() {
   const timeoutId = window.setTimeout(() => controller.abort(), PDF_LOAD_TIMEOUT_MS)
   try {
     const headers = new Headers()
-    const token = localStorage.getItem("access_token")
+    const token = getAccessToken()
     if (token) headers.set("Authorization", `Bearer ${token}`)
 
     const res = await fetch(source.value, {

@@ -5,6 +5,7 @@ import { toast } from "vue-sonner"
 import { Loader2 } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
+import { clearAccessToken } from "@/lib/authStorage"
 import { getMessage } from "@/lib/messages"
 import { useTranslation } from "@/lib/language"
 
@@ -89,6 +90,7 @@ async function handleUpdatePassword() {
       body: JSON.stringify({ old_password: password.oldPassword, new_password: password.newPassword }),
     })
     toast.success(getMessage("PASSWORD_UPDATE_SUCCESS", lang.value))
+    clearAccessToken()
     localStorage.removeItem("is_authenticated")
     localStorage.removeItem("user_name")
     setTimeout(() => { window.location.href = "/login" }, 1500)

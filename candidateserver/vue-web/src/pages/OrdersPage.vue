@@ -5,6 +5,7 @@ import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus }
 import AppShell from "@/components/AppShell.vue"
 import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
+import { getAccessToken } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 
 type OrderItem = { id: string; items: string[]; date: string; amount: string; currency: string; status: keyof typeof statusConfig; rawStatus: string; pipelineId: string; paymentMethod: string }
@@ -72,7 +73,7 @@ async function downloadInvoicePdf(orderId: string) {
   const timeoutId = window.setTimeout(() => controller.abort(), INVOICE_DOWNLOAD_TIMEOUT_MS)
   try {
     const headers = new Headers()
-    const token = localStorage.getItem("access_token")
+    const token = getAccessToken()
     if (token) headers.set("Authorization", `Bearer ${token}`)
 
     const response = await fetch(`/api/invoices/${encodeURIComponent(orderId)}/pdf`, {
