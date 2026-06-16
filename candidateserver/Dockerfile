@@ -13,7 +13,7 @@ COPY candidateserver/vue-web/ ./
 RUN rm -rf node_modules && \
     if [ -f package.json ]; then \
         npm ci && \
-        node -e "require.resolve('@embedpdf/vue-pdf-viewer'); require.resolve('@embedpdf/snippet'); require.resolve('@embedpdf/core'); require.resolve('@embedpdf/pdfium'); require.resolve('@vue/devtools-api'); require.resolve('@vue/devtools-api', { paths: [require.resolve('vue-router')] }); console.log('frontend dependency check ok')" && \
+        node -e "const fs=require('fs'); require.resolve('@embedpdf/vue-pdf-viewer'); require.resolve('@embedpdf/snippet'); if (!fs.existsSync('node_modules/@embedpdf/snippet/dist/embedpdf.js')) throw new Error('missing @embedpdf/snippet dist/embedpdf.js'); require.resolve('@embedpdf/core'); require.resolve('@embedpdf/pdfium'); require.resolve('@vue/devtools-api'); require.resolve('@vue/devtools-api', { paths: [require.resolve('vue-router')] }); console.log('frontend dependency check ok')" && \
         npm run build; \
     else \
         mkdir -p dist; \
