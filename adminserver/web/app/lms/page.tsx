@@ -1327,7 +1327,7 @@ export default function LmsCoursesPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...formToPayload(form),
-        from_course_guid: course.course_guid || "",
+        from_course_id: course.course_id,
       }),
     })
 

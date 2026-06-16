@@ -441,7 +441,7 @@ export default function PipelinesPage() {
           name: form.name.trim() + " (Copy)",
           category_tips: form.category_tips.trim(),
           respath: form.respath.trim(),
-          from_pipeline_guid: selectedPipeline.pipeline_guid,
+          from_pipeline_id: selectedPipeline.pipeline_id,
         }),
       })
       const newPipelineId = res?.pipeline_id || ""

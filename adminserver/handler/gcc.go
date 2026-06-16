@@ -29,13 +29,35 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 
 // CreatePipelineDraft POST /api/pipelines
 func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
-	var req gccpb.CreatePipelineDraftRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var input struct {
+		gccpb.CreatePipelineDraftRequest
+		FromPipelineId string `json:"from_pipeline_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	if strings.TrimSpace(input.FromPipelineId) != "" {
+		req := &gccpb.DuplicatePipelineDraftRequest{
+			FromPipelineId: strings.TrimSpace(input.FromPipelineId),
+			PipelineId:     newLmsID(),
+			Name:           input.Name,
+		}
+		if !requireRequestFields(w, req.FromPipelineId, "from_pipeline_id", req.Name, "name") {
+			return
+		}
+		resp, err := h.Gcc.DuplicatePipelineDraft(r.Context(), req)
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		WriteJSON(w, http.StatusOK, resp)
+		return
+	}
+
+	req := input.CreatePipelineDraftRequest
 	req.PipelineId = newLmsID()
-	if req.FromPipelineGuid == "" && req.PipelineGuid == "" {
+	if req.PipelineGuid == "" {
 		req.PipelineGuid = newLmsID()
 	}
 	if !requireRequestFields(w, req.CategoryTips, "category_tips", req.Name, "name", req.Respath, "respath") {

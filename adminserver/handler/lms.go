@@ -164,13 +164,35 @@ func (h *Handler) ListLmsCourses(w http.ResponseWriter, r *http.Request) {
 
 // CreateLmsCourse POST /api/lms/courses
 func (h *Handler) CreateLmsCourse(w http.ResponseWriter, r *http.Request) {
-	var req lmspb.CreateCourseDraftRequest
-	if err := ReadJSON(r, &req); err != nil {
+	var input struct {
+		lmspb.CreateCourseDraftRequest
+		FromCourseId string `json:"from_course_id"`
+	}
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	if strings.TrimSpace(input.FromCourseId) != "" {
+		req := &lmspb.DuplicateCourseDraftRequest{
+			FromCourseId: strings.TrimSpace(input.FromCourseId),
+			CourseId:     newLmsID(),
+			Title:        input.Title,
+		}
+		if !requireRequestFields(w, req.FromCourseId, "from_course_id", req.Title, "title") {
+			return
+		}
+		resp, err := h.Lms.DuplicateCourseDraftAdmin(r.Context(), req)
+		if err != nil {
+			writeLmsError(w, err)
+			return
+		}
+		WriteJSON(w, http.StatusOK, resp)
+		return
+	}
+
+	req := input.CreateCourseDraftRequest
 	req.CourseId = newLmsID()
-	if strings.TrimSpace(req.FromCourseGuid) == "" && strings.TrimSpace(req.CourseGuid) == "" {
+	if strings.TrimSpace(req.CourseGuid) == "" {
 		req.CourseGuid = newLmsID()
 	}
 	if !requireRequestField(w, req.Title, "title") {
