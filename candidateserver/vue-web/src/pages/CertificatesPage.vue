@@ -61,15 +61,9 @@ onMounted(async () => {
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
-      <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
-        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-          <Award class="h-3.5 w-3.5" />
-          {{ t.sidebar.certificates }}
-        </div>
-        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.certificatesPage.title }}</h1>
-        <p class="mt-2 text-muted-foreground">{{ t.certificatesPage.subtitle }}</p>
-      </div>
+    <div class="mb-4 px-1 py-3 md:py-5">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.certificatesPage.title }}</h1>
+      <p class="mt-2 text-muted-foreground">{{ t.certificatesPage.subtitle }}</p>
     </div>
 
     <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">

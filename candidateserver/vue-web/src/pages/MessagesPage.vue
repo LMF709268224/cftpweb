@@ -126,17 +126,11 @@ onMounted(fetchMessages)
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
-      <div class="flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <MessageSquare class="h-3.5 w-3.5" />
-            {{ t.sidebar.messages }}
-          </div>
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
-          <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
-        </div>
-        <button v-if="unreadCount > 0" class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="markAllAsRead"><CheckCheck class="h-4 w-4" /> {{ t.messagesPage.markAllAsRead }}</button>
+    <div class="mb-4 px-1 py-3 md:py-5">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
+      <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
+      <div v-if="unreadCount > 0" class="mt-4 flex justify-end">
+        <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="markAllAsRead"><CheckCheck class="h-4 w-4" /> {{ t.messagesPage.markAllAsRead }}</button>
       </div>
     </div>
 

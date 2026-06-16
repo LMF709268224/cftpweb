@@ -125,17 +125,13 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
-      <div class="flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <CalendarClock class="h-3.5 w-3.5" />
-            {{ t.sidebar.exams }}
-          </div>
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
-          <p class="mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
-        </div>
-        <RouterLink to="/courses" class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary">{{ t.courses.browseCoursesBtn }} <ExternalLink class="h-4 w-4" /></RouterLink>
+    <div class="mb-4 px-1 py-3 md:py-5">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
+      <p class="mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
+      <div class="mt-4 flex justify-end">
+        <RouterLink to="/courses" class="inline-flex items-center gap-2 rounded-md bg-[#2563eb] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#1d4ed8]">
+          {{ t.courses.browseCoursesBtn }} <ExternalLink class="h-4 w-4" />
+        </RouterLink>
       </div>
     </div>
 

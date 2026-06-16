@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { Archive, ChevronRight, PackageOpen, RefreshCw, Search } from "lucide-vue-next"
+import { ChevronRight, PackageOpen, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -76,28 +76,20 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
-    <section class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
-      <div class="flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <Archive class="h-3.5 w-3.5" />
-            {{ filteredPacks.length }} {{ copy.count }}
-          </div>
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
-          <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
-        </div>
-        <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="loadPacks()">
-          <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
-          {{ copy.refresh }}
-        </button>
-      </div>
-    </section>
+    <div class="mb-4 px-1 py-3 md:py-5">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
+      <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
+    </div>
 
-    <section class="mb-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="relative">
-        <Search class="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-        <input v-model="search" class="input pl-11" :placeholder="copy.search" />
+    <section class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
+      <div class="relative flex-1 sm:max-w-md">
+        <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input v-model="search" class="input pl-10" :placeholder="copy.search" />
       </div>
+      <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="loadPacks()">
+        <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
+        {{ copy.refresh }}
+      </button>
     </section>
 
     <section v-if="filteredPacks.length" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -124,11 +116,16 @@ onMounted(() => {
       </RouterLink>
     </section>
 
+    <section v-else-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <RefreshCw class="h-5 w-5 animate-spin" />
+      <span>Loading...</span>
+    </section>
+
     <section v-else class="rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
         <PackageOpen class="h-8 w-8 text-primary" />
       </div>
-      <h2 class="mt-4 text-lg font-semibold text-foreground">{{ loading ? "Loading..." : copy.emptyTitle }}</h2>
+      <h2 class="mt-4 text-lg font-semibold text-foreground">{{ copy.emptyTitle }}</h2>
       <p class="mt-2 text-sm text-muted-foreground">{{ copy.emptyDesc }}</p>
     </section>
 
