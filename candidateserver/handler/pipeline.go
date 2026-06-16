@@ -461,7 +461,7 @@ func (h *Handler) GetLessonPreviewURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expiresAt := time.Now().Add(10 * time.Minute).Unix()
+	expiresAt := time.Now().Add(time.Hour).Unix()
 	filename := sanitizeFilename(lesson.GetTitle()) + ".pdf"
 	token := h.signPDFPreviewToken(candidateID, "lesson", lessonID, viewURL, filename, expiresAt)
 	params := url.Values{}
@@ -486,7 +486,7 @@ func (h *Handler) GetResourcePreviewURL(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	expiresAt := time.Now().Add(10 * time.Minute).Unix()
+	expiresAt := time.Now().Add(time.Hour).Unix()
 	token := h.signPDFPreviewToken(candidateID, "resource", resourceURL, resourceURL, "resource.pdf", expiresAt)
 	params := url.Values{}
 	params.Set("src", resourceURL)
@@ -515,13 +515,20 @@ func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, viewResp.GetViewUrl(), nil)
+	method := http.MethodGet
+	if r.Method == http.MethodHead {
+		method = http.MethodHead
+	}
+	proxyReq, err := http.NewRequestWithContext(r.Context(), method, viewResp.GetViewUrl(), nil)
 	if err != nil {
 		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "invalid view url")
 		return
 	}
 	if rangeHeader := strings.TrimSpace(r.Header.Get("Range")); rangeHeader != "" {
 		proxyReq.Header.Set("Range", rangeHeader)
+	}
+	if ifRange := strings.TrimSpace(r.Header.Get("If-Range")); ifRange != "" {
+		proxyReq.Header.Set("If-Range", ifRange)
 	}
 
 	proxyResp, err := http.DefaultClient.Do(proxyReq)
@@ -532,11 +539,17 @@ func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 	defer proxyResp.Body.Close()
 
 	copyPreviewHeaders(w.Header(), proxyResp.Header)
+	if w.Header().Get("Accept-Ranges") == "" {
+		w.Header().Set("Accept-Ranges", "bytes")
+	}
 	w.Header().Set("Content-Type", "application/pdf")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, sanitizeFilename(lesson.GetTitle())+".pdf"))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(proxyResp.StatusCode)
 
+	if r.Method == http.MethodHead {
+		return
+	}
 	if _, err := io.Copy(w, proxyResp.Body); err != nil {
 		slog.Warn("failed to stream lesson preview", "error", err, "lesson_id", lessonID)
 	}
@@ -571,13 +584,20 @@ func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, resourceURL, nil)
+	method := http.MethodGet
+	if r.Method == http.MethodHead {
+		method = http.MethodHead
+	}
+	proxyReq, err := http.NewRequestWithContext(r.Context(), method, resourceURL, nil)
 	if err != nil {
 		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "invalid resource url")
 		return
 	}
 	if rangeHeader := strings.TrimSpace(r.Header.Get("Range")); rangeHeader != "" {
 		proxyReq.Header.Set("Range", rangeHeader)
+	}
+	if ifRange := strings.TrimSpace(r.Header.Get("If-Range")); ifRange != "" {
+		proxyReq.Header.Set("If-Range", ifRange)
 	}
 
 	proxyResp, err := http.DefaultClient.Do(proxyReq)
@@ -588,6 +608,9 @@ func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 	defer proxyResp.Body.Close()
 
 	copyPreviewHeaders(w.Header(), proxyResp.Header)
+	if w.Header().Get("Accept-Ranges") == "" {
+		w.Header().Set("Accept-Ranges", "bytes")
+	}
 	contentType := strings.TrimSpace(proxyResp.Header.Get("Content-Type"))
 	if contentType == "" || contentType == "application/octet-stream" {
 		contentType = "application/pdf"
@@ -597,6 +620,9 @@ func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(proxyResp.StatusCode)
 
+	if r.Method == http.MethodHead {
+		return
+	}
 	if _, err := io.Copy(w, proxyResp.Body); err != nil {
 		slog.Warn("failed to stream resource preview", "error", err, "resource_url", resourceURL)
 	}
@@ -619,7 +645,11 @@ func (h *Handler) PreviewResourceURLPublic(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *Handler) streamPDFPreview(w http.ResponseWriter, r *http.Request, sourceURL string, filename string, logKind string, logID string) {
-	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, sourceURL, nil)
+	method := http.MethodGet
+	if r.Method == http.MethodHead {
+		method = http.MethodHead
+	}
+	proxyReq, err := http.NewRequestWithContext(r.Context(), method, sourceURL, nil)
 	if err != nil {
 		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "invalid preview url")
 		return
@@ -645,6 +675,9 @@ func (h *Handler) streamPDFPreview(w http.ResponseWriter, r *http.Request, sourc
 	}
 
 	copyPreviewHeaders(w.Header(), proxyResp.Header)
+	if w.Header().Get("Accept-Ranges") == "" {
+		w.Header().Set("Accept-Ranges", "bytes")
+	}
 	contentType := strings.TrimSpace(proxyResp.Header.Get("Content-Type"))
 	if contentType == "" || contentType == "application/octet-stream" {
 		contentType = "application/pdf"
@@ -654,6 +687,9 @@ func (h *Handler) streamPDFPreview(w http.ResponseWriter, r *http.Request, sourc
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(proxyResp.StatusCode)
 
+	if r.Method == http.MethodHead {
+		return
+	}
 	if _, err := io.Copy(w, proxyResp.Body); err != nil {
 		slog.Warn("failed to stream preview", "error", err, "kind", logKind, "id", logID)
 	}

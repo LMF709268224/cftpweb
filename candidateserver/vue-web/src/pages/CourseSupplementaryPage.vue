@@ -88,11 +88,21 @@ function openResource(item: SupplementaryMaterialItem) {
       src: item.url,
       title: item.title || "Supplementary Material",
     })
-    window.open(`/pdf-preview?${params.toString()}`, "_blank", "noopener,noreferrer")
+    openPreviewTab(`/pdf-preview?${params.toString()}`)
     return
   }
 
   window.open(item.url, "_blank", "noopener,noreferrer")
+}
+
+function openPreviewTab(url: string) {
+  const link = document.createElement("a")
+  link.href = url
+  link.target = "_blank"
+  link.rel = "noopener noreferrer"
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
 }
 
 async function loadCourse() {

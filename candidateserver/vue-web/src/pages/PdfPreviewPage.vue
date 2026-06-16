@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import { computed, onErrorCaptured, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onErrorCaptured, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { PDFViewer } from "@embedpdf/vue-pdf-viewer"
-import { AlertTriangle, ArrowLeft, FileText, Loader2 } from "lucide-vue-next"
+import { AlertTriangle, ArrowLeft, ExternalLink, FileText, Loader2, RotateCw } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 
 const route = useRoute()
 const router = useRouter()
 const viewerSrc = ref("")
 const loading = ref(false)
-const viewerPreparing = ref(false)
+const viewerReady = ref(false)
+const viewerFailed = ref(false)
+const slowPreview = ref(false)
 const errorMessage = ref("")
-const viewerError = ref(false)
+let slowPreviewTimer: number | undefined
 
 const title = computed(() => String(route.query.title || "PDF Preview"))
 const source = computed(() => {
@@ -35,13 +37,30 @@ const viewerConfig = computed(() => ({
     },
   },
   tabBar: "never",
-  disabledCategories: ["annotation", "print", "export", "redaction"],
+  disabledCategories: ["annotation", "insert", "form", "redaction", "panel-comment"],
 }))
 
+function clearSlowPreviewTimer() {
+  if (slowPreviewTimer) {
+    window.clearTimeout(slowPreviewTimer)
+    slowPreviewTimer = undefined
+  }
+}
+
+function startSlowPreviewTimer() {
+  clearSlowPreviewTimer()
+  slowPreviewTimer = window.setTimeout(() => {
+    slowPreview.value = true
+  }, 12000)
+}
+
 async function loadPdf() {
+  clearSlowPreviewTimer()
   viewerSrc.value = ""
+  viewerReady.value = false
+  viewerFailed.value = false
+  slowPreview.value = false
   errorMessage.value = ""
-  viewerError.value = false
 
   if (!source.value) {
     errorMessage.value = "No PDF resource found for preview."
@@ -49,7 +68,6 @@ async function loadPdf() {
   }
 
   loading.value = true
-  viewerPreparing.value = false
   try {
     const res = await apiClient(source.value, { timeoutMs: 30000 })
     if (!res?.url) {
@@ -57,10 +75,7 @@ async function loadPdf() {
       return
     }
     viewerSrc.value = res.url
-    viewerPreparing.value = true
-    window.setTimeout(() => {
-      viewerPreparing.value = false
-    }, 1200)
+    startSlowPreviewTimer()
   } catch (err) {
     errorMessage.value = "PDF preview failed. Please check your network and try again."
   } finally {
@@ -68,19 +83,25 @@ async function loadPdf() {
   }
 }
 
+function handleViewerReady() {
+  viewerReady.value = true
+}
+
 function goBack() {
   if (window.history.length > 1) router.back()
   else router.push("/courses")
 }
 
+watch(source, loadPdf, { immediate: true })
+onBeforeUnmount(clearSlowPreviewTimer)
+
 onErrorCaptured((err) => {
   console.error("PDF viewer failed:", err)
-  viewerError.value = true
-  errorMessage.value = "The advanced PDF viewer failed to load. A basic browser preview is shown instead."
+  viewerFailed.value = true
+  slowPreview.value = true
+  clearSlowPreviewTimer()
   return false
 })
-
-watch(source, loadPdf, { immediate: true })
 </script>
 
 <template>
@@ -101,17 +122,53 @@ watch(source, loadPdf, { immediate: true })
 
     <main class="min-h-0 flex-1 p-3">
       <div v-if="viewerSrc" class="relative h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,74,82,0.08)]">
-        <PDFViewer v-if="!viewerError" class="h-full w-full" :config="viewerConfig" />
+        <PDFViewer
+          v-if="!viewerFailed"
+          :key="viewerSrc"
+          class="h-full w-full"
+          :config="viewerConfig"
+          @ready="handleViewerReady"
+        />
         <iframe
           v-else
+          :key="viewerSrc"
           :src="viewerSrc"
           class="h-full w-full border-0"
           title="PDF preview fallback"
         />
-        <div v-if="viewerPreparing" class="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/80 text-sm text-slate-600 backdrop-blur-[1px]">
-          <div class="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-[0_16px_40px_rgba(15,74,82,0.12)]">
+        <div v-if="!viewerReady && !viewerFailed" class="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-sm text-slate-600 backdrop-blur-[1px]">
+          <div class="flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 text-center shadow-[0_16px_40px_rgba(15,74,82,0.12)]">
             <Loader2 class="h-5 w-5 animate-spin text-emerald-500" />
-            Preparing PDF preview...
+            <div class="space-y-1">
+              <div class="font-semibold text-slate-900">Loading PDF viewer...</div>
+              <p v-if="slowPreview" class="text-xs leading-5 text-slate-500">
+                This PDF is still loading. Large files may take longer; you can reload or open the signed preview URL directly.
+              </p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-2">
+              <button class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50" @click="loadPdf">
+                <RotateCw class="h-3.5 w-3.5" />
+                Reload
+              </button>
+              <a :href="viewerSrc" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-emerald-600">
+                <ExternalLink class="h-3.5 w-3.5" />
+                Open directly
+              </a>
+            </div>
+          </div>
+        </div>
+        <div v-if="viewerReady && slowPreview && !viewerFailed" class="absolute right-4 top-4 z-10 max-w-sm rounded-2xl border border-amber-200 bg-amber-50/95 p-3 text-xs text-amber-900 shadow-[0_12px_32px_rgba(120,53,15,0.16)] backdrop-blur">
+          <div class="font-semibold">PDF is still loading</div>
+          <p class="mt-1 leading-5">Large files can take longer in the advanced viewer. You can wait, reload, or open the signed preview URL directly.</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button class="inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 font-semibold text-amber-900 transition-colors hover:bg-amber-100" @click="loadPdf">
+              <RotateCw class="h-3.5 w-3.5" />
+              Reload
+            </button>
+            <a :href="viewerSrc" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-2 font-semibold text-white transition-colors hover:bg-emerald-600">
+              <ExternalLink class="h-3.5 w-3.5" />
+              Open directly
+            </a>
           </div>
         </div>
       </div>
