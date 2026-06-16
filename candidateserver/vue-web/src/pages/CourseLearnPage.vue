@@ -533,7 +533,7 @@ function openSupplementaryPreview(item: SupplementaryMaterialItem) {
     src: item.url,
     title: item.title || "Supplementary Material",
   })
-  window.open(`/pdf-preview?${params.toString()}`, "_blank", "noopener,noreferrer")
+  openPreviewTab(`/pdf-preview?${params.toString()}`)
 }
 
 async function loadCourse() {
@@ -664,11 +664,21 @@ async function openLessonPdf() {
     params.set("title", lesson.value.title)
   }
   const previewUrl = `/pdf-preview?${params.toString()}`
-  window.open(previewUrl, "_blank", "noopener,noreferrer")
+  openPreviewTab(previewUrl)
 }
 
 async function openInlinePdf(url: string) {
-  window.open(url, "_blank", "noopener,noreferrer")
+  openPreviewTab(url)
+}
+
+function openPreviewTab(url: string) {
+  const link = document.createElement("a")
+  link.href = url
+  link.target = "_blank"
+  link.rel = "noopener noreferrer"
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
 }
 
 async function openMaterial(material: CourseMaterialSummary) {
