@@ -31,7 +31,7 @@ const viewerConfig = computed(() => ({
     preference: "light",
     light: {
       accent: {
-        primary: "#36c39f",
+        primary: "#101e43",
       },
     },
   },

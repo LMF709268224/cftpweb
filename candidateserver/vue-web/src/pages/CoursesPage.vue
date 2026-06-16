@@ -209,15 +209,9 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
-      <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
-        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-          <BookOpen class="h-3.5 w-3.5" />
-          {{ t.sidebar.courses }}
-        </div>
-        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.courses.title }}</h1>
-        <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
-      </div>
+    <div class="mb-4 px-1 py-3 md:py-5">
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.courses.title }}</h1>
+      <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
     </div>
 
     <div class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">

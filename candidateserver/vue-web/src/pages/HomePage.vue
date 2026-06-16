@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
-import { RouterLink } from "vue-router"
-import { BookOpen, CheckCircle2, GraduationCap, MessageSquare } from "lucide-vue-next"
+import { BookOpen, CheckCircle2, MessageSquare } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import StatsCard from "@/components/StatsCard.vue"
 import TodoList from "@/components/TodoList.vue"
@@ -22,6 +21,16 @@ const unreadCount = ref(0)
 const stats = ref<DashboardStats>({})
 const welcomeSeparator = computed(() => (lang.value === "zh" ? "\uFF0C" : ", "))
 
+const guideCopy = computed(() => lang.value === "zh"
+  ? {
+      title: "新手引导",
+      subtitle: "欢迎来到 CFtP。你的第一步是进入认证中心，选择并购买适合自己的认证课程；完成学习后，再按流程提交资格材料、预约考试，最终在证书中心查看认证结果。",
+    }
+  : {
+      title: "Getting Started",
+      subtitle: "Welcome to CFtP. Your first step is to enter the certification center and choose the right certification path. After learning, submit qualification files, schedule exams, and review your certificate result.",
+    },
+)
 const todoItems = computed(() =>
   unreadCount.value > 0
     ? [
@@ -61,29 +70,14 @@ onMounted(async () => {
 <template>
   <AppShell content-class="p-4">
     <div class="space-y-4">
-      <section class="overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
-        <div class="relative flex flex-col gap-4 bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4 md:flex-row md:items-center md:justify-between">
-          <div class="absolute right-8 top-0 h-24 w-24 rounded-full bg-primary/10 blur-3xl" />
-          <div class="relative">
-            <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-              <GraduationCap class="h-3.5 w-3.5" />
-              {{ t.sidebar.systemName }}
-            </div>
-            <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.sidebar.home }}</h1>
-            <p class="mt-2 text-muted-foreground">{{ t.home.welcomeBack }}{{ welcomeSeparator }}{{ userName }}</p>
-          </div>
+      <div class="mb-4 px-1 py-3 md:py-5">
+        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.sidebar.home }}</h1>
+        <p class="mt-2 text-muted-foreground">{{ t.home.welcomeBack }}{{ welcomeSeparator }}{{ userName }}</p>
+      </div>
 
-          <div class="relative grid grid-cols-2 gap-4 sm:min-w-[340px]">
-            <RouterLink to="/courses" class="rounded-xl bg-white/85 px-4 py-3 shadow-sm transition-colors hover:bg-white">
-              <p class="text-xs text-muted-foreground">{{ t.home.courseInProgress }}</p>
-              <p class="mt-1 text-2xl font-bold text-foreground">{{ stats.courses_in_progress || 0 }}</p>
-            </RouterLink>
-            <RouterLink to="/messages" class="rounded-xl bg-white/85 px-4 py-3 shadow-sm transition-colors hover:bg-white">
-              <p class="text-xs text-muted-foreground">{{ t.home.unreadMessages }}</p>
-              <p class="mt-1 text-2xl font-bold text-primary">{{ unreadCount }}</p>
-            </RouterLink>
-          </div>
-        </div>
+      <section class="rounded-[16px] bg-white px-4 py-6 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:px-8 md:py-8">
+        <h2 class="text-2xl font-bold tracking-tight text-primary md:text-3xl">{{ guideCopy.title }}</h2>
+        <p class="mx-auto mt-3 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">{{ guideCopy.subtitle }}</p>
       </section>
 
       <section class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
