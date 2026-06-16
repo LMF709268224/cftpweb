@@ -172,4 +172,17 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
   }
+
+  @media (max-width: 767px) {
+    .page-main .text-3xl,
+    .app-side-card .text-3xl {
+      font-size: 1.5rem !important;
+      line-height: 2rem !important;
+    }
+
+    .page-main h1.text-2xl {
+      font-size: 1.25rem !important;
+      line-height: 1.75rem !important;
+    }
+  }
 }
