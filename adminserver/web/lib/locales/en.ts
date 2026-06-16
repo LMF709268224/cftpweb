@@ -543,6 +543,10 @@ export const en: AppTranslations = {
     deletePublishedBlocked: "Published pipelines cannot be deleted directly",
     loadLmsFailed: "Failed to load published courses",
     loadCredentialsFailed: "Failed to load credential definitions",
+    loadPdfTemplatesFailed: "Failed to load PDF templates",
+    selectPdfTemplate: "Select PDF template",
+    noPdfTemplates: "No PDF templates are available. Create one in PDF Template Configuration first.",
+    certTemplateRequired: "Please select a PDF template for {{name}} before saving.",
   },
   progPage: {
     title: "Pipeline Management",

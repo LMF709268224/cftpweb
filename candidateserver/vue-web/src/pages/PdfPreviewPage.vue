@@ -123,17 +123,15 @@ onErrorCaptured((err) => {
     </header>
 
     <main class="min-h-0 flex-1 p-3">
-      <div v-if="viewerSrc" class="relative h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,74,82,0.08)]">
+      <div v-if="viewerSrc" :key="viewerSrc" class="relative h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,74,82,0.08)]">
         <PDFViewer
           v-if="!viewerFailed"
-          :key="viewerSrc"
           class="h-full w-full"
           :config="viewerConfig"
           @ready="handleViewerReady"
         />
         <iframe
           v-else
-          :key="`fallback-${viewerSrc}`"
           :src="viewerSrc"
           class="h-full w-full border-0"
           title="PDF preview fallback"

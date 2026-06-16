@@ -43,12 +43,21 @@ type Qualification = {
   name_hint?: string
   name?: string
   title?: string
+  pdf_template_id?: string
+  review_stripe_product_id?: string
+  review_stripe_price_id?: string
 }
 
 type CredentialDefinition = {
   cred_def_id: string
   name?: string
   category?: string
+}
+
+type PdfTemplate = {
+  template_id: string
+  name?: string
+  description?: string
 }
 
 type StageConfig = {
@@ -164,15 +173,23 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
 }
 
 function cleanFormForStructure(form: PipelineForm) {
+  const cleanQualifications = (items: Qualification[]) => normalizeQualifications(items).map((item) => ({
+    qual_id: (item.qual_id || "").trim(),
+    name_hint: (item.name_hint || item.name || item.title || "").trim(),
+    pdf_template_id: (item.pdf_template_id || "").trim(),
+    review_stripe_product_id: (item.review_stripe_product_id || "").trim(),
+    review_stripe_price_id: (item.review_stripe_price_id || "").trim(),
+  }))
+
   return {
     unlock_stripe_product_id: form.unlock_stripe_product_id.trim(),
     unlock_stripe_price_id: form.unlock_stripe_price_id.trim(),
-    unlock_quals: form.unlock_quals || [],
+    unlock_quals: cleanQualifications(form.unlock_quals),
     package_stripe_product_id: form.package_stripe_product_id.trim(),
     package_stripe_price_id: form.package_stripe_price_id.trim(),
     package_coupon: form.package_coupon.trim(),
-    certs: form.certs || [],
-    certs_quals: form.certs_quals || [],
+    certs: cleanQualifications(form.certs),
+    certs_quals: cleanQualifications(form.certs_quals),
     stages: form.stages.map((stage) => ({
       stage_id: stage.stage_id || "",
       name: stage.name.trim(),
@@ -246,6 +263,7 @@ export default function PipelinesPage() {
   const [pipelines, setPipelines] = useState<Pipeline[]>([])
   const [lmsCourses, setLmsCourses] = useState<LmsCourse[]>([])
   const [credentialDefinitions, setCredentialDefinitions] = useState<CredentialDefinition[]>([])
+  const [pdfTemplates, setPdfTemplates] = useState<PdfTemplate[]>([])
   const [selectedId, setSelectedId] = useState("")
   const [form, setForm] = useState<PipelineForm>(emptyForm)
   const [categoryFilter, setCategoryFilter] = useState("")
@@ -292,6 +310,7 @@ export default function PipelinesPage() {
     () => certificateItems.map((item, index) => qualificationLabel(item, `${page.certificate} ${index + 1}`)),
     [certificateItems, page.certificate],
   )
+  const pdfTemplateById = useMemo(() => new Map(pdfTemplates.map((template) => [template.template_id, template])), [pdfTemplates])
 
   const lmsCourseName = (courseId: string) => {
     const course = lmsCourses.find((item) => item.course_id === courseId)
@@ -331,6 +350,11 @@ export default function PipelinesPage() {
     setCredentialDefinitions(res?.definitions || [])
   }, [])
 
+  const loadPdfTemplates = useCallback(async () => {
+    const res = await apiClient("/api/pdf-templates")
+    setPdfTemplates(res?.templates || [])
+  }, [])
+
   useEffect(() => {
     loadPipelines()
   }, [loadPipelines])
@@ -342,6 +366,10 @@ export default function PipelinesPage() {
   useEffect(() => {
     loadCredentialDefinitions().catch(() => toast.error(page.loadCredentialsFailed))
   }, [loadCredentialDefinitions, page.loadCredentialsFailed])
+
+  useEffect(() => {
+    loadPdfTemplates().catch(() => toast.error(page.loadPdfTemplatesFailed))
+  }, [loadPdfTemplates, page.loadPdfTemplatesFailed])
 
   const selectPipeline = async (pipeline: Pipeline) => {
     setSelectedId(pipeline.pipeline_id)
@@ -465,6 +493,13 @@ export default function PipelinesPage() {
     return true
   }
 
+  const validateFinalCertificateTemplates = () => {
+    const missing = normalizeQualifications(form.certs).find((item) => !item.pdf_template_id?.trim())
+    if (!missing) return true
+    toast.error(page.certTemplateRequired.replace("{{name}}", qualificationLabel(missing, page.certificate)))
+    return false
+  }
+
   const saveStructure = async () => {
     if (!selectedPipeline) return
     if (published) {
@@ -472,6 +507,7 @@ export default function PipelinesPage() {
       return
     }
     if (!validateStructure()) return
+    if (!validateFinalCertificateTemplates()) return
     setSaving(true)
     try {
       const res = await apiClient(`/api/pipelines/${selectedPipeline.pipeline_id}/structure`, {
@@ -490,6 +526,7 @@ export default function PipelinesPage() {
   const publishPipeline = async () => {
     if (!selectedPipeline) return
     if (!validateStructure()) return
+    if (!validateFinalCertificateTemplates()) return
     setSaving(true)
     try {
       await apiClient(`/api/pipelines/${selectedPipeline.pipeline_id}/publish`, {
@@ -654,6 +691,22 @@ export default function PipelinesPage() {
     }))
   }
 
+  const updateQualificationTemplate = (field: "certs", qualId: string, templateId: string) => {
+    const template = pdfTemplateById.get(templateId)
+    setForm((prev) => ({
+      ...prev,
+      [field]: normalizeQualifications(prev[field]).map((item) =>
+        item.qual_id === qualId
+          ? {
+              ...item,
+              pdf_template_id: templateId,
+              name_hint: item.name_hint || item.name || template?.name || qualId,
+            }
+          : item,
+      ),
+    }))
+  }
+
   const renderQualificationSelector = (
     field: "unlock_quals" | "certs_quals" | "certs",
     label: string,
@@ -675,18 +728,43 @@ export default function PipelinesPage() {
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {credentialDefinitions.map((definition) => {
               const checked = hasQualification(selected, definition.cred_def_id)
+              const selectedQualification = selected.find((item) => item.qual_id === definition.cred_def_id)
               return (
-                <label key={`${field}-${definition.cred_def_id}`} className="flex min-h-12 items-start gap-2 rounded-md border bg-background p-3 text-sm">
+                <div key={`${field}-${definition.cred_def_id}`} className="flex min-h-12 items-start gap-2 rounded-md border bg-background p-3 text-sm">
                   <Checkbox
                     checked={checked}
                     onCheckedChange={(value) => updateQualificationField(field, definition, Boolean(value))}
                     disabled={published}
                   />
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1">
                     <span className="block truncate font-medium">{definition.name || definition.cred_def_id}</span>
                     <span className="block truncate text-xs text-muted-foreground">{definition.category || definition.cred_def_id}</span>
+                    {field === "certs" && checked && (
+                      <span className="mt-2 block">
+                        {pdfTemplates.length === 0 ? (
+                          <span className="block rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">{page.noPdfTemplates}</span>
+                        ) : (
+                          <Select
+                            value={selectedQualification?.pdf_template_id || undefined}
+                            onValueChange={(value) => updateQualificationTemplate("certs", definition.cred_def_id, value)}
+                            disabled={published}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue placeholder={page.selectPdfTemplate} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {pdfTemplates.map((template) => (
+                                <SelectItem key={template.template_id} value={template.template_id}>
+                                  {template.name || template.template_id}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </span>
+                    )}
                   </span>
-                </label>
+                </div>
               )
             })}
           </div>
