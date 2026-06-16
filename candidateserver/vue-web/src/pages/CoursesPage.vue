@@ -238,12 +238,12 @@ onMounted(() => {
       </button>
     </div>
 
-    <div class="mb-4 rounded-md bg-white px-8 pt-6">
-      <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
+    <div class="mb-4 rounded-md bg-white px-4 pt-4 md:px-8 md:pt-6">
+      <div class="grid grid-cols-3 border-b border-[#edf0f2] md:flex md:flex-wrap md:gap-10">
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        :class="['relative cursor-pointer px-1 pb-7 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+        :class="['relative cursor-pointer px-1 pb-4 text-center text-sm font-medium transition-colors duration-200 md:pb-7 md:text-left md:text-base', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
         @click="activeTab = tab.id"
       >
         {{ tab.label }}
@@ -273,15 +273,15 @@ onMounted(() => {
       </div>
       <div v-for="course in myCourses" :key="course.id" class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
-        <div class="flex gap-4">
+        <div class="flex flex-wrap gap-4 md:flex-nowrap">
           <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <BookOpen class="h-7 w-7" />
           </div>
-          <div class="flex flex-1 flex-col justify-between">
+          <div class="flex min-w-0 flex-1 flex-col justify-between">
             <div>
-              <div class="flex items-start justify-between gap-4">
+              <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                 <h3 class="text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ course.title || t.common.unknownCourse }}</h3>
-                <span :class="['badge', timelineStatusBadgeClassForStatus('PIPELINE', course.statusValue)]">
+                <span :class="['badge w-fit whitespace-nowrap', timelineStatusBadgeClassForStatus('PIPELINE', course.statusValue)]">
                   {{ statusLabel(t, CANDIDATE_PIPELINE_STATUS_LABELS, course.statusValue) }}
                 </span>
               </div>
@@ -295,14 +295,14 @@ onMounted(() => {
                 </div>
               </div>
             </div>
-            <div class="mt-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
+            <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
               <span v-if="course.currentStage">{{ t.courses.stage }}: {{ course.currentStage }}</span>
               <span v-if="course.startedAt">{{ course.startedAt }}</span>
               <span v-if="course.completedAt">{{ course.completedAt }}</span>
             </div>
           </div>
-          <div class="flex flex-col items-end justify-between">
-            <RouterLink :to="`/courses/detail?id=${encodeURIComponent(course.id)}`" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20">
+          <div class="flex w-full shrink-0 items-center md:w-auto">
+            <RouterLink :to="`/courses/detail?id=${encodeURIComponent(course.id)}`" class="btn btn-primary w-full rounded-lg shadow-sm shadow-primary/20 md:w-auto">
               {{ t.courses.viewDetails }} <ChevronRight class="h-4 w-4" />
             </RouterLink>
           </div>
