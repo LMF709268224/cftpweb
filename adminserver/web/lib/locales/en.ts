@@ -502,6 +502,7 @@ export const en: AppTranslations = {
     noUnits: "No units",
     selectPipelineHint: "Select or create a pipeline before configuring its structure",
     saveStructure: "Save Structure",
+    saveQualifications: "Save Qualifications",
     preview: "Pipeline Preview",
     noPreview: "No preview",
     instanceOps: "Candidate Pipeline Instances",

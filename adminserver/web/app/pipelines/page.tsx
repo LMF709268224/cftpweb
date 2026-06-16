@@ -886,9 +886,15 @@ export default function PipelinesPage() {
               </div>
 
               <div className="rounded-lg border bg-card">
-                <div className="border-b px-4 py-3">
-                  <h2 className="font-semibold">{page.qualificationConfig}</h2>
-                  <p className="text-xs text-muted-foreground">{page.qualificationConfigHint}</p>
+                <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+                  <div>
+                    <h2 className="font-semibold">{page.qualificationConfig}</h2>
+                    <p className="text-xs text-muted-foreground">{page.qualificationConfigHint}</p>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={saveStructure} disabled={!selectedPipeline || saving || published}>
+                    <Save className="h-4 w-4" />
+                    {page.saveQualifications}
+                  </Button>
                 </div>
                 <div className="space-y-3 p-4">
                   {renderQualificationSelector("unlock_quals", page.unlockQuals, page.unlockQualsHint)}
