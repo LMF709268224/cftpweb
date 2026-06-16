@@ -53,14 +53,10 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Post("/refresh", h.RefreshToken)
 	})
 
-	r.Route("/api/pipeline", func(r chi.Router) {
-		r.Use(s.authMiddleware)
-		r.Use(pdfPreviewTimeout)
-		r.Get("/resource-preview", h.PreviewResourceURL)
-		r.Head("/resource-preview", h.PreviewResourceURL)
-		r.Get("/lessons/{lessonId}/preview", h.PreviewLessonPDF)
-		r.Head("/lessons/{lessonId}/preview", h.PreviewLessonPDF)
-	})
+	r.With(s.authMiddleware, pdfPreviewTimeout).Get("/api/pipeline/resource-preview", h.PreviewResourceURL)
+	r.With(s.authMiddleware, pdfPreviewTimeout).Head("/api/pipeline/resource-preview", h.PreviewResourceURL)
+	r.With(s.authMiddleware, pdfPreviewTimeout).Get("/api/pipeline/lessons/{lessonId}/preview", h.PreviewLessonPDF)
+	r.With(s.authMiddleware, pdfPreviewTimeout).Head("/api/pipeline/lessons/{lessonId}/preview", h.PreviewLessonPDF)
 
 	r.Route("/api", func(r chi.Router) {
 		r.Use(normalTimeout)
