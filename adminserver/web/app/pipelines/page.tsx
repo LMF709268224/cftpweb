@@ -43,6 +43,9 @@ type UnitConfig = {
   unit_id?: string
   name?: string
   glms_course_id: string
+  program?: string
+  exam_id?: string
+  form_code?: string
   stripe_product_id?: string
   stripe_price_id?: string
   exemption_stripe_product_id?: string
@@ -103,6 +106,9 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
         unit_id: unit.unit_id,
         name: unit.name || "",
         glms_course_id: unit.glms_course_id || "",
+        program: unit.program || "",
+        exam_id: unit.exam_id || "",
+        form_code: unit.form_code || "",
         stripe_product_id: unit.stripe_product_id || "",
         stripe_price_id: unit.stripe_price_id || "",
         exemption_stripe_product_id: unit.exemption_stripe_product_id || "",
@@ -130,6 +136,9 @@ function cleanFormForStructure(form: PipelineForm) {
         unit_id: unit.unit_id || "",
         name: (unit.name || "").trim(),
         glms_course_id: unit.glms_course_id.trim(),
+        program: (unit.program || "").trim(),
+        exam_id: (unit.exam_id || "").trim(),
+        form_code: (unit.form_code || "").trim(),
         stripe_product_id: (unit.stripe_product_id || "").trim(),
         stripe_price_id: (unit.stripe_price_id || "").trim(),
         exemption_stripe_product_id: (unit.exemption_stripe_product_id || "").trim(),
@@ -435,10 +444,11 @@ export default function PipelinesPage() {
           from_pipeline_guid: selectedPipeline.pipeline_guid,
         }),
       })
+      const newPipelineId = res?.pipeline_id || ""
       toast.success(page.createSuccess)
-      setSelectedId(res?.pipeline_id || "")
+      setSelectedId(newPipelineId)
       try {
-        const detail = await apiClient(`/api/pipelines/${res?.pipeline_id}`)
+        const detail = await apiClient(`/api/pipelines/${newPipelineId}`)
         setForm(pipelineToForm(detail))
       } catch {
         setForm(pipelineToForm(res))
@@ -495,6 +505,9 @@ export default function PipelinesPage() {
                 {
                   name: "",
                   glms_course_id: "",
+                  program: "",
+                  exam_id: "",
+                  form_code: "",
                   allow_retake: false,
                   exemption_quals: [],
                 },
@@ -804,6 +817,32 @@ export default function PipelinesPage() {
                                     </label>
                                   </div>
                                 </div>
+                                <div className="mt-3 rounded-md border bg-muted/20 p-3">
+                                  <div className="mb-3">
+                                    <div className="text-sm font-semibold">Exam</div>
+                                    <p className="mt-1 text-xs text-muted-foreground">Program, Exam ID, and Form Code come from the pipeline unit config. Leave them empty if this unit has no formal exam.</p>
+                                  </div>
+                                  <div className="grid gap-3 md:grid-cols-3">
+                                    <Input
+                                      placeholder="Program"
+                                      value={unit.program || ""}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { program: event.target.value })}
+                                      disabled={published}
+                                    />
+                                    <Input
+                                      placeholder="Exam ID"
+                                      value={unit.exam_id || ""}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exam_id: event.target.value })}
+                                      disabled={published}
+                                    />
+                                    <Input
+                                      placeholder="Form Code"
+                                      value={unit.form_code || ""}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { form_code: event.target.value })}
+                                      disabled={published}
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             ))
                           )}
@@ -839,12 +878,24 @@ export default function PipelinesPage() {
                         <div className="mt-2 space-y-3 text-sm text-muted-foreground">
                           {stage.units.map((unit, unitIndex) => {
                             const detail = lmsCourseDetails[unit.glms_course_id]
+                            const hasExam = Boolean((unit.program || unit.exam_id || "").trim())
                             return (
                               <div key={unit.unit_id || unitIndex} className="rounded-md border bg-background p-3 shadow-sm">
                                 <div className="flex items-center gap-2 mb-3">
                                   <CheckCircle2 className="h-4 w-4 text-primary" />
                                   <span className="font-semibold text-foreground">{lmsCourseName(unit.glms_course_id)}</span>
                                   {unit.stripe_price_id && <Badge variant="outline">{unit.stripe_price_id}</Badge>}
+                                  {hasExam && <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">Exam</Badge>}
+                                </div>
+                                <div className="mb-3 grid gap-2 rounded-md bg-muted/40 p-3 text-xs md:grid-cols-3">
+                                  <div>Exam: {hasExam ? "Yes" : "No"}</div>
+                                  {hasExam && (
+                                    <>
+                                      <div>Program: {unit.program || t.common.na}</div>
+                                      <div>Exam ID: {unit.exam_id || t.common.na}</div>
+                                      <div>Form Code: {unit.form_code || t.common.na}</div>
+                                    </>
+                                  )}
                                 </div>
                                 {detail && (
                                   <div className="ml-6 space-y-4 border-l-2 pl-4">

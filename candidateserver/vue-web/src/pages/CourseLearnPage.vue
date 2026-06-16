@@ -31,9 +31,17 @@ import {
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
+import {
+  normalizeSupplementaryMaterials,
+  parseSupplementaryMaterialItems,
+  type SupplementaryMaterial,
+  type SupplementaryMaterialItem,
+} from "@/lib/supplementaryMaterials"
 
 type CourseCompleteResponse = {
   complete_course?: CompleteCourse
+  supplementary_material?: SupplementaryMaterial | SupplementaryMaterial[]
+  supplementaryMaterial?: SupplementaryMaterial | SupplementaryMaterial[]
   quiz_progress?: Record<string, QuizProgressItem>
 }
 
@@ -42,6 +50,7 @@ type CompleteCourse = {
   chapters?: ChapterDetail[]
   materials?: CourseMaterialSummary[]
   supplementary_material?: SupplementaryMaterial | SupplementaryMaterial[]
+  supplementaryMaterial?: SupplementaryMaterial | SupplementaryMaterial[]
   quizzes?: any[]
 }
 
@@ -88,26 +97,6 @@ type CourseMaterialSummary = {
   file_size?: number
   sort_order?: number
   file_hash?: string
-}
-
-type SupplementaryMaterial = {
-  material_id?: string
-  course_id?: string
-  kind?: string
-  data_json?: string | unknown[] | Record<string, unknown>
-  version?: number
-  created_at?: string
-  updated_at?: string
-}
-
-type SupplementaryMaterialItem = {
-  key: string
-  chapter: string
-  type: string
-  title: string
-  description: string
-  url: string
-  sourceKind: string
 }
 
 type QuizProgressItem = {
@@ -170,12 +159,15 @@ const course = computed<Course | undefined>(() => completeCourse.value?.course)
 const chapters = computed<ChapterDetail[]>(() => completeCourse.value?.chapters || [])
 const materials = computed<CourseMaterialSummary[]>(() => completeCourse.value?.materials || [])
 const supplementaryMaterials = computed<SupplementaryMaterial[]>(() => {
-  const raw = completeCourse.value?.supplementary_material
-  if (!raw) return []
-  return Array.isArray(raw) ? raw.filter(Boolean) : [raw]
+  const raw =
+    completeCourse.value?.supplementary_material ??
+    completeCourse.value?.supplementaryMaterial ??
+    payload.value?.supplementary_material ??
+    payload.value?.supplementaryMaterial
+  return normalizeSupplementaryMaterials(raw)
 })
 const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() =>
-  supplementaryMaterials.value.flatMap((material, materialIndex) => parseSupplementaryMaterialItems(material, materialIndex)),
+  parseSupplementaryMaterialItems(supplementaryMaterials.value, t.value.learning.chapters),
 )
 const totalMaterialCount = computed(() => materials.value.length + supplementaryMaterialItems.value.length)
 const courseQuizzes = computed<any[]>(() => completeCourse.value?.quizzes || [])
@@ -214,6 +206,18 @@ const currentStageStatus = computed(() => runtime.value?.current_stage_status)
 const currentUnitStatus = computed(() => runtime.value?.current_unit_status)
 const nextUnitStatus = computed(() => nextStep.value?.status || currentUnitStatus.value)
 const currentLessonRawCompleted = computed(() => Boolean(lesson.value?.lesson_id && completedLessonIds.value.has(lesson.value.lesson_id)))
+
+const courseHasExam = computed(() => {
+  const stages = runtime.value?.config?.stages || []
+  for (const stage of stages) {
+    for (const unit of stage.units || []) {
+      if (unit.glms_course_id === courseId.value || unit.course_id === courseId.value) {
+        return Boolean(unit.exam_id || unit.program)
+      }
+    }
+  }
+  return false
+})
 
 const totalQuizzesCount = computed(() => {
   let count = courseQuizzes.value.length
@@ -493,69 +497,6 @@ function materialTypeLabel(materialType?: number) {
   }
 }
 
-function parseSupplementaryMaterialItems(material: SupplementaryMaterial, materialIndex: number): SupplementaryMaterialItem[] {
-  const data = parseSupplementaryJson(material.data_json)
-  const records = supplementaryRecordsFromData(data)
-
-  return records.map((record, recordIndex) => {
-    const title = stringFromRecord(record, ["title", "name", "label", "heading"])
-    const description = stringFromRecord(record, ["description", "desc", "summary", "detail", "content"])
-    const type = stringFromRecord(record, ["type", "material_type", "resource_type", "kind"]) || t.value.learning.materialTypeUnknown
-    const chapter = stringFromRecord(record, ["chapter", "chapter_title", "chapterTitle", "section"]) || t.value.learning.chapters
-    const url = stringFromRecord(record, ["url", "link", "href", "external_url", "externalUrl"])
-    const fallbackKey = `${material.material_id || "supplementary"}-${materialIndex}-${recordIndex}`
-
-    return {
-      key: stringFromRecord(record, ["id", "material_id", "resource_id", "key"]) || fallbackKey,
-      chapter,
-      type,
-      title: title || t.value.learning.unknownMaterial,
-      description,
-      url,
-      sourceKind: material.kind || "",
-    }
-  })
-}
-
-function parseSupplementaryJson(dataJson: SupplementaryMaterial["data_json"]) {
-  if (!dataJson) return null
-  if (typeof dataJson !== "string") return dataJson
-
-  const trimmed = dataJson.trim()
-  if (!trimmed) return null
-
-  try {
-    return JSON.parse(trimmed)
-  } catch {
-    return null
-  }
-}
-
-function supplementaryRecordsFromData(data: unknown): Record<string, unknown>[] {
-  if (Array.isArray(data)) return data.filter(isRecord)
-  if (!isRecord(data)) return []
-
-  for (const key of ["items", "resources", "materials", "data", "list"]) {
-    const value = data[key]
-    if (Array.isArray(value)) return value.filter(isRecord)
-  }
-
-  return [data]
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value))
-}
-
-function stringFromRecord(record: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    const value = record[key]
-    if (typeof value === "string" && value.trim()) return value.trim()
-    if (typeof value === "number" && Number.isFinite(value)) return String(value)
-  }
-  return ""
-}
-
 function supplementaryChapterLabel(item: SupplementaryMaterialItem, index: number) {
   return supplementaryMaterialItems.value[index - 1]?.chapter === item.chapter ? "" : item.chapter
 }
@@ -578,6 +519,15 @@ function supplementaryTypeClass(type: string) {
 
 function supplementaryTypeIcon(type: string) {
   return type.trim().toLowerCase() === "video" ? Play : FileText
+}
+
+function openSupplementaryPreview(item: SupplementaryMaterialItem) {
+  if (!item.url) return
+  const params = new URLSearchParams({
+    src: item.url,
+    title: item.title || "Supplementary Material",
+  })
+  window.open(`/pdf-preview?${params.toString()}`, "_blank", "noopener,noreferrer")
 }
 
 async function loadCourse() {
@@ -703,14 +653,12 @@ async function markCompleted() {
 
 async function openLessonPdf() {
   if (!lesson.value?.lesson_id) return
-  try {
-    const res = await apiClient(`/api/pipeline/lessons/${lesson.value.lesson_id}/url`)
-    if (res?.url) {
-      await openInlinePdf(res.url)
-    } else toast.error(t.value.common.error)
-  } catch {
-    // apiClient handles localized errors.
-  }
+  const params = new URLSearchParams({
+    lessonId: lesson.value.lesson_id,
+    title: lesson.value.title || t.value.learning.openLessonPdf,
+  })
+  const previewUrl = `/pdf-preview?${params.toString()}`
+  window.open(previewUrl, "_blank", "noopener,noreferrer")
 }
 
 async function openInlinePdf(url: string) {
@@ -848,6 +796,8 @@ watch(selectedMaterial, () => {
             <span class="inline-flex items-center gap-1.5"><BookOpen class="h-4 w-4" />{{ chapters.length }} {{ t.learning.chapters }}</span>
             <span class="inline-flex items-center gap-1.5"><Clock class="h-4 w-4" />{{ lessons.length }} {{ t.learning.lessons }}</span>
             <span class="inline-flex items-center gap-1.5 text-primary"><CheckCircle2 class="h-4 w-4" />{{ progressPercentage }}%</span>
+            <span v-if="courseHasExam" class="inline-flex items-center gap-1.5 text-amber-600"><FileText class="h-4 w-4" />包含认证考试</span>
+            <span v-else class="inline-flex items-center gap-1.5 text-slate-500"><FileText class="h-4 w-4" />仅需学习</span>
           </div>
 
           <div class="mt-4 space-y-3">
@@ -1129,8 +1079,8 @@ watch(selectedMaterial, () => {
             <div class="mt-2 text-xs text-muted-foreground">{{ t.learning.materialsEmptyHint }}</div>
           </div>
           <div v-else class="space-y-4">
-            <div v-if="supplementaryMaterialItems.length > 0" class="overflow-hidden rounded-md border border-slate-100 bg-white">
-              <div class="border-b border-slate-100 bg-slate-50 px-4 py-3">
+            <div v-if="supplementaryMaterialItems.length > 0" class="rounded-md border border-slate-100 bg-slate-50 p-4">
+              <div class="border-b border-slate-100 pb-3">
                 <div class="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <BookOpen class="h-4 w-4 text-primary" />
                   <span>Supplementary Materials</span>
@@ -1139,19 +1089,20 @@ watch(selectedMaterial, () => {
                 <p class="mt-1 text-xs text-muted-foreground">Additional learning resources organized by chapter</p>
               </div>
 
-              <div class="hidden grid-cols-[minmax(180px,0.9fr)_120px_minmax(260px,2fr)] border-b border-slate-100 bg-white px-4 py-3 text-sm font-medium text-muted-foreground md:grid">
+              <div class="hidden grid-cols-[minmax(160px,0.9fr)_120px_minmax(260px,1.4fr)_180px] border-b border-slate-100 px-3 py-3 text-sm font-medium text-muted-foreground md:grid">
                 <div>Chapter</div>
                 <div>Type</div>
                 <div>Title & Description</div>
+                <div>Resource Link</div>
               </div>
 
               <div class="divide-y divide-slate-100">
                 <div
                   v-for="(item, index) in supplementaryMaterialItems"
                   :key="item.key"
-                  class="grid gap-2 px-4 py-3 text-sm md:grid-cols-[minmax(180px,0.9fr)_120px_minmax(260px,2fr)]"
+                  class="grid gap-3 px-3 py-4 text-sm md:grid-cols-[minmax(160px,0.9fr)_120px_minmax(260px,1.4fr)_180px]"
                 >
-                  <div class="font-medium text-slate-700">
+                  <div class="font-medium text-foreground">
                     <span class="md:hidden text-xs text-muted-foreground">Chapter: </span>
                     {{ supplementaryChapterLabel(item, index) }}
                   </div>
@@ -1162,17 +1113,20 @@ watch(selectedMaterial, () => {
                     </span>
                   </div>
                   <div>
-                    <a
-                      v-if="item.url"
-                      :href="item.url"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="font-semibold text-foreground transition-colors hover:text-primary"
-                    >
-                      {{ item.title }}
-                    </a>
-                    <div v-else class="font-semibold text-foreground">{{ item.title }}</div>
+                    <div class="font-semibold text-foreground">{{ item.title }}</div>
                     <p v-if="item.description" class="mt-1 text-xs leading-relaxed text-muted-foreground">{{ item.description }}</p>
+                  </div>
+                  <div class="min-w-0">
+                    <button
+                      v-if="item.url"
+                      class="inline-flex max-w-full items-center gap-1 rounded-lg border border-primary/20 bg-white px-3 py-2 text-left text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                      :title="item.url"
+                      @click="openSupplementaryPreview(item)"
+                    >
+                      <ExternalLink class="h-3.5 w-3.5 shrink-0" />
+                      <span class="truncate">{{ item.url }}</span>
+                    </button>
+                    <span v-else class="text-xs text-muted-foreground">No resource_link</span>
                   </div>
                 </div>
               </div>

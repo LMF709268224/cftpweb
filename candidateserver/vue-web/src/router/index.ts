@@ -5,6 +5,7 @@ import CallbackPage from "@/pages/CallbackPage.vue"
 import CoursesPage from "@/pages/CoursesPage.vue"
 import CourseDetailPage from "@/pages/CourseDetailPage.vue"
 import CourseLearnPage from "@/pages/CourseLearnPage.vue"
+import CourseSupplementaryPage from "@/pages/CourseSupplementaryPage.vue"
 import CourseTimelinePage from "@/pages/CourseTimelinePage.vue"
 import MembershipPage from "@/pages/MembershipPage.vue"
 import ExamsPage from "@/pages/ExamsPage.vue"
@@ -19,6 +20,7 @@ import SettingsPage from "@/pages/SettingsPage.vue"
 import QuizPage from "@/pages/QuizPage.vue"
 import ResourcePackDetailPage from "@/pages/ResourcePackDetailPage.vue"
 import ResourcePacksPage from "@/pages/ResourcePacksPage.vue"
+import PdfPreviewPage from "@/pages/PdfPreviewPage.vue"
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -29,6 +31,7 @@ export const router = createRouter({
     { path: "/courses", component: CoursesPage },
     { path: "/courses/detail", component: CourseDetailPage },
     { path: "/courses/learn", component: CourseLearnPage },
+    { path: "/courses/supplementary", component: CourseSupplementaryPage },
     { path: "/courses/timeline", component: CourseTimelinePage },
     { path: "/membership", component: MembershipPage },
     { path: "/exams", component: ExamsPage },
@@ -43,5 +46,6 @@ export const router = createRouter({
     { path: "/messages", component: MessagesPage },
     { path: "/settings", component: SettingsPage },
     { path: "/quizzes", component: QuizPage },
+    { path: "/pdf-preview", component: PdfPreviewPage },
   ],
 })
