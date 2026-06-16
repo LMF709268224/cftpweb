@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, nextTick } from "vue"
+import { computed, onBeforeUnmount, ref, watch, nextTick } from "vue"
 import { toast } from "vue-sonner"
 import { AlertCircle, Building2, CheckCircle2, CreditCard, Lock, Loader2, ShoppingCart } from "lucide-vue-next"
 import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
@@ -65,6 +65,8 @@ const activeOrder = ref<ActiveOrder | null>(null)
 const paymentPreview = ref<PaymentPreview | null>(null)
 const previewError = ref("")
 const embeddedClientSecret = ref("")
+let stripeCheckoutInstance: any = null
+let stripeCheckoutMountToken = 0
 
 const selectedExemptionsJson = JSON.stringify({ stages: [] })
 const copy = computed(() => t.value.purchaseDialog || {})
@@ -75,11 +77,44 @@ const cannotContinue = computed(() => Boolean(eligibility.value && !canPurchase.
 const hasInProgressOrder = computed(() => blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
 
 watch(() => props.open, (open) => {
-  if (open && props.pipelineId) void loadEligibility()
+  if (open && props.pipelineId) {
+    void loadEligibility()
+  } else {
+    destroyStripeCheckout(true)
+  }
 })
 
 function close() {
+  destroyStripeCheckout(true)
   emit("update:open", false)
+}
+
+onBeforeUnmount(() => {
+  destroyStripeCheckout(true)
+})
+
+function clearCheckoutContainer() {
+  const container = document.getElementById("checkout")
+  if (container) container.innerHTML = ""
+}
+
+function destroyStripeCheckout(clearClientSecret = false) {
+  stripeCheckoutMountToken += 1
+  const checkout = stripeCheckoutInstance
+  stripeCheckoutInstance = null
+  if (checkout) {
+    try {
+      if (typeof checkout.destroy === "function") {
+        checkout.destroy()
+      } else if (typeof checkout.unmount === "function") {
+        checkout.unmount()
+      }
+    } catch (error) {
+      console.error("Failed to destroy Stripe embedded checkout", error)
+    }
+  }
+  clearCheckoutContainer()
+  if (clearClientSecret) embeddedClientSecret.value = ""
 }
 
 function normalizedStatus(status: unknown) {
@@ -145,7 +180,7 @@ async function loadEligibility() {
   activeOrder.value = null
   paymentPreview.value = null
   previewError.value = ""
-  embeddedClientSecret.value = ""
+  destroyStripeCheckout(true)
   try {
     const res: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
     eligibility.value = res
@@ -281,6 +316,8 @@ function rememberPendingMallPayment() {
 }
 
 async function mountStripeCheckout(clientSecret: string) {
+  destroyStripeCheckout(false)
+  const mountToken = stripeCheckoutMountToken
   try {
     const configRes = await apiClient("/api/public/config")
     const pk = configRes.stripe_publishable_key
@@ -294,6 +331,11 @@ async function mountStripeCheckout(clientSecret: string) {
     const checkout = await stripe.initEmbeddedCheckout({
       fetchClientSecret: async () => clientSecret
     })
+    if (mountToken !== stripeCheckoutMountToken) {
+      if (typeof checkout.destroy === "function") checkout.destroy()
+      return
+    }
+    stripeCheckoutInstance = checkout
     checkout.mount("#checkout")
   } catch (err: any) {
     console.error(err)
@@ -306,7 +348,7 @@ async function initiatePayment() {
   const bizType = activeOrder.value.action === "unlock" ? "PIPELINE_UNLOCK" : "PIPELINE_PAYMENT"
   paymentLoading.value = true
   try {
-    embeddedClientSecret.value = ""
+    destroyStripeCheckout(true)
     const origin = window.location.origin
     const successParams = new URLSearchParams({
       payment_status: "success",

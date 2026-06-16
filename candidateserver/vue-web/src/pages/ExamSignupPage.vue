@@ -307,6 +307,7 @@ async function handleSubmit() {
   }
   const requiredFields = [
     ["first_name", t.value.examSignup.formFirstName],
+    ["middle_name", t.value.examSignup.formMiddleName],
     ["last_name", t.value.examSignup.formLastName],
     ["email", t.value.examSignup.formEmail],
     ["gender", t.value.examSignup.formGender],
@@ -350,7 +351,7 @@ async function handleSubmit() {
           <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formFirstName }} *</span><input v-model="formData.first_name" class="input" required /></label>
           <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formLastName }} *</span><input v-model="formData.last_name" class="input" required /></label>
         </div>
-        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formMiddleName }}</span><input v-model="formData.middle_name" class="input" /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formMiddleName }} *</span><input v-model="formData.middle_name" class="input" /></label>
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formEmail }} *</span><input v-model="formData.email" class="input" type="email" required /></label>
           <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formGender }} *</span><input v-model="formData.gender" class="input" placeholder="Male / Female" required /></label>

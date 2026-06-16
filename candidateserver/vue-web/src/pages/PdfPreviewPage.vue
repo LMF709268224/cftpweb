@@ -71,7 +71,7 @@ async function loadPdf() {
 
   loading.value = true
   try {
-    const res = await apiClient(source.value, { timeoutMs: 30000 })
+    const res = await apiClient(source.value, { timeoutMs: 60000 })
     if (!res?.url) {
       errorMessage.value = "No PDF resource found for preview."
       return

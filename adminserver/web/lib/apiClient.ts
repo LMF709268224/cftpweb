@@ -5,7 +5,7 @@ type ApiClientOptions = RequestInit & {
   timeoutMs?: number
 }
 
-const DEFAULT_API_TIMEOUT_MS = 15000
+const DEFAULT_API_TIMEOUT_MS = 60000
 
 export async function apiClient(endpoint: string, options: ApiClientOptions = {}) {
   const { timeoutMs = DEFAULT_API_TIMEOUT_MS, signal, ...fetchOptions } = options
