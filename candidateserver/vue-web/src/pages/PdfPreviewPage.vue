@@ -12,7 +12,7 @@ const errorMessage = ref("")
 const viewerError = ref(false)
 let objectUrl = ""
 
-const PDF_LOAD_TIMEOUT_MS = 20000
+const PDF_LOAD_TIMEOUT_MS = 120000
 
 const title = computed(() => String(route.query.title || "PDF Preview"))
 const source = computed(() => {
@@ -75,7 +75,7 @@ async function loadPdf() {
     viewerSrc.value = objectUrl
   } catch (err) {
     errorMessage.value = err instanceof DOMException && err.name === "AbortError"
-      ? "PDF preview timed out. Please reload or go back and try again."
+      ? "PDF preview is taking too long. The file may be large or the storage service may be slow. Please reload or try again later."
       : "PDF preview failed. Please check your network and try again."
   } finally {
     window.clearTimeout(timeoutId)

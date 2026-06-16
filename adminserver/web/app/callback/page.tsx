@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2, ShieldAlert, CheckCircle2 } from "lucide-react"
 import { getErrorMessage } from "@/lib/errorCodes"
+import { apiClient } from "@/lib/apiClient"
 
 function CallbackContent() {
   const router = useRouter()
@@ -29,21 +30,10 @@ function CallbackContent() {
 
     const performLogin = async () => {
       try {
-        const res = await fetch("/api/auth/login", {
+        const payload = await apiClient("/api/auth/login", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({ code, state }),
         })
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}))
-          throw new Error(errData.error_code || "AUTH_FAILED")
-        }
-
-        const resData = await res.json()
-        const payload = resData.data || {}
 
         setStatus("success")
 

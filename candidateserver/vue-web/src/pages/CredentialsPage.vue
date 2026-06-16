@@ -16,11 +16,22 @@ const resubmitAppId = ref("")
 const isApplyOpen = ref(false)
 const uploadedFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
 const isSubmitting = ref(false)
+const UPLOAD_TIMEOUT_MS = 30000
 
 async function sha256Hex(file: File) {
   const buffer = await file.arrayBuffer()
   const hash = await crypto.subtle.digest("SHA-256", buffer)
   return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, "0")).join("")
+}
+
+async function uploadWithTimeout(url: string, init: RequestInit) {
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), UPLOAD_TIMEOUT_MS)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } finally {
+    window.clearTimeout(timeoutId)
+  }
 }
 
 async function fetchData() {
@@ -61,7 +72,7 @@ async function handleFileUpload(constraintName: string, file: File) {
       method: "POST",
       body: JSON.stringify({ cred_def_id: selectedDef.value.cred_def_id, file_name: file.name, file_ext: fileExt, file_hash: fileHash, content_type: contentType, file_usage: constraintName }),
     })
-    const uploadRes = await fetch(res.upload_url, { method: "PUT", headers: new Headers(res.signed_headers || {}), body: file })
+    const uploadRes = await uploadWithTimeout(res.upload_url, { method: "PUT", headers: new Headers(res.signed_headers || {}), body: file })
     if (!uploadRes.ok) throw new Error("S3 upload failed")
     uploadedFiles.value = { ...uploadedFiles.value, [constraintName]: { name: file.name, url: res.file_key, ext: fileExt, hash: fileHash, size: file.size } }
   } catch {

@@ -1,22 +1,17 @@
 'use client'
 
 import React, { useEffect } from "react"
+import { apiClient } from "@/lib/apiClient"
 
 export default function LoginPage() {
   useEffect(() => {
     const handleLogin = async () => {
       try {
         const callbackUrl = encodeURIComponent(window.location.origin + "/callback")
-        const response = await fetch(`/api/auth/login-url?callback=${callbackUrl}`)
+        const resData = await apiClient(`/api/auth/login-url?callback=${callbackUrl}`)
 
-        if (!response.ok) {
-          throw new Error("AUTH_FAILED")
-        }
-
-        const resData = await response.json()
-
-        if (resData.data && resData.data.url) {
-          window.location.href = resData.data.url
+        if (resData?.url) {
+          window.location.href = resData.url
           return
         }
 

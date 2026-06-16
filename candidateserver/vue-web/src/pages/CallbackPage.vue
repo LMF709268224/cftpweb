@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
 import { getErrorMessage } from "@/lib/errorCodes"
+import { apiClient } from "@/lib/apiClient"
 
 const route = useRoute()
 const router = useRouter()
@@ -22,17 +23,10 @@ onMounted(async () => {
   }
 
   try {
-    const res = await fetch("/api/auth/login", {
+    const payload = await apiClient("/api/auth/login", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ code, state }),
     })
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}))
-      throw new Error(errData.error_code || "AUTH_FAILED")
-    }
-    const resData = await res.json()
-    const payload = resData.data || {}
     if (payload.user) localStorage.setItem("user_name", payload.user.name)
     if (payload.token) localStorage.setItem("access_token", payload.token)
     localStorage.setItem("is_authenticated", "true")

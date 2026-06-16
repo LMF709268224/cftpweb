@@ -82,13 +82,8 @@ function mapCandidatePipeline(pipeline: any) {
 async function loadPipelineThumbnailUrl(pipelineId: string) {
   if (!pipelineId) return ""
   try {
-    const headers = new Headers()
-    const token = localStorage.getItem("access_token")
-    if (token) headers.set("Authorization", `Bearer ${token}`)
-    const response = await fetch(`/api/mall/pipelines/${encodeURIComponent(pipelineId)}/thumbnail-url`, { credentials: "include", headers })
-    if (!response.ok) return ""
-    const data = await response.json()
-    return typeof data?.data?.url === "string" ? data.data.url : ""
+    const data = await apiClient(`/api/mall/pipelines/${encodeURIComponent(pipelineId)}/thumbnail-url`)
+    return typeof data?.url === "string" ? data.url : ""
   } catch {
     return ""
   }

@@ -89,6 +89,18 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value))
 }
 
+export function isPdfResourceUrl(url: string) {
+  const normalized = url.trim().toLowerCase()
+  if (!normalized) return false
+
+  try {
+    const parsed = new URL(normalized)
+    return parsed.pathname.endsWith(".pdf")
+  } catch {
+    return normalized.split("?")[0].split("#")[0].endsWith(".pdf")
+  }
+}
+
 function stringFromRecord(record: Record<string, unknown>, keys: string[]) {
   for (const key of keys) {
     const value = record[key]

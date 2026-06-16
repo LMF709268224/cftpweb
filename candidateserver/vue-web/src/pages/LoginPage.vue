@@ -1,17 +1,16 @@
 <script setup lang="ts">
 import { onMounted } from "vue"
 import { useTranslation } from "@/lib/language"
+import { apiClient } from "@/lib/apiClient"
 
 const { t } = useTranslation()
 
 onMounted(async () => {
   try {
     const callbackUrl = encodeURIComponent(window.location.origin + "/callback")
-    const response = await fetch(`/api/auth/login-url?callback=${callbackUrl}`)
-    if (!response.ok) throw new Error("AUTH_FAILED")
-    const resData = await response.json()
-    if (resData.data?.url) {
-      window.location.href = resData.data.url
+    const resData = await apiClient(`/api/auth/login-url?callback=${callbackUrl}`)
+    if (resData?.url) {
+      window.location.href = resData.url
       return
     }
     throw new Error("AUTH_FAILED")
