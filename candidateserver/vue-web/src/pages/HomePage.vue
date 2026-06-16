@@ -25,13 +25,13 @@ const welcomeSeparator = computed(() => (lang.value === "zh" ? "\uFF0C" : ", "))
 
 const guideCopy = computed(() => lang.value === "zh"
   ? {
-      title: "新手引导",
-      subtitle: "欢迎来到 CFtP。你的第一步是进入认证中心，选择并购买适合自己的认证课程；完成学习后，再按流程提交资格材料、预约考试，最终在证书中心查看认证结果。",
+      title: "欢迎来到 CFtP",
+      subtitle: "你的第一步是进入认证中心，选择并购买适合自己的认证课程；完成学习后，再按流程提交资格材料、预约考试，最终在证书中心查看认证结果。",
       buyCourses: "购买课程",
     }
   : {
-      title: "Getting Started",
-      subtitle: "Welcome to CFtP. Your first step is to enter the certification center and choose the right certification path. After learning, submit qualification files, schedule exams, and review your certificate result.",
+      title: "Welcome to CFtP",
+      subtitle: "Your first step is to enter the certification center and choose the right certification path. After learning, submit qualification files, schedule exams, and review your certificate result.",
       buyCourses: "Buy Courses",
     },
 )
