@@ -18,9 +18,7 @@ const activeSettingsTab = computed(() => String(route.query.tab || "profile"))
 const navItems = computed(() => [
   { href: "/", label: t.value.sidebar.home },
   { href: "/courses", label: t.value.sidebar.courses },
-  { href: "/membership", label: t.value.sidebar.membership },
   { href: "/exams", label: t.value.sidebar.exams },
-  { href: "/records", label: t.value.sidebar.records },
   { href: "/resource-packs", label: lang.value === "zh" ? "资源包" : "Resources" },
   { href: "/credentials", label: t.value.sidebar.credentials },
   { href: "/certificates", label: t.value.sidebar.certificates },
@@ -133,7 +131,6 @@ async function handleLogout() {
           {{ userName.charAt(0).toUpperCase() }}
         </div>
         <h2 class="mt-3 truncate text-sm font-bold text-slate-950">{{ userName }}</h2>
-        <p class="mt-1.5 whitespace-nowrap text-xs text-slate-500">{{ t.common.certifiedMember }}</p>
       </div>
 
       <div class="h-px bg-slate-100" />
@@ -163,7 +160,6 @@ async function handleLogout() {
         {{ userName.charAt(0).toUpperCase() }}
       </div>
       <h2 class="mt-4 truncate text-base font-bold text-slate-950">{{ userName }}</h2>
-      <p class="mt-3 whitespace-nowrap text-sm text-slate-500">{{ t.common.certifiedMember }}</p>
     </div>
 
     <div class="h-px bg-slate-100" />

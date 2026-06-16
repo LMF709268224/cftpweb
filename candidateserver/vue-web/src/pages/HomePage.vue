@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { BookOpen, CheckCircle2, Crown, GraduationCap, MessageSquare } from "lucide-vue-next"
+import { BookOpen, CheckCircle2, GraduationCap, MessageSquare } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import StatsCard from "@/components/StatsCard.vue"
 import TodoList from "@/components/TodoList.vue"
@@ -87,10 +87,9 @@ onMounted(async () => {
       </section>
 
       <section class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <StatsCard :title="t.home.courseInProgress" :value="String(stats.courses_in_progress || 0)" :icon="BookOpen" variant="primary" :description="t.courses.tabs.my" href="/courses" />
           <StatsCard :title="t.home.certified" :value="String(stats.certifications_earned || 0)" :icon="CheckCircle2" variant="success" :description="t.sidebar.certificates" href="/certificates" />
-          <StatsCard :title="t.home.memberLevel" :value="stats.membership_level || t.common.na" :icon="Crown" variant="warning" :description="t.membership.title" href="/membership" />
           <StatsCard :title="t.home.unreadMessages" :value="String(unreadCount)" :icon="MessageSquare" variant="info" :description="t.home.unreadMessagesCount" href="/messages" />
         </div>
       </section>
