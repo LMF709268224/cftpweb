@@ -331,7 +331,17 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
     </div>
-    <div v-else-if="!pipeline" class="rounded-md bg-white p-8 text-center text-muted-foreground">{{ t.common.na }}</div>
+    <div v-else-if="!pipeline" class="rounded-md bg-white p-8 text-center text-muted-foreground">
+      <div class="mx-auto max-w-md space-y-4">
+        <div>
+          <h2 class="text-lg font-semibold text-foreground">{{ t.learning.courseUnavailableTitle }}</h2>
+          <p class="mt-2 text-sm">{{ t.learning.courseUnavailableDesc }}</p>
+        </div>
+        <RouterLink to="/courses" class="btn btn-primary mx-auto w-fit rounded-lg">
+          {{ t.courses.backToPipelines }}
+        </RouterLink>
+      </div>
+    </div>
     <template v-else>
       <div :class="['mb-4 rounded-md bg-white p-6', firstCourseThumbnail && 'grid gap-6 lg:grid-cols-[340px_1fr]']">
         <div v-if="firstCourseThumbnail" class="relative flex aspect-video items-center justify-center overflow-hidden rounded-md bg-muted">
@@ -383,7 +393,17 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
           <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ stages.length }} {{ t.courses.stages }} / {{ totalUnits }} {{ t.courses.units }}</span>
         </div>
 
-        <div v-if="stages.length === 0" class="rounded-md bg-slate-50 p-8 text-center text-muted-foreground">{{ t.common.na }}</div>
+        <div v-if="stages.length === 0" class="rounded-md bg-slate-50 p-8 text-center text-muted-foreground">
+          <div class="mx-auto max-w-md space-y-4">
+            <div>
+              <h3 class="text-base font-semibold text-foreground">{{ t.courses.noStagesTitle }}</h3>
+              <p class="mt-2 text-sm">{{ t.courses.noStagesDesc }}</p>
+            </div>
+            <RouterLink to="/courses" class="btn btn-primary mx-auto w-fit rounded-lg">
+              {{ t.courses.backToPipelines }}
+            </RouterLink>
+          </div>
+        </div>
         <div v-else class="space-y-3">
           <div
             v-for="(stage, stageIndex) in stages"

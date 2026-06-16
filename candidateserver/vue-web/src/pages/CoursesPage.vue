@@ -34,6 +34,26 @@ const myCourses = ref<any[]>([])
 const learningResources = ref<any[]>([])
 const loading = ref(false)
 
+const emptyCopy = computed(() => lang.value === "zh"
+  ? {
+      noAvailableTitle: "暂无可购买认证",
+      noAvailableDesc: "认证商城开放课程后，会显示在这里。",
+      noSearchTitle: "没有匹配的认证",
+      noSearchDesc: "换个关键词再试，或清空搜索查看全部认证。",
+      clearSearch: "清空搜索",
+      noResourceSearchTitle: "没有匹配的学习资料",
+      noResourceSearchDesc: "换个关键词或资源类型再试。",
+    }
+  : {
+      noAvailableTitle: "No certifications available",
+      noAvailableDesc: "Certifications will appear here once they are available in the catalog.",
+      noSearchTitle: "No matching certifications",
+      noSearchDesc: "Try another keyword or clear the search to view all certifications.",
+      clearSearch: "Clear search",
+      noResourceSearchTitle: "No matching materials",
+      noResourceSearchDesc: "Try another keyword or resource type.",
+    })
+
 const tabs = computed(() => [
   { id: "all", label: t.value.courses.tabs.all },
   { id: "my", label: t.value.courses.tabs.my },
@@ -257,7 +277,11 @@ onMounted(() => {
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
           <Search class="h-8 w-8 text-primary" />
         </div>
-        <h3 class="mb-2 text-lg font-semibold text-foreground">暂无数据</h3>
+        <h3 class="mb-2 text-lg font-semibold text-foreground">{{ searchQuery.trim() ? emptyCopy.noSearchTitle : emptyCopy.noAvailableTitle }}</h3>
+        <p class="mx-auto max-w-md text-sm leading-6 text-muted-foreground">{{ searchQuery.trim() ? emptyCopy.noSearchDesc : emptyCopy.noAvailableDesc }}</p>
+        <button v-if="searchQuery.trim()" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="searchQuery = ''">
+          {{ emptyCopy.clearSearch }}
+        </button>
       </div>
     </div>
 
@@ -313,6 +337,9 @@ onMounted(() => {
     </div>
 
     <div v-if="activeTab === 'resources'" class="space-y-4">
+      <div v-if="loading && learningResources.length === 0" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
+      </div>
       <div
         v-for="resource in filteredResources"
         :key="resource.id"
@@ -352,12 +379,15 @@ onMounted(() => {
           <button class="btn btn-ghost px-2" @click.stop><Bookmark class="h-4 w-4" /></button>
         </div>
       </div>
-      <div v-if="filteredResources.length === 0" class="flex flex-col items-center justify-center rounded-[16px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div v-if="!loading && filteredResources.length === 0" class="flex flex-col items-center justify-center rounded-[16px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
           <FileText class="h-8 w-8 text-primary" />
         </div>
-        <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.courses.noResources }}</h3>
-        <p class="text-muted-foreground">{{ t.courses.noResourcesDesc }}</p>
+        <h3 class="mb-2 text-lg font-semibold text-foreground">{{ searchQuery.trim() || resourceFilter !== 'all' ? emptyCopy.noResourceSearchTitle : t.courses.noResources }}</h3>
+        <p class="mx-auto max-w-md text-sm leading-6 text-muted-foreground">{{ searchQuery.trim() || resourceFilter !== 'all' ? emptyCopy.noResourceSearchDesc : t.courses.noResourcesDesc }}</p>
+        <button v-if="searchQuery.trim() || resourceFilter !== 'all'" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="searchQuery = ''; resourceFilter = 'all'">
+          {{ emptyCopy.clearSearch }}
+        </button>
       </div>
     </div>
   </AppShell>

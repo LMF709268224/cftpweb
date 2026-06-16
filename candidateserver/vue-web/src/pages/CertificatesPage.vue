@@ -70,7 +70,7 @@ onMounted(async () => {
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
     </div>
-    <div v-else class="grid gap-4 lg:grid-cols-2">
+    <div v-else-if="certificates.length" class="grid gap-4 lg:grid-cols-2">
       <div v-for="cert in certificates" :key="cert.id" class="group relative overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10">
         <div class="relative bg-primary p-4 text-white">
           <div class="relative flex items-start justify-between">
@@ -106,12 +106,18 @@ onMounted(async () => {
           </div>
         </div>
       </div>
-      <div class="flex flex-col items-center justify-center rounded-[16px] bg-white p-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><Award class="h-8 w-8 text-primary" /></div>
-        <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.certificatesPage.keepLearningTitle }}</h3>
-        <p class="mb-4 text-sm text-muted-foreground">{{ t.certificatesPage.keepLearningDesc }}</p>
-        <RouterLink to="/courses" class="btn btn-outline rounded-lg hover:border-primary/25 hover:bg-primary/10 hover:text-primary"><ExternalLink class="h-4 w-4" /> {{ t.certificatesPage.browseCourses }}</RouterLink>
+    </div>
+
+    <div v-else class="flex min-h-[320px] flex-col items-center justify-center rounded-[16px] bg-white p-6 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
+        <Award class="h-8 w-8 text-primary" />
       </div>
+      <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.certificatesPage.keepLearningTitle }}</h3>
+      <p class="mb-5 max-w-md text-sm leading-6 text-muted-foreground">{{ t.certificatesPage.keepLearningDesc }}</p>
+      <RouterLink to="/courses" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20">
+        <ExternalLink class="h-4 w-4" />
+        {{ t.certificatesPage.browseCourses }}
+      </RouterLink>
     </div>
   </AppShell>
 </template>
