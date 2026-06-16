@@ -659,8 +659,11 @@ async function markCompleted() {
 
 async function openLessonPdf() {
   if (!lesson.value?.lesson_id) return
-  const previewUrl = `/api/pipeline/lessons/${encodeURIComponent(lesson.value.lesson_id)}/preview`
-  window.open(previewUrl, "_blank", "noopener,noreferrer")
+  const params = new URLSearchParams({
+    lessonId: lesson.value.lesson_id,
+    title: lesson.value.title || "PDF Lesson",
+  })
+  window.open(`/pdf-preview?${params.toString()}`, "_blank", "noopener,noreferrer")
 }
 
 async function openInlinePdf(url: string) {

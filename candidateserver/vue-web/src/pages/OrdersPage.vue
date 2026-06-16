@@ -54,10 +54,23 @@ const INVOICE_DOWNLOAD_TIMEOUT_MS = 20000
 
 async function viewInvoice(orderId: string) {
   if (invoiceLoading.value) return
+  try {
+    invoiceLoading.value = orderId
+    if (await openHostedInvoice(orderId)) return
+    await downloadInvoicePdf(orderId)
+  } catch (err) {
+    console.error("Failed to view invoice:", err)
+    const isTimeout = err instanceof DOMException && err.name === "AbortError"
+    alert(isTimeout ? "打开发票超时，请稍后重试 (Invoice request timed out)" : "获取发票失败，请稍后重试 (Failed to open invoice)")
+  } finally {
+    invoiceLoading.value = null
+  }
+}
+
+async function downloadInvoicePdf(orderId: string) {
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), INVOICE_DOWNLOAD_TIMEOUT_MS)
   try {
-    invoiceLoading.value = orderId
     const headers = new Headers()
     const token = localStorage.getItem("access_token")
     if (token) headers.set("Authorization", `Bearer ${token}`)
@@ -83,12 +96,9 @@ async function viewInvoice(orderId: string) {
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
   } catch (err) {
     console.error("Failed to download invoice:", err)
-    const isTimeout = err instanceof DOMException && err.name === "AbortError"
-    if (!isTimeout && await openHostedInvoice(orderId)) return
-    alert(isTimeout ? "下载发票超时，请稍后重试 (Invoice download timed out)" : "获取发票失败，请稍后重试 (Failed to download invoice)")
+    throw err
   } finally {
     window.clearTimeout(timeoutId)
-    invoiceLoading.value = null
   }
 }
 
