@@ -129,13 +129,12 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
-    <section class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
-      <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
-      <RouterLink to="/resource-packs" class="mb-4 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
+    <section class="mb-6">
+      <RouterLink to="/resource-packs" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
         <ArrowLeft class="h-4 w-4" />
         {{ copy.back }}
       </RouterLink>
-      <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <FileArchive class="h-3.5 w-3.5" />
@@ -144,11 +143,10 @@ onMounted(() => {
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
           <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
         </div>
-        <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="!packId || loading" @click="loadFiles()">
+        <button class="btn btn-outline rounded-lg bg-white shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="!packId || loading" @click="loadFiles()">
           <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
           {{ copy.refresh }}
         </button>
-      </div>
       </div>
     </section>
 
@@ -156,7 +154,7 @@ onMounted(() => {
       <article
         v-for="file in orderedFiles"
         :key="file.file_id"
-        class="group relative flex flex-col gap-4 overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10 md:flex-row md:items-center md:justify-between"
+        class="group relative flex flex-col gap-4 overflow-hidden rounded-[14px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-colors hover:bg-white md:flex-row md:items-center md:justify-between"
       >
         <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
         <div class="flex gap-4">
