@@ -55,6 +55,9 @@ function hasExamResult(exam: any) {
   const normalized = normalizedExamStatus(exam.result_status)
   return typeof exam.total_score === "number" || exam.is_passed === true || ["DONE", "PASSED", "FAILED", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
 }
+function hasExplicitPassStatus(exam: any) {
+  return typeof exam.is_passed === "boolean"
+}
 function hasText(value?: string | null) {
   return Boolean(value?.trim())
 }
@@ -68,6 +71,12 @@ function canScheduleExam(exam: any) {
 
 function noResultLabel() {
   return (t.value.examsPage as any).statusNoResult || t.value.examsPage.statusPending
+}
+function resultPublishedLabel() {
+  return (t.value.examsPage as any).statusResultPublished || t.value.examsPage.statusPending
+}
+function passStatusLabel(exam: any) {
+  return exam.is_passed ? (t.value.examsPage as any).statusQualified || t.value.examsPage.statusPassed : (t.value.examsPage as any).statusUnqualified || t.value.examsPage.statusFailed
 }
 
 async function loadExams(tab: TabId = activeTab.value, keyword = search.value) {
@@ -184,10 +193,12 @@ onMounted(() => {
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="shouldShowExamStatus(exam.exam_status)" :class="['badge', statusBadgeClassForStatusValue(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
-                  <span v-if="shouldShowExamStatus(exam.result_status)" :class="['badge', statusBadgeClassForStatusValue(exam.result_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.result_status)) }}</span>
-                  <span v-if="hasExamResult(exam) && exam.is_passed" :class="['badge gap-1', statusBadgeClassForStatusValue('SUCCESS')]"><CheckCircle2 class="h-3 w-3" /> {{ t.examsPage.statusPassed }}</span>
-                  <span v-else-if="!hasExamResult(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
-                  <span v-else :class="['badge', statusBadgeClassForStatusValue('FAILED')]">{{ t.examsPage.statusFailed }}</span>
+                  <span v-if="hasExamResult(exam)" :class="['badge', statusBadgeClassForStatusValue('DONE')]">{{ resultPublishedLabel() }}</span>
+                  <span v-else :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
+                  <span v-if="hasExplicitPassStatus(exam)" :class="['badge gap-1', statusBadgeClassForStatusValue(exam.is_passed ? 'SUCCESS' : 'FAILED')]">
+                    <CheckCircle2 v-if="exam.is_passed" class="h-3 w-3" />
+                    {{ passStatusLabel(exam) }}
+                  </span>
                 </div>
                 <h3 class="text-lg font-semibold text-foreground">{{ exam.exam_code || exam.program_code || exam.exam_id || t.common.unknown }}</h3>
                 <div class="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
@@ -214,7 +225,7 @@ onMounted(() => {
                   <ExternalLink v-else class="h-4 w-4" />
                   {{ t.learning.actionScheduleExam }}
                 </button>
-                <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-outline rounded-lg">{{ t.examsPage.viewResult }}</RouterLink>
+                <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20">{{ t.examsPage.viewResult }}</RouterLink>
               </div>
             </div>
           </div>
