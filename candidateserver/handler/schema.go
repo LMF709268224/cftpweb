@@ -36,9 +36,16 @@ type UserMeRsp struct {
 	FirstName   string   `json:"first_name"`
 	LastName    string   `json:"last_name"`
 	Phone       string   `json:"phone"`
+	HomePhone   string   `json:"home_phone"`
+	WorkPhone   string   `json:"work_phone"`
+	Country     string   `json:"country"`
+	Province    string   `json:"province"`
+	City        string   `json:"city"`
 	Region      string   `json:"region"`
 	Location    string   `json:"location"`
 	Address     []string `json:"address"`
+	AddressText string   `json:"address_text"`
+	PostalCode  string   `json:"postal_code"`
 	Affiliation string   `json:"affiliation"`
 	Title       string   `json:"title"`
 	RealName    string   `json:"real_name"`
@@ -51,6 +58,16 @@ type UserMeRsp struct {
 type UserProfileInput struct {
 	Email       string `json:"email"`
 	DisplayName string `json:"display_name"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Phone       string `json:"phone"`
+	HomePhone   string `json:"home_phone"`
+	WorkPhone   string `json:"work_phone"`
+	Country     string `json:"country"`
+	Province    string `json:"province"`
+	City        string `json:"city"`
+	Address     string `json:"address"`
+	PostalCode  string `json:"postal_code"`
 	Affiliation string `json:"affiliation"`
 	Title       string `json:"title"`
 	RealName    string `json:"real_name"`

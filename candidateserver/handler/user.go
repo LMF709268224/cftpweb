@@ -4,8 +4,15 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
+)
+
+const (
+	userPropWorkPhone  = "work_phone"
+	userPropProvince   = "province"
+	userPropPostalCode = "postal_code"
 )
 
 // GetUserMe GET /api/user/me
@@ -18,6 +25,8 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	addressText := strings.Join(fullUser.Address, ", ")
+
 	WriteJSON(w, http.StatusOK, UserMeRsp{
 		Name:        fullUser.Name,
 		Email:       fullUser.Email,
@@ -25,9 +34,16 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 		FirstName:   fullUser.FirstName,
 		LastName:    fullUser.LastName,
 		Phone:       fullUser.Phone,
+		HomePhone:   fullUser.Phone,
+		WorkPhone:   getUserProperty(fullUser, userPropWorkPhone),
+		Country:     fullUser.Region,
+		Province:    getUserProperty(fullUser, userPropProvince),
+		City:        fullUser.Location,
 		Region:      fullUser.Region,
 		Location:    fullUser.Location,
 		Address:     fullUser.Address,
+		AddressText: addressText,
+		PostalCode:  getUserProperty(fullUser, userPropPostalCode),
 		Affiliation: fullUser.Affiliation,
 		Title:       fullUser.Title,
 		RealName:    fullUser.RealName,
@@ -55,8 +71,16 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// fullUser.Email = input.Email
+	if strings.TrimSpace(fullUser.Email) == "" {
+		fullUser.Email = strings.TrimSpace(input.Email)
+	}
 	fullUser.DisplayName = input.DisplayName
+	fullUser.FirstName = input.FirstName
+	fullUser.LastName = input.LastName
+	fullUser.Phone = firstNonEmpty(input.HomePhone, input.Phone)
+	fullUser.Region = input.Country
+	fullUser.Location = input.City
+	fullUser.Address = addressFromText(input.Address)
 	fullUser.Affiliation = input.Affiliation
 	fullUser.Title = input.Title
 	fullUser.RealName = input.RealName
@@ -64,6 +88,9 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	fullUser.Gender = input.Gender
 	fullUser.Birthday = input.Birthday
 	fullUser.Education = input.Education
+	setUserProperty(fullUser, userPropWorkPhone, input.WorkPhone)
+	setUserProperty(fullUser, userPropProvince, input.Province)
+	setUserProperty(fullUser, userPropPostalCode, input.PostalCode)
 
 	if _, err := casdoorsdk.UpdateUser(fullUser); err != nil {
 		slog.Error("Failed to update user", "error", err)
@@ -101,4 +128,40 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "密码修改成功"})
+}
+
+func getUserProperty(user *casdoorsdk.User, key string) string {
+	if user == nil || user.Properties == nil {
+		return ""
+	}
+	return user.Properties[key]
+}
+
+func setUserProperty(user *casdoorsdk.User, key string, value string) {
+	if user.Properties == nil {
+		user.Properties = map[string]string{}
+	}
+	value = strings.TrimSpace(value)
+	if value == "" {
+		delete(user.Properties, key)
+		return
+	}
+	user.Properties[key] = value
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
+}
+
+func addressFromText(value string) []string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil
+	}
+	return []string{value}
 }

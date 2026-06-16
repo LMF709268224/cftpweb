@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onErrorCaptured, ref, watch } from "vue"
+import { computed, onErrorCaptured, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { PDFViewer } from "@embedpdf/vue-pdf-viewer"
 import { AlertTriangle, ArrowLeft, FileText, Loader2 } from "lucide-vue-next"
@@ -11,9 +11,6 @@ const viewerSrc = ref("")
 const loading = ref(false)
 const errorMessage = ref("")
 const viewerError = ref(false)
-let objectUrl = ""
-
-const PDF_LOAD_TIMEOUT_MS = 120000
 
 const title = computed(() => String(route.query.title || "PDF Preview"))
 const source = computed(() => {
@@ -41,7 +38,7 @@ const viewerConfig = computed(() => ({
 }))
 
 async function loadPdf() {
-  cleanupObjectUrl()
+  viewerSrc.value = ""
   errorMessage.value = ""
   viewerError.value = false
 
@@ -51,43 +48,15 @@ async function loadPdf() {
   }
 
   loading.value = true
-  const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), PDF_LOAD_TIMEOUT_MS)
   try {
-    const headers = new Headers()
-    const token = getAccessToken()
-    if (token) headers.set("Authorization", `Bearer ${token}`)
-
-    const res = await fetch(source.value, {
-      credentials: "include",
-      headers,
-      signal: controller.signal,
-    })
-
-    if (!res.ok) {
-      errorMessage.value = res.status === 401
-        ? "Your session has expired or you do not have permission. Please sign in and try again."
-        : "PDF preview failed. Please try again later."
-      return
-    }
-
-    const blob = await res.blob()
-    objectUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
-    viewerSrc.value = objectUrl
+    // Sync the token into the same-origin cookie before EmbedPDF issues Range requests.
+    getAccessToken()
+    viewerSrc.value = source.value
   } catch (err) {
-    errorMessage.value = err instanceof DOMException && err.name === "AbortError"
-      ? "PDF preview is taking too long. The file may be large or the storage service may be slow. Please reload or try again later."
-      : "PDF preview failed. Please check your network and try again."
+    errorMessage.value = "PDF preview failed. Please check your network and try again."
   } finally {
-    window.clearTimeout(timeoutId)
     loading.value = false
   }
-}
-
-function cleanupObjectUrl() {
-  if (objectUrl) URL.revokeObjectURL(objectUrl)
-  objectUrl = ""
-  viewerSrc.value = ""
 }
 
 function goBack() {
@@ -103,7 +72,6 @@ onErrorCaptured((err) => {
 })
 
 watch(source, loadPdf, { immediate: true })
-onBeforeUnmount(cleanupObjectUrl)
 </script>
 
 <template>
