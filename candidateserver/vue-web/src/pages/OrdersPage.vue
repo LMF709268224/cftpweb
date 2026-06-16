@@ -17,7 +17,6 @@ const statusConfig = {
 } as const
 
 const orderTypes = [
-  { value: "ALL", label: "全部订单" },
   { value: "PIPELINE_PAYMENT", label: "认证订单 (Pipeline)" },
   { value: "STAGE_PAYMENT", label: "阶段订单 (Stage)" },
   { value: "COURSE_RETAKE_PAYMENT", label: "课时重修订单 (Retake)" },
