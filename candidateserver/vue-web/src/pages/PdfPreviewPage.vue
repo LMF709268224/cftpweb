@@ -3,7 +3,7 @@ import { computed, onErrorCaptured, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { PDFViewer } from "@embedpdf/vue-pdf-viewer"
 import { AlertTriangle, ArrowLeft, FileText, Loader2 } from "lucide-vue-next"
-import { getAccessToken } from "@/lib/authStorage"
+import { apiClient } from "@/lib/apiClient"
 
 const route = useRoute()
 const router = useRouter()
@@ -15,10 +15,10 @@ const viewerError = ref(false)
 const title = computed(() => String(route.query.title || "PDF Preview"))
 const source = computed(() => {
   const lessonId = String(route.query.lessonId || "")
-  if (lessonId) return `/api/pipeline/lessons/${encodeURIComponent(lessonId)}/preview`
+  if (lessonId) return `/api/pipeline/lessons/${encodeURIComponent(lessonId)}/preview-url`
 
   const src = String(route.query.src || "")
-  if (src) return `/api/pipeline/resource-preview?src=${encodeURIComponent(src)}`
+  if (src) return `/api/pipeline/resource-preview-url?src=${encodeURIComponent(src)}`
 
   return ""
 })
@@ -49,9 +49,12 @@ async function loadPdf() {
 
   loading.value = true
   try {
-    // Sync the token into the same-origin cookie before EmbedPDF issues Range requests.
-    getAccessToken()
-    viewerSrc.value = source.value
+    const res = await apiClient(source.value, { timeoutMs: 30000 })
+    if (!res?.url) {
+      errorMessage.value = "No PDF resource found for preview."
+      return
+    }
+    viewerSrc.value = res.url
   } catch (err) {
     errorMessage.value = "PDF preview failed. Please check your network and try again."
   } finally {

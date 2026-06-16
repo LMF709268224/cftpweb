@@ -245,6 +245,7 @@ type PurchasePipelineInput struct {
 type GetAccessURLRsp struct {
 	URL       string `json:"url"`
 	ExpiresAt string `json:"expires_at"`
+	Title     string `json:"title,omitempty"`
 }
 
 type SignupExamInput struct {
