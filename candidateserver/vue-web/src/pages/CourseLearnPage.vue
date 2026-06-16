@@ -802,7 +802,17 @@ watch(selectedMaterial, () => {
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
     </div>
-    <div v-else-if="!course" class="rounded-md bg-white p-8 text-center text-muted-foreground">{{ t.common.na }}</div>
+    <div v-else-if="!course" class="rounded-md bg-white p-8 text-center text-muted-foreground">
+      <div class="mx-auto max-w-md space-y-4">
+        <div>
+          <h2 class="text-lg font-semibold text-foreground">{{ t.learning.courseUnavailableTitle }}</h2>
+          <p class="mt-2 text-sm">{{ t.learning.courseUnavailableDesc }}</p>
+        </div>
+        <RouterLink :to="pipelineId ? `/courses/detail?id=${encodeURIComponent(pipelineId)}` : '/courses'" class="btn btn-primary mx-auto w-fit rounded-lg">
+          {{ pipelineId ? t.learning.backToCourse : t.courses.backToPipelines }}
+        </RouterLink>
+      </div>
+    </div>
     <div v-else class="grid gap-6 lg:grid-cols-[340px_1fr]">
       <aside class="space-y-4">
         <div class="rounded-md bg-white p-6">
@@ -891,7 +901,11 @@ watch(selectedMaterial, () => {
           <div class="mb-4 flex items-center justify-between">
             <h2 class="text-sm font-semibold text-foreground">{{ t.learning.chapters }}</h2>
           </div>
-          <div class="rounded-md bg-slate-50 p-3">
+          <div v-if="chapters.length === 0" class="rounded-md bg-slate-50 p-6 text-center text-sm text-muted-foreground">
+            <h3 class="text-base font-semibold text-foreground">{{ t.learning.noChaptersTitle }}</h3>
+            <p class="mt-2">{{ t.learning.noChaptersDesc }}</p>
+          </div>
+          <div v-else class="rounded-md bg-slate-50 p-3">
             <div
               v-for="(chapter, chapterIndex) in chapters"
               :key="chapter.chapter?.chapter_id || chapterIndex"
