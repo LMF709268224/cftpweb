@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { AlertCircle, CheckCircle2, ChevronLeft, Clock, FileText } from "lucide-vue-next"
+import { AlertCircle, CheckCircle2, ChevronLeft, Clock, FileText, Loader2 } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -75,7 +75,10 @@ onMounted(loadPaper)
 <template>
   <AppShell content-class="p-4">
     <div v-if="loading" class="flex min-h-[60vh] items-center justify-center">
-      <div class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-r-transparent" />
+      <div class="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <Loader2 class="h-5 w-5 animate-spin text-primary" />
+        <span>{{ t.common.loading }}</span>
+      </div>
     </div>
 
     <div v-else-if="!paper" class="flex min-h-[60vh] flex-col items-center justify-center gap-4">

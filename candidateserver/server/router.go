@@ -161,7 +161,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/", h.ListOrders)
 			r.Get("/{orderId}", h.GetOrder)
 		})
-
 		r.Route("/invoices", func(r chi.Router) {
 			r.Get("/{orderId}", h.QueryInvoice)
 			r.Get("/{orderId}/pdf", h.DownloadPdf)

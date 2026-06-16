@@ -23,7 +23,7 @@ const orderTypes = [
   { value: "CREDENTIAL_APPLICATION_ORDER", label: "证书申请订单 (Credential)" },
 ]
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const orders = ref<OrderItem[]>([])
 const totalSpent = ref(0)
 const completedCount = ref(0)
@@ -50,23 +50,16 @@ function handleOrderClick(order: OrderItem) {
 }
 
 const invoiceLoading = ref<string | null>(null)
+const invoiceOpeningLabel = computed(() => (lang.value === "zh" ? "正在打开发票，请稍候..." : "Opening invoice. Please wait..."))
 
 async function viewInvoice(orderId: string) {
   if (invoiceLoading.value) return
-  try {
-    invoiceLoading.value = orderId
-    const res = await apiClient(`/api/invoices/${encodeURIComponent(orderId)}`)
-    if (res?.invoice_url) {
-      window.open(res.invoice_url, "_blank", "noopener,noreferrer")
-      return
-    }
-    throw new Error("invoice_url is empty")
-  } catch (err) {
-    console.error("Failed to view invoice:", err)
-    alert("获取发票失败，请稍后重试 (Failed to open invoice)")
-  } finally {
-    invoiceLoading.value = null
-  }
+  invoiceLoading.value = orderId
+  const redirectUrl = `/invoice-redirect?orderId=${encodeURIComponent(orderId)}`
+  window.open(redirectUrl, "_blank", "noopener,noreferrer")
+  window.setTimeout(() => {
+    if (invoiceLoading.value === orderId) invoiceLoading.value = null
+  }, 1200)
 }
 
 function formatMoney(amount: number, currency = "USD") {
@@ -122,6 +115,11 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-4">
+    <div v-if="invoiceLoading" class="fixed right-5 top-5 z-50 flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-[0_16px_40px_rgba(15,74,82,0.14)]">
+      <Loader2 class="h-4 w-4 animate-spin text-emerald-500" />
+      <span>{{ invoiceOpeningLabel }}</span>
+    </div>
+
     <div class="mb-4 px-1 py-3 md:py-5">
       <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.orders.title }}</h1>
       <p class="mt-2 text-muted-foreground">{{ t.orders.subtitle }}</p>
@@ -190,6 +188,7 @@ onMounted(() => {
             <button v-if="order.status === 'completed'" @click.stop="viewInvoice(order.id)" class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground" title="查看发票 / View Invoice">
               <Loader2 v-if="invoiceLoading === order.id" class="h-4 w-4 animate-spin text-primary" />
               <FileText v-else class="h-4 w-4" />
+              <span class="sr-only">{{ invoiceOpeningLabel }}</span>
             </button>
             <span v-else class="h-9 w-9" />
 

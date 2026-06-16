@@ -23,6 +23,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+const pdfPreviewStreamTimeout = 30 * time.Minute
+
 // GetPipelineTimeline GET /api/mall/pipelines/{pipelineId}/timeline
 func (h *Handler) GetPipelineTimeline(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
@@ -550,6 +552,7 @@ func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodHead {
 		return
 	}
+	extendPDFPreviewWriteDeadline(w)
 	if _, err := io.Copy(w, proxyResp.Body); err != nil {
 		slog.Warn("failed to stream lesson preview", "error", err, "lesson_id", lessonID)
 	}
@@ -623,6 +626,7 @@ func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodHead {
 		return
 	}
+	extendPDFPreviewWriteDeadline(w)
 	if _, err := io.Copy(w, proxyResp.Body); err != nil {
 		slog.Warn("failed to stream resource preview", "error", err, "resource_url", resourceURL)
 	}
@@ -690,8 +694,15 @@ func (h *Handler) streamPDFPreview(w http.ResponseWriter, r *http.Request, sourc
 	if r.Method == http.MethodHead {
 		return
 	}
+	extendPDFPreviewWriteDeadline(w)
 	if _, err := io.Copy(w, proxyResp.Body); err != nil {
 		slog.Warn("failed to stream preview", "error", err, "kind", logKind, "id", logID)
+	}
+}
+
+func extendPDFPreviewWriteDeadline(w http.ResponseWriter) {
+	if err := http.NewResponseController(w).SetWriteDeadline(time.Now().Add(pdfPreviewStreamTimeout)); err != nil {
+		slog.Warn("failed to extend pdf preview write deadline", "error", err)
 	}
 }
 

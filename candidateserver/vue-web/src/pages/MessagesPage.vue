@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import { Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Megaphone, MessageSquare, MoreHorizontal, Trash2 } from "lucide-vue-next"
+import { Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, Trash2 } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
@@ -15,6 +15,7 @@ const detailModalOpen = ref(false)
 const selectedMessageDetail = ref<any>(null)
 const messageList = ref<Message[]>([])
 const openMenuId = ref<string | null>(null)
+const loading = ref(true)
 
 const typeConfig = computed(() => ({
   system: { icon: Bell, iconBg: "bg-primary/10", iconColor: "text-primary", label: t.value.messagesPage.systemNotice },
@@ -44,6 +45,7 @@ function deleteMenuLabel() {
 }
 
 async function fetchMessages() {
+  loading.value = true
   try {
     const res = await apiClient("/api/messages?limit=50")
     if (res?.messages) {
@@ -74,6 +76,8 @@ async function fetchMessages() {
     }
   } catch (e) {
     console.error(e)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -158,7 +162,11 @@ onMounted(fetchMessages)
     </div>
 
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div v-if="filteredMessages.length === 0" class="flex flex-col items-center justify-center px-4 py-16 text-center">
+      <div v-if="loading" class="flex items-center justify-center gap-2 px-4 py-16 text-muted-foreground">
+        <Loader2 class="h-5 w-5 animate-spin text-primary" />
+        <span>{{ t.common.loading }}</span>
+      </div>
+      <div v-else-if="filteredMessages.length === 0" class="flex flex-col items-center justify-center px-4 py-16 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><MessageSquare class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.messagesPage.noMessages }}</h3>
         <p class="text-muted-foreground">{{ t.messagesPage.noMessagesDesc }}</p>
