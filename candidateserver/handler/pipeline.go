@@ -455,8 +455,15 @@ func (h *Handler) GetLessonPreviewURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	viewURL := strings.TrimSpace(viewResp.GetViewUrl())
+	if viewURL == "" {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "empty view url")
+		return
+	}
+
 	expiresAt := time.Now().Add(10 * time.Minute).Unix()
-	token := h.signPDFPreviewToken(candidateID, "lesson", lessonID, expiresAt)
+	filename := sanitizeFilename(lesson.GetTitle()) + ".pdf"
+	token := h.signPDFPreviewToken(candidateID, "lesson", lessonID, viewURL, filename, expiresAt)
 	params := url.Values{}
 	params.Set("token", token)
 	previewURL := "/api/public/pdf-preview/lessons/" + url.PathEscape(lessonID) + "?" + params.Encode()
@@ -480,7 +487,7 @@ func (h *Handler) GetResourcePreviewURL(w http.ResponseWriter, r *http.Request) 
 	}
 
 	expiresAt := time.Now().Add(10 * time.Minute).Unix()
-	token := h.signPDFPreviewToken(candidateID, "resource", resourceURL, expiresAt)
+	token := h.signPDFPreviewToken(candidateID, "resource", resourceURL, resourceURL, "resource.pdf", expiresAt)
 	params := url.Values{}
 	params.Set("src", resourceURL)
 	params.Set("token", token)
@@ -538,23 +545,18 @@ func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PreviewLessonPDFPublic(w http.ResponseWriter, r *http.Request) {
 	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
 	token := strings.TrimSpace(r.URL.Query().Get("token"))
-	candidateID, ok := h.verifyPDFPreviewToken(token, "lesson", lessonID)
-	if !ok || !requireRequestFields(w, candidateID, "candidate_id", lessonID, "lesson_id") {
+	preview, ok := h.verifyPDFPreviewToken(token, "lesson", lessonID)
+	if !ok || !requireRequestFields(w, preview.CandidateID, "candidate_id", lessonID, "lesson_id") {
 		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
 		return
 	}
 
-	viewResp, lesson, err := h.lessonViewURL(r.Context(), candidateID, lessonID)
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-	if strings.TrimSpace(viewResp.GetViewUrl()) == "" {
-		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "empty view url")
+	if !isValidPreviewResourceURL(preview.SourceURL) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid preview url")
 		return
 	}
 
-	h.streamPDFPreview(w, r, viewResp.GetViewUrl(), sanitizeFilename(lesson.GetTitle())+".pdf", "lesson", lessonID)
+	h.streamPDFPreview(w, r, preview.SourceURL, preview.Filename, "lesson", lessonID)
 }
 
 func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
@@ -603,17 +605,17 @@ func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PreviewResourceURLPublic(w http.ResponseWriter, r *http.Request) {
 	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
 	token := strings.TrimSpace(r.URL.Query().Get("token"))
-	candidateID, ok := h.verifyPDFPreviewToken(token, "resource", resourceURL)
-	if !ok || !requireRequestFields(w, candidateID, "candidate_id", resourceURL, "src") {
+	preview, ok := h.verifyPDFPreviewToken(token, "resource", resourceURL)
+	if !ok || !requireRequestFields(w, preview.CandidateID, "candidate_id", resourceURL, "src") {
 		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
 		return
 	}
-	if !isValidPreviewResourceURL(resourceURL) {
+	if !isValidPreviewResourceURL(preview.SourceURL) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid resource url")
 		return
 	}
 
-	h.streamPDFPreview(w, r, resourceURL, "resource.pdf", "resource", resourceURL)
+	h.streamPDFPreview(w, r, preview.SourceURL, preview.Filename, "resource", resourceURL)
 }
 
 func (h *Handler) streamPDFPreview(w http.ResponseWriter, r *http.Request, sourceURL string, filename string, logKind string, logID string) {
@@ -657,40 +659,50 @@ func (h *Handler) streamPDFPreview(w http.ResponseWriter, r *http.Request, sourc
 	}
 }
 
-func (h *Handler) signPDFPreviewToken(candidateID string, resourceKind string, resourceID string, expiresAt int64) string {
-	payload := strings.Join([]string{candidateID, resourceKind, resourceID, strconv.FormatInt(expiresAt, 10)}, "\n")
+type pdfPreviewClaims struct {
+	CandidateID string
+	SourceURL   string
+	Filename    string
+}
+
+func (h *Handler) signPDFPreviewToken(candidateID string, resourceKind string, resourceID string, sourceURL string, filename string, expiresAt int64) string {
+	payload := strings.Join([]string{candidateID, resourceKind, resourceID, sourceURL, filename, strconv.FormatInt(expiresAt, 10)}, "\n")
 	mac := hmac.New(sha256.New, h.pdfPreviewSigningKey())
 	_, _ = mac.Write([]byte(payload))
 	signature := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
 	return base64.RawURLEncoding.EncodeToString([]byte(payload + "\n" + signature))
 }
 
-func (h *Handler) verifyPDFPreviewToken(token string, resourceKind string, resourceID string) (string, bool) {
+func (h *Handler) verifyPDFPreviewToken(token string, resourceKind string, resourceID string) (pdfPreviewClaims, bool) {
 	decoded, err := base64.RawURLEncoding.DecodeString(token)
 	if err != nil {
-		return "", false
+		return pdfPreviewClaims{}, false
 	}
 	parts := strings.Split(string(decoded), "\n")
-	if len(parts) != 5 {
-		return "", false
+	if len(parts) != 7 {
+		return pdfPreviewClaims{}, false
 	}
 	candidateID := parts[0]
 	if parts[1] != resourceKind || parts[2] != resourceID {
-		return "", false
+		return pdfPreviewClaims{}, false
 	}
-	expiresAt, err := strconv.ParseInt(parts[3], 10, 64)
+	expiresAt, err := strconv.ParseInt(parts[5], 10, 64)
 	if err != nil || time.Now().Unix() > expiresAt {
-		return "", false
+		return pdfPreviewClaims{}, false
 	}
 
-	payload := strings.Join(parts[:4], "\n")
+	payload := strings.Join(parts[:6], "\n")
 	mac := hmac.New(sha256.New, h.pdfPreviewSigningKey())
 	_, _ = mac.Write([]byte(payload))
 	expected := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
-	if !hmac.Equal([]byte(expected), []byte(parts[4])) {
-		return "", false
+	if !hmac.Equal([]byte(expected), []byte(parts[6])) {
+		return pdfPreviewClaims{}, false
 	}
-	return candidateID, candidateID != ""
+	return pdfPreviewClaims{
+		CandidateID: candidateID,
+		SourceURL:   parts[3],
+		Filename:    parts[4],
+	}, candidateID != "" && parts[3] != ""
 }
 
 func (h *Handler) pdfPreviewSigningKey() []byte {
