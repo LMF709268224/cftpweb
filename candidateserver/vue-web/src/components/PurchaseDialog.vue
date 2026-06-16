@@ -454,6 +454,9 @@ async function initiatePayment() {
             <div class="flex items-center gap-2 font-semibold"><CreditCard class="h-4 w-4" />{{ copy.embeddedCheckoutTitle }}</div>
             <p class="mt-2">{{ copy.embeddedCheckoutDesc }}</p>
           </div>
+          <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            <strong>⚠️ 测试环境提示：</strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验。
+          </div>
           <div class="rounded-lg border bg-white p-4 text-sm text-muted-foreground min-h-[400px]">
             <div id="checkout"></div>
           </div>
@@ -491,6 +494,9 @@ async function initiatePayment() {
               <Building2 class="h-4 w-4 text-muted-foreground" />
               <span class="text-sm font-medium text-foreground">{{ copy.bank }}</span>
             </button>
+          </div>
+          <div v-if="paymentMethod === 'stripe'" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            <strong>⚠️ 测试环境提示：</strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验。
           </div>
         </div>
       </div>

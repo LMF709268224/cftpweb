@@ -50,23 +50,61 @@ function handleOrderClick(order: OrderItem) {
 }
 
 const invoiceLoading = ref<string | null>(null)
+const INVOICE_DOWNLOAD_TIMEOUT_MS = 20000
 
 async function viewInvoice(orderId: string) {
   if (invoiceLoading.value) return
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), INVOICE_DOWNLOAD_TIMEOUT_MS)
   try {
     invoiceLoading.value = orderId
-    const res = await apiClient(`/api/invoices/${orderId}`)
-    if (res.invoice_url) {
-      window.open(res.invoice_url, '_blank')
-    } else {
-      alert("发票还在生成中或不可用 (Invoice not available yet)")
+    const headers = new Headers()
+    const token = localStorage.getItem("access_token")
+    if (token) headers.set("Authorization", `Bearer ${token}`)
+
+    const response = await fetch(`/api/invoices/${encodeURIComponent(orderId)}/pdf`, {
+      credentials: "include",
+      headers,
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      throw new Error(`Invoice PDF request failed: ${response.status}`)
     }
+
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
+    const link = document.createElement("a")
+    link.href = objectUrl
+    link.download = getInvoiceFilename(response.headers.get("Content-Disposition"), orderId)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
   } catch (err) {
-    console.error("Failed to fetch invoice:", err)
-    alert("获取发票失败 (Failed to fetch invoice)")
+    console.error("Failed to download invoice:", err)
+    const isTimeout = err instanceof DOMException && err.name === "AbortError"
+    alert(isTimeout ? "下载发票超时，请稍后重试 (Invoice download timed out)" : "获取发票失败，请稍后重试 (Failed to download invoice)")
   } finally {
+    window.clearTimeout(timeoutId)
     invoiceLoading.value = null
   }
+}
+
+function getInvoiceFilename(disposition: string | null, orderId: string) {
+  if (disposition) {
+    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
+    if (utf8Match?.[1]) {
+      return decodeURIComponent(utf8Match[1])
+    }
+
+    const plainMatch = disposition.match(/filename="?([^";]+)"?/i)
+    if (plainMatch?.[1]) {
+      return plainMatch[1].endsWith(".pdf") ? plainMatch[1] : `${plainMatch[1]}.pdf`
+    }
+  }
+
+  return `invoice-${orderId}.pdf`
 }
 
 async function fetchOrders() {
