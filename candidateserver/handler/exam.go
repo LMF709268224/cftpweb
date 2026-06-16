@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -372,10 +373,40 @@ func examURLTypeForGexam(urlType gprog.ExamURLType) string {
 	}
 }
 
+func truncateForLog(value string, maxLen int) string {
+	if maxLen <= 0 || len(value) <= maxLen {
+		return value
+	}
+	return value[:maxLen] + "...(truncated)"
+}
+
+func requestClientAddr(r *http.Request) string {
+	if forwardedFor := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); forwardedFor != "" {
+		parts := strings.Split(forwardedFor, ",")
+		return strings.TrimSpace(parts[0])
+	}
+	if realIP := strings.TrimSpace(r.Header.Get("X-Real-IP")); realIP != "" {
+		return realIP
+	}
+	return r.RemoteAddr
+}
+
 // ThirdPartyExamCallback POST /api/public/webhooks/exams/callback/{urlType}/{examId}
 func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request) {
 	urlType := chi.URLParam(r, "urlType")
 	examId := chi.URLParam(r, "examId")
+	logAttrs := []any{
+		"exam_id", examId,
+		"url_type", urlType,
+		"method", r.Method,
+		"path", r.URL.Path,
+		"raw_query", truncateForLog(r.URL.RawQuery, 512),
+		"remote_addr", requestClientAddr(r),
+		"user_agent", truncateForLog(r.UserAgent(), 256),
+		"content_type", r.Header.Get("Content-Type"),
+		"content_length", r.ContentLength,
+	}
+	slog.Info("ThirdPartyExamCallback received", logAttrs...)
 
 	// Helper function for rendering auto-closing HTML
 	renderCloseHTML := func(success bool, errMsg string) {
@@ -404,35 +435,67 @@ func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request)
 
 	// 1. 解析 Form 数据
 	if err := r.ParseForm(); err != nil {
+		slog.Warn("ThirdPartyExamCallback parse form failed", append(logAttrs, "error", err)...)
 		renderCloseHTML(false, "parse form error: "+err.Error())
 		return
 	}
+	slog.Info("ThirdPartyExamCallback form parsed", append(logAttrs, "form_keys", len(r.Form))...)
 
 	// 2. 提取 apptdata 字段
 	apptDataRaw := r.FormValue("apptdata")
 	if apptDataRaw == "" {
+		slog.Warn("ThirdPartyExamCallback missing apptdata", logAttrs...)
 		renderCloseHTML(false, "empty apptdata")
 		return
 	}
+	slog.Info("ThirdPartyExamCallback apptdata extracted",
+		append(logAttrs,
+			"apptdata_length", len(apptDataRaw),
+			"apptdata_preview", truncateForLog(apptDataRaw, 1024),
+		)...,
+	)
 
 	// 3. 包装成 JSON 字符串，满足 gexam 对 callback_body 必须是合法 JSON 的要求
 	bodyMap := map[string]string{"raw_xml": apptDataRaw}
 	bodyJson, err := json.Marshal(bodyMap)
 	if err != nil {
+		slog.Error("ThirdPartyExamCallback marshal callback body failed",
+			append(logAttrs,
+				"apptdata_length", len(apptDataRaw),
+				"error", err,
+			)...,
+		)
 		renderCloseHTML(false, "json marshal error")
 		return
 	}
+	slog.Info("ThirdPartyExamCallback calling gprog",
+		append(logAttrs,
+			"callback_body_length", len(bodyJson),
+		)...,
+	)
 
 	// 4. 将结果发送给 gprog 的 ExamUrlCallback
-	_, err = h.Gprog.ExamUrlCallback(r.Context(), &gprog.ExamUrlCallbackReq{
+	resp, err := h.Gprog.ExamUrlCallback(r.Context(), &gprog.ExamUrlCallbackReq{
 		ExamId:       examId,
 		UrlType:      urlType,
 		CallbackBody: string(bodyJson),
 	})
 	if err != nil {
+		slog.Error("ThirdPartyExamCallback gprog processing failed",
+			append(logAttrs,
+				"callback_body_length", len(bodyJson),
+				"error", err,
+			)...,
+		)
 		renderCloseHTML(false, "backend processing failed: "+err.Error())
 		return
 	}
+	slog.Info("ThirdPartyExamCallback processed successfully",
+		append(logAttrs,
+			"callback_body_length", len(bodyJson),
+			"gprog_response", resp,
+		)...,
+	)
 
 	// 5. 成功后返回自动关闭窗口的 HTML
 	renderCloseHTML(true, "")
