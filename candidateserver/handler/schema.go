@@ -500,15 +500,17 @@ type QueryInvoiceRsp struct {
 // ===================== 鐠併垹宕?(Orders) =====================
 
 type OrderItem struct {
-	OrderID       string  `json:"order_id"`
-	ProductName   string  `json:"product_name"`
-	Status        string  `json:"status"` // completed / pending / cancelled
-	RawStatus     string  `json:"raw_status"`
-	PipelineID    string  `json:"pipeline_id"`
-	CreatedAt     string  `json:"created_at"`
-	PaymentMethod string  `json:"payment_method"`
-	Amount        float64 `json:"amount"`
-	Currency      string  `json:"currency"`
+	OrderID              string  `json:"order_id"`
+	ProductName          string  `json:"product_name"`
+	Status               string  `json:"status"` // completed / pending / cancelled
+	RawStatus            string  `json:"raw_status"`
+	PipelineID           string  `json:"pipeline_id"`
+	CreatedAt            string  `json:"created_at"`
+	PaymentMethod        string  `json:"payment_method"`
+	Amount               float64 `json:"amount"`
+	Currency             string  `json:"currency"`
+	PipelinePayOrderUlid string  `json:"pipeline_pay_order_ulid,omitempty"`
+	CanViewInvoice       bool    `json:"can_view_invoice"`
 }
 
 type PurchasePipelineReq struct {
@@ -545,6 +547,9 @@ type OrderListRsp struct {
 	TotalOrders int         `json:"total_orders"`
 	Completed   int         `json:"completed"`
 	TotalAmount float64     `json:"total_amount"`
+	Page        int         `json:"page"`
+	PageSize    int         `json:"page_size"`
+	TotalPages  int         `json:"total_pages"`
 	Orders      []OrderItem `json:"orders"`
 }
 

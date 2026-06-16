@@ -1,13 +1,28 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
-import { CheckCircle2, ChevronRight, Loader2, Package, Receipt, ShoppingCart, FileText } from "lucide-vue-next"
-import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
+import { computed, onMounted, ref } from "vue"
+import { useRouter } from "vue-router"
+import { CheckCircle2, ChevronRight, FileText, Loader2, Package, Receipt, ShoppingCart } from "lucide-vue-next"
+import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
-type OrderItem = { id: string; items: string[]; date: string; amount: string; currency: string; status: keyof typeof statusConfig; rawStatus: string; pipelineId: string; paymentMethod: string }
+type OrderStatus = keyof typeof statusConfig
+
+type OrderItem = {
+  id: string
+  invoiceOrderId: string
+  canViewInvoice: boolean
+  items: string[]
+  date: string
+  amount: string
+  currency: string
+  status: OrderStatus
+  rawStatus: string
+  pipelineId: string
+  paymentMethod: string
+}
 
 const statusConfig = {
   completed: { labelKey: "statusCompleted", statusValue: "SUCCESS" },
@@ -16,28 +31,31 @@ const statusConfig = {
   cancelled: { labelKey: "statusCancelled", statusValue: "CANCEL" },
 } as const
 
-const orderTypes = [
-  { value: "PIPELINE_PAYMENT", label: "认证订单 (Pipeline)" },
-  { value: "STAGE_PAYMENT", label: "阶段订单 (Stage)" },
-  { value: "COURSE_RETAKE_PAYMENT", label: "课时重修订单 (Retake)" },
-  { value: "CREDENTIAL_APPLICATION_ORDER", label: "证书申请订单 (Credential)" },
-]
-
 const { t, lang } = useTranslation()
+const router = useRouter()
+
 const orders = ref<OrderItem[]>([])
 const totalSpent = ref(0)
 const completedCount = ref(0)
 const loading = ref(true)
-const selectedOrderType = ref("PIPELINE_PAYMENT")
-const displayCurrency = computed(() => orders.value.find((order) => order.currency)?.currency || "USD")
-const totalSpentLabel = computed(() => formatMoney(totalSpent.value, displayCurrency.value))
-
-import { useRouter } from "vue-router"
-
+const page = ref(1)
+const pageSize = 10
+const totalOrders = ref(0)
+const totalPages = ref(0)
+const invoiceLoading = ref<string | null>(null)
 const showPurchaseDialog = ref(false)
 const selectedCourseName = ref("")
 const selectedPipelineId = ref("")
-const router = useRouter()
+
+const displayCurrency = computed(() => orders.value.find((order) => order.currency)?.currency || "USD")
+const totalSpentLabel = computed(() => formatMoney(totalSpent.value, displayCurrency.value))
+const invoiceOpeningLabel = computed(() => (lang.value === "zh" ? "正在打开发票，请稍候..." : "Opening invoice. Please wait..."))
+const orderRangeLabel = computed(() => {
+  if (totalOrders.value === 0) return "0 / 0"
+  const start = (page.value - 1) * pageSize + 1
+  const end = Math.min(page.value * pageSize, totalOrders.value)
+  return `${start}-${end} / ${totalOrders.value}`
+})
 
 function handleOrderClick(order: OrderItem) {
   if (order.status !== "completed" && order.pipelineId) {
@@ -49,11 +67,8 @@ function handleOrderClick(order: OrderItem) {
   }
 }
 
-const invoiceLoading = ref<string | null>(null)
-const invoiceOpeningLabel = computed(() => (lang.value === "zh" ? "正在打开发票，请稍候..." : "Opening invoice. Please wait..."))
-
 async function viewInvoice(orderId: string) {
-  if (invoiceLoading.value) return
+  if (!orderId || invoiceLoading.value) return
   invoiceLoading.value = orderId
   const redirectUrl = `/invoice-redirect?orderId=${encodeURIComponent(orderId)}`
   window.open(redirectUrl, "_blank", "noopener,noreferrer")
@@ -77,18 +92,25 @@ function formatMoney(amount: number, currency = "USD") {
 async function fetchOrders() {
   loading.value = true
   try {
-    const url = `/api/orders?biz_type=${selectedOrderType.value}`
-    const res = await apiClient(url)
-    totalSpent.value = res.total_amount || 0
-    completedCount.value = res.completed || 0
+    const params = new URLSearchParams({
+      page: String(page.value),
+      page_size: String(pageSize),
+    })
+    const res = await apiClient(`/api/orders?${params.toString()}`)
+    totalSpent.value = Number(res.total_amount || 0)
+    completedCount.value = Number(res.completed || 0)
+    totalOrders.value = Number(res.total_orders || 0)
+    totalPages.value = Number(res.total_pages || 0)
     if (Array.isArray(res.orders)) {
       orders.value = res.orders.map((o: any) => ({
         id: o.order_id,
+        invoiceOrderId: o.pipeline_pay_order_ulid || "",
+        canViewInvoice: Boolean(o.can_view_invoice && o.pipeline_pay_order_ulid),
         items: [o.product_name],
         date: o.created_at,
         currency: (o.currency || "USD").toUpperCase(),
         amount: o.amount > 0 ? formatMoney(o.amount, o.currency || "USD") : "-",
-        status: (o.status in statusConfig ? o.status : "pending") as keyof typeof statusConfig,
+        status: (o.status in statusConfig ? o.status : "pending") as OrderStatus,
         rawStatus: o.raw_status,
         pipelineId: o.pipeline_id,
         paymentMethod: o.payment_method,
@@ -99,14 +121,19 @@ async function fetchOrders() {
   } catch (err) {
     console.error("Failed to fetch orders:", err)
     orders.value = []
+    totalOrders.value = 0
+    totalPages.value = 0
   } finally {
     loading.value = false
   }
 }
 
-watch(selectedOrderType, () => {
+function goToPage(nextPage: number) {
+  if (loading.value) return
+  if (nextPage < 1 || (totalPages.value > 0 && nextPage > totalPages.value)) return
+  page.value = nextPage
   fetchOrders()
-})
+}
 
 onMounted(() => {
   fetchOrders()
@@ -130,7 +157,7 @@ onMounted(() => {
         <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
         <div class="flex items-center gap-4">
           <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 transition-transform group-hover:scale-105"><ShoppingCart class="h-6 w-6 text-primary" /></div>
-          <div><p class="text-2xl font-bold text-card-foreground">{{ orders.length }}</p><p class="text-sm text-muted-foreground">{{ t.orders.totalOrders }}</p></div>
+          <div><p class="text-2xl font-bold text-card-foreground">{{ totalOrders }}</p><p class="text-sm text-muted-foreground">{{ t.orders.totalOrders }}</p></div>
         </div>
       </div>
       <div class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
@@ -155,15 +182,7 @@ onMounted(() => {
           <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10"><Receipt class="h-4 w-4 text-primary" /></div>
           <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
         </div>
-        <div class="flex items-center gap-2">
-          <label class="text-sm font-medium text-muted-foreground whitespace-nowrap">订单类型</label>
-          <select 
-            v-model="selectedOrderType"
-            class="h-9 rounded-md border border-slate-200 bg-white px-3 py-1 text-sm text-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          >
-            <option v-for="opt in orderTypes" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </select>
-        </div>
+        <div class="text-sm text-muted-foreground">{{ orderRangeLabel }}</div>
       </div>
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground"><Loader2 class="h-5 w-5 animate-spin" /> {{ t.common.loading }}</div>
       <div v-else-if="orders.length === 0" class="flex flex-col items-center justify-center px-4 py-14 text-center">
@@ -184,9 +203,8 @@ onMounted(() => {
               </span>
             </div>
             <div class="text-right"><p class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p></div>
-            
-            <button v-if="order.status === 'completed'" @click.stop="viewInvoice(order.id)" class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground" title="查看发票 / View Invoice">
-              <Loader2 v-if="invoiceLoading === order.id" class="h-4 w-4 animate-spin text-primary" />
+            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground" title="查看发票 / View Invoice">
+              <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin text-primary" />
               <FileText v-else class="h-4 w-4" />
               <span class="sr-only">{{ invoiceOpeningLabel }}</span>
             </button>
@@ -195,14 +213,26 @@ onMounted(() => {
             <ChevronRight class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
           </div>
         </div>
+        <div class="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-muted-foreground">
+          <span>{{ orderRangeLabel }}</span>
+          <div class="flex items-center gap-2">
+            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page <= 1 || loading" @click="goToPage(page - 1)">
+              {{ lang === "zh" ? "上一页" : "Previous" }}
+            </button>
+            <span class="min-w-20 text-center">{{ page }} / {{ totalPages || 1 }}</span>
+            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="totalPages === 0 || page >= totalPages || loading" @click="goToPage(page + 1)">
+              {{ lang === "zh" ? "下一页" : "Next" }}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-    
-    <PurchaseDialog 
+
+    <PurchaseDialog
       v-if="showPurchaseDialog"
-      v-model:open="showPurchaseDialog" 
-      :course-name="selectedCourseName" 
-      :pipeline-id="selectedPipelineId" 
+      v-model:open="showPurchaseDialog"
+      :course-name="selectedCourseName"
+      :pipeline-id="selectedPipelineId"
     />
   </AppShell>
 </template>

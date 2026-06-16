@@ -541,6 +541,10 @@ export const zh = {
     deletePublishedBlocked: "已发布管线不能直接删除",
     loadLmsFailed: "已发布课程加载失败",
     loadCredentialsFailed: "资格/证书定义加载失败",
+    loadPdfTemplatesFailed: "PDF 模板加载失败",
+    selectPdfTemplate: "选择 PDF 模板",
+    noPdfTemplates: "暂无 PDF 模板，请先到 PDF 模板配置里创建。",
+    certTemplateRequired: "保存前请为 {{name}} 选择 PDF 模板。",
   },
   progPage: {
     title: "管线管理",
