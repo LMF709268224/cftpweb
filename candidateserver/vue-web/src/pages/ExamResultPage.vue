@@ -38,7 +38,7 @@ onMounted(async () => {
     </div>
     <div v-else-if="!examId" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">{{ t.examsPage.selectExamFirst }}</div>
     <div v-else-if="!result || result.has_result === false" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">{{ t.examsPage.noScoreDetails }}</div>
-    <div v-else class="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+    <div v-else>
       <section class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="mb-4 flex flex-wrap items-center gap-2">
           <span :class="['badge border', statusBadgeClassForStatusValue(result.is_passed ? 'SUCCESS' : 'FAILED')]">
@@ -66,11 +66,6 @@ onMounted(async () => {
           <RouterLink to="/exams" class="btn btn-primary"><ClipboardList class="h-4 w-4" /> {{ t.examsPage.backToExams }}</RouterLink>
           <RouterLink to="/certificates" class="btn btn-outline">{{ t.examsPage.viewCertificate }} <ExternalLink class="h-4 w-4" /></RouterLink>
         </div>
-      </section>
-      <section class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-        <h2 class="mb-4 text-lg font-semibold text-foreground">{{ t.examsPage.scoreDetails }}</h2>
-        <pre v-if="result.score_details_raw" class="max-h-[560px] overflow-auto whitespace-pre-wrap rounded-lg bg-muted/30 p-4 text-xs leading-6 text-muted-foreground">{{ result.score_details_raw }}</pre>
-        <div v-else class="rounded-lg bg-muted/30 p-4 text-sm text-muted-foreground">{{ t.examsPage.noScoreDetails }}</div>
       </section>
     </div>
   </AppShell>
