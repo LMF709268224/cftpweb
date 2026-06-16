@@ -500,6 +500,7 @@ export const zh = {
     noUnits: "暂无单元",
     selectPipelineHint: "请选择或创建一个管线后配置结构",
     saveStructure: "保存结构",
+    saveQualifications: "保存资格/证书配置",
     preview: "管线预览",
     noPreview: "暂无预览",
     instanceOps: "考生管线实例",
@@ -1054,3 +1055,4 @@ export const zh = {
 }
 
 export type AppTranslations = typeof zh;
+

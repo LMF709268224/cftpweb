@@ -50,12 +50,14 @@ func (h *Handler) ListStageOrders(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	candidateULID := strings.TrimSpace(r.URL.Query().Get("candidate_ulid"))
 	bizType := strings.TrimSpace(r.URL.Query().Get("biz_type"))
+	bizRefULID := strings.TrimSpace(r.URL.Query().Get("biz_ref_ulid"))
 	orderStatus := strings.TrimSpace(r.URL.Query().Get("order_status"))
 	paymentStatus := strings.TrimSpace(r.URL.Query().Get("payment_status"))
 
 	req := &mallpb.ListOrdersRequest{
 		CandidateUlid: candidateULID,
 		BizType:       bizType,
+		BizRefUlid:    bizRefULID,
 		OrderStatus:   orderStatus,
 		PaymentStatus: paymentStatus,
 		Limit:         int32(parseUint32Query(r, "limit")),

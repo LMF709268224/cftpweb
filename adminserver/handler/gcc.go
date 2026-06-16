@@ -83,15 +83,45 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if fromPipelineID != "" {
-		req := &gccpb.DuplicatePipelineDraftRequest{
-			FromPipelineId: fromPipelineID,
-			PipelineId:     newLmsID(),
-			Name:           strings.TrimSpace(input.Name),
-		}
-		if !requireRequestFields(w, req.FromPipelineId, "from_pipeline_id", req.Name, "name") {
+		source, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
+			Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: fromPipelineID},
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
 			return
 		}
-		resp, err := h.Gcc.DuplicatePipelineDraft(r.Context(), req)
+		req := &gccpb.CreatePipelineDraftRequest{
+			CategoryTips:       firstNonEmpty(input.CategoryTips, source.GetCategoryTips()),
+			Name:               firstNonEmpty(input.Name, source.GetName()+" (Copy)"),
+			PipelineId:         newLmsID(),
+			PipelineGuid:       newLmsID(),
+			Respath:            firstNonEmpty(input.Respath, source.GetRespath()),
+			ThumbnailObjectKey: source.GetThumbnailObjectKey(),
+			ThumbnailFileHash:  source.GetThumbnailFileHash(),
+		}
+		if !requireRequestFields(w, req.CategoryTips, "category_tips", req.Name, "name", req.Respath, "respath") {
+			return
+		}
+		created, err := h.Gcc.CreatePipelineDraft(r.Context(), req)
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		if len(source.GetStages()) == 0 {
+			WriteJSON(w, http.StatusOK, created)
+			return
+		}
+		structureReq := &gccpb.UpdatePipelineStructureRequest{
+			PipelineId:            firstNonEmpty(created.GetPipelineId(), req.PipelineId),
+			Stages:                clonePipelineStages(source.GetStages()),
+			UnlockQuals:           clonePipelineQualifications(source.GetUnlockQuals()),
+			CertsQuals:            clonePipelineQualifications(source.GetCertsQuals()),
+			UnlockStripeProductId: source.GetUnlockStripeProductId(),
+			UnlockStripePriceId:   source.GetUnlockStripePriceId(),
+			Certs:                 clonePipelineQualifications(source.GetCerts()),
+			PackageCoupon:         source.GetPackageCoupon(),
+		}
+		resp, err := h.Gcc.UpdatePipelineStructure(r.Context(), structureReq)
 		if err != nil {
 			HandleGrpcError(w, err)
 			return
@@ -148,6 +178,9 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 		return
 	}
 	for i, stage := range req.Stages {
+		if stage.StageId == "" {
+			stage.StageId = newLmsID()
+		}
 		if !requireRequestField(w, stage.Name, "stages["+strconv.Itoa(i)+"].name") {
 			return
 		}
@@ -316,4 +349,59 @@ func requirePairedFields(w http.ResponseWriter, left string, leftName string, ri
 	}
 	WriteError(w, http.StatusBadRequest, ErrInvalidRequest, leftName+" is required when "+rightName+" is provided")
 	return false
+}
+
+func clonePipelineStages(stages []*gccpb.StageConfig) []*gccpb.StageConfig {
+	cloned := make([]*gccpb.StageConfig, 0, len(stages))
+	for _, stage := range stages {
+		if stage == nil {
+			continue
+		}
+		nextStage := &gccpb.StageConfig{
+			StageId:   newLmsID(),
+			Name:      stage.GetName(),
+			SortOrder: stage.GetSortOrder(),
+			Units:     make([]*gccpb.UnitConfig, 0, len(stage.GetUnits())),
+		}
+		for _, unit := range stage.GetUnits() {
+			if unit == nil {
+				continue
+			}
+			nextStage.Units = append(nextStage.Units, &gccpb.UnitConfig{
+				UnitId:                   newLmsID(),
+				Name:                     unit.GetName(),
+				ExemptionQuals:           append([]string(nil), unit.GetExemptionQuals()...),
+				AllowExemption:           unit.GetAllowExemption(),
+				StripeProductId:          unit.GetStripeProductId(),
+				StripePriceId:            unit.GetStripePriceId(),
+				ExemptionStripeProductId: unit.GetExemptionStripeProductId(),
+				ExemptionStripePriceId:   unit.GetExemptionStripePriceId(),
+				RetakeStripeProductId:    unit.GetRetakeStripeProductId(),
+				RetakeStripePriceId:      unit.GetRetakeStripePriceId(),
+				GlmsCourseId:             unit.GetGlmsCourseId(),
+				Program:                  unit.GetProgram(),
+				ExamId:                   unit.GetExamId(),
+				FormCode:                 unit.GetFormCode(),
+			})
+		}
+		cloned = append(cloned, nextStage)
+	}
+	return cloned
+}
+
+func clonePipelineQualifications(items []*gccpb.Qualification) []*gccpb.Qualification {
+	cloned := make([]*gccpb.Qualification, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		cloned = append(cloned, &gccpb.Qualification{
+			QualId:                item.GetQualId(),
+			NameHint:              item.GetNameHint(),
+			PdfTemplateId:         item.GetPdfTemplateId(),
+			ReviewStripeProductId: item.GetReviewStripeProductId(),
+			ReviewStripePriceId:   item.GetReviewStripePriceId(),
+		})
+	}
+	return cloned
 }
