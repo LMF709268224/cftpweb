@@ -50,69 +50,23 @@ function handleOrderClick(order: OrderItem) {
 }
 
 const invoiceLoading = ref<string | null>(null)
-const INVOICE_DOWNLOAD_TIMEOUT_MS = 20000
 
 async function viewInvoice(orderId: string) {
   if (invoiceLoading.value) return
   try {
     invoiceLoading.value = orderId
-    if (await openHostedInvoice(orderId)) return
-    await downloadInvoicePdf(orderId)
-  } catch (err) {
-    console.error("Failed to view invoice:", err)
-    const isTimeout = err instanceof DOMException && err.name === "AbortError"
-    alert(isTimeout ? "打开发票超时，请稍后重试 (Invoice request timed out)" : "获取发票失败，请稍后重试 (Failed to open invoice)")
-  } finally {
-    invoiceLoading.value = null
-  }
-}
-
-async function downloadInvoicePdf(orderId: string) {
-  const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), INVOICE_DOWNLOAD_TIMEOUT_MS)
-  try {
-    const headers = new Headers()
-    const token = localStorage.getItem("access_token")
-    if (token) headers.set("Authorization", `Bearer ${token}`)
-
-    const response = await fetch(`/api/invoices/${encodeURIComponent(orderId)}/pdf`, {
-      credentials: "include",
-      headers,
-      signal: controller.signal,
-    })
-
-    if (!response.ok) {
-      throw new Error(`Invoice PDF request failed: ${response.status}`)
-    }
-
-    const blob = await response.blob()
-    const objectUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
-    const link = document.createElement("a")
-    link.href = objectUrl
-    link.download = getInvoiceFilename(response.headers.get("Content-Disposition"), orderId)
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
-  } catch (err) {
-    console.error("Failed to download invoice:", err)
-    throw err
-  } finally {
-    window.clearTimeout(timeoutId)
-  }
-}
-
-async function openHostedInvoice(orderId: string) {
-  try {
     const res = await apiClient(`/api/invoices/${encodeURIComponent(orderId)}`)
     if (res?.invoice_url) {
       window.open(res.invoice_url, "_blank", "noopener,noreferrer")
-      return true
+      return
     }
+    throw new Error("invoice_url is empty")
   } catch (err) {
-    console.error("Failed to open hosted invoice fallback:", err)
+    console.error("Failed to view invoice:", err)
+    alert("获取发票失败，请稍后重试 (Failed to open invoice)")
+  } finally {
+    invoiceLoading.value = null
   }
-  return false
 }
 
 function formatMoney(amount: number, currency = "USD") {
@@ -125,22 +79,6 @@ function formatMoney(amount: number, currency = "USD") {
   } catch {
     return `${normalizedCurrency} ${amount.toLocaleString()}`
   }
-}
-
-function getInvoiceFilename(disposition: string | null, orderId: string) {
-  if (disposition) {
-    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
-    if (utf8Match?.[1]) {
-      return decodeURIComponent(utf8Match[1])
-    }
-
-    const plainMatch = disposition.match(/filename="?([^";]+)"?/i)
-    if (plainMatch?.[1]) {
-      return plainMatch[1].endsWith(".pdf") ? plainMatch[1] : `${plainMatch[1]}.pdf`
-    }
-  }
-
-  return `invoice-${orderId}.pdf`
 }
 
 async function fetchOrders() {

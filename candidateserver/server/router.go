@@ -32,6 +32,10 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	r.Route("/api/public/webhooks", func(r chi.Router) {
 		r.Post("/exams/callback/{urlType}/{examId}", h.ThirdPartyExamCallback)
 	})
+	r.Route("/api/public/pdf-preview", func(r chi.Router) {
+		r.Get("/lessons/{lessonId}", h.PreviewLessonPDFPublic)
+		r.Get("/resource", h.PreviewResourceURLPublic)
+	})
 
 	r.Get("/api/public/config", h.GetPublicConfig)
 
@@ -76,9 +80,11 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/materials", h.ListMaterials)
 			r.Get("/materials/{materialId}/url", h.GetAccessURL)
 			r.Get("/resource-preview", h.PreviewResourceURL)
+			r.Get("/resource-preview-url", h.GetResourcePreviewURL)
 			r.Get("/courses/{courseId}/complete", h.GetPipelineCourse)
 			r.Get("/lessons/{lessonId}", h.GetPipelineLessonDetail)
 			r.Get("/lessons/{lessonId}/url", h.GetLessonURL)
+			r.Get("/lessons/{lessonId}/preview-url", h.GetLessonPreviewURL)
 			r.Get("/lessons/{lessonId}/preview", h.PreviewLessonPDF)
 			r.Post("/lessons/{lessonId}/complete", h.CompletePipelineLesson)
 			r.Get("/{pipelineUlid}/certificate-url", h.GetPipelineCertificateViewURL)

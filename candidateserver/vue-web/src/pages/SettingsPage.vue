@@ -5,6 +5,7 @@ import { toast } from "vue-sonner"
 import { Loader2 } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
+import { clearAccessToken } from "@/lib/authStorage"
 import { getMessage } from "@/lib/messages"
 import { useTranslation } from "@/lib/language"
 
@@ -12,10 +13,41 @@ const route = useRoute()
 const router = useRouter()
 const { t, lang } = useTranslation()
 const activeTab = ref(String(route.query.tab || "profile"))
-const profile = reactive({ name: "", displayName: "", email: "", affiliation: "", title: "", realName: "", bio: "", gender: "", birthday: "", education: "" })
+const profile = reactive({
+  name: "",
+  displayName: "",
+  email: "",
+  firstName: "",
+  lastName: "",
+  homePhone: "",
+  workPhone: "",
+  gender: "",
+  birthday: "",
+  country: "",
+  province: "",
+  city: "",
+  address: "",
+  postalCode: "",
+  affiliation: "",
+  title: "",
+  realName: "",
+  bio: "",
+  education: "",
+})
 const password = reactive({ oldPassword: "", newPassword: "", confirmPassword: "" })
 const isProfileLoading = ref(false)
 const isPasswordLoading = ref(false)
+
+function normalizeDate(value: unknown) {
+  return typeof value === "string" ? value.split("T")[0] : ""
+}
+
+function normalizeAddress(value: unknown, fallback: unknown) {
+  if (typeof value === "string") return value
+  if (Array.isArray(fallback)) return fallback.join(", ")
+  if (typeof fallback === "string") return fallback
+  return ""
+}
 
 watch(
   () => route.query.tab,
@@ -37,12 +69,21 @@ onMounted(async () => {
       profile.name = payload.name || ""
       profile.displayName = payload.display_name || ""
       profile.email = payload.email || ""
+      profile.firstName = payload.first_name || ""
+      profile.lastName = payload.last_name || ""
+      profile.homePhone = payload.home_phone || payload.phone || ""
+      profile.workPhone = payload.work_phone || ""
+      profile.gender = payload.gender || ""
+      profile.birthday = normalizeDate(payload.birthday)
+      profile.country = payload.country || payload.region || ""
+      profile.province = payload.province || ""
+      profile.city = payload.city || payload.location || ""
+      profile.address = normalizeAddress(payload.address_text, payload.address)
+      profile.postalCode = payload.postal_code || ""
       profile.affiliation = payload.affiliation || ""
       profile.title = payload.title || ""
       profile.realName = payload.real_name || ""
       profile.bio = payload.bio || ""
-      profile.gender = payload.gender || ""
-      profile.birthday = payload.birthday || ""
       profile.education = payload.education || ""
     }
   } catch {
@@ -58,12 +99,21 @@ async function handleUpdateProfile() {
       body: JSON.stringify({
         display_name: profile.displayName,
         email: profile.email,
+        first_name: profile.firstName,
+        last_name: profile.lastName,
+        home_phone: profile.homePhone,
+        work_phone: profile.workPhone,
+        gender: profile.gender,
+        birthday: profile.birthday,
+        country: profile.country,
+        province: profile.province,
+        city: profile.city,
+        address: profile.address,
+        postal_code: profile.postalCode,
         affiliation: profile.affiliation,
         title: profile.title,
         real_name: profile.realName,
         bio: profile.bio,
-        gender: profile.gender,
-        birthday: profile.birthday,
         education: profile.education,
       }),
     })
@@ -89,6 +139,7 @@ async function handleUpdatePassword() {
       body: JSON.stringify({ old_password: password.oldPassword, new_password: password.newPassword }),
     })
     toast.success(getMessage("PASSWORD_UPDATE_SUCCESS", lang.value))
+    clearAccessToken()
     localStorage.removeItem("is_authenticated")
     localStorage.removeItem("user_name")
     setTimeout(() => { window.location.href = "/login" }, 1500)
@@ -134,8 +185,17 @@ async function handleUpdatePassword() {
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.email }}</span><input v-model="profile.email" class="input bg-muted" disabled /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.displayName }}</span><input v-model="profile.displayName" class="input" :placeholder="t.settings.displayNamePlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.realName }}</span><input v-model="profile.realName" class="input" :placeholder="t.settings.realNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.firstName }}</span><input v-model="profile.firstName" class="input" :placeholder="t.settings.firstNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.lastName }}</span><input v-model="profile.lastName" class="input" :placeholder="t.settings.lastNamePlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.gender }}</span><input v-model="profile.gender" class="input" :placeholder="t.settings.genderPlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.birthday }}</span><input v-model="profile.birthday" class="input" type="date" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.homePhone }}</span><input v-model="profile.homePhone" class="input" type="tel" :placeholder="t.settings.homePhonePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.workPhone }}</span><input v-model="profile.workPhone" class="input" type="tel" :placeholder="t.settings.workPhonePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.country }}</span><input v-model="profile.country" class="input" :placeholder="t.settings.countryPlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.province }}</span><input v-model="profile.province" class="input" :placeholder="t.settings.provincePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.city }}</span><input v-model="profile.city" class="input" :placeholder="t.settings.cityPlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.postalCode }}</span><input v-model="profile.postalCode" class="input" :placeholder="t.settings.postalCodePlaceholder" /></label>
+            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.address }}</span><input v-model="profile.address" class="input" :placeholder="t.settings.addressPlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.affiliation }}</span><input v-model="profile.affiliation" class="input" :placeholder="t.settings.affiliationPlaceholder" /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.jobTitle }}</span><input v-model="profile.title" class="input" :placeholder="t.settings.jobTitlePlaceholder" /></label>
             <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.education }}</span><input v-model="profile.education" class="input" :placeholder="t.settings.educationPlaceholder" /></label>

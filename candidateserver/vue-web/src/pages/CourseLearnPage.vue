@@ -659,11 +659,12 @@ async function markCompleted() {
 
 async function openLessonPdf() {
   if (!lesson.value?.lesson_id) return
-  const params = new URLSearchParams({
-    lessonId: lesson.value.lesson_id,
-    title: lesson.value.title || "PDF Lesson",
-  })
-  window.open(`/pdf-preview?${params.toString()}`, "_blank", "noopener,noreferrer")
+  const params = new URLSearchParams({ lessonId: lesson.value.lesson_id })
+  if (lesson.value.title) {
+    params.set("title", lesson.value.title)
+  }
+  const previewUrl = `/pdf-preview?${params.toString()}`
+  window.open(previewUrl, "_blank", "noopener,noreferrer")
 }
 
 async function openInlinePdf(url: string) {

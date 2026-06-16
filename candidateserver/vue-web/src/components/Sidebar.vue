@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
 import { LogOut, Menu, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
+import { clearAccessToken } from "@/lib/authStorage"
 import { getCachedDashboard } from "@/lib/dashboardCache"
 import { useTranslation } from "@/lib/language"
 
@@ -46,7 +47,7 @@ async function handleLogout() {
   } catch {
     // apiClient already shows localized errors.
   } finally {
-    localStorage.removeItem("access_token")
+    clearAccessToken()
     localStorage.removeItem("user_name")
     window.location.href = "/login"
   }

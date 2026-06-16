@@ -2,6 +2,9 @@ package handler
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"log/slog"
@@ -10,6 +13,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
@@ -438,6 +442,55 @@ func (h *Handler) GetLessonURL(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *Handler) GetLessonPreviewURL(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
+	if !requireRequestFields(w, candidateID, "candidate_id", lessonID, "lesson_id") {
+		return
+	}
+
+	viewResp, lesson, err := h.lessonViewURL(r.Context(), candidateID, lessonID)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	expiresAt := time.Now().Add(10 * time.Minute).Unix()
+	token := h.signPDFPreviewToken(candidateID, "lesson", lessonID, expiresAt)
+	params := url.Values{}
+	params.Set("token", token)
+	previewURL := "/api/public/pdf-preview/lessons/" + url.PathEscape(lessonID) + "?" + params.Encode()
+
+	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
+		URL:       previewURL,
+		ExpiresAt: firstNonEmpty(viewResp.GetExpiresAt(), time.Unix(expiresAt, 0).UTC().Format(time.RFC3339)),
+		Title:     lesson.GetTitle(),
+	})
+}
+
+func (h *Handler) GetResourcePreviewURL(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
+	if !requireRequestFields(w, candidateID, "candidate_id", resourceURL, "src") {
+		return
+	}
+	if !isValidPreviewResourceURL(resourceURL) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid resource url")
+		return
+	}
+
+	expiresAt := time.Now().Add(10 * time.Minute).Unix()
+	token := h.signPDFPreviewToken(candidateID, "resource", resourceURL, expiresAt)
+	params := url.Values{}
+	params.Set("src", resourceURL)
+	params.Set("token", token)
+
+	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
+		URL:       "/api/public/pdf-preview/resource?" + params.Encode(),
+		ExpiresAt: time.Unix(expiresAt, 0).UTC().Format(time.RFC3339),
+	})
+}
+
 func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
@@ -482,6 +535,28 @@ func (h *Handler) PreviewLessonPDF(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (h *Handler) PreviewLessonPDFPublic(w http.ResponseWriter, r *http.Request) {
+	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
+	token := strings.TrimSpace(r.URL.Query().Get("token"))
+	candidateID, ok := h.verifyPDFPreviewToken(token, "lesson", lessonID)
+	if !ok || !requireRequestFields(w, candidateID, "candidate_id", lessonID, "lesson_id") {
+		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
+		return
+	}
+
+	viewResp, lesson, err := h.lessonViewURL(r.Context(), candidateID, lessonID)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	if strings.TrimSpace(viewResp.GetViewUrl()) == "" {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "empty view url")
+		return
+	}
+
+	h.streamPDFPreview(w, r, viewResp.GetViewUrl(), sanitizeFilename(lesson.GetTitle())+".pdf", "lesson", lessonID)
+}
+
 func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
@@ -489,8 +564,7 @@ func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parsed, err := url.Parse(resourceURL)
-	if err != nil || parsed == nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+	if !isValidPreviewResourceURL(resourceURL) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid resource url")
 		return
 	}
@@ -524,6 +598,115 @@ func (h *Handler) PreviewResourceURL(w http.ResponseWriter, r *http.Request) {
 	if _, err := io.Copy(w, proxyResp.Body); err != nil {
 		slog.Warn("failed to stream resource preview", "error", err, "resource_url", resourceURL)
 	}
+}
+
+func (h *Handler) PreviewResourceURLPublic(w http.ResponseWriter, r *http.Request) {
+	resourceURL := strings.TrimSpace(r.URL.Query().Get("src"))
+	token := strings.TrimSpace(r.URL.Query().Get("token"))
+	candidateID, ok := h.verifyPDFPreviewToken(token, "resource", resourceURL)
+	if !ok || !requireRequestFields(w, candidateID, "candidate_id", resourceURL, "src") {
+		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
+		return
+	}
+	if !isValidPreviewResourceURL(resourceURL) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid resource url")
+		return
+	}
+
+	h.streamPDFPreview(w, r, resourceURL, "resource.pdf", "resource", resourceURL)
+}
+
+func (h *Handler) streamPDFPreview(w http.ResponseWriter, r *http.Request, sourceURL string, filename string, logKind string, logID string) {
+	proxyReq, err := http.NewRequestWithContext(r.Context(), http.MethodGet, sourceURL, nil)
+	if err != nil {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "invalid preview url")
+		return
+	}
+	if rangeHeader := strings.TrimSpace(r.Header.Get("Range")); rangeHeader != "" {
+		proxyReq.Header.Set("Range", rangeHeader)
+	}
+	if ifRange := strings.TrimSpace(r.Header.Get("If-Range")); ifRange != "" {
+		proxyReq.Header.Set("If-Range", ifRange)
+	}
+
+	proxyResp, err := http.DefaultClient.Do(proxyReq)
+	if err != nil {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "failed to open preview")
+		return
+	}
+	defer proxyResp.Body.Close()
+
+	if proxyResp.StatusCode < 200 || proxyResp.StatusCode >= 300 {
+		slog.Warn("preview upstream returned non-2xx", "kind", logKind, "id", logID, "status", proxyResp.StatusCode)
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "failed to open preview")
+		return
+	}
+
+	copyPreviewHeaders(w.Header(), proxyResp.Header)
+	contentType := strings.TrimSpace(proxyResp.Header.Get("Content-Type"))
+	if contentType == "" || contentType == "application/octet-stream" {
+		contentType = "application/pdf"
+	}
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s"`, sanitizeFilename(filename)))
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(proxyResp.StatusCode)
+
+	if _, err := io.Copy(w, proxyResp.Body); err != nil {
+		slog.Warn("failed to stream preview", "error", err, "kind", logKind, "id", logID)
+	}
+}
+
+func (h *Handler) signPDFPreviewToken(candidateID string, resourceKind string, resourceID string, expiresAt int64) string {
+	payload := strings.Join([]string{candidateID, resourceKind, resourceID, strconv.FormatInt(expiresAt, 10)}, "\n")
+	mac := hmac.New(sha256.New, h.pdfPreviewSigningKey())
+	_, _ = mac.Write([]byte(payload))
+	signature := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	return base64.RawURLEncoding.EncodeToString([]byte(payload + "\n" + signature))
+}
+
+func (h *Handler) verifyPDFPreviewToken(token string, resourceKind string, resourceID string) (string, bool) {
+	decoded, err := base64.RawURLEncoding.DecodeString(token)
+	if err != nil {
+		return "", false
+	}
+	parts := strings.Split(string(decoded), "\n")
+	if len(parts) != 5 {
+		return "", false
+	}
+	candidateID := parts[0]
+	if parts[1] != resourceKind || parts[2] != resourceID {
+		return "", false
+	}
+	expiresAt, err := strconv.ParseInt(parts[3], 10, 64)
+	if err != nil || time.Now().Unix() > expiresAt {
+		return "", false
+	}
+
+	payload := strings.Join(parts[:4], "\n")
+	mac := hmac.New(sha256.New, h.pdfPreviewSigningKey())
+	_, _ = mac.Write([]byte(payload))
+	expected := base64.RawURLEncoding.EncodeToString(mac.Sum(nil))
+	if !hmac.Equal([]byte(expected), []byte(parts[4])) {
+		return "", false
+	}
+	return candidateID, candidateID != ""
+}
+
+func (h *Handler) pdfPreviewSigningKey() []byte {
+	key := strings.TrimSpace(h.CasdoorClientSecret)
+	if key == "" {
+		key = strings.TrimSpace(h.CasdoorClientId)
+	}
+	if key == "" {
+		key = "candidate-pdf-preview"
+	}
+	return []byte(key)
+}
+
+func isValidPreviewResourceURL(resourceURL string) bool {
+	parsed, err := url.Parse(resourceURL)
+	return err == nil && parsed != nil && (parsed.Scheme == "http" || parsed.Scheme == "https") && parsed.Host != ""
 }
 
 func (h *Handler) lessonViewURL(ctx context.Context, candidateID, lessonID string) (*lmspb.CreateViewURLResponse, *lmspb.Lesson, error) {
