@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onErrorCaptured, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { PDFViewer } from "@embedpdf/vue-pdf-viewer"
 import { AlertTriangle, ArrowLeft, FileText, Loader2 } from "lucide-vue-next"
@@ -9,7 +9,10 @@ const router = useRouter()
 const viewerSrc = ref("")
 const loading = ref(false)
 const errorMessage = ref("")
+const viewerError = ref(false)
 let objectUrl = ""
+
+const PDF_LOAD_TIMEOUT_MS = 20000
 
 const title = computed(() => String(route.query.title || "PDF Preview"))
 const source = computed(() => {
@@ -39,6 +42,7 @@ const viewerConfig = computed(() => ({
 async function loadPdf() {
   cleanupObjectUrl()
   errorMessage.value = ""
+  viewerError.value = false
 
   if (!source.value) {
     errorMessage.value = "No PDF resource found for preview."
@@ -46,6 +50,8 @@ async function loadPdf() {
   }
 
   loading.value = true
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), PDF_LOAD_TIMEOUT_MS)
   try {
     const headers = new Headers()
     const token = localStorage.getItem("access_token")
@@ -54,6 +60,7 @@ async function loadPdf() {
     const res = await fetch(source.value, {
       credentials: "include",
       headers,
+      signal: controller.signal,
     })
 
     if (!res.ok) {
@@ -66,9 +73,12 @@ async function loadPdf() {
     const blob = await res.blob()
     objectUrl = URL.createObjectURL(new Blob([blob], { type: "application/pdf" }))
     viewerSrc.value = objectUrl
-  } catch {
-    errorMessage.value = "PDF preview failed. Please check your network and try again."
+  } catch (err) {
+    errorMessage.value = err instanceof DOMException && err.name === "AbortError"
+      ? "PDF preview timed out. Please reload or go back and try again."
+      : "PDF preview failed. Please check your network and try again."
   } finally {
+    window.clearTimeout(timeoutId)
     loading.value = false
   }
 }
@@ -83,6 +93,13 @@ function goBack() {
   if (window.history.length > 1) router.back()
   else router.push("/courses")
 }
+
+onErrorCaptured((err) => {
+  console.error("PDF viewer failed:", err)
+  viewerError.value = true
+  errorMessage.value = "The advanced PDF viewer failed to load. A basic browser preview is shown instead."
+  return false
+})
 
 watch(source, loadPdf, { immediate: true })
 onBeforeUnmount(cleanupObjectUrl)
@@ -106,7 +123,13 @@ onBeforeUnmount(cleanupObjectUrl)
 
     <main class="min-h-0 flex-1 p-3">
       <div v-if="viewerSrc" class="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,74,82,0.08)]">
-        <PDFViewer class="h-full w-full" :config="viewerConfig" />
+        <PDFViewer v-if="!viewerError" class="h-full w-full" :config="viewerConfig" />
+        <iframe
+          v-else
+          :src="viewerSrc"
+          class="h-full w-full border-0"
+          title="PDF preview fallback"
+        />
       </div>
       <div v-else class="flex h-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white text-sm text-slate-500">
         <div v-if="loading" class="flex items-center gap-2">

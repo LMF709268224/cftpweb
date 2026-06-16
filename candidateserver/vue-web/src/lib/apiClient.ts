@@ -1,22 +1,55 @@
 import { toast } from "vue-sonner"
 import { getErrorMessage, localizeApiErrorMessage } from "./errorCodes"
 
-export async function apiClient(endpoint: string, options: RequestInit = {}) {
+type ApiClientOptions = RequestInit & {
+  timeoutMs?: number
+}
+
+const DEFAULT_API_TIMEOUT_MS = 15000
+
+export async function apiClient(endpoint: string, options: ApiClientOptions = {}) {
+  const { timeoutMs = DEFAULT_API_TIMEOUT_MS, signal, ...fetchOptions } = options
+  const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
   const headers = new Headers(options.headers)
   const token = localStorage.getItem("access_token")
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
+
+  if (signal) {
+    if (signal.aborted) {
+      controller.abort()
+    } else {
+      signal.addEventListener("abort", () => controller.abort(), { once: true })
+    }
+  }
 
   if (token) headers.set("Authorization", `Bearer ${token}`)
   if (options.body && !(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json")
   }
 
-  const res = await fetch(endpoint, {
-    credentials: "include",
-    ...options,
-    headers,
-  })
-
-  const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
+  let res: Response
+  try {
+    res = await fetch(endpoint, {
+      credentials: "include",
+      ...fetchOptions,
+      headers,
+      signal: controller.signal,
+    })
+  } catch (err) {
+    const isAbort = err instanceof DOMException && err.name === "AbortError"
+    const errorMsg = isAbort
+      ? currentLang === "zh"
+        ? "请求超时，请稍后重试"
+        : "Request timed out. Please try again."
+      : currentLang === "zh"
+        ? "网络请求失败，请检查网络后重试"
+        : "Network request failed. Please check your connection and try again."
+    toast.error(errorMsg)
+    throw new Error(errorMsg)
+  } finally {
+    window.clearTimeout(timeoutId)
+  }
 
   if (res.status === 401) {
     localStorage.removeItem("is_authenticated")
