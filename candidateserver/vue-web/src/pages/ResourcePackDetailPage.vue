@@ -22,6 +22,7 @@ type ResourcePackFile = {
 const route = useRoute()
 const { lang } = useTranslation()
 const loading = ref(false)
+const openingFileId = ref("")
 const files = ref<ResourcePackFile[]>([])
 const nextPageToken = ref("")
 
@@ -39,6 +40,8 @@ const copy = computed(() => lang.value === "zh"
       updated: "更新于",
       refresh: "刷新",
       missing: "缺少资源包 ID",
+      loading: "加载中...",
+      loadMore: "加载更多",
     }
   : {
       title: "Resource Pack Detail",
@@ -52,6 +55,8 @@ const copy = computed(() => lang.value === "zh"
       updated: "Updated",
       refresh: "Refresh",
       missing: "Missing resource pack ID",
+      loading: "Loading...",
+      loadMore: "Load more",
     })
 
 const orderedFiles = computed(() =>
@@ -96,13 +101,18 @@ async function loadFiles(pageToken = "") {
 
 async function openFile(file: ResourcePackFile) {
   if (!file.file_id) return
-  const resp = await apiClient(`/api/resource-pack-files/${encodeURIComponent(file.file_id)}/view-url`)
-  const url = resp?.view_url
-  if (!url) {
-    toast.error("No view URL")
-    return
+  openingFileId.value = file.file_id
+  try {
+    const resp = await apiClient(`/api/resource-pack-files/${encodeURIComponent(file.file_id)}/view-url`)
+    const url = resp?.view_url
+    if (!url) {
+      toast.error("No view URL")
+      return
+    }
+    window.open(url, "_blank", "noopener,noreferrer")
+  } finally {
+    openingFileId.value = ""
   }
-  window.open(url, "_blank", "noopener,noreferrer")
 }
 
 watch(packId, () => {
@@ -161,10 +171,15 @@ onMounted(() => {
             </div>
           </div>
         </div>
-        <button class="btn btn-primary shrink-0 rounded-lg shadow-sm shadow-primary/20" @click="openFile(file)">
-          <ExternalLink v-if="Number(file.file_type) === 1" class="h-4 w-4" />
+        <button
+          class="btn btn-primary shrink-0 rounded-lg shadow-sm shadow-primary/20"
+          :disabled="openingFileId === file.file_id"
+          @click="openFile(file)"
+        >
+          <RefreshCw v-if="openingFileId === file.file_id" class="h-4 w-4 animate-spin" />
+          <ExternalLink v-else-if="Number(file.file_type) === 1" class="h-4 w-4" />
           <Download v-else class="h-4 w-4" />
-          {{ Number(file.file_type) === 1 ? copy.open : copy.download }}
+          {{ openingFileId === file.file_id ? copy.loading : Number(file.file_type) === 1 ? copy.open : copy.download }}
         </button>
       </article>
     </section>
@@ -173,13 +188,13 @@ onMounted(() => {
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
         <FileArchive class="h-8 w-8 text-primary" />
       </div>
-      <h2 class="mt-4 text-lg font-semibold text-foreground">{{ loading ? "Loading..." : copy.emptyTitle }}</h2>
+      <h2 class="mt-4 text-lg font-semibold text-foreground">{{ loading ? copy.loading : copy.emptyTitle }}</h2>
       <p class="mt-2 text-sm text-muted-foreground">{{ copy.emptyDesc }}</p>
     </section>
 
     <div v-if="nextPageToken" class="mt-4 text-center">
       <button class="btn btn-outline rounded-lg" :disabled="loading" @click="loadFiles(nextPageToken)">
-        {{ loading ? "Loading..." : "Load more" }}
+        {{ loading ? copy.loading : copy.loadMore }}
       </button>
     </div>
   </AppShell>

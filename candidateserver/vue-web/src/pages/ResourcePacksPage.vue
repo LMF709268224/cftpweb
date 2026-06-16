@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { ChevronRight, PackageOpen, RefreshCw, Search } from "lucide-vue-next"
+import { PackageOpen, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -113,9 +113,8 @@ onMounted(() => {
           <p v-if="pack.respath">{{ copy.path }}: <span class="font-medium text-card-foreground">{{ pack.respath }}</span></p>
           <p v-if="pack.updated_at">{{ copy.updated }}: {{ pack.updated_at }}</p>
         </div>
-        <div class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-primary">
+        <div class="mt-4 flex h-9 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors group-hover:bg-primary/90">
           {{ copy.open }}
-          <ChevronRight class="h-4 w-4 transition group-hover:translate-x-1" />
         </div>
       </RouterLink>
     </section>
