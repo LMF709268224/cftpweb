@@ -1642,7 +1642,6 @@ type CreateCourseDraftRequest struct {
 	DurationMin          uint32                 `protobuf:"varint,5,opt,name=duration_min,json=durationMin,proto3" json:"duration_min,omitempty"`                            // 课程总时长（分钟）
 	CertificationEnabled bool                   `protobuf:"varint,6,opt,name=certification_enabled,json=certificationEnabled,proto3" json:"certification_enabled,omitempty"` // 是否启用结课认证
 	CertificationDefId   string                 `protobuf:"bytes,7,opt,name=certification_def_id,json=certificationDefId,proto3" json:"certification_def_id,omitempty"`      // 资格定义ID
-	FromCourseGuid       string                 `protobuf:"bytes,8,opt,name=from_course_guid,json=fromCourseGuid,proto3" json:"from_course_guid,omitempty"`                  // 从指定已发布版本深拷贝创建（可选，与手动创建二选一）
 	CourseId             string                 `protobuf:"bytes,9,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                      // 外部指定的课程版本ID ULID ([required])
 	CourseGuid           string                 `protobuf:"bytes,10,opt,name=course_guid,json=courseGuid,proto3" json:"course_guid,omitempty"`                               // 外部指定的课程业务唯一ID ULID ([required])
 	ThumbnailFileHash    string                 `protobuf:"bytes,11,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`        // 课程封面图SHA256哈希
@@ -1730,13 +1729,6 @@ func (x *CreateCourseDraftRequest) GetCertificationDefId() string {
 	return ""
 }
 
-func (x *CreateCourseDraftRequest) GetFromCourseGuid() string {
-	if x != nil {
-		return x.FromCourseGuid
-	}
-	return ""
-}
-
 func (x *CreateCourseDraftRequest) GetCourseId() string {
 	if x != nil {
 		return x.CourseId
@@ -1765,6 +1757,66 @@ func (x *CreateCourseDraftRequest) GetRespath() string {
 	return ""
 }
 
+type DuplicateCourseDraftRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FromCourseId  string                 `protobuf:"bytes,1,opt,name=from_course_id,json=fromCourseId,proto3" json:"from_course_id,omitempty"` // 数据源 course_id (特定版本唯一ID) [required]
+	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`               // 新的 course_id ULID (新草稿版本ID) [required]
+	Title         string                 `protobuf:"bytes,3,opt,name=title,proto3" json:"title,omitempty"`                                     // 新的课程标题 [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DuplicateCourseDraftRequest) Reset() {
+	*x = DuplicateCourseDraftRequest{}
+	mi := &file_lms_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DuplicateCourseDraftRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DuplicateCourseDraftRequest) ProtoMessage() {}
+
+func (x *DuplicateCourseDraftRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DuplicateCourseDraftRequest.ProtoReflect.Descriptor instead.
+func (*DuplicateCourseDraftRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *DuplicateCourseDraftRequest) GetFromCourseId() string {
+	if x != nil {
+		return x.FromCourseId
+	}
+	return ""
+}
+
+func (x *DuplicateCourseDraftRequest) GetCourseId() string {
+	if x != nil {
+		return x.CourseId
+	}
+	return ""
+}
+
+func (x *DuplicateCourseDraftRequest) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
 type UpdateCourseRequest struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	CourseId             string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`                                      // 课程版本ID ([required])
@@ -1784,7 +1836,7 @@ type UpdateCourseRequest struct {
 
 func (x *UpdateCourseRequest) Reset() {
 	*x = UpdateCourseRequest{}
-	mi := &file_lms_proto_msgTypes[11]
+	mi := &file_lms_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1796,7 +1848,7 @@ func (x *UpdateCourseRequest) String() string {
 func (*UpdateCourseRequest) ProtoMessage() {}
 
 func (x *UpdateCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[11]
+	mi := &file_lms_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1809,7 +1861,7 @@ func (x *UpdateCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCourseRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{11}
+	return file_lms_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UpdateCourseRequest) GetCourseId() string {
@@ -1898,7 +1950,7 @@ type UpdateCourseResponse struct {
 
 func (x *UpdateCourseResponse) Reset() {
 	*x = UpdateCourseResponse{}
-	mi := &file_lms_proto_msgTypes[12]
+	mi := &file_lms_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1910,7 +1962,7 @@ func (x *UpdateCourseResponse) String() string {
 func (*UpdateCourseResponse) ProtoMessage() {}
 
 func (x *UpdateCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[12]
+	mi := &file_lms_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1923,7 +1975,7 @@ func (x *UpdateCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCourseResponse.ProtoReflect.Descriptor instead.
 func (*UpdateCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{12}
+	return file_lms_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *UpdateCourseResponse) GetSuccess() bool {
@@ -1943,7 +1995,7 @@ type DeleteCourseRequest struct {
 
 func (x *DeleteCourseRequest) Reset() {
 	*x = DeleteCourseRequest{}
-	mi := &file_lms_proto_msgTypes[13]
+	mi := &file_lms_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1955,7 +2007,7 @@ func (x *DeleteCourseRequest) String() string {
 func (*DeleteCourseRequest) ProtoMessage() {}
 
 func (x *DeleteCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[13]
+	mi := &file_lms_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1968,7 +2020,7 @@ func (x *DeleteCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCourseRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{13}
+	return file_lms_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *DeleteCourseRequest) GetCourseId() string {
@@ -1994,7 +2046,7 @@ type DeleteCourseResponse struct {
 
 func (x *DeleteCourseResponse) Reset() {
 	*x = DeleteCourseResponse{}
-	mi := &file_lms_proto_msgTypes[14]
+	mi := &file_lms_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2006,7 +2058,7 @@ func (x *DeleteCourseResponse) String() string {
 func (*DeleteCourseResponse) ProtoMessage() {}
 
 func (x *DeleteCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[14]
+	mi := &file_lms_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2019,7 +2071,7 @@ func (x *DeleteCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCourseResponse.ProtoReflect.Descriptor instead.
 func (*DeleteCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{14}
+	return file_lms_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *DeleteCourseResponse) GetSuccess() bool {
@@ -2038,7 +2090,7 @@ type GetCourseRequest struct {
 
 func (x *GetCourseRequest) Reset() {
 	*x = GetCourseRequest{}
-	mi := &file_lms_proto_msgTypes[15]
+	mi := &file_lms_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2050,7 +2102,7 @@ func (x *GetCourseRequest) String() string {
 func (*GetCourseRequest) ProtoMessage() {}
 
 func (x *GetCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[15]
+	mi := &file_lms_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2063,7 +2115,7 @@ func (x *GetCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{15}
+	return file_lms_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *GetCourseRequest) GetCourseId() string {
@@ -2082,7 +2134,7 @@ type GetCourseResponse struct {
 
 func (x *GetCourseResponse) Reset() {
 	*x = GetCourseResponse{}
-	mi := &file_lms_proto_msgTypes[16]
+	mi := &file_lms_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2094,7 +2146,7 @@ func (x *GetCourseResponse) String() string {
 func (*GetCourseResponse) ProtoMessage() {}
 
 func (x *GetCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[16]
+	mi := &file_lms_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2107,7 +2159,7 @@ func (x *GetCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{16}
+	return file_lms_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetCourseResponse) GetCourse() *Course {
@@ -2129,7 +2181,7 @@ type ListCoursesRequest struct {
 
 func (x *ListCoursesRequest) Reset() {
 	*x = ListCoursesRequest{}
-	mi := &file_lms_proto_msgTypes[17]
+	mi := &file_lms_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2141,7 +2193,7 @@ func (x *ListCoursesRequest) String() string {
 func (*ListCoursesRequest) ProtoMessage() {}
 
 func (x *ListCoursesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[17]
+	mi := &file_lms_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2154,7 +2206,7 @@ func (x *ListCoursesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCoursesRequest.ProtoReflect.Descriptor instead.
 func (*ListCoursesRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{17}
+	return file_lms_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ListCoursesRequest) GetCategoryTips() string {
@@ -2195,7 +2247,7 @@ type ListCoursesResponse struct {
 
 func (x *ListCoursesResponse) Reset() {
 	*x = ListCoursesResponse{}
-	mi := &file_lms_proto_msgTypes[18]
+	mi := &file_lms_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2207,7 +2259,7 @@ func (x *ListCoursesResponse) String() string {
 func (*ListCoursesResponse) ProtoMessage() {}
 
 func (x *ListCoursesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[18]
+	mi := &file_lms_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2220,7 +2272,7 @@ func (x *ListCoursesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCoursesResponse.ProtoReflect.Descriptor instead.
 func (*ListCoursesResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{18}
+	return file_lms_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ListCoursesResponse) GetCourses() []*CourseSummary {
@@ -2247,7 +2299,7 @@ type PublishCourseRequest struct {
 
 func (x *PublishCourseRequest) Reset() {
 	*x = PublishCourseRequest{}
-	mi := &file_lms_proto_msgTypes[19]
+	mi := &file_lms_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2259,7 +2311,7 @@ func (x *PublishCourseRequest) String() string {
 func (*PublishCourseRequest) ProtoMessage() {}
 
 func (x *PublishCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[19]
+	mi := &file_lms_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2272,7 +2324,7 @@ func (x *PublishCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishCourseRequest.ProtoReflect.Descriptor instead.
 func (*PublishCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{19}
+	return file_lms_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *PublishCourseRequest) GetCourseId() string {
@@ -2298,7 +2350,7 @@ type PublishCourseResponse struct {
 
 func (x *PublishCourseResponse) Reset() {
 	*x = PublishCourseResponse{}
-	mi := &file_lms_proto_msgTypes[20]
+	mi := &file_lms_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2310,7 +2362,7 @@ func (x *PublishCourseResponse) String() string {
 func (*PublishCourseResponse) ProtoMessage() {}
 
 func (x *PublishCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[20]
+	mi := &file_lms_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2323,7 +2375,7 @@ func (x *PublishCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishCourseResponse.ProtoReflect.Descriptor instead.
 func (*PublishCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{20}
+	return file_lms_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *PublishCourseResponse) GetSuccess() bool {
@@ -2350,7 +2402,7 @@ type CreateCourseMaterialRequest struct {
 
 func (x *CreateCourseMaterialRequest) Reset() {
 	*x = CreateCourseMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[21]
+	mi := &file_lms_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2362,7 +2414,7 @@ func (x *CreateCourseMaterialRequest) String() string {
 func (*CreateCourseMaterialRequest) ProtoMessage() {}
 
 func (x *CreateCourseMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[21]
+	mi := &file_lms_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2375,7 +2427,7 @@ func (x *CreateCourseMaterialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCourseMaterialRequest.ProtoReflect.Descriptor instead.
 func (*CreateCourseMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{21}
+	return file_lms_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CreateCourseMaterialRequest) GetMaterialId() string {
@@ -2450,7 +2502,7 @@ type CreateCourseMaterialResponse struct {
 
 func (x *CreateCourseMaterialResponse) Reset() {
 	*x = CreateCourseMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[22]
+	mi := &file_lms_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2462,7 +2514,7 @@ func (x *CreateCourseMaterialResponse) String() string {
 func (*CreateCourseMaterialResponse) ProtoMessage() {}
 
 func (x *CreateCourseMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[22]
+	mi := &file_lms_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2475,7 +2527,7 @@ func (x *CreateCourseMaterialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateCourseMaterialResponse.ProtoReflect.Descriptor instead.
 func (*CreateCourseMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{22}
+	return file_lms_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *CreateCourseMaterialResponse) GetMaterialId() string {
@@ -2502,7 +2554,7 @@ type UpdateCourseMaterialRequest struct {
 
 func (x *UpdateCourseMaterialRequest) Reset() {
 	*x = UpdateCourseMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[23]
+	mi := &file_lms_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2514,7 +2566,7 @@ func (x *UpdateCourseMaterialRequest) String() string {
 func (*UpdateCourseMaterialRequest) ProtoMessage() {}
 
 func (x *UpdateCourseMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[23]
+	mi := &file_lms_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2527,7 +2579,7 @@ func (x *UpdateCourseMaterialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCourseMaterialRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCourseMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{23}
+	return file_lms_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *UpdateCourseMaterialRequest) GetMaterialId() string {
@@ -2602,7 +2654,7 @@ type UpdateCourseMaterialResponse struct {
 
 func (x *UpdateCourseMaterialResponse) Reset() {
 	*x = UpdateCourseMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[24]
+	mi := &file_lms_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2614,7 +2666,7 @@ func (x *UpdateCourseMaterialResponse) String() string {
 func (*UpdateCourseMaterialResponse) ProtoMessage() {}
 
 func (x *UpdateCourseMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[24]
+	mi := &file_lms_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2627,7 +2679,7 @@ func (x *UpdateCourseMaterialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateCourseMaterialResponse.ProtoReflect.Descriptor instead.
 func (*UpdateCourseMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{24}
+	return file_lms_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *UpdateCourseMaterialResponse) GetSuccess() bool {
@@ -2647,7 +2699,7 @@ type DeleteCourseMaterialRequest struct {
 
 func (x *DeleteCourseMaterialRequest) Reset() {
 	*x = DeleteCourseMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[25]
+	mi := &file_lms_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2659,7 +2711,7 @@ func (x *DeleteCourseMaterialRequest) String() string {
 func (*DeleteCourseMaterialRequest) ProtoMessage() {}
 
 func (x *DeleteCourseMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[25]
+	mi := &file_lms_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2672,7 +2724,7 @@ func (x *DeleteCourseMaterialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCourseMaterialRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCourseMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{25}
+	return file_lms_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *DeleteCourseMaterialRequest) GetMaterialId() string {
@@ -2698,7 +2750,7 @@ type DeleteCourseMaterialResponse struct {
 
 func (x *DeleteCourseMaterialResponse) Reset() {
 	*x = DeleteCourseMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[26]
+	mi := &file_lms_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2710,7 +2762,7 @@ func (x *DeleteCourseMaterialResponse) String() string {
 func (*DeleteCourseMaterialResponse) ProtoMessage() {}
 
 func (x *DeleteCourseMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[26]
+	mi := &file_lms_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2723,7 +2775,7 @@ func (x *DeleteCourseMaterialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteCourseMaterialResponse.ProtoReflect.Descriptor instead.
 func (*DeleteCourseMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{26}
+	return file_lms_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *DeleteCourseMaterialResponse) GetSuccess() bool {
@@ -2742,7 +2794,7 @@ type GetCourseMaterialRequest struct {
 
 func (x *GetCourseMaterialRequest) Reset() {
 	*x = GetCourseMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[27]
+	mi := &file_lms_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2754,7 +2806,7 @@ func (x *GetCourseMaterialRequest) String() string {
 func (*GetCourseMaterialRequest) ProtoMessage() {}
 
 func (x *GetCourseMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[27]
+	mi := &file_lms_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2767,7 +2819,7 @@ func (x *GetCourseMaterialRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseMaterialRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{27}
+	return file_lms_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GetCourseMaterialRequest) GetMaterialId() string {
@@ -2786,7 +2838,7 @@ type GetCourseMaterialResponse struct {
 
 func (x *GetCourseMaterialResponse) Reset() {
 	*x = GetCourseMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[28]
+	mi := &file_lms_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2798,7 +2850,7 @@ func (x *GetCourseMaterialResponse) String() string {
 func (*GetCourseMaterialResponse) ProtoMessage() {}
 
 func (x *GetCourseMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[28]
+	mi := &file_lms_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2811,7 +2863,7 @@ func (x *GetCourseMaterialResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseMaterialResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{28}
+	return file_lms_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *GetCourseMaterialResponse) GetMaterial() *CourseMaterial {
@@ -2830,7 +2882,7 @@ type ListCourseMaterialsRequest struct {
 
 func (x *ListCourseMaterialsRequest) Reset() {
 	*x = ListCourseMaterialsRequest{}
-	mi := &file_lms_proto_msgTypes[29]
+	mi := &file_lms_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2842,7 +2894,7 @@ func (x *ListCourseMaterialsRequest) String() string {
 func (*ListCourseMaterialsRequest) ProtoMessage() {}
 
 func (x *ListCourseMaterialsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[29]
+	mi := &file_lms_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2855,7 +2907,7 @@ func (x *ListCourseMaterialsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseMaterialsRequest.ProtoReflect.Descriptor instead.
 func (*ListCourseMaterialsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{29}
+	return file_lms_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ListCourseMaterialsRequest) GetCourseId() string {
@@ -2874,7 +2926,7 @@ type ListCourseMaterialsResponse struct {
 
 func (x *ListCourseMaterialsResponse) Reset() {
 	*x = ListCourseMaterialsResponse{}
-	mi := &file_lms_proto_msgTypes[30]
+	mi := &file_lms_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2886,7 +2938,7 @@ func (x *ListCourseMaterialsResponse) String() string {
 func (*ListCourseMaterialsResponse) ProtoMessage() {}
 
 func (x *ListCourseMaterialsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[30]
+	mi := &file_lms_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2899,7 +2951,7 @@ func (x *ListCourseMaterialsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseMaterialsResponse.ProtoReflect.Descriptor instead.
 func (*ListCourseMaterialsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{30}
+	return file_lms_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ListCourseMaterialsResponse) GetMaterials() []*CourseMaterialSummary {
@@ -2919,7 +2971,7 @@ type ReorderCourseMaterialsRequest struct {
 
 func (x *ReorderCourseMaterialsRequest) Reset() {
 	*x = ReorderCourseMaterialsRequest{}
-	mi := &file_lms_proto_msgTypes[31]
+	mi := &file_lms_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2931,7 +2983,7 @@ func (x *ReorderCourseMaterialsRequest) String() string {
 func (*ReorderCourseMaterialsRequest) ProtoMessage() {}
 
 func (x *ReorderCourseMaterialsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[31]
+	mi := &file_lms_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2944,7 +2996,7 @@ func (x *ReorderCourseMaterialsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderCourseMaterialsRequest.ProtoReflect.Descriptor instead.
 func (*ReorderCourseMaterialsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{31}
+	return file_lms_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ReorderCourseMaterialsRequest) GetCourseId() string {
@@ -2970,7 +3022,7 @@ type ReorderCourseMaterialsResponse struct {
 
 func (x *ReorderCourseMaterialsResponse) Reset() {
 	*x = ReorderCourseMaterialsResponse{}
-	mi := &file_lms_proto_msgTypes[32]
+	mi := &file_lms_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2982,7 +3034,7 @@ func (x *ReorderCourseMaterialsResponse) String() string {
 func (*ReorderCourseMaterialsResponse) ProtoMessage() {}
 
 func (x *ReorderCourseMaterialsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[32]
+	mi := &file_lms_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2995,7 +3047,7 @@ func (x *ReorderCourseMaterialsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderCourseMaterialsResponse.ProtoReflect.Descriptor instead.
 func (*ReorderCourseMaterialsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{32}
+	return file_lms_proto_rawDescGZIP(), []int{33}
 }
 
 func (x *ReorderCourseMaterialsResponse) GetSuccess() bool {
@@ -3017,7 +3069,7 @@ type CreateChapterRequest struct {
 
 func (x *CreateChapterRequest) Reset() {
 	*x = CreateChapterRequest{}
-	mi := &file_lms_proto_msgTypes[33]
+	mi := &file_lms_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3029,7 +3081,7 @@ func (x *CreateChapterRequest) String() string {
 func (*CreateChapterRequest) ProtoMessage() {}
 
 func (x *CreateChapterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[33]
+	mi := &file_lms_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3042,7 +3094,7 @@ func (x *CreateChapterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateChapterRequest.ProtoReflect.Descriptor instead.
 func (*CreateChapterRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{33}
+	return file_lms_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *CreateChapterRequest) GetChapterId() string {
@@ -3082,7 +3134,7 @@ type CreateChapterResponse struct {
 
 func (x *CreateChapterResponse) Reset() {
 	*x = CreateChapterResponse{}
-	mi := &file_lms_proto_msgTypes[34]
+	mi := &file_lms_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3094,7 +3146,7 @@ func (x *CreateChapterResponse) String() string {
 func (*CreateChapterResponse) ProtoMessage() {}
 
 func (x *CreateChapterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[34]
+	mi := &file_lms_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3107,7 +3159,7 @@ func (x *CreateChapterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateChapterResponse.ProtoReflect.Descriptor instead.
 func (*CreateChapterResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{34}
+	return file_lms_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *CreateChapterResponse) GetChapterId() string {
@@ -3129,7 +3181,7 @@ type UpdateChapterRequest struct {
 
 func (x *UpdateChapterRequest) Reset() {
 	*x = UpdateChapterRequest{}
-	mi := &file_lms_proto_msgTypes[35]
+	mi := &file_lms_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3141,7 +3193,7 @@ func (x *UpdateChapterRequest) String() string {
 func (*UpdateChapterRequest) ProtoMessage() {}
 
 func (x *UpdateChapterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[35]
+	mi := &file_lms_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3154,7 +3206,7 @@ func (x *UpdateChapterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateChapterRequest.ProtoReflect.Descriptor instead.
 func (*UpdateChapterRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{35}
+	return file_lms_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *UpdateChapterRequest) GetChapterId() string {
@@ -3194,7 +3246,7 @@ type UpdateChapterResponse struct {
 
 func (x *UpdateChapterResponse) Reset() {
 	*x = UpdateChapterResponse{}
-	mi := &file_lms_proto_msgTypes[36]
+	mi := &file_lms_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3206,7 +3258,7 @@ func (x *UpdateChapterResponse) String() string {
 func (*UpdateChapterResponse) ProtoMessage() {}
 
 func (x *UpdateChapterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[36]
+	mi := &file_lms_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3219,7 +3271,7 @@ func (x *UpdateChapterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateChapterResponse.ProtoReflect.Descriptor instead.
 func (*UpdateChapterResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{36}
+	return file_lms_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *UpdateChapterResponse) GetSuccess() bool {
@@ -3239,7 +3291,7 @@ type DeleteChapterRequest struct {
 
 func (x *DeleteChapterRequest) Reset() {
 	*x = DeleteChapterRequest{}
-	mi := &file_lms_proto_msgTypes[37]
+	mi := &file_lms_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3251,7 +3303,7 @@ func (x *DeleteChapterRequest) String() string {
 func (*DeleteChapterRequest) ProtoMessage() {}
 
 func (x *DeleteChapterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[37]
+	mi := &file_lms_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3264,7 +3316,7 @@ func (x *DeleteChapterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteChapterRequest.ProtoReflect.Descriptor instead.
 func (*DeleteChapterRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{37}
+	return file_lms_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *DeleteChapterRequest) GetChapterId() string {
@@ -3290,7 +3342,7 @@ type DeleteChapterResponse struct {
 
 func (x *DeleteChapterResponse) Reset() {
 	*x = DeleteChapterResponse{}
-	mi := &file_lms_proto_msgTypes[38]
+	mi := &file_lms_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3302,7 +3354,7 @@ func (x *DeleteChapterResponse) String() string {
 func (*DeleteChapterResponse) ProtoMessage() {}
 
 func (x *DeleteChapterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[38]
+	mi := &file_lms_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3315,7 +3367,7 @@ func (x *DeleteChapterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteChapterResponse.ProtoReflect.Descriptor instead.
 func (*DeleteChapterResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{38}
+	return file_lms_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *DeleteChapterResponse) GetSuccess() bool {
@@ -3334,7 +3386,7 @@ type GetChapterRequest struct {
 
 func (x *GetChapterRequest) Reset() {
 	*x = GetChapterRequest{}
-	mi := &file_lms_proto_msgTypes[39]
+	mi := &file_lms_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3346,7 +3398,7 @@ func (x *GetChapterRequest) String() string {
 func (*GetChapterRequest) ProtoMessage() {}
 
 func (x *GetChapterRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[39]
+	mi := &file_lms_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3359,7 +3411,7 @@ func (x *GetChapterRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChapterRequest.ProtoReflect.Descriptor instead.
 func (*GetChapterRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{39}
+	return file_lms_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *GetChapterRequest) GetChapterId() string {
@@ -3378,7 +3430,7 @@ type GetChapterResponse struct {
 
 func (x *GetChapterResponse) Reset() {
 	*x = GetChapterResponse{}
-	mi := &file_lms_proto_msgTypes[40]
+	mi := &file_lms_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3390,7 +3442,7 @@ func (x *GetChapterResponse) String() string {
 func (*GetChapterResponse) ProtoMessage() {}
 
 func (x *GetChapterResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[40]
+	mi := &file_lms_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3403,7 +3455,7 @@ func (x *GetChapterResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChapterResponse.ProtoReflect.Descriptor instead.
 func (*GetChapterResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{40}
+	return file_lms_proto_rawDescGZIP(), []int{41}
 }
 
 func (x *GetChapterResponse) GetChapter() *Chapter {
@@ -3422,7 +3474,7 @@ type ListChaptersRequest struct {
 
 func (x *ListChaptersRequest) Reset() {
 	*x = ListChaptersRequest{}
-	mi := &file_lms_proto_msgTypes[41]
+	mi := &file_lms_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3434,7 +3486,7 @@ func (x *ListChaptersRequest) String() string {
 func (*ListChaptersRequest) ProtoMessage() {}
 
 func (x *ListChaptersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[41]
+	mi := &file_lms_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3447,7 +3499,7 @@ func (x *ListChaptersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChaptersRequest.ProtoReflect.Descriptor instead.
 func (*ListChaptersRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{41}
+	return file_lms_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *ListChaptersRequest) GetCourseId() string {
@@ -3466,7 +3518,7 @@ type ListChaptersResponse struct {
 
 func (x *ListChaptersResponse) Reset() {
 	*x = ListChaptersResponse{}
-	mi := &file_lms_proto_msgTypes[42]
+	mi := &file_lms_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3478,7 +3530,7 @@ func (x *ListChaptersResponse) String() string {
 func (*ListChaptersResponse) ProtoMessage() {}
 
 func (x *ListChaptersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[42]
+	mi := &file_lms_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3491,7 +3543,7 @@ func (x *ListChaptersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChaptersResponse.ProtoReflect.Descriptor instead.
 func (*ListChaptersResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{42}
+	return file_lms_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *ListChaptersResponse) GetChapters() []*ChapterSummary {
@@ -3511,7 +3563,7 @@ type ReorderChaptersRequest struct {
 
 func (x *ReorderChaptersRequest) Reset() {
 	*x = ReorderChaptersRequest{}
-	mi := &file_lms_proto_msgTypes[43]
+	mi := &file_lms_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3523,7 +3575,7 @@ func (x *ReorderChaptersRequest) String() string {
 func (*ReorderChaptersRequest) ProtoMessage() {}
 
 func (x *ReorderChaptersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[43]
+	mi := &file_lms_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3536,7 +3588,7 @@ func (x *ReorderChaptersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderChaptersRequest.ProtoReflect.Descriptor instead.
 func (*ReorderChaptersRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{43}
+	return file_lms_proto_rawDescGZIP(), []int{44}
 }
 
 func (x *ReorderChaptersRequest) GetCourseId() string {
@@ -3562,7 +3614,7 @@ type ReorderChaptersResponse struct {
 
 func (x *ReorderChaptersResponse) Reset() {
 	*x = ReorderChaptersResponse{}
-	mi := &file_lms_proto_msgTypes[44]
+	mi := &file_lms_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3574,7 +3626,7 @@ func (x *ReorderChaptersResponse) String() string {
 func (*ReorderChaptersResponse) ProtoMessage() {}
 
 func (x *ReorderChaptersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[44]
+	mi := &file_lms_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3587,7 +3639,7 @@ func (x *ReorderChaptersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderChaptersResponse.ProtoReflect.Descriptor instead.
 func (*ReorderChaptersResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{44}
+	return file_lms_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ReorderChaptersResponse) GetSuccess() bool {
@@ -3618,7 +3670,7 @@ type CreateLessonRequest struct {
 
 func (x *CreateLessonRequest) Reset() {
 	*x = CreateLessonRequest{}
-	mi := &file_lms_proto_msgTypes[45]
+	mi := &file_lms_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3630,7 +3682,7 @@ func (x *CreateLessonRequest) String() string {
 func (*CreateLessonRequest) ProtoMessage() {}
 
 func (x *CreateLessonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[45]
+	mi := &file_lms_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3643,7 +3695,7 @@ func (x *CreateLessonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateLessonRequest.ProtoReflect.Descriptor instead.
 func (*CreateLessonRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{45}
+	return file_lms_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *CreateLessonRequest) GetLessonId() string {
@@ -3746,7 +3798,7 @@ type CreateLessonResponse struct {
 
 func (x *CreateLessonResponse) Reset() {
 	*x = CreateLessonResponse{}
-	mi := &file_lms_proto_msgTypes[46]
+	mi := &file_lms_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3758,7 +3810,7 @@ func (x *CreateLessonResponse) String() string {
 func (*CreateLessonResponse) ProtoMessage() {}
 
 func (x *CreateLessonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[46]
+	mi := &file_lms_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3771,7 +3823,7 @@ func (x *CreateLessonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateLessonResponse.ProtoReflect.Descriptor instead.
 func (*CreateLessonResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{46}
+	return file_lms_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *CreateLessonResponse) GetLessonId() string {
@@ -3802,7 +3854,7 @@ type UpdateLessonRequest struct {
 
 func (x *UpdateLessonRequest) Reset() {
 	*x = UpdateLessonRequest{}
-	mi := &file_lms_proto_msgTypes[47]
+	mi := &file_lms_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3814,7 +3866,7 @@ func (x *UpdateLessonRequest) String() string {
 func (*UpdateLessonRequest) ProtoMessage() {}
 
 func (x *UpdateLessonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[47]
+	mi := &file_lms_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3827,7 +3879,7 @@ func (x *UpdateLessonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLessonRequest.ProtoReflect.Descriptor instead.
 func (*UpdateLessonRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{47}
+	return file_lms_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *UpdateLessonRequest) GetLessonId() string {
@@ -3930,7 +3982,7 @@ type UpdateLessonResponse struct {
 
 func (x *UpdateLessonResponse) Reset() {
 	*x = UpdateLessonResponse{}
-	mi := &file_lms_proto_msgTypes[48]
+	mi := &file_lms_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3942,7 +3994,7 @@ func (x *UpdateLessonResponse) String() string {
 func (*UpdateLessonResponse) ProtoMessage() {}
 
 func (x *UpdateLessonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[48]
+	mi := &file_lms_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3955,7 +4007,7 @@ func (x *UpdateLessonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateLessonResponse.ProtoReflect.Descriptor instead.
 func (*UpdateLessonResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{48}
+	return file_lms_proto_rawDescGZIP(), []int{49}
 }
 
 func (x *UpdateLessonResponse) GetSuccess() bool {
@@ -3975,7 +4027,7 @@ type DeleteLessonRequest struct {
 
 func (x *DeleteLessonRequest) Reset() {
 	*x = DeleteLessonRequest{}
-	mi := &file_lms_proto_msgTypes[49]
+	mi := &file_lms_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3987,7 +4039,7 @@ func (x *DeleteLessonRequest) String() string {
 func (*DeleteLessonRequest) ProtoMessage() {}
 
 func (x *DeleteLessonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[49]
+	mi := &file_lms_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4000,7 +4052,7 @@ func (x *DeleteLessonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLessonRequest.ProtoReflect.Descriptor instead.
 func (*DeleteLessonRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{49}
+	return file_lms_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *DeleteLessonRequest) GetLessonId() string {
@@ -4026,7 +4078,7 @@ type DeleteLessonResponse struct {
 
 func (x *DeleteLessonResponse) Reset() {
 	*x = DeleteLessonResponse{}
-	mi := &file_lms_proto_msgTypes[50]
+	mi := &file_lms_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4038,7 +4090,7 @@ func (x *DeleteLessonResponse) String() string {
 func (*DeleteLessonResponse) ProtoMessage() {}
 
 func (x *DeleteLessonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[50]
+	mi := &file_lms_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4051,7 +4103,7 @@ func (x *DeleteLessonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteLessonResponse.ProtoReflect.Descriptor instead.
 func (*DeleteLessonResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{50}
+	return file_lms_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *DeleteLessonResponse) GetSuccess() bool {
@@ -4070,7 +4122,7 @@ type GetLessonRequest struct {
 
 func (x *GetLessonRequest) Reset() {
 	*x = GetLessonRequest{}
-	mi := &file_lms_proto_msgTypes[51]
+	mi := &file_lms_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4082,7 +4134,7 @@ func (x *GetLessonRequest) String() string {
 func (*GetLessonRequest) ProtoMessage() {}
 
 func (x *GetLessonRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[51]
+	mi := &file_lms_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4095,7 +4147,7 @@ func (x *GetLessonRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonRequest.ProtoReflect.Descriptor instead.
 func (*GetLessonRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{51}
+	return file_lms_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *GetLessonRequest) GetLessonId() string {
@@ -4114,7 +4166,7 @@ type GetLessonResponse struct {
 
 func (x *GetLessonResponse) Reset() {
 	*x = GetLessonResponse{}
-	mi := &file_lms_proto_msgTypes[52]
+	mi := &file_lms_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4126,7 +4178,7 @@ func (x *GetLessonResponse) String() string {
 func (*GetLessonResponse) ProtoMessage() {}
 
 func (x *GetLessonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[52]
+	mi := &file_lms_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4139,7 +4191,7 @@ func (x *GetLessonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonResponse.ProtoReflect.Descriptor instead.
 func (*GetLessonResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{52}
+	return file_lms_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *GetLessonResponse) GetLesson() *Lesson {
@@ -4158,7 +4210,7 @@ type ListLessonsRequest struct {
 
 func (x *ListLessonsRequest) Reset() {
 	*x = ListLessonsRequest{}
-	mi := &file_lms_proto_msgTypes[53]
+	mi := &file_lms_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4170,7 +4222,7 @@ func (x *ListLessonsRequest) String() string {
 func (*ListLessonsRequest) ProtoMessage() {}
 
 func (x *ListLessonsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[53]
+	mi := &file_lms_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4183,7 +4235,7 @@ func (x *ListLessonsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLessonsRequest.ProtoReflect.Descriptor instead.
 func (*ListLessonsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{53}
+	return file_lms_proto_rawDescGZIP(), []int{54}
 }
 
 func (x *ListLessonsRequest) GetChapterId() string {
@@ -4202,7 +4254,7 @@ type ListLessonsResponse struct {
 
 func (x *ListLessonsResponse) Reset() {
 	*x = ListLessonsResponse{}
-	mi := &file_lms_proto_msgTypes[54]
+	mi := &file_lms_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4214,7 +4266,7 @@ func (x *ListLessonsResponse) String() string {
 func (*ListLessonsResponse) ProtoMessage() {}
 
 func (x *ListLessonsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[54]
+	mi := &file_lms_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4227,7 +4279,7 @@ func (x *ListLessonsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLessonsResponse.ProtoReflect.Descriptor instead.
 func (*ListLessonsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{54}
+	return file_lms_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *ListLessonsResponse) GetLessons() []*LessonSummary {
@@ -4247,7 +4299,7 @@ type ReorderLessonsRequest struct {
 
 func (x *ReorderLessonsRequest) Reset() {
 	*x = ReorderLessonsRequest{}
-	mi := &file_lms_proto_msgTypes[55]
+	mi := &file_lms_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4259,7 +4311,7 @@ func (x *ReorderLessonsRequest) String() string {
 func (*ReorderLessonsRequest) ProtoMessage() {}
 
 func (x *ReorderLessonsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[55]
+	mi := &file_lms_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4272,7 +4324,7 @@ func (x *ReorderLessonsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderLessonsRequest.ProtoReflect.Descriptor instead.
 func (*ReorderLessonsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{55}
+	return file_lms_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *ReorderLessonsRequest) GetChapterId() string {
@@ -4298,7 +4350,7 @@ type ReorderLessonsResponse struct {
 
 func (x *ReorderLessonsResponse) Reset() {
 	*x = ReorderLessonsResponse{}
-	mi := &file_lms_proto_msgTypes[56]
+	mi := &file_lms_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4310,7 +4362,7 @@ func (x *ReorderLessonsResponse) String() string {
 func (*ReorderLessonsResponse) ProtoMessage() {}
 
 func (x *ReorderLessonsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[56]
+	mi := &file_lms_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4323,7 +4375,7 @@ func (x *ReorderLessonsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderLessonsResponse.ProtoReflect.Descriptor instead.
 func (*ReorderLessonsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{56}
+	return file_lms_proto_rawDescGZIP(), []int{57}
 }
 
 func (x *ReorderLessonsResponse) GetSuccess() bool {
@@ -4347,7 +4399,7 @@ type CreatePrerequisiteRequest struct {
 
 func (x *CreatePrerequisiteRequest) Reset() {
 	*x = CreatePrerequisiteRequest{}
-	mi := &file_lms_proto_msgTypes[57]
+	mi := &file_lms_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4359,7 +4411,7 @@ func (x *CreatePrerequisiteRequest) String() string {
 func (*CreatePrerequisiteRequest) ProtoMessage() {}
 
 func (x *CreatePrerequisiteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[57]
+	mi := &file_lms_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4372,7 +4424,7 @@ func (x *CreatePrerequisiteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePrerequisiteRequest.ProtoReflect.Descriptor instead.
 func (*CreatePrerequisiteRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{57}
+	return file_lms_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *CreatePrerequisiteRequest) GetPrerequisiteId() string {
@@ -4426,7 +4478,7 @@ type CreatePrerequisiteResponse struct {
 
 func (x *CreatePrerequisiteResponse) Reset() {
 	*x = CreatePrerequisiteResponse{}
-	mi := &file_lms_proto_msgTypes[58]
+	mi := &file_lms_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4438,7 +4490,7 @@ func (x *CreatePrerequisiteResponse) String() string {
 func (*CreatePrerequisiteResponse) ProtoMessage() {}
 
 func (x *CreatePrerequisiteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[58]
+	mi := &file_lms_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4451,7 +4503,7 @@ func (x *CreatePrerequisiteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreatePrerequisiteResponse.ProtoReflect.Descriptor instead.
 func (*CreatePrerequisiteResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{58}
+	return file_lms_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *CreatePrerequisiteResponse) GetPrerequisiteId() string {
@@ -4476,7 +4528,7 @@ type UpdatePrerequisiteRequest struct {
 
 func (x *UpdatePrerequisiteRequest) Reset() {
 	*x = UpdatePrerequisiteRequest{}
-	mi := &file_lms_proto_msgTypes[59]
+	mi := &file_lms_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4488,7 +4540,7 @@ func (x *UpdatePrerequisiteRequest) String() string {
 func (*UpdatePrerequisiteRequest) ProtoMessage() {}
 
 func (x *UpdatePrerequisiteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[59]
+	mi := &file_lms_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4501,7 +4553,7 @@ func (x *UpdatePrerequisiteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePrerequisiteRequest.ProtoReflect.Descriptor instead.
 func (*UpdatePrerequisiteRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{59}
+	return file_lms_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *UpdatePrerequisiteRequest) GetPrerequisiteId() string {
@@ -4562,7 +4614,7 @@ type UpdatePrerequisiteResponse struct {
 
 func (x *UpdatePrerequisiteResponse) Reset() {
 	*x = UpdatePrerequisiteResponse{}
-	mi := &file_lms_proto_msgTypes[60]
+	mi := &file_lms_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4574,7 +4626,7 @@ func (x *UpdatePrerequisiteResponse) String() string {
 func (*UpdatePrerequisiteResponse) ProtoMessage() {}
 
 func (x *UpdatePrerequisiteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[60]
+	mi := &file_lms_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4587,7 +4639,7 @@ func (x *UpdatePrerequisiteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePrerequisiteResponse.ProtoReflect.Descriptor instead.
 func (*UpdatePrerequisiteResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{60}
+	return file_lms_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *UpdatePrerequisiteResponse) GetSuccess() bool {
@@ -4607,7 +4659,7 @@ type DeletePrerequisiteRequest struct {
 
 func (x *DeletePrerequisiteRequest) Reset() {
 	*x = DeletePrerequisiteRequest{}
-	mi := &file_lms_proto_msgTypes[61]
+	mi := &file_lms_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4619,7 +4671,7 @@ func (x *DeletePrerequisiteRequest) String() string {
 func (*DeletePrerequisiteRequest) ProtoMessage() {}
 
 func (x *DeletePrerequisiteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[61]
+	mi := &file_lms_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4632,7 +4684,7 @@ func (x *DeletePrerequisiteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePrerequisiteRequest.ProtoReflect.Descriptor instead.
 func (*DeletePrerequisiteRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{61}
+	return file_lms_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *DeletePrerequisiteRequest) GetPrerequisiteId() string {
@@ -4658,7 +4710,7 @@ type DeletePrerequisiteResponse struct {
 
 func (x *DeletePrerequisiteResponse) Reset() {
 	*x = DeletePrerequisiteResponse{}
-	mi := &file_lms_proto_msgTypes[62]
+	mi := &file_lms_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4670,7 +4722,7 @@ func (x *DeletePrerequisiteResponse) String() string {
 func (*DeletePrerequisiteResponse) ProtoMessage() {}
 
 func (x *DeletePrerequisiteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[62]
+	mi := &file_lms_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4683,7 +4735,7 @@ func (x *DeletePrerequisiteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePrerequisiteResponse.ProtoReflect.Descriptor instead.
 func (*DeletePrerequisiteResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{62}
+	return file_lms_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *DeletePrerequisiteResponse) GetSuccess() bool {
@@ -4702,7 +4754,7 @@ type GetPrerequisiteRequest struct {
 
 func (x *GetPrerequisiteRequest) Reset() {
 	*x = GetPrerequisiteRequest{}
-	mi := &file_lms_proto_msgTypes[63]
+	mi := &file_lms_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4714,7 +4766,7 @@ func (x *GetPrerequisiteRequest) String() string {
 func (*GetPrerequisiteRequest) ProtoMessage() {}
 
 func (x *GetPrerequisiteRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[63]
+	mi := &file_lms_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4727,7 +4779,7 @@ func (x *GetPrerequisiteRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPrerequisiteRequest.ProtoReflect.Descriptor instead.
 func (*GetPrerequisiteRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{63}
+	return file_lms_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *GetPrerequisiteRequest) GetPrerequisiteId() string {
@@ -4746,7 +4798,7 @@ type GetPrerequisiteResponse struct {
 
 func (x *GetPrerequisiteResponse) Reset() {
 	*x = GetPrerequisiteResponse{}
-	mi := &file_lms_proto_msgTypes[64]
+	mi := &file_lms_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4758,7 +4810,7 @@ func (x *GetPrerequisiteResponse) String() string {
 func (*GetPrerequisiteResponse) ProtoMessage() {}
 
 func (x *GetPrerequisiteResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[64]
+	mi := &file_lms_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4771,7 +4823,7 @@ func (x *GetPrerequisiteResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPrerequisiteResponse.ProtoReflect.Descriptor instead.
 func (*GetPrerequisiteResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{64}
+	return file_lms_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *GetPrerequisiteResponse) GetPrerequisite() *Prerequisite {
@@ -4791,7 +4843,7 @@ type ListPrerequisitesRequest struct {
 
 func (x *ListPrerequisitesRequest) Reset() {
 	*x = ListPrerequisitesRequest{}
-	mi := &file_lms_proto_msgTypes[65]
+	mi := &file_lms_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4803,7 +4855,7 @@ func (x *ListPrerequisitesRequest) String() string {
 func (*ListPrerequisitesRequest) ProtoMessage() {}
 
 func (x *ListPrerequisitesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[65]
+	mi := &file_lms_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4816,7 +4868,7 @@ func (x *ListPrerequisitesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPrerequisitesRequest.ProtoReflect.Descriptor instead.
 func (*ListPrerequisitesRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{65}
+	return file_lms_proto_rawDescGZIP(), []int{66}
 }
 
 func (x *ListPrerequisitesRequest) GetTargetEntityType() EntityType {
@@ -4842,7 +4894,7 @@ type ListPrerequisitesResponse struct {
 
 func (x *ListPrerequisitesResponse) Reset() {
 	*x = ListPrerequisitesResponse{}
-	mi := &file_lms_proto_msgTypes[66]
+	mi := &file_lms_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4854,7 +4906,7 @@ func (x *ListPrerequisitesResponse) String() string {
 func (*ListPrerequisitesResponse) ProtoMessage() {}
 
 func (x *ListPrerequisitesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[66]
+	mi := &file_lms_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4867,7 +4919,7 @@ func (x *ListPrerequisitesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPrerequisitesResponse.ProtoReflect.Descriptor instead.
 func (*ListPrerequisitesResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{66}
+	return file_lms_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *ListPrerequisitesResponse) GetPrerequisites() []*PrerequisiteSummary {
@@ -4895,7 +4947,7 @@ type CreateQuizRequest struct {
 
 func (x *CreateQuizRequest) Reset() {
 	*x = CreateQuizRequest{}
-	mi := &file_lms_proto_msgTypes[67]
+	mi := &file_lms_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4907,7 +4959,7 @@ func (x *CreateQuizRequest) String() string {
 func (*CreateQuizRequest) ProtoMessage() {}
 
 func (x *CreateQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[67]
+	mi := &file_lms_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4920,7 +4972,7 @@ func (x *CreateQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizRequest.ProtoReflect.Descriptor instead.
 func (*CreateQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{67}
+	return file_lms_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *CreateQuizRequest) GetQuizId() string {
@@ -4988,7 +5040,7 @@ type CreateQuizResponse struct {
 
 func (x *CreateQuizResponse) Reset() {
 	*x = CreateQuizResponse{}
-	mi := &file_lms_proto_msgTypes[68]
+	mi := &file_lms_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5000,7 +5052,7 @@ func (x *CreateQuizResponse) String() string {
 func (*CreateQuizResponse) ProtoMessage() {}
 
 func (x *CreateQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[68]
+	mi := &file_lms_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5013,7 +5065,7 @@ func (x *CreateQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizResponse.ProtoReflect.Descriptor instead.
 func (*CreateQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{68}
+	return file_lms_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *CreateQuizResponse) GetQuizId() string {
@@ -5040,7 +5092,7 @@ type UpdateQuizRequest struct {
 
 func (x *UpdateQuizRequest) Reset() {
 	*x = UpdateQuizRequest{}
-	mi := &file_lms_proto_msgTypes[69]
+	mi := &file_lms_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5052,7 +5104,7 @@ func (x *UpdateQuizRequest) String() string {
 func (*UpdateQuizRequest) ProtoMessage() {}
 
 func (x *UpdateQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[69]
+	mi := &file_lms_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5065,7 +5117,7 @@ func (x *UpdateQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizRequest.ProtoReflect.Descriptor instead.
 func (*UpdateQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{69}
+	return file_lms_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *UpdateQuizRequest) GetQuizId() string {
@@ -5126,7 +5178,7 @@ type UpdateQuizResponse struct {
 
 func (x *UpdateQuizResponse) Reset() {
 	*x = UpdateQuizResponse{}
-	mi := &file_lms_proto_msgTypes[70]
+	mi := &file_lms_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5138,7 +5190,7 @@ func (x *UpdateQuizResponse) String() string {
 func (*UpdateQuizResponse) ProtoMessage() {}
 
 func (x *UpdateQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[70]
+	mi := &file_lms_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5151,7 +5203,7 @@ func (x *UpdateQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizResponse.ProtoReflect.Descriptor instead.
 func (*UpdateQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{70}
+	return file_lms_proto_rawDescGZIP(), []int{71}
 }
 
 func (x *UpdateQuizResponse) GetSuccess() bool {
@@ -5171,7 +5223,7 @@ type DeleteQuizRequest struct {
 
 func (x *DeleteQuizRequest) Reset() {
 	*x = DeleteQuizRequest{}
-	mi := &file_lms_proto_msgTypes[71]
+	mi := &file_lms_proto_msgTypes[72]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5183,7 +5235,7 @@ func (x *DeleteQuizRequest) String() string {
 func (*DeleteQuizRequest) ProtoMessage() {}
 
 func (x *DeleteQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[71]
+	mi := &file_lms_proto_msgTypes[72]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5196,7 +5248,7 @@ func (x *DeleteQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizRequest.ProtoReflect.Descriptor instead.
 func (*DeleteQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{71}
+	return file_lms_proto_rawDescGZIP(), []int{72}
 }
 
 func (x *DeleteQuizRequest) GetQuizId() string {
@@ -5222,7 +5274,7 @@ type DeleteQuizResponse struct {
 
 func (x *DeleteQuizResponse) Reset() {
 	*x = DeleteQuizResponse{}
-	mi := &file_lms_proto_msgTypes[72]
+	mi := &file_lms_proto_msgTypes[73]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5234,7 +5286,7 @@ func (x *DeleteQuizResponse) String() string {
 func (*DeleteQuizResponse) ProtoMessage() {}
 
 func (x *DeleteQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[72]
+	mi := &file_lms_proto_msgTypes[73]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5247,7 +5299,7 @@ func (x *DeleteQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizResponse.ProtoReflect.Descriptor instead.
 func (*DeleteQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{72}
+	return file_lms_proto_rawDescGZIP(), []int{73}
 }
 
 func (x *DeleteQuizResponse) GetSuccess() bool {
@@ -5266,7 +5318,7 @@ type GetQuizRequest struct {
 
 func (x *GetQuizRequest) Reset() {
 	*x = GetQuizRequest{}
-	mi := &file_lms_proto_msgTypes[73]
+	mi := &file_lms_proto_msgTypes[74]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5278,7 +5330,7 @@ func (x *GetQuizRequest) String() string {
 func (*GetQuizRequest) ProtoMessage() {}
 
 func (x *GetQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[73]
+	mi := &file_lms_proto_msgTypes[74]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5291,7 +5343,7 @@ func (x *GetQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizRequest.ProtoReflect.Descriptor instead.
 func (*GetQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{73}
+	return file_lms_proto_rawDescGZIP(), []int{74}
 }
 
 func (x *GetQuizRequest) GetQuizId() string {
@@ -5310,7 +5362,7 @@ type GetQuizResponse struct {
 
 func (x *GetQuizResponse) Reset() {
 	*x = GetQuizResponse{}
-	mi := &file_lms_proto_msgTypes[74]
+	mi := &file_lms_proto_msgTypes[75]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5322,7 +5374,7 @@ func (x *GetQuizResponse) String() string {
 func (*GetQuizResponse) ProtoMessage() {}
 
 func (x *GetQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[74]
+	mi := &file_lms_proto_msgTypes[75]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5335,7 +5387,7 @@ func (x *GetQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{74}
+	return file_lms_proto_rawDescGZIP(), []int{75}
 }
 
 func (x *GetQuizResponse) GetQuiz() *Quiz {
@@ -5355,7 +5407,7 @@ type ListQuizzesRequest struct {
 
 func (x *ListQuizzesRequest) Reset() {
 	*x = ListQuizzesRequest{}
-	mi := &file_lms_proto_msgTypes[75]
+	mi := &file_lms_proto_msgTypes[76]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5367,7 +5419,7 @@ func (x *ListQuizzesRequest) String() string {
 func (*ListQuizzesRequest) ProtoMessage() {}
 
 func (x *ListQuizzesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[75]
+	mi := &file_lms_proto_msgTypes[76]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5380,7 +5432,7 @@ func (x *ListQuizzesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizzesRequest.ProtoReflect.Descriptor instead.
 func (*ListQuizzesRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{75}
+	return file_lms_proto_rawDescGZIP(), []int{76}
 }
 
 func (x *ListQuizzesRequest) GetQuizzableType() QuizzableType {
@@ -5406,7 +5458,7 @@ type ListQuizzesResponse struct {
 
 func (x *ListQuizzesResponse) Reset() {
 	*x = ListQuizzesResponse{}
-	mi := &file_lms_proto_msgTypes[76]
+	mi := &file_lms_proto_msgTypes[77]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5418,7 +5470,7 @@ func (x *ListQuizzesResponse) String() string {
 func (*ListQuizzesResponse) ProtoMessage() {}
 
 func (x *ListQuizzesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[76]
+	mi := &file_lms_proto_msgTypes[77]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5431,7 +5483,7 @@ func (x *ListQuizzesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizzesResponse.ProtoReflect.Descriptor instead.
 func (*ListQuizzesResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{76}
+	return file_lms_proto_rawDescGZIP(), []int{77}
 }
 
 func (x *ListQuizzesResponse) GetQuizzes() []*QuizSummary {
@@ -5457,7 +5509,7 @@ type CreateQuizQuestionRequest struct {
 
 func (x *CreateQuizQuestionRequest) Reset() {
 	*x = CreateQuizQuestionRequest{}
-	mi := &file_lms_proto_msgTypes[77]
+	mi := &file_lms_proto_msgTypes[78]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5469,7 +5521,7 @@ func (x *CreateQuizQuestionRequest) String() string {
 func (*CreateQuizQuestionRequest) ProtoMessage() {}
 
 func (x *CreateQuizQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[77]
+	mi := &file_lms_proto_msgTypes[78]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5482,7 +5534,7 @@ func (x *CreateQuizQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizQuestionRequest.ProtoReflect.Descriptor instead.
 func (*CreateQuizQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{77}
+	return file_lms_proto_rawDescGZIP(), []int{78}
 }
 
 func (x *CreateQuizQuestionRequest) GetQuestionId() string {
@@ -5550,7 +5602,7 @@ type CreateQuizQuestionResponse struct {
 
 func (x *CreateQuizQuestionResponse) Reset() {
 	*x = CreateQuizQuestionResponse{}
-	mi := &file_lms_proto_msgTypes[78]
+	mi := &file_lms_proto_msgTypes[79]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5562,7 +5614,7 @@ func (x *CreateQuizQuestionResponse) String() string {
 func (*CreateQuizQuestionResponse) ProtoMessage() {}
 
 func (x *CreateQuizQuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[78]
+	mi := &file_lms_proto_msgTypes[79]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5575,7 +5627,7 @@ func (x *CreateQuizQuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizQuestionResponse.ProtoReflect.Descriptor instead.
 func (*CreateQuizQuestionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{78}
+	return file_lms_proto_rawDescGZIP(), []int{79}
 }
 
 func (x *CreateQuizQuestionResponse) GetQuestionId() string {
@@ -5601,7 +5653,7 @@ type UpdateQuizQuestionRequest struct {
 
 func (x *UpdateQuizQuestionRequest) Reset() {
 	*x = UpdateQuizQuestionRequest{}
-	mi := &file_lms_proto_msgTypes[79]
+	mi := &file_lms_proto_msgTypes[80]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5613,7 +5665,7 @@ func (x *UpdateQuizQuestionRequest) String() string {
 func (*UpdateQuizQuestionRequest) ProtoMessage() {}
 
 func (x *UpdateQuizQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[79]
+	mi := &file_lms_proto_msgTypes[80]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5626,7 +5678,7 @@ func (x *UpdateQuizQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizQuestionRequest.ProtoReflect.Descriptor instead.
 func (*UpdateQuizQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{79}
+	return file_lms_proto_rawDescGZIP(), []int{80}
 }
 
 func (x *UpdateQuizQuestionRequest) GetQuestionId() string {
@@ -5694,7 +5746,7 @@ type UpdateQuizQuestionResponse struct {
 
 func (x *UpdateQuizQuestionResponse) Reset() {
 	*x = UpdateQuizQuestionResponse{}
-	mi := &file_lms_proto_msgTypes[80]
+	mi := &file_lms_proto_msgTypes[81]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5706,7 +5758,7 @@ func (x *UpdateQuizQuestionResponse) String() string {
 func (*UpdateQuizQuestionResponse) ProtoMessage() {}
 
 func (x *UpdateQuizQuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[80]
+	mi := &file_lms_proto_msgTypes[81]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5719,7 +5771,7 @@ func (x *UpdateQuizQuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizQuestionResponse.ProtoReflect.Descriptor instead.
 func (*UpdateQuizQuestionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{80}
+	return file_lms_proto_rawDescGZIP(), []int{81}
 }
 
 func (x *UpdateQuizQuestionResponse) GetSuccess() bool {
@@ -5739,7 +5791,7 @@ type DeleteQuizQuestionRequest struct {
 
 func (x *DeleteQuizQuestionRequest) Reset() {
 	*x = DeleteQuizQuestionRequest{}
-	mi := &file_lms_proto_msgTypes[81]
+	mi := &file_lms_proto_msgTypes[82]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5751,7 +5803,7 @@ func (x *DeleteQuizQuestionRequest) String() string {
 func (*DeleteQuizQuestionRequest) ProtoMessage() {}
 
 func (x *DeleteQuizQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[81]
+	mi := &file_lms_proto_msgTypes[82]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5764,7 +5816,7 @@ func (x *DeleteQuizQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizQuestionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteQuizQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{81}
+	return file_lms_proto_rawDescGZIP(), []int{82}
 }
 
 func (x *DeleteQuizQuestionRequest) GetQuestionId() string {
@@ -5790,7 +5842,7 @@ type DeleteQuizQuestionResponse struct {
 
 func (x *DeleteQuizQuestionResponse) Reset() {
 	*x = DeleteQuizQuestionResponse{}
-	mi := &file_lms_proto_msgTypes[82]
+	mi := &file_lms_proto_msgTypes[83]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5802,7 +5854,7 @@ func (x *DeleteQuizQuestionResponse) String() string {
 func (*DeleteQuizQuestionResponse) ProtoMessage() {}
 
 func (x *DeleteQuizQuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[82]
+	mi := &file_lms_proto_msgTypes[83]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5815,7 +5867,7 @@ func (x *DeleteQuizQuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizQuestionResponse.ProtoReflect.Descriptor instead.
 func (*DeleteQuizQuestionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{82}
+	return file_lms_proto_rawDescGZIP(), []int{83}
 }
 
 func (x *DeleteQuizQuestionResponse) GetSuccess() bool {
@@ -5834,7 +5886,7 @@ type GetQuizQuestionRequest struct {
 
 func (x *GetQuizQuestionRequest) Reset() {
 	*x = GetQuizQuestionRequest{}
-	mi := &file_lms_proto_msgTypes[83]
+	mi := &file_lms_proto_msgTypes[84]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5846,7 +5898,7 @@ func (x *GetQuizQuestionRequest) String() string {
 func (*GetQuizQuestionRequest) ProtoMessage() {}
 
 func (x *GetQuizQuestionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[83]
+	mi := &file_lms_proto_msgTypes[84]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5859,7 +5911,7 @@ func (x *GetQuizQuestionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizQuestionRequest.ProtoReflect.Descriptor instead.
 func (*GetQuizQuestionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{83}
+	return file_lms_proto_rawDescGZIP(), []int{84}
 }
 
 func (x *GetQuizQuestionRequest) GetQuestionId() string {
@@ -5878,7 +5930,7 @@ type GetQuizQuestionResponse struct {
 
 func (x *GetQuizQuestionResponse) Reset() {
 	*x = GetQuizQuestionResponse{}
-	mi := &file_lms_proto_msgTypes[84]
+	mi := &file_lms_proto_msgTypes[85]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5890,7 +5942,7 @@ func (x *GetQuizQuestionResponse) String() string {
 func (*GetQuizQuestionResponse) ProtoMessage() {}
 
 func (x *GetQuizQuestionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[84]
+	mi := &file_lms_proto_msgTypes[85]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5903,7 +5955,7 @@ func (x *GetQuizQuestionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizQuestionResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizQuestionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{84}
+	return file_lms_proto_rawDescGZIP(), []int{85}
 }
 
 func (x *GetQuizQuestionResponse) GetQuestion() *QuizQuestion {
@@ -5922,7 +5974,7 @@ type ListQuizQuestionsRequest struct {
 
 func (x *ListQuizQuestionsRequest) Reset() {
 	*x = ListQuizQuestionsRequest{}
-	mi := &file_lms_proto_msgTypes[85]
+	mi := &file_lms_proto_msgTypes[86]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5934,7 +5986,7 @@ func (x *ListQuizQuestionsRequest) String() string {
 func (*ListQuizQuestionsRequest) ProtoMessage() {}
 
 func (x *ListQuizQuestionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[85]
+	mi := &file_lms_proto_msgTypes[86]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5947,7 +5999,7 @@ func (x *ListQuizQuestionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizQuestionsRequest.ProtoReflect.Descriptor instead.
 func (*ListQuizQuestionsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{85}
+	return file_lms_proto_rawDescGZIP(), []int{86}
 }
 
 func (x *ListQuizQuestionsRequest) GetQuizId() string {
@@ -5966,7 +6018,7 @@ type ListQuizQuestionsResponse struct {
 
 func (x *ListQuizQuestionsResponse) Reset() {
 	*x = ListQuizQuestionsResponse{}
-	mi := &file_lms_proto_msgTypes[86]
+	mi := &file_lms_proto_msgTypes[87]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -5978,7 +6030,7 @@ func (x *ListQuizQuestionsResponse) String() string {
 func (*ListQuizQuestionsResponse) ProtoMessage() {}
 
 func (x *ListQuizQuestionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[86]
+	mi := &file_lms_proto_msgTypes[87]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -5991,7 +6043,7 @@ func (x *ListQuizQuestionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizQuestionsResponse.ProtoReflect.Descriptor instead.
 func (*ListQuizQuestionsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{86}
+	return file_lms_proto_rawDescGZIP(), []int{87}
 }
 
 func (x *ListQuizQuestionsResponse) GetQuestions() []*QuizQuestionSummary {
@@ -6011,7 +6063,7 @@ type ReorderQuizQuestionsRequest struct {
 
 func (x *ReorderQuizQuestionsRequest) Reset() {
 	*x = ReorderQuizQuestionsRequest{}
-	mi := &file_lms_proto_msgTypes[87]
+	mi := &file_lms_proto_msgTypes[88]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6023,7 +6075,7 @@ func (x *ReorderQuizQuestionsRequest) String() string {
 func (*ReorderQuizQuestionsRequest) ProtoMessage() {}
 
 func (x *ReorderQuizQuestionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[87]
+	mi := &file_lms_proto_msgTypes[88]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6036,7 +6088,7 @@ func (x *ReorderQuizQuestionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderQuizQuestionsRequest.ProtoReflect.Descriptor instead.
 func (*ReorderQuizQuestionsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{87}
+	return file_lms_proto_rawDescGZIP(), []int{88}
 }
 
 func (x *ReorderQuizQuestionsRequest) GetQuizId() string {
@@ -6062,7 +6114,7 @@ type ReorderQuizQuestionsResponse struct {
 
 func (x *ReorderQuizQuestionsResponse) Reset() {
 	*x = ReorderQuizQuestionsResponse{}
-	mi := &file_lms_proto_msgTypes[88]
+	mi := &file_lms_proto_msgTypes[89]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6074,7 +6126,7 @@ func (x *ReorderQuizQuestionsResponse) String() string {
 func (*ReorderQuizQuestionsResponse) ProtoMessage() {}
 
 func (x *ReorderQuizQuestionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[88]
+	mi := &file_lms_proto_msgTypes[89]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6087,7 +6139,7 @@ func (x *ReorderQuizQuestionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderQuizQuestionsResponse.ProtoReflect.Descriptor instead.
 func (*ReorderQuizQuestionsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{88}
+	return file_lms_proto_rawDescGZIP(), []int{89}
 }
 
 func (x *ReorderQuizQuestionsResponse) GetSuccess() bool {
@@ -6110,7 +6162,7 @@ type CreateQuizOptionRequest struct {
 
 func (x *CreateQuizOptionRequest) Reset() {
 	*x = CreateQuizOptionRequest{}
-	mi := &file_lms_proto_msgTypes[89]
+	mi := &file_lms_proto_msgTypes[90]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6122,7 +6174,7 @@ func (x *CreateQuizOptionRequest) String() string {
 func (*CreateQuizOptionRequest) ProtoMessage() {}
 
 func (x *CreateQuizOptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[89]
+	mi := &file_lms_proto_msgTypes[90]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6135,7 +6187,7 @@ func (x *CreateQuizOptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizOptionRequest.ProtoReflect.Descriptor instead.
 func (*CreateQuizOptionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{89}
+	return file_lms_proto_rawDescGZIP(), []int{90}
 }
 
 func (x *CreateQuizOptionRequest) GetOptionId() string {
@@ -6182,7 +6234,7 @@ type CreateQuizOptionResponse struct {
 
 func (x *CreateQuizOptionResponse) Reset() {
 	*x = CreateQuizOptionResponse{}
-	mi := &file_lms_proto_msgTypes[90]
+	mi := &file_lms_proto_msgTypes[91]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6194,7 +6246,7 @@ func (x *CreateQuizOptionResponse) String() string {
 func (*CreateQuizOptionResponse) ProtoMessage() {}
 
 func (x *CreateQuizOptionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[90]
+	mi := &file_lms_proto_msgTypes[91]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6207,7 +6259,7 @@ func (x *CreateQuizOptionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateQuizOptionResponse.ProtoReflect.Descriptor instead.
 func (*CreateQuizOptionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{90}
+	return file_lms_proto_rawDescGZIP(), []int{91}
 }
 
 func (x *CreateQuizOptionResponse) GetOptionId() string {
@@ -6230,7 +6282,7 @@ type UpdateQuizOptionRequest struct {
 
 func (x *UpdateQuizOptionRequest) Reset() {
 	*x = UpdateQuizOptionRequest{}
-	mi := &file_lms_proto_msgTypes[91]
+	mi := &file_lms_proto_msgTypes[92]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6242,7 +6294,7 @@ func (x *UpdateQuizOptionRequest) String() string {
 func (*UpdateQuizOptionRequest) ProtoMessage() {}
 
 func (x *UpdateQuizOptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[91]
+	mi := &file_lms_proto_msgTypes[92]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6255,7 +6307,7 @@ func (x *UpdateQuizOptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizOptionRequest.ProtoReflect.Descriptor instead.
 func (*UpdateQuizOptionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{91}
+	return file_lms_proto_rawDescGZIP(), []int{92}
 }
 
 func (x *UpdateQuizOptionRequest) GetOptionId() string {
@@ -6302,7 +6354,7 @@ type UpdateQuizOptionResponse struct {
 
 func (x *UpdateQuizOptionResponse) Reset() {
 	*x = UpdateQuizOptionResponse{}
-	mi := &file_lms_proto_msgTypes[92]
+	mi := &file_lms_proto_msgTypes[93]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6314,7 +6366,7 @@ func (x *UpdateQuizOptionResponse) String() string {
 func (*UpdateQuizOptionResponse) ProtoMessage() {}
 
 func (x *UpdateQuizOptionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[92]
+	mi := &file_lms_proto_msgTypes[93]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6327,7 +6379,7 @@ func (x *UpdateQuizOptionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateQuizOptionResponse.ProtoReflect.Descriptor instead.
 func (*UpdateQuizOptionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{92}
+	return file_lms_proto_rawDescGZIP(), []int{93}
 }
 
 func (x *UpdateQuizOptionResponse) GetSuccess() bool {
@@ -6347,7 +6399,7 @@ type DeleteQuizOptionRequest struct {
 
 func (x *DeleteQuizOptionRequest) Reset() {
 	*x = DeleteQuizOptionRequest{}
-	mi := &file_lms_proto_msgTypes[93]
+	mi := &file_lms_proto_msgTypes[94]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6359,7 +6411,7 @@ func (x *DeleteQuizOptionRequest) String() string {
 func (*DeleteQuizOptionRequest) ProtoMessage() {}
 
 func (x *DeleteQuizOptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[93]
+	mi := &file_lms_proto_msgTypes[94]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6372,7 +6424,7 @@ func (x *DeleteQuizOptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizOptionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteQuizOptionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{93}
+	return file_lms_proto_rawDescGZIP(), []int{94}
 }
 
 func (x *DeleteQuizOptionRequest) GetOptionId() string {
@@ -6398,7 +6450,7 @@ type DeleteQuizOptionResponse struct {
 
 func (x *DeleteQuizOptionResponse) Reset() {
 	*x = DeleteQuizOptionResponse{}
-	mi := &file_lms_proto_msgTypes[94]
+	mi := &file_lms_proto_msgTypes[95]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6410,7 +6462,7 @@ func (x *DeleteQuizOptionResponse) String() string {
 func (*DeleteQuizOptionResponse) ProtoMessage() {}
 
 func (x *DeleteQuizOptionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[94]
+	mi := &file_lms_proto_msgTypes[95]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6423,7 +6475,7 @@ func (x *DeleteQuizOptionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteQuizOptionResponse.ProtoReflect.Descriptor instead.
 func (*DeleteQuizOptionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{94}
+	return file_lms_proto_rawDescGZIP(), []int{95}
 }
 
 func (x *DeleteQuizOptionResponse) GetSuccess() bool {
@@ -6442,7 +6494,7 @@ type GetQuizOptionRequest struct {
 
 func (x *GetQuizOptionRequest) Reset() {
 	*x = GetQuizOptionRequest{}
-	mi := &file_lms_proto_msgTypes[95]
+	mi := &file_lms_proto_msgTypes[96]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6454,7 +6506,7 @@ func (x *GetQuizOptionRequest) String() string {
 func (*GetQuizOptionRequest) ProtoMessage() {}
 
 func (x *GetQuizOptionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[95]
+	mi := &file_lms_proto_msgTypes[96]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6467,7 +6519,7 @@ func (x *GetQuizOptionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizOptionRequest.ProtoReflect.Descriptor instead.
 func (*GetQuizOptionRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{95}
+	return file_lms_proto_rawDescGZIP(), []int{96}
 }
 
 func (x *GetQuizOptionRequest) GetOptionId() string {
@@ -6486,7 +6538,7 @@ type GetQuizOptionResponse struct {
 
 func (x *GetQuizOptionResponse) Reset() {
 	*x = GetQuizOptionResponse{}
-	mi := &file_lms_proto_msgTypes[96]
+	mi := &file_lms_proto_msgTypes[97]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6498,7 +6550,7 @@ func (x *GetQuizOptionResponse) String() string {
 func (*GetQuizOptionResponse) ProtoMessage() {}
 
 func (x *GetQuizOptionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[96]
+	mi := &file_lms_proto_msgTypes[97]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6511,7 +6563,7 @@ func (x *GetQuizOptionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizOptionResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizOptionResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{96}
+	return file_lms_proto_rawDescGZIP(), []int{97}
 }
 
 func (x *GetQuizOptionResponse) GetOption() *QuizOption {
@@ -6530,7 +6582,7 @@ type ListQuizOptionsRequest struct {
 
 func (x *ListQuizOptionsRequest) Reset() {
 	*x = ListQuizOptionsRequest{}
-	mi := &file_lms_proto_msgTypes[97]
+	mi := &file_lms_proto_msgTypes[98]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6542,7 +6594,7 @@ func (x *ListQuizOptionsRequest) String() string {
 func (*ListQuizOptionsRequest) ProtoMessage() {}
 
 func (x *ListQuizOptionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[97]
+	mi := &file_lms_proto_msgTypes[98]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6555,7 +6607,7 @@ func (x *ListQuizOptionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizOptionsRequest.ProtoReflect.Descriptor instead.
 func (*ListQuizOptionsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{97}
+	return file_lms_proto_rawDescGZIP(), []int{98}
 }
 
 func (x *ListQuizOptionsRequest) GetQuestionId() string {
@@ -6574,7 +6626,7 @@ type ListQuizOptionsResponse struct {
 
 func (x *ListQuizOptionsResponse) Reset() {
 	*x = ListQuizOptionsResponse{}
-	mi := &file_lms_proto_msgTypes[98]
+	mi := &file_lms_proto_msgTypes[99]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6586,7 +6638,7 @@ func (x *ListQuizOptionsResponse) String() string {
 func (*ListQuizOptionsResponse) ProtoMessage() {}
 
 func (x *ListQuizOptionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[98]
+	mi := &file_lms_proto_msgTypes[99]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6599,7 +6651,7 @@ func (x *ListQuizOptionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizOptionsResponse.ProtoReflect.Descriptor instead.
 func (*ListQuizOptionsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{98}
+	return file_lms_proto_rawDescGZIP(), []int{99}
 }
 
 func (x *ListQuizOptionsResponse) GetOptions() []*QuizOptionSummary {
@@ -6619,7 +6671,7 @@ type ReorderQuizOptionsRequest struct {
 
 func (x *ReorderQuizOptionsRequest) Reset() {
 	*x = ReorderQuizOptionsRequest{}
-	mi := &file_lms_proto_msgTypes[99]
+	mi := &file_lms_proto_msgTypes[100]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6631,7 +6683,7 @@ func (x *ReorderQuizOptionsRequest) String() string {
 func (*ReorderQuizOptionsRequest) ProtoMessage() {}
 
 func (x *ReorderQuizOptionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[99]
+	mi := &file_lms_proto_msgTypes[100]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6644,7 +6696,7 @@ func (x *ReorderQuizOptionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderQuizOptionsRequest.ProtoReflect.Descriptor instead.
 func (*ReorderQuizOptionsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{99}
+	return file_lms_proto_rawDescGZIP(), []int{100}
 }
 
 func (x *ReorderQuizOptionsRequest) GetQuestionId() string {
@@ -6670,7 +6722,7 @@ type ReorderQuizOptionsResponse struct {
 
 func (x *ReorderQuizOptionsResponse) Reset() {
 	*x = ReorderQuizOptionsResponse{}
-	mi := &file_lms_proto_msgTypes[100]
+	mi := &file_lms_proto_msgTypes[101]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6682,7 +6734,7 @@ func (x *ReorderQuizOptionsResponse) String() string {
 func (*ReorderQuizOptionsResponse) ProtoMessage() {}
 
 func (x *ReorderQuizOptionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[100]
+	mi := &file_lms_proto_msgTypes[101]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6695,7 +6747,7 @@ func (x *ReorderQuizOptionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReorderQuizOptionsResponse.ProtoReflect.Descriptor instead.
 func (*ReorderQuizOptionsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{100}
+	return file_lms_proto_rawDescGZIP(), []int{101}
 }
 
 func (x *ReorderQuizOptionsResponse) GetSuccess() bool {
@@ -6717,7 +6769,7 @@ type ListObjectsRequest struct {
 
 func (x *ListObjectsRequest) Reset() {
 	*x = ListObjectsRequest{}
-	mi := &file_lms_proto_msgTypes[101]
+	mi := &file_lms_proto_msgTypes[102]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6729,7 +6781,7 @@ func (x *ListObjectsRequest) String() string {
 func (*ListObjectsRequest) ProtoMessage() {}
 
 func (x *ListObjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[101]
+	mi := &file_lms_proto_msgTypes[102]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6742,7 +6794,7 @@ func (x *ListObjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListObjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListObjectsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{101}
+	return file_lms_proto_rawDescGZIP(), []int{102}
 }
 
 func (x *ListObjectsRequest) GetPrefix() string {
@@ -6784,7 +6836,7 @@ type ListObjectsResponse struct {
 
 func (x *ListObjectsResponse) Reset() {
 	*x = ListObjectsResponse{}
-	mi := &file_lms_proto_msgTypes[102]
+	mi := &file_lms_proto_msgTypes[103]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6796,7 +6848,7 @@ func (x *ListObjectsResponse) String() string {
 func (*ListObjectsResponse) ProtoMessage() {}
 
 func (x *ListObjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[102]
+	mi := &file_lms_proto_msgTypes[103]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6809,7 +6861,7 @@ func (x *ListObjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListObjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListObjectsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{102}
+	return file_lms_proto_rawDescGZIP(), []int{103}
 }
 
 func (x *ListObjectsResponse) GetBucketName() string {
@@ -6852,7 +6904,7 @@ type CreateUploadURLRequest struct {
 
 func (x *CreateUploadURLRequest) Reset() {
 	*x = CreateUploadURLRequest{}
-	mi := &file_lms_proto_msgTypes[103]
+	mi := &file_lms_proto_msgTypes[104]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6864,7 +6916,7 @@ func (x *CreateUploadURLRequest) String() string {
 func (*CreateUploadURLRequest) ProtoMessage() {}
 
 func (x *CreateUploadURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[103]
+	mi := &file_lms_proto_msgTypes[104]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6877,7 +6929,7 @@ func (x *CreateUploadURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUploadURLRequest.ProtoReflect.Descriptor instead.
 func (*CreateUploadURLRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{103}
+	return file_lms_proto_rawDescGZIP(), []int{104}
 }
 
 func (x *CreateUploadURLRequest) GetUploadType() UploadType {
@@ -6970,7 +7022,7 @@ type CreateUploadURLResponse struct {
 
 func (x *CreateUploadURLResponse) Reset() {
 	*x = CreateUploadURLResponse{}
-	mi := &file_lms_proto_msgTypes[104]
+	mi := &file_lms_proto_msgTypes[105]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -6982,7 +7034,7 @@ func (x *CreateUploadURLResponse) String() string {
 func (*CreateUploadURLResponse) ProtoMessage() {}
 
 func (x *CreateUploadURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[104]
+	mi := &file_lms_proto_msgTypes[105]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -6995,7 +7047,7 @@ func (x *CreateUploadURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUploadURLResponse.ProtoReflect.Descriptor instead.
 func (*CreateUploadURLResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{104}
+	return file_lms_proto_rawDescGZIP(), []int{105}
 }
 
 func (x *CreateUploadURLResponse) GetBucketName() string {
@@ -7042,7 +7094,7 @@ type CreateViewURLRequest struct {
 
 func (x *CreateViewURLRequest) Reset() {
 	*x = CreateViewURLRequest{}
-	mi := &file_lms_proto_msgTypes[105]
+	mi := &file_lms_proto_msgTypes[106]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7054,7 +7106,7 @@ func (x *CreateViewURLRequest) String() string {
 func (*CreateViewURLRequest) ProtoMessage() {}
 
 func (x *CreateViewURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[105]
+	mi := &file_lms_proto_msgTypes[106]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7067,7 +7119,7 @@ func (x *CreateViewURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateViewURLRequest.ProtoReflect.Descriptor instead.
 func (*CreateViewURLRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{105}
+	return file_lms_proto_rawDescGZIP(), []int{106}
 }
 
 func (x *CreateViewURLRequest) GetObjectKey() string {
@@ -7089,7 +7141,7 @@ type CreateViewURLResponse struct {
 
 func (x *CreateViewURLResponse) Reset() {
 	*x = CreateViewURLResponse{}
-	mi := &file_lms_proto_msgTypes[106]
+	mi := &file_lms_proto_msgTypes[107]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7101,7 +7153,7 @@ func (x *CreateViewURLResponse) String() string {
 func (*CreateViewURLResponse) ProtoMessage() {}
 
 func (x *CreateViewURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[106]
+	mi := &file_lms_proto_msgTypes[107]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7114,7 +7166,7 @@ func (x *CreateViewURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateViewURLResponse.ProtoReflect.Descriptor instead.
 func (*CreateViewURLResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{106}
+	return file_lms_proto_rawDescGZIP(), []int{107}
 }
 
 func (x *CreateViewURLResponse) GetBucketName() string {
@@ -7158,7 +7210,7 @@ type GrantCourseAccessPermissionAdminRequest struct {
 
 func (x *GrantCourseAccessPermissionAdminRequest) Reset() {
 	*x = GrantCourseAccessPermissionAdminRequest{}
-	mi := &file_lms_proto_msgTypes[107]
+	mi := &file_lms_proto_msgTypes[108]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7170,7 +7222,7 @@ func (x *GrantCourseAccessPermissionAdminRequest) String() string {
 func (*GrantCourseAccessPermissionAdminRequest) ProtoMessage() {}
 
 func (x *GrantCourseAccessPermissionAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[107]
+	mi := &file_lms_proto_msgTypes[108]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7183,7 +7235,7 @@ func (x *GrantCourseAccessPermissionAdminRequest) ProtoReflect() protoreflect.Me
 
 // Deprecated: Use GrantCourseAccessPermissionAdminRequest.ProtoReflect.Descriptor instead.
 func (*GrantCourseAccessPermissionAdminRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{107}
+	return file_lms_proto_rawDescGZIP(), []int{108}
 }
 
 func (x *GrantCourseAccessPermissionAdminRequest) GetCourseId() string {
@@ -7230,7 +7282,7 @@ type GrantCourseAccessPermissionAdminResponse struct {
 
 func (x *GrantCourseAccessPermissionAdminResponse) Reset() {
 	*x = GrantCourseAccessPermissionAdminResponse{}
-	mi := &file_lms_proto_msgTypes[108]
+	mi := &file_lms_proto_msgTypes[109]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7242,7 +7294,7 @@ func (x *GrantCourseAccessPermissionAdminResponse) String() string {
 func (*GrantCourseAccessPermissionAdminResponse) ProtoMessage() {}
 
 func (x *GrantCourseAccessPermissionAdminResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[108]
+	mi := &file_lms_proto_msgTypes[109]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7255,7 +7307,7 @@ func (x *GrantCourseAccessPermissionAdminResponse) ProtoReflect() protoreflect.M
 
 // Deprecated: Use GrantCourseAccessPermissionAdminResponse.ProtoReflect.Descriptor instead.
 func (*GrantCourseAccessPermissionAdminResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{108}
+	return file_lms_proto_rawDescGZIP(), []int{109}
 }
 
 func (x *GrantCourseAccessPermissionAdminResponse) GetSuccess() bool {
@@ -7278,7 +7330,7 @@ type RevokeCourseAccessPermissionAdminRequest struct {
 
 func (x *RevokeCourseAccessPermissionAdminRequest) Reset() {
 	*x = RevokeCourseAccessPermissionAdminRequest{}
-	mi := &file_lms_proto_msgTypes[109]
+	mi := &file_lms_proto_msgTypes[110]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7290,7 +7342,7 @@ func (x *RevokeCourseAccessPermissionAdminRequest) String() string {
 func (*RevokeCourseAccessPermissionAdminRequest) ProtoMessage() {}
 
 func (x *RevokeCourseAccessPermissionAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[109]
+	mi := &file_lms_proto_msgTypes[110]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7303,7 +7355,7 @@ func (x *RevokeCourseAccessPermissionAdminRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use RevokeCourseAccessPermissionAdminRequest.ProtoReflect.Descriptor instead.
 func (*RevokeCourseAccessPermissionAdminRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{109}
+	return file_lms_proto_rawDescGZIP(), []int{110}
 }
 
 func (x *RevokeCourseAccessPermissionAdminRequest) GetCourseId() string {
@@ -7350,7 +7402,7 @@ type RevokeCourseAccessPermissionAdminResponse struct {
 
 func (x *RevokeCourseAccessPermissionAdminResponse) Reset() {
 	*x = RevokeCourseAccessPermissionAdminResponse{}
-	mi := &file_lms_proto_msgTypes[110]
+	mi := &file_lms_proto_msgTypes[111]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7362,7 +7414,7 @@ func (x *RevokeCourseAccessPermissionAdminResponse) String() string {
 func (*RevokeCourseAccessPermissionAdminResponse) ProtoMessage() {}
 
 func (x *RevokeCourseAccessPermissionAdminResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[110]
+	mi := &file_lms_proto_msgTypes[111]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7375,7 +7427,7 @@ func (x *RevokeCourseAccessPermissionAdminResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use RevokeCourseAccessPermissionAdminResponse.ProtoReflect.Descriptor instead.
 func (*RevokeCourseAccessPermissionAdminResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{110}
+	return file_lms_proto_rawDescGZIP(), []int{111}
 }
 
 func (x *RevokeCourseAccessPermissionAdminResponse) GetSuccess() bool {
@@ -7390,13 +7442,15 @@ type EnrollCandidateCourseRequest struct {
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ([required])
 	CourseId      string                 `protobuf:"bytes,2,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`          // 课程版本ID (必填，课程必须为Active状态)
 	BizUnit       string                 `protobuf:"bytes,3,opt,name=biz_unit,json=bizUnit,proto3" json:"biz_unit,omitempty"`             // 触发报名的业务单元：gmall(商城)/gexam(考试)等 ([required])
+	RefEntityType string                 `protobuf:"bytes,4,opt,name=ref_entity_type,json=refEntityType,proto3" json:"ref_entity_type,omitempty"`
+	RefEntityId   string                 `protobuf:"bytes,5,opt,name=ref_entity_id,json=refEntityId,proto3" json:"ref_entity_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EnrollCandidateCourseRequest) Reset() {
 	*x = EnrollCandidateCourseRequest{}
-	mi := &file_lms_proto_msgTypes[111]
+	mi := &file_lms_proto_msgTypes[112]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7408,7 +7462,7 @@ func (x *EnrollCandidateCourseRequest) String() string {
 func (*EnrollCandidateCourseRequest) ProtoMessage() {}
 
 func (x *EnrollCandidateCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[111]
+	mi := &file_lms_proto_msgTypes[112]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7421,7 +7475,7 @@ func (x *EnrollCandidateCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnrollCandidateCourseRequest.ProtoReflect.Descriptor instead.
 func (*EnrollCandidateCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{111}
+	return file_lms_proto_rawDescGZIP(), []int{112}
 }
 
 func (x *EnrollCandidateCourseRequest) GetCandidateId() string {
@@ -7445,6 +7499,20 @@ func (x *EnrollCandidateCourseRequest) GetBizUnit() string {
 	return ""
 }
 
+func (x *EnrollCandidateCourseRequest) GetRefEntityType() string {
+	if x != nil {
+		return x.RefEntityType
+	}
+	return ""
+}
+
+func (x *EnrollCandidateCourseRequest) GetRefEntityId() string {
+	if x != nil {
+		return x.RefEntityId
+	}
+	return ""
+}
+
 type EnrollCandidateCourseResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EnrollmentId  string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"` // 选课记录ID
@@ -7456,7 +7524,7 @@ type EnrollCandidateCourseResponse struct {
 
 func (x *EnrollCandidateCourseResponse) Reset() {
 	*x = EnrollCandidateCourseResponse{}
-	mi := &file_lms_proto_msgTypes[112]
+	mi := &file_lms_proto_msgTypes[113]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7468,7 +7536,7 @@ func (x *EnrollCandidateCourseResponse) String() string {
 func (*EnrollCandidateCourseResponse) ProtoMessage() {}
 
 func (x *EnrollCandidateCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[112]
+	mi := &file_lms_proto_msgTypes[113]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7481,7 +7549,7 @@ func (x *EnrollCandidateCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnrollCandidateCourseResponse.ProtoReflect.Descriptor instead.
 func (*EnrollCandidateCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{112}
+	return file_lms_proto_rawDescGZIP(), []int{113}
 }
 
 func (x *EnrollCandidateCourseResponse) GetEnrollmentId() string {
@@ -7510,13 +7578,15 @@ type BatchEnrollCandidateCoursesRequest struct {
 	CandidateId   string                 `protobuf:"bytes,1,opt,name=candidate_id,json=candidateId,proto3" json:"candidate_id,omitempty"` // 考生ID ([required])
 	CourseIds     []string               `protobuf:"bytes,2,rep,name=course_ids,json=courseIds,proto3" json:"course_ids,omitempty"`       // 课程版本ID 列表 (必填)
 	BizUnit       string                 `protobuf:"bytes,3,opt,name=biz_unit,json=bizUnit,proto3" json:"biz_unit,omitempty"`             // 触发报名的业务单元：gmall(商城)/gexam(考试)等 ([required])
+	RefEntityType string                 `protobuf:"bytes,4,opt,name=ref_entity_type,json=refEntityType,proto3" json:"ref_entity_type,omitempty"`
+	RefEntityId   string                 `protobuf:"bytes,5,opt,name=ref_entity_id,json=refEntityId,proto3" json:"ref_entity_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BatchEnrollCandidateCoursesRequest) Reset() {
 	*x = BatchEnrollCandidateCoursesRequest{}
-	mi := &file_lms_proto_msgTypes[113]
+	mi := &file_lms_proto_msgTypes[114]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7528,7 +7598,7 @@ func (x *BatchEnrollCandidateCoursesRequest) String() string {
 func (*BatchEnrollCandidateCoursesRequest) ProtoMessage() {}
 
 func (x *BatchEnrollCandidateCoursesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[113]
+	mi := &file_lms_proto_msgTypes[114]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7541,7 +7611,7 @@ func (x *BatchEnrollCandidateCoursesRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use BatchEnrollCandidateCoursesRequest.ProtoReflect.Descriptor instead.
 func (*BatchEnrollCandidateCoursesRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{113}
+	return file_lms_proto_rawDescGZIP(), []int{114}
 }
 
 func (x *BatchEnrollCandidateCoursesRequest) GetCandidateId() string {
@@ -7565,6 +7635,20 @@ func (x *BatchEnrollCandidateCoursesRequest) GetBizUnit() string {
 	return ""
 }
 
+func (x *BatchEnrollCandidateCoursesRequest) GetRefEntityType() string {
+	if x != nil {
+		return x.RefEntityType
+	}
+	return ""
+}
+
+func (x *BatchEnrollCandidateCoursesRequest) GetRefEntityId() string {
+	if x != nil {
+		return x.RefEntityId
+	}
+	return ""
+}
+
 type BatchEnrollResult struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CourseId      string                 `protobuf:"bytes,1,opt,name=course_id,json=courseId,proto3" json:"course_id,omitempty"`
@@ -7577,7 +7661,7 @@ type BatchEnrollResult struct {
 
 func (x *BatchEnrollResult) Reset() {
 	*x = BatchEnrollResult{}
-	mi := &file_lms_proto_msgTypes[114]
+	mi := &file_lms_proto_msgTypes[115]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7589,7 +7673,7 @@ func (x *BatchEnrollResult) String() string {
 func (*BatchEnrollResult) ProtoMessage() {}
 
 func (x *BatchEnrollResult) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[114]
+	mi := &file_lms_proto_msgTypes[115]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7602,7 +7686,7 @@ func (x *BatchEnrollResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchEnrollResult.ProtoReflect.Descriptor instead.
 func (*BatchEnrollResult) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{114}
+	return file_lms_proto_rawDescGZIP(), []int{115}
 }
 
 func (x *BatchEnrollResult) GetCourseId() string {
@@ -7642,7 +7726,7 @@ type BatchEnrollCandidateCoursesResponse struct {
 
 func (x *BatchEnrollCandidateCoursesResponse) Reset() {
 	*x = BatchEnrollCandidateCoursesResponse{}
-	mi := &file_lms_proto_msgTypes[115]
+	mi := &file_lms_proto_msgTypes[116]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7654,7 +7738,7 @@ func (x *BatchEnrollCandidateCoursesResponse) String() string {
 func (*BatchEnrollCandidateCoursesResponse) ProtoMessage() {}
 
 func (x *BatchEnrollCandidateCoursesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[115]
+	mi := &file_lms_proto_msgTypes[116]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7667,7 +7751,7 @@ func (x *BatchEnrollCandidateCoursesResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use BatchEnrollCandidateCoursesResponse.ProtoReflect.Descriptor instead.
 func (*BatchEnrollCandidateCoursesResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{115}
+	return file_lms_proto_rawDescGZIP(), []int{116}
 }
 
 func (x *BatchEnrollCandidateCoursesResponse) GetResults() []*BatchEnrollResult {
@@ -7687,7 +7771,7 @@ type CompleteLessonLearningRequest struct {
 
 func (x *CompleteLessonLearningRequest) Reset() {
 	*x = CompleteLessonLearningRequest{}
-	mi := &file_lms_proto_msgTypes[116]
+	mi := &file_lms_proto_msgTypes[117]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7699,7 +7783,7 @@ func (x *CompleteLessonLearningRequest) String() string {
 func (*CompleteLessonLearningRequest) ProtoMessage() {}
 
 func (x *CompleteLessonLearningRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[116]
+	mi := &file_lms_proto_msgTypes[117]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7712,7 +7796,7 @@ func (x *CompleteLessonLearningRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteLessonLearningRequest.ProtoReflect.Descriptor instead.
 func (*CompleteLessonLearningRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{116}
+	return file_lms_proto_rawDescGZIP(), []int{117}
 }
 
 func (x *CompleteLessonLearningRequest) GetCandidateId() string {
@@ -7741,7 +7825,7 @@ type CompleteLessonLearningResponse struct {
 
 func (x *CompleteLessonLearningResponse) Reset() {
 	*x = CompleteLessonLearningResponse{}
-	mi := &file_lms_proto_msgTypes[117]
+	mi := &file_lms_proto_msgTypes[118]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7753,7 +7837,7 @@ func (x *CompleteLessonLearningResponse) String() string {
 func (*CompleteLessonLearningResponse) ProtoMessage() {}
 
 func (x *CompleteLessonLearningResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[117]
+	mi := &file_lms_proto_msgTypes[118]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7766,7 +7850,7 @@ func (x *CompleteLessonLearningResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteLessonLearningResponse.ProtoReflect.Descriptor instead.
 func (*CompleteLessonLearningResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{117}
+	return file_lms_proto_rawDescGZIP(), []int{118}
 }
 
 func (x *CompleteLessonLearningResponse) GetLessonStatus() string {
@@ -7809,7 +7893,7 @@ type ListCandidateEnrollmentsRequest struct {
 
 func (x *ListCandidateEnrollmentsRequest) Reset() {
 	*x = ListCandidateEnrollmentsRequest{}
-	mi := &file_lms_proto_msgTypes[118]
+	mi := &file_lms_proto_msgTypes[119]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7821,7 +7905,7 @@ func (x *ListCandidateEnrollmentsRequest) String() string {
 func (*ListCandidateEnrollmentsRequest) ProtoMessage() {}
 
 func (x *ListCandidateEnrollmentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[118]
+	mi := &file_lms_proto_msgTypes[119]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7834,7 +7918,7 @@ func (x *ListCandidateEnrollmentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCandidateEnrollmentsRequest.ProtoReflect.Descriptor instead.
 func (*ListCandidateEnrollmentsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{118}
+	return file_lms_proto_rawDescGZIP(), []int{119}
 }
 
 func (x *ListCandidateEnrollmentsRequest) GetCandidateId() string {
@@ -7880,7 +7964,7 @@ type CandidateEnrollmentSummary struct {
 
 func (x *CandidateEnrollmentSummary) Reset() {
 	*x = CandidateEnrollmentSummary{}
-	mi := &file_lms_proto_msgTypes[119]
+	mi := &file_lms_proto_msgTypes[120]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7892,7 +7976,7 @@ func (x *CandidateEnrollmentSummary) String() string {
 func (*CandidateEnrollmentSummary) ProtoMessage() {}
 
 func (x *CandidateEnrollmentSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[119]
+	mi := &file_lms_proto_msgTypes[120]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7905,7 +7989,7 @@ func (x *CandidateEnrollmentSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CandidateEnrollmentSummary.ProtoReflect.Descriptor instead.
 func (*CandidateEnrollmentSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{119}
+	return file_lms_proto_rawDescGZIP(), []int{120}
 }
 
 func (x *CandidateEnrollmentSummary) GetEnrollmentId() string {
@@ -7967,7 +8051,7 @@ type ListCandidateEnrollmentsResponse struct {
 
 func (x *ListCandidateEnrollmentsResponse) Reset() {
 	*x = ListCandidateEnrollmentsResponse{}
-	mi := &file_lms_proto_msgTypes[120]
+	mi := &file_lms_proto_msgTypes[121]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -7979,7 +8063,7 @@ func (x *ListCandidateEnrollmentsResponse) String() string {
 func (*ListCandidateEnrollmentsResponse) ProtoMessage() {}
 
 func (x *ListCandidateEnrollmentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[120]
+	mi := &file_lms_proto_msgTypes[121]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -7992,7 +8076,7 @@ func (x *ListCandidateEnrollmentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCandidateEnrollmentsResponse.ProtoReflect.Descriptor instead.
 func (*ListCandidateEnrollmentsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{120}
+	return file_lms_proto_rawDescGZIP(), []int{121}
 }
 
 func (x *ListCandidateEnrollmentsResponse) GetEnrollments() []*CandidateEnrollmentSummary {
@@ -8019,7 +8103,7 @@ type GetCandidateEnrollmentDetailRequest struct {
 
 func (x *GetCandidateEnrollmentDetailRequest) Reset() {
 	*x = GetCandidateEnrollmentDetailRequest{}
-	mi := &file_lms_proto_msgTypes[121]
+	mi := &file_lms_proto_msgTypes[122]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8031,7 +8115,7 @@ func (x *GetCandidateEnrollmentDetailRequest) String() string {
 func (*GetCandidateEnrollmentDetailRequest) ProtoMessage() {}
 
 func (x *GetCandidateEnrollmentDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[121]
+	mi := &file_lms_proto_msgTypes[122]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8044,7 +8128,7 @@ func (x *GetCandidateEnrollmentDetailRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetCandidateEnrollmentDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetCandidateEnrollmentDetailRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{121}
+	return file_lms_proto_rawDescGZIP(), []int{122}
 }
 
 func (x *GetCandidateEnrollmentDetailRequest) GetEnrollmentId() string {
@@ -8082,7 +8166,7 @@ type GetCandidateEnrollmentDetailResponse struct {
 
 func (x *GetCandidateEnrollmentDetailResponse) Reset() {
 	*x = GetCandidateEnrollmentDetailResponse{}
-	mi := &file_lms_proto_msgTypes[122]
+	mi := &file_lms_proto_msgTypes[123]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8094,7 +8178,7 @@ func (x *GetCandidateEnrollmentDetailResponse) String() string {
 func (*GetCandidateEnrollmentDetailResponse) ProtoMessage() {}
 
 func (x *GetCandidateEnrollmentDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[122]
+	mi := &file_lms_proto_msgTypes[123]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8107,7 +8191,7 @@ func (x *GetCandidateEnrollmentDetailResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use GetCandidateEnrollmentDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetCandidateEnrollmentDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{122}
+	return file_lms_proto_rawDescGZIP(), []int{123}
 }
 
 func (x *GetCandidateEnrollmentDetailResponse) GetEnrollmentId() string {
@@ -8213,7 +8297,7 @@ type ListCourseEnrollmentsForAdminRequest struct {
 
 func (x *ListCourseEnrollmentsForAdminRequest) Reset() {
 	*x = ListCourseEnrollmentsForAdminRequest{}
-	mi := &file_lms_proto_msgTypes[123]
+	mi := &file_lms_proto_msgTypes[124]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8225,7 +8309,7 @@ func (x *ListCourseEnrollmentsForAdminRequest) String() string {
 func (*ListCourseEnrollmentsForAdminRequest) ProtoMessage() {}
 
 func (x *ListCourseEnrollmentsForAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[123]
+	mi := &file_lms_proto_msgTypes[124]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8238,7 +8322,7 @@ func (x *ListCourseEnrollmentsForAdminRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use ListCourseEnrollmentsForAdminRequest.ProtoReflect.Descriptor instead.
 func (*ListCourseEnrollmentsForAdminRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{123}
+	return file_lms_proto_rawDescGZIP(), []int{124}
 }
 
 func (x *ListCourseEnrollmentsForAdminRequest) GetCourseId() string {
@@ -8283,7 +8367,7 @@ type CourseEnrollmentSummaryForAdmin struct {
 
 func (x *CourseEnrollmentSummaryForAdmin) Reset() {
 	*x = CourseEnrollmentSummaryForAdmin{}
-	mi := &file_lms_proto_msgTypes[124]
+	mi := &file_lms_proto_msgTypes[125]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8295,7 +8379,7 @@ func (x *CourseEnrollmentSummaryForAdmin) String() string {
 func (*CourseEnrollmentSummaryForAdmin) ProtoMessage() {}
 
 func (x *CourseEnrollmentSummaryForAdmin) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[124]
+	mi := &file_lms_proto_msgTypes[125]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8308,7 +8392,7 @@ func (x *CourseEnrollmentSummaryForAdmin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseEnrollmentSummaryForAdmin.ProtoReflect.Descriptor instead.
 func (*CourseEnrollmentSummaryForAdmin) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{124}
+	return file_lms_proto_rawDescGZIP(), []int{125}
 }
 
 func (x *CourseEnrollmentSummaryForAdmin) GetEnrollmentId() string {
@@ -8363,7 +8447,7 @@ type ListCourseEnrollmentsForAdminResponse struct {
 
 func (x *ListCourseEnrollmentsForAdminResponse) Reset() {
 	*x = ListCourseEnrollmentsForAdminResponse{}
-	mi := &file_lms_proto_msgTypes[125]
+	mi := &file_lms_proto_msgTypes[126]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8375,7 +8459,7 @@ func (x *ListCourseEnrollmentsForAdminResponse) String() string {
 func (*ListCourseEnrollmentsForAdminResponse) ProtoMessage() {}
 
 func (x *ListCourseEnrollmentsForAdminResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[125]
+	mi := &file_lms_proto_msgTypes[126]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8388,7 +8472,7 @@ func (x *ListCourseEnrollmentsForAdminResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ListCourseEnrollmentsForAdminResponse.ProtoReflect.Descriptor instead.
 func (*ListCourseEnrollmentsForAdminResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{125}
+	return file_lms_proto_rawDescGZIP(), []int{126}
 }
 
 func (x *ListCourseEnrollmentsForAdminResponse) GetEnrollments() []*CourseEnrollmentSummaryForAdmin {
@@ -8415,7 +8499,7 @@ type GetCandidateProgressForAdminRequest struct {
 
 func (x *GetCandidateProgressForAdminRequest) Reset() {
 	*x = GetCandidateProgressForAdminRequest{}
-	mi := &file_lms_proto_msgTypes[126]
+	mi := &file_lms_proto_msgTypes[127]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8427,7 +8511,7 @@ func (x *GetCandidateProgressForAdminRequest) String() string {
 func (*GetCandidateProgressForAdminRequest) ProtoMessage() {}
 
 func (x *GetCandidateProgressForAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[126]
+	mi := &file_lms_proto_msgTypes[127]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8440,7 +8524,7 @@ func (x *GetCandidateProgressForAdminRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetCandidateProgressForAdminRequest.ProtoReflect.Descriptor instead.
 func (*GetCandidateProgressForAdminRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{126}
+	return file_lms_proto_rawDescGZIP(), []int{127}
 }
 
 func (x *GetCandidateProgressForAdminRequest) GetCandidateId() string {
@@ -8474,7 +8558,7 @@ type GetCandidateProgressForAdminResponse struct {
 
 func (x *GetCandidateProgressForAdminResponse) Reset() {
 	*x = GetCandidateProgressForAdminResponse{}
-	mi := &file_lms_proto_msgTypes[127]
+	mi := &file_lms_proto_msgTypes[128]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8486,7 +8570,7 @@ func (x *GetCandidateProgressForAdminResponse) String() string {
 func (*GetCandidateProgressForAdminResponse) ProtoMessage() {}
 
 func (x *GetCandidateProgressForAdminResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[127]
+	mi := &file_lms_proto_msgTypes[128]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8499,7 +8583,7 @@ func (x *GetCandidateProgressForAdminResponse) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use GetCandidateProgressForAdminResponse.ProtoReflect.Descriptor instead.
 func (*GetCandidateProgressForAdminResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{127}
+	return file_lms_proto_rawDescGZIP(), []int{128}
 }
 
 func (x *GetCandidateProgressForAdminResponse) GetEnrollmentId() string {
@@ -8574,7 +8658,7 @@ type QuizOptionDetail struct {
 
 func (x *QuizOptionDetail) Reset() {
 	*x = QuizOptionDetail{}
-	mi := &file_lms_proto_msgTypes[128]
+	mi := &file_lms_proto_msgTypes[129]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8586,7 +8670,7 @@ func (x *QuizOptionDetail) String() string {
 func (*QuizOptionDetail) ProtoMessage() {}
 
 func (x *QuizOptionDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[128]
+	mi := &file_lms_proto_msgTypes[129]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8599,7 +8683,7 @@ func (x *QuizOptionDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizOptionDetail.ProtoReflect.Descriptor instead.
 func (*QuizOptionDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{128}
+	return file_lms_proto_rawDescGZIP(), []int{129}
 }
 
 func (x *QuizOptionDetail) GetOption() *QuizOption {
@@ -8619,7 +8703,7 @@ type QuizQuestionDetail struct {
 
 func (x *QuizQuestionDetail) Reset() {
 	*x = QuizQuestionDetail{}
-	mi := &file_lms_proto_msgTypes[129]
+	mi := &file_lms_proto_msgTypes[130]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8631,7 +8715,7 @@ func (x *QuizQuestionDetail) String() string {
 func (*QuizQuestionDetail) ProtoMessage() {}
 
 func (x *QuizQuestionDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[129]
+	mi := &file_lms_proto_msgTypes[130]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8644,7 +8728,7 @@ func (x *QuizQuestionDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizQuestionDetail.ProtoReflect.Descriptor instead.
 func (*QuizQuestionDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{129}
+	return file_lms_proto_rawDescGZIP(), []int{130}
 }
 
 func (x *QuizQuestionDetail) GetQuestion() *QuizQuestion {
@@ -8671,7 +8755,7 @@ type QuizDetail struct {
 
 func (x *QuizDetail) Reset() {
 	*x = QuizDetail{}
-	mi := &file_lms_proto_msgTypes[130]
+	mi := &file_lms_proto_msgTypes[131]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8683,7 +8767,7 @@ func (x *QuizDetail) String() string {
 func (*QuizDetail) ProtoMessage() {}
 
 func (x *QuizDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[130]
+	mi := &file_lms_proto_msgTypes[131]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8696,7 +8780,7 @@ func (x *QuizDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizDetail.ProtoReflect.Descriptor instead.
 func (*QuizDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{130}
+	return file_lms_proto_rawDescGZIP(), []int{131}
 }
 
 func (x *QuizDetail) GetQuiz() *Quiz {
@@ -8723,7 +8807,7 @@ type LessonDetail struct {
 
 func (x *LessonDetail) Reset() {
 	*x = LessonDetail{}
-	mi := &file_lms_proto_msgTypes[131]
+	mi := &file_lms_proto_msgTypes[132]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8735,7 +8819,7 @@ func (x *LessonDetail) String() string {
 func (*LessonDetail) ProtoMessage() {}
 
 func (x *LessonDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[131]
+	mi := &file_lms_proto_msgTypes[132]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8748,7 +8832,7 @@ func (x *LessonDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LessonDetail.ProtoReflect.Descriptor instead.
 func (*LessonDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{131}
+	return file_lms_proto_rawDescGZIP(), []int{132}
 }
 
 func (x *LessonDetail) GetLesson() *Lesson {
@@ -8776,7 +8860,7 @@ type ChapterDetail struct {
 
 func (x *ChapterDetail) Reset() {
 	*x = ChapterDetail{}
-	mi := &file_lms_proto_msgTypes[132]
+	mi := &file_lms_proto_msgTypes[133]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8788,7 +8872,7 @@ func (x *ChapterDetail) String() string {
 func (*ChapterDetail) ProtoMessage() {}
 
 func (x *ChapterDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[132]
+	mi := &file_lms_proto_msgTypes[133]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8801,7 +8885,7 @@ func (x *ChapterDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChapterDetail.ProtoReflect.Descriptor instead.
 func (*ChapterDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{132}
+	return file_lms_proto_rawDescGZIP(), []int{133}
 }
 
 func (x *ChapterDetail) GetChapter() *Chapter {
@@ -8838,7 +8922,7 @@ type CompleteCourse struct {
 
 func (x *CompleteCourse) Reset() {
 	*x = CompleteCourse{}
-	mi := &file_lms_proto_msgTypes[133]
+	mi := &file_lms_proto_msgTypes[134]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8850,7 +8934,7 @@ func (x *CompleteCourse) String() string {
 func (*CompleteCourse) ProtoMessage() {}
 
 func (x *CompleteCourse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[133]
+	mi := &file_lms_proto_msgTypes[134]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8863,7 +8947,7 @@ func (x *CompleteCourse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteCourse.ProtoReflect.Descriptor instead.
 func (*CompleteCourse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{133}
+	return file_lms_proto_rawDescGZIP(), []int{134}
 }
 
 func (x *CompleteCourse) GetCourse() *Course {
@@ -8916,7 +9000,7 @@ type SupplementaryMaterial struct {
 
 func (x *SupplementaryMaterial) Reset() {
 	*x = SupplementaryMaterial{}
-	mi := &file_lms_proto_msgTypes[134]
+	mi := &file_lms_proto_msgTypes[135]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -8928,7 +9012,7 @@ func (x *SupplementaryMaterial) String() string {
 func (*SupplementaryMaterial) ProtoMessage() {}
 
 func (x *SupplementaryMaterial) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[134]
+	mi := &file_lms_proto_msgTypes[135]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -8941,7 +9025,7 @@ func (x *SupplementaryMaterial) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SupplementaryMaterial.ProtoReflect.Descriptor instead.
 func (*SupplementaryMaterial) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{134}
+	return file_lms_proto_rawDescGZIP(), []int{135}
 }
 
 func (x *SupplementaryMaterial) GetMaterialId() string {
@@ -9002,7 +9086,7 @@ type GetCompleteCourseRequest struct {
 
 func (x *GetCompleteCourseRequest) Reset() {
 	*x = GetCompleteCourseRequest{}
-	mi := &file_lms_proto_msgTypes[135]
+	mi := &file_lms_proto_msgTypes[136]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9014,7 +9098,7 @@ func (x *GetCompleteCourseRequest) String() string {
 func (*GetCompleteCourseRequest) ProtoMessage() {}
 
 func (x *GetCompleteCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[135]
+	mi := &file_lms_proto_msgTypes[136]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9027,7 +9111,7 @@ func (x *GetCompleteCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompleteCourseRequest.ProtoReflect.Descriptor instead.
 func (*GetCompleteCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{135}
+	return file_lms_proto_rawDescGZIP(), []int{136}
 }
 
 func (x *GetCompleteCourseRequest) GetCourseId() string {
@@ -9046,7 +9130,7 @@ type GetCompleteCourseResponse struct {
 
 func (x *GetCompleteCourseResponse) Reset() {
 	*x = GetCompleteCourseResponse{}
-	mi := &file_lms_proto_msgTypes[136]
+	mi := &file_lms_proto_msgTypes[137]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9058,7 +9142,7 @@ func (x *GetCompleteCourseResponse) String() string {
 func (*GetCompleteCourseResponse) ProtoMessage() {}
 
 func (x *GetCompleteCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[136]
+	mi := &file_lms_proto_msgTypes[137]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9071,7 +9155,7 @@ func (x *GetCompleteCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCompleteCourseResponse.ProtoReflect.Descriptor instead.
 func (*GetCompleteCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{136}
+	return file_lms_proto_rawDescGZIP(), []int{137}
 }
 
 func (x *GetCompleteCourseResponse) GetCompleteCourse() *CompleteCourse {
@@ -9093,7 +9177,7 @@ type CreateCourseSupplementaryMaterialRequest struct {
 
 func (x *CreateCourseSupplementaryMaterialRequest) Reset() {
 	*x = CreateCourseSupplementaryMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[137]
+	mi := &file_lms_proto_msgTypes[138]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9105,7 +9189,7 @@ func (x *CreateCourseSupplementaryMaterialRequest) String() string {
 func (*CreateCourseSupplementaryMaterialRequest) ProtoMessage() {}
 
 func (x *CreateCourseSupplementaryMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[137]
+	mi := &file_lms_proto_msgTypes[138]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9118,7 +9202,7 @@ func (x *CreateCourseSupplementaryMaterialRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use CreateCourseSupplementaryMaterialRequest.ProtoReflect.Descriptor instead.
 func (*CreateCourseSupplementaryMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{137}
+	return file_lms_proto_rawDescGZIP(), []int{138}
 }
 
 func (x *CreateCourseSupplementaryMaterialRequest) GetMaterialId() string {
@@ -9158,7 +9242,7 @@ type CreateCourseSupplementaryMaterialResponse struct {
 
 func (x *CreateCourseSupplementaryMaterialResponse) Reset() {
 	*x = CreateCourseSupplementaryMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[138]
+	mi := &file_lms_proto_msgTypes[139]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9170,7 +9254,7 @@ func (x *CreateCourseSupplementaryMaterialResponse) String() string {
 func (*CreateCourseSupplementaryMaterialResponse) ProtoMessage() {}
 
 func (x *CreateCourseSupplementaryMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[138]
+	mi := &file_lms_proto_msgTypes[139]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9183,7 +9267,7 @@ func (x *CreateCourseSupplementaryMaterialResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use CreateCourseSupplementaryMaterialResponse.ProtoReflect.Descriptor instead.
 func (*CreateCourseSupplementaryMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{138}
+	return file_lms_proto_rawDescGZIP(), []int{139}
 }
 
 func (x *CreateCourseSupplementaryMaterialResponse) GetMaterial() *SupplementaryMaterial {
@@ -9205,7 +9289,7 @@ type UpdateCourseSupplementaryMaterialRequest struct {
 
 func (x *UpdateCourseSupplementaryMaterialRequest) Reset() {
 	*x = UpdateCourseSupplementaryMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[139]
+	mi := &file_lms_proto_msgTypes[140]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9217,7 +9301,7 @@ func (x *UpdateCourseSupplementaryMaterialRequest) String() string {
 func (*UpdateCourseSupplementaryMaterialRequest) ProtoMessage() {}
 
 func (x *UpdateCourseSupplementaryMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[139]
+	mi := &file_lms_proto_msgTypes[140]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9230,7 +9314,7 @@ func (x *UpdateCourseSupplementaryMaterialRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use UpdateCourseSupplementaryMaterialRequest.ProtoReflect.Descriptor instead.
 func (*UpdateCourseSupplementaryMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{139}
+	return file_lms_proto_rawDescGZIP(), []int{140}
 }
 
 func (x *UpdateCourseSupplementaryMaterialRequest) GetMaterialId() string {
@@ -9270,7 +9354,7 @@ type UpdateCourseSupplementaryMaterialResponse struct {
 
 func (x *UpdateCourseSupplementaryMaterialResponse) Reset() {
 	*x = UpdateCourseSupplementaryMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[140]
+	mi := &file_lms_proto_msgTypes[141]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9282,7 +9366,7 @@ func (x *UpdateCourseSupplementaryMaterialResponse) String() string {
 func (*UpdateCourseSupplementaryMaterialResponse) ProtoMessage() {}
 
 func (x *UpdateCourseSupplementaryMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[140]
+	mi := &file_lms_proto_msgTypes[141]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9295,7 +9379,7 @@ func (x *UpdateCourseSupplementaryMaterialResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use UpdateCourseSupplementaryMaterialResponse.ProtoReflect.Descriptor instead.
 func (*UpdateCourseSupplementaryMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{140}
+	return file_lms_proto_rawDescGZIP(), []int{141}
 }
 
 func (x *UpdateCourseSupplementaryMaterialResponse) GetMaterial() *SupplementaryMaterial {
@@ -9315,7 +9399,7 @@ type DeleteCourseSupplementaryMaterialRequest struct {
 
 func (x *DeleteCourseSupplementaryMaterialRequest) Reset() {
 	*x = DeleteCourseSupplementaryMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[141]
+	mi := &file_lms_proto_msgTypes[142]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9327,7 +9411,7 @@ func (x *DeleteCourseSupplementaryMaterialRequest) String() string {
 func (*DeleteCourseSupplementaryMaterialRequest) ProtoMessage() {}
 
 func (x *DeleteCourseSupplementaryMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[141]
+	mi := &file_lms_proto_msgTypes[142]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9340,7 +9424,7 @@ func (x *DeleteCourseSupplementaryMaterialRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use DeleteCourseSupplementaryMaterialRequest.ProtoReflect.Descriptor instead.
 func (*DeleteCourseSupplementaryMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{141}
+	return file_lms_proto_rawDescGZIP(), []int{142}
 }
 
 func (x *DeleteCourseSupplementaryMaterialRequest) GetMaterialId() string {
@@ -9366,7 +9450,7 @@ type DeleteCourseSupplementaryMaterialResponse struct {
 
 func (x *DeleteCourseSupplementaryMaterialResponse) Reset() {
 	*x = DeleteCourseSupplementaryMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[142]
+	mi := &file_lms_proto_msgTypes[143]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9378,7 +9462,7 @@ func (x *DeleteCourseSupplementaryMaterialResponse) String() string {
 func (*DeleteCourseSupplementaryMaterialResponse) ProtoMessage() {}
 
 func (x *DeleteCourseSupplementaryMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[142]
+	mi := &file_lms_proto_msgTypes[143]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9391,7 +9475,7 @@ func (x *DeleteCourseSupplementaryMaterialResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use DeleteCourseSupplementaryMaterialResponse.ProtoReflect.Descriptor instead.
 func (*DeleteCourseSupplementaryMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{142}
+	return file_lms_proto_rawDescGZIP(), []int{143}
 }
 
 func (x *DeleteCourseSupplementaryMaterialResponse) GetSuccess() bool {
@@ -9410,7 +9494,7 @@ type GetCourseSupplementaryMaterialRequest struct {
 
 func (x *GetCourseSupplementaryMaterialRequest) Reset() {
 	*x = GetCourseSupplementaryMaterialRequest{}
-	mi := &file_lms_proto_msgTypes[143]
+	mi := &file_lms_proto_msgTypes[144]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9422,7 +9506,7 @@ func (x *GetCourseSupplementaryMaterialRequest) String() string {
 func (*GetCourseSupplementaryMaterialRequest) ProtoMessage() {}
 
 func (x *GetCourseSupplementaryMaterialRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[143]
+	mi := &file_lms_proto_msgTypes[144]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9435,7 +9519,7 @@ func (x *GetCourseSupplementaryMaterialRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetCourseSupplementaryMaterialRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseSupplementaryMaterialRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{143}
+	return file_lms_proto_rawDescGZIP(), []int{144}
 }
 
 func (x *GetCourseSupplementaryMaterialRequest) GetCourseId() string {
@@ -9454,7 +9538,7 @@ type GetCourseSupplementaryMaterialResponse struct {
 
 func (x *GetCourseSupplementaryMaterialResponse) Reset() {
 	*x = GetCourseSupplementaryMaterialResponse{}
-	mi := &file_lms_proto_msgTypes[144]
+	mi := &file_lms_proto_msgTypes[145]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9466,7 +9550,7 @@ func (x *GetCourseSupplementaryMaterialResponse) String() string {
 func (*GetCourseSupplementaryMaterialResponse) ProtoMessage() {}
 
 func (x *GetCourseSupplementaryMaterialResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[144]
+	mi := &file_lms_proto_msgTypes[145]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9479,7 +9563,7 @@ func (x *GetCourseSupplementaryMaterialResponse) ProtoReflect() protoreflect.Mes
 
 // Deprecated: Use GetCourseSupplementaryMaterialResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseSupplementaryMaterialResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{144}
+	return file_lms_proto_rawDescGZIP(), []int{145}
 }
 
 func (x *GetCourseSupplementaryMaterialResponse) GetMaterial() *SupplementaryMaterial {
@@ -9499,7 +9583,7 @@ type TakeQuizRequest struct {
 
 func (x *TakeQuizRequest) Reset() {
 	*x = TakeQuizRequest{}
-	mi := &file_lms_proto_msgTypes[145]
+	mi := &file_lms_proto_msgTypes[146]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9511,7 +9595,7 @@ func (x *TakeQuizRequest) String() string {
 func (*TakeQuizRequest) ProtoMessage() {}
 
 func (x *TakeQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[145]
+	mi := &file_lms_proto_msgTypes[146]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9524,7 +9608,7 @@ func (x *TakeQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TakeQuizRequest.ProtoReflect.Descriptor instead.
 func (*TakeQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{145}
+	return file_lms_proto_rawDescGZIP(), []int{146}
 }
 
 func (x *TakeQuizRequest) GetCandidateId() string {
@@ -9551,7 +9635,7 @@ type TakeQuizResponse struct {
 
 func (x *TakeQuizResponse) Reset() {
 	*x = TakeQuizResponse{}
-	mi := &file_lms_proto_msgTypes[146]
+	mi := &file_lms_proto_msgTypes[147]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9563,7 +9647,7 @@ func (x *TakeQuizResponse) String() string {
 func (*TakeQuizResponse) ProtoMessage() {}
 
 func (x *TakeQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[146]
+	mi := &file_lms_proto_msgTypes[147]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9576,7 +9660,7 @@ func (x *TakeQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TakeQuizResponse.ProtoReflect.Descriptor instead.
 func (*TakeQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{146}
+	return file_lms_proto_rawDescGZIP(), []int{147}
 }
 
 func (x *TakeQuizResponse) GetAttemptId() string {
@@ -9604,7 +9688,7 @@ type QuizOptionForCandidate struct {
 
 func (x *QuizOptionForCandidate) Reset() {
 	*x = QuizOptionForCandidate{}
-	mi := &file_lms_proto_msgTypes[147]
+	mi := &file_lms_proto_msgTypes[148]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9616,7 +9700,7 @@ func (x *QuizOptionForCandidate) String() string {
 func (*QuizOptionForCandidate) ProtoMessage() {}
 
 func (x *QuizOptionForCandidate) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[147]
+	mi := &file_lms_proto_msgTypes[148]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9629,7 +9713,7 @@ func (x *QuizOptionForCandidate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizOptionForCandidate.ProtoReflect.Descriptor instead.
 func (*QuizOptionForCandidate) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{147}
+	return file_lms_proto_rawDescGZIP(), []int{148}
 }
 
 func (x *QuizOptionForCandidate) GetOptionId() string {
@@ -9667,7 +9751,7 @@ type QuizQuestionForCandidate struct {
 
 func (x *QuizQuestionForCandidate) Reset() {
 	*x = QuizQuestionForCandidate{}
-	mi := &file_lms_proto_msgTypes[148]
+	mi := &file_lms_proto_msgTypes[149]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9679,7 +9763,7 @@ func (x *QuizQuestionForCandidate) String() string {
 func (*QuizQuestionForCandidate) ProtoMessage() {}
 
 func (x *QuizQuestionForCandidate) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[148]
+	mi := &file_lms_proto_msgTypes[149]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9692,7 +9776,7 @@ func (x *QuizQuestionForCandidate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizQuestionForCandidate.ProtoReflect.Descriptor instead.
 func (*QuizQuestionForCandidate) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{148}
+	return file_lms_proto_rawDescGZIP(), []int{149}
 }
 
 func (x *QuizQuestionForCandidate) GetQuestionId() string {
@@ -9747,7 +9831,7 @@ type GetCandidateQuizPaperRequest struct {
 
 func (x *GetCandidateQuizPaperRequest) Reset() {
 	*x = GetCandidateQuizPaperRequest{}
-	mi := &file_lms_proto_msgTypes[149]
+	mi := &file_lms_proto_msgTypes[150]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9759,7 +9843,7 @@ func (x *GetCandidateQuizPaperRequest) String() string {
 func (*GetCandidateQuizPaperRequest) ProtoMessage() {}
 
 func (x *GetCandidateQuizPaperRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[149]
+	mi := &file_lms_proto_msgTypes[150]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9772,7 +9856,7 @@ func (x *GetCandidateQuizPaperRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCandidateQuizPaperRequest.ProtoReflect.Descriptor instead.
 func (*GetCandidateQuizPaperRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{149}
+	return file_lms_proto_rawDescGZIP(), []int{150}
 }
 
 func (x *GetCandidateQuizPaperRequest) GetCandidateId() string {
@@ -9803,7 +9887,7 @@ type GetCandidateQuizPaperResponse struct {
 
 func (x *GetCandidateQuizPaperResponse) Reset() {
 	*x = GetCandidateQuizPaperResponse{}
-	mi := &file_lms_proto_msgTypes[150]
+	mi := &file_lms_proto_msgTypes[151]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9815,7 +9899,7 @@ func (x *GetCandidateQuizPaperResponse) String() string {
 func (*GetCandidateQuizPaperResponse) ProtoMessage() {}
 
 func (x *GetCandidateQuizPaperResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[150]
+	mi := &file_lms_proto_msgTypes[151]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9828,7 +9912,7 @@ func (x *GetCandidateQuizPaperResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCandidateQuizPaperResponse.ProtoReflect.Descriptor instead.
 func (*GetCandidateQuizPaperResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{150}
+	return file_lms_proto_rawDescGZIP(), []int{151}
 }
 
 func (x *GetCandidateQuizPaperResponse) GetAttemptId() string {
@@ -9883,7 +9967,7 @@ type QuizAnswerSubmission struct {
 
 func (x *QuizAnswerSubmission) Reset() {
 	*x = QuizAnswerSubmission{}
-	mi := &file_lms_proto_msgTypes[151]
+	mi := &file_lms_proto_msgTypes[152]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9895,7 +9979,7 @@ func (x *QuizAnswerSubmission) String() string {
 func (*QuizAnswerSubmission) ProtoMessage() {}
 
 func (x *QuizAnswerSubmission) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[151]
+	mi := &file_lms_proto_msgTypes[152]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9908,7 +9992,7 @@ func (x *QuizAnswerSubmission) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizAnswerSubmission.ProtoReflect.Descriptor instead.
 func (*QuizAnswerSubmission) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{151}
+	return file_lms_proto_rawDescGZIP(), []int{152}
 }
 
 func (x *QuizAnswerSubmission) GetQuestionId() string {
@@ -9936,7 +10020,7 @@ type SubmitQuizRequest struct {
 
 func (x *SubmitQuizRequest) Reset() {
 	*x = SubmitQuizRequest{}
-	mi := &file_lms_proto_msgTypes[152]
+	mi := &file_lms_proto_msgTypes[153]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -9948,7 +10032,7 @@ func (x *SubmitQuizRequest) String() string {
 func (*SubmitQuizRequest) ProtoMessage() {}
 
 func (x *SubmitQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[152]
+	mi := &file_lms_proto_msgTypes[153]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -9961,7 +10045,7 @@ func (x *SubmitQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitQuizRequest.ProtoReflect.Descriptor instead.
 func (*SubmitQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{152}
+	return file_lms_proto_rawDescGZIP(), []int{153}
 }
 
 func (x *SubmitQuizRequest) GetCandidateId() string {
@@ -10001,7 +10085,7 @@ type SubmitQuizResponse struct {
 
 func (x *SubmitQuizResponse) Reset() {
 	*x = SubmitQuizResponse{}
-	mi := &file_lms_proto_msgTypes[153]
+	mi := &file_lms_proto_msgTypes[154]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10013,7 +10097,7 @@ func (x *SubmitQuizResponse) String() string {
 func (*SubmitQuizResponse) ProtoMessage() {}
 
 func (x *SubmitQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[153]
+	mi := &file_lms_proto_msgTypes[154]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10026,7 +10110,7 @@ func (x *SubmitQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitQuizResponse.ProtoReflect.Descriptor instead.
 func (*SubmitQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{153}
+	return file_lms_proto_rawDescGZIP(), []int{154}
 }
 
 func (x *SubmitQuizResponse) GetAttemptId() string {
@@ -10110,7 +10194,7 @@ type BrokenAssetDetail struct {
 
 func (x *BrokenAssetDetail) Reset() {
 	*x = BrokenAssetDetail{}
-	mi := &file_lms_proto_msgTypes[154]
+	mi := &file_lms_proto_msgTypes[155]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10122,7 +10206,7 @@ func (x *BrokenAssetDetail) String() string {
 func (*BrokenAssetDetail) ProtoMessage() {}
 
 func (x *BrokenAssetDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[154]
+	mi := &file_lms_proto_msgTypes[155]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10135,7 +10219,7 @@ func (x *BrokenAssetDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BrokenAssetDetail.ProtoReflect.Descriptor instead.
 func (*BrokenAssetDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{154}
+	return file_lms_proto_rawDescGZIP(), []int{155}
 }
 
 func (x *BrokenAssetDetail) GetObjectKey() string {
@@ -10261,7 +10345,7 @@ type ListBrokenAssetsRequest struct {
 
 func (x *ListBrokenAssetsRequest) Reset() {
 	*x = ListBrokenAssetsRequest{}
-	mi := &file_lms_proto_msgTypes[155]
+	mi := &file_lms_proto_msgTypes[156]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10273,7 +10357,7 @@ func (x *ListBrokenAssetsRequest) String() string {
 func (*ListBrokenAssetsRequest) ProtoMessage() {}
 
 func (x *ListBrokenAssetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[155]
+	mi := &file_lms_proto_msgTypes[156]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10286,7 +10370,7 @@ func (x *ListBrokenAssetsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBrokenAssetsRequest.ProtoReflect.Descriptor instead.
 func (*ListBrokenAssetsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{155}
+	return file_lms_proto_rawDescGZIP(), []int{156}
 }
 
 func (x *ListBrokenAssetsRequest) GetPageSize() uint32 {
@@ -10320,7 +10404,7 @@ type ListBrokenAssetsResponse struct {
 
 func (x *ListBrokenAssetsResponse) Reset() {
 	*x = ListBrokenAssetsResponse{}
-	mi := &file_lms_proto_msgTypes[156]
+	mi := &file_lms_proto_msgTypes[157]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10332,7 +10416,7 @@ func (x *ListBrokenAssetsResponse) String() string {
 func (*ListBrokenAssetsResponse) ProtoMessage() {}
 
 func (x *ListBrokenAssetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[156]
+	mi := &file_lms_proto_msgTypes[157]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10345,7 +10429,7 @@ func (x *ListBrokenAssetsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBrokenAssetsResponse.ProtoReflect.Descriptor instead.
 func (*ListBrokenAssetsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{156}
+	return file_lms_proto_rawDescGZIP(), []int{157}
 }
 
 func (x *ListBrokenAssetsResponse) GetAssets() []*BrokenAssetDetail {
@@ -10374,7 +10458,7 @@ type ImportQuizRequest struct {
 
 func (x *ImportQuizRequest) Reset() {
 	*x = ImportQuizRequest{}
-	mi := &file_lms_proto_msgTypes[157]
+	mi := &file_lms_proto_msgTypes[158]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10386,7 +10470,7 @@ func (x *ImportQuizRequest) String() string {
 func (*ImportQuizRequest) ProtoMessage() {}
 
 func (x *ImportQuizRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[157]
+	mi := &file_lms_proto_msgTypes[158]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10399,7 +10483,7 @@ func (x *ImportQuizRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportQuizRequest.ProtoReflect.Descriptor instead.
 func (*ImportQuizRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{157}
+	return file_lms_proto_rawDescGZIP(), []int{158}
 }
 
 func (x *ImportQuizRequest) GetQuizzableType() QuizzableType {
@@ -10434,7 +10518,7 @@ type ImportQuizResponse struct {
 
 func (x *ImportQuizResponse) Reset() {
 	*x = ImportQuizResponse{}
-	mi := &file_lms_proto_msgTypes[158]
+	mi := &file_lms_proto_msgTypes[159]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10446,7 +10530,7 @@ func (x *ImportQuizResponse) String() string {
 func (*ImportQuizResponse) ProtoMessage() {}
 
 func (x *ImportQuizResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[158]
+	mi := &file_lms_proto_msgTypes[159]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10459,7 +10543,7 @@ func (x *ImportQuizResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportQuizResponse.ProtoReflect.Descriptor instead.
 func (*ImportQuizResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{158}
+	return file_lms_proto_rawDescGZIP(), []int{159}
 }
 
 func (x *ImportQuizResponse) GetQuizId() string {
@@ -10494,7 +10578,7 @@ type ImportCourseRequest struct {
 
 func (x *ImportCourseRequest) Reset() {
 	*x = ImportCourseRequest{}
-	mi := &file_lms_proto_msgTypes[159]
+	mi := &file_lms_proto_msgTypes[160]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10506,7 +10590,7 @@ func (x *ImportCourseRequest) String() string {
 func (*ImportCourseRequest) ProtoMessage() {}
 
 func (x *ImportCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[159]
+	mi := &file_lms_proto_msgTypes[160]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10519,7 +10603,7 @@ func (x *ImportCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportCourseRequest.ProtoReflect.Descriptor instead.
 func (*ImportCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{159}
+	return file_lms_proto_rawDescGZIP(), []int{160}
 }
 
 func (x *ImportCourseRequest) GetCategoryTips() string {
@@ -10549,7 +10633,7 @@ type ImportCourseResponse struct {
 
 func (x *ImportCourseResponse) Reset() {
 	*x = ImportCourseResponse{}
-	mi := &file_lms_proto_msgTypes[160]
+	mi := &file_lms_proto_msgTypes[161]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10561,7 +10645,7 @@ func (x *ImportCourseResponse) String() string {
 func (*ImportCourseResponse) ProtoMessage() {}
 
 func (x *ImportCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[160]
+	mi := &file_lms_proto_msgTypes[161]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10574,7 +10658,7 @@ func (x *ImportCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportCourseResponse.ProtoReflect.Descriptor instead.
 func (*ImportCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{160}
+	return file_lms_proto_rawDescGZIP(), []int{161}
 }
 
 func (x *ImportCourseResponse) GetCourseId() string {
@@ -10621,7 +10705,7 @@ type GetCourseSummaryResponse struct {
 
 func (x *GetCourseSummaryResponse) Reset() {
 	*x = GetCourseSummaryResponse{}
-	mi := &file_lms_proto_msgTypes[161]
+	mi := &file_lms_proto_msgTypes[162]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10633,7 +10717,7 @@ func (x *GetCourseSummaryResponse) String() string {
 func (*GetCourseSummaryResponse) ProtoMessage() {}
 
 func (x *GetCourseSummaryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[161]
+	mi := &file_lms_proto_msgTypes[162]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10646,7 +10730,7 @@ func (x *GetCourseSummaryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseSummaryResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseSummaryResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{161}
+	return file_lms_proto_rawDescGZIP(), []int{162}
 }
 
 func (x *GetCourseSummaryResponse) GetCourse() *CourseSummary {
@@ -10680,7 +10764,7 @@ type CourseSummary struct {
 
 func (x *CourseSummary) Reset() {
 	*x = CourseSummary{}
-	mi := &file_lms_proto_msgTypes[162]
+	mi := &file_lms_proto_msgTypes[163]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10692,7 +10776,7 @@ func (x *CourseSummary) String() string {
 func (*CourseSummary) ProtoMessage() {}
 
 func (x *CourseSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[162]
+	mi := &file_lms_proto_msgTypes[163]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10705,7 +10789,7 @@ func (x *CourseSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseSummary.ProtoReflect.Descriptor instead.
 func (*CourseSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{162}
+	return file_lms_proto_rawDescGZIP(), []int{163}
 }
 
 func (x *CourseSummary) GetCourseId() string {
@@ -10839,7 +10923,7 @@ type CourseMaterialSummary struct {
 
 func (x *CourseMaterialSummary) Reset() {
 	*x = CourseMaterialSummary{}
-	mi := &file_lms_proto_msgTypes[163]
+	mi := &file_lms_proto_msgTypes[164]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10851,7 +10935,7 @@ func (x *CourseMaterialSummary) String() string {
 func (*CourseMaterialSummary) ProtoMessage() {}
 
 func (x *CourseMaterialSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[163]
+	mi := &file_lms_proto_msgTypes[164]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10864,7 +10948,7 @@ func (x *CourseMaterialSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseMaterialSummary.ProtoReflect.Descriptor instead.
 func (*CourseMaterialSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{163}
+	return file_lms_proto_rawDescGZIP(), []int{164}
 }
 
 func (x *CourseMaterialSummary) GetMaterialId() string {
@@ -10959,7 +11043,7 @@ type ChapterSummary struct {
 
 func (x *ChapterSummary) Reset() {
 	*x = ChapterSummary{}
-	mi := &file_lms_proto_msgTypes[164]
+	mi := &file_lms_proto_msgTypes[165]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -10971,7 +11055,7 @@ func (x *ChapterSummary) String() string {
 func (*ChapterSummary) ProtoMessage() {}
 
 func (x *ChapterSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[164]
+	mi := &file_lms_proto_msgTypes[165]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -10984,7 +11068,7 @@ func (x *ChapterSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChapterSummary.ProtoReflect.Descriptor instead.
 func (*ChapterSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{164}
+	return file_lms_proto_rawDescGZIP(), []int{165}
 }
 
 func (x *ChapterSummary) GetChapterId() string {
@@ -11058,7 +11142,7 @@ type LessonSummary struct {
 
 func (x *LessonSummary) Reset() {
 	*x = LessonSummary{}
-	mi := &file_lms_proto_msgTypes[165]
+	mi := &file_lms_proto_msgTypes[166]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11070,7 +11154,7 @@ func (x *LessonSummary) String() string {
 func (*LessonSummary) ProtoMessage() {}
 
 func (x *LessonSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[165]
+	mi := &file_lms_proto_msgTypes[166]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11083,7 +11167,7 @@ func (x *LessonSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LessonSummary.ProtoReflect.Descriptor instead.
 func (*LessonSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{165}
+	return file_lms_proto_rawDescGZIP(), []int{166}
 }
 
 func (x *LessonSummary) GetLessonId() string {
@@ -11201,7 +11285,7 @@ type PrerequisiteSummary struct {
 
 func (x *PrerequisiteSummary) Reset() {
 	*x = PrerequisiteSummary{}
-	mi := &file_lms_proto_msgTypes[166]
+	mi := &file_lms_proto_msgTypes[167]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11213,7 +11297,7 @@ func (x *PrerequisiteSummary) String() string {
 func (*PrerequisiteSummary) ProtoMessage() {}
 
 func (x *PrerequisiteSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[166]
+	mi := &file_lms_proto_msgTypes[167]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11226,7 +11310,7 @@ func (x *PrerequisiteSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrerequisiteSummary.ProtoReflect.Descriptor instead.
 func (*PrerequisiteSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{166}
+	return file_lms_proto_rawDescGZIP(), []int{167}
 }
 
 func (x *PrerequisiteSummary) GetPrerequisiteId() string {
@@ -11312,7 +11396,7 @@ type QuizSummary struct {
 
 func (x *QuizSummary) Reset() {
 	*x = QuizSummary{}
-	mi := &file_lms_proto_msgTypes[167]
+	mi := &file_lms_proto_msgTypes[168]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11324,7 +11408,7 @@ func (x *QuizSummary) String() string {
 func (*QuizSummary) ProtoMessage() {}
 
 func (x *QuizSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[167]
+	mi := &file_lms_proto_msgTypes[168]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11337,7 +11421,7 @@ func (x *QuizSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizSummary.ProtoReflect.Descriptor instead.
 func (*QuizSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{167}
+	return file_lms_proto_rawDescGZIP(), []int{168}
 }
 
 func (x *QuizSummary) GetQuizId() string {
@@ -11427,7 +11511,7 @@ type QuizQuestionSummary struct {
 
 func (x *QuizQuestionSummary) Reset() {
 	*x = QuizQuestionSummary{}
-	mi := &file_lms_proto_msgTypes[168]
+	mi := &file_lms_proto_msgTypes[169]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11439,7 +11523,7 @@ func (x *QuizQuestionSummary) String() string {
 func (*QuizQuestionSummary) ProtoMessage() {}
 
 func (x *QuizQuestionSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[168]
+	mi := &file_lms_proto_msgTypes[169]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11452,7 +11536,7 @@ func (x *QuizQuestionSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizQuestionSummary.ProtoReflect.Descriptor instead.
 func (*QuizQuestionSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{168}
+	return file_lms_proto_rawDescGZIP(), []int{169}
 }
 
 func (x *QuizQuestionSummary) GetQuestionId() string {
@@ -11533,7 +11617,7 @@ type QuizOptionSummary struct {
 
 func (x *QuizOptionSummary) Reset() {
 	*x = QuizOptionSummary{}
-	mi := &file_lms_proto_msgTypes[169]
+	mi := &file_lms_proto_msgTypes[170]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11545,7 +11629,7 @@ func (x *QuizOptionSummary) String() string {
 func (*QuizOptionSummary) ProtoMessage() {}
 
 func (x *QuizOptionSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[169]
+	mi := &file_lms_proto_msgTypes[170]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11558,7 +11642,7 @@ func (x *QuizOptionSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizOptionSummary.ProtoReflect.Descriptor instead.
 func (*QuizOptionSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{169}
+	return file_lms_proto_rawDescGZIP(), []int{170}
 }
 
 func (x *QuizOptionSummary) GetOptionId() string {
@@ -11626,7 +11710,7 @@ type CourseDetail struct {
 
 func (x *CourseDetail) Reset() {
 	*x = CourseDetail{}
-	mi := &file_lms_proto_msgTypes[170]
+	mi := &file_lms_proto_msgTypes[171]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11638,7 +11722,7 @@ func (x *CourseDetail) String() string {
 func (*CourseDetail) ProtoMessage() {}
 
 func (x *CourseDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[170]
+	mi := &file_lms_proto_msgTypes[171]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11651,7 +11735,7 @@ func (x *CourseDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseDetail.ProtoReflect.Descriptor instead.
 func (*CourseDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{170}
+	return file_lms_proto_rawDescGZIP(), []int{171}
 }
 
 func (x *CourseDetail) GetCourse() *Course {
@@ -11712,7 +11796,7 @@ type GetCourseDetailRequest struct {
 
 func (x *GetCourseDetailRequest) Reset() {
 	*x = GetCourseDetailRequest{}
-	mi := &file_lms_proto_msgTypes[171]
+	mi := &file_lms_proto_msgTypes[172]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11724,7 +11808,7 @@ func (x *GetCourseDetailRequest) String() string {
 func (*GetCourseDetailRequest) ProtoMessage() {}
 
 func (x *GetCourseDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[171]
+	mi := &file_lms_proto_msgTypes[172]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11737,7 +11821,7 @@ func (x *GetCourseDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseDetailRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{171}
+	return file_lms_proto_rawDescGZIP(), []int{172}
 }
 
 func (x *GetCourseDetailRequest) GetCourseId() string {
@@ -11756,7 +11840,7 @@ type GetCourseDetailResponse struct {
 
 func (x *GetCourseDetailResponse) Reset() {
 	*x = GetCourseDetailResponse{}
-	mi := &file_lms_proto_msgTypes[172]
+	mi := &file_lms_proto_msgTypes[173]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11768,7 +11852,7 @@ func (x *GetCourseDetailResponse) String() string {
 func (*GetCourseDetailResponse) ProtoMessage() {}
 
 func (x *GetCourseDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[172]
+	mi := &file_lms_proto_msgTypes[173]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11781,7 +11865,7 @@ func (x *GetCourseDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{172}
+	return file_lms_proto_rawDescGZIP(), []int{173}
 }
 
 func (x *GetCourseDetailResponse) GetCourseDetail() *CourseDetail {
@@ -11800,7 +11884,7 @@ type GetCourseMaterialDetailResponse struct {
 
 func (x *GetCourseMaterialDetailResponse) Reset() {
 	*x = GetCourseMaterialDetailResponse{}
-	mi := &file_lms_proto_msgTypes[173]
+	mi := &file_lms_proto_msgTypes[174]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11812,7 +11896,7 @@ func (x *GetCourseMaterialDetailResponse) String() string {
 func (*GetCourseMaterialDetailResponse) ProtoMessage() {}
 
 func (x *GetCourseMaterialDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[173]
+	mi := &file_lms_proto_msgTypes[174]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11825,7 +11909,7 @@ func (x *GetCourseMaterialDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseMaterialDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseMaterialDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{173}
+	return file_lms_proto_rawDescGZIP(), []int{174}
 }
 
 func (x *GetCourseMaterialDetailResponse) GetMaterial() *CourseMaterial {
@@ -11844,7 +11928,7 @@ type GetChapterDetailResponse struct {
 
 func (x *GetChapterDetailResponse) Reset() {
 	*x = GetChapterDetailResponse{}
-	mi := &file_lms_proto_msgTypes[174]
+	mi := &file_lms_proto_msgTypes[175]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11856,7 +11940,7 @@ func (x *GetChapterDetailResponse) String() string {
 func (*GetChapterDetailResponse) ProtoMessage() {}
 
 func (x *GetChapterDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[174]
+	mi := &file_lms_proto_msgTypes[175]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11869,7 +11953,7 @@ func (x *GetChapterDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChapterDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetChapterDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{174}
+	return file_lms_proto_rawDescGZIP(), []int{175}
 }
 
 func (x *GetChapterDetailResponse) GetChapter() *Chapter {
@@ -11888,7 +11972,7 @@ type GetLessonDetailResponse struct {
 
 func (x *GetLessonDetailResponse) Reset() {
 	*x = GetLessonDetailResponse{}
-	mi := &file_lms_proto_msgTypes[175]
+	mi := &file_lms_proto_msgTypes[176]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11900,7 +11984,7 @@ func (x *GetLessonDetailResponse) String() string {
 func (*GetLessonDetailResponse) ProtoMessage() {}
 
 func (x *GetLessonDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[175]
+	mi := &file_lms_proto_msgTypes[176]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11913,7 +11997,7 @@ func (x *GetLessonDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetLessonDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{175}
+	return file_lms_proto_rawDescGZIP(), []int{176}
 }
 
 func (x *GetLessonDetailResponse) GetLesson() *Lesson {
@@ -11932,7 +12016,7 @@ type GetPrerequisiteDetailResponse struct {
 
 func (x *GetPrerequisiteDetailResponse) Reset() {
 	*x = GetPrerequisiteDetailResponse{}
-	mi := &file_lms_proto_msgTypes[176]
+	mi := &file_lms_proto_msgTypes[177]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11944,7 +12028,7 @@ func (x *GetPrerequisiteDetailResponse) String() string {
 func (*GetPrerequisiteDetailResponse) ProtoMessage() {}
 
 func (x *GetPrerequisiteDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[176]
+	mi := &file_lms_proto_msgTypes[177]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -11957,7 +12041,7 @@ func (x *GetPrerequisiteDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPrerequisiteDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetPrerequisiteDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{176}
+	return file_lms_proto_rawDescGZIP(), []int{177}
 }
 
 func (x *GetPrerequisiteDetailResponse) GetPrerequisite() *Prerequisite {
@@ -11976,7 +12060,7 @@ type GetQuizDetailRequest struct {
 
 func (x *GetQuizDetailRequest) Reset() {
 	*x = GetQuizDetailRequest{}
-	mi := &file_lms_proto_msgTypes[177]
+	mi := &file_lms_proto_msgTypes[178]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -11988,7 +12072,7 @@ func (x *GetQuizDetailRequest) String() string {
 func (*GetQuizDetailRequest) ProtoMessage() {}
 
 func (x *GetQuizDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[177]
+	mi := &file_lms_proto_msgTypes[178]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12001,7 +12085,7 @@ func (x *GetQuizDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetQuizDetailRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{177}
+	return file_lms_proto_rawDescGZIP(), []int{178}
 }
 
 func (x *GetQuizDetailRequest) GetQuizId() string {
@@ -12020,7 +12104,7 @@ type GetQuizDetailResponse struct {
 
 func (x *GetQuizDetailResponse) Reset() {
 	*x = GetQuizDetailResponse{}
-	mi := &file_lms_proto_msgTypes[178]
+	mi := &file_lms_proto_msgTypes[179]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12032,7 +12116,7 @@ func (x *GetQuizDetailResponse) String() string {
 func (*GetQuizDetailResponse) ProtoMessage() {}
 
 func (x *GetQuizDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[178]
+	mi := &file_lms_proto_msgTypes[179]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12045,7 +12129,7 @@ func (x *GetQuizDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{178}
+	return file_lms_proto_rawDescGZIP(), []int{179}
 }
 
 func (x *GetQuizDetailResponse) GetQuizDetail() *QuizDetail {
@@ -12064,7 +12148,7 @@ type GetQuizQuestionDetailResponse struct {
 
 func (x *GetQuizQuestionDetailResponse) Reset() {
 	*x = GetQuizQuestionDetailResponse{}
-	mi := &file_lms_proto_msgTypes[179]
+	mi := &file_lms_proto_msgTypes[180]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12076,7 +12160,7 @@ func (x *GetQuizQuestionDetailResponse) String() string {
 func (*GetQuizQuestionDetailResponse) ProtoMessage() {}
 
 func (x *GetQuizQuestionDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[179]
+	mi := &file_lms_proto_msgTypes[180]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12089,7 +12173,7 @@ func (x *GetQuizQuestionDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizQuestionDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizQuestionDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{179}
+	return file_lms_proto_rawDescGZIP(), []int{180}
 }
 
 func (x *GetQuizQuestionDetailResponse) GetQuestion() *QuizQuestion {
@@ -12108,7 +12192,7 @@ type GetQuizOptionDetailResponse struct {
 
 func (x *GetQuizOptionDetailResponse) Reset() {
 	*x = GetQuizOptionDetailResponse{}
-	mi := &file_lms_proto_msgTypes[180]
+	mi := &file_lms_proto_msgTypes[181]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12120,7 +12204,7 @@ func (x *GetQuizOptionDetailResponse) String() string {
 func (*GetQuizOptionDetailResponse) ProtoMessage() {}
 
 func (x *GetQuizOptionDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[180]
+	mi := &file_lms_proto_msgTypes[181]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12133,7 +12217,7 @@ func (x *GetQuizOptionDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizOptionDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizOptionDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{180}
+	return file_lms_proto_rawDescGZIP(), []int{181}
 }
 
 func (x *GetQuizOptionDetailResponse) GetOption() *QuizOption {
@@ -12157,7 +12241,7 @@ type ListLessonProgressRequest struct {
 
 func (x *ListLessonProgressRequest) Reset() {
 	*x = ListLessonProgressRequest{}
-	mi := &file_lms_proto_msgTypes[181]
+	mi := &file_lms_proto_msgTypes[182]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12169,7 +12253,7 @@ func (x *ListLessonProgressRequest) String() string {
 func (*ListLessonProgressRequest) ProtoMessage() {}
 
 func (x *ListLessonProgressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[181]
+	mi := &file_lms_proto_msgTypes[182]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12182,7 +12266,7 @@ func (x *ListLessonProgressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLessonProgressRequest.ProtoReflect.Descriptor instead.
 func (*ListLessonProgressRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{181}
+	return file_lms_proto_rawDescGZIP(), []int{182}
 }
 
 func (x *ListLessonProgressRequest) GetCandidateId() string {
@@ -12236,7 +12320,7 @@ type LessonProgressSummary struct {
 
 func (x *LessonProgressSummary) Reset() {
 	*x = LessonProgressSummary{}
-	mi := &file_lms_proto_msgTypes[182]
+	mi := &file_lms_proto_msgTypes[183]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12248,7 +12332,7 @@ func (x *LessonProgressSummary) String() string {
 func (*LessonProgressSummary) ProtoMessage() {}
 
 func (x *LessonProgressSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[182]
+	mi := &file_lms_proto_msgTypes[183]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12261,7 +12345,7 @@ func (x *LessonProgressSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LessonProgressSummary.ProtoReflect.Descriptor instead.
 func (*LessonProgressSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{182}
+	return file_lms_proto_rawDescGZIP(), []int{183}
 }
 
 func (x *LessonProgressSummary) GetUserId() string {
@@ -12330,7 +12414,7 @@ type ListLessonProgressResponse struct {
 
 func (x *ListLessonProgressResponse) Reset() {
 	*x = ListLessonProgressResponse{}
-	mi := &file_lms_proto_msgTypes[183]
+	mi := &file_lms_proto_msgTypes[184]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12342,7 +12426,7 @@ func (x *ListLessonProgressResponse) String() string {
 func (*ListLessonProgressResponse) ProtoMessage() {}
 
 func (x *ListLessonProgressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[183]
+	mi := &file_lms_proto_msgTypes[184]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12355,7 +12439,7 @@ func (x *ListLessonProgressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLessonProgressResponse.ProtoReflect.Descriptor instead.
 func (*ListLessonProgressResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{183}
+	return file_lms_proto_rawDescGZIP(), []int{184}
 }
 
 func (x *ListLessonProgressResponse) GetProgress() []*LessonProgressSummary {
@@ -12382,7 +12466,7 @@ type GetLessonProgressDetailRequest struct {
 
 func (x *GetLessonProgressDetailRequest) Reset() {
 	*x = GetLessonProgressDetailRequest{}
-	mi := &file_lms_proto_msgTypes[184]
+	mi := &file_lms_proto_msgTypes[185]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12394,7 +12478,7 @@ func (x *GetLessonProgressDetailRequest) String() string {
 func (*GetLessonProgressDetailRequest) ProtoMessage() {}
 
 func (x *GetLessonProgressDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[184]
+	mi := &file_lms_proto_msgTypes[185]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12407,7 +12491,7 @@ func (x *GetLessonProgressDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonProgressDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetLessonProgressDetailRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{184}
+	return file_lms_proto_rawDescGZIP(), []int{185}
 }
 
 func (x *GetLessonProgressDetailRequest) GetUserId() string {
@@ -12433,7 +12517,7 @@ type GetLessonProgressDetailResponse struct {
 
 func (x *GetLessonProgressDetailResponse) Reset() {
 	*x = GetLessonProgressDetailResponse{}
-	mi := &file_lms_proto_msgTypes[185]
+	mi := &file_lms_proto_msgTypes[186]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12445,7 +12529,7 @@ func (x *GetLessonProgressDetailResponse) String() string {
 func (*GetLessonProgressDetailResponse) ProtoMessage() {}
 
 func (x *GetLessonProgressDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[185]
+	mi := &file_lms_proto_msgTypes[186]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12458,7 +12542,7 @@ func (x *GetLessonProgressDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonProgressDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetLessonProgressDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{185}
+	return file_lms_proto_rawDescGZIP(), []int{186}
 }
 
 func (x *GetLessonProgressDetailResponse) GetProgress() *LessonProgress {
@@ -12482,7 +12566,7 @@ type ListQuizAttemptsRequest struct {
 
 func (x *ListQuizAttemptsRequest) Reset() {
 	*x = ListQuizAttemptsRequest{}
-	mi := &file_lms_proto_msgTypes[186]
+	mi := &file_lms_proto_msgTypes[187]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12494,7 +12578,7 @@ func (x *ListQuizAttemptsRequest) String() string {
 func (*ListQuizAttemptsRequest) ProtoMessage() {}
 
 func (x *ListQuizAttemptsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[186]
+	mi := &file_lms_proto_msgTypes[187]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12507,7 +12591,7 @@ func (x *ListQuizAttemptsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizAttemptsRequest.ProtoReflect.Descriptor instead.
 func (*ListQuizAttemptsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{186}
+	return file_lms_proto_rawDescGZIP(), []int{187}
 }
 
 func (x *ListQuizAttemptsRequest) GetQuizId() string {
@@ -12567,7 +12651,7 @@ type QuizAttemptSummary struct {
 
 func (x *QuizAttemptSummary) Reset() {
 	*x = QuizAttemptSummary{}
-	mi := &file_lms_proto_msgTypes[187]
+	mi := &file_lms_proto_msgTypes[188]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12579,7 +12663,7 @@ func (x *QuizAttemptSummary) String() string {
 func (*QuizAttemptSummary) ProtoMessage() {}
 
 func (x *QuizAttemptSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[187]
+	mi := &file_lms_proto_msgTypes[188]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12592,7 +12676,7 @@ func (x *QuizAttemptSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizAttemptSummary.ProtoReflect.Descriptor instead.
 func (*QuizAttemptSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{187}
+	return file_lms_proto_rawDescGZIP(), []int{188}
 }
 
 func (x *QuizAttemptSummary) GetAttemptId() string {
@@ -12703,7 +12787,7 @@ type ListQuizAttemptsResponse struct {
 
 func (x *ListQuizAttemptsResponse) Reset() {
 	*x = ListQuizAttemptsResponse{}
-	mi := &file_lms_proto_msgTypes[188]
+	mi := &file_lms_proto_msgTypes[189]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12715,7 +12799,7 @@ func (x *ListQuizAttemptsResponse) String() string {
 func (*ListQuizAttemptsResponse) ProtoMessage() {}
 
 func (x *ListQuizAttemptsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[188]
+	mi := &file_lms_proto_msgTypes[189]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12728,7 +12812,7 @@ func (x *ListQuizAttemptsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizAttemptsResponse.ProtoReflect.Descriptor instead.
 func (*ListQuizAttemptsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{188}
+	return file_lms_proto_rawDescGZIP(), []int{189}
 }
 
 func (x *ListQuizAttemptsResponse) GetAttempts() []*QuizAttemptSummary {
@@ -12754,7 +12838,7 @@ type GetQuizAttemptDetailRequest struct {
 
 func (x *GetQuizAttemptDetailRequest) Reset() {
 	*x = GetQuizAttemptDetailRequest{}
-	mi := &file_lms_proto_msgTypes[189]
+	mi := &file_lms_proto_msgTypes[190]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12766,7 +12850,7 @@ func (x *GetQuizAttemptDetailRequest) String() string {
 func (*GetQuizAttemptDetailRequest) ProtoMessage() {}
 
 func (x *GetQuizAttemptDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[189]
+	mi := &file_lms_proto_msgTypes[190]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12779,7 +12863,7 @@ func (x *GetQuizAttemptDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizAttemptDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetQuizAttemptDetailRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{189}
+	return file_lms_proto_rawDescGZIP(), []int{190}
 }
 
 func (x *GetQuizAttemptDetailRequest) GetAttemptId() string {
@@ -12811,7 +12895,7 @@ type QuizAttemptDetail struct {
 
 func (x *QuizAttemptDetail) Reset() {
 	*x = QuizAttemptDetail{}
-	mi := &file_lms_proto_msgTypes[190]
+	mi := &file_lms_proto_msgTypes[191]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12823,7 +12907,7 @@ func (x *QuizAttemptDetail) String() string {
 func (*QuizAttemptDetail) ProtoMessage() {}
 
 func (x *QuizAttemptDetail) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[190]
+	mi := &file_lms_proto_msgTypes[191]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12836,7 +12920,7 @@ func (x *QuizAttemptDetail) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use QuizAttemptDetail.ProtoReflect.Descriptor instead.
 func (*QuizAttemptDetail) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{190}
+	return file_lms_proto_rawDescGZIP(), []int{191}
 }
 
 func (x *QuizAttemptDetail) GetAttemptId() string {
@@ -12946,7 +13030,7 @@ type GetQuizAttemptDetailResponse struct {
 
 func (x *GetQuizAttemptDetailResponse) Reset() {
 	*x = GetQuizAttemptDetailResponse{}
-	mi := &file_lms_proto_msgTypes[191]
+	mi := &file_lms_proto_msgTypes[192]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -12958,7 +13042,7 @@ func (x *GetQuizAttemptDetailResponse) String() string {
 func (*GetQuizAttemptDetailResponse) ProtoMessage() {}
 
 func (x *GetQuizAttemptDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[191]
+	mi := &file_lms_proto_msgTypes[192]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -12971,7 +13055,7 @@ func (x *GetQuizAttemptDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizAttemptDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetQuizAttemptDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{191}
+	return file_lms_proto_rawDescGZIP(), []int{192}
 }
 
 func (x *GetQuizAttemptDetailResponse) GetAttempt() *QuizAttemptDetail {
@@ -12994,7 +13078,7 @@ type ListChapterProgressRequest struct {
 
 func (x *ListChapterProgressRequest) Reset() {
 	*x = ListChapterProgressRequest{}
-	mi := &file_lms_proto_msgTypes[192]
+	mi := &file_lms_proto_msgTypes[193]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13006,7 +13090,7 @@ func (x *ListChapterProgressRequest) String() string {
 func (*ListChapterProgressRequest) ProtoMessage() {}
 
 func (x *ListChapterProgressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[192]
+	mi := &file_lms_proto_msgTypes[193]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13019,7 +13103,7 @@ func (x *ListChapterProgressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChapterProgressRequest.ProtoReflect.Descriptor instead.
 func (*ListChapterProgressRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{192}
+	return file_lms_proto_rawDescGZIP(), []int{193}
 }
 
 func (x *ListChapterProgressRequest) GetCandidateId() string {
@@ -13069,7 +13153,7 @@ type ChapterProgressSummary struct {
 
 func (x *ChapterProgressSummary) Reset() {
 	*x = ChapterProgressSummary{}
-	mi := &file_lms_proto_msgTypes[193]
+	mi := &file_lms_proto_msgTypes[194]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13081,7 +13165,7 @@ func (x *ChapterProgressSummary) String() string {
 func (*ChapterProgressSummary) ProtoMessage() {}
 
 func (x *ChapterProgressSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[193]
+	mi := &file_lms_proto_msgTypes[194]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13094,7 +13178,7 @@ func (x *ChapterProgressSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChapterProgressSummary.ProtoReflect.Descriptor instead.
 func (*ChapterProgressSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{193}
+	return file_lms_proto_rawDescGZIP(), []int{194}
 }
 
 func (x *ChapterProgressSummary) GetCandidateId() string {
@@ -13184,7 +13268,7 @@ type ListChapterProgressResponse struct {
 
 func (x *ListChapterProgressResponse) Reset() {
 	*x = ListChapterProgressResponse{}
-	mi := &file_lms_proto_msgTypes[194]
+	mi := &file_lms_proto_msgTypes[195]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13196,7 +13280,7 @@ func (x *ListChapterProgressResponse) String() string {
 func (*ListChapterProgressResponse) ProtoMessage() {}
 
 func (x *ListChapterProgressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[194]
+	mi := &file_lms_proto_msgTypes[195]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13209,7 +13293,7 @@ func (x *ListChapterProgressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChapterProgressResponse.ProtoReflect.Descriptor instead.
 func (*ListChapterProgressResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{194}
+	return file_lms_proto_rawDescGZIP(), []int{195}
 }
 
 func (x *ListChapterProgressResponse) GetProgress() []*ChapterProgressSummary {
@@ -13236,7 +13320,7 @@ type GetChapterProgressDetailRequest struct {
 
 func (x *GetChapterProgressDetailRequest) Reset() {
 	*x = GetChapterProgressDetailRequest{}
-	mi := &file_lms_proto_msgTypes[195]
+	mi := &file_lms_proto_msgTypes[196]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13248,7 +13332,7 @@ func (x *GetChapterProgressDetailRequest) String() string {
 func (*GetChapterProgressDetailRequest) ProtoMessage() {}
 
 func (x *GetChapterProgressDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[195]
+	mi := &file_lms_proto_msgTypes[196]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13261,7 +13345,7 @@ func (x *GetChapterProgressDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChapterProgressDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetChapterProgressDetailRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{195}
+	return file_lms_proto_rawDescGZIP(), []int{196}
 }
 
 func (x *GetChapterProgressDetailRequest) GetCandidateId() string {
@@ -13287,7 +13371,7 @@ type GetChapterProgressDetailResponse struct {
 
 func (x *GetChapterProgressDetailResponse) Reset() {
 	*x = GetChapterProgressDetailResponse{}
-	mi := &file_lms_proto_msgTypes[196]
+	mi := &file_lms_proto_msgTypes[197]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13299,7 +13383,7 @@ func (x *GetChapterProgressDetailResponse) String() string {
 func (*GetChapterProgressDetailResponse) ProtoMessage() {}
 
 func (x *GetChapterProgressDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[196]
+	mi := &file_lms_proto_msgTypes[197]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13312,7 +13396,7 @@ func (x *GetChapterProgressDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChapterProgressDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetChapterProgressDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{196}
+	return file_lms_proto_rawDescGZIP(), []int{197}
 }
 
 func (x *GetChapterProgressDetailResponse) GetProgress() *ChapterProgress {
@@ -13336,7 +13420,7 @@ type ListCourseAssetsRequest struct {
 
 func (x *ListCourseAssetsRequest) Reset() {
 	*x = ListCourseAssetsRequest{}
-	mi := &file_lms_proto_msgTypes[197]
+	mi := &file_lms_proto_msgTypes[198]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13348,7 +13432,7 @@ func (x *ListCourseAssetsRequest) String() string {
 func (*ListCourseAssetsRequest) ProtoMessage() {}
 
 func (x *ListCourseAssetsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[197]
+	mi := &file_lms_proto_msgTypes[198]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13361,7 +13445,7 @@ func (x *ListCourseAssetsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseAssetsRequest.ProtoReflect.Descriptor instead.
 func (*ListCourseAssetsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{197}
+	return file_lms_proto_rawDescGZIP(), []int{198}
 }
 
 func (x *ListCourseAssetsRequest) GetStatus() string {
@@ -13417,7 +13501,7 @@ type CourseAssetSummary struct {
 
 func (x *CourseAssetSummary) Reset() {
 	*x = CourseAssetSummary{}
-	mi := &file_lms_proto_msgTypes[198]
+	mi := &file_lms_proto_msgTypes[199]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13429,7 +13513,7 @@ func (x *CourseAssetSummary) String() string {
 func (*CourseAssetSummary) ProtoMessage() {}
 
 func (x *CourseAssetSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[198]
+	mi := &file_lms_proto_msgTypes[199]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13442,7 +13526,7 @@ func (x *CourseAssetSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseAssetSummary.ProtoReflect.Descriptor instead.
 func (*CourseAssetSummary) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{198}
+	return file_lms_proto_rawDescGZIP(), []int{199}
 }
 
 func (x *CourseAssetSummary) GetObjectKey() string {
@@ -13525,7 +13609,7 @@ type ListCourseAssetsResponse struct {
 
 func (x *ListCourseAssetsResponse) Reset() {
 	*x = ListCourseAssetsResponse{}
-	mi := &file_lms_proto_msgTypes[199]
+	mi := &file_lms_proto_msgTypes[200]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13537,7 +13621,7 @@ func (x *ListCourseAssetsResponse) String() string {
 func (*ListCourseAssetsResponse) ProtoMessage() {}
 
 func (x *ListCourseAssetsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[199]
+	mi := &file_lms_proto_msgTypes[200]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13550,7 +13634,7 @@ func (x *ListCourseAssetsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseAssetsResponse.ProtoReflect.Descriptor instead.
 func (*ListCourseAssetsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{199}
+	return file_lms_proto_rawDescGZIP(), []int{200}
 }
 
 func (x *ListCourseAssetsResponse) GetAssets() []*CourseAssetSummary {
@@ -13577,7 +13661,7 @@ type GetCourseAssetDetailRequest struct {
 
 func (x *GetCourseAssetDetailRequest) Reset() {
 	*x = GetCourseAssetDetailRequest{}
-	mi := &file_lms_proto_msgTypes[200]
+	mi := &file_lms_proto_msgTypes[201]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13589,7 +13673,7 @@ func (x *GetCourseAssetDetailRequest) String() string {
 func (*GetCourseAssetDetailRequest) ProtoMessage() {}
 
 func (x *GetCourseAssetDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[200]
+	mi := &file_lms_proto_msgTypes[201]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13602,7 +13686,7 @@ func (x *GetCourseAssetDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseAssetDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseAssetDetailRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{200}
+	return file_lms_proto_rawDescGZIP(), []int{201}
 }
 
 func (x *GetCourseAssetDetailRequest) GetObjectKey() string {
@@ -13628,7 +13712,7 @@ type GetCourseAssetDetailResponse struct {
 
 func (x *GetCourseAssetDetailResponse) Reset() {
 	*x = GetCourseAssetDetailResponse{}
-	mi := &file_lms_proto_msgTypes[201]
+	mi := &file_lms_proto_msgTypes[202]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13640,7 +13724,7 @@ func (x *GetCourseAssetDetailResponse) String() string {
 func (*GetCourseAssetDetailResponse) ProtoMessage() {}
 
 func (x *GetCourseAssetDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[201]
+	mi := &file_lms_proto_msgTypes[202]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13653,7 +13737,7 @@ func (x *GetCourseAssetDetailResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseAssetDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseAssetDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{201}
+	return file_lms_proto_rawDescGZIP(), []int{202}
 }
 
 func (x *GetCourseAssetDetailResponse) GetAsset() *CourseAsset {
@@ -13681,7 +13765,7 @@ type CourseAsset struct {
 
 func (x *CourseAsset) Reset() {
 	*x = CourseAsset{}
-	mi := &file_lms_proto_msgTypes[202]
+	mi := &file_lms_proto_msgTypes[203]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13693,7 +13777,7 @@ func (x *CourseAsset) String() string {
 func (*CourseAsset) ProtoMessage() {}
 
 func (x *CourseAsset) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[202]
+	mi := &file_lms_proto_msgTypes[203]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13706,7 +13790,7 @@ func (x *CourseAsset) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseAsset.ProtoReflect.Descriptor instead.
 func (*CourseAsset) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{202}
+	return file_lms_proto_rawDescGZIP(), []int{203}
 }
 
 func (x *CourseAsset) GetObjectKey() string {
@@ -13792,7 +13876,7 @@ type ListPrerequisitesByRequiredEntityRequest struct {
 
 func (x *ListPrerequisitesByRequiredEntityRequest) Reset() {
 	*x = ListPrerequisitesByRequiredEntityRequest{}
-	mi := &file_lms_proto_msgTypes[203]
+	mi := &file_lms_proto_msgTypes[204]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13804,7 +13888,7 @@ func (x *ListPrerequisitesByRequiredEntityRequest) String() string {
 func (*ListPrerequisitesByRequiredEntityRequest) ProtoMessage() {}
 
 func (x *ListPrerequisitesByRequiredEntityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[203]
+	mi := &file_lms_proto_msgTypes[204]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13817,7 +13901,7 @@ func (x *ListPrerequisitesByRequiredEntityRequest) ProtoReflect() protoreflect.M
 
 // Deprecated: Use ListPrerequisitesByRequiredEntityRequest.ProtoReflect.Descriptor instead.
 func (*ListPrerequisitesByRequiredEntityRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{203}
+	return file_lms_proto_rawDescGZIP(), []int{204}
 }
 
 func (x *ListPrerequisitesByRequiredEntityRequest) GetRequiredEntityType() EntityType {
@@ -13858,7 +13942,7 @@ type ListPrerequisitesByRequiredEntityResponse struct {
 
 func (x *ListPrerequisitesByRequiredEntityResponse) Reset() {
 	*x = ListPrerequisitesByRequiredEntityResponse{}
-	mi := &file_lms_proto_msgTypes[204]
+	mi := &file_lms_proto_msgTypes[205]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13870,7 +13954,7 @@ func (x *ListPrerequisitesByRequiredEntityResponse) String() string {
 func (*ListPrerequisitesByRequiredEntityResponse) ProtoMessage() {}
 
 func (x *ListPrerequisitesByRequiredEntityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[204]
+	mi := &file_lms_proto_msgTypes[205]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13883,7 +13967,7 @@ func (x *ListPrerequisitesByRequiredEntityResponse) ProtoReflect() protoreflect.
 
 // Deprecated: Use ListPrerequisitesByRequiredEntityResponse.ProtoReflect.Descriptor instead.
 func (*ListPrerequisitesByRequiredEntityResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{204}
+	return file_lms_proto_rawDescGZIP(), []int{205}
 }
 
 func (x *ListPrerequisitesByRequiredEntityResponse) GetPrerequisites() []*Prerequisite {
@@ -13912,7 +13996,7 @@ type ListLessonsByCourseRequest struct {
 
 func (x *ListLessonsByCourseRequest) Reset() {
 	*x = ListLessonsByCourseRequest{}
-	mi := &file_lms_proto_msgTypes[205]
+	mi := &file_lms_proto_msgTypes[206]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13924,7 +14008,7 @@ func (x *ListLessonsByCourseRequest) String() string {
 func (*ListLessonsByCourseRequest) ProtoMessage() {}
 
 func (x *ListLessonsByCourseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[205]
+	mi := &file_lms_proto_msgTypes[206]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13937,7 +14021,7 @@ func (x *ListLessonsByCourseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLessonsByCourseRequest.ProtoReflect.Descriptor instead.
 func (*ListLessonsByCourseRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{205}
+	return file_lms_proto_rawDescGZIP(), []int{206}
 }
 
 func (x *ListLessonsByCourseRequest) GetCourseId() string {
@@ -13971,7 +14055,7 @@ type ListLessonsByCourseResponse struct {
 
 func (x *ListLessonsByCourseResponse) Reset() {
 	*x = ListLessonsByCourseResponse{}
-	mi := &file_lms_proto_msgTypes[206]
+	mi := &file_lms_proto_msgTypes[207]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -13983,7 +14067,7 @@ func (x *ListLessonsByCourseResponse) String() string {
 func (*ListLessonsByCourseResponse) ProtoMessage() {}
 
 func (x *ListLessonsByCourseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[206]
+	mi := &file_lms_proto_msgTypes[207]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -13996,7 +14080,7 @@ func (x *ListLessonsByCourseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLessonsByCourseResponse.ProtoReflect.Descriptor instead.
 func (*ListLessonsByCourseResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{206}
+	return file_lms_proto_rawDescGZIP(), []int{207}
 }
 
 func (x *ListLessonsByCourseResponse) GetLessons() []*LessonSummary {
@@ -14028,7 +14112,7 @@ type ListCourseEnrollmentsRequest struct {
 
 func (x *ListCourseEnrollmentsRequest) Reset() {
 	*x = ListCourseEnrollmentsRequest{}
-	mi := &file_lms_proto_msgTypes[207]
+	mi := &file_lms_proto_msgTypes[208]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14040,7 +14124,7 @@ func (x *ListCourseEnrollmentsRequest) String() string {
 func (*ListCourseEnrollmentsRequest) ProtoMessage() {}
 
 func (x *ListCourseEnrollmentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[207]
+	mi := &file_lms_proto_msgTypes[208]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14053,7 +14137,7 @@ func (x *ListCourseEnrollmentsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseEnrollmentsRequest.ProtoReflect.Descriptor instead.
 func (*ListCourseEnrollmentsRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{207}
+	return file_lms_proto_rawDescGZIP(), []int{208}
 }
 
 func (x *ListCourseEnrollmentsRequest) GetCandidateId() string {
@@ -14108,7 +14192,7 @@ type ListCourseEnrollmentsResponse struct {
 
 func (x *ListCourseEnrollmentsResponse) Reset() {
 	*x = ListCourseEnrollmentsResponse{}
-	mi := &file_lms_proto_msgTypes[208]
+	mi := &file_lms_proto_msgTypes[209]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14120,7 +14204,7 @@ func (x *ListCourseEnrollmentsResponse) String() string {
 func (*ListCourseEnrollmentsResponse) ProtoMessage() {}
 
 func (x *ListCourseEnrollmentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[208]
+	mi := &file_lms_proto_msgTypes[209]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14133,7 +14217,7 @@ func (x *ListCourseEnrollmentsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCourseEnrollmentsResponse.ProtoReflect.Descriptor instead.
 func (*ListCourseEnrollmentsResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{208}
+	return file_lms_proto_rawDescGZIP(), []int{209}
 }
 
 func (x *ListCourseEnrollmentsResponse) GetEnrollments() []*CourseEnrollment {
@@ -14167,13 +14251,15 @@ type CourseEnrollment struct {
 	Version               uint32                 `protobuf:"varint,13,opt,name=version,proto3" json:"version,omitempty"`
 	CreatedAt             string                 `protobuf:"bytes,14,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt             string                 `protobuf:"bytes,15,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	RefEntityType         string                 `protobuf:"bytes,16,opt,name=ref_entity_type,json=refEntityType,proto3" json:"ref_entity_type,omitempty"`
+	RefEntityId           string                 `protobuf:"bytes,17,opt,name=ref_entity_id,json=refEntityId,proto3" json:"ref_entity_id,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
 
 func (x *CourseEnrollment) Reset() {
 	*x = CourseEnrollment{}
-	mi := &file_lms_proto_msgTypes[209]
+	mi := &file_lms_proto_msgTypes[210]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14185,7 +14271,7 @@ func (x *CourseEnrollment) String() string {
 func (*CourseEnrollment) ProtoMessage() {}
 
 func (x *CourseEnrollment) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[209]
+	mi := &file_lms_proto_msgTypes[210]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14198,7 +14284,7 @@ func (x *CourseEnrollment) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CourseEnrollment.ProtoReflect.Descriptor instead.
 func (*CourseEnrollment) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{209}
+	return file_lms_proto_rawDescGZIP(), []int{210}
 }
 
 func (x *CourseEnrollment) GetEnrollmentId() string {
@@ -14306,6 +14392,20 @@ func (x *CourseEnrollment) GetUpdatedAt() string {
 	return ""
 }
 
+func (x *CourseEnrollment) GetRefEntityType() string {
+	if x != nil {
+		return x.RefEntityType
+	}
+	return ""
+}
+
+func (x *CourseEnrollment) GetRefEntityId() string {
+	if x != nil {
+		return x.RefEntityId
+	}
+	return ""
+}
+
 type GetCourseEnrollmentDetailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	EnrollmentId  string                 `protobuf:"bytes,1,opt,name=enrollment_id,json=enrollmentId,proto3" json:"enrollment_id,omitempty"` // 选课记录ID [required]
@@ -14315,7 +14415,7 @@ type GetCourseEnrollmentDetailRequest struct {
 
 func (x *GetCourseEnrollmentDetailRequest) Reset() {
 	*x = GetCourseEnrollmentDetailRequest{}
-	mi := &file_lms_proto_msgTypes[210]
+	mi := &file_lms_proto_msgTypes[211]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14327,7 +14427,7 @@ func (x *GetCourseEnrollmentDetailRequest) String() string {
 func (*GetCourseEnrollmentDetailRequest) ProtoMessage() {}
 
 func (x *GetCourseEnrollmentDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[210]
+	mi := &file_lms_proto_msgTypes[211]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14340,7 +14440,7 @@ func (x *GetCourseEnrollmentDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseEnrollmentDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseEnrollmentDetailRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{210}
+	return file_lms_proto_rawDescGZIP(), []int{211}
 }
 
 func (x *GetCourseEnrollmentDetailRequest) GetEnrollmentId() string {
@@ -14359,7 +14459,7 @@ type GetCourseEnrollmentDetailResponse struct {
 
 func (x *GetCourseEnrollmentDetailResponse) Reset() {
 	*x = GetCourseEnrollmentDetailResponse{}
-	mi := &file_lms_proto_msgTypes[211]
+	mi := &file_lms_proto_msgTypes[212]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14371,7 +14471,7 @@ func (x *GetCourseEnrollmentDetailResponse) String() string {
 func (*GetCourseEnrollmentDetailResponse) ProtoMessage() {}
 
 func (x *GetCourseEnrollmentDetailResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[211]
+	mi := &file_lms_proto_msgTypes[212]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14384,7 +14484,7 @@ func (x *GetCourseEnrollmentDetailResponse) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetCourseEnrollmentDetailResponse.ProtoReflect.Descriptor instead.
 func (*GetCourseEnrollmentDetailResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{211}
+	return file_lms_proto_rawDescGZIP(), []int{212}
 }
 
 func (x *GetCourseEnrollmentDetailResponse) GetEnrollment() *CourseEnrollment {
@@ -14410,7 +14510,7 @@ type LessonProgress struct {
 
 func (x *LessonProgress) Reset() {
 	*x = LessonProgress{}
-	mi := &file_lms_proto_msgTypes[212]
+	mi := &file_lms_proto_msgTypes[213]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14422,7 +14522,7 @@ func (x *LessonProgress) String() string {
 func (*LessonProgress) ProtoMessage() {}
 
 func (x *LessonProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[212]
+	mi := &file_lms_proto_msgTypes[213]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14435,7 +14535,7 @@ func (x *LessonProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LessonProgress.ProtoReflect.Descriptor instead.
 func (*LessonProgress) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{212}
+	return file_lms_proto_rawDescGZIP(), []int{213}
 }
 
 func (x *LessonProgress) GetUserId() string {
@@ -14513,7 +14613,7 @@ type ChapterProgress struct {
 
 func (x *ChapterProgress) Reset() {
 	*x = ChapterProgress{}
-	mi := &file_lms_proto_msgTypes[213]
+	mi := &file_lms_proto_msgTypes[214]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14525,7 +14625,7 @@ func (x *ChapterProgress) String() string {
 func (*ChapterProgress) ProtoMessage() {}
 
 func (x *ChapterProgress) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[213]
+	mi := &file_lms_proto_msgTypes[214]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14538,7 +14638,7 @@ func (x *ChapterProgress) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChapterProgress.ProtoReflect.Descriptor instead.
 func (*ChapterProgress) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{213}
+	return file_lms_proto_rawDescGZIP(), []int{214}
 }
 
 func (x *ChapterProgress) GetCandidateId() string {
@@ -14628,7 +14728,7 @@ type SyncCourseProgressRequest struct {
 
 func (x *SyncCourseProgressRequest) Reset() {
 	*x = SyncCourseProgressRequest{}
-	mi := &file_lms_proto_msgTypes[214]
+	mi := &file_lms_proto_msgTypes[215]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14640,7 +14740,7 @@ func (x *SyncCourseProgressRequest) String() string {
 func (*SyncCourseProgressRequest) ProtoMessage() {}
 
 func (x *SyncCourseProgressRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[214]
+	mi := &file_lms_proto_msgTypes[215]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14653,7 +14753,7 @@ func (x *SyncCourseProgressRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncCourseProgressRequest.ProtoReflect.Descriptor instead.
 func (*SyncCourseProgressRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{214}
+	return file_lms_proto_rawDescGZIP(), []int{215}
 }
 
 func (x *SyncCourseProgressRequest) GetCandidateId() string {
@@ -14683,7 +14783,7 @@ type SyncCourseProgressResponse struct {
 
 func (x *SyncCourseProgressResponse) Reset() {
 	*x = SyncCourseProgressResponse{}
-	mi := &file_lms_proto_msgTypes[215]
+	mi := &file_lms_proto_msgTypes[216]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14695,7 +14795,7 @@ func (x *SyncCourseProgressResponse) String() string {
 func (*SyncCourseProgressResponse) ProtoMessage() {}
 
 func (x *SyncCourseProgressResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[215]
+	mi := &file_lms_proto_msgTypes[216]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14708,7 +14808,7 @@ func (x *SyncCourseProgressResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncCourseProgressResponse.ProtoReflect.Descriptor instead.
 func (*SyncCourseProgressResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{215}
+	return file_lms_proto_rawDescGZIP(), []int{216}
 }
 
 func (x *SyncCourseProgressResponse) GetSuccess() bool {
@@ -14756,7 +14856,7 @@ type GetCourseSummaryCandidateRequest struct {
 
 func (x *GetCourseSummaryCandidateRequest) Reset() {
 	*x = GetCourseSummaryCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[216]
+	mi := &file_lms_proto_msgTypes[217]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14768,7 +14868,7 @@ func (x *GetCourseSummaryCandidateRequest) String() string {
 func (*GetCourseSummaryCandidateRequest) ProtoMessage() {}
 
 func (x *GetCourseSummaryCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[216]
+	mi := &file_lms_proto_msgTypes[217]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14781,7 +14881,7 @@ func (x *GetCourseSummaryCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseSummaryCandidateRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseSummaryCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{216}
+	return file_lms_proto_rawDescGZIP(), []int{217}
 }
 
 func (x *GetCourseSummaryCandidateRequest) GetCandidateId() string {
@@ -14808,7 +14908,7 @@ type GetCourseDetailCandidateRequest struct {
 
 func (x *GetCourseDetailCandidateRequest) Reset() {
 	*x = GetCourseDetailCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[217]
+	mi := &file_lms_proto_msgTypes[218]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14820,7 +14920,7 @@ func (x *GetCourseDetailCandidateRequest) String() string {
 func (*GetCourseDetailCandidateRequest) ProtoMessage() {}
 
 func (x *GetCourseDetailCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[217]
+	mi := &file_lms_proto_msgTypes[218]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14833,7 +14933,7 @@ func (x *GetCourseDetailCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCourseDetailCandidateRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseDetailCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{217}
+	return file_lms_proto_rawDescGZIP(), []int{218}
 }
 
 func (x *GetCourseDetailCandidateRequest) GetCandidateId() string {
@@ -14862,7 +14962,7 @@ type ListCoursesCandidateRequest struct {
 
 func (x *ListCoursesCandidateRequest) Reset() {
 	*x = ListCoursesCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[218]
+	mi := &file_lms_proto_msgTypes[219]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14874,7 +14974,7 @@ func (x *ListCoursesCandidateRequest) String() string {
 func (*ListCoursesCandidateRequest) ProtoMessage() {}
 
 func (x *ListCoursesCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[218]
+	mi := &file_lms_proto_msgTypes[219]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14887,7 +14987,7 @@ func (x *ListCoursesCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListCoursesCandidateRequest.ProtoReflect.Descriptor instead.
 func (*ListCoursesCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{218}
+	return file_lms_proto_rawDescGZIP(), []int{219}
 }
 
 func (x *ListCoursesCandidateRequest) GetCandidateId() string {
@@ -14928,7 +15028,7 @@ type GetCourseMaterialCandidateRequest struct {
 
 func (x *GetCourseMaterialCandidateRequest) Reset() {
 	*x = GetCourseMaterialCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[219]
+	mi := &file_lms_proto_msgTypes[220]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14940,7 +15040,7 @@ func (x *GetCourseMaterialCandidateRequest) String() string {
 func (*GetCourseMaterialCandidateRequest) ProtoMessage() {}
 
 func (x *GetCourseMaterialCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[219]
+	mi := &file_lms_proto_msgTypes[220]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -14953,7 +15053,7 @@ func (x *GetCourseMaterialCandidateRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetCourseMaterialCandidateRequest.ProtoReflect.Descriptor instead.
 func (*GetCourseMaterialCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{219}
+	return file_lms_proto_rawDescGZIP(), []int{220}
 }
 
 func (x *GetCourseMaterialCandidateRequest) GetCandidateId() string {
@@ -14980,7 +15080,7 @@ type ListCourseMaterialsCandidateRequest struct {
 
 func (x *ListCourseMaterialsCandidateRequest) Reset() {
 	*x = ListCourseMaterialsCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[220]
+	mi := &file_lms_proto_msgTypes[221]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -14992,7 +15092,7 @@ func (x *ListCourseMaterialsCandidateRequest) String() string {
 func (*ListCourseMaterialsCandidateRequest) ProtoMessage() {}
 
 func (x *ListCourseMaterialsCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[220]
+	mi := &file_lms_proto_msgTypes[221]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15005,7 +15105,7 @@ func (x *ListCourseMaterialsCandidateRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ListCourseMaterialsCandidateRequest.ProtoReflect.Descriptor instead.
 func (*ListCourseMaterialsCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{220}
+	return file_lms_proto_rawDescGZIP(), []int{221}
 }
 
 func (x *ListCourseMaterialsCandidateRequest) GetCandidateId() string {
@@ -15032,7 +15132,7 @@ type GetChapterCandidateRequest struct {
 
 func (x *GetChapterCandidateRequest) Reset() {
 	*x = GetChapterCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[221]
+	mi := &file_lms_proto_msgTypes[222]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15044,7 +15144,7 @@ func (x *GetChapterCandidateRequest) String() string {
 func (*GetChapterCandidateRequest) ProtoMessage() {}
 
 func (x *GetChapterCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[221]
+	mi := &file_lms_proto_msgTypes[222]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15057,7 +15157,7 @@ func (x *GetChapterCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChapterCandidateRequest.ProtoReflect.Descriptor instead.
 func (*GetChapterCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{221}
+	return file_lms_proto_rawDescGZIP(), []int{222}
 }
 
 func (x *GetChapterCandidateRequest) GetCandidateId() string {
@@ -15084,7 +15184,7 @@ type GetChapterDetailCandidateRequest struct {
 
 func (x *GetChapterDetailCandidateRequest) Reset() {
 	*x = GetChapterDetailCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[222]
+	mi := &file_lms_proto_msgTypes[223]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15096,7 +15196,7 @@ func (x *GetChapterDetailCandidateRequest) String() string {
 func (*GetChapterDetailCandidateRequest) ProtoMessage() {}
 
 func (x *GetChapterDetailCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[222]
+	mi := &file_lms_proto_msgTypes[223]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15109,7 +15209,7 @@ func (x *GetChapterDetailCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetChapterDetailCandidateRequest.ProtoReflect.Descriptor instead.
 func (*GetChapterDetailCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{222}
+	return file_lms_proto_rawDescGZIP(), []int{223}
 }
 
 func (x *GetChapterDetailCandidateRequest) GetCandidateId() string {
@@ -15136,7 +15236,7 @@ type ListChaptersCandidateRequest struct {
 
 func (x *ListChaptersCandidateRequest) Reset() {
 	*x = ListChaptersCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[223]
+	mi := &file_lms_proto_msgTypes[224]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15148,7 +15248,7 @@ func (x *ListChaptersCandidateRequest) String() string {
 func (*ListChaptersCandidateRequest) ProtoMessage() {}
 
 func (x *ListChaptersCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[223]
+	mi := &file_lms_proto_msgTypes[224]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15161,7 +15261,7 @@ func (x *ListChaptersCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListChaptersCandidateRequest.ProtoReflect.Descriptor instead.
 func (*ListChaptersCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{223}
+	return file_lms_proto_rawDescGZIP(), []int{224}
 }
 
 func (x *ListChaptersCandidateRequest) GetCandidateId() string {
@@ -15188,7 +15288,7 @@ type GetLessonCandidateRequest struct {
 
 func (x *GetLessonCandidateRequest) Reset() {
 	*x = GetLessonCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[224]
+	mi := &file_lms_proto_msgTypes[225]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15200,7 +15300,7 @@ func (x *GetLessonCandidateRequest) String() string {
 func (*GetLessonCandidateRequest) ProtoMessage() {}
 
 func (x *GetLessonCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[224]
+	mi := &file_lms_proto_msgTypes[225]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15213,7 +15313,7 @@ func (x *GetLessonCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonCandidateRequest.ProtoReflect.Descriptor instead.
 func (*GetLessonCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{224}
+	return file_lms_proto_rawDescGZIP(), []int{225}
 }
 
 func (x *GetLessonCandidateRequest) GetCandidateId() string {
@@ -15240,7 +15340,7 @@ type GetLessonDetailCandidateRequest struct {
 
 func (x *GetLessonDetailCandidateRequest) Reset() {
 	*x = GetLessonDetailCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[225]
+	mi := &file_lms_proto_msgTypes[226]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15252,7 +15352,7 @@ func (x *GetLessonDetailCandidateRequest) String() string {
 func (*GetLessonDetailCandidateRequest) ProtoMessage() {}
 
 func (x *GetLessonDetailCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[225]
+	mi := &file_lms_proto_msgTypes[226]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15265,7 +15365,7 @@ func (x *GetLessonDetailCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonDetailCandidateRequest.ProtoReflect.Descriptor instead.
 func (*GetLessonDetailCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{225}
+	return file_lms_proto_rawDescGZIP(), []int{226}
 }
 
 func (x *GetLessonDetailCandidateRequest) GetCandidateId() string {
@@ -15292,7 +15392,7 @@ type ListLessonsCandidateRequest struct {
 
 func (x *ListLessonsCandidateRequest) Reset() {
 	*x = ListLessonsCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[226]
+	mi := &file_lms_proto_msgTypes[227]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15304,7 +15404,7 @@ func (x *ListLessonsCandidateRequest) String() string {
 func (*ListLessonsCandidateRequest) ProtoMessage() {}
 
 func (x *ListLessonsCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[226]
+	mi := &file_lms_proto_msgTypes[227]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15317,7 +15417,7 @@ func (x *ListLessonsCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListLessonsCandidateRequest.ProtoReflect.Descriptor instead.
 func (*ListLessonsCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{226}
+	return file_lms_proto_rawDescGZIP(), []int{227}
 }
 
 func (x *ListLessonsCandidateRequest) GetCandidateId() string {
@@ -15346,7 +15446,7 @@ type ListLessonsByCourseCandidateRequest struct {
 
 func (x *ListLessonsByCourseCandidateRequest) Reset() {
 	*x = ListLessonsByCourseCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[227]
+	mi := &file_lms_proto_msgTypes[228]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15358,7 +15458,7 @@ func (x *ListLessonsByCourseCandidateRequest) String() string {
 func (*ListLessonsByCourseCandidateRequest) ProtoMessage() {}
 
 func (x *ListLessonsByCourseCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[227]
+	mi := &file_lms_proto_msgTypes[228]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15371,7 +15471,7 @@ func (x *ListLessonsByCourseCandidateRequest) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use ListLessonsByCourseCandidateRequest.ProtoReflect.Descriptor instead.
 func (*ListLessonsByCourseCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{227}
+	return file_lms_proto_rawDescGZIP(), []int{228}
 }
 
 func (x *ListLessonsByCourseCandidateRequest) GetCandidateId() string {
@@ -15412,7 +15512,7 @@ type GetCompleteCourseCandidateRequest struct {
 
 func (x *GetCompleteCourseCandidateRequest) Reset() {
 	*x = GetCompleteCourseCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[228]
+	mi := &file_lms_proto_msgTypes[229]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15424,7 +15524,7 @@ func (x *GetCompleteCourseCandidateRequest) String() string {
 func (*GetCompleteCourseCandidateRequest) ProtoMessage() {}
 
 func (x *GetCompleteCourseCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[228]
+	mi := &file_lms_proto_msgTypes[229]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15437,7 +15537,7 @@ func (x *GetCompleteCourseCandidateRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetCompleteCourseCandidateRequest.ProtoReflect.Descriptor instead.
 func (*GetCompleteCourseCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{228}
+	return file_lms_proto_rawDescGZIP(), []int{229}
 }
 
 func (x *GetCompleteCourseCandidateRequest) GetCandidateId() string {
@@ -15464,7 +15564,7 @@ type GetQuizCandidateRequest struct {
 
 func (x *GetQuizCandidateRequest) Reset() {
 	*x = GetQuizCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[229]
+	mi := &file_lms_proto_msgTypes[230]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15476,7 +15576,7 @@ func (x *GetQuizCandidateRequest) String() string {
 func (*GetQuizCandidateRequest) ProtoMessage() {}
 
 func (x *GetQuizCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[229]
+	mi := &file_lms_proto_msgTypes[230]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15489,7 +15589,7 @@ func (x *GetQuizCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetQuizCandidateRequest.ProtoReflect.Descriptor instead.
 func (*GetQuizCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{229}
+	return file_lms_proto_rawDescGZIP(), []int{230}
 }
 
 func (x *GetQuizCandidateRequest) GetCandidateId() string {
@@ -15517,7 +15617,7 @@ type ListQuizzesCandidateRequest struct {
 
 func (x *ListQuizzesCandidateRequest) Reset() {
 	*x = ListQuizzesCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[230]
+	mi := &file_lms_proto_msgTypes[231]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15529,7 +15629,7 @@ func (x *ListQuizzesCandidateRequest) String() string {
 func (*ListQuizzesCandidateRequest) ProtoMessage() {}
 
 func (x *ListQuizzesCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[230]
+	mi := &file_lms_proto_msgTypes[231]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15542,7 +15642,7 @@ func (x *ListQuizzesCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListQuizzesCandidateRequest.ProtoReflect.Descriptor instead.
 func (*ListQuizzesCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{230}
+	return file_lms_proto_rawDescGZIP(), []int{231}
 }
 
 func (x *ListQuizzesCandidateRequest) GetCandidateId() string {
@@ -15576,7 +15676,7 @@ type CreateViewURLCandidateRequest struct {
 
 func (x *CreateViewURLCandidateRequest) Reset() {
 	*x = CreateViewURLCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[231]
+	mi := &file_lms_proto_msgTypes[232]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15588,7 +15688,7 @@ func (x *CreateViewURLCandidateRequest) String() string {
 func (*CreateViewURLCandidateRequest) ProtoMessage() {}
 
 func (x *CreateViewURLCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[231]
+	mi := &file_lms_proto_msgTypes[232]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15601,7 +15701,7 @@ func (x *CreateViewURLCandidateRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateViewURLCandidateRequest.ProtoReflect.Descriptor instead.
 func (*CreateViewURLCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{231}
+	return file_lms_proto_rawDescGZIP(), []int{232}
 }
 
 func (x *CreateViewURLCandidateRequest) GetCandidateId() string {
@@ -15626,13 +15726,15 @@ type CreateResourcePackRequest struct {
 	ThumbnailObjectKey string                 `protobuf:"bytes,3,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
 	ThumbnailFileHash  string                 `protobuf:"bytes,4,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`
 	Respath            string                 `protobuf:"bytes,5,opt,name=respath,proto3" json:"respath,omitempty"`
+	Icon               string                 `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
+	Category           string                 `protobuf:"bytes,8,opt,name=category,proto3" json:"category,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *CreateResourcePackRequest) Reset() {
 	*x = CreateResourcePackRequest{}
-	mi := &file_lms_proto_msgTypes[232]
+	mi := &file_lms_proto_msgTypes[233]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15644,7 +15746,7 @@ func (x *CreateResourcePackRequest) String() string {
 func (*CreateResourcePackRequest) ProtoMessage() {}
 
 func (x *CreateResourcePackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[232]
+	mi := &file_lms_proto_msgTypes[233]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15657,7 +15759,7 @@ func (x *CreateResourcePackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateResourcePackRequest.ProtoReflect.Descriptor instead.
 func (*CreateResourcePackRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{232}
+	return file_lms_proto_rawDescGZIP(), []int{233}
 }
 
 func (x *CreateResourcePackRequest) GetPackId() string {
@@ -15702,6 +15804,20 @@ func (x *CreateResourcePackRequest) GetRespath() string {
 	return ""
 }
 
+func (x *CreateResourcePackRequest) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
+}
+
+func (x *CreateResourcePackRequest) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
 type UpdateResourcePackRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	PackId             string                 `protobuf:"bytes,1,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
@@ -15712,13 +15828,15 @@ type UpdateResourcePackRequest struct {
 	Respath            string                 `protobuf:"bytes,6,opt,name=respath,proto3" json:"respath,omitempty"`
 	Status             string                 `protobuf:"bytes,7,opt,name=status,proto3" json:"status,omitempty"`
 	Version            uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`
+	Icon               string                 `protobuf:"bytes,9,opt,name=icon,proto3" json:"icon,omitempty"`
+	Category           string                 `protobuf:"bytes,10,opt,name=category,proto3" json:"category,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *UpdateResourcePackRequest) Reset() {
 	*x = UpdateResourcePackRequest{}
-	mi := &file_lms_proto_msgTypes[233]
+	mi := &file_lms_proto_msgTypes[234]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15730,7 +15848,7 @@ func (x *UpdateResourcePackRequest) String() string {
 func (*UpdateResourcePackRequest) ProtoMessage() {}
 
 func (x *UpdateResourcePackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[233]
+	mi := &file_lms_proto_msgTypes[234]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15743,7 +15861,7 @@ func (x *UpdateResourcePackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateResourcePackRequest.ProtoReflect.Descriptor instead.
 func (*UpdateResourcePackRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{233}
+	return file_lms_proto_rawDescGZIP(), []int{234}
 }
 
 func (x *UpdateResourcePackRequest) GetPackId() string {
@@ -15802,6 +15920,20 @@ func (x *UpdateResourcePackRequest) GetVersion() uint32 {
 	return 0
 }
 
+func (x *UpdateResourcePackRequest) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackRequest) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
 type DeleteResourcePackRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PackId        string                 `protobuf:"bytes,1,opt,name=pack_id,json=packId,proto3" json:"pack_id,omitempty"`
@@ -15812,7 +15944,7 @@ type DeleteResourcePackRequest struct {
 
 func (x *DeleteResourcePackRequest) Reset() {
 	*x = DeleteResourcePackRequest{}
-	mi := &file_lms_proto_msgTypes[234]
+	mi := &file_lms_proto_msgTypes[235]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15824,7 +15956,7 @@ func (x *DeleteResourcePackRequest) String() string {
 func (*DeleteResourcePackRequest) ProtoMessage() {}
 
 func (x *DeleteResourcePackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[234]
+	mi := &file_lms_proto_msgTypes[235]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15837,7 +15969,7 @@ func (x *DeleteResourcePackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteResourcePackRequest.ProtoReflect.Descriptor instead.
 func (*DeleteResourcePackRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{234}
+	return file_lms_proto_rawDescGZIP(), []int{235}
 }
 
 func (x *DeleteResourcePackRequest) GetPackId() string {
@@ -15863,7 +15995,7 @@ type DeleteResourcePackResponse struct {
 
 func (x *DeleteResourcePackResponse) Reset() {
 	*x = DeleteResourcePackResponse{}
-	mi := &file_lms_proto_msgTypes[235]
+	mi := &file_lms_proto_msgTypes[236]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15875,7 +16007,7 @@ func (x *DeleteResourcePackResponse) String() string {
 func (*DeleteResourcePackResponse) ProtoMessage() {}
 
 func (x *DeleteResourcePackResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[235]
+	mi := &file_lms_proto_msgTypes[236]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15888,7 +16020,7 @@ func (x *DeleteResourcePackResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteResourcePackResponse.ProtoReflect.Descriptor instead.
 func (*DeleteResourcePackResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{235}
+	return file_lms_proto_rawDescGZIP(), []int{236}
 }
 
 func (x *DeleteResourcePackResponse) GetSuccess() bool {
@@ -15907,7 +16039,7 @@ type GetResourcePackRequest struct {
 
 func (x *GetResourcePackRequest) Reset() {
 	*x = GetResourcePackRequest{}
-	mi := &file_lms_proto_msgTypes[236]
+	mi := &file_lms_proto_msgTypes[237]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15919,7 +16051,7 @@ func (x *GetResourcePackRequest) String() string {
 func (*GetResourcePackRequest) ProtoMessage() {}
 
 func (x *GetResourcePackRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[236]
+	mi := &file_lms_proto_msgTypes[237]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15932,7 +16064,7 @@ func (x *GetResourcePackRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetResourcePackRequest.ProtoReflect.Descriptor instead.
 func (*GetResourcePackRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{236}
+	return file_lms_proto_rawDescGZIP(), []int{237}
 }
 
 func (x *GetResourcePackRequest) GetPackId() string {
@@ -15953,7 +16085,7 @@ type ListResourcePacksRequest struct {
 
 func (x *ListResourcePacksRequest) Reset() {
 	*x = ListResourcePacksRequest{}
-	mi := &file_lms_proto_msgTypes[237]
+	mi := &file_lms_proto_msgTypes[238]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -15965,7 +16097,7 @@ func (x *ListResourcePacksRequest) String() string {
 func (*ListResourcePacksRequest) ProtoMessage() {}
 
 func (x *ListResourcePacksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[237]
+	mi := &file_lms_proto_msgTypes[238]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -15978,7 +16110,7 @@ func (x *ListResourcePacksRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListResourcePacksRequest.ProtoReflect.Descriptor instead.
 func (*ListResourcePacksRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{237}
+	return file_lms_proto_rawDescGZIP(), []int{238}
 }
 
 func (x *ListResourcePacksRequest) GetPageSize() uint32 {
@@ -16012,7 +16144,7 @@ type ListResourcePacksResponse struct {
 
 func (x *ListResourcePacksResponse) Reset() {
 	*x = ListResourcePacksResponse{}
-	mi := &file_lms_proto_msgTypes[238]
+	mi := &file_lms_proto_msgTypes[239]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16024,7 +16156,7 @@ func (x *ListResourcePacksResponse) String() string {
 func (*ListResourcePacksResponse) ProtoMessage() {}
 
 func (x *ListResourcePacksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[238]
+	mi := &file_lms_proto_msgTypes[239]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16037,7 +16169,7 @@ func (x *ListResourcePacksResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListResourcePacksResponse.ProtoReflect.Descriptor instead.
 func (*ListResourcePacksResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{238}
+	return file_lms_proto_rawDescGZIP(), []int{239}
 }
 
 func (x *ListResourcePacksResponse) GetPacks() []*ResourcePack {
@@ -16075,7 +16207,7 @@ type CreateResourcePackFileRequest struct {
 
 func (x *CreateResourcePackFileRequest) Reset() {
 	*x = CreateResourcePackFileRequest{}
-	mi := &file_lms_proto_msgTypes[239]
+	mi := &file_lms_proto_msgTypes[240]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16087,7 +16219,7 @@ func (x *CreateResourcePackFileRequest) String() string {
 func (*CreateResourcePackFileRequest) ProtoMessage() {}
 
 func (x *CreateResourcePackFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[239]
+	mi := &file_lms_proto_msgTypes[240]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16100,7 +16232,7 @@ func (x *CreateResourcePackFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateResourcePackFileRequest.ProtoReflect.Descriptor instead.
 func (*CreateResourcePackFileRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{239}
+	return file_lms_proto_rawDescGZIP(), []int{240}
 }
 
 func (x *CreateResourcePackFileRequest) GetFileId() string {
@@ -16215,7 +16347,7 @@ type UpdateResourcePackFileRequest struct {
 
 func (x *UpdateResourcePackFileRequest) Reset() {
 	*x = UpdateResourcePackFileRequest{}
-	mi := &file_lms_proto_msgTypes[240]
+	mi := &file_lms_proto_msgTypes[241]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16227,7 +16359,7 @@ func (x *UpdateResourcePackFileRequest) String() string {
 func (*UpdateResourcePackFileRequest) ProtoMessage() {}
 
 func (x *UpdateResourcePackFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[240]
+	mi := &file_lms_proto_msgTypes[241]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16240,7 +16372,7 @@ func (x *UpdateResourcePackFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateResourcePackFileRequest.ProtoReflect.Descriptor instead.
 func (*UpdateResourcePackFileRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{240}
+	return file_lms_proto_rawDescGZIP(), []int{241}
 }
 
 func (x *UpdateResourcePackFileRequest) GetFileId() string {
@@ -16344,7 +16476,7 @@ type DeleteResourcePackFileRequest struct {
 
 func (x *DeleteResourcePackFileRequest) Reset() {
 	*x = DeleteResourcePackFileRequest{}
-	mi := &file_lms_proto_msgTypes[241]
+	mi := &file_lms_proto_msgTypes[242]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16356,7 +16488,7 @@ func (x *DeleteResourcePackFileRequest) String() string {
 func (*DeleteResourcePackFileRequest) ProtoMessage() {}
 
 func (x *DeleteResourcePackFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[241]
+	mi := &file_lms_proto_msgTypes[242]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16369,7 +16501,7 @@ func (x *DeleteResourcePackFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteResourcePackFileRequest.ProtoReflect.Descriptor instead.
 func (*DeleteResourcePackFileRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{241}
+	return file_lms_proto_rawDescGZIP(), []int{242}
 }
 
 func (x *DeleteResourcePackFileRequest) GetFileId() string {
@@ -16395,7 +16527,7 @@ type DeleteResourcePackFileResponse struct {
 
 func (x *DeleteResourcePackFileResponse) Reset() {
 	*x = DeleteResourcePackFileResponse{}
-	mi := &file_lms_proto_msgTypes[242]
+	mi := &file_lms_proto_msgTypes[243]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16407,7 +16539,7 @@ func (x *DeleteResourcePackFileResponse) String() string {
 func (*DeleteResourcePackFileResponse) ProtoMessage() {}
 
 func (x *DeleteResourcePackFileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[242]
+	mi := &file_lms_proto_msgTypes[243]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16420,7 +16552,7 @@ func (x *DeleteResourcePackFileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteResourcePackFileResponse.ProtoReflect.Descriptor instead.
 func (*DeleteResourcePackFileResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{242}
+	return file_lms_proto_rawDescGZIP(), []int{243}
 }
 
 func (x *DeleteResourcePackFileResponse) GetSuccess() bool {
@@ -16439,7 +16571,7 @@ type GetResourcePackFileRequest struct {
 
 func (x *GetResourcePackFileRequest) Reset() {
 	*x = GetResourcePackFileRequest{}
-	mi := &file_lms_proto_msgTypes[243]
+	mi := &file_lms_proto_msgTypes[244]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16451,7 +16583,7 @@ func (x *GetResourcePackFileRequest) String() string {
 func (*GetResourcePackFileRequest) ProtoMessage() {}
 
 func (x *GetResourcePackFileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[243]
+	mi := &file_lms_proto_msgTypes[244]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16464,7 +16596,7 @@ func (x *GetResourcePackFileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetResourcePackFileRequest.ProtoReflect.Descriptor instead.
 func (*GetResourcePackFileRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{243}
+	return file_lms_proto_rawDescGZIP(), []int{244}
 }
 
 func (x *GetResourcePackFileRequest) GetFileId() string {
@@ -16485,7 +16617,7 @@ type ListResourcePackFilesRequest struct {
 
 func (x *ListResourcePackFilesRequest) Reset() {
 	*x = ListResourcePackFilesRequest{}
-	mi := &file_lms_proto_msgTypes[244]
+	mi := &file_lms_proto_msgTypes[245]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16497,7 +16629,7 @@ func (x *ListResourcePackFilesRequest) String() string {
 func (*ListResourcePackFilesRequest) ProtoMessage() {}
 
 func (x *ListResourcePackFilesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[244]
+	mi := &file_lms_proto_msgTypes[245]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16510,7 +16642,7 @@ func (x *ListResourcePackFilesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListResourcePackFilesRequest.ProtoReflect.Descriptor instead.
 func (*ListResourcePackFilesRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{244}
+	return file_lms_proto_rawDescGZIP(), []int{245}
 }
 
 func (x *ListResourcePackFilesRequest) GetPackId() string {
@@ -16544,7 +16676,7 @@ type ListResourcePackFilesResponse struct {
 
 func (x *ListResourcePackFilesResponse) Reset() {
 	*x = ListResourcePackFilesResponse{}
-	mi := &file_lms_proto_msgTypes[245]
+	mi := &file_lms_proto_msgTypes[246]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16556,7 +16688,7 @@ func (x *ListResourcePackFilesResponse) String() string {
 func (*ListResourcePackFilesResponse) ProtoMessage() {}
 
 func (x *ListResourcePackFilesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[245]
+	mi := &file_lms_proto_msgTypes[246]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16569,7 +16701,7 @@ func (x *ListResourcePackFilesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListResourcePackFilesResponse.ProtoReflect.Descriptor instead.
 func (*ListResourcePackFilesResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{245}
+	return file_lms_proto_rawDescGZIP(), []int{246}
 }
 
 func (x *ListResourcePackFilesResponse) GetFiles() []*ResourcePackFile {
@@ -16586,6 +16718,74 @@ func (x *ListResourcePackFilesResponse) GetNextPageToken() string {
 	return ""
 }
 
+type UpdateResourcePackFileThumbnailRequest struct {
+	state              protoimpl.MessageState `protogen:"open.v1"`
+	FileId             string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
+	ThumbnailObjectKey string                 `protobuf:"bytes,2,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
+	ThumbnailFileHash  string                 `protobuf:"bytes,3,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`
+	Version            uint32                 `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *UpdateResourcePackFileThumbnailRequest) Reset() {
+	*x = UpdateResourcePackFileThumbnailRequest{}
+	mi := &file_lms_proto_msgTypes[247]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateResourcePackFileThumbnailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateResourcePackFileThumbnailRequest) ProtoMessage() {}
+
+func (x *UpdateResourcePackFileThumbnailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_lms_proto_msgTypes[247]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateResourcePackFileThumbnailRequest.ProtoReflect.Descriptor instead.
+func (*UpdateResourcePackFileThumbnailRequest) Descriptor() ([]byte, []int) {
+	return file_lms_proto_rawDescGZIP(), []int{247}
+}
+
+func (x *UpdateResourcePackFileThumbnailRequest) GetFileId() string {
+	if x != nil {
+		return x.FileId
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileThumbnailRequest) GetThumbnailObjectKey() string {
+	if x != nil {
+		return x.ThumbnailObjectKey
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileThumbnailRequest) GetThumbnailFileHash() string {
+	if x != nil {
+		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *UpdateResourcePackFileThumbnailRequest) GetVersion() uint32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
 type GetLessonVideoPlayURLRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	LessonId      string                 `protobuf:"bytes,1,opt,name=lesson_id,json=lessonId,proto3" json:"lesson_id,omitempty"`          // 课时 ID [required]
@@ -16596,7 +16796,7 @@ type GetLessonVideoPlayURLRequest struct {
 
 func (x *GetLessonVideoPlayURLRequest) Reset() {
 	*x = GetLessonVideoPlayURLRequest{}
-	mi := &file_lms_proto_msgTypes[246]
+	mi := &file_lms_proto_msgTypes[248]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16608,7 +16808,7 @@ func (x *GetLessonVideoPlayURLRequest) String() string {
 func (*GetLessonVideoPlayURLRequest) ProtoMessage() {}
 
 func (x *GetLessonVideoPlayURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[246]
+	mi := &file_lms_proto_msgTypes[248]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16621,7 +16821,7 @@ func (x *GetLessonVideoPlayURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonVideoPlayURLRequest.ProtoReflect.Descriptor instead.
 func (*GetLessonVideoPlayURLRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{246}
+	return file_lms_proto_rawDescGZIP(), []int{248}
 }
 
 func (x *GetLessonVideoPlayURLRequest) GetLessonId() string {
@@ -16648,7 +16848,7 @@ type GetLessonVideoPlayURLResponse struct {
 
 func (x *GetLessonVideoPlayURLResponse) Reset() {
 	*x = GetLessonVideoPlayURLResponse{}
-	mi := &file_lms_proto_msgTypes[247]
+	mi := &file_lms_proto_msgTypes[249]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16660,7 +16860,7 @@ func (x *GetLessonVideoPlayURLResponse) String() string {
 func (*GetLessonVideoPlayURLResponse) ProtoMessage() {}
 
 func (x *GetLessonVideoPlayURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[247]
+	mi := &file_lms_proto_msgTypes[249]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16673,7 +16873,7 @@ func (x *GetLessonVideoPlayURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetLessonVideoPlayURLResponse.ProtoReflect.Descriptor instead.
 func (*GetLessonVideoPlayURLResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{247}
+	return file_lms_proto_rawDescGZIP(), []int{249}
 }
 
 func (x *GetLessonVideoPlayURLResponse) GetPlayUrl() string {
@@ -16700,7 +16900,7 @@ type GetResourcePackFileViewURLRequest struct {
 
 func (x *GetResourcePackFileViewURLRequest) Reset() {
 	*x = GetResourcePackFileViewURLRequest{}
-	mi := &file_lms_proto_msgTypes[248]
+	mi := &file_lms_proto_msgTypes[250]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16712,7 +16912,7 @@ func (x *GetResourcePackFileViewURLRequest) String() string {
 func (*GetResourcePackFileViewURLRequest) ProtoMessage() {}
 
 func (x *GetResourcePackFileViewURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[248]
+	mi := &file_lms_proto_msgTypes[250]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16725,7 +16925,7 @@ func (x *GetResourcePackFileViewURLRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use GetResourcePackFileViewURLRequest.ProtoReflect.Descriptor instead.
 func (*GetResourcePackFileViewURLRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{248}
+	return file_lms_proto_rawDescGZIP(), []int{250}
 }
 
 func (x *GetResourcePackFileViewURLRequest) GetFileId() string {
@@ -16752,7 +16952,7 @@ type GetResourcePackFileViewURLResponse struct {
 
 func (x *GetResourcePackFileViewURLResponse) Reset() {
 	*x = GetResourcePackFileViewURLResponse{}
-	mi := &file_lms_proto_msgTypes[249]
+	mi := &file_lms_proto_msgTypes[251]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16764,7 +16964,7 @@ func (x *GetResourcePackFileViewURLResponse) String() string {
 func (*GetResourcePackFileViewURLResponse) ProtoMessage() {}
 
 func (x *GetResourcePackFileViewURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[249]
+	mi := &file_lms_proto_msgTypes[251]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16777,7 +16977,7 @@ func (x *GetResourcePackFileViewURLResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetResourcePackFileViewURLResponse.ProtoReflect.Descriptor instead.
 func (*GetResourcePackFileViewURLResponse) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{249}
+	return file_lms_proto_rawDescGZIP(), []int{251}
 }
 
 func (x *GetResourcePackFileViewURLResponse) GetViewUrl() string {
@@ -16806,13 +17006,15 @@ type ResourcePack struct {
 	Version            uint32                 `protobuf:"varint,8,opt,name=version,proto3" json:"version,omitempty"`
 	CreatedAt          string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt          string                 `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	Icon               string                 `protobuf:"bytes,11,opt,name=icon,proto3" json:"icon,omitempty"`
+	Category           string                 `protobuf:"bytes,12,opt,name=category,proto3" json:"category,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
 func (x *ResourcePack) Reset() {
 	*x = ResourcePack{}
-	mi := &file_lms_proto_msgTypes[250]
+	mi := &file_lms_proto_msgTypes[252]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16824,7 +17026,7 @@ func (x *ResourcePack) String() string {
 func (*ResourcePack) ProtoMessage() {}
 
 func (x *ResourcePack) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[250]
+	mi := &file_lms_proto_msgTypes[252]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16837,7 +17039,7 @@ func (x *ResourcePack) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourcePack.ProtoReflect.Descriptor instead.
 func (*ResourcePack) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{250}
+	return file_lms_proto_rawDescGZIP(), []int{252}
 }
 
 func (x *ResourcePack) GetPackId() string {
@@ -16910,6 +17112,20 @@ func (x *ResourcePack) GetUpdatedAt() string {
 	return ""
 }
 
+func (x *ResourcePack) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
+}
+
+func (x *ResourcePack) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
 type ResourcePackFile struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	FileId             string                 `protobuf:"bytes,1,opt,name=file_id,json=fileId,proto3" json:"file_id,omitempty"`
@@ -16934,7 +17150,7 @@ type ResourcePackFile struct {
 
 func (x *ResourcePackFile) Reset() {
 	*x = ResourcePackFile{}
-	mi := &file_lms_proto_msgTypes[251]
+	mi := &file_lms_proto_msgTypes[253]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -16946,7 +17162,7 @@ func (x *ResourcePackFile) String() string {
 func (*ResourcePackFile) ProtoMessage() {}
 
 func (x *ResourcePackFile) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[251]
+	mi := &file_lms_proto_msgTypes[253]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -16959,7 +17175,7 @@ func (x *ResourcePackFile) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResourcePackFile.ProtoReflect.Descriptor instead.
 func (*ResourcePackFile) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{251}
+	return file_lms_proto_rawDescGZIP(), []int{253}
 }
 
 func (x *ResourcePackFile) GetFileId() string {
@@ -17085,7 +17301,7 @@ type ListResourcePacksCandidateRequest struct {
 
 func (x *ListResourcePacksCandidateRequest) Reset() {
 	*x = ListResourcePacksCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[252]
+	mi := &file_lms_proto_msgTypes[254]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17097,7 +17313,7 @@ func (x *ListResourcePacksCandidateRequest) String() string {
 func (*ListResourcePacksCandidateRequest) ProtoMessage() {}
 
 func (x *ListResourcePacksCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[252]
+	mi := &file_lms_proto_msgTypes[254]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17110,7 +17326,7 @@ func (x *ListResourcePacksCandidateRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use ListResourcePacksCandidateRequest.ProtoReflect.Descriptor instead.
 func (*ListResourcePacksCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{252}
+	return file_lms_proto_rawDescGZIP(), []int{254}
 }
 
 func (x *ListResourcePacksCandidateRequest) GetCandidateId() string {
@@ -17146,7 +17362,7 @@ type ListResourcePackFilesCandidateRequest struct {
 
 func (x *ListResourcePackFilesCandidateRequest) Reset() {
 	*x = ListResourcePackFilesCandidateRequest{}
-	mi := &file_lms_proto_msgTypes[253]
+	mi := &file_lms_proto_msgTypes[255]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -17158,7 +17374,7 @@ func (x *ListResourcePackFilesCandidateRequest) String() string {
 func (*ListResourcePackFilesCandidateRequest) ProtoMessage() {}
 
 func (x *ListResourcePackFilesCandidateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_lms_proto_msgTypes[253]
+	mi := &file_lms_proto_msgTypes[255]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -17171,7 +17387,7 @@ func (x *ListResourcePackFilesCandidateRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use ListResourcePackFilesCandidateRequest.ProtoReflect.Descriptor instead.
 func (*ListResourcePackFilesCandidateRequest) Descriptor() ([]byte, []int) {
-	return file_lms_proto_rawDescGZIP(), []int{253}
+	return file_lms_proto_rawDescGZIP(), []int{255}
 }
 
 func (x *ListResourcePackFilesCandidateRequest) GetCandidateId() string {
@@ -17358,7 +17574,7 @@ const file_lms_proto_rawDesc = "" +
 	"\n" +
 	"object_key\x18\x02 \x01(\tR\tobjectKey\x12\x1b\n" +
 	"\tfile_size\x18\x03 \x01(\x04R\bfileSize\x12#\n" +
-	"\rlast_modified\x18\x04 \x01(\tR\flastModified\"\xe5\x03\n" +
+	"\rlast_modified\x18\x04 \x01(\tR\flastModified\"\xc1\x03\n" +
 	"\x18CreateCourseDraftRequest\x12#\n" +
 	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -17366,14 +17582,17 @@ const file_lms_proto_rawDesc = "" +
 	"\x14thumbnail_object_key\x18\x04 \x01(\tR\x12thumbnailObjectKey\x12!\n" +
 	"\fduration_min\x18\x05 \x01(\rR\vdurationMin\x123\n" +
 	"\x15certification_enabled\x18\x06 \x01(\bR\x14certificationEnabled\x120\n" +
-	"\x14certification_def_id\x18\a \x01(\tR\x12certificationDefId\x12(\n" +
-	"\x10from_course_guid\x18\b \x01(\tR\x0efromCourseGuid\x12\x1b\n" +
+	"\x14certification_def_id\x18\a \x01(\tR\x12certificationDefId\x12\x1b\n" +
 	"\tcourse_id\x18\t \x01(\tR\bcourseId\x12\x1f\n" +
 	"\vcourse_guid\x18\n" +
 	" \x01(\tR\n" +
 	"courseGuid\x12.\n" +
 	"\x13thumbnail_file_hash\x18\v \x01(\tR\x11thumbnailFileHash\x12\x18\n" +
-	"\arespath\x18\f \x01(\tR\arespath\"\xaf\x03\n" +
+	"\arespath\x18\f \x01(\tR\arespathJ\x04\b\b\x10\t\"v\n" +
+	"\x1bDuplicateCourseDraftRequest\x12$\n" +
+	"\x0efrom_course_id\x18\x01 \x01(\tR\ffromCourseId\x12\x1b\n" +
+	"\tcourse_id\x18\x02 \x01(\tR\bcourseId\x12\x14\n" +
+	"\x05title\x18\x03 \x01(\tR\x05title\"\xaf\x03\n" +
 	"\x13UpdateCourseRequest\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12#\n" +
 	"\rcategory_tips\x18\x02 \x01(\tR\fcategoryTips\x12\x14\n" +
@@ -17794,20 +18013,24 @@ const file_lms_proto_rawDesc = "" +
 	"operatorId\x12\x16\n" +
 	"\x06reason\x18\x05 \x01(\tR\x06reason\"E\n" +
 	")RevokeCourseAccessPermissionAdminResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"y\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xc5\x01\n" +
 	"\x1cEnrollCandidateCourseRequest\x12!\n" +
 	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1b\n" +
 	"\tcourse_id\x18\x02 \x01(\tR\bcourseId\x12\x19\n" +
-	"\bbiz_unit\x18\x03 \x01(\tR\abizUnit\"y\n" +
+	"\bbiz_unit\x18\x03 \x01(\tR\abizUnit\x12&\n" +
+	"\x0fref_entity_type\x18\x04 \x01(\tR\rrefEntityType\x12\"\n" +
+	"\rref_entity_id\x18\x05 \x01(\tR\vrefEntityId\"y\n" +
 	"\x1dEnrollCandidateCourseResponse\x12#\n" +
 	"\renrollment_id\x18\x01 \x01(\tR\fenrollmentId\x12\x16\n" +
 	"\x06status\x18\x02 \x01(\tR\x06status\x12\x1b\n" +
-	"\tjoined_at\x18\x03 \x01(\tR\bjoinedAt\"\x81\x01\n" +
+	"\tjoined_at\x18\x03 \x01(\tR\bjoinedAt\"\xcd\x01\n" +
 	"\"BatchEnrollCandidateCoursesRequest\x12!\n" +
 	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
 	"\n" +
 	"course_ids\x18\x02 \x03(\tR\tcourseIds\x12\x19\n" +
-	"\bbiz_unit\x18\x03 \x01(\tR\abizUnit\"\x8a\x01\n" +
+	"\bbiz_unit\x18\x03 \x01(\tR\abizUnit\x12&\n" +
+	"\x0fref_entity_type\x18\x04 \x01(\tR\rrefEntityType\x12\"\n" +
+	"\rref_entity_id\x18\x05 \x01(\tR\vrefEntityId\"\x8a\x01\n" +
 	"\x11BatchEnrollResult\x12\x1b\n" +
 	"\tcourse_id\x18\x01 \x01(\tR\bcourseId\x12#\n" +
 	"\renrollment_id\x18\x02 \x01(\tR\fenrollmentId\x12\x16\n" +
@@ -18407,7 +18630,7 @@ const file_lms_proto_rawDesc = "" +
 	"page_token\x18\x06 \x01(\tR\tpageToken\"\x81\x01\n" +
 	"\x1dListCourseEnrollmentsResponse\x128\n" +
 	"\venrollments\x18\x01 \x03(\v2\x16.glms.CourseEnrollmentR\venrollments\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xa7\x04\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xf3\x04\n" +
 	"\x10CourseEnrollment\x12#\n" +
 	"\renrollment_id\x18\x01 \x01(\tR\fenrollmentId\x12!\n" +
 	"\fcandidate_id\x18\x02 \x01(\tR\vcandidateId\x12\x1b\n" +
@@ -18426,7 +18649,9 @@ const file_lms_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x0e \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
-	"updated_at\x18\x0f \x01(\tR\tupdatedAt\"G\n" +
+	"updated_at\x18\x0f \x01(\tR\tupdatedAt\x12&\n" +
+	"\x0fref_entity_type\x18\x10 \x01(\tR\rrefEntityType\x12\"\n" +
+	"\rref_entity_id\x18\x11 \x01(\tR\vrefEntityId\"G\n" +
 	" GetCourseEnrollmentDetailRequest\x12#\n" +
 	"\renrollment_id\x18\x01 \x01(\tR\fenrollmentId\"[\n" +
 	"!GetCourseEnrollmentDetailResponse\x126\n" +
@@ -18529,14 +18754,16 @@ const file_lms_proto_rawDesc = "" +
 	"\x1dCreateViewURLCandidateRequest\x12!\n" +
 	"\fcandidate_id\x18\x01 \x01(\tR\vcandidateId\x12\x1d\n" +
 	"\n" +
-	"object_key\x18\x02 \x01(\tR\tobjectKey\"\xe8\x01\n" +
+	"object_key\x18\x02 \x01(\tR\tobjectKey\"\x98\x02\n" +
 	"\x19CreateResourcePackRequest\x12\x17\n" +
 	"\apack_id\x18\x06 \x01(\tR\x06packId\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x120\n" +
 	"\x14thumbnail_object_key\x18\x03 \x01(\tR\x12thumbnailObjectKey\x12.\n" +
 	"\x13thumbnail_file_hash\x18\x04 \x01(\tR\x11thumbnailFileHash\x12\x18\n" +
-	"\arespath\x18\x05 \x01(\tR\arespath\"\x9a\x02\n" +
+	"\arespath\x18\x05 \x01(\tR\arespath\x12\x12\n" +
+	"\x04icon\x18\a \x01(\tR\x04icon\x12\x1a\n" +
+	"\bcategory\x18\b \x01(\tR\bcategory\"\xca\x02\n" +
 	"\x19UpdateResourcePackRequest\x12\x17\n" +
 	"\apack_id\x18\x01 \x01(\tR\x06packId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -18545,7 +18772,10 @@ const file_lms_proto_rawDesc = "" +
 	"\x13thumbnail_file_hash\x18\x05 \x01(\tR\x11thumbnailFileHash\x12\x18\n" +
 	"\arespath\x18\x06 \x01(\tR\arespath\x12\x16\n" +
 	"\x06status\x18\a \x01(\tR\x06status\x12\x18\n" +
-	"\aversion\x18\b \x01(\rR\aversion\"N\n" +
+	"\aversion\x18\b \x01(\rR\aversion\x12\x12\n" +
+	"\x04icon\x18\t \x01(\tR\x04icon\x12\x1a\n" +
+	"\bcategory\x18\n" +
+	" \x01(\tR\bcategory\"N\n" +
 	"\x19DeleteResourcePackRequest\x12\x17\n" +
 	"\apack_id\x18\x01 \x01(\tR\x06packId\x12\x18\n" +
 	"\aversion\x18\x02 \x01(\rR\aversion\"6\n" +
@@ -18607,7 +18837,12 @@ const file_lms_proto_rawDesc = "" +
 	"page_token\x18\x03 \x01(\tR\tpageToken\"u\n" +
 	"\x1dListResourcePackFilesResponse\x12,\n" +
 	"\x05files\x18\x01 \x03(\v2\x16.glms.ResourcePackFileR\x05files\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"^\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xbd\x01\n" +
+	"&UpdateResourcePackFileThumbnailRequest\x12\x17\n" +
+	"\afile_id\x18\x01 \x01(\tR\x06fileId\x120\n" +
+	"\x14thumbnail_object_key\x18\x02 \x01(\tR\x12thumbnailObjectKey\x12.\n" +
+	"\x13thumbnail_file_hash\x18\x03 \x01(\tR\x11thumbnailFileHash\x12\x18\n" +
+	"\aversion\x18\x04 \x01(\rR\aversion\"^\n" +
 	"\x1cGetLessonVideoPlayURLRequest\x12\x1b\n" +
 	"\tlesson_id\x18\x01 \x01(\tR\blessonId\x12!\n" +
 	"\fcandidate_id\x18\x02 \x01(\tR\vcandidateId\"Y\n" +
@@ -18621,7 +18856,7 @@ const file_lms_proto_rawDesc = "" +
 	"\"GetResourcePackFileViewURLResponse\x12\x19\n" +
 	"\bview_url\x18\x01 \x01(\tR\aviewUrl\x12\x1d\n" +
 	"\n" +
-	"expires_at\x18\x02 \x01(\tR\texpiresAt\"\xcb\x02\n" +
+	"expires_at\x18\x02 \x01(\tR\texpiresAt\"\xfb\x02\n" +
 	"\fResourcePack\x12\x17\n" +
 	"\apack_id\x18\x01 \x01(\tR\x06packId\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12 \n" +
@@ -18635,7 +18870,9 @@ const file_lms_proto_rawDesc = "" +
 	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x1d\n" +
 	"\n" +
 	"updated_at\x18\n" +
-	" \x01(\tR\tupdatedAt\"\xb7\x04\n" +
+	" \x01(\tR\tupdatedAt\x12\x12\n" +
+	"\x04icon\x18\v \x01(\tR\x04icon\x12\x1a\n" +
+	"\bcategory\x18\f \x01(\tR\bcategory\"\xb7\x04\n" +
 	"\x10ResourcePackFile\x12\x17\n" +
 	"\afile_id\x18\x01 \x01(\tR\x06fileId\x12\x17\n" +
 	"\apack_id\x18\x02 \x01(\tR\x06packId\x12\x14\n" +
@@ -18718,10 +18955,11 @@ const file_lms_proto_rawDesc = "" +
 	"\x18UPLOAD_TYPE_LESSON_ASSET\x10\x03\x12\x1a\n" +
 	"\x16UPLOAD_TYPE_QUIZ_ASSET\x10\x04\x12'\n" +
 	"#UPLOAD_TYPE_RESOURCE_PACK_THUMBNAIL\x10\x05\x12\"\n" +
-	"\x1eUPLOAD_TYPE_RESOURCE_PACK_FILE\x10\x062\xcbV\n" +
+	"\x1eUPLOAD_TYPE_RESOURCE_PACK_FILE\x10\x062\x87X\n" +
 	"\n" +
 	"LmsService\x12F\n" +
-	"\x16CreateCourseDraftAdmin\x12\x1e.glms.CreateCourseDraftRequest\x1a\f.glms.Course\x12J\n" +
+	"\x16CreateCourseDraftAdmin\x12\x1e.glms.CreateCourseDraftRequest\x1a\f.glms.Course\x12L\n" +
+	"\x19DuplicateCourseDraftAdmin\x12!.glms.DuplicateCourseDraftRequest\x1a\f.glms.Course\x12J\n" +
 	"\x11UpdateCourseAdmin\x12\x19.glms.UpdateCourseRequest\x1a\x1a.glms.UpdateCourseResponse\x12J\n" +
 	"\x11DeleteCourseAdmin\x12\x19.glms.DeleteCourseRequest\x1a\x1a.glms.DeleteCourseResponse\x12M\n" +
 	"\x12PublishCourseAdmin\x12\x1a.glms.PublishCourseRequest\x1a\x1b.glms.PublishCourseResponse\x12O\n" +
@@ -18814,7 +19052,8 @@ const file_lms_proto_rawDesc = "" +
 	"\x1bUpdateResourcePackFileAdmin\x12#.glms.UpdateResourcePackFileRequest\x1a\x16.glms.ResourcePackFile\x12h\n" +
 	"\x1bDeleteResourcePackFileAdmin\x12#.glms.DeleteResourcePackFileRequest\x1a$.glms.DeleteResourcePackFileResponse\x12T\n" +
 	"\x18GetResourcePackFileAdmin\x12 .glms.GetResourcePackFileRequest\x1a\x16.glms.ResourcePackFile\x12e\n" +
-	"\x1aListResourcePackFilesAdmin\x12\".glms.ListResourcePackFilesRequest\x1a#.glms.ListResourcePackFilesResponse\x12Z\n" +
+	"\x1aListResourcePackFilesAdmin\x12\".glms.ListResourcePackFilesRequest\x1a#.glms.ListResourcePackFilesResponse\x12l\n" +
+	"$UpdateResourcePackFileThumbnailAdmin\x12,.glms.UpdateResourcePackFileThumbnailRequest\x1a\x16.glms.ResourcePackFile\x12Z\n" +
 	"\x10GetCourseSummary\x12&.glms.GetCourseSummaryCandidateRequest\x1a\x1e.glms.GetCourseSummaryResponse\x12W\n" +
 	"\x0fGetCourseDetail\x12%.glms.GetCourseDetailCandidateRequest\x1a\x1d.glms.GetCourseDetailResponse\x12K\n" +
 	"\vListCourses\x12!.glms.ListCoursesCandidateRequest\x1a\x19.glms.ListCoursesResponse\x12]\n" +
@@ -18858,7 +19097,7 @@ func file_lms_proto_rawDescGZIP() []byte {
 }
 
 var file_lms_proto_enumTypes = make([]protoimpl.EnumInfo, 8)
-var file_lms_proto_msgTypes = make([]protoimpl.MessageInfo, 255)
+var file_lms_proto_msgTypes = make([]protoimpl.MessageInfo, 257)
 var file_lms_proto_goTypes = []any{
 	(MaterialType)(0),                                 // 0: glms.MaterialType
 	(LessonType)(0),                                   // 1: glms.LessonType
@@ -18879,250 +19118,252 @@ var file_lms_proto_goTypes = []any{
 	(*ReorderItem)(nil),                               // 16: glms.ReorderItem
 	(*BucketObject)(nil),                              // 17: glms.BucketObject
 	(*CreateCourseDraftRequest)(nil),                  // 18: glms.CreateCourseDraftRequest
-	(*UpdateCourseRequest)(nil),                       // 19: glms.UpdateCourseRequest
-	(*UpdateCourseResponse)(nil),                      // 20: glms.UpdateCourseResponse
-	(*DeleteCourseRequest)(nil),                       // 21: glms.DeleteCourseRequest
-	(*DeleteCourseResponse)(nil),                      // 22: glms.DeleteCourseResponse
-	(*GetCourseRequest)(nil),                          // 23: glms.GetCourseRequest
-	(*GetCourseResponse)(nil),                         // 24: glms.GetCourseResponse
-	(*ListCoursesRequest)(nil),                        // 25: glms.ListCoursesRequest
-	(*ListCoursesResponse)(nil),                       // 26: glms.ListCoursesResponse
-	(*PublishCourseRequest)(nil),                      // 27: glms.PublishCourseRequest
-	(*PublishCourseResponse)(nil),                     // 28: glms.PublishCourseResponse
-	(*CreateCourseMaterialRequest)(nil),               // 29: glms.CreateCourseMaterialRequest
-	(*CreateCourseMaterialResponse)(nil),              // 30: glms.CreateCourseMaterialResponse
-	(*UpdateCourseMaterialRequest)(nil),               // 31: glms.UpdateCourseMaterialRequest
-	(*UpdateCourseMaterialResponse)(nil),              // 32: glms.UpdateCourseMaterialResponse
-	(*DeleteCourseMaterialRequest)(nil),               // 33: glms.DeleteCourseMaterialRequest
-	(*DeleteCourseMaterialResponse)(nil),              // 34: glms.DeleteCourseMaterialResponse
-	(*GetCourseMaterialRequest)(nil),                  // 35: glms.GetCourseMaterialRequest
-	(*GetCourseMaterialResponse)(nil),                 // 36: glms.GetCourseMaterialResponse
-	(*ListCourseMaterialsRequest)(nil),                // 37: glms.ListCourseMaterialsRequest
-	(*ListCourseMaterialsResponse)(nil),               // 38: glms.ListCourseMaterialsResponse
-	(*ReorderCourseMaterialsRequest)(nil),             // 39: glms.ReorderCourseMaterialsRequest
-	(*ReorderCourseMaterialsResponse)(nil),            // 40: glms.ReorderCourseMaterialsResponse
-	(*CreateChapterRequest)(nil),                      // 41: glms.CreateChapterRequest
-	(*CreateChapterResponse)(nil),                     // 42: glms.CreateChapterResponse
-	(*UpdateChapterRequest)(nil),                      // 43: glms.UpdateChapterRequest
-	(*UpdateChapterResponse)(nil),                     // 44: glms.UpdateChapterResponse
-	(*DeleteChapterRequest)(nil),                      // 45: glms.DeleteChapterRequest
-	(*DeleteChapterResponse)(nil),                     // 46: glms.DeleteChapterResponse
-	(*GetChapterRequest)(nil),                         // 47: glms.GetChapterRequest
-	(*GetChapterResponse)(nil),                        // 48: glms.GetChapterResponse
-	(*ListChaptersRequest)(nil),                       // 49: glms.ListChaptersRequest
-	(*ListChaptersResponse)(nil),                      // 50: glms.ListChaptersResponse
-	(*ReorderChaptersRequest)(nil),                    // 51: glms.ReorderChaptersRequest
-	(*ReorderChaptersResponse)(nil),                   // 52: glms.ReorderChaptersResponse
-	(*CreateLessonRequest)(nil),                       // 53: glms.CreateLessonRequest
-	(*CreateLessonResponse)(nil),                      // 54: glms.CreateLessonResponse
-	(*UpdateLessonRequest)(nil),                       // 55: glms.UpdateLessonRequest
-	(*UpdateLessonResponse)(nil),                      // 56: glms.UpdateLessonResponse
-	(*DeleteLessonRequest)(nil),                       // 57: glms.DeleteLessonRequest
-	(*DeleteLessonResponse)(nil),                      // 58: glms.DeleteLessonResponse
-	(*GetLessonRequest)(nil),                          // 59: glms.GetLessonRequest
-	(*GetLessonResponse)(nil),                         // 60: glms.GetLessonResponse
-	(*ListLessonsRequest)(nil),                        // 61: glms.ListLessonsRequest
-	(*ListLessonsResponse)(nil),                       // 62: glms.ListLessonsResponse
-	(*ReorderLessonsRequest)(nil),                     // 63: glms.ReorderLessonsRequest
-	(*ReorderLessonsResponse)(nil),                    // 64: glms.ReorderLessonsResponse
-	(*CreatePrerequisiteRequest)(nil),                 // 65: glms.CreatePrerequisiteRequest
-	(*CreatePrerequisiteResponse)(nil),                // 66: glms.CreatePrerequisiteResponse
-	(*UpdatePrerequisiteRequest)(nil),                 // 67: glms.UpdatePrerequisiteRequest
-	(*UpdatePrerequisiteResponse)(nil),                // 68: glms.UpdatePrerequisiteResponse
-	(*DeletePrerequisiteRequest)(nil),                 // 69: glms.DeletePrerequisiteRequest
-	(*DeletePrerequisiteResponse)(nil),                // 70: glms.DeletePrerequisiteResponse
-	(*GetPrerequisiteRequest)(nil),                    // 71: glms.GetPrerequisiteRequest
-	(*GetPrerequisiteResponse)(nil),                   // 72: glms.GetPrerequisiteResponse
-	(*ListPrerequisitesRequest)(nil),                  // 73: glms.ListPrerequisitesRequest
-	(*ListPrerequisitesResponse)(nil),                 // 74: glms.ListPrerequisitesResponse
-	(*CreateQuizRequest)(nil),                         // 75: glms.CreateQuizRequest
-	(*CreateQuizResponse)(nil),                        // 76: glms.CreateQuizResponse
-	(*UpdateQuizRequest)(nil),                         // 77: glms.UpdateQuizRequest
-	(*UpdateQuizResponse)(nil),                        // 78: glms.UpdateQuizResponse
-	(*DeleteQuizRequest)(nil),                         // 79: glms.DeleteQuizRequest
-	(*DeleteQuizResponse)(nil),                        // 80: glms.DeleteQuizResponse
-	(*GetQuizRequest)(nil),                            // 81: glms.GetQuizRequest
-	(*GetQuizResponse)(nil),                           // 82: glms.GetQuizResponse
-	(*ListQuizzesRequest)(nil),                        // 83: glms.ListQuizzesRequest
-	(*ListQuizzesResponse)(nil),                       // 84: glms.ListQuizzesResponse
-	(*CreateQuizQuestionRequest)(nil),                 // 85: glms.CreateQuizQuestionRequest
-	(*CreateQuizQuestionResponse)(nil),                // 86: glms.CreateQuizQuestionResponse
-	(*UpdateQuizQuestionRequest)(nil),                 // 87: glms.UpdateQuizQuestionRequest
-	(*UpdateQuizQuestionResponse)(nil),                // 88: glms.UpdateQuizQuestionResponse
-	(*DeleteQuizQuestionRequest)(nil),                 // 89: glms.DeleteQuizQuestionRequest
-	(*DeleteQuizQuestionResponse)(nil),                // 90: glms.DeleteQuizQuestionResponse
-	(*GetQuizQuestionRequest)(nil),                    // 91: glms.GetQuizQuestionRequest
-	(*GetQuizQuestionResponse)(nil),                   // 92: glms.GetQuizQuestionResponse
-	(*ListQuizQuestionsRequest)(nil),                  // 93: glms.ListQuizQuestionsRequest
-	(*ListQuizQuestionsResponse)(nil),                 // 94: glms.ListQuizQuestionsResponse
-	(*ReorderQuizQuestionsRequest)(nil),               // 95: glms.ReorderQuizQuestionsRequest
-	(*ReorderQuizQuestionsResponse)(nil),              // 96: glms.ReorderQuizQuestionsResponse
-	(*CreateQuizOptionRequest)(nil),                   // 97: glms.CreateQuizOptionRequest
-	(*CreateQuizOptionResponse)(nil),                  // 98: glms.CreateQuizOptionResponse
-	(*UpdateQuizOptionRequest)(nil),                   // 99: glms.UpdateQuizOptionRequest
-	(*UpdateQuizOptionResponse)(nil),                  // 100: glms.UpdateQuizOptionResponse
-	(*DeleteQuizOptionRequest)(nil),                   // 101: glms.DeleteQuizOptionRequest
-	(*DeleteQuizOptionResponse)(nil),                  // 102: glms.DeleteQuizOptionResponse
-	(*GetQuizOptionRequest)(nil),                      // 103: glms.GetQuizOptionRequest
-	(*GetQuizOptionResponse)(nil),                     // 104: glms.GetQuizOptionResponse
-	(*ListQuizOptionsRequest)(nil),                    // 105: glms.ListQuizOptionsRequest
-	(*ListQuizOptionsResponse)(nil),                   // 106: glms.ListQuizOptionsResponse
-	(*ReorderQuizOptionsRequest)(nil),                 // 107: glms.ReorderQuizOptionsRequest
-	(*ReorderQuizOptionsResponse)(nil),                // 108: glms.ReorderQuizOptionsResponse
-	(*ListObjectsRequest)(nil),                        // 109: glms.ListObjectsRequest
-	(*ListObjectsResponse)(nil),                       // 110: glms.ListObjectsResponse
-	(*CreateUploadURLRequest)(nil),                    // 111: glms.CreateUploadURLRequest
-	(*CreateUploadURLResponse)(nil),                   // 112: glms.CreateUploadURLResponse
-	(*CreateViewURLRequest)(nil),                      // 113: glms.CreateViewURLRequest
-	(*CreateViewURLResponse)(nil),                     // 114: glms.CreateViewURLResponse
-	(*GrantCourseAccessPermissionAdminRequest)(nil),   // 115: glms.GrantCourseAccessPermissionAdminRequest
-	(*GrantCourseAccessPermissionAdminResponse)(nil),  // 116: glms.GrantCourseAccessPermissionAdminResponse
-	(*RevokeCourseAccessPermissionAdminRequest)(nil),  // 117: glms.RevokeCourseAccessPermissionAdminRequest
-	(*RevokeCourseAccessPermissionAdminResponse)(nil), // 118: glms.RevokeCourseAccessPermissionAdminResponse
-	(*EnrollCandidateCourseRequest)(nil),              // 119: glms.EnrollCandidateCourseRequest
-	(*EnrollCandidateCourseResponse)(nil),             // 120: glms.EnrollCandidateCourseResponse
-	(*BatchEnrollCandidateCoursesRequest)(nil),        // 121: glms.BatchEnrollCandidateCoursesRequest
-	(*BatchEnrollResult)(nil),                         // 122: glms.BatchEnrollResult
-	(*BatchEnrollCandidateCoursesResponse)(nil),       // 123: glms.BatchEnrollCandidateCoursesResponse
-	(*CompleteLessonLearningRequest)(nil),             // 124: glms.CompleteLessonLearningRequest
-	(*CompleteLessonLearningResponse)(nil),            // 125: glms.CompleteLessonLearningResponse
-	(*ListCandidateEnrollmentsRequest)(nil),           // 126: glms.ListCandidateEnrollmentsRequest
-	(*CandidateEnrollmentSummary)(nil),                // 127: glms.CandidateEnrollmentSummary
-	(*ListCandidateEnrollmentsResponse)(nil),          // 128: glms.ListCandidateEnrollmentsResponse
-	(*GetCandidateEnrollmentDetailRequest)(nil),       // 129: glms.GetCandidateEnrollmentDetailRequest
-	(*GetCandidateEnrollmentDetailResponse)(nil),      // 130: glms.GetCandidateEnrollmentDetailResponse
-	(*ListCourseEnrollmentsForAdminRequest)(nil),      // 131: glms.ListCourseEnrollmentsForAdminRequest
-	(*CourseEnrollmentSummaryForAdmin)(nil),           // 132: glms.CourseEnrollmentSummaryForAdmin
-	(*ListCourseEnrollmentsForAdminResponse)(nil),     // 133: glms.ListCourseEnrollmentsForAdminResponse
-	(*GetCandidateProgressForAdminRequest)(nil),       // 134: glms.GetCandidateProgressForAdminRequest
-	(*GetCandidateProgressForAdminResponse)(nil),      // 135: glms.GetCandidateProgressForAdminResponse
-	(*QuizOptionDetail)(nil),                          // 136: glms.QuizOptionDetail
-	(*QuizQuestionDetail)(nil),                        // 137: glms.QuizQuestionDetail
-	(*QuizDetail)(nil),                                // 138: glms.QuizDetail
-	(*LessonDetail)(nil),                              // 139: glms.LessonDetail
-	(*ChapterDetail)(nil),                             // 140: glms.ChapterDetail
-	(*CompleteCourse)(nil),                            // 141: glms.CompleteCourse
-	(*SupplementaryMaterial)(nil),                     // 142: glms.SupplementaryMaterial
-	(*GetCompleteCourseRequest)(nil),                  // 143: glms.GetCompleteCourseRequest
-	(*GetCompleteCourseResponse)(nil),                 // 144: glms.GetCompleteCourseResponse
-	(*CreateCourseSupplementaryMaterialRequest)(nil),  // 145: glms.CreateCourseSupplementaryMaterialRequest
-	(*CreateCourseSupplementaryMaterialResponse)(nil), // 146: glms.CreateCourseSupplementaryMaterialResponse
-	(*UpdateCourseSupplementaryMaterialRequest)(nil),  // 147: glms.UpdateCourseSupplementaryMaterialRequest
-	(*UpdateCourseSupplementaryMaterialResponse)(nil), // 148: glms.UpdateCourseSupplementaryMaterialResponse
-	(*DeleteCourseSupplementaryMaterialRequest)(nil),  // 149: glms.DeleteCourseSupplementaryMaterialRequest
-	(*DeleteCourseSupplementaryMaterialResponse)(nil), // 150: glms.DeleteCourseSupplementaryMaterialResponse
-	(*GetCourseSupplementaryMaterialRequest)(nil),     // 151: glms.GetCourseSupplementaryMaterialRequest
-	(*GetCourseSupplementaryMaterialResponse)(nil),    // 152: glms.GetCourseSupplementaryMaterialResponse
-	(*TakeQuizRequest)(nil),                           // 153: glms.TakeQuizRequest
-	(*TakeQuizResponse)(nil),                          // 154: glms.TakeQuizResponse
-	(*QuizOptionForCandidate)(nil),                    // 155: glms.QuizOptionForCandidate
-	(*QuizQuestionForCandidate)(nil),                  // 156: glms.QuizQuestionForCandidate
-	(*GetCandidateQuizPaperRequest)(nil),              // 157: glms.GetCandidateQuizPaperRequest
-	(*GetCandidateQuizPaperResponse)(nil),             // 158: glms.GetCandidateQuizPaperResponse
-	(*QuizAnswerSubmission)(nil),                      // 159: glms.QuizAnswerSubmission
-	(*SubmitQuizRequest)(nil),                         // 160: glms.SubmitQuizRequest
-	(*SubmitQuizResponse)(nil),                        // 161: glms.SubmitQuizResponse
-	(*BrokenAssetDetail)(nil),                         // 162: glms.BrokenAssetDetail
-	(*ListBrokenAssetsRequest)(nil),                   // 163: glms.ListBrokenAssetsRequest
-	(*ListBrokenAssetsResponse)(nil),                  // 164: glms.ListBrokenAssetsResponse
-	(*ImportQuizRequest)(nil),                         // 165: glms.ImportQuizRequest
-	(*ImportQuizResponse)(nil),                        // 166: glms.ImportQuizResponse
-	(*ImportCourseRequest)(nil),                       // 167: glms.ImportCourseRequest
-	(*ImportCourseResponse)(nil),                      // 168: glms.ImportCourseResponse
-	(*GetCourseSummaryResponse)(nil),                  // 169: glms.GetCourseSummaryResponse
-	(*CourseSummary)(nil),                             // 170: glms.CourseSummary
-	(*CourseMaterialSummary)(nil),                     // 171: glms.CourseMaterialSummary
-	(*ChapterSummary)(nil),                            // 172: glms.ChapterSummary
-	(*LessonSummary)(nil),                             // 173: glms.LessonSummary
-	(*PrerequisiteSummary)(nil),                       // 174: glms.PrerequisiteSummary
-	(*QuizSummary)(nil),                               // 175: glms.QuizSummary
-	(*QuizQuestionSummary)(nil),                       // 176: glms.QuizQuestionSummary
-	(*QuizOptionSummary)(nil),                         // 177: glms.QuizOptionSummary
-	(*CourseDetail)(nil),                              // 178: glms.CourseDetail
-	(*GetCourseDetailRequest)(nil),                    // 179: glms.GetCourseDetailRequest
-	(*GetCourseDetailResponse)(nil),                   // 180: glms.GetCourseDetailResponse
-	(*GetCourseMaterialDetailResponse)(nil),           // 181: glms.GetCourseMaterialDetailResponse
-	(*GetChapterDetailResponse)(nil),                  // 182: glms.GetChapterDetailResponse
-	(*GetLessonDetailResponse)(nil),                   // 183: glms.GetLessonDetailResponse
-	(*GetPrerequisiteDetailResponse)(nil),             // 184: glms.GetPrerequisiteDetailResponse
-	(*GetQuizDetailRequest)(nil),                      // 185: glms.GetQuizDetailRequest
-	(*GetQuizDetailResponse)(nil),                     // 186: glms.GetQuizDetailResponse
-	(*GetQuizQuestionDetailResponse)(nil),             // 187: glms.GetQuizQuestionDetailResponse
-	(*GetQuizOptionDetailResponse)(nil),               // 188: glms.GetQuizOptionDetailResponse
-	(*ListLessonProgressRequest)(nil),                 // 189: glms.ListLessonProgressRequest
-	(*LessonProgressSummary)(nil),                     // 190: glms.LessonProgressSummary
-	(*ListLessonProgressResponse)(nil),                // 191: glms.ListLessonProgressResponse
-	(*GetLessonProgressDetailRequest)(nil),            // 192: glms.GetLessonProgressDetailRequest
-	(*GetLessonProgressDetailResponse)(nil),           // 193: glms.GetLessonProgressDetailResponse
-	(*ListQuizAttemptsRequest)(nil),                   // 194: glms.ListQuizAttemptsRequest
-	(*QuizAttemptSummary)(nil),                        // 195: glms.QuizAttemptSummary
-	(*ListQuizAttemptsResponse)(nil),                  // 196: glms.ListQuizAttemptsResponse
-	(*GetQuizAttemptDetailRequest)(nil),               // 197: glms.GetQuizAttemptDetailRequest
-	(*QuizAttemptDetail)(nil),                         // 198: glms.QuizAttemptDetail
-	(*GetQuizAttemptDetailResponse)(nil),              // 199: glms.GetQuizAttemptDetailResponse
-	(*ListChapterProgressRequest)(nil),                // 200: glms.ListChapterProgressRequest
-	(*ChapterProgressSummary)(nil),                    // 201: glms.ChapterProgressSummary
-	(*ListChapterProgressResponse)(nil),               // 202: glms.ListChapterProgressResponse
-	(*GetChapterProgressDetailRequest)(nil),           // 203: glms.GetChapterProgressDetailRequest
-	(*GetChapterProgressDetailResponse)(nil),          // 204: glms.GetChapterProgressDetailResponse
-	(*ListCourseAssetsRequest)(nil),                   // 205: glms.ListCourseAssetsRequest
-	(*CourseAssetSummary)(nil),                        // 206: glms.CourseAssetSummary
-	(*ListCourseAssetsResponse)(nil),                  // 207: glms.ListCourseAssetsResponse
-	(*GetCourseAssetDetailRequest)(nil),               // 208: glms.GetCourseAssetDetailRequest
-	(*GetCourseAssetDetailResponse)(nil),              // 209: glms.GetCourseAssetDetailResponse
-	(*CourseAsset)(nil),                               // 210: glms.CourseAsset
-	(*ListPrerequisitesByRequiredEntityRequest)(nil),  // 211: glms.ListPrerequisitesByRequiredEntityRequest
-	(*ListPrerequisitesByRequiredEntityResponse)(nil), // 212: glms.ListPrerequisitesByRequiredEntityResponse
-	(*ListLessonsByCourseRequest)(nil),                // 213: glms.ListLessonsByCourseRequest
-	(*ListLessonsByCourseResponse)(nil),               // 214: glms.ListLessonsByCourseResponse
-	(*ListCourseEnrollmentsRequest)(nil),              // 215: glms.ListCourseEnrollmentsRequest
-	(*ListCourseEnrollmentsResponse)(nil),             // 216: glms.ListCourseEnrollmentsResponse
-	(*CourseEnrollment)(nil),                          // 217: glms.CourseEnrollment
-	(*GetCourseEnrollmentDetailRequest)(nil),          // 218: glms.GetCourseEnrollmentDetailRequest
-	(*GetCourseEnrollmentDetailResponse)(nil),         // 219: glms.GetCourseEnrollmentDetailResponse
-	(*LessonProgress)(nil),                            // 220: glms.LessonProgress
-	(*ChapterProgress)(nil),                           // 221: glms.ChapterProgress
-	(*SyncCourseProgressRequest)(nil),                 // 222: glms.SyncCourseProgressRequest
-	(*SyncCourseProgressResponse)(nil),                // 223: glms.SyncCourseProgressResponse
-	(*GetCourseSummaryCandidateRequest)(nil),          // 224: glms.GetCourseSummaryCandidateRequest
-	(*GetCourseDetailCandidateRequest)(nil),           // 225: glms.GetCourseDetailCandidateRequest
-	(*ListCoursesCandidateRequest)(nil),               // 226: glms.ListCoursesCandidateRequest
-	(*GetCourseMaterialCandidateRequest)(nil),         // 227: glms.GetCourseMaterialCandidateRequest
-	(*ListCourseMaterialsCandidateRequest)(nil),       // 228: glms.ListCourseMaterialsCandidateRequest
-	(*GetChapterCandidateRequest)(nil),                // 229: glms.GetChapterCandidateRequest
-	(*GetChapterDetailCandidateRequest)(nil),          // 230: glms.GetChapterDetailCandidateRequest
-	(*ListChaptersCandidateRequest)(nil),              // 231: glms.ListChaptersCandidateRequest
-	(*GetLessonCandidateRequest)(nil),                 // 232: glms.GetLessonCandidateRequest
-	(*GetLessonDetailCandidateRequest)(nil),           // 233: glms.GetLessonDetailCandidateRequest
-	(*ListLessonsCandidateRequest)(nil),               // 234: glms.ListLessonsCandidateRequest
-	(*ListLessonsByCourseCandidateRequest)(nil),       // 235: glms.ListLessonsByCourseCandidateRequest
-	(*GetCompleteCourseCandidateRequest)(nil),         // 236: glms.GetCompleteCourseCandidateRequest
-	(*GetQuizCandidateRequest)(nil),                   // 237: glms.GetQuizCandidateRequest
-	(*ListQuizzesCandidateRequest)(nil),               // 238: glms.ListQuizzesCandidateRequest
-	(*CreateViewURLCandidateRequest)(nil),             // 239: glms.CreateViewURLCandidateRequest
-	(*CreateResourcePackRequest)(nil),                 // 240: glms.CreateResourcePackRequest
-	(*UpdateResourcePackRequest)(nil),                 // 241: glms.UpdateResourcePackRequest
-	(*DeleteResourcePackRequest)(nil),                 // 242: glms.DeleteResourcePackRequest
-	(*DeleteResourcePackResponse)(nil),                // 243: glms.DeleteResourcePackResponse
-	(*GetResourcePackRequest)(nil),                    // 244: glms.GetResourcePackRequest
-	(*ListResourcePacksRequest)(nil),                  // 245: glms.ListResourcePacksRequest
-	(*ListResourcePacksResponse)(nil),                 // 246: glms.ListResourcePacksResponse
-	(*CreateResourcePackFileRequest)(nil),             // 247: glms.CreateResourcePackFileRequest
-	(*UpdateResourcePackFileRequest)(nil),             // 248: glms.UpdateResourcePackFileRequest
-	(*DeleteResourcePackFileRequest)(nil),             // 249: glms.DeleteResourcePackFileRequest
-	(*DeleteResourcePackFileResponse)(nil),            // 250: glms.DeleteResourcePackFileResponse
-	(*GetResourcePackFileRequest)(nil),                // 251: glms.GetResourcePackFileRequest
-	(*ListResourcePackFilesRequest)(nil),              // 252: glms.ListResourcePackFilesRequest
-	(*ListResourcePackFilesResponse)(nil),             // 253: glms.ListResourcePackFilesResponse
-	(*GetLessonVideoPlayURLRequest)(nil),              // 254: glms.GetLessonVideoPlayURLRequest
-	(*GetLessonVideoPlayURLResponse)(nil),             // 255: glms.GetLessonVideoPlayURLResponse
-	(*GetResourcePackFileViewURLRequest)(nil),         // 256: glms.GetResourcePackFileViewURLRequest
-	(*GetResourcePackFileViewURLResponse)(nil),        // 257: glms.GetResourcePackFileViewURLResponse
-	(*ResourcePack)(nil),                              // 258: glms.ResourcePack
-	(*ResourcePackFile)(nil),                          // 259: glms.ResourcePackFile
-	(*ListResourcePacksCandidateRequest)(nil),         // 260: glms.ListResourcePacksCandidateRequest
-	(*ListResourcePackFilesCandidateRequest)(nil),     // 261: glms.ListResourcePackFilesCandidateRequest
-	nil, // 262: glms.CreateUploadURLResponse.SignedHeadersEntry
+	(*DuplicateCourseDraftRequest)(nil),               // 19: glms.DuplicateCourseDraftRequest
+	(*UpdateCourseRequest)(nil),                       // 20: glms.UpdateCourseRequest
+	(*UpdateCourseResponse)(nil),                      // 21: glms.UpdateCourseResponse
+	(*DeleteCourseRequest)(nil),                       // 22: glms.DeleteCourseRequest
+	(*DeleteCourseResponse)(nil),                      // 23: glms.DeleteCourseResponse
+	(*GetCourseRequest)(nil),                          // 24: glms.GetCourseRequest
+	(*GetCourseResponse)(nil),                         // 25: glms.GetCourseResponse
+	(*ListCoursesRequest)(nil),                        // 26: glms.ListCoursesRequest
+	(*ListCoursesResponse)(nil),                       // 27: glms.ListCoursesResponse
+	(*PublishCourseRequest)(nil),                      // 28: glms.PublishCourseRequest
+	(*PublishCourseResponse)(nil),                     // 29: glms.PublishCourseResponse
+	(*CreateCourseMaterialRequest)(nil),               // 30: glms.CreateCourseMaterialRequest
+	(*CreateCourseMaterialResponse)(nil),              // 31: glms.CreateCourseMaterialResponse
+	(*UpdateCourseMaterialRequest)(nil),               // 32: glms.UpdateCourseMaterialRequest
+	(*UpdateCourseMaterialResponse)(nil),              // 33: glms.UpdateCourseMaterialResponse
+	(*DeleteCourseMaterialRequest)(nil),               // 34: glms.DeleteCourseMaterialRequest
+	(*DeleteCourseMaterialResponse)(nil),              // 35: glms.DeleteCourseMaterialResponse
+	(*GetCourseMaterialRequest)(nil),                  // 36: glms.GetCourseMaterialRequest
+	(*GetCourseMaterialResponse)(nil),                 // 37: glms.GetCourseMaterialResponse
+	(*ListCourseMaterialsRequest)(nil),                // 38: glms.ListCourseMaterialsRequest
+	(*ListCourseMaterialsResponse)(nil),               // 39: glms.ListCourseMaterialsResponse
+	(*ReorderCourseMaterialsRequest)(nil),             // 40: glms.ReorderCourseMaterialsRequest
+	(*ReorderCourseMaterialsResponse)(nil),            // 41: glms.ReorderCourseMaterialsResponse
+	(*CreateChapterRequest)(nil),                      // 42: glms.CreateChapterRequest
+	(*CreateChapterResponse)(nil),                     // 43: glms.CreateChapterResponse
+	(*UpdateChapterRequest)(nil),                      // 44: glms.UpdateChapterRequest
+	(*UpdateChapterResponse)(nil),                     // 45: glms.UpdateChapterResponse
+	(*DeleteChapterRequest)(nil),                      // 46: glms.DeleteChapterRequest
+	(*DeleteChapterResponse)(nil),                     // 47: glms.DeleteChapterResponse
+	(*GetChapterRequest)(nil),                         // 48: glms.GetChapterRequest
+	(*GetChapterResponse)(nil),                        // 49: glms.GetChapterResponse
+	(*ListChaptersRequest)(nil),                       // 50: glms.ListChaptersRequest
+	(*ListChaptersResponse)(nil),                      // 51: glms.ListChaptersResponse
+	(*ReorderChaptersRequest)(nil),                    // 52: glms.ReorderChaptersRequest
+	(*ReorderChaptersResponse)(nil),                   // 53: glms.ReorderChaptersResponse
+	(*CreateLessonRequest)(nil),                       // 54: glms.CreateLessonRequest
+	(*CreateLessonResponse)(nil),                      // 55: glms.CreateLessonResponse
+	(*UpdateLessonRequest)(nil),                       // 56: glms.UpdateLessonRequest
+	(*UpdateLessonResponse)(nil),                      // 57: glms.UpdateLessonResponse
+	(*DeleteLessonRequest)(nil),                       // 58: glms.DeleteLessonRequest
+	(*DeleteLessonResponse)(nil),                      // 59: glms.DeleteLessonResponse
+	(*GetLessonRequest)(nil),                          // 60: glms.GetLessonRequest
+	(*GetLessonResponse)(nil),                         // 61: glms.GetLessonResponse
+	(*ListLessonsRequest)(nil),                        // 62: glms.ListLessonsRequest
+	(*ListLessonsResponse)(nil),                       // 63: glms.ListLessonsResponse
+	(*ReorderLessonsRequest)(nil),                     // 64: glms.ReorderLessonsRequest
+	(*ReorderLessonsResponse)(nil),                    // 65: glms.ReorderLessonsResponse
+	(*CreatePrerequisiteRequest)(nil),                 // 66: glms.CreatePrerequisiteRequest
+	(*CreatePrerequisiteResponse)(nil),                // 67: glms.CreatePrerequisiteResponse
+	(*UpdatePrerequisiteRequest)(nil),                 // 68: glms.UpdatePrerequisiteRequest
+	(*UpdatePrerequisiteResponse)(nil),                // 69: glms.UpdatePrerequisiteResponse
+	(*DeletePrerequisiteRequest)(nil),                 // 70: glms.DeletePrerequisiteRequest
+	(*DeletePrerequisiteResponse)(nil),                // 71: glms.DeletePrerequisiteResponse
+	(*GetPrerequisiteRequest)(nil),                    // 72: glms.GetPrerequisiteRequest
+	(*GetPrerequisiteResponse)(nil),                   // 73: glms.GetPrerequisiteResponse
+	(*ListPrerequisitesRequest)(nil),                  // 74: glms.ListPrerequisitesRequest
+	(*ListPrerequisitesResponse)(nil),                 // 75: glms.ListPrerequisitesResponse
+	(*CreateQuizRequest)(nil),                         // 76: glms.CreateQuizRequest
+	(*CreateQuizResponse)(nil),                        // 77: glms.CreateQuizResponse
+	(*UpdateQuizRequest)(nil),                         // 78: glms.UpdateQuizRequest
+	(*UpdateQuizResponse)(nil),                        // 79: glms.UpdateQuizResponse
+	(*DeleteQuizRequest)(nil),                         // 80: glms.DeleteQuizRequest
+	(*DeleteQuizResponse)(nil),                        // 81: glms.DeleteQuizResponse
+	(*GetQuizRequest)(nil),                            // 82: glms.GetQuizRequest
+	(*GetQuizResponse)(nil),                           // 83: glms.GetQuizResponse
+	(*ListQuizzesRequest)(nil),                        // 84: glms.ListQuizzesRequest
+	(*ListQuizzesResponse)(nil),                       // 85: glms.ListQuizzesResponse
+	(*CreateQuizQuestionRequest)(nil),                 // 86: glms.CreateQuizQuestionRequest
+	(*CreateQuizQuestionResponse)(nil),                // 87: glms.CreateQuizQuestionResponse
+	(*UpdateQuizQuestionRequest)(nil),                 // 88: glms.UpdateQuizQuestionRequest
+	(*UpdateQuizQuestionResponse)(nil),                // 89: glms.UpdateQuizQuestionResponse
+	(*DeleteQuizQuestionRequest)(nil),                 // 90: glms.DeleteQuizQuestionRequest
+	(*DeleteQuizQuestionResponse)(nil),                // 91: glms.DeleteQuizQuestionResponse
+	(*GetQuizQuestionRequest)(nil),                    // 92: glms.GetQuizQuestionRequest
+	(*GetQuizQuestionResponse)(nil),                   // 93: glms.GetQuizQuestionResponse
+	(*ListQuizQuestionsRequest)(nil),                  // 94: glms.ListQuizQuestionsRequest
+	(*ListQuizQuestionsResponse)(nil),                 // 95: glms.ListQuizQuestionsResponse
+	(*ReorderQuizQuestionsRequest)(nil),               // 96: glms.ReorderQuizQuestionsRequest
+	(*ReorderQuizQuestionsResponse)(nil),              // 97: glms.ReorderQuizQuestionsResponse
+	(*CreateQuizOptionRequest)(nil),                   // 98: glms.CreateQuizOptionRequest
+	(*CreateQuizOptionResponse)(nil),                  // 99: glms.CreateQuizOptionResponse
+	(*UpdateQuizOptionRequest)(nil),                   // 100: glms.UpdateQuizOptionRequest
+	(*UpdateQuizOptionResponse)(nil),                  // 101: glms.UpdateQuizOptionResponse
+	(*DeleteQuizOptionRequest)(nil),                   // 102: glms.DeleteQuizOptionRequest
+	(*DeleteQuizOptionResponse)(nil),                  // 103: glms.DeleteQuizOptionResponse
+	(*GetQuizOptionRequest)(nil),                      // 104: glms.GetQuizOptionRequest
+	(*GetQuizOptionResponse)(nil),                     // 105: glms.GetQuizOptionResponse
+	(*ListQuizOptionsRequest)(nil),                    // 106: glms.ListQuizOptionsRequest
+	(*ListQuizOptionsResponse)(nil),                   // 107: glms.ListQuizOptionsResponse
+	(*ReorderQuizOptionsRequest)(nil),                 // 108: glms.ReorderQuizOptionsRequest
+	(*ReorderQuizOptionsResponse)(nil),                // 109: glms.ReorderQuizOptionsResponse
+	(*ListObjectsRequest)(nil),                        // 110: glms.ListObjectsRequest
+	(*ListObjectsResponse)(nil),                       // 111: glms.ListObjectsResponse
+	(*CreateUploadURLRequest)(nil),                    // 112: glms.CreateUploadURLRequest
+	(*CreateUploadURLResponse)(nil),                   // 113: glms.CreateUploadURLResponse
+	(*CreateViewURLRequest)(nil),                      // 114: glms.CreateViewURLRequest
+	(*CreateViewURLResponse)(nil),                     // 115: glms.CreateViewURLResponse
+	(*GrantCourseAccessPermissionAdminRequest)(nil),   // 116: glms.GrantCourseAccessPermissionAdminRequest
+	(*GrantCourseAccessPermissionAdminResponse)(nil),  // 117: glms.GrantCourseAccessPermissionAdminResponse
+	(*RevokeCourseAccessPermissionAdminRequest)(nil),  // 118: glms.RevokeCourseAccessPermissionAdminRequest
+	(*RevokeCourseAccessPermissionAdminResponse)(nil), // 119: glms.RevokeCourseAccessPermissionAdminResponse
+	(*EnrollCandidateCourseRequest)(nil),              // 120: glms.EnrollCandidateCourseRequest
+	(*EnrollCandidateCourseResponse)(nil),             // 121: glms.EnrollCandidateCourseResponse
+	(*BatchEnrollCandidateCoursesRequest)(nil),        // 122: glms.BatchEnrollCandidateCoursesRequest
+	(*BatchEnrollResult)(nil),                         // 123: glms.BatchEnrollResult
+	(*BatchEnrollCandidateCoursesResponse)(nil),       // 124: glms.BatchEnrollCandidateCoursesResponse
+	(*CompleteLessonLearningRequest)(nil),             // 125: glms.CompleteLessonLearningRequest
+	(*CompleteLessonLearningResponse)(nil),            // 126: glms.CompleteLessonLearningResponse
+	(*ListCandidateEnrollmentsRequest)(nil),           // 127: glms.ListCandidateEnrollmentsRequest
+	(*CandidateEnrollmentSummary)(nil),                // 128: glms.CandidateEnrollmentSummary
+	(*ListCandidateEnrollmentsResponse)(nil),          // 129: glms.ListCandidateEnrollmentsResponse
+	(*GetCandidateEnrollmentDetailRequest)(nil),       // 130: glms.GetCandidateEnrollmentDetailRequest
+	(*GetCandidateEnrollmentDetailResponse)(nil),      // 131: glms.GetCandidateEnrollmentDetailResponse
+	(*ListCourseEnrollmentsForAdminRequest)(nil),      // 132: glms.ListCourseEnrollmentsForAdminRequest
+	(*CourseEnrollmentSummaryForAdmin)(nil),           // 133: glms.CourseEnrollmentSummaryForAdmin
+	(*ListCourseEnrollmentsForAdminResponse)(nil),     // 134: glms.ListCourseEnrollmentsForAdminResponse
+	(*GetCandidateProgressForAdminRequest)(nil),       // 135: glms.GetCandidateProgressForAdminRequest
+	(*GetCandidateProgressForAdminResponse)(nil),      // 136: glms.GetCandidateProgressForAdminResponse
+	(*QuizOptionDetail)(nil),                          // 137: glms.QuizOptionDetail
+	(*QuizQuestionDetail)(nil),                        // 138: glms.QuizQuestionDetail
+	(*QuizDetail)(nil),                                // 139: glms.QuizDetail
+	(*LessonDetail)(nil),                              // 140: glms.LessonDetail
+	(*ChapterDetail)(nil),                             // 141: glms.ChapterDetail
+	(*CompleteCourse)(nil),                            // 142: glms.CompleteCourse
+	(*SupplementaryMaterial)(nil),                     // 143: glms.SupplementaryMaterial
+	(*GetCompleteCourseRequest)(nil),                  // 144: glms.GetCompleteCourseRequest
+	(*GetCompleteCourseResponse)(nil),                 // 145: glms.GetCompleteCourseResponse
+	(*CreateCourseSupplementaryMaterialRequest)(nil),  // 146: glms.CreateCourseSupplementaryMaterialRequest
+	(*CreateCourseSupplementaryMaterialResponse)(nil), // 147: glms.CreateCourseSupplementaryMaterialResponse
+	(*UpdateCourseSupplementaryMaterialRequest)(nil),  // 148: glms.UpdateCourseSupplementaryMaterialRequest
+	(*UpdateCourseSupplementaryMaterialResponse)(nil), // 149: glms.UpdateCourseSupplementaryMaterialResponse
+	(*DeleteCourseSupplementaryMaterialRequest)(nil),  // 150: glms.DeleteCourseSupplementaryMaterialRequest
+	(*DeleteCourseSupplementaryMaterialResponse)(nil), // 151: glms.DeleteCourseSupplementaryMaterialResponse
+	(*GetCourseSupplementaryMaterialRequest)(nil),     // 152: glms.GetCourseSupplementaryMaterialRequest
+	(*GetCourseSupplementaryMaterialResponse)(nil),    // 153: glms.GetCourseSupplementaryMaterialResponse
+	(*TakeQuizRequest)(nil),                           // 154: glms.TakeQuizRequest
+	(*TakeQuizResponse)(nil),                          // 155: glms.TakeQuizResponse
+	(*QuizOptionForCandidate)(nil),                    // 156: glms.QuizOptionForCandidate
+	(*QuizQuestionForCandidate)(nil),                  // 157: glms.QuizQuestionForCandidate
+	(*GetCandidateQuizPaperRequest)(nil),              // 158: glms.GetCandidateQuizPaperRequest
+	(*GetCandidateQuizPaperResponse)(nil),             // 159: glms.GetCandidateQuizPaperResponse
+	(*QuizAnswerSubmission)(nil),                      // 160: glms.QuizAnswerSubmission
+	(*SubmitQuizRequest)(nil),                         // 161: glms.SubmitQuizRequest
+	(*SubmitQuizResponse)(nil),                        // 162: glms.SubmitQuizResponse
+	(*BrokenAssetDetail)(nil),                         // 163: glms.BrokenAssetDetail
+	(*ListBrokenAssetsRequest)(nil),                   // 164: glms.ListBrokenAssetsRequest
+	(*ListBrokenAssetsResponse)(nil),                  // 165: glms.ListBrokenAssetsResponse
+	(*ImportQuizRequest)(nil),                         // 166: glms.ImportQuizRequest
+	(*ImportQuizResponse)(nil),                        // 167: glms.ImportQuizResponse
+	(*ImportCourseRequest)(nil),                       // 168: glms.ImportCourseRequest
+	(*ImportCourseResponse)(nil),                      // 169: glms.ImportCourseResponse
+	(*GetCourseSummaryResponse)(nil),                  // 170: glms.GetCourseSummaryResponse
+	(*CourseSummary)(nil),                             // 171: glms.CourseSummary
+	(*CourseMaterialSummary)(nil),                     // 172: glms.CourseMaterialSummary
+	(*ChapterSummary)(nil),                            // 173: glms.ChapterSummary
+	(*LessonSummary)(nil),                             // 174: glms.LessonSummary
+	(*PrerequisiteSummary)(nil),                       // 175: glms.PrerequisiteSummary
+	(*QuizSummary)(nil),                               // 176: glms.QuizSummary
+	(*QuizQuestionSummary)(nil),                       // 177: glms.QuizQuestionSummary
+	(*QuizOptionSummary)(nil),                         // 178: glms.QuizOptionSummary
+	(*CourseDetail)(nil),                              // 179: glms.CourseDetail
+	(*GetCourseDetailRequest)(nil),                    // 180: glms.GetCourseDetailRequest
+	(*GetCourseDetailResponse)(nil),                   // 181: glms.GetCourseDetailResponse
+	(*GetCourseMaterialDetailResponse)(nil),           // 182: glms.GetCourseMaterialDetailResponse
+	(*GetChapterDetailResponse)(nil),                  // 183: glms.GetChapterDetailResponse
+	(*GetLessonDetailResponse)(nil),                   // 184: glms.GetLessonDetailResponse
+	(*GetPrerequisiteDetailResponse)(nil),             // 185: glms.GetPrerequisiteDetailResponse
+	(*GetQuizDetailRequest)(nil),                      // 186: glms.GetQuizDetailRequest
+	(*GetQuizDetailResponse)(nil),                     // 187: glms.GetQuizDetailResponse
+	(*GetQuizQuestionDetailResponse)(nil),             // 188: glms.GetQuizQuestionDetailResponse
+	(*GetQuizOptionDetailResponse)(nil),               // 189: glms.GetQuizOptionDetailResponse
+	(*ListLessonProgressRequest)(nil),                 // 190: glms.ListLessonProgressRequest
+	(*LessonProgressSummary)(nil),                     // 191: glms.LessonProgressSummary
+	(*ListLessonProgressResponse)(nil),                // 192: glms.ListLessonProgressResponse
+	(*GetLessonProgressDetailRequest)(nil),            // 193: glms.GetLessonProgressDetailRequest
+	(*GetLessonProgressDetailResponse)(nil),           // 194: glms.GetLessonProgressDetailResponse
+	(*ListQuizAttemptsRequest)(nil),                   // 195: glms.ListQuizAttemptsRequest
+	(*QuizAttemptSummary)(nil),                        // 196: glms.QuizAttemptSummary
+	(*ListQuizAttemptsResponse)(nil),                  // 197: glms.ListQuizAttemptsResponse
+	(*GetQuizAttemptDetailRequest)(nil),               // 198: glms.GetQuizAttemptDetailRequest
+	(*QuizAttemptDetail)(nil),                         // 199: glms.QuizAttemptDetail
+	(*GetQuizAttemptDetailResponse)(nil),              // 200: glms.GetQuizAttemptDetailResponse
+	(*ListChapterProgressRequest)(nil),                // 201: glms.ListChapterProgressRequest
+	(*ChapterProgressSummary)(nil),                    // 202: glms.ChapterProgressSummary
+	(*ListChapterProgressResponse)(nil),               // 203: glms.ListChapterProgressResponse
+	(*GetChapterProgressDetailRequest)(nil),           // 204: glms.GetChapterProgressDetailRequest
+	(*GetChapterProgressDetailResponse)(nil),          // 205: glms.GetChapterProgressDetailResponse
+	(*ListCourseAssetsRequest)(nil),                   // 206: glms.ListCourseAssetsRequest
+	(*CourseAssetSummary)(nil),                        // 207: glms.CourseAssetSummary
+	(*ListCourseAssetsResponse)(nil),                  // 208: glms.ListCourseAssetsResponse
+	(*GetCourseAssetDetailRequest)(nil),               // 209: glms.GetCourseAssetDetailRequest
+	(*GetCourseAssetDetailResponse)(nil),              // 210: glms.GetCourseAssetDetailResponse
+	(*CourseAsset)(nil),                               // 211: glms.CourseAsset
+	(*ListPrerequisitesByRequiredEntityRequest)(nil),  // 212: glms.ListPrerequisitesByRequiredEntityRequest
+	(*ListPrerequisitesByRequiredEntityResponse)(nil), // 213: glms.ListPrerequisitesByRequiredEntityResponse
+	(*ListLessonsByCourseRequest)(nil),                // 214: glms.ListLessonsByCourseRequest
+	(*ListLessonsByCourseResponse)(nil),               // 215: glms.ListLessonsByCourseResponse
+	(*ListCourseEnrollmentsRequest)(nil),              // 216: glms.ListCourseEnrollmentsRequest
+	(*ListCourseEnrollmentsResponse)(nil),             // 217: glms.ListCourseEnrollmentsResponse
+	(*CourseEnrollment)(nil),                          // 218: glms.CourseEnrollment
+	(*GetCourseEnrollmentDetailRequest)(nil),          // 219: glms.GetCourseEnrollmentDetailRequest
+	(*GetCourseEnrollmentDetailResponse)(nil),         // 220: glms.GetCourseEnrollmentDetailResponse
+	(*LessonProgress)(nil),                            // 221: glms.LessonProgress
+	(*ChapterProgress)(nil),                           // 222: glms.ChapterProgress
+	(*SyncCourseProgressRequest)(nil),                 // 223: glms.SyncCourseProgressRequest
+	(*SyncCourseProgressResponse)(nil),                // 224: glms.SyncCourseProgressResponse
+	(*GetCourseSummaryCandidateRequest)(nil),          // 225: glms.GetCourseSummaryCandidateRequest
+	(*GetCourseDetailCandidateRequest)(nil),           // 226: glms.GetCourseDetailCandidateRequest
+	(*ListCoursesCandidateRequest)(nil),               // 227: glms.ListCoursesCandidateRequest
+	(*GetCourseMaterialCandidateRequest)(nil),         // 228: glms.GetCourseMaterialCandidateRequest
+	(*ListCourseMaterialsCandidateRequest)(nil),       // 229: glms.ListCourseMaterialsCandidateRequest
+	(*GetChapterCandidateRequest)(nil),                // 230: glms.GetChapterCandidateRequest
+	(*GetChapterDetailCandidateRequest)(nil),          // 231: glms.GetChapterDetailCandidateRequest
+	(*ListChaptersCandidateRequest)(nil),              // 232: glms.ListChaptersCandidateRequest
+	(*GetLessonCandidateRequest)(nil),                 // 233: glms.GetLessonCandidateRequest
+	(*GetLessonDetailCandidateRequest)(nil),           // 234: glms.GetLessonDetailCandidateRequest
+	(*ListLessonsCandidateRequest)(nil),               // 235: glms.ListLessonsCandidateRequest
+	(*ListLessonsByCourseCandidateRequest)(nil),       // 236: glms.ListLessonsByCourseCandidateRequest
+	(*GetCompleteCourseCandidateRequest)(nil),         // 237: glms.GetCompleteCourseCandidateRequest
+	(*GetQuizCandidateRequest)(nil),                   // 238: glms.GetQuizCandidateRequest
+	(*ListQuizzesCandidateRequest)(nil),               // 239: glms.ListQuizzesCandidateRequest
+	(*CreateViewURLCandidateRequest)(nil),             // 240: glms.CreateViewURLCandidateRequest
+	(*CreateResourcePackRequest)(nil),                 // 241: glms.CreateResourcePackRequest
+	(*UpdateResourcePackRequest)(nil),                 // 242: glms.UpdateResourcePackRequest
+	(*DeleteResourcePackRequest)(nil),                 // 243: glms.DeleteResourcePackRequest
+	(*DeleteResourcePackResponse)(nil),                // 244: glms.DeleteResourcePackResponse
+	(*GetResourcePackRequest)(nil),                    // 245: glms.GetResourcePackRequest
+	(*ListResourcePacksRequest)(nil),                  // 246: glms.ListResourcePacksRequest
+	(*ListResourcePacksResponse)(nil),                 // 247: glms.ListResourcePacksResponse
+	(*CreateResourcePackFileRequest)(nil),             // 248: glms.CreateResourcePackFileRequest
+	(*UpdateResourcePackFileRequest)(nil),             // 249: glms.UpdateResourcePackFileRequest
+	(*DeleteResourcePackFileRequest)(nil),             // 250: glms.DeleteResourcePackFileRequest
+	(*DeleteResourcePackFileResponse)(nil),            // 251: glms.DeleteResourcePackFileResponse
+	(*GetResourcePackFileRequest)(nil),                // 252: glms.GetResourcePackFileRequest
+	(*ListResourcePackFilesRequest)(nil),              // 253: glms.ListResourcePackFilesRequest
+	(*ListResourcePackFilesResponse)(nil),             // 254: glms.ListResourcePackFilesResponse
+	(*UpdateResourcePackFileThumbnailRequest)(nil),    // 255: glms.UpdateResourcePackFileThumbnailRequest
+	(*GetLessonVideoPlayURLRequest)(nil),              // 256: glms.GetLessonVideoPlayURLRequest
+	(*GetLessonVideoPlayURLResponse)(nil),             // 257: glms.GetLessonVideoPlayURLResponse
+	(*GetResourcePackFileViewURLRequest)(nil),         // 258: glms.GetResourcePackFileViewURLRequest
+	(*GetResourcePackFileViewURLResponse)(nil),        // 259: glms.GetResourcePackFileViewURLResponse
+	(*ResourcePack)(nil),                              // 260: glms.ResourcePack
+	(*ResourcePackFile)(nil),                          // 261: glms.ResourcePackFile
+	(*ListResourcePacksCandidateRequest)(nil),         // 262: glms.ListResourcePacksCandidateRequest
+	(*ListResourcePackFilesCandidateRequest)(nil),     // 263: glms.ListResourcePackFilesCandidateRequest
+	nil, // 264: glms.CreateUploadURLResponse.SignedHeadersEntry
 }
 var file_lms_proto_depIdxs = []int32{
 	0,   // 0: glms.CourseMaterial.material_type:type_name -> glms.MaterialType
@@ -19133,19 +19374,19 @@ var file_lms_proto_depIdxs = []int32{
 	4,   // 5: glms.Quiz.quizzable_type:type_name -> glms.QuizzableType
 	5,   // 6: glms.QuizQuestion.question_type:type_name -> glms.QuizQuestionType
 	8,   // 7: glms.GetCourseResponse.course:type_name -> glms.Course
-	170, // 8: glms.ListCoursesResponse.courses:type_name -> glms.CourseSummary
+	171, // 8: glms.ListCoursesResponse.courses:type_name -> glms.CourseSummary
 	0,   // 9: glms.CreateCourseMaterialRequest.material_type:type_name -> glms.MaterialType
 	0,   // 10: glms.UpdateCourseMaterialRequest.material_type:type_name -> glms.MaterialType
 	9,   // 11: glms.GetCourseMaterialResponse.material:type_name -> glms.CourseMaterial
-	171, // 12: glms.ListCourseMaterialsResponse.materials:type_name -> glms.CourseMaterialSummary
+	172, // 12: glms.ListCourseMaterialsResponse.materials:type_name -> glms.CourseMaterialSummary
 	16,  // 13: glms.ReorderCourseMaterialsRequest.items:type_name -> glms.ReorderItem
 	10,  // 14: glms.GetChapterResponse.chapter:type_name -> glms.Chapter
-	172, // 15: glms.ListChaptersResponse.chapters:type_name -> glms.ChapterSummary
+	173, // 15: glms.ListChaptersResponse.chapters:type_name -> glms.ChapterSummary
 	16,  // 16: glms.ReorderChaptersRequest.items:type_name -> glms.ReorderItem
 	1,   // 17: glms.CreateLessonRequest.lesson_type:type_name -> glms.LessonType
 	1,   // 18: glms.UpdateLessonRequest.lesson_type:type_name -> glms.LessonType
 	11,  // 19: glms.GetLessonResponse.lesson:type_name -> glms.Lesson
-	173, // 20: glms.ListLessonsResponse.lessons:type_name -> glms.LessonSummary
+	174, // 20: glms.ListLessonsResponse.lessons:type_name -> glms.LessonSummary
 	16,  // 21: glms.ReorderLessonsRequest.items:type_name -> glms.ReorderItem
 	2,   // 22: glms.CreatePrerequisiteRequest.required_entity_type:type_name -> glms.EntityType
 	3,   // 23: glms.CreatePrerequisiteRequest.required_result:type_name -> glms.PrerequisiteResult
@@ -19155,51 +19396,51 @@ var file_lms_proto_depIdxs = []int32{
 	2,   // 27: glms.UpdatePrerequisiteRequest.target_entity_type:type_name -> glms.EntityType
 	12,  // 28: glms.GetPrerequisiteResponse.prerequisite:type_name -> glms.Prerequisite
 	2,   // 29: glms.ListPrerequisitesRequest.target_entity_type:type_name -> glms.EntityType
-	174, // 30: glms.ListPrerequisitesResponse.prerequisites:type_name -> glms.PrerequisiteSummary
+	175, // 30: glms.ListPrerequisitesResponse.prerequisites:type_name -> glms.PrerequisiteSummary
 	4,   // 31: glms.CreateQuizRequest.quizzable_type:type_name -> glms.QuizzableType
 	13,  // 32: glms.GetQuizResponse.quiz:type_name -> glms.Quiz
 	4,   // 33: glms.ListQuizzesRequest.quizzable_type:type_name -> glms.QuizzableType
-	175, // 34: glms.ListQuizzesResponse.quizzes:type_name -> glms.QuizSummary
+	176, // 34: glms.ListQuizzesResponse.quizzes:type_name -> glms.QuizSummary
 	5,   // 35: glms.CreateQuizQuestionRequest.question_type:type_name -> glms.QuizQuestionType
 	5,   // 36: glms.UpdateQuizQuestionRequest.question_type:type_name -> glms.QuizQuestionType
 	14,  // 37: glms.GetQuizQuestionResponse.question:type_name -> glms.QuizQuestion
-	176, // 38: glms.ListQuizQuestionsResponse.questions:type_name -> glms.QuizQuestionSummary
+	177, // 38: glms.ListQuizQuestionsResponse.questions:type_name -> glms.QuizQuestionSummary
 	16,  // 39: glms.ReorderQuizQuestionsRequest.items:type_name -> glms.ReorderItem
 	15,  // 40: glms.GetQuizOptionResponse.option:type_name -> glms.QuizOption
-	177, // 41: glms.ListQuizOptionsResponse.options:type_name -> glms.QuizOptionSummary
+	178, // 41: glms.ListQuizOptionsResponse.options:type_name -> glms.QuizOptionSummary
 	16,  // 42: glms.ReorderQuizOptionsRequest.items:type_name -> glms.ReorderItem
 	17,  // 43: glms.ListObjectsResponse.objects:type_name -> glms.BucketObject
 	7,   // 44: glms.CreateUploadURLRequest.upload_type:type_name -> glms.UploadType
-	262, // 45: glms.CreateUploadURLResponse.signed_headers:type_name -> glms.CreateUploadURLResponse.SignedHeadersEntry
-	122, // 46: glms.BatchEnrollCandidateCoursesResponse.results:type_name -> glms.BatchEnrollResult
-	127, // 47: glms.ListCandidateEnrollmentsResponse.enrollments:type_name -> glms.CandidateEnrollmentSummary
-	132, // 48: glms.ListCourseEnrollmentsForAdminResponse.enrollments:type_name -> glms.CourseEnrollmentSummaryForAdmin
+	264, // 45: glms.CreateUploadURLResponse.signed_headers:type_name -> glms.CreateUploadURLResponse.SignedHeadersEntry
+	123, // 46: glms.BatchEnrollCandidateCoursesResponse.results:type_name -> glms.BatchEnrollResult
+	128, // 47: glms.ListCandidateEnrollmentsResponse.enrollments:type_name -> glms.CandidateEnrollmentSummary
+	133, // 48: glms.ListCourseEnrollmentsForAdminResponse.enrollments:type_name -> glms.CourseEnrollmentSummaryForAdmin
 	15,  // 49: glms.QuizOptionDetail.option:type_name -> glms.QuizOption
 	14,  // 50: glms.QuizQuestionDetail.question:type_name -> glms.QuizQuestion
 	15,  // 51: glms.QuizQuestionDetail.options:type_name -> glms.QuizOption
 	13,  // 52: glms.QuizDetail.quiz:type_name -> glms.Quiz
-	137, // 53: glms.QuizDetail.questions:type_name -> glms.QuizQuestionDetail
+	138, // 53: glms.QuizDetail.questions:type_name -> glms.QuizQuestionDetail
 	11,  // 54: glms.LessonDetail.lesson:type_name -> glms.Lesson
-	138, // 55: glms.LessonDetail.quizzes:type_name -> glms.QuizDetail
+	139, // 55: glms.LessonDetail.quizzes:type_name -> glms.QuizDetail
 	10,  // 56: glms.ChapterDetail.chapter:type_name -> glms.Chapter
-	139, // 57: glms.ChapterDetail.lessons:type_name -> glms.LessonDetail
-	138, // 58: glms.ChapterDetail.quizzes:type_name -> glms.QuizDetail
+	140, // 57: glms.ChapterDetail.lessons:type_name -> glms.LessonDetail
+	139, // 58: glms.ChapterDetail.quizzes:type_name -> glms.QuizDetail
 	8,   // 59: glms.CompleteCourse.course:type_name -> glms.Course
 	9,   // 60: glms.CompleteCourse.materials:type_name -> glms.CourseMaterial
-	140, // 61: glms.CompleteCourse.chapters:type_name -> glms.ChapterDetail
-	138, // 62: glms.CompleteCourse.quizzes:type_name -> glms.QuizDetail
-	142, // 63: glms.CompleteCourse.supplementary_material:type_name -> glms.SupplementaryMaterial
-	141, // 64: glms.GetCompleteCourseResponse.complete_course:type_name -> glms.CompleteCourse
-	142, // 65: glms.CreateCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
-	142, // 66: glms.UpdateCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
-	142, // 67: glms.GetCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
+	141, // 61: glms.CompleteCourse.chapters:type_name -> glms.ChapterDetail
+	139, // 62: glms.CompleteCourse.quizzes:type_name -> glms.QuizDetail
+	143, // 63: glms.CompleteCourse.supplementary_material:type_name -> glms.SupplementaryMaterial
+	142, // 64: glms.GetCompleteCourseResponse.complete_course:type_name -> glms.CompleteCourse
+	143, // 65: glms.CreateCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
+	143, // 66: glms.UpdateCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
+	143, // 67: glms.GetCourseSupplementaryMaterialResponse.material:type_name -> glms.SupplementaryMaterial
 	5,   // 68: glms.QuizQuestionForCandidate.question_type:type_name -> glms.QuizQuestionType
-	155, // 69: glms.QuizQuestionForCandidate.options:type_name -> glms.QuizOptionForCandidate
-	156, // 70: glms.GetCandidateQuizPaperResponse.questions:type_name -> glms.QuizQuestionForCandidate
-	159, // 71: glms.SubmitQuizRequest.submissions:type_name -> glms.QuizAnswerSubmission
-	162, // 72: glms.ListBrokenAssetsResponse.assets:type_name -> glms.BrokenAssetDetail
+	156, // 69: glms.QuizQuestionForCandidate.options:type_name -> glms.QuizOptionForCandidate
+	157, // 70: glms.GetCandidateQuizPaperResponse.questions:type_name -> glms.QuizQuestionForCandidate
+	160, // 71: glms.SubmitQuizRequest.submissions:type_name -> glms.QuizAnswerSubmission
+	163, // 72: glms.ListBrokenAssetsResponse.assets:type_name -> glms.BrokenAssetDetail
 	4,   // 73: glms.ImportQuizRequest.quizzable_type:type_name -> glms.QuizzableType
-	170, // 74: glms.GetCourseSummaryResponse.course:type_name -> glms.CourseSummary
+	171, // 74: glms.GetCourseSummaryResponse.course:type_name -> glms.CourseSummary
 	0,   // 75: glms.CourseMaterialSummary.material_type:type_name -> glms.MaterialType
 	1,   // 76: glms.LessonSummary.lesson_type:type_name -> glms.LessonType
 	2,   // 77: glms.PrerequisiteSummary.required_entity_type:type_name -> glms.EntityType
@@ -19208,277 +19449,281 @@ var file_lms_proto_depIdxs = []int32{
 	4,   // 80: glms.QuizSummary.quizzable_type:type_name -> glms.QuizzableType
 	5,   // 81: glms.QuizQuestionSummary.question_type:type_name -> glms.QuizQuestionType
 	8,   // 82: glms.CourseDetail.course:type_name -> glms.Course
-	178, // 83: glms.GetCourseDetailResponse.course_detail:type_name -> glms.CourseDetail
+	179, // 83: glms.GetCourseDetailResponse.course_detail:type_name -> glms.CourseDetail
 	9,   // 84: glms.GetCourseMaterialDetailResponse.material:type_name -> glms.CourseMaterial
 	10,  // 85: glms.GetChapterDetailResponse.chapter:type_name -> glms.Chapter
 	11,  // 86: glms.GetLessonDetailResponse.lesson:type_name -> glms.Lesson
 	12,  // 87: glms.GetPrerequisiteDetailResponse.prerequisite:type_name -> glms.Prerequisite
-	138, // 88: glms.GetQuizDetailResponse.quiz_detail:type_name -> glms.QuizDetail
+	139, // 88: glms.GetQuizDetailResponse.quiz_detail:type_name -> glms.QuizDetail
 	14,  // 89: glms.GetQuizQuestionDetailResponse.question:type_name -> glms.QuizQuestion
 	15,  // 90: glms.GetQuizOptionDetailResponse.option:type_name -> glms.QuizOption
-	190, // 91: glms.ListLessonProgressResponse.progress:type_name -> glms.LessonProgressSummary
-	220, // 92: glms.GetLessonProgressDetailResponse.progress:type_name -> glms.LessonProgress
-	195, // 93: glms.ListQuizAttemptsResponse.attempts:type_name -> glms.QuizAttemptSummary
-	198, // 94: glms.GetQuizAttemptDetailResponse.attempt:type_name -> glms.QuizAttemptDetail
-	201, // 95: glms.ListChapterProgressResponse.progress:type_name -> glms.ChapterProgressSummary
-	221, // 96: glms.GetChapterProgressDetailResponse.progress:type_name -> glms.ChapterProgress
-	206, // 97: glms.ListCourseAssetsResponse.assets:type_name -> glms.CourseAssetSummary
-	210, // 98: glms.GetCourseAssetDetailResponse.asset:type_name -> glms.CourseAsset
+	191, // 91: glms.ListLessonProgressResponse.progress:type_name -> glms.LessonProgressSummary
+	221, // 92: glms.GetLessonProgressDetailResponse.progress:type_name -> glms.LessonProgress
+	196, // 93: glms.ListQuizAttemptsResponse.attempts:type_name -> glms.QuizAttemptSummary
+	199, // 94: glms.GetQuizAttemptDetailResponse.attempt:type_name -> glms.QuizAttemptDetail
+	202, // 95: glms.ListChapterProgressResponse.progress:type_name -> glms.ChapterProgressSummary
+	222, // 96: glms.GetChapterProgressDetailResponse.progress:type_name -> glms.ChapterProgress
+	207, // 97: glms.ListCourseAssetsResponse.assets:type_name -> glms.CourseAssetSummary
+	211, // 98: glms.GetCourseAssetDetailResponse.asset:type_name -> glms.CourseAsset
 	2,   // 99: glms.ListPrerequisitesByRequiredEntityRequest.required_entity_type:type_name -> glms.EntityType
 	12,  // 100: glms.ListPrerequisitesByRequiredEntityResponse.prerequisites:type_name -> glms.Prerequisite
-	173, // 101: glms.ListLessonsByCourseResponse.lessons:type_name -> glms.LessonSummary
-	217, // 102: glms.ListCourseEnrollmentsResponse.enrollments:type_name -> glms.CourseEnrollment
-	217, // 103: glms.GetCourseEnrollmentDetailResponse.enrollment:type_name -> glms.CourseEnrollment
+	174, // 101: glms.ListLessonsByCourseResponse.lessons:type_name -> glms.LessonSummary
+	218, // 102: glms.ListCourseEnrollmentsResponse.enrollments:type_name -> glms.CourseEnrollment
+	218, // 103: glms.GetCourseEnrollmentDetailResponse.enrollment:type_name -> glms.CourseEnrollment
 	4,   // 104: glms.ListQuizzesCandidateRequest.quizzable_type:type_name -> glms.QuizzableType
-	258, // 105: glms.ListResourcePacksResponse.packs:type_name -> glms.ResourcePack
+	260, // 105: glms.ListResourcePacksResponse.packs:type_name -> glms.ResourcePack
 	6,   // 106: glms.CreateResourcePackFileRequest.file_type:type_name -> glms.ResourcePackFileType
 	6,   // 107: glms.UpdateResourcePackFileRequest.file_type:type_name -> glms.ResourcePackFileType
-	259, // 108: glms.ListResourcePackFilesResponse.files:type_name -> glms.ResourcePackFile
+	261, // 108: glms.ListResourcePackFilesResponse.files:type_name -> glms.ResourcePackFile
 	6,   // 109: glms.ResourcePackFile.file_type:type_name -> glms.ResourcePackFileType
 	18,  // 110: glms.LmsService.CreateCourseDraftAdmin:input_type -> glms.CreateCourseDraftRequest
-	19,  // 111: glms.LmsService.UpdateCourseAdmin:input_type -> glms.UpdateCourseRequest
-	21,  // 112: glms.LmsService.DeleteCourseAdmin:input_type -> glms.DeleteCourseRequest
-	27,  // 113: glms.LmsService.PublishCourseAdmin:input_type -> glms.PublishCourseRequest
-	23,  // 114: glms.LmsService.GetCourseSummaryAdmin:input_type -> glms.GetCourseRequest
-	179, // 115: glms.LmsService.GetCourseDetailAdmin:input_type -> glms.GetCourseDetailRequest
-	25,  // 116: glms.LmsService.ListCoursesAdmin:input_type -> glms.ListCoursesRequest
-	29,  // 117: glms.LmsService.CreateCourseMaterialAdmin:input_type -> glms.CreateCourseMaterialRequest
-	31,  // 118: glms.LmsService.UpdateCourseMaterialAdmin:input_type -> glms.UpdateCourseMaterialRequest
-	33,  // 119: glms.LmsService.DeleteCourseMaterialAdmin:input_type -> glms.DeleteCourseMaterialRequest
-	35,  // 120: glms.LmsService.GetCourseMaterialAdmin:input_type -> glms.GetCourseMaterialRequest
-	35,  // 121: glms.LmsService.GetCourseMaterialDetailAdmin:input_type -> glms.GetCourseMaterialRequest
-	37,  // 122: glms.LmsService.ListCourseMaterialsAdmin:input_type -> glms.ListCourseMaterialsRequest
-	39,  // 123: glms.LmsService.ReorderCourseMaterialsAdmin:input_type -> glms.ReorderCourseMaterialsRequest
-	41,  // 124: glms.LmsService.CreateChapterAdmin:input_type -> glms.CreateChapterRequest
-	43,  // 125: glms.LmsService.UpdateChapterAdmin:input_type -> glms.UpdateChapterRequest
-	45,  // 126: glms.LmsService.DeleteChapterAdmin:input_type -> glms.DeleteChapterRequest
-	47,  // 127: glms.LmsService.GetChapterAdmin:input_type -> glms.GetChapterRequest
-	47,  // 128: glms.LmsService.GetChapterDetailAdmin:input_type -> glms.GetChapterRequest
-	49,  // 129: glms.LmsService.ListChaptersAdmin:input_type -> glms.ListChaptersRequest
-	51,  // 130: glms.LmsService.ReorderChaptersAdmin:input_type -> glms.ReorderChaptersRequest
-	53,  // 131: glms.LmsService.CreateLessonAdmin:input_type -> glms.CreateLessonRequest
-	55,  // 132: glms.LmsService.UpdateLessonAdmin:input_type -> glms.UpdateLessonRequest
-	57,  // 133: glms.LmsService.DeleteLessonAdmin:input_type -> glms.DeleteLessonRequest
-	59,  // 134: glms.LmsService.GetLessonAdmin:input_type -> glms.GetLessonRequest
-	59,  // 135: glms.LmsService.GetLessonDetailAdmin:input_type -> glms.GetLessonRequest
-	61,  // 136: glms.LmsService.ListLessonsAdmin:input_type -> glms.ListLessonsRequest
-	63,  // 137: glms.LmsService.ReorderLessonsAdmin:input_type -> glms.ReorderLessonsRequest
-	213, // 138: glms.LmsService.ListLessonsByCourseAdmin:input_type -> glms.ListLessonsByCourseRequest
-	65,  // 139: glms.LmsService.CreatePrerequisiteAdmin:input_type -> glms.CreatePrerequisiteRequest
-	67,  // 140: glms.LmsService.UpdatePrerequisiteAdmin:input_type -> glms.UpdatePrerequisiteRequest
-	69,  // 141: glms.LmsService.DeletePrerequisiteAdmin:input_type -> glms.DeletePrerequisiteRequest
-	71,  // 142: glms.LmsService.GetPrerequisiteAdmin:input_type -> glms.GetPrerequisiteRequest
-	71,  // 143: glms.LmsService.GetPrerequisiteDetailAdmin:input_type -> glms.GetPrerequisiteRequest
-	73,  // 144: glms.LmsService.ListPrerequisitesAdmin:input_type -> glms.ListPrerequisitesRequest
-	211, // 145: glms.LmsService.ListPrerequisitesByRequiredEntityAdmin:input_type -> glms.ListPrerequisitesByRequiredEntityRequest
-	75,  // 146: glms.LmsService.CreateQuizAdmin:input_type -> glms.CreateQuizRequest
-	77,  // 147: glms.LmsService.UpdateQuizAdmin:input_type -> glms.UpdateQuizRequest
-	79,  // 148: glms.LmsService.DeleteQuizAdmin:input_type -> glms.DeleteQuizRequest
-	81,  // 149: glms.LmsService.GetQuizAdmin:input_type -> glms.GetQuizRequest
-	185, // 150: glms.LmsService.GetQuizDetailAdmin:input_type -> glms.GetQuizDetailRequest
-	83,  // 151: glms.LmsService.ListQuizzesAdmin:input_type -> glms.ListQuizzesRequest
-	85,  // 152: glms.LmsService.CreateQuizQuestionAdmin:input_type -> glms.CreateQuizQuestionRequest
-	87,  // 153: glms.LmsService.UpdateQuizQuestionAdmin:input_type -> glms.UpdateQuizQuestionRequest
-	89,  // 154: glms.LmsService.DeleteQuizQuestionAdmin:input_type -> glms.DeleteQuizQuestionRequest
-	91,  // 155: glms.LmsService.GetQuizQuestionAdmin:input_type -> glms.GetQuizQuestionRequest
-	91,  // 156: glms.LmsService.GetQuizQuestionDetailAdmin:input_type -> glms.GetQuizQuestionRequest
-	93,  // 157: glms.LmsService.ListQuizQuestionsAdmin:input_type -> glms.ListQuizQuestionsRequest
-	95,  // 158: glms.LmsService.ReorderQuizQuestionsAdmin:input_type -> glms.ReorderQuizQuestionsRequest
-	97,  // 159: glms.LmsService.CreateQuizOptionAdmin:input_type -> glms.CreateQuizOptionRequest
-	99,  // 160: glms.LmsService.UpdateQuizOptionAdmin:input_type -> glms.UpdateQuizOptionRequest
-	101, // 161: glms.LmsService.DeleteQuizOptionAdmin:input_type -> glms.DeleteQuizOptionRequest
-	103, // 162: glms.LmsService.GetQuizOptionAdmin:input_type -> glms.GetQuizOptionRequest
-	103, // 163: glms.LmsService.GetQuizOptionDetailAdmin:input_type -> glms.GetQuizOptionRequest
-	105, // 164: glms.LmsService.ListQuizOptionsAdmin:input_type -> glms.ListQuizOptionsRequest
-	107, // 165: glms.LmsService.ReorderQuizOptionsAdmin:input_type -> glms.ReorderQuizOptionsRequest
-	165, // 166: glms.LmsService.ImportQuizAdmin:input_type -> glms.ImportQuizRequest
-	167, // 167: glms.LmsService.ImportCourseAdmin:input_type -> glms.ImportCourseRequest
-	109, // 168: glms.LmsService.ListObjectsAdmin:input_type -> glms.ListObjectsRequest
-	111, // 169: glms.LmsService.CreateUploadURLAdmin:input_type -> glms.CreateUploadURLRequest
-	163, // 170: glms.LmsService.ListBrokenAssetsAdmin:input_type -> glms.ListBrokenAssetsRequest
-	119, // 171: glms.LmsService.EnrollCandidateCourseAdmin:input_type -> glms.EnrollCandidateCourseRequest
-	121, // 172: glms.LmsService.BatchEnrollCandidateCoursesAdmin:input_type -> glms.BatchEnrollCandidateCoursesRequest
-	115, // 173: glms.LmsService.GrantCourseAccessPermissionAdmin:input_type -> glms.GrantCourseAccessPermissionAdminRequest
-	117, // 174: glms.LmsService.RevokeCourseAccessPermissionAdmin:input_type -> glms.RevokeCourseAccessPermissionAdminRequest
-	189, // 175: glms.LmsService.ListLessonProgressAdmin:input_type -> glms.ListLessonProgressRequest
-	192, // 176: glms.LmsService.GetLessonProgressDetailAdmin:input_type -> glms.GetLessonProgressDetailRequest
-	194, // 177: glms.LmsService.ListQuizAttemptsAdmin:input_type -> glms.ListQuizAttemptsRequest
-	197, // 178: glms.LmsService.GetQuizAttemptDetailAdmin:input_type -> glms.GetQuizAttemptDetailRequest
-	200, // 179: glms.LmsService.ListChapterProgressAdmin:input_type -> glms.ListChapterProgressRequest
-	203, // 180: glms.LmsService.GetChapterProgressDetailAdmin:input_type -> glms.GetChapterProgressDetailRequest
-	205, // 181: glms.LmsService.ListCourseAssetsAdmin:input_type -> glms.ListCourseAssetsRequest
-	208, // 182: glms.LmsService.GetCourseAssetDetailAdmin:input_type -> glms.GetCourseAssetDetailRequest
-	215, // 183: glms.LmsService.ListCourseEnrollmentsAdmin:input_type -> glms.ListCourseEnrollmentsRequest
-	218, // 184: glms.LmsService.GetCourseEnrollmentDetailAdmin:input_type -> glms.GetCourseEnrollmentDetailRequest
-	131, // 185: glms.LmsService.ListCourseEnrollmentsForAdmin:input_type -> glms.ListCourseEnrollmentsForAdminRequest
-	134, // 186: glms.LmsService.GetCandidateProgressForAdmin:input_type -> glms.GetCandidateProgressForAdminRequest
-	222, // 187: glms.LmsService.SyncCourseProgressAdmin:input_type -> glms.SyncCourseProgressRequest
-	143, // 188: glms.LmsService.GetCompleteCourseAdmin:input_type -> glms.GetCompleteCourseRequest
-	113, // 189: glms.LmsService.CreateViewURLAdmin:input_type -> glms.CreateViewURLRequest
-	145, // 190: glms.LmsService.CreateCourseSupplementaryMaterialAdmin:input_type -> glms.CreateCourseSupplementaryMaterialRequest
-	147, // 191: glms.LmsService.UpdateCourseSupplementaryMaterialAdmin:input_type -> glms.UpdateCourseSupplementaryMaterialRequest
-	149, // 192: glms.LmsService.DeleteCourseSupplementaryMaterialAdmin:input_type -> glms.DeleteCourseSupplementaryMaterialRequest
-	151, // 193: glms.LmsService.GetCourseSupplementaryMaterialAdmin:input_type -> glms.GetCourseSupplementaryMaterialRequest
-	240, // 194: glms.LmsService.CreateResourcePackAdmin:input_type -> glms.CreateResourcePackRequest
-	241, // 195: glms.LmsService.UpdateResourcePackAdmin:input_type -> glms.UpdateResourcePackRequest
-	242, // 196: glms.LmsService.DeleteResourcePackAdmin:input_type -> glms.DeleteResourcePackRequest
-	244, // 197: glms.LmsService.GetResourcePackAdmin:input_type -> glms.GetResourcePackRequest
-	245, // 198: glms.LmsService.ListResourcePacksAdmin:input_type -> glms.ListResourcePacksRequest
-	247, // 199: glms.LmsService.CreateResourcePackFileAdmin:input_type -> glms.CreateResourcePackFileRequest
-	248, // 200: glms.LmsService.UpdateResourcePackFileAdmin:input_type -> glms.UpdateResourcePackFileRequest
-	249, // 201: glms.LmsService.DeleteResourcePackFileAdmin:input_type -> glms.DeleteResourcePackFileRequest
-	251, // 202: glms.LmsService.GetResourcePackFileAdmin:input_type -> glms.GetResourcePackFileRequest
-	252, // 203: glms.LmsService.ListResourcePackFilesAdmin:input_type -> glms.ListResourcePackFilesRequest
-	224, // 204: glms.LmsService.GetCourseSummary:input_type -> glms.GetCourseSummaryCandidateRequest
-	225, // 205: glms.LmsService.GetCourseDetail:input_type -> glms.GetCourseDetailCandidateRequest
-	226, // 206: glms.LmsService.ListCourses:input_type -> glms.ListCoursesCandidateRequest
-	227, // 207: glms.LmsService.GetCourseMaterial:input_type -> glms.GetCourseMaterialCandidateRequest
-	227, // 208: glms.LmsService.GetCourseMaterialDetail:input_type -> glms.GetCourseMaterialCandidateRequest
-	228, // 209: glms.LmsService.ListCourseMaterials:input_type -> glms.ListCourseMaterialsCandidateRequest
-	229, // 210: glms.LmsService.GetChapter:input_type -> glms.GetChapterCandidateRequest
-	230, // 211: glms.LmsService.GetChapterDetail:input_type -> glms.GetChapterDetailCandidateRequest
-	231, // 212: glms.LmsService.ListChapters:input_type -> glms.ListChaptersCandidateRequest
-	232, // 213: glms.LmsService.GetLesson:input_type -> glms.GetLessonCandidateRequest
-	233, // 214: glms.LmsService.GetLessonDetail:input_type -> glms.GetLessonDetailCandidateRequest
-	234, // 215: glms.LmsService.ListLessons:input_type -> glms.ListLessonsCandidateRequest
-	235, // 216: glms.LmsService.ListLessonsByCourse:input_type -> glms.ListLessonsByCourseCandidateRequest
-	236, // 217: glms.LmsService.GetCompleteCourse:input_type -> glms.GetCompleteCourseCandidateRequest
-	237, // 218: glms.LmsService.GetQuiz:input_type -> glms.GetQuizCandidateRequest
-	238, // 219: glms.LmsService.ListQuizzes:input_type -> glms.ListQuizzesCandidateRequest
-	239, // 220: glms.LmsService.CreateViewURL:input_type -> glms.CreateViewURLCandidateRequest
-	254, // 221: glms.LmsService.GetLessonVideoPlayURL:input_type -> glms.GetLessonVideoPlayURLRequest
-	256, // 222: glms.LmsService.GetResourcePackFileViewURL:input_type -> glms.GetResourcePackFileViewURLRequest
-	260, // 223: glms.LmsService.ListResourcePacks:input_type -> glms.ListResourcePacksCandidateRequest
-	261, // 224: glms.LmsService.ListResourcePackFiles:input_type -> glms.ListResourcePackFilesCandidateRequest
-	124, // 225: glms.LmsService.CompleteLessonLearning:input_type -> glms.CompleteLessonLearningRequest
-	153, // 226: glms.LmsService.TakeQuiz:input_type -> glms.TakeQuizRequest
-	157, // 227: glms.LmsService.GetCandidateQuizPaper:input_type -> glms.GetCandidateQuizPaperRequest
-	160, // 228: glms.LmsService.SubmitQuiz:input_type -> glms.SubmitQuizRequest
-	126, // 229: glms.LmsService.ListCandidateEnrollments:input_type -> glms.ListCandidateEnrollmentsRequest
-	129, // 230: glms.LmsService.GetCandidateEnrollmentDetail:input_type -> glms.GetCandidateEnrollmentDetailRequest
-	8,   // 231: glms.LmsService.CreateCourseDraftAdmin:output_type -> glms.Course
-	20,  // 232: glms.LmsService.UpdateCourseAdmin:output_type -> glms.UpdateCourseResponse
-	22,  // 233: glms.LmsService.DeleteCourseAdmin:output_type -> glms.DeleteCourseResponse
-	28,  // 234: glms.LmsService.PublishCourseAdmin:output_type -> glms.PublishCourseResponse
-	169, // 235: glms.LmsService.GetCourseSummaryAdmin:output_type -> glms.GetCourseSummaryResponse
-	180, // 236: glms.LmsService.GetCourseDetailAdmin:output_type -> glms.GetCourseDetailResponse
-	26,  // 237: glms.LmsService.ListCoursesAdmin:output_type -> glms.ListCoursesResponse
-	30,  // 238: glms.LmsService.CreateCourseMaterialAdmin:output_type -> glms.CreateCourseMaterialResponse
-	32,  // 239: glms.LmsService.UpdateCourseMaterialAdmin:output_type -> glms.UpdateCourseMaterialResponse
-	34,  // 240: glms.LmsService.DeleteCourseMaterialAdmin:output_type -> glms.DeleteCourseMaterialResponse
-	36,  // 241: glms.LmsService.GetCourseMaterialAdmin:output_type -> glms.GetCourseMaterialResponse
-	181, // 242: glms.LmsService.GetCourseMaterialDetailAdmin:output_type -> glms.GetCourseMaterialDetailResponse
-	38,  // 243: glms.LmsService.ListCourseMaterialsAdmin:output_type -> glms.ListCourseMaterialsResponse
-	40,  // 244: glms.LmsService.ReorderCourseMaterialsAdmin:output_type -> glms.ReorderCourseMaterialsResponse
-	42,  // 245: glms.LmsService.CreateChapterAdmin:output_type -> glms.CreateChapterResponse
-	44,  // 246: glms.LmsService.UpdateChapterAdmin:output_type -> glms.UpdateChapterResponse
-	46,  // 247: glms.LmsService.DeleteChapterAdmin:output_type -> glms.DeleteChapterResponse
-	48,  // 248: glms.LmsService.GetChapterAdmin:output_type -> glms.GetChapterResponse
-	182, // 249: glms.LmsService.GetChapterDetailAdmin:output_type -> glms.GetChapterDetailResponse
-	50,  // 250: glms.LmsService.ListChaptersAdmin:output_type -> glms.ListChaptersResponse
-	52,  // 251: glms.LmsService.ReorderChaptersAdmin:output_type -> glms.ReorderChaptersResponse
-	54,  // 252: glms.LmsService.CreateLessonAdmin:output_type -> glms.CreateLessonResponse
-	56,  // 253: glms.LmsService.UpdateLessonAdmin:output_type -> glms.UpdateLessonResponse
-	58,  // 254: glms.LmsService.DeleteLessonAdmin:output_type -> glms.DeleteLessonResponse
-	60,  // 255: glms.LmsService.GetLessonAdmin:output_type -> glms.GetLessonResponse
-	183, // 256: glms.LmsService.GetLessonDetailAdmin:output_type -> glms.GetLessonDetailResponse
-	62,  // 257: glms.LmsService.ListLessonsAdmin:output_type -> glms.ListLessonsResponse
-	64,  // 258: glms.LmsService.ReorderLessonsAdmin:output_type -> glms.ReorderLessonsResponse
-	214, // 259: glms.LmsService.ListLessonsByCourseAdmin:output_type -> glms.ListLessonsByCourseResponse
-	66,  // 260: glms.LmsService.CreatePrerequisiteAdmin:output_type -> glms.CreatePrerequisiteResponse
-	68,  // 261: glms.LmsService.UpdatePrerequisiteAdmin:output_type -> glms.UpdatePrerequisiteResponse
-	70,  // 262: glms.LmsService.DeletePrerequisiteAdmin:output_type -> glms.DeletePrerequisiteResponse
-	72,  // 263: glms.LmsService.GetPrerequisiteAdmin:output_type -> glms.GetPrerequisiteResponse
-	184, // 264: glms.LmsService.GetPrerequisiteDetailAdmin:output_type -> glms.GetPrerequisiteDetailResponse
-	74,  // 265: glms.LmsService.ListPrerequisitesAdmin:output_type -> glms.ListPrerequisitesResponse
-	212, // 266: glms.LmsService.ListPrerequisitesByRequiredEntityAdmin:output_type -> glms.ListPrerequisitesByRequiredEntityResponse
-	76,  // 267: glms.LmsService.CreateQuizAdmin:output_type -> glms.CreateQuizResponse
-	78,  // 268: glms.LmsService.UpdateQuizAdmin:output_type -> glms.UpdateQuizResponse
-	80,  // 269: glms.LmsService.DeleteQuizAdmin:output_type -> glms.DeleteQuizResponse
-	82,  // 270: glms.LmsService.GetQuizAdmin:output_type -> glms.GetQuizResponse
-	186, // 271: glms.LmsService.GetQuizDetailAdmin:output_type -> glms.GetQuizDetailResponse
-	84,  // 272: glms.LmsService.ListQuizzesAdmin:output_type -> glms.ListQuizzesResponse
-	86,  // 273: glms.LmsService.CreateQuizQuestionAdmin:output_type -> glms.CreateQuizQuestionResponse
-	88,  // 274: glms.LmsService.UpdateQuizQuestionAdmin:output_type -> glms.UpdateQuizQuestionResponse
-	90,  // 275: glms.LmsService.DeleteQuizQuestionAdmin:output_type -> glms.DeleteQuizQuestionResponse
-	92,  // 276: glms.LmsService.GetQuizQuestionAdmin:output_type -> glms.GetQuizQuestionResponse
-	187, // 277: glms.LmsService.GetQuizQuestionDetailAdmin:output_type -> glms.GetQuizQuestionDetailResponse
-	94,  // 278: glms.LmsService.ListQuizQuestionsAdmin:output_type -> glms.ListQuizQuestionsResponse
-	96,  // 279: glms.LmsService.ReorderQuizQuestionsAdmin:output_type -> glms.ReorderQuizQuestionsResponse
-	98,  // 280: glms.LmsService.CreateQuizOptionAdmin:output_type -> glms.CreateQuizOptionResponse
-	100, // 281: glms.LmsService.UpdateQuizOptionAdmin:output_type -> glms.UpdateQuizOptionResponse
-	102, // 282: glms.LmsService.DeleteQuizOptionAdmin:output_type -> glms.DeleteQuizOptionResponse
-	104, // 283: glms.LmsService.GetQuizOptionAdmin:output_type -> glms.GetQuizOptionResponse
-	188, // 284: glms.LmsService.GetQuizOptionDetailAdmin:output_type -> glms.GetQuizOptionDetailResponse
-	106, // 285: glms.LmsService.ListQuizOptionsAdmin:output_type -> glms.ListQuizOptionsResponse
-	108, // 286: glms.LmsService.ReorderQuizOptionsAdmin:output_type -> glms.ReorderQuizOptionsResponse
-	166, // 287: glms.LmsService.ImportQuizAdmin:output_type -> glms.ImportQuizResponse
-	168, // 288: glms.LmsService.ImportCourseAdmin:output_type -> glms.ImportCourseResponse
-	110, // 289: glms.LmsService.ListObjectsAdmin:output_type -> glms.ListObjectsResponse
-	112, // 290: glms.LmsService.CreateUploadURLAdmin:output_type -> glms.CreateUploadURLResponse
-	164, // 291: glms.LmsService.ListBrokenAssetsAdmin:output_type -> glms.ListBrokenAssetsResponse
-	120, // 292: glms.LmsService.EnrollCandidateCourseAdmin:output_type -> glms.EnrollCandidateCourseResponse
-	123, // 293: glms.LmsService.BatchEnrollCandidateCoursesAdmin:output_type -> glms.BatchEnrollCandidateCoursesResponse
-	116, // 294: glms.LmsService.GrantCourseAccessPermissionAdmin:output_type -> glms.GrantCourseAccessPermissionAdminResponse
-	118, // 295: glms.LmsService.RevokeCourseAccessPermissionAdmin:output_type -> glms.RevokeCourseAccessPermissionAdminResponse
-	191, // 296: glms.LmsService.ListLessonProgressAdmin:output_type -> glms.ListLessonProgressResponse
-	193, // 297: glms.LmsService.GetLessonProgressDetailAdmin:output_type -> glms.GetLessonProgressDetailResponse
-	196, // 298: glms.LmsService.ListQuizAttemptsAdmin:output_type -> glms.ListQuizAttemptsResponse
-	199, // 299: glms.LmsService.GetQuizAttemptDetailAdmin:output_type -> glms.GetQuizAttemptDetailResponse
-	202, // 300: glms.LmsService.ListChapterProgressAdmin:output_type -> glms.ListChapterProgressResponse
-	204, // 301: glms.LmsService.GetChapterProgressDetailAdmin:output_type -> glms.GetChapterProgressDetailResponse
-	207, // 302: glms.LmsService.ListCourseAssetsAdmin:output_type -> glms.ListCourseAssetsResponse
-	209, // 303: glms.LmsService.GetCourseAssetDetailAdmin:output_type -> glms.GetCourseAssetDetailResponse
-	216, // 304: glms.LmsService.ListCourseEnrollmentsAdmin:output_type -> glms.ListCourseEnrollmentsResponse
-	219, // 305: glms.LmsService.GetCourseEnrollmentDetailAdmin:output_type -> glms.GetCourseEnrollmentDetailResponse
-	133, // 306: glms.LmsService.ListCourseEnrollmentsForAdmin:output_type -> glms.ListCourseEnrollmentsForAdminResponse
-	135, // 307: glms.LmsService.GetCandidateProgressForAdmin:output_type -> glms.GetCandidateProgressForAdminResponse
-	223, // 308: glms.LmsService.SyncCourseProgressAdmin:output_type -> glms.SyncCourseProgressResponse
-	144, // 309: glms.LmsService.GetCompleteCourseAdmin:output_type -> glms.GetCompleteCourseResponse
-	114, // 310: glms.LmsService.CreateViewURLAdmin:output_type -> glms.CreateViewURLResponse
-	146, // 311: glms.LmsService.CreateCourseSupplementaryMaterialAdmin:output_type -> glms.CreateCourseSupplementaryMaterialResponse
-	148, // 312: glms.LmsService.UpdateCourseSupplementaryMaterialAdmin:output_type -> glms.UpdateCourseSupplementaryMaterialResponse
-	150, // 313: glms.LmsService.DeleteCourseSupplementaryMaterialAdmin:output_type -> glms.DeleteCourseSupplementaryMaterialResponse
-	152, // 314: glms.LmsService.GetCourseSupplementaryMaterialAdmin:output_type -> glms.GetCourseSupplementaryMaterialResponse
-	258, // 315: glms.LmsService.CreateResourcePackAdmin:output_type -> glms.ResourcePack
-	258, // 316: glms.LmsService.UpdateResourcePackAdmin:output_type -> glms.ResourcePack
-	243, // 317: glms.LmsService.DeleteResourcePackAdmin:output_type -> glms.DeleteResourcePackResponse
-	258, // 318: glms.LmsService.GetResourcePackAdmin:output_type -> glms.ResourcePack
-	246, // 319: glms.LmsService.ListResourcePacksAdmin:output_type -> glms.ListResourcePacksResponse
-	259, // 320: glms.LmsService.CreateResourcePackFileAdmin:output_type -> glms.ResourcePackFile
-	259, // 321: glms.LmsService.UpdateResourcePackFileAdmin:output_type -> glms.ResourcePackFile
-	250, // 322: glms.LmsService.DeleteResourcePackFileAdmin:output_type -> glms.DeleteResourcePackFileResponse
-	259, // 323: glms.LmsService.GetResourcePackFileAdmin:output_type -> glms.ResourcePackFile
-	253, // 324: glms.LmsService.ListResourcePackFilesAdmin:output_type -> glms.ListResourcePackFilesResponse
-	169, // 325: glms.LmsService.GetCourseSummary:output_type -> glms.GetCourseSummaryResponse
-	180, // 326: glms.LmsService.GetCourseDetail:output_type -> glms.GetCourseDetailResponse
-	26,  // 327: glms.LmsService.ListCourses:output_type -> glms.ListCoursesResponse
-	36,  // 328: glms.LmsService.GetCourseMaterial:output_type -> glms.GetCourseMaterialResponse
-	181, // 329: glms.LmsService.GetCourseMaterialDetail:output_type -> glms.GetCourseMaterialDetailResponse
-	38,  // 330: glms.LmsService.ListCourseMaterials:output_type -> glms.ListCourseMaterialsResponse
-	48,  // 331: glms.LmsService.GetChapter:output_type -> glms.GetChapterResponse
-	182, // 332: glms.LmsService.GetChapterDetail:output_type -> glms.GetChapterDetailResponse
-	50,  // 333: glms.LmsService.ListChapters:output_type -> glms.ListChaptersResponse
-	60,  // 334: glms.LmsService.GetLesson:output_type -> glms.GetLessonResponse
-	183, // 335: glms.LmsService.GetLessonDetail:output_type -> glms.GetLessonDetailResponse
-	62,  // 336: glms.LmsService.ListLessons:output_type -> glms.ListLessonsResponse
-	214, // 337: glms.LmsService.ListLessonsByCourse:output_type -> glms.ListLessonsByCourseResponse
-	144, // 338: glms.LmsService.GetCompleteCourse:output_type -> glms.GetCompleteCourseResponse
-	82,  // 339: glms.LmsService.GetQuiz:output_type -> glms.GetQuizResponse
-	84,  // 340: glms.LmsService.ListQuizzes:output_type -> glms.ListQuizzesResponse
-	114, // 341: glms.LmsService.CreateViewURL:output_type -> glms.CreateViewURLResponse
-	255, // 342: glms.LmsService.GetLessonVideoPlayURL:output_type -> glms.GetLessonVideoPlayURLResponse
-	257, // 343: glms.LmsService.GetResourcePackFileViewURL:output_type -> glms.GetResourcePackFileViewURLResponse
-	246, // 344: glms.LmsService.ListResourcePacks:output_type -> glms.ListResourcePacksResponse
-	253, // 345: glms.LmsService.ListResourcePackFiles:output_type -> glms.ListResourcePackFilesResponse
-	125, // 346: glms.LmsService.CompleteLessonLearning:output_type -> glms.CompleteLessonLearningResponse
-	154, // 347: glms.LmsService.TakeQuiz:output_type -> glms.TakeQuizResponse
-	158, // 348: glms.LmsService.GetCandidateQuizPaper:output_type -> glms.GetCandidateQuizPaperResponse
-	161, // 349: glms.LmsService.SubmitQuiz:output_type -> glms.SubmitQuizResponse
-	128, // 350: glms.LmsService.ListCandidateEnrollments:output_type -> glms.ListCandidateEnrollmentsResponse
-	130, // 351: glms.LmsService.GetCandidateEnrollmentDetail:output_type -> glms.GetCandidateEnrollmentDetailResponse
-	231, // [231:352] is the sub-list for method output_type
-	110, // [110:231] is the sub-list for method input_type
+	19,  // 111: glms.LmsService.DuplicateCourseDraftAdmin:input_type -> glms.DuplicateCourseDraftRequest
+	20,  // 112: glms.LmsService.UpdateCourseAdmin:input_type -> glms.UpdateCourseRequest
+	22,  // 113: glms.LmsService.DeleteCourseAdmin:input_type -> glms.DeleteCourseRequest
+	28,  // 114: glms.LmsService.PublishCourseAdmin:input_type -> glms.PublishCourseRequest
+	24,  // 115: glms.LmsService.GetCourseSummaryAdmin:input_type -> glms.GetCourseRequest
+	180, // 116: glms.LmsService.GetCourseDetailAdmin:input_type -> glms.GetCourseDetailRequest
+	26,  // 117: glms.LmsService.ListCoursesAdmin:input_type -> glms.ListCoursesRequest
+	30,  // 118: glms.LmsService.CreateCourseMaterialAdmin:input_type -> glms.CreateCourseMaterialRequest
+	32,  // 119: glms.LmsService.UpdateCourseMaterialAdmin:input_type -> glms.UpdateCourseMaterialRequest
+	34,  // 120: glms.LmsService.DeleteCourseMaterialAdmin:input_type -> glms.DeleteCourseMaterialRequest
+	36,  // 121: glms.LmsService.GetCourseMaterialAdmin:input_type -> glms.GetCourseMaterialRequest
+	36,  // 122: glms.LmsService.GetCourseMaterialDetailAdmin:input_type -> glms.GetCourseMaterialRequest
+	38,  // 123: glms.LmsService.ListCourseMaterialsAdmin:input_type -> glms.ListCourseMaterialsRequest
+	40,  // 124: glms.LmsService.ReorderCourseMaterialsAdmin:input_type -> glms.ReorderCourseMaterialsRequest
+	42,  // 125: glms.LmsService.CreateChapterAdmin:input_type -> glms.CreateChapterRequest
+	44,  // 126: glms.LmsService.UpdateChapterAdmin:input_type -> glms.UpdateChapterRequest
+	46,  // 127: glms.LmsService.DeleteChapterAdmin:input_type -> glms.DeleteChapterRequest
+	48,  // 128: glms.LmsService.GetChapterAdmin:input_type -> glms.GetChapterRequest
+	48,  // 129: glms.LmsService.GetChapterDetailAdmin:input_type -> glms.GetChapterRequest
+	50,  // 130: glms.LmsService.ListChaptersAdmin:input_type -> glms.ListChaptersRequest
+	52,  // 131: glms.LmsService.ReorderChaptersAdmin:input_type -> glms.ReorderChaptersRequest
+	54,  // 132: glms.LmsService.CreateLessonAdmin:input_type -> glms.CreateLessonRequest
+	56,  // 133: glms.LmsService.UpdateLessonAdmin:input_type -> glms.UpdateLessonRequest
+	58,  // 134: glms.LmsService.DeleteLessonAdmin:input_type -> glms.DeleteLessonRequest
+	60,  // 135: glms.LmsService.GetLessonAdmin:input_type -> glms.GetLessonRequest
+	60,  // 136: glms.LmsService.GetLessonDetailAdmin:input_type -> glms.GetLessonRequest
+	62,  // 137: glms.LmsService.ListLessonsAdmin:input_type -> glms.ListLessonsRequest
+	64,  // 138: glms.LmsService.ReorderLessonsAdmin:input_type -> glms.ReorderLessonsRequest
+	214, // 139: glms.LmsService.ListLessonsByCourseAdmin:input_type -> glms.ListLessonsByCourseRequest
+	66,  // 140: glms.LmsService.CreatePrerequisiteAdmin:input_type -> glms.CreatePrerequisiteRequest
+	68,  // 141: glms.LmsService.UpdatePrerequisiteAdmin:input_type -> glms.UpdatePrerequisiteRequest
+	70,  // 142: glms.LmsService.DeletePrerequisiteAdmin:input_type -> glms.DeletePrerequisiteRequest
+	72,  // 143: glms.LmsService.GetPrerequisiteAdmin:input_type -> glms.GetPrerequisiteRequest
+	72,  // 144: glms.LmsService.GetPrerequisiteDetailAdmin:input_type -> glms.GetPrerequisiteRequest
+	74,  // 145: glms.LmsService.ListPrerequisitesAdmin:input_type -> glms.ListPrerequisitesRequest
+	212, // 146: glms.LmsService.ListPrerequisitesByRequiredEntityAdmin:input_type -> glms.ListPrerequisitesByRequiredEntityRequest
+	76,  // 147: glms.LmsService.CreateQuizAdmin:input_type -> glms.CreateQuizRequest
+	78,  // 148: glms.LmsService.UpdateQuizAdmin:input_type -> glms.UpdateQuizRequest
+	80,  // 149: glms.LmsService.DeleteQuizAdmin:input_type -> glms.DeleteQuizRequest
+	82,  // 150: glms.LmsService.GetQuizAdmin:input_type -> glms.GetQuizRequest
+	186, // 151: glms.LmsService.GetQuizDetailAdmin:input_type -> glms.GetQuizDetailRequest
+	84,  // 152: glms.LmsService.ListQuizzesAdmin:input_type -> glms.ListQuizzesRequest
+	86,  // 153: glms.LmsService.CreateQuizQuestionAdmin:input_type -> glms.CreateQuizQuestionRequest
+	88,  // 154: glms.LmsService.UpdateQuizQuestionAdmin:input_type -> glms.UpdateQuizQuestionRequest
+	90,  // 155: glms.LmsService.DeleteQuizQuestionAdmin:input_type -> glms.DeleteQuizQuestionRequest
+	92,  // 156: glms.LmsService.GetQuizQuestionAdmin:input_type -> glms.GetQuizQuestionRequest
+	92,  // 157: glms.LmsService.GetQuizQuestionDetailAdmin:input_type -> glms.GetQuizQuestionRequest
+	94,  // 158: glms.LmsService.ListQuizQuestionsAdmin:input_type -> glms.ListQuizQuestionsRequest
+	96,  // 159: glms.LmsService.ReorderQuizQuestionsAdmin:input_type -> glms.ReorderQuizQuestionsRequest
+	98,  // 160: glms.LmsService.CreateQuizOptionAdmin:input_type -> glms.CreateQuizOptionRequest
+	100, // 161: glms.LmsService.UpdateQuizOptionAdmin:input_type -> glms.UpdateQuizOptionRequest
+	102, // 162: glms.LmsService.DeleteQuizOptionAdmin:input_type -> glms.DeleteQuizOptionRequest
+	104, // 163: glms.LmsService.GetQuizOptionAdmin:input_type -> glms.GetQuizOptionRequest
+	104, // 164: glms.LmsService.GetQuizOptionDetailAdmin:input_type -> glms.GetQuizOptionRequest
+	106, // 165: glms.LmsService.ListQuizOptionsAdmin:input_type -> glms.ListQuizOptionsRequest
+	108, // 166: glms.LmsService.ReorderQuizOptionsAdmin:input_type -> glms.ReorderQuizOptionsRequest
+	166, // 167: glms.LmsService.ImportQuizAdmin:input_type -> glms.ImportQuizRequest
+	168, // 168: glms.LmsService.ImportCourseAdmin:input_type -> glms.ImportCourseRequest
+	110, // 169: glms.LmsService.ListObjectsAdmin:input_type -> glms.ListObjectsRequest
+	112, // 170: glms.LmsService.CreateUploadURLAdmin:input_type -> glms.CreateUploadURLRequest
+	164, // 171: glms.LmsService.ListBrokenAssetsAdmin:input_type -> glms.ListBrokenAssetsRequest
+	120, // 172: glms.LmsService.EnrollCandidateCourseAdmin:input_type -> glms.EnrollCandidateCourseRequest
+	122, // 173: glms.LmsService.BatchEnrollCandidateCoursesAdmin:input_type -> glms.BatchEnrollCandidateCoursesRequest
+	116, // 174: glms.LmsService.GrantCourseAccessPermissionAdmin:input_type -> glms.GrantCourseAccessPermissionAdminRequest
+	118, // 175: glms.LmsService.RevokeCourseAccessPermissionAdmin:input_type -> glms.RevokeCourseAccessPermissionAdminRequest
+	190, // 176: glms.LmsService.ListLessonProgressAdmin:input_type -> glms.ListLessonProgressRequest
+	193, // 177: glms.LmsService.GetLessonProgressDetailAdmin:input_type -> glms.GetLessonProgressDetailRequest
+	195, // 178: glms.LmsService.ListQuizAttemptsAdmin:input_type -> glms.ListQuizAttemptsRequest
+	198, // 179: glms.LmsService.GetQuizAttemptDetailAdmin:input_type -> glms.GetQuizAttemptDetailRequest
+	201, // 180: glms.LmsService.ListChapterProgressAdmin:input_type -> glms.ListChapterProgressRequest
+	204, // 181: glms.LmsService.GetChapterProgressDetailAdmin:input_type -> glms.GetChapterProgressDetailRequest
+	206, // 182: glms.LmsService.ListCourseAssetsAdmin:input_type -> glms.ListCourseAssetsRequest
+	209, // 183: glms.LmsService.GetCourseAssetDetailAdmin:input_type -> glms.GetCourseAssetDetailRequest
+	216, // 184: glms.LmsService.ListCourseEnrollmentsAdmin:input_type -> glms.ListCourseEnrollmentsRequest
+	219, // 185: glms.LmsService.GetCourseEnrollmentDetailAdmin:input_type -> glms.GetCourseEnrollmentDetailRequest
+	132, // 186: glms.LmsService.ListCourseEnrollmentsForAdmin:input_type -> glms.ListCourseEnrollmentsForAdminRequest
+	135, // 187: glms.LmsService.GetCandidateProgressForAdmin:input_type -> glms.GetCandidateProgressForAdminRequest
+	223, // 188: glms.LmsService.SyncCourseProgressAdmin:input_type -> glms.SyncCourseProgressRequest
+	144, // 189: glms.LmsService.GetCompleteCourseAdmin:input_type -> glms.GetCompleteCourseRequest
+	114, // 190: glms.LmsService.CreateViewURLAdmin:input_type -> glms.CreateViewURLRequest
+	146, // 191: glms.LmsService.CreateCourseSupplementaryMaterialAdmin:input_type -> glms.CreateCourseSupplementaryMaterialRequest
+	148, // 192: glms.LmsService.UpdateCourseSupplementaryMaterialAdmin:input_type -> glms.UpdateCourseSupplementaryMaterialRequest
+	150, // 193: glms.LmsService.DeleteCourseSupplementaryMaterialAdmin:input_type -> glms.DeleteCourseSupplementaryMaterialRequest
+	152, // 194: glms.LmsService.GetCourseSupplementaryMaterialAdmin:input_type -> glms.GetCourseSupplementaryMaterialRequest
+	241, // 195: glms.LmsService.CreateResourcePackAdmin:input_type -> glms.CreateResourcePackRequest
+	242, // 196: glms.LmsService.UpdateResourcePackAdmin:input_type -> glms.UpdateResourcePackRequest
+	243, // 197: glms.LmsService.DeleteResourcePackAdmin:input_type -> glms.DeleteResourcePackRequest
+	245, // 198: glms.LmsService.GetResourcePackAdmin:input_type -> glms.GetResourcePackRequest
+	246, // 199: glms.LmsService.ListResourcePacksAdmin:input_type -> glms.ListResourcePacksRequest
+	248, // 200: glms.LmsService.CreateResourcePackFileAdmin:input_type -> glms.CreateResourcePackFileRequest
+	249, // 201: glms.LmsService.UpdateResourcePackFileAdmin:input_type -> glms.UpdateResourcePackFileRequest
+	250, // 202: glms.LmsService.DeleteResourcePackFileAdmin:input_type -> glms.DeleteResourcePackFileRequest
+	252, // 203: glms.LmsService.GetResourcePackFileAdmin:input_type -> glms.GetResourcePackFileRequest
+	253, // 204: glms.LmsService.ListResourcePackFilesAdmin:input_type -> glms.ListResourcePackFilesRequest
+	255, // 205: glms.LmsService.UpdateResourcePackFileThumbnailAdmin:input_type -> glms.UpdateResourcePackFileThumbnailRequest
+	225, // 206: glms.LmsService.GetCourseSummary:input_type -> glms.GetCourseSummaryCandidateRequest
+	226, // 207: glms.LmsService.GetCourseDetail:input_type -> glms.GetCourseDetailCandidateRequest
+	227, // 208: glms.LmsService.ListCourses:input_type -> glms.ListCoursesCandidateRequest
+	228, // 209: glms.LmsService.GetCourseMaterial:input_type -> glms.GetCourseMaterialCandidateRequest
+	228, // 210: glms.LmsService.GetCourseMaterialDetail:input_type -> glms.GetCourseMaterialCandidateRequest
+	229, // 211: glms.LmsService.ListCourseMaterials:input_type -> glms.ListCourseMaterialsCandidateRequest
+	230, // 212: glms.LmsService.GetChapter:input_type -> glms.GetChapterCandidateRequest
+	231, // 213: glms.LmsService.GetChapterDetail:input_type -> glms.GetChapterDetailCandidateRequest
+	232, // 214: glms.LmsService.ListChapters:input_type -> glms.ListChaptersCandidateRequest
+	233, // 215: glms.LmsService.GetLesson:input_type -> glms.GetLessonCandidateRequest
+	234, // 216: glms.LmsService.GetLessonDetail:input_type -> glms.GetLessonDetailCandidateRequest
+	235, // 217: glms.LmsService.ListLessons:input_type -> glms.ListLessonsCandidateRequest
+	236, // 218: glms.LmsService.ListLessonsByCourse:input_type -> glms.ListLessonsByCourseCandidateRequest
+	237, // 219: glms.LmsService.GetCompleteCourse:input_type -> glms.GetCompleteCourseCandidateRequest
+	238, // 220: glms.LmsService.GetQuiz:input_type -> glms.GetQuizCandidateRequest
+	239, // 221: glms.LmsService.ListQuizzes:input_type -> glms.ListQuizzesCandidateRequest
+	240, // 222: glms.LmsService.CreateViewURL:input_type -> glms.CreateViewURLCandidateRequest
+	256, // 223: glms.LmsService.GetLessonVideoPlayURL:input_type -> glms.GetLessonVideoPlayURLRequest
+	258, // 224: glms.LmsService.GetResourcePackFileViewURL:input_type -> glms.GetResourcePackFileViewURLRequest
+	262, // 225: glms.LmsService.ListResourcePacks:input_type -> glms.ListResourcePacksCandidateRequest
+	263, // 226: glms.LmsService.ListResourcePackFiles:input_type -> glms.ListResourcePackFilesCandidateRequest
+	125, // 227: glms.LmsService.CompleteLessonLearning:input_type -> glms.CompleteLessonLearningRequest
+	154, // 228: glms.LmsService.TakeQuiz:input_type -> glms.TakeQuizRequest
+	158, // 229: glms.LmsService.GetCandidateQuizPaper:input_type -> glms.GetCandidateQuizPaperRequest
+	161, // 230: glms.LmsService.SubmitQuiz:input_type -> glms.SubmitQuizRequest
+	127, // 231: glms.LmsService.ListCandidateEnrollments:input_type -> glms.ListCandidateEnrollmentsRequest
+	130, // 232: glms.LmsService.GetCandidateEnrollmentDetail:input_type -> glms.GetCandidateEnrollmentDetailRequest
+	8,   // 233: glms.LmsService.CreateCourseDraftAdmin:output_type -> glms.Course
+	8,   // 234: glms.LmsService.DuplicateCourseDraftAdmin:output_type -> glms.Course
+	21,  // 235: glms.LmsService.UpdateCourseAdmin:output_type -> glms.UpdateCourseResponse
+	23,  // 236: glms.LmsService.DeleteCourseAdmin:output_type -> glms.DeleteCourseResponse
+	29,  // 237: glms.LmsService.PublishCourseAdmin:output_type -> glms.PublishCourseResponse
+	170, // 238: glms.LmsService.GetCourseSummaryAdmin:output_type -> glms.GetCourseSummaryResponse
+	181, // 239: glms.LmsService.GetCourseDetailAdmin:output_type -> glms.GetCourseDetailResponse
+	27,  // 240: glms.LmsService.ListCoursesAdmin:output_type -> glms.ListCoursesResponse
+	31,  // 241: glms.LmsService.CreateCourseMaterialAdmin:output_type -> glms.CreateCourseMaterialResponse
+	33,  // 242: glms.LmsService.UpdateCourseMaterialAdmin:output_type -> glms.UpdateCourseMaterialResponse
+	35,  // 243: glms.LmsService.DeleteCourseMaterialAdmin:output_type -> glms.DeleteCourseMaterialResponse
+	37,  // 244: glms.LmsService.GetCourseMaterialAdmin:output_type -> glms.GetCourseMaterialResponse
+	182, // 245: glms.LmsService.GetCourseMaterialDetailAdmin:output_type -> glms.GetCourseMaterialDetailResponse
+	39,  // 246: glms.LmsService.ListCourseMaterialsAdmin:output_type -> glms.ListCourseMaterialsResponse
+	41,  // 247: glms.LmsService.ReorderCourseMaterialsAdmin:output_type -> glms.ReorderCourseMaterialsResponse
+	43,  // 248: glms.LmsService.CreateChapterAdmin:output_type -> glms.CreateChapterResponse
+	45,  // 249: glms.LmsService.UpdateChapterAdmin:output_type -> glms.UpdateChapterResponse
+	47,  // 250: glms.LmsService.DeleteChapterAdmin:output_type -> glms.DeleteChapterResponse
+	49,  // 251: glms.LmsService.GetChapterAdmin:output_type -> glms.GetChapterResponse
+	183, // 252: glms.LmsService.GetChapterDetailAdmin:output_type -> glms.GetChapterDetailResponse
+	51,  // 253: glms.LmsService.ListChaptersAdmin:output_type -> glms.ListChaptersResponse
+	53,  // 254: glms.LmsService.ReorderChaptersAdmin:output_type -> glms.ReorderChaptersResponse
+	55,  // 255: glms.LmsService.CreateLessonAdmin:output_type -> glms.CreateLessonResponse
+	57,  // 256: glms.LmsService.UpdateLessonAdmin:output_type -> glms.UpdateLessonResponse
+	59,  // 257: glms.LmsService.DeleteLessonAdmin:output_type -> glms.DeleteLessonResponse
+	61,  // 258: glms.LmsService.GetLessonAdmin:output_type -> glms.GetLessonResponse
+	184, // 259: glms.LmsService.GetLessonDetailAdmin:output_type -> glms.GetLessonDetailResponse
+	63,  // 260: glms.LmsService.ListLessonsAdmin:output_type -> glms.ListLessonsResponse
+	65,  // 261: glms.LmsService.ReorderLessonsAdmin:output_type -> glms.ReorderLessonsResponse
+	215, // 262: glms.LmsService.ListLessonsByCourseAdmin:output_type -> glms.ListLessonsByCourseResponse
+	67,  // 263: glms.LmsService.CreatePrerequisiteAdmin:output_type -> glms.CreatePrerequisiteResponse
+	69,  // 264: glms.LmsService.UpdatePrerequisiteAdmin:output_type -> glms.UpdatePrerequisiteResponse
+	71,  // 265: glms.LmsService.DeletePrerequisiteAdmin:output_type -> glms.DeletePrerequisiteResponse
+	73,  // 266: glms.LmsService.GetPrerequisiteAdmin:output_type -> glms.GetPrerequisiteResponse
+	185, // 267: glms.LmsService.GetPrerequisiteDetailAdmin:output_type -> glms.GetPrerequisiteDetailResponse
+	75,  // 268: glms.LmsService.ListPrerequisitesAdmin:output_type -> glms.ListPrerequisitesResponse
+	213, // 269: glms.LmsService.ListPrerequisitesByRequiredEntityAdmin:output_type -> glms.ListPrerequisitesByRequiredEntityResponse
+	77,  // 270: glms.LmsService.CreateQuizAdmin:output_type -> glms.CreateQuizResponse
+	79,  // 271: glms.LmsService.UpdateQuizAdmin:output_type -> glms.UpdateQuizResponse
+	81,  // 272: glms.LmsService.DeleteQuizAdmin:output_type -> glms.DeleteQuizResponse
+	83,  // 273: glms.LmsService.GetQuizAdmin:output_type -> glms.GetQuizResponse
+	187, // 274: glms.LmsService.GetQuizDetailAdmin:output_type -> glms.GetQuizDetailResponse
+	85,  // 275: glms.LmsService.ListQuizzesAdmin:output_type -> glms.ListQuizzesResponse
+	87,  // 276: glms.LmsService.CreateQuizQuestionAdmin:output_type -> glms.CreateQuizQuestionResponse
+	89,  // 277: glms.LmsService.UpdateQuizQuestionAdmin:output_type -> glms.UpdateQuizQuestionResponse
+	91,  // 278: glms.LmsService.DeleteQuizQuestionAdmin:output_type -> glms.DeleteQuizQuestionResponse
+	93,  // 279: glms.LmsService.GetQuizQuestionAdmin:output_type -> glms.GetQuizQuestionResponse
+	188, // 280: glms.LmsService.GetQuizQuestionDetailAdmin:output_type -> glms.GetQuizQuestionDetailResponse
+	95,  // 281: glms.LmsService.ListQuizQuestionsAdmin:output_type -> glms.ListQuizQuestionsResponse
+	97,  // 282: glms.LmsService.ReorderQuizQuestionsAdmin:output_type -> glms.ReorderQuizQuestionsResponse
+	99,  // 283: glms.LmsService.CreateQuizOptionAdmin:output_type -> glms.CreateQuizOptionResponse
+	101, // 284: glms.LmsService.UpdateQuizOptionAdmin:output_type -> glms.UpdateQuizOptionResponse
+	103, // 285: glms.LmsService.DeleteQuizOptionAdmin:output_type -> glms.DeleteQuizOptionResponse
+	105, // 286: glms.LmsService.GetQuizOptionAdmin:output_type -> glms.GetQuizOptionResponse
+	189, // 287: glms.LmsService.GetQuizOptionDetailAdmin:output_type -> glms.GetQuizOptionDetailResponse
+	107, // 288: glms.LmsService.ListQuizOptionsAdmin:output_type -> glms.ListQuizOptionsResponse
+	109, // 289: glms.LmsService.ReorderQuizOptionsAdmin:output_type -> glms.ReorderQuizOptionsResponse
+	167, // 290: glms.LmsService.ImportQuizAdmin:output_type -> glms.ImportQuizResponse
+	169, // 291: glms.LmsService.ImportCourseAdmin:output_type -> glms.ImportCourseResponse
+	111, // 292: glms.LmsService.ListObjectsAdmin:output_type -> glms.ListObjectsResponse
+	113, // 293: glms.LmsService.CreateUploadURLAdmin:output_type -> glms.CreateUploadURLResponse
+	165, // 294: glms.LmsService.ListBrokenAssetsAdmin:output_type -> glms.ListBrokenAssetsResponse
+	121, // 295: glms.LmsService.EnrollCandidateCourseAdmin:output_type -> glms.EnrollCandidateCourseResponse
+	124, // 296: glms.LmsService.BatchEnrollCandidateCoursesAdmin:output_type -> glms.BatchEnrollCandidateCoursesResponse
+	117, // 297: glms.LmsService.GrantCourseAccessPermissionAdmin:output_type -> glms.GrantCourseAccessPermissionAdminResponse
+	119, // 298: glms.LmsService.RevokeCourseAccessPermissionAdmin:output_type -> glms.RevokeCourseAccessPermissionAdminResponse
+	192, // 299: glms.LmsService.ListLessonProgressAdmin:output_type -> glms.ListLessonProgressResponse
+	194, // 300: glms.LmsService.GetLessonProgressDetailAdmin:output_type -> glms.GetLessonProgressDetailResponse
+	197, // 301: glms.LmsService.ListQuizAttemptsAdmin:output_type -> glms.ListQuizAttemptsResponse
+	200, // 302: glms.LmsService.GetQuizAttemptDetailAdmin:output_type -> glms.GetQuizAttemptDetailResponse
+	203, // 303: glms.LmsService.ListChapterProgressAdmin:output_type -> glms.ListChapterProgressResponse
+	205, // 304: glms.LmsService.GetChapterProgressDetailAdmin:output_type -> glms.GetChapterProgressDetailResponse
+	208, // 305: glms.LmsService.ListCourseAssetsAdmin:output_type -> glms.ListCourseAssetsResponse
+	210, // 306: glms.LmsService.GetCourseAssetDetailAdmin:output_type -> glms.GetCourseAssetDetailResponse
+	217, // 307: glms.LmsService.ListCourseEnrollmentsAdmin:output_type -> glms.ListCourseEnrollmentsResponse
+	220, // 308: glms.LmsService.GetCourseEnrollmentDetailAdmin:output_type -> glms.GetCourseEnrollmentDetailResponse
+	134, // 309: glms.LmsService.ListCourseEnrollmentsForAdmin:output_type -> glms.ListCourseEnrollmentsForAdminResponse
+	136, // 310: glms.LmsService.GetCandidateProgressForAdmin:output_type -> glms.GetCandidateProgressForAdminResponse
+	224, // 311: glms.LmsService.SyncCourseProgressAdmin:output_type -> glms.SyncCourseProgressResponse
+	145, // 312: glms.LmsService.GetCompleteCourseAdmin:output_type -> glms.GetCompleteCourseResponse
+	115, // 313: glms.LmsService.CreateViewURLAdmin:output_type -> glms.CreateViewURLResponse
+	147, // 314: glms.LmsService.CreateCourseSupplementaryMaterialAdmin:output_type -> glms.CreateCourseSupplementaryMaterialResponse
+	149, // 315: glms.LmsService.UpdateCourseSupplementaryMaterialAdmin:output_type -> glms.UpdateCourseSupplementaryMaterialResponse
+	151, // 316: glms.LmsService.DeleteCourseSupplementaryMaterialAdmin:output_type -> glms.DeleteCourseSupplementaryMaterialResponse
+	153, // 317: glms.LmsService.GetCourseSupplementaryMaterialAdmin:output_type -> glms.GetCourseSupplementaryMaterialResponse
+	260, // 318: glms.LmsService.CreateResourcePackAdmin:output_type -> glms.ResourcePack
+	260, // 319: glms.LmsService.UpdateResourcePackAdmin:output_type -> glms.ResourcePack
+	244, // 320: glms.LmsService.DeleteResourcePackAdmin:output_type -> glms.DeleteResourcePackResponse
+	260, // 321: glms.LmsService.GetResourcePackAdmin:output_type -> glms.ResourcePack
+	247, // 322: glms.LmsService.ListResourcePacksAdmin:output_type -> glms.ListResourcePacksResponse
+	261, // 323: glms.LmsService.CreateResourcePackFileAdmin:output_type -> glms.ResourcePackFile
+	261, // 324: glms.LmsService.UpdateResourcePackFileAdmin:output_type -> glms.ResourcePackFile
+	251, // 325: glms.LmsService.DeleteResourcePackFileAdmin:output_type -> glms.DeleteResourcePackFileResponse
+	261, // 326: glms.LmsService.GetResourcePackFileAdmin:output_type -> glms.ResourcePackFile
+	254, // 327: glms.LmsService.ListResourcePackFilesAdmin:output_type -> glms.ListResourcePackFilesResponse
+	261, // 328: glms.LmsService.UpdateResourcePackFileThumbnailAdmin:output_type -> glms.ResourcePackFile
+	170, // 329: glms.LmsService.GetCourseSummary:output_type -> glms.GetCourseSummaryResponse
+	181, // 330: glms.LmsService.GetCourseDetail:output_type -> glms.GetCourseDetailResponse
+	27,  // 331: glms.LmsService.ListCourses:output_type -> glms.ListCoursesResponse
+	37,  // 332: glms.LmsService.GetCourseMaterial:output_type -> glms.GetCourseMaterialResponse
+	182, // 333: glms.LmsService.GetCourseMaterialDetail:output_type -> glms.GetCourseMaterialDetailResponse
+	39,  // 334: glms.LmsService.ListCourseMaterials:output_type -> glms.ListCourseMaterialsResponse
+	49,  // 335: glms.LmsService.GetChapter:output_type -> glms.GetChapterResponse
+	183, // 336: glms.LmsService.GetChapterDetail:output_type -> glms.GetChapterDetailResponse
+	51,  // 337: glms.LmsService.ListChapters:output_type -> glms.ListChaptersResponse
+	61,  // 338: glms.LmsService.GetLesson:output_type -> glms.GetLessonResponse
+	184, // 339: glms.LmsService.GetLessonDetail:output_type -> glms.GetLessonDetailResponse
+	63,  // 340: glms.LmsService.ListLessons:output_type -> glms.ListLessonsResponse
+	215, // 341: glms.LmsService.ListLessonsByCourse:output_type -> glms.ListLessonsByCourseResponse
+	145, // 342: glms.LmsService.GetCompleteCourse:output_type -> glms.GetCompleteCourseResponse
+	83,  // 343: glms.LmsService.GetQuiz:output_type -> glms.GetQuizResponse
+	85,  // 344: glms.LmsService.ListQuizzes:output_type -> glms.ListQuizzesResponse
+	115, // 345: glms.LmsService.CreateViewURL:output_type -> glms.CreateViewURLResponse
+	257, // 346: glms.LmsService.GetLessonVideoPlayURL:output_type -> glms.GetLessonVideoPlayURLResponse
+	259, // 347: glms.LmsService.GetResourcePackFileViewURL:output_type -> glms.GetResourcePackFileViewURLResponse
+	247, // 348: glms.LmsService.ListResourcePacks:output_type -> glms.ListResourcePacksResponse
+	254, // 349: glms.LmsService.ListResourcePackFiles:output_type -> glms.ListResourcePackFilesResponse
+	126, // 350: glms.LmsService.CompleteLessonLearning:output_type -> glms.CompleteLessonLearningResponse
+	155, // 351: glms.LmsService.TakeQuiz:output_type -> glms.TakeQuizResponse
+	159, // 352: glms.LmsService.GetCandidateQuizPaper:output_type -> glms.GetCandidateQuizPaperResponse
+	162, // 353: glms.LmsService.SubmitQuiz:output_type -> glms.SubmitQuizResponse
+	129, // 354: glms.LmsService.ListCandidateEnrollments:output_type -> glms.ListCandidateEnrollmentsResponse
+	131, // 355: glms.LmsService.GetCandidateEnrollmentDetail:output_type -> glms.GetCandidateEnrollmentDetailResponse
+	233, // [233:356] is the sub-list for method output_type
+	110, // [110:233] is the sub-list for method input_type
 	110, // [110:110] is the sub-list for extension type_name
 	110, // [110:110] is the sub-list for extension extendee
 	0,   // [0:110] is the sub-list for field type_name
@@ -19495,7 +19740,7 @@ func file_lms_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_lms_proto_rawDesc), len(file_lms_proto_rawDesc)),
 			NumEnums:      8,
-			NumMessages:   255,
+			NumMessages:   257,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

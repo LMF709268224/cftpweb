@@ -7,7 +7,7 @@ import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
-type OrderItem = { id: string; items: string[]; date: string; amount: string; status: keyof typeof statusConfig; rawStatus: string; pipelineId: string; paymentMethod: string }
+type OrderItem = { id: string; items: string[]; date: string; amount: string; currency: string; status: keyof typeof statusConfig; rawStatus: string; pipelineId: string; paymentMethod: string }
 
 const statusConfig = {
   completed: { labelKey: "statusCompleted", statusValue: "SUCCESS" },
@@ -30,7 +30,8 @@ const totalSpent = ref(0)
 const completedCount = ref(0)
 const loading = ref(true)
 const selectedOrderType = ref("PIPELINE_PAYMENT")
-const totalSpentLabel = computed(() => `¥${totalSpent.value.toLocaleString()}`)
+const displayCurrency = computed(() => orders.value.find((order) => order.currency)?.currency || "USD")
+const totalSpentLabel = computed(() => formatMoney(totalSpent.value, displayCurrency.value))
 
 import { useRouter } from "vue-router"
 
@@ -84,10 +85,36 @@ async function viewInvoice(orderId: string) {
   } catch (err) {
     console.error("Failed to download invoice:", err)
     const isTimeout = err instanceof DOMException && err.name === "AbortError"
+    if (!isTimeout && await openHostedInvoice(orderId)) return
     alert(isTimeout ? "下载发票超时，请稍后重试 (Invoice download timed out)" : "获取发票失败，请稍后重试 (Failed to download invoice)")
   } finally {
     window.clearTimeout(timeoutId)
     invoiceLoading.value = null
+  }
+}
+
+async function openHostedInvoice(orderId: string) {
+  try {
+    const res = await apiClient(`/api/invoices/${encodeURIComponent(orderId)}`)
+    if (res?.invoice_url) {
+      window.open(res.invoice_url, "_blank", "noopener,noreferrer")
+      return true
+    }
+  } catch (err) {
+    console.error("Failed to open hosted invoice fallback:", err)
+  }
+  return false
+}
+
+function formatMoney(amount: number, currency = "USD") {
+  const normalizedCurrency = (currency || "USD").toUpperCase()
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency: normalizedCurrency,
+    }).format(amount)
+  } catch {
+    return `${normalizedCurrency} ${amount.toLocaleString()}`
   }
 }
 
@@ -119,7 +146,8 @@ async function fetchOrders() {
         id: o.order_id,
         items: [o.product_name],
         date: o.created_at,
-        amount: o.amount > 0 ? `¥${o.amount.toLocaleString()}` : "-",
+        currency: (o.currency || "USD").toUpperCase(),
+        amount: o.amount > 0 ? formatMoney(o.amount, o.currency || "USD") : "-",
         status: (o.status in statusConfig ? o.status : "pending") as keyof typeof statusConfig,
         rawStatus: o.raw_status,
         pipelineId: o.pipeline_id,

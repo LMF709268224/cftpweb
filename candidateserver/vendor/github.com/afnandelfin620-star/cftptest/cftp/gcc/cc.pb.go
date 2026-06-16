@@ -499,7 +499,6 @@ type CreatePipelineDraftRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	CategoryTips       string                 `protobuf:"bytes,1,opt,name=category_tips,json=categoryTips,proto3" json:"category_tips,omitempty"`                     // 分类提示，客户端按相同值分组展示，最长64字符
 	Name               string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`                                                         // 管线名称 [required]
-	FromPipelineGuid   string                 `protobuf:"bytes,3,opt,name=from_pipeline_guid,json=fromPipelineGuid,proto3" json:"from_pipeline_guid,omitempty"`       // 如果提供，则从该版本复制；如果不提供，则创建全新管线 [optional]
 	PipelineId         string                 `protobuf:"bytes,4,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`                           // 外部指定的 pipeline_id ULID (版本唯一ID) [required]
 	PipelineGuid       string                 `protobuf:"bytes,5,opt,name=pipeline_guid,json=pipelineGuid,proto3" json:"pipeline_guid,omitempty"`                     // 外部指定的 pipeline_guid ULID (业务唯一ID) [required for fresh creation]
 	Respath            string                 `protobuf:"bytes,6,opt,name=respath,proto3" json:"respath,omitempty"`                                                   // 权限资源路径 [required]
@@ -553,13 +552,6 @@ func (x *CreatePipelineDraftRequest) GetName() string {
 	return ""
 }
 
-func (x *CreatePipelineDraftRequest) GetFromPipelineGuid() string {
-	if x != nil {
-		return x.FromPipelineGuid
-	}
-	return ""
-}
-
 func (x *CreatePipelineDraftRequest) GetPipelineId() string {
 	if x != nil {
 		return x.PipelineId
@@ -595,6 +587,66 @@ func (x *CreatePipelineDraftRequest) GetThumbnailFileHash() string {
 	return ""
 }
 
+type DuplicatePipelineDraftRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	FromPipelineId string                 `protobuf:"bytes,1,opt,name=from_pipeline_id,json=fromPipelineId,proto3" json:"from_pipeline_id,omitempty"` // 数据源 pipeline_id (特定版本唯一ID) [required]
+	PipelineId     string                 `protobuf:"bytes,2,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`               // 新的 pipeline_id ULID (新草稿版本ID) [required]
+	Name           string                 `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`                                             // 新的管线名称 [required]
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DuplicatePipelineDraftRequest) Reset() {
+	*x = DuplicatePipelineDraftRequest{}
+	mi := &file_cc_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DuplicatePipelineDraftRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DuplicatePipelineDraftRequest) ProtoMessage() {}
+
+func (x *DuplicatePipelineDraftRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_cc_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DuplicatePipelineDraftRequest.ProtoReflect.Descriptor instead.
+func (*DuplicatePipelineDraftRequest) Descriptor() ([]byte, []int) {
+	return file_cc_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *DuplicatePipelineDraftRequest) GetFromPipelineId() string {
+	if x != nil {
+		return x.FromPipelineId
+	}
+	return ""
+}
+
+func (x *DuplicatePipelineDraftRequest) GetPipelineId() string {
+	if x != nil {
+		return x.PipelineId
+	}
+	return ""
+}
+
+func (x *DuplicatePipelineDraftRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
 type UpdatePipelineStructureRequest struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	PipelineId            string                 `protobuf:"bytes,1,opt,name=pipeline_id,json=pipelineId,proto3" json:"pipeline_id,omitempty"`                                      // 必须是 Draft 状态的 管线 ID [required]
@@ -611,7 +663,7 @@ type UpdatePipelineStructureRequest struct {
 
 func (x *UpdatePipelineStructureRequest) Reset() {
 	*x = UpdatePipelineStructureRequest{}
-	mi := &file_cc_proto_msgTypes[5]
+	mi := &file_cc_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -623,7 +675,7 @@ func (x *UpdatePipelineStructureRequest) String() string {
 func (*UpdatePipelineStructureRequest) ProtoMessage() {}
 
 func (x *UpdatePipelineStructureRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[5]
+	mi := &file_cc_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -636,7 +688,7 @@ func (x *UpdatePipelineStructureRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdatePipelineStructureRequest.ProtoReflect.Descriptor instead.
 func (*UpdatePipelineStructureRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{5}
+	return file_cc_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *UpdatePipelineStructureRequest) GetPipelineId() string {
@@ -704,7 +756,7 @@ type PublishPipelineRequest struct {
 
 func (x *PublishPipelineRequest) Reset() {
 	*x = PublishPipelineRequest{}
-	mi := &file_cc_proto_msgTypes[6]
+	mi := &file_cc_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -716,7 +768,7 @@ func (x *PublishPipelineRequest) String() string {
 func (*PublishPipelineRequest) ProtoMessage() {}
 
 func (x *PublishPipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[6]
+	mi := &file_cc_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -729,7 +781,7 @@ func (x *PublishPipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishPipelineRequest.ProtoReflect.Descriptor instead.
 func (*PublishPipelineRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{6}
+	return file_cc_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *PublishPipelineRequest) GetPipelineId() string {
@@ -748,7 +800,7 @@ type DeprecatePipelineRequest struct {
 
 func (x *DeprecatePipelineRequest) Reset() {
 	*x = DeprecatePipelineRequest{}
-	mi := &file_cc_proto_msgTypes[7]
+	mi := &file_cc_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -760,7 +812,7 @@ func (x *DeprecatePipelineRequest) String() string {
 func (*DeprecatePipelineRequest) ProtoMessage() {}
 
 func (x *DeprecatePipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[7]
+	mi := &file_cc_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -773,7 +825,7 @@ func (x *DeprecatePipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeprecatePipelineRequest.ProtoReflect.Descriptor instead.
 func (*DeprecatePipelineRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{7}
+	return file_cc_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *DeprecatePipelineRequest) GetPipelineId() string {
@@ -792,7 +844,7 @@ type DeletePipelineRequest struct {
 
 func (x *DeletePipelineRequest) Reset() {
 	*x = DeletePipelineRequest{}
-	mi := &file_cc_proto_msgTypes[8]
+	mi := &file_cc_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -804,7 +856,7 @@ func (x *DeletePipelineRequest) String() string {
 func (*DeletePipelineRequest) ProtoMessage() {}
 
 func (x *DeletePipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[8]
+	mi := &file_cc_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -817,7 +869,7 @@ func (x *DeletePipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeletePipelineRequest.ProtoReflect.Descriptor instead.
 func (*DeletePipelineRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{8}
+	return file_cc_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *DeletePipelineRequest) GetPipelineId() string {
@@ -843,7 +895,7 @@ type UpdateMetadataRequest struct {
 
 func (x *UpdateMetadataRequest) Reset() {
 	*x = UpdateMetadataRequest{}
-	mi := &file_cc_proto_msgTypes[9]
+	mi := &file_cc_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -855,7 +907,7 @@ func (x *UpdateMetadataRequest) String() string {
 func (*UpdateMetadataRequest) ProtoMessage() {}
 
 func (x *UpdateMetadataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[9]
+	mi := &file_cc_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -868,7 +920,7 @@ func (x *UpdateMetadataRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateMetadataRequest.ProtoReflect.Descriptor instead.
 func (*UpdateMetadataRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{9}
+	return file_cc_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *UpdateMetadataRequest) GetTargetId() string {
@@ -942,7 +994,7 @@ type UnitStripeUpdate struct {
 
 func (x *UnitStripeUpdate) Reset() {
 	*x = UnitStripeUpdate{}
-	mi := &file_cc_proto_msgTypes[10]
+	mi := &file_cc_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -954,7 +1006,7 @@ func (x *UnitStripeUpdate) String() string {
 func (*UnitStripeUpdate) ProtoMessage() {}
 
 func (x *UnitStripeUpdate) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[10]
+	mi := &file_cc_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -967,7 +1019,7 @@ func (x *UnitStripeUpdate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnitStripeUpdate.ProtoReflect.Descriptor instead.
 func (*UnitStripeUpdate) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{10}
+	return file_cc_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *UnitStripeUpdate) GetUnitId() string {
@@ -1034,7 +1086,7 @@ type GetPipelineRequest struct {
 
 func (x *GetPipelineRequest) Reset() {
 	*x = GetPipelineRequest{}
-	mi := &file_cc_proto_msgTypes[11]
+	mi := &file_cc_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1046,7 +1098,7 @@ func (x *GetPipelineRequest) String() string {
 func (*GetPipelineRequest) ProtoMessage() {}
 
 func (x *GetPipelineRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[11]
+	mi := &file_cc_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1059,7 +1111,7 @@ func (x *GetPipelineRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPipelineRequest.ProtoReflect.Descriptor instead.
 func (*GetPipelineRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{11}
+	return file_cc_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *GetPipelineRequest) GetQuery() isGetPipelineRequest_Query {
@@ -1112,7 +1164,7 @@ type GetPipelineFinalEligibilityRequest struct {
 
 func (x *GetPipelineFinalEligibilityRequest) Reset() {
 	*x = GetPipelineFinalEligibilityRequest{}
-	mi := &file_cc_proto_msgTypes[12]
+	mi := &file_cc_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1124,7 +1176,7 @@ func (x *GetPipelineFinalEligibilityRequest) String() string {
 func (*GetPipelineFinalEligibilityRequest) ProtoMessage() {}
 
 func (x *GetPipelineFinalEligibilityRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[12]
+	mi := &file_cc_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1137,7 +1189,7 @@ func (x *GetPipelineFinalEligibilityRequest) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use GetPipelineFinalEligibilityRequest.ProtoReflect.Descriptor instead.
 func (*GetPipelineFinalEligibilityRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{12}
+	return file_cc_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *GetPipelineFinalEligibilityRequest) GetPipelineId() string {
@@ -1158,7 +1210,7 @@ type GetPipelineFinalEligibilityResponse struct {
 
 func (x *GetPipelineFinalEligibilityResponse) Reset() {
 	*x = GetPipelineFinalEligibilityResponse{}
-	mi := &file_cc_proto_msgTypes[13]
+	mi := &file_cc_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1170,7 +1222,7 @@ func (x *GetPipelineFinalEligibilityResponse) String() string {
 func (*GetPipelineFinalEligibilityResponse) ProtoMessage() {}
 
 func (x *GetPipelineFinalEligibilityResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[13]
+	mi := &file_cc_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1183,7 +1235,7 @@ func (x *GetPipelineFinalEligibilityResponse) ProtoReflect() protoreflect.Messag
 
 // Deprecated: Use GetPipelineFinalEligibilityResponse.ProtoReflect.Descriptor instead.
 func (*GetPipelineFinalEligibilityResponse) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{13}
+	return file_cc_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *GetPipelineFinalEligibilityResponse) GetPipelineId() string {
@@ -1219,7 +1271,7 @@ type ListPipelinesRequest struct {
 
 func (x *ListPipelinesRequest) Reset() {
 	*x = ListPipelinesRequest{}
-	mi := &file_cc_proto_msgTypes[14]
+	mi := &file_cc_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1231,7 +1283,7 @@ func (x *ListPipelinesRequest) String() string {
 func (*ListPipelinesRequest) ProtoMessage() {}
 
 func (x *ListPipelinesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[14]
+	mi := &file_cc_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1244,7 +1296,7 @@ func (x *ListPipelinesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPipelinesRequest.ProtoReflect.Descriptor instead.
 func (*ListPipelinesRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{14}
+	return file_cc_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ListPipelinesRequest) GetCategoryTips() string {
@@ -1288,7 +1340,7 @@ type ListPipelinesAdminRequest struct {
 
 func (x *ListPipelinesAdminRequest) Reset() {
 	*x = ListPipelinesAdminRequest{}
-	mi := &file_cc_proto_msgTypes[15]
+	mi := &file_cc_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1300,7 +1352,7 @@ func (x *ListPipelinesAdminRequest) String() string {
 func (*ListPipelinesAdminRequest) ProtoMessage() {}
 
 func (x *ListPipelinesAdminRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[15]
+	mi := &file_cc_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1313,7 +1365,7 @@ func (x *ListPipelinesAdminRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPipelinesAdminRequest.ProtoReflect.Descriptor instead.
 func (*ListPipelinesAdminRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{15}
+	return file_cc_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *ListPipelinesAdminRequest) GetCategoryTips() string {
@@ -1360,7 +1412,7 @@ type ListPipelinesResponse struct {
 
 func (x *ListPipelinesResponse) Reset() {
 	*x = ListPipelinesResponse{}
-	mi := &file_cc_proto_msgTypes[16]
+	mi := &file_cc_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1372,7 +1424,7 @@ func (x *ListPipelinesResponse) String() string {
 func (*ListPipelinesResponse) ProtoMessage() {}
 
 func (x *ListPipelinesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[16]
+	mi := &file_cc_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1385,7 +1437,7 @@ func (x *ListPipelinesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListPipelinesResponse.ProtoReflect.Descriptor instead.
 func (*ListPipelinesResponse) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{16}
+	return file_cc_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ListPipelinesResponse) GetPipelines() []*PipelineSummary {
@@ -1414,7 +1466,7 @@ type PipelineSummary struct {
 
 func (x *PipelineSummary) Reset() {
 	*x = PipelineSummary{}
-	mi := &file_cc_proto_msgTypes[17]
+	mi := &file_cc_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1426,7 +1478,7 @@ func (x *PipelineSummary) String() string {
 func (*PipelineSummary) ProtoMessage() {}
 
 func (x *PipelineSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[17]
+	mi := &file_cc_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1439,7 +1491,7 @@ func (x *PipelineSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PipelineSummary.ProtoReflect.Descriptor instead.
 func (*PipelineSummary) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{17}
+	return file_cc_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *PipelineSummary) GetPipelineId() string {
@@ -1534,7 +1586,7 @@ type StageSummary struct {
 
 func (x *StageSummary) Reset() {
 	*x = StageSummary{}
-	mi := &file_cc_proto_msgTypes[18]
+	mi := &file_cc_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1546,7 +1598,7 @@ func (x *StageSummary) String() string {
 func (*StageSummary) ProtoMessage() {}
 
 func (x *StageSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[18]
+	mi := &file_cc_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1559,7 +1611,7 @@ func (x *StageSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StageSummary.ProtoReflect.Descriptor instead.
 func (*StageSummary) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{18}
+	return file_cc_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *StageSummary) GetStageId() string {
@@ -1629,7 +1681,7 @@ type UnitSummary struct {
 
 func (x *UnitSummary) Reset() {
 	*x = UnitSummary{}
-	mi := &file_cc_proto_msgTypes[19]
+	mi := &file_cc_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1641,7 +1693,7 @@ func (x *UnitSummary) String() string {
 func (*UnitSummary) ProtoMessage() {}
 
 func (x *UnitSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[19]
+	mi := &file_cc_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1654,7 +1706,7 @@ func (x *UnitSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UnitSummary.ProtoReflect.Descriptor instead.
 func (*UnitSummary) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{19}
+	return file_cc_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *UnitSummary) GetUnitId() string {
@@ -1733,7 +1785,7 @@ type GetPipelineDetailRequest struct {
 
 func (x *GetPipelineDetailRequest) Reset() {
 	*x = GetPipelineDetailRequest{}
-	mi := &file_cc_proto_msgTypes[20]
+	mi := &file_cc_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1745,7 +1797,7 @@ func (x *GetPipelineDetailRequest) String() string {
 func (*GetPipelineDetailRequest) ProtoMessage() {}
 
 func (x *GetPipelineDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[20]
+	mi := &file_cc_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1758,7 +1810,7 @@ func (x *GetPipelineDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPipelineDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetPipelineDetailRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{20}
+	return file_cc_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *GetPipelineDetailRequest) GetQuery() isGetPipelineDetailRequest_Query {
@@ -1811,7 +1863,7 @@ type GetUnitDetailRequest struct {
 
 func (x *GetUnitDetailRequest) Reset() {
 	*x = GetUnitDetailRequest{}
-	mi := &file_cc_proto_msgTypes[21]
+	mi := &file_cc_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1823,7 +1875,7 @@ func (x *GetUnitDetailRequest) String() string {
 func (*GetUnitDetailRequest) ProtoMessage() {}
 
 func (x *GetUnitDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[21]
+	mi := &file_cc_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1836,7 +1888,7 @@ func (x *GetUnitDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetUnitDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetUnitDetailRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{21}
+	return file_cc_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetUnitDetailRequest) GetUnitId() string {
@@ -1857,7 +1909,7 @@ type ListStagesRequest struct {
 
 func (x *ListStagesRequest) Reset() {
 	*x = ListStagesRequest{}
-	mi := &file_cc_proto_msgTypes[22]
+	mi := &file_cc_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1869,7 +1921,7 @@ func (x *ListStagesRequest) String() string {
 func (*ListStagesRequest) ProtoMessage() {}
 
 func (x *ListStagesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[22]
+	mi := &file_cc_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1882,7 +1934,7 @@ func (x *ListStagesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListStagesRequest.ProtoReflect.Descriptor instead.
 func (*ListStagesRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{22}
+	return file_cc_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ListStagesRequest) GetPipelineId() string {
@@ -1915,7 +1967,7 @@ type ListStagesResponse struct {
 
 func (x *ListStagesResponse) Reset() {
 	*x = ListStagesResponse{}
-	mi := &file_cc_proto_msgTypes[23]
+	mi := &file_cc_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1927,7 +1979,7 @@ func (x *ListStagesResponse) String() string {
 func (*ListStagesResponse) ProtoMessage() {}
 
 func (x *ListStagesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[23]
+	mi := &file_cc_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1940,7 +1992,7 @@ func (x *ListStagesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListStagesResponse.ProtoReflect.Descriptor instead.
 func (*ListStagesResponse) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{23}
+	return file_cc_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *ListStagesResponse) GetStages() []*StageSummary {
@@ -1959,7 +2011,7 @@ type GetStageDetailRequest struct {
 
 func (x *GetStageDetailRequest) Reset() {
 	*x = GetStageDetailRequest{}
-	mi := &file_cc_proto_msgTypes[24]
+	mi := &file_cc_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1971,7 +2023,7 @@ func (x *GetStageDetailRequest) String() string {
 func (*GetStageDetailRequest) ProtoMessage() {}
 
 func (x *GetStageDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[24]
+	mi := &file_cc_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1984,7 +2036,7 @@ func (x *GetStageDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStageDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetStageDetailRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{24}
+	return file_cc_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetStageDetailRequest) GetStageId() string {
@@ -2009,7 +2061,7 @@ type ListUnitsRequest struct {
 
 func (x *ListUnitsRequest) Reset() {
 	*x = ListUnitsRequest{}
-	mi := &file_cc_proto_msgTypes[25]
+	mi := &file_cc_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2021,7 +2073,7 @@ func (x *ListUnitsRequest) String() string {
 func (*ListUnitsRequest) ProtoMessage() {}
 
 func (x *ListUnitsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[25]
+	mi := &file_cc_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2034,7 +2086,7 @@ func (x *ListUnitsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUnitsRequest.ProtoReflect.Descriptor instead.
 func (*ListUnitsRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{25}
+	return file_cc_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ListUnitsRequest) GetFilter() isListUnitsRequest_Filter {
@@ -2101,7 +2153,7 @@ type ListUnitsResponse struct {
 
 func (x *ListUnitsResponse) Reset() {
 	*x = ListUnitsResponse{}
-	mi := &file_cc_proto_msgTypes[26]
+	mi := &file_cc_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2113,7 +2165,7 @@ func (x *ListUnitsResponse) String() string {
 func (*ListUnitsResponse) ProtoMessage() {}
 
 func (x *ListUnitsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[26]
+	mi := &file_cc_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2126,7 +2178,7 @@ func (x *ListUnitsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListUnitsResponse.ProtoReflect.Descriptor instead.
 func (*ListUnitsResponse) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{26}
+	return file_cc_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ListUnitsResponse) GetUnits() []*UnitSummary {
@@ -2148,7 +2200,7 @@ type CreateUploadURLRequest struct {
 
 func (x *CreateUploadURLRequest) Reset() {
 	*x = CreateUploadURLRequest{}
-	mi := &file_cc_proto_msgTypes[27]
+	mi := &file_cc_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2160,7 +2212,7 @@ func (x *CreateUploadURLRequest) String() string {
 func (*CreateUploadURLRequest) ProtoMessage() {}
 
 func (x *CreateUploadURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[27]
+	mi := &file_cc_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2173,7 +2225,7 @@ func (x *CreateUploadURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUploadURLRequest.ProtoReflect.Descriptor instead.
 func (*CreateUploadURLRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{27}
+	return file_cc_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *CreateUploadURLRequest) GetFileName() string {
@@ -2217,7 +2269,7 @@ type CreateUploadURLResponse struct {
 
 func (x *CreateUploadURLResponse) Reset() {
 	*x = CreateUploadURLResponse{}
-	mi := &file_cc_proto_msgTypes[28]
+	mi := &file_cc_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2229,7 +2281,7 @@ func (x *CreateUploadURLResponse) String() string {
 func (*CreateUploadURLResponse) ProtoMessage() {}
 
 func (x *CreateUploadURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[28]
+	mi := &file_cc_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2242,7 +2294,7 @@ func (x *CreateUploadURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateUploadURLResponse.ProtoReflect.Descriptor instead.
 func (*CreateUploadURLResponse) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{28}
+	return file_cc_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *CreateUploadURLResponse) GetBucketName() string {
@@ -2289,7 +2341,7 @@ type GetPublicURLRequest struct {
 
 func (x *GetPublicURLRequest) Reset() {
 	*x = GetPublicURLRequest{}
-	mi := &file_cc_proto_msgTypes[29]
+	mi := &file_cc_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2301,7 +2353,7 @@ func (x *GetPublicURLRequest) String() string {
 func (*GetPublicURLRequest) ProtoMessage() {}
 
 func (x *GetPublicURLRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[29]
+	mi := &file_cc_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2314,7 +2366,7 @@ func (x *GetPublicURLRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPublicURLRequest.ProtoReflect.Descriptor instead.
 func (*GetPublicURLRequest) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{29}
+	return file_cc_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *GetPublicURLRequest) GetPipelineId() string {
@@ -2333,7 +2385,7 @@ type GetPublicURLResponse struct {
 
 func (x *GetPublicURLResponse) Reset() {
 	*x = GetPublicURLResponse{}
-	mi := &file_cc_proto_msgTypes[30]
+	mi := &file_cc_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2345,7 +2397,7 @@ func (x *GetPublicURLResponse) String() string {
 func (*GetPublicURLResponse) ProtoMessage() {}
 
 func (x *GetPublicURLResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cc_proto_msgTypes[30]
+	mi := &file_cc_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2358,7 +2410,7 @@ func (x *GetPublicURLResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetPublicURLResponse.ProtoReflect.Descriptor instead.
 func (*GetPublicURLResponse) Descriptor() ([]byte, []int) {
-	return file_cc_proto_rawDescGZIP(), []int{30}
+	return file_cc_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *GetPublicURLResponse) GetPublicUrl() string {
@@ -2425,17 +2477,21 @@ const file_cc_proto_rawDesc = "" +
 	"\tname_hint\x18\x02 \x01(\tR\bnameHint\x12&\n" +
 	"\x0fpdf_template_id\x18\x03 \x01(\tR\rpdfTemplateId\x127\n" +
 	"\x18review_stripe_product_id\x18\x04 \x01(\tR\x15reviewStripeProductId\x123\n" +
-	"\x16review_stripe_price_id\x18\x05 \x01(\tR\x13reviewStripePriceId\"\xc5\x02\n" +
+	"\x16review_stripe_price_id\x18\x05 \x01(\tR\x13reviewStripePriceId\"\x9d\x02\n" +
 	"\x1aCreatePipelineDraftRequest\x12#\n" +
 	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\x12,\n" +
-	"\x12from_pipeline_guid\x18\x03 \x01(\tR\x10fromPipelineGuid\x12\x1f\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
 	"\vpipeline_id\x18\x04 \x01(\tR\n" +
 	"pipelineId\x12#\n" +
 	"\rpipeline_guid\x18\x05 \x01(\tR\fpipelineGuid\x12\x18\n" +
 	"\arespath\x18\x06 \x01(\tR\arespath\x120\n" +
 	"\x14thumbnail_object_key\x18\a \x01(\tR\x12thumbnailObjectKey\x12.\n" +
-	"\x13thumbnail_file_hash\x18\b \x01(\tR\x11thumbnailFileHash\"\xa2\x03\n" +
+	"\x13thumbnail_file_hash\x18\b \x01(\tR\x11thumbnailFileHashJ\x04\b\x03\x10\x04\"~\n" +
+	"\x1dDuplicatePipelineDraftRequest\x12(\n" +
+	"\x10from_pipeline_id\x18\x01 \x01(\tR\x0efromPipelineId\x12\x1f\n" +
+	"\vpipeline_id\x18\x02 \x01(\tR\n" +
+	"pipelineId\x12\x12\n" +
+	"\x04name\x18\x03 \x01(\tR\x04name\"\xa2\x03\n" +
 	"\x1eUpdatePipelineStructureRequest\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
 	"pipelineId\x12(\n" +
@@ -2607,9 +2663,11 @@ const file_cc_proto_rawDesc = "" +
 	"pipelineId\"5\n" +
 	"\x14GetPublicURLResponse\x12\x1d\n" +
 	"\n" +
-	"public_url\x18\x01 \x01(\tR\tpublicUrl2\xef\t\n" +
+	"public_url\x18\x01 \x01(\tR\tpublicUrl2\xc2\n" +
+	"\n" +
 	"\tCCService\x12K\n" +
-	"\x13CreatePipelineDraft\x12\x1f.gcc.CreatePipelineDraftRequest\x1a\x13.gcc.PipelineConfig\x12S\n" +
+	"\x13CreatePipelineDraft\x12\x1f.gcc.CreatePipelineDraftRequest\x1a\x13.gcc.PipelineConfig\x12Q\n" +
+	"\x16DuplicatePipelineDraft\x12\".gcc.DuplicatePipelineDraftRequest\x1a\x13.gcc.PipelineConfig\x12S\n" +
 	"\x17UpdatePipelineStructure\x12#.gcc.UpdatePipelineStructureRequest\x1a\x13.gcc.PipelineConfig\x12C\n" +
 	"\x0fPublishPipeline\x12\x1b.gcc.PublishPipelineRequest\x1a\x13.gcc.PipelineConfig\x12J\n" +
 	"\x11DeprecatePipeline\x12\x1d.gcc.DeprecatePipelineRequest\x1a\x16.google.protobuf.Empty\x12D\n" +
@@ -2641,41 +2699,42 @@ func file_cc_proto_rawDescGZIP() []byte {
 	return file_cc_proto_rawDescData
 }
 
-var file_cc_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
+var file_cc_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
 var file_cc_proto_goTypes = []any{
 	(*PipelineConfig)(nil),                      // 0: gcc.PipelineConfig
 	(*StageConfig)(nil),                         // 1: gcc.StageConfig
 	(*UnitConfig)(nil),                          // 2: gcc.UnitConfig
 	(*Qualification)(nil),                       // 3: gcc.Qualification
 	(*CreatePipelineDraftRequest)(nil),          // 4: gcc.CreatePipelineDraftRequest
-	(*UpdatePipelineStructureRequest)(nil),      // 5: gcc.UpdatePipelineStructureRequest
-	(*PublishPipelineRequest)(nil),              // 6: gcc.PublishPipelineRequest
-	(*DeprecatePipelineRequest)(nil),            // 7: gcc.DeprecatePipelineRequest
-	(*DeletePipelineRequest)(nil),               // 8: gcc.DeletePipelineRequest
-	(*UpdateMetadataRequest)(nil),               // 9: gcc.UpdateMetadataRequest
-	(*UnitStripeUpdate)(nil),                    // 10: gcc.UnitStripeUpdate
-	(*GetPipelineRequest)(nil),                  // 11: gcc.GetPipelineRequest
-	(*GetPipelineFinalEligibilityRequest)(nil),  // 12: gcc.GetPipelineFinalEligibilityRequest
-	(*GetPipelineFinalEligibilityResponse)(nil), // 13: gcc.GetPipelineFinalEligibilityResponse
-	(*ListPipelinesRequest)(nil),                // 14: gcc.ListPipelinesRequest
-	(*ListPipelinesAdminRequest)(nil),           // 15: gcc.ListPipelinesAdminRequest
-	(*ListPipelinesResponse)(nil),               // 16: gcc.ListPipelinesResponse
-	(*PipelineSummary)(nil),                     // 17: gcc.PipelineSummary
-	(*StageSummary)(nil),                        // 18: gcc.StageSummary
-	(*UnitSummary)(nil),                         // 19: gcc.UnitSummary
-	(*GetPipelineDetailRequest)(nil),            // 20: gcc.GetPipelineDetailRequest
-	(*GetUnitDetailRequest)(nil),                // 21: gcc.GetUnitDetailRequest
-	(*ListStagesRequest)(nil),                   // 22: gcc.ListStagesRequest
-	(*ListStagesResponse)(nil),                  // 23: gcc.ListStagesResponse
-	(*GetStageDetailRequest)(nil),               // 24: gcc.GetStageDetailRequest
-	(*ListUnitsRequest)(nil),                    // 25: gcc.ListUnitsRequest
-	(*ListUnitsResponse)(nil),                   // 26: gcc.ListUnitsResponse
-	(*CreateUploadURLRequest)(nil),              // 27: gcc.CreateUploadURLRequest
-	(*CreateUploadURLResponse)(nil),             // 28: gcc.CreateUploadURLResponse
-	(*GetPublicURLRequest)(nil),                 // 29: gcc.GetPublicURLRequest
-	(*GetPublicURLResponse)(nil),                // 30: gcc.GetPublicURLResponse
-	nil,                                         // 31: gcc.CreateUploadURLResponse.SignedHeadersEntry
-	(*emptypb.Empty)(nil),                       // 32: google.protobuf.Empty
+	(*DuplicatePipelineDraftRequest)(nil),       // 5: gcc.DuplicatePipelineDraftRequest
+	(*UpdatePipelineStructureRequest)(nil),      // 6: gcc.UpdatePipelineStructureRequest
+	(*PublishPipelineRequest)(nil),              // 7: gcc.PublishPipelineRequest
+	(*DeprecatePipelineRequest)(nil),            // 8: gcc.DeprecatePipelineRequest
+	(*DeletePipelineRequest)(nil),               // 9: gcc.DeletePipelineRequest
+	(*UpdateMetadataRequest)(nil),               // 10: gcc.UpdateMetadataRequest
+	(*UnitStripeUpdate)(nil),                    // 11: gcc.UnitStripeUpdate
+	(*GetPipelineRequest)(nil),                  // 12: gcc.GetPipelineRequest
+	(*GetPipelineFinalEligibilityRequest)(nil),  // 13: gcc.GetPipelineFinalEligibilityRequest
+	(*GetPipelineFinalEligibilityResponse)(nil), // 14: gcc.GetPipelineFinalEligibilityResponse
+	(*ListPipelinesRequest)(nil),                // 15: gcc.ListPipelinesRequest
+	(*ListPipelinesAdminRequest)(nil),           // 16: gcc.ListPipelinesAdminRequest
+	(*ListPipelinesResponse)(nil),               // 17: gcc.ListPipelinesResponse
+	(*PipelineSummary)(nil),                     // 18: gcc.PipelineSummary
+	(*StageSummary)(nil),                        // 19: gcc.StageSummary
+	(*UnitSummary)(nil),                         // 20: gcc.UnitSummary
+	(*GetPipelineDetailRequest)(nil),            // 21: gcc.GetPipelineDetailRequest
+	(*GetUnitDetailRequest)(nil),                // 22: gcc.GetUnitDetailRequest
+	(*ListStagesRequest)(nil),                   // 23: gcc.ListStagesRequest
+	(*ListStagesResponse)(nil),                  // 24: gcc.ListStagesResponse
+	(*GetStageDetailRequest)(nil),               // 25: gcc.GetStageDetailRequest
+	(*ListUnitsRequest)(nil),                    // 26: gcc.ListUnitsRequest
+	(*ListUnitsResponse)(nil),                   // 27: gcc.ListUnitsResponse
+	(*CreateUploadURLRequest)(nil),              // 28: gcc.CreateUploadURLRequest
+	(*CreateUploadURLResponse)(nil),             // 29: gcc.CreateUploadURLResponse
+	(*GetPublicURLRequest)(nil),                 // 30: gcc.GetPublicURLRequest
+	(*GetPublicURLResponse)(nil),                // 31: gcc.GetPublicURLResponse
+	nil,                                         // 32: gcc.CreateUploadURLResponse.SignedHeadersEntry
+	(*emptypb.Empty)(nil),                       // 33: google.protobuf.Empty
 }
 var file_cc_proto_depIdxs = []int32{
 	3,  // 0: gcc.PipelineConfig.unlock_quals:type_name -> gcc.Qualification
@@ -2687,49 +2746,51 @@ var file_cc_proto_depIdxs = []int32{
 	3,  // 6: gcc.UpdatePipelineStructureRequest.unlock_quals:type_name -> gcc.Qualification
 	3,  // 7: gcc.UpdatePipelineStructureRequest.certs_quals:type_name -> gcc.Qualification
 	3,  // 8: gcc.UpdatePipelineStructureRequest.certs:type_name -> gcc.Qualification
-	10, // 9: gcc.UpdateMetadataRequest.unit_updates:type_name -> gcc.UnitStripeUpdate
+	11, // 9: gcc.UpdateMetadataRequest.unit_updates:type_name -> gcc.UnitStripeUpdate
 	3,  // 10: gcc.GetPipelineFinalEligibilityResponse.certs_quals:type_name -> gcc.Qualification
 	3,  // 11: gcc.GetPipelineFinalEligibilityResponse.certs:type_name -> gcc.Qualification
-	17, // 12: gcc.ListPipelinesResponse.pipelines:type_name -> gcc.PipelineSummary
-	18, // 13: gcc.ListStagesResponse.stages:type_name -> gcc.StageSummary
-	19, // 14: gcc.ListUnitsResponse.units:type_name -> gcc.UnitSummary
-	31, // 15: gcc.CreateUploadURLResponse.signed_headers:type_name -> gcc.CreateUploadURLResponse.SignedHeadersEntry
+	18, // 12: gcc.ListPipelinesResponse.pipelines:type_name -> gcc.PipelineSummary
+	19, // 13: gcc.ListStagesResponse.stages:type_name -> gcc.StageSummary
+	20, // 14: gcc.ListUnitsResponse.units:type_name -> gcc.UnitSummary
+	32, // 15: gcc.CreateUploadURLResponse.signed_headers:type_name -> gcc.CreateUploadURLResponse.SignedHeadersEntry
 	4,  // 16: gcc.CCService.CreatePipelineDraft:input_type -> gcc.CreatePipelineDraftRequest
-	5,  // 17: gcc.CCService.UpdatePipelineStructure:input_type -> gcc.UpdatePipelineStructureRequest
-	6,  // 18: gcc.CCService.PublishPipeline:input_type -> gcc.PublishPipelineRequest
-	7,  // 19: gcc.CCService.DeprecatePipeline:input_type -> gcc.DeprecatePipelineRequest
-	8,  // 20: gcc.CCService.DeletePipeline:input_type -> gcc.DeletePipelineRequest
-	9,  // 21: gcc.CCService.UpdatePipelineMetadata:input_type -> gcc.UpdateMetadataRequest
-	11, // 22: gcc.CCService.GetPipeline:input_type -> gcc.GetPipelineRequest
-	20, // 23: gcc.CCService.GetPipelineDetail:input_type -> gcc.GetPipelineDetailRequest
-	12, // 24: gcc.CCService.GetPipelineFinalEligibility:input_type -> gcc.GetPipelineFinalEligibilityRequest
-	14, // 25: gcc.CCService.ListPipelines:input_type -> gcc.ListPipelinesRequest
-	15, // 26: gcc.CCService.ListPipelinesAdmin:input_type -> gcc.ListPipelinesAdminRequest
-	22, // 27: gcc.CCService.ListStages:input_type -> gcc.ListStagesRequest
-	24, // 28: gcc.CCService.GetStageDetail:input_type -> gcc.GetStageDetailRequest
-	25, // 29: gcc.CCService.ListUnits:input_type -> gcc.ListUnitsRequest
-	21, // 30: gcc.CCService.GetUnitDetail:input_type -> gcc.GetUnitDetailRequest
-	27, // 31: gcc.CCService.CreateUploadURL:input_type -> gcc.CreateUploadURLRequest
-	29, // 32: gcc.CCService.GetPublicURL:input_type -> gcc.GetPublicURLRequest
-	0,  // 33: gcc.CCService.CreatePipelineDraft:output_type -> gcc.PipelineConfig
-	0,  // 34: gcc.CCService.UpdatePipelineStructure:output_type -> gcc.PipelineConfig
-	0,  // 35: gcc.CCService.PublishPipeline:output_type -> gcc.PipelineConfig
-	32, // 36: gcc.CCService.DeprecatePipeline:output_type -> google.protobuf.Empty
-	32, // 37: gcc.CCService.DeletePipeline:output_type -> google.protobuf.Empty
-	32, // 38: gcc.CCService.UpdatePipelineMetadata:output_type -> google.protobuf.Empty
-	0,  // 39: gcc.CCService.GetPipeline:output_type -> gcc.PipelineConfig
-	0,  // 40: gcc.CCService.GetPipelineDetail:output_type -> gcc.PipelineConfig
-	13, // 41: gcc.CCService.GetPipelineFinalEligibility:output_type -> gcc.GetPipelineFinalEligibilityResponse
-	16, // 42: gcc.CCService.ListPipelines:output_type -> gcc.ListPipelinesResponse
-	16, // 43: gcc.CCService.ListPipelinesAdmin:output_type -> gcc.ListPipelinesResponse
-	23, // 44: gcc.CCService.ListStages:output_type -> gcc.ListStagesResponse
-	1,  // 45: gcc.CCService.GetStageDetail:output_type -> gcc.StageConfig
-	26, // 46: gcc.CCService.ListUnits:output_type -> gcc.ListUnitsResponse
-	2,  // 47: gcc.CCService.GetUnitDetail:output_type -> gcc.UnitConfig
-	28, // 48: gcc.CCService.CreateUploadURL:output_type -> gcc.CreateUploadURLResponse
-	30, // 49: gcc.CCService.GetPublicURL:output_type -> gcc.GetPublicURLResponse
-	33, // [33:50] is the sub-list for method output_type
-	16, // [16:33] is the sub-list for method input_type
+	5,  // 17: gcc.CCService.DuplicatePipelineDraft:input_type -> gcc.DuplicatePipelineDraftRequest
+	6,  // 18: gcc.CCService.UpdatePipelineStructure:input_type -> gcc.UpdatePipelineStructureRequest
+	7,  // 19: gcc.CCService.PublishPipeline:input_type -> gcc.PublishPipelineRequest
+	8,  // 20: gcc.CCService.DeprecatePipeline:input_type -> gcc.DeprecatePipelineRequest
+	9,  // 21: gcc.CCService.DeletePipeline:input_type -> gcc.DeletePipelineRequest
+	10, // 22: gcc.CCService.UpdatePipelineMetadata:input_type -> gcc.UpdateMetadataRequest
+	12, // 23: gcc.CCService.GetPipeline:input_type -> gcc.GetPipelineRequest
+	21, // 24: gcc.CCService.GetPipelineDetail:input_type -> gcc.GetPipelineDetailRequest
+	13, // 25: gcc.CCService.GetPipelineFinalEligibility:input_type -> gcc.GetPipelineFinalEligibilityRequest
+	15, // 26: gcc.CCService.ListPipelines:input_type -> gcc.ListPipelinesRequest
+	16, // 27: gcc.CCService.ListPipelinesAdmin:input_type -> gcc.ListPipelinesAdminRequest
+	23, // 28: gcc.CCService.ListStages:input_type -> gcc.ListStagesRequest
+	25, // 29: gcc.CCService.GetStageDetail:input_type -> gcc.GetStageDetailRequest
+	26, // 30: gcc.CCService.ListUnits:input_type -> gcc.ListUnitsRequest
+	22, // 31: gcc.CCService.GetUnitDetail:input_type -> gcc.GetUnitDetailRequest
+	28, // 32: gcc.CCService.CreateUploadURL:input_type -> gcc.CreateUploadURLRequest
+	30, // 33: gcc.CCService.GetPublicURL:input_type -> gcc.GetPublicURLRequest
+	0,  // 34: gcc.CCService.CreatePipelineDraft:output_type -> gcc.PipelineConfig
+	0,  // 35: gcc.CCService.DuplicatePipelineDraft:output_type -> gcc.PipelineConfig
+	0,  // 36: gcc.CCService.UpdatePipelineStructure:output_type -> gcc.PipelineConfig
+	0,  // 37: gcc.CCService.PublishPipeline:output_type -> gcc.PipelineConfig
+	33, // 38: gcc.CCService.DeprecatePipeline:output_type -> google.protobuf.Empty
+	33, // 39: gcc.CCService.DeletePipeline:output_type -> google.protobuf.Empty
+	33, // 40: gcc.CCService.UpdatePipelineMetadata:output_type -> google.protobuf.Empty
+	0,  // 41: gcc.CCService.GetPipeline:output_type -> gcc.PipelineConfig
+	0,  // 42: gcc.CCService.GetPipelineDetail:output_type -> gcc.PipelineConfig
+	14, // 43: gcc.CCService.GetPipelineFinalEligibility:output_type -> gcc.GetPipelineFinalEligibilityResponse
+	17, // 44: gcc.CCService.ListPipelines:output_type -> gcc.ListPipelinesResponse
+	17, // 45: gcc.CCService.ListPipelinesAdmin:output_type -> gcc.ListPipelinesResponse
+	24, // 46: gcc.CCService.ListStages:output_type -> gcc.ListStagesResponse
+	1,  // 47: gcc.CCService.GetStageDetail:output_type -> gcc.StageConfig
+	27, // 48: gcc.CCService.ListUnits:output_type -> gcc.ListUnitsResponse
+	2,  // 49: gcc.CCService.GetUnitDetail:output_type -> gcc.UnitConfig
+	29, // 50: gcc.CCService.CreateUploadURL:output_type -> gcc.CreateUploadURLResponse
+	31, // 51: gcc.CCService.GetPublicURL:output_type -> gcc.GetPublicURLResponse
+	34, // [34:52] is the sub-list for method output_type
+	16, // [16:34] is the sub-list for method input_type
 	16, // [16:16] is the sub-list for extension type_name
 	16, // [16:16] is the sub-list for extension extendee
 	0,  // [0:16] is the sub-list for field type_name
@@ -2740,18 +2801,18 @@ func file_cc_proto_init() {
 	if File_cc_proto != nil {
 		return
 	}
-	file_cc_proto_msgTypes[9].OneofWrappers = []any{}
 	file_cc_proto_msgTypes[10].OneofWrappers = []any{}
-	file_cc_proto_msgTypes[11].OneofWrappers = []any{
+	file_cc_proto_msgTypes[11].OneofWrappers = []any{}
+	file_cc_proto_msgTypes[12].OneofWrappers = []any{
 		(*GetPipelineRequest_PipelineId)(nil),
 		(*GetPipelineRequest_PipelineGuid)(nil),
 	}
-	file_cc_proto_msgTypes[15].OneofWrappers = []any{}
-	file_cc_proto_msgTypes[20].OneofWrappers = []any{
+	file_cc_proto_msgTypes[16].OneofWrappers = []any{}
+	file_cc_proto_msgTypes[21].OneofWrappers = []any{
 		(*GetPipelineDetailRequest_PipelineId)(nil),
 		(*GetPipelineDetailRequest_PipelineGuid)(nil),
 	}
-	file_cc_proto_msgTypes[25].OneofWrappers = []any{
+	file_cc_proto_msgTypes[26].OneofWrappers = []any{
 		(*ListUnitsRequest_StageId)(nil),
 		(*ListUnitsRequest_PipelineId)(nil),
 	}
@@ -2761,7 +2822,7 @@ func file_cc_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cc_proto_rawDesc), len(file_cc_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   32,
+			NumMessages:   33,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

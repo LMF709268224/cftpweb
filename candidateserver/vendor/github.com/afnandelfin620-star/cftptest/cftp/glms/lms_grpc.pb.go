@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	LmsService_CreateCourseDraftAdmin_FullMethodName                 = "/glms.LmsService/CreateCourseDraftAdmin"
+	LmsService_DuplicateCourseDraftAdmin_FullMethodName              = "/glms.LmsService/DuplicateCourseDraftAdmin"
 	LmsService_UpdateCourseAdmin_FullMethodName                      = "/glms.LmsService/UpdateCourseAdmin"
 	LmsService_DeleteCourseAdmin_FullMethodName                      = "/glms.LmsService/DeleteCourseAdmin"
 	LmsService_PublishCourseAdmin_FullMethodName                     = "/glms.LmsService/PublishCourseAdmin"
@@ -113,6 +114,7 @@ const (
 	LmsService_DeleteResourcePackFileAdmin_FullMethodName            = "/glms.LmsService/DeleteResourcePackFileAdmin"
 	LmsService_GetResourcePackFileAdmin_FullMethodName               = "/glms.LmsService/GetResourcePackFileAdmin"
 	LmsService_ListResourcePackFilesAdmin_FullMethodName             = "/glms.LmsService/ListResourcePackFilesAdmin"
+	LmsService_UpdateResourcePackFileThumbnailAdmin_FullMethodName   = "/glms.LmsService/UpdateResourcePackFileThumbnailAdmin"
 	LmsService_GetCourseSummary_FullMethodName                       = "/glms.LmsService/GetCourseSummary"
 	LmsService_GetCourseDetail_FullMethodName                        = "/glms.LmsService/GetCourseDetail"
 	LmsService_ListCourses_FullMethodName                            = "/glms.LmsService/ListCourses"
@@ -150,6 +152,7 @@ type LmsServiceClient interface {
 	// 1. 管理端 & 内部微服务调用接口 (Admin & Internal Services - Suffixed with Admin)
 	// ==========================================
 	CreateCourseDraftAdmin(ctx context.Context, in *CreateCourseDraftRequest, opts ...grpc.CallOption) (*Course, error)
+	DuplicateCourseDraftAdmin(ctx context.Context, in *DuplicateCourseDraftRequest, opts ...grpc.CallOption) (*Course, error)
 	UpdateCourseAdmin(ctx context.Context, in *UpdateCourseRequest, opts ...grpc.CallOption) (*UpdateCourseResponse, error)
 	DeleteCourseAdmin(ctx context.Context, in *DeleteCourseRequest, opts ...grpc.CallOption) (*DeleteCourseResponse, error)
 	PublishCourseAdmin(ctx context.Context, in *PublishCourseRequest, opts ...grpc.CallOption) (*PublishCourseResponse, error)
@@ -243,6 +246,7 @@ type LmsServiceClient interface {
 	DeleteResourcePackFileAdmin(ctx context.Context, in *DeleteResourcePackFileRequest, opts ...grpc.CallOption) (*DeleteResourcePackFileResponse, error)
 	GetResourcePackFileAdmin(ctx context.Context, in *GetResourcePackFileRequest, opts ...grpc.CallOption) (*ResourcePackFile, error)
 	ListResourcePackFilesAdmin(ctx context.Context, in *ListResourcePackFilesRequest, opts ...grpc.CallOption) (*ListResourcePackFilesResponse, error)
+	UpdateResourcePackFileThumbnailAdmin(ctx context.Context, in *UpdateResourcePackFileThumbnailRequest, opts ...grpc.CallOption) (*ResourcePackFile, error)
 	// ==========================================
 	// 2. 考生端接口 (Candidate-facing APIs - check candidateUlid & Casdoor permissions)
 	// ==========================================
@@ -288,6 +292,16 @@ func (c *lmsServiceClient) CreateCourseDraftAdmin(ctx context.Context, in *Creat
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Course)
 	err := c.cc.Invoke(ctx, LmsService_CreateCourseDraftAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lmsServiceClient) DuplicateCourseDraftAdmin(ctx context.Context, in *DuplicateCourseDraftRequest, opts ...grpc.CallOption) (*Course, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Course)
+	err := c.cc.Invoke(ctx, LmsService_DuplicateCourseDraftAdmin_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -1224,6 +1238,16 @@ func (c *lmsServiceClient) ListResourcePackFilesAdmin(ctx context.Context, in *L
 	return out, nil
 }
 
+func (c *lmsServiceClient) UpdateResourcePackFileThumbnailAdmin(ctx context.Context, in *UpdateResourcePackFileThumbnailRequest, opts ...grpc.CallOption) (*ResourcePackFile, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ResourcePackFile)
+	err := c.cc.Invoke(ctx, LmsService_UpdateResourcePackFileThumbnailAdmin_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *lmsServiceClient) GetCourseSummary(ctx context.Context, in *GetCourseSummaryCandidateRequest, opts ...grpc.CallOption) (*GetCourseSummaryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetCourseSummaryResponse)
@@ -1502,6 +1526,7 @@ type LmsServiceServer interface {
 	// 1. 管理端 & 内部微服务调用接口 (Admin & Internal Services - Suffixed with Admin)
 	// ==========================================
 	CreateCourseDraftAdmin(context.Context, *CreateCourseDraftRequest) (*Course, error)
+	DuplicateCourseDraftAdmin(context.Context, *DuplicateCourseDraftRequest) (*Course, error)
 	UpdateCourseAdmin(context.Context, *UpdateCourseRequest) (*UpdateCourseResponse, error)
 	DeleteCourseAdmin(context.Context, *DeleteCourseRequest) (*DeleteCourseResponse, error)
 	PublishCourseAdmin(context.Context, *PublishCourseRequest) (*PublishCourseResponse, error)
@@ -1595,6 +1620,7 @@ type LmsServiceServer interface {
 	DeleteResourcePackFileAdmin(context.Context, *DeleteResourcePackFileRequest) (*DeleteResourcePackFileResponse, error)
 	GetResourcePackFileAdmin(context.Context, *GetResourcePackFileRequest) (*ResourcePackFile, error)
 	ListResourcePackFilesAdmin(context.Context, *ListResourcePackFilesRequest) (*ListResourcePackFilesResponse, error)
+	UpdateResourcePackFileThumbnailAdmin(context.Context, *UpdateResourcePackFileThumbnailRequest) (*ResourcePackFile, error)
 	// ==========================================
 	// 2. 考生端接口 (Candidate-facing APIs - check candidateUlid & Casdoor permissions)
 	// ==========================================
@@ -1638,6 +1664,9 @@ type UnimplementedLmsServiceServer struct{}
 
 func (UnimplementedLmsServiceServer) CreateCourseDraftAdmin(context.Context, *CreateCourseDraftRequest) (*Course, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateCourseDraftAdmin not implemented")
+}
+func (UnimplementedLmsServiceServer) DuplicateCourseDraftAdmin(context.Context, *DuplicateCourseDraftRequest) (*Course, error) {
+	return nil, status.Error(codes.Unimplemented, "method DuplicateCourseDraftAdmin not implemented")
 }
 func (UnimplementedLmsServiceServer) UpdateCourseAdmin(context.Context, *UpdateCourseRequest) (*UpdateCourseResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateCourseAdmin not implemented")
@@ -1918,6 +1947,9 @@ func (UnimplementedLmsServiceServer) GetResourcePackFileAdmin(context.Context, *
 func (UnimplementedLmsServiceServer) ListResourcePackFilesAdmin(context.Context, *ListResourcePackFilesRequest) (*ListResourcePackFilesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListResourcePackFilesAdmin not implemented")
 }
+func (UnimplementedLmsServiceServer) UpdateResourcePackFileThumbnailAdmin(context.Context, *UpdateResourcePackFileThumbnailRequest) (*ResourcePackFile, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateResourcePackFileThumbnailAdmin not implemented")
+}
 func (UnimplementedLmsServiceServer) GetCourseSummary(context.Context, *GetCourseSummaryCandidateRequest) (*GetCourseSummaryResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCourseSummary not implemented")
 }
@@ -2034,6 +2066,24 @@ func _LmsService_CreateCourseDraftAdmin_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LmsServiceServer).CreateCourseDraftAdmin(ctx, req.(*CreateCourseDraftRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LmsService_DuplicateCourseDraftAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DuplicateCourseDraftRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).DuplicateCourseDraftAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_DuplicateCourseDraftAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).DuplicateCourseDraftAdmin(ctx, req.(*DuplicateCourseDraftRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -3712,6 +3762,24 @@ func _LmsService_ListResourcePackFilesAdmin_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LmsService_UpdateResourcePackFileThumbnailAdmin_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateResourcePackFileThumbnailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LmsServiceServer).UpdateResourcePackFileThumbnailAdmin(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LmsService_UpdateResourcePackFileThumbnailAdmin_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LmsServiceServer).UpdateResourcePackFileThumbnailAdmin(ctx, req.(*UpdateResourcePackFileThumbnailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _LmsService_GetCourseSummary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCourseSummaryCandidateRequest)
 	if err := dec(in); err != nil {
@@ -4210,6 +4278,10 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _LmsService_CreateCourseDraftAdmin_Handler,
 		},
 		{
+			MethodName: "DuplicateCourseDraftAdmin",
+			Handler:    _LmsService_DuplicateCourseDraftAdmin_Handler,
+		},
+		{
 			MethodName: "UpdateCourseAdmin",
 			Handler:    _LmsService_UpdateCourseAdmin_Handler,
 		},
@@ -4580,6 +4652,10 @@ var LmsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListResourcePackFilesAdmin",
 			Handler:    _LmsService_ListResourcePackFilesAdmin_Handler,
+		},
+		{
+			MethodName: "UpdateResourcePackFileThumbnailAdmin",
+			Handler:    _LmsService_UpdateResourcePackFileThumbnailAdmin_Handler,
 		},
 		{
 			MethodName: "GetCourseSummary",

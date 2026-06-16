@@ -88,6 +88,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		amount := 0.0
+		currency := "USD"
 		actualOrderUlid := item.GetPipelineOrderUlid() // default fallback
 		// 获取真实的支付订单来拿正确的金额 (Total Amount) 和真实的 Order ID (用于发票)
 		listOrdersResp, err := h.Mall.ListOrders(r.Context(), &mallpb.ListOrdersRequest{
@@ -98,6 +99,9 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		if err == nil && listOrdersResp != nil && len(listOrdersResp.GetItems()) > 0 {
 			realOrder := listOrdersResp.GetItems()[0]
 			amount = float64(realOrder.GetAmountMinor()) / 100.0
+			if strings.TrimSpace(realOrder.GetCurrencyCode()) != "" {
+				currency = strings.ToUpper(strings.TrimSpace(realOrder.GetCurrencyCode()))
+			}
 			actualOrderUlid = realOrder.GetOrderUlid()
 		} else {
 			// 如果由于某种原因真实支付订单还未生成（比如刚创建还在 pending），回退使用 PreviewPayment
@@ -107,6 +111,9 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			})
 			if err == nil && previewResp != nil {
 				amount = float64(previewResp.GetTotal()) / 100.0
+				if strings.TrimSpace(previewResp.GetCurrency()) != "" {
+					currency = strings.ToUpper(strings.TrimSpace(previewResp.GetCurrency()))
+				}
 			}
 		}
 
@@ -128,6 +135,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:     createdAt,
 			PaymentMethod: item.GetPaymentMode(),
 			Amount:        amount,
+			Currency:      currency,
 		})
 	}
 

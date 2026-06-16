@@ -490,6 +490,7 @@ type OrderItem struct {
 	CreatedAt     string  `json:"created_at"`
 	PaymentMethod string  `json:"payment_method"`
 	Amount        float64 `json:"amount"`
+	Currency      string  `json:"currency"`
 }
 
 type PurchasePipelineReq struct {

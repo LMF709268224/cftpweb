@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	CCService_CreatePipelineDraft_FullMethodName         = "/gcc.CCService/CreatePipelineDraft"
+	CCService_DuplicatePipelineDraft_FullMethodName      = "/gcc.CCService/DuplicatePipelineDraft"
 	CCService_UpdatePipelineStructure_FullMethodName     = "/gcc.CCService/UpdatePipelineStructure"
 	CCService_PublishPipeline_FullMethodName             = "/gcc.CCService/PublishPipeline"
 	CCService_DeprecatePipeline_FullMethodName           = "/gcc.CCService/DeprecatePipeline"
@@ -45,6 +46,8 @@ const (
 type CCServiceClient interface {
 	// 创建管线草稿 (从现有版本复制或全新创建)
 	CreatePipelineDraft(ctx context.Context, in *CreatePipelineDraftRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
+	// 从现有管线版本深拷贝创建新草稿
+	DuplicatePipelineDraft(ctx context.Context, in *DuplicatePipelineDraftRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
 	// 更新管线结构 (仅限草稿态，增加/删除/排序 Stage 或 Unit，修改 Stripe 支付配置与资格要求)
 	UpdatePipelineStructure(ctx context.Context, in *UpdatePipelineStructureRequest, opts ...grpc.CallOption) (*PipelineConfig, error)
 	// 发布新版本 (全量锁定快照，is_current 置为 1，版本号 +1)
@@ -81,6 +84,16 @@ func (c *cCServiceClient) CreatePipelineDraft(ctx context.Context, in *CreatePip
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PipelineConfig)
 	err := c.cc.Invoke(ctx, CCService_CreatePipelineDraft_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cCServiceClient) DuplicatePipelineDraft(ctx context.Context, in *DuplicatePipelineDraftRequest, opts ...grpc.CallOption) (*PipelineConfig, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PipelineConfig)
+	err := c.cc.Invoke(ctx, CCService_DuplicatePipelineDraft_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -253,6 +266,8 @@ func (c *cCServiceClient) GetPublicURL(ctx context.Context, in *GetPublicURLRequ
 type CCServiceServer interface {
 	// 创建管线草稿 (从现有版本复制或全新创建)
 	CreatePipelineDraft(context.Context, *CreatePipelineDraftRequest) (*PipelineConfig, error)
+	// 从现有管线版本深拷贝创建新草稿
+	DuplicatePipelineDraft(context.Context, *DuplicatePipelineDraftRequest) (*PipelineConfig, error)
 	// 更新管线结构 (仅限草稿态，增加/删除/排序 Stage 或 Unit，修改 Stripe 支付配置与资格要求)
 	UpdatePipelineStructure(context.Context, *UpdatePipelineStructureRequest) (*PipelineConfig, error)
 	// 发布新版本 (全量锁定快照，is_current 置为 1，版本号 +1)
@@ -287,6 +302,9 @@ type UnimplementedCCServiceServer struct{}
 
 func (UnimplementedCCServiceServer) CreatePipelineDraft(context.Context, *CreatePipelineDraftRequest) (*PipelineConfig, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreatePipelineDraft not implemented")
+}
+func (UnimplementedCCServiceServer) DuplicatePipelineDraft(context.Context, *DuplicatePipelineDraftRequest) (*PipelineConfig, error) {
+	return nil, status.Error(codes.Unimplemented, "method DuplicatePipelineDraft not implemented")
 }
 func (UnimplementedCCServiceServer) UpdatePipelineStructure(context.Context, *UpdatePipelineStructureRequest) (*PipelineConfig, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdatePipelineStructure not implemented")
@@ -371,6 +389,24 @@ func _CCService_CreatePipelineDraft_Handler(srv interface{}, ctx context.Context
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CCServiceServer).CreatePipelineDraft(ctx, req.(*CreatePipelineDraftRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CCService_DuplicatePipelineDraft_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DuplicatePipelineDraftRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CCServiceServer).DuplicatePipelineDraft(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CCService_DuplicatePipelineDraft_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CCServiceServer).DuplicatePipelineDraft(ctx, req.(*DuplicatePipelineDraftRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -673,6 +709,10 @@ var CCService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreatePipelineDraft",
 			Handler:    _CCService_CreatePipelineDraft_Handler,
+		},
+		{
+			MethodName: "DuplicatePipelineDraft",
+			Handler:    _CCService_DuplicatePipelineDraft_Handler,
 		},
 		{
 			MethodName: "UpdatePipelineStructure",
