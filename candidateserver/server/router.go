@@ -1,6 +1,7 @@
 package server
 
 import (
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -239,12 +240,62 @@ func serveStaticFile(w http.ResponseWriter, r *http.Request, filename string) {
 	} else {
 		w.Header().Set("Cache-Control", "public, max-age=86400")
 	}
-	http.ServeFile(w, r, filename)
+	serveMaybeCompressedFile(w, r, filename)
 }
 
 func serveHTMLFile(w http.ResponseWriter, r *http.Request, filename string) {
 	w.Header().Set("Cache-Control", "no-cache")
+	serveMaybeCompressedFile(w, r, filename)
+}
+
+func serveMaybeCompressedFile(w http.ResponseWriter, r *http.Request, filename string) {
+	if canUsePrecompressedFile(r) {
+		if encoding, compressedFilename, ok := preferredCompressedFile(r, filename); ok {
+			if contentType := mime.TypeByExtension(filepath.Ext(filename)); contentType != "" {
+				w.Header().Set("Content-Type", contentType)
+			}
+			w.Header().Set("Content-Encoding", encoding)
+			w.Header().Add("Vary", "Accept-Encoding")
+			http.ServeFile(w, r, compressedFilename)
+			return
+		}
+	}
+
+	w.Header().Add("Vary", "Accept-Encoding")
 	http.ServeFile(w, r, filename)
+}
+
+func canUsePrecompressedFile(r *http.Request) bool {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		return false
+	}
+	return r.Header.Get("Range") == ""
+}
+
+func preferredCompressedFile(r *http.Request, filename string) (string, string, bool) {
+	acceptEncoding := r.Header.Get("Accept-Encoding")
+	if acceptsEncoding(acceptEncoding, "br") && regularFileExists(filename+".br") {
+		return "br", filename + ".br", true
+	}
+	if acceptsEncoding(acceptEncoding, "gzip") && regularFileExists(filename+".gz") {
+		return "gzip", filename + ".gz", true
+	}
+	return "", "", false
+}
+
+func acceptsEncoding(header string, encoding string) bool {
+	for _, part := range strings.Split(header, ",") {
+		token := strings.TrimSpace(strings.Split(part, ";")[0])
+		if token == encoding || token == "*" {
+			return true
+		}
+	}
+	return false
+}
+
+func regularFileExists(filename string) bool {
+	stat, err := os.Stat(filename)
+	return err == nil && !stat.IsDir()
 }
 
 func safeJoin(baseDir, requestPath string) (string, bool) {

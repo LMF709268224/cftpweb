@@ -1,27 +1,28 @@
 import { createRouter, createWebHistory } from "vue-router"
-import HomePage from "@/pages/HomePage.vue"
-import LoginPage from "@/pages/LoginPage.vue"
-import CallbackPage from "@/pages/CallbackPage.vue"
-import CoursesPage from "@/pages/CoursesPage.vue"
-import CourseDetailPage from "@/pages/CourseDetailPage.vue"
-import CourseLearnPage from "@/pages/CourseLearnPage.vue"
-import CourseSupplementaryPage from "@/pages/CourseSupplementaryPage.vue"
-import CourseTimelinePage from "@/pages/CourseTimelinePage.vue"
-import MembershipPage from "@/pages/MembershipPage.vue"
-import ExamsPage from "@/pages/ExamsPage.vue"
-import ExamResultPage from "@/pages/ExamResultPage.vue"
-import ExamSignupPage from "@/pages/ExamSignupPage.vue"
-import RecordsPage from "@/pages/RecordsPage.vue"
-import CredentialsPage from "@/pages/CredentialsPage.vue"
-import CertificatesPage from "@/pages/CertificatesPage.vue"
-import OrdersPage from "@/pages/OrdersPage.vue"
-import MessagesPage from "@/pages/MessagesPage.vue"
-import SettingsPage from "@/pages/SettingsPage.vue"
-import QuizPage from "@/pages/QuizPage.vue"
-import ResourcePackDetailPage from "@/pages/ResourcePackDetailPage.vue"
-import ResourcePacksPage from "@/pages/ResourcePacksPage.vue"
-import PdfPreviewPage from "@/pages/PdfPreviewPage.vue"
-import InvoiceRedirectPage from "@/pages/InvoiceRedirectPage.vue"
+
+const HomePage = () => import("@/pages/HomePage.vue")
+const LoginPage = () => import("@/pages/LoginPage.vue")
+const CallbackPage = () => import("@/pages/CallbackPage.vue")
+const CoursesPage = () => import("@/pages/CoursesPage.vue")
+const CourseDetailPage = () => import("@/pages/CourseDetailPage.vue")
+const CourseLearnPage = () => import("@/pages/CourseLearnPage.vue")
+const CourseSupplementaryPage = () => import("@/pages/CourseSupplementaryPage.vue")
+const CourseTimelinePage = () => import("@/pages/CourseTimelinePage.vue")
+const MembershipPage = () => import("@/pages/MembershipPage.vue")
+const ExamsPage = () => import("@/pages/ExamsPage.vue")
+const ExamResultPage = () => import("@/pages/ExamResultPage.vue")
+const ExamSignupPage = () => import("@/pages/ExamSignupPage.vue")
+const RecordsPage = () => import("@/pages/RecordsPage.vue")
+const CredentialsPage = () => import("@/pages/CredentialsPage.vue")
+const CertificatesPage = () => import("@/pages/CertificatesPage.vue")
+const OrdersPage = () => import("@/pages/OrdersPage.vue")
+const MessagesPage = () => import("@/pages/MessagesPage.vue")
+const SettingsPage = () => import("@/pages/SettingsPage.vue")
+const QuizPage = () => import("@/pages/QuizPage.vue")
+const ResourcePackDetailPage = () => import("@/pages/ResourcePackDetailPage.vue")
+const ResourcePacksPage = () => import("@/pages/ResourcePacksPage.vue")
+const PdfPreviewPage = () => import("@/pages/PdfPreviewPage.vue")
+const InvoiceRedirectPage = () => import("@/pages/InvoiceRedirectPage.vue")
 
 function firstRouteValue(value: unknown) {
   if (Array.isArray(value)) return String(value[0] || "")
