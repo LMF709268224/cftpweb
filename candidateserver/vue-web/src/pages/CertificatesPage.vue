@@ -13,7 +13,7 @@ const certificates = ref<any[]>([])
 const loading = ref(false)
 const celebrationVisible = ref(false)
 const CERTIFICATE_PREVIEW_TIMEOUT_MS = 20000
-const CERTIFICATE_CELEBRATION_SESSION_KEY = "cftp-certificates-celebration-shown"
+const CERTIFICATE_CELEBRATED_IDS_KEY = "cftp-certificates-celebrated-ids"
 
 type CertificatesModalTexts = {
   celebrationModalTitle?: string
@@ -46,6 +46,10 @@ function openCertificate(url?: string) {
   if (url) window.open(url, "_blank")
 }
 
+function getCelebrationCertificateKey(cert?: { id?: string; credentialId?: string }) {
+  return cert?.credentialId || cert?.id || ""
+}
+
 async function previewCertificate(url?: string) {
   if (!url) return
   if (loading.value) return
@@ -73,7 +77,13 @@ function downloadFeaturedCertificate() {
 function closeCelebrationModal() {
   celebrationVisible.value = false
   try {
-    window.sessionStorage.setItem(CERTIFICATE_CELEBRATION_SESSION_KEY, "1")
+    const certificateKey = getCelebrationCertificateKey(featuredCertificate.value)
+    if (!certificateKey) return
+    const storedIds = JSON.parse(window.localStorage.getItem(CERTIFICATE_CELEBRATED_IDS_KEY) || "[]") as string[]
+    if (!storedIds.includes(certificateKey)) {
+      storedIds.push(certificateKey)
+      window.localStorage.setItem(CERTIFICATE_CELEBRATED_IDS_KEY, JSON.stringify(storedIds))
+    }
   } catch (error) {
     console.warn("Failed to persist certificate celebration state", error)
   }
@@ -108,21 +118,34 @@ onMounted(async () => {
   try {
     const res = await apiClient("/api/certificates")
     if (res?.certificates) {
-      certificates.value = res.certificates.map((cert: any) => ({
-        id: cert.cred_id || cert.catalog_id,
-        name: cert.name,
-        description: cert.description || "",
-        issueDate: cert.created_at ? formatBackendDate(cert.created_at).split(" ")[0] : t.value.common.na,
-        expiryDate: cert.valid_until ? formatBackendDate(cert.valid_until).split(" ")[0] : t.value.common.permanent,
-        credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
-        pdfUrl:
-          cert.files?.find(
-            (f: any) => f.file_type === 2 || f.file_ext === ".pdf" || f.file_ext === "pdf" || f.file_name?.endsWith(".pdf"),
-          )?.view_url || "",
-      }))
+      certificates.value = res.certificates
+        .map((cert: any) => ({
+          id: cert.cred_id || cert.catalog_id,
+          credGuid: cert.cred_guid || "",
+          createdAt: cert.created_at || "",
+          createdAtMs: cert.created_at ? new Date(cert.created_at).getTime() : 0,
+          validUntil: cert.valid_until || "",
+          validUntilMs: cert.valid_until ? new Date(cert.valid_until).getTime() : 0,
+          name: cert.name,
+          description: cert.description || "",
+          issueDate: cert.created_at ? formatBackendDate(cert.created_at).split(" ")[0] : t.value.common.na,
+          expiryDate: cert.valid_until ? formatBackendDate(cert.valid_until).split(" ")[0] : t.value.common.permanent,
+          credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
+          pdfUrl:
+            cert.files?.find(
+              (f: any) => f.file_type === 2 || f.file_ext === ".pdf" || f.file_ext === "pdf" || f.file_name?.endsWith(".pdf"),
+            )?.view_url || "",
+        }))
+        .sort((a: any, b: any) => {
+          if (b.createdAtMs !== a.createdAtMs) return b.createdAtMs - a.createdAtMs
+          return b.validUntilMs - a.validUntilMs
+        })
+
       if (certificates.value.length) {
         try {
-          celebrationVisible.value = window.sessionStorage.getItem(CERTIFICATE_CELEBRATION_SESSION_KEY) !== "1"
+          const latestCertificateKey = getCelebrationCertificateKey(certificates.value[0])
+          const storedIds = JSON.parse(window.localStorage.getItem(CERTIFICATE_CELEBRATED_IDS_KEY) || "[]") as string[]
+          celebrationVisible.value = !!latestCertificateKey && !storedIds.includes(latestCertificateKey)
         } catch (error) {
           console.warn("Failed to read certificate celebration state", error)
           celebrationVisible.value = true
