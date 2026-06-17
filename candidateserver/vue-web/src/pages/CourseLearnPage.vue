@@ -134,6 +134,7 @@ type ProgressRecord = {
 }
 
 type MaterialGroupKey = "all" | "textbook" | "slides" | "reference" | "other"
+type LearnContentTabKey = "lesson" | "quiz" | "materials"
 
 const route = useRoute()
 const router = useRouter()
@@ -151,6 +152,7 @@ const activeMaterialGroup = ref<MaterialGroupKey>("all")
 const runtime = ref<any>(null)
 const scheduleLoading = ref(false)
 const lessonContentExpanded = ref(true)
+const activeContentTab = ref<LearnContentTabKey>("lesson")
 
 const courseId = computed(() => String(route.params.courseId || route.query.courseId || ""))
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.pipelineId || ""))
@@ -344,6 +346,32 @@ const activeChapterQuizTasks = computed(() => {
 const activeLessonQuizTasks = computed(() => (activeLessonId.value ? lessonQuizTasksByLessonId.value.get(activeLessonId.value) || [] : []))
 const currentLessonCompleted = computed(() => currentLessonRawCompleted.value && activeLessonQuizTasks.value.every((task) => task.completed))
 const visibleChapterAndLessonQuizTasks = computed(() => [...activeChapterQuizTasks.value, ...activeLessonQuizTasks.value])
+const totalVisibleQuizCount = computed(() => courseQuizTasks.value.length + visibleChapterAndLessonQuizTasks.value.length)
+const completedVisibleQuizCount = computed(() =>
+  courseQuizTasks.value.filter((task) => task.completed).length + visibleChapterAndLessonQuizTasks.value.filter((task) => task.completed).length,
+)
+const learnContentTabs = computed(() => [
+  {
+    id: "lesson" as const,
+    label: t.value.learning.lessonContentTitle,
+    icon: BookOpen,
+    count: lesson.value ? 1 : 0,
+  },
+  ...(totalVisibleQuizCount.value > 0
+    ? [{
+        id: "quiz" as const,
+        label: t.value.learning.allQuizzesTitle,
+        icon: Target,
+        count: totalVisibleQuizCount.value,
+      }]
+    : []),
+  {
+    id: "materials" as const,
+    label: t.value.learning.materialsTitle,
+    icon: FileText,
+    count: totalMaterialCount.value,
+  },
+])
 const nextLearningLessonId = computed(() => {
   for (const item of lessons.value) {
     const candidate = item.lesson?.lesson_id
@@ -719,13 +747,17 @@ async function downloadMaterial(material: CourseMaterialSummary) {
 async function selectLesson(lessonId?: string, chapterId?: string) {
   if (lessonId) activeLessonId.value = lessonId
   if (chapterId) activeChapterId.value = chapterId
+  activeContentTab.value = "lesson"
   activeMaterialGroup.value = "all"
   if (materials.value.length > 0 && !selectedMaterialId.value) selectedMaterialId.value = materials.value[0].material_id || ""
   await refreshProgress(false)
 }
 
 function scrollToBottom() {
-  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" })
+  activeContentTab.value = "quiz"
+  requestAnimationFrame(() => {
+    document.getElementById("course-learn-content")?.scrollIntoView({ behavior: "smooth", block: "start" })
+  })
 }
 
 function nextStepLink() {
@@ -812,9 +844,10 @@ watch(selectedMaterial, () => {
         </RouterLink>
       </div>
     </div>
-    <div v-else class="grid gap-6 lg:grid-cols-[340px_1fr]">
-      <aside class="space-y-4">
-        <div class="rounded-md bg-white p-6">
+    <div v-else class="space-y-6">
+      <section class="rounded-md bg-white p-6">
+        <div class="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+        <div class="min-w-0">
           <h1 class="text-2xl font-bold text-foreground">{{ course.title || t.common.unknownCourse }}</h1>
           <p class="mt-2 text-sm text-muted-foreground">{{ course.description || t.common.na }}</p>
           <div class="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
@@ -825,22 +858,24 @@ watch(selectedMaterial, () => {
             <span v-else class="inline-flex items-center gap-1.5 text-slate-500"><FileText class="h-4 w-4" />仅需学习</span>
           </div>
 
-          <div class="mt-4 space-y-3">
+          <div class="mt-5 space-y-3 rounded-md bg-slate-50 p-4">
             <div class="flex items-center justify-between text-xs text-muted-foreground">
               <span>{{ t.learning.progressLabel }}</span>
               <span>{{ completedLessonsCount }}/{{ lessons.length }} {{ t.learning.lessons }}</span>
             </div>
-            <div class="h-2.5 overflow-hidden rounded-full bg-muted">
+            <div class="h-2.5 overflow-hidden rounded-full bg-white">
               <div class="h-full rounded-full bg-primary transition-all" :style="{ width: `${Math.max(0, Math.min(100, progressPercentage))}%` }" />
             </div>
             <div class="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.completedLessonsBadge }} {{ completedLessonsCount }}</span>
-              <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.passedQuizBadge }} {{ passedQuizzesCount }}</span>
-              <span v-if="syncState?.course_status" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ t.learning.courseStatusLabel }}: {{ courseStatusLabel(syncState.course_status) }}</span>
+              <span class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.completedLessonsBadge }} {{ completedLessonsCount }}</span>
+              <span class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.passedQuizBadge }} {{ passedQuizzesCount }}</span>
+              <span v-if="syncState?.course_status" class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.courseStatusLabel }}: {{ courseStatusLabel(syncState.course_status) }}</span>
             </div>
           </div>
+        </div>
 
-          <div class="mt-4 rounded-md bg-slate-50 p-4">
+        <div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-1">
+          <div class="rounded-md bg-slate-50 p-4">
             <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
               <Sparkles class="h-4 w-4 text-primary" />
               {{ t.learning.statusSummaryTitle }}
@@ -867,7 +902,7 @@ watch(selectedMaterial, () => {
             </div>
           </div>
 
-          <div v-if="nextStepState.action || nextUnitStatus" class="mt-4 rounded-md bg-slate-50 p-4">
+          <div v-if="nextStepState.action || nextUnitStatus" class="rounded-md bg-slate-50 p-4">
             <div class="flex flex-col gap-3">
               <div>
                 <div class="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -895,70 +930,40 @@ watch(selectedMaterial, () => {
             </div>
           </div>
         </div>
-
-        <div class="rounded-md bg-white p-6">
-          <div class="mb-4 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-foreground">{{ t.learning.chapters }}</h2>
-          </div>
-          <div v-if="chapters.length === 0" class="rounded-md bg-slate-50 p-6 text-center text-sm text-muted-foreground">
-            <h3 class="text-base font-semibold text-foreground">{{ t.learning.noChaptersTitle }}</h3>
-            <p class="mt-2">{{ t.learning.noChaptersDesc }}</p>
-          </div>
-          <div v-else class="rounded-md bg-slate-50 p-3">
-            <div
-              v-for="(chapter, chapterIndex) in chapters"
-              :key="chapter.chapter?.chapter_id || chapterIndex"
-              :class="['rounded-md px-3 py-4', chapterIndex > 0 ? 'mt-2' : '']"
-            >
-              <button
-                type="button"
-                class="mb-3 flex w-full items-center gap-3 text-left"
-                @click="selectLesson(chapter.lessons?.[0]?.lesson?.lesson_id, chapter.chapter?.chapter_id || `chapter-${chapterIndex}`)"
-              >
-                <div
-                  :class="[
-                    'flex h-8 w-8 items-center justify-center rounded-md text-sm font-semibold',
-                    chapterCompleted(chapter, chapterIndex) ? 'bg-emerald-100 text-emerald-700' : 'bg-primary/10 text-primary',
-                  ]"
-                >
-                  <CheckCircle2 v-if="chapterCompleted(chapter, chapterIndex)" class="h-4 w-4" />
-                  <span v-else>{{ chapterIndex + 1 }}</span>
-                </div>
-                <div class="min-w-0 flex-1">
-                  <div class="truncate font-medium text-foreground">{{ chapter.chapter?.title || `${t.learning.chapterPrefix} ${chapterIndex + 1}` }}</div>
-                  <div class="text-xs text-muted-foreground">
-                    {{ chapter.lessons?.length || 0 }} {{ t.learning.lessons }}
-                  </div>
-                </div>
-                <ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground" />
-              </button>
-              <div class="space-y-1 pl-11">
-                <button
-                  v-for="lessonDetail in chapter.lessons || []"
-                  :key="lessonDetail.lesson?.lesson_id || lessonDetail.lesson?.title"
-                  type="button"
-                  :class="[
-                    'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors',
-                    lessonDetail.lesson?.lesson_id === activeLessonId ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100',
-                  ]"
-                  @click="selectLesson(lessonDetail.lesson?.lesson_id, chapter.chapter?.chapter_id || `chapter-${chapterIndex}`)"
-                >
-                  <span class="flex min-w-0 items-center gap-2 truncate">
-                    <CheckCircle2 v-if="lessonFullyCompleted(lessonDetail.lesson?.lesson_id)" class="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                    <span v-else class="h-3.5 w-3.5 shrink-0 rounded-full border border-muted-foreground/30" />
-                    <span class="truncate">{{ lessonDetail.lesson?.title || t.learning.unknownLesson }}</span>
-                  </span>
-                  <ChevronDown v-if="lessonDetail.lesson?.lesson_id === activeLessonId" class="h-4 w-4" />
-                  <ChevronRight v-else class="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
-      </aside>
+      </section>
 
-      <section class="space-y-4">
-        <div v-if="courseQuizTasks.length > 0 || visibleChapterAndLessonQuizTasks.length > 0" class="rounded-md bg-white p-6">
+      <section id="course-learn-content" class="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
+        <aside class="rounded-md bg-white p-4 xl:sticky xl:top-4 xl:self-start">
+          <div class="space-y-2">
+            <button
+              v-for="tab in learnContentTabs"
+              :key="tab.id"
+              type="button"
+              :class="[
+                'flex w-full items-center gap-3 rounded-md border px-3 py-3 text-left text-sm transition-all',
+                activeContentTab === tab.id
+                  ? 'border-primary/30 bg-primary/10 text-primary shadow-sm'
+                  : 'border-transparent bg-transparent text-slate-600 hover:border-slate-200 hover:bg-slate-50',
+              ]"
+              @click="activeContentTab = tab.id"
+            >
+              <span
+                :class="[
+                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-md',
+                  activeContentTab === tab.id ? 'bg-white text-primary' : 'bg-slate-50 text-slate-400',
+                ]"
+              >
+                <component :is="tab.icon" class="h-4 w-4" />
+              </span>
+              <span class="min-w-0 flex-1 font-semibold">{{ tab.label }}</span>
+              <span v-if="tab.count > 0" class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ tab.count }}</span>
+            </button>
+          </div>
+        </aside>
+
+        <div class="min-w-0 space-y-4">
+        <div v-if="activeContentTab === 'quiz' && (courseQuizTasks.length > 0 || visibleChapterAndLessonQuizTasks.length > 0)" class="rounded-md bg-white p-6">
           <div class="mb-4 flex items-center justify-between gap-4">
             <div>
               <div class="mb-2 flex items-center gap-2">
@@ -967,7 +972,7 @@ watch(selectedMaterial, () => {
               </div>
             </div>
             <span class="badge shrink-0 border-slate-200 bg-slate-50 text-slate-700">
-              {{ courseQuizTasks.filter((task) => task.completed).length + visibleChapterAndLessonQuizTasks.filter((task) => task.completed).length }}/{{ courseQuizTasks.length + visibleChapterAndLessonQuizTasks.length }}
+              {{ completedVisibleQuizCount }}/{{ totalVisibleQuizCount }}
             </span>
           </div>
 
@@ -1028,7 +1033,7 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div id="lesson-detail" class="rounded-md bg-white p-6">
+        <div v-if="activeContentTab === 'lesson'" id="lesson-detail" class="rounded-md bg-white p-6">
           <div class="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
             <div class="flex flex-wrap items-center gap-2">
               <span class="badge border-primary/15 bg-primary/10 text-primary">{{ lessonTypeLabel(lesson?.lesson_type) }}</span>
@@ -1091,7 +1096,7 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div class="rounded-md bg-white p-6">
+        <div v-if="activeContentTab === 'materials'" class="rounded-md bg-white p-6">
           <div class="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div class="mb-2 flex items-center gap-2">
@@ -1101,6 +1106,66 @@ watch(selectedMaterial, () => {
               <p class="text-sm text-muted-foreground">{{ t.learning.materialsDesc }}</p>
             </div>
             <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ totalMaterialCount }} {{ t.learning.materialsCountSuffix }}</span>
+          </div>
+
+          <div class="mb-4 rounded-md border border-slate-100 bg-slate-50 p-4">
+            <div class="mb-4 flex items-center justify-between">
+              <h2 class="text-sm font-semibold text-foreground">{{ t.learning.chapters }}</h2>
+            </div>
+            <div v-if="chapters.length === 0" class="rounded-md bg-white p-6 text-center text-sm text-muted-foreground">
+              <h3 class="text-base font-semibold text-foreground">{{ t.learning.noChaptersTitle }}</h3>
+              <p class="mt-2">{{ t.learning.noChaptersDesc }}</p>
+            </div>
+            <div v-else class="rounded-md bg-white p-3">
+              <div
+                v-for="(chapter, chapterIndex) in chapters"
+                :key="chapter.chapter?.chapter_id || chapterIndex"
+                :class="['rounded-md px-3 py-4', chapterIndex > 0 ? 'mt-2' : '']"
+              >
+                <button
+                  type="button"
+                  class="mb-3 flex w-full items-center gap-3 text-left"
+                  @click="selectLesson(chapter.lessons?.[0]?.lesson?.lesson_id, chapter.chapter?.chapter_id || `chapter-${chapterIndex}`)"
+                >
+                  <div
+                    :class="[
+                      'flex h-8 w-8 items-center justify-center rounded-md text-sm font-semibold',
+                      chapterCompleted(chapter, chapterIndex) ? 'bg-emerald-100 text-emerald-700' : 'bg-primary/10 text-primary',
+                    ]"
+                  >
+                    <CheckCircle2 v-if="chapterCompleted(chapter, chapterIndex)" class="h-4 w-4" />
+                    <span v-else>{{ chapterIndex + 1 }}</span>
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="truncate font-medium text-foreground">{{ chapter.chapter?.title || `${t.learning.chapterPrefix} ${chapterIndex + 1}` }}</div>
+                    <div class="text-xs text-muted-foreground">
+                      {{ chapter.lessons?.length || 0 }} {{ t.learning.lessons }}
+                    </div>
+                  </div>
+                  <ChevronRight class="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+                <div class="space-y-1 pl-11">
+                  <button
+                    v-for="lessonDetail in chapter.lessons || []"
+                    :key="lessonDetail.lesson?.lesson_id || lessonDetail.lesson?.title"
+                    type="button"
+                    :class="[
+                      'flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm transition-colors',
+                      lessonDetail.lesson?.lesson_id === activeLessonId ? 'bg-primary/10 text-primary' : 'hover:bg-slate-100',
+                    ]"
+                    @click="selectLesson(lessonDetail.lesson?.lesson_id, chapter.chapter?.chapter_id || `chapter-${chapterIndex}`)"
+                  >
+                    <span class="flex min-w-0 items-center gap-2 truncate">
+                      <CheckCircle2 v-if="lessonFullyCompleted(lessonDetail.lesson?.lesson_id)" class="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                      <span v-else class="h-3.5 w-3.5 shrink-0 rounded-full border border-muted-foreground/30" />
+                      <span class="truncate">{{ lessonDetail.lesson?.title || t.learning.unknownLesson }}</span>
+                    </span>
+                    <ChevronDown v-if="lessonDetail.lesson?.lesson_id === activeLessonId" class="h-4 w-4" />
+                    <ChevronRight v-else class="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div v-if="totalMaterialCount === 0" class="rounded-md bg-slate-50 p-6 text-center text-sm text-muted-foreground">
@@ -1248,6 +1313,7 @@ watch(selectedMaterial, () => {
               </div>
             </div>
           </div>
+        </div>
         </div>
       </section>
     </div>
