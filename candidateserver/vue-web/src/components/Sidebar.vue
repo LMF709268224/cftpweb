@@ -16,6 +16,35 @@ const mobileMenuOpen = ref(false)
 
 const activeSettingsTab = computed(() => String(route.query.tab || "profile"))
 
+const navRouteGroups: Record<string, string[]> = {
+  "/": ["/"],
+  "/certifications": [
+    "/certifications",
+    "/courses",
+    "/pdf-preview/lessons",
+  ],
+  "/exams": ["/exams"],
+  "/resource-packs": [
+    "/resource-packs",
+    "/resource-pack-files",
+    "/pdf-preview/resources",
+  ],
+  "/credentials": ["/credentials"],
+  "/certificates": ["/certificates"],
+  "/orders": ["/orders", "/invoice-redirect"],
+  "/messages": ["/messages"],
+}
+
+function isNavItemActive(href: string) {
+  const currentPath = route.path
+  const groups = navRouteGroups[href] || [href]
+
+  return groups.some((group) => {
+    if (group === "/") return currentPath === "/"
+    return currentPath === group || currentPath.startsWith(`${group}/`)
+  })
+}
+
 const navItems = computed(() => [
   { href: "/", label: t.value.sidebar.home },
   { href: "/certifications", label: t.value.sidebar.courses },
@@ -142,12 +171,11 @@ async function handleLogout() {
           :key="item.href"
           :to="item.href"
           :class="[
-            'relative block py-1.5 transition-colors hover:text-primary',
-            route.path === item.href ? 'font-medium text-primary' : '',
+            'mx-3 block rounded-xl px-4 py-2 transition-colors hover:bg-slate-100 hover:text-primary',
+            isNavItemActive(item.href) ? 'bg-primary/8 font-semibold text-primary' : '',
           ]"
           @click="mobileMenuOpen = false"
         >
-          <span v-if="route.path === item.href" class="absolute left-0 top-1/2 h-8 w-0.5 -translate-y-1/2 bg-primary" />
           {{ item.label }}
           <span v-if="item.badge" class="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">{{ item.badge }}</span>
         </RouterLink>
@@ -171,11 +199,10 @@ async function handleLogout() {
         :key="item.href"
         :to="item.href"
         :class="[
-          'relative block py-2.5 transition-colors hover:text-primary',
-          route.path === item.href ? 'font-medium text-primary' : '',
+          'mx-3 block rounded-xl px-4 py-2.5 transition-colors hover:bg-slate-100 hover:text-primary',
+          isNavItemActive(item.href) ? 'bg-primary/8 font-semibold text-primary' : '',
         ]"
       >
-        <span v-if="route.path === item.href" class="absolute left-0 top-1/2 h-8 w-0.5 -translate-y-1/2 bg-primary" />
         {{ item.label }}
         <span v-if="item.badge" class="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-xs text-primary">{{ item.badge }}</span>
       </RouterLink>
