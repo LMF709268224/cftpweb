@@ -41,6 +41,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Head("/lessons/{lessonId}", h.PreviewLessonPDFPublic)
 		r.Get("/resource", h.PreviewResourceURLPublic)
 		r.Head("/resource", h.PreviewResourceURLPublic)
+		r.Get("/resource-pack-files/{fileId}", h.PreviewResourcePackFilePDFPublic)
+		r.Head("/resource-pack-files/{fileId}", h.PreviewResourcePackFilePDFPublic)
 	})
 
 	r.With(normalTimeout).Get("/api/public/config", h.GetPublicConfig)
@@ -119,6 +121,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		r.Route("/resource-pack-files", func(r chi.Router) {
 			r.Get("/{file_id}/view-url", h.GetResourcePackFileViewURL)
+			r.Get("/{file_id}/thumbnail-url", h.GetResourcePackFileThumbnailURL)
+			r.Get("/{file_id}/preview-url", h.GetResourcePackFilePreviewURL)
 		})
 
 		r.Route("/quizzes", func(r chi.Router) {

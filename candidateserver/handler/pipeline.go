@@ -648,6 +648,22 @@ func (h *Handler) PreviewResourceURLPublic(w http.ResponseWriter, r *http.Reques
 	h.streamPDFPreview(w, r, preview.SourceURL, preview.Filename, "resource", resourceURL)
 }
 
+func (h *Handler) PreviewResourcePackFilePDFPublic(w http.ResponseWriter, r *http.Request) {
+	fileID := strings.TrimSpace(chi.URLParam(r, "fileId"))
+	token := strings.TrimSpace(r.URL.Query().Get("token"))
+	preview, ok := h.verifyPDFPreviewToken(token, "resource-pack-file", fileID)
+	if !ok || !requireRequestFields(w, preview.CandidateID, "candidate_id", fileID, "file_id") {
+		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
+		return
+	}
+	if !isValidPreviewResourceURL(preview.SourceURL) {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid preview url")
+		return
+	}
+
+	h.streamPDFPreview(w, r, preview.SourceURL, preview.Filename, "resource-pack-file", fileID)
+}
+
 func (h *Handler) streamPDFPreview(w http.ResponseWriter, r *http.Request, sourceURL string, filename string, logKind string, logID string) {
 	method := http.MethodGet
 	if r.Method == http.MethodHead {
