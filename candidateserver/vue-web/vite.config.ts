@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      "@embedpdf/vue-pdf-viewer": fileURLToPath(new URL("./node_modules/@embedpdf/vue-pdf-viewer/dist/index.js", import.meta.url)),
       "@embedpdf/snippet": fileURLToPath(new URL("./node_modules/@embedpdf/snippet/dist/embedpdf.js", import.meta.url)),
       "@vue/reactivity": fileURLToPath(new URL("./node_modules/@vue/reactivity/dist/reactivity.esm-bundler.js", import.meta.url)),
       "@vue/runtime-core": fileURLToPath(new URL("./node_modules/@vue/runtime-core/dist/runtime-core.esm-bundler.js", import.meta.url)),
