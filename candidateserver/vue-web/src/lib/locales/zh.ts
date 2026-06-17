@@ -363,6 +363,8 @@ export const zh = {
     statusResultPublished: "已出成绩",
     statusQualified: "合格",
     statusUnqualified: "不合格",
+    statusWaitingExamConfirmation: "等待考试系统确认",
+    waitingExamConfirmationDesc: "已提交考试报名，考试系统尚未确认预约结果，无需重复报名。",
     statusScheduled: "已预约考试",
     statusOpen: "可预约考试",
     notScheduledTitle: "尚未预约考试",

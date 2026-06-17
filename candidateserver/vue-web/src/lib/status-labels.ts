@@ -388,6 +388,7 @@ export const CANDIDATE_COURSE_STATUS_LABELS: StatusLabelMap = {
 }
 
 export const EXAM_STATUS_LABELS: StatusLabelMap = {
+  WAITING_EXAM_CONFIRMATION: "examsPage.statusWaitingExamConfirmation",
   OPEN: "examsPage.statusOpen",
   CREATED: "examsPage.statusOpen",
   DONE: "examsPage.statusPassed",

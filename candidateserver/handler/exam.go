@@ -292,11 +292,17 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 		if exam == nil {
 			continue
 		}
+
+		examStatus := exam.GetExamStatus()
+		if shouldShowWaitingExamConfirmation(exam) {
+			examStatus = "WAITING_EXAM_CONFIRMATION"
+		}
+
 		out.Exams = append(out.Exams, ExamListItem{
 			ExamId:               exam.GetExamId(),
 			ProgramCode:          exam.GetProgramCode(),
 			ExamCode:             exam.GetExamCode(),
-			ExamStatus:           exam.GetExamStatus(),
+			ExamStatus:           examStatus,
 			ResultStatus:         exam.GetResultStatus(),
 			TotalScore:           exam.GetTotalScore(),
 			IsPassed:             exam.GetIsPassed(),
@@ -313,6 +319,24 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, out)
+}
+
+func shouldShowWaitingExamConfirmation(exam *gexampb.ExamInfo) bool {
+	if exam == nil || strings.TrimSpace(exam.GetLastTermurlTimestamp()) == "" {
+		return false
+	}
+	if strings.TrimSpace(exam.GetConfirmationNumber()) != "" ||
+		strings.TrimSpace(exam.GetAppointmentStartTime()) != "" ||
+		strings.TrimSpace(exam.GetAppointmentEndTime()) != "" ||
+		strings.TrimSpace(exam.GetSiteName()) != "" {
+		return false
+	}
+	if strings.TrimSpace(exam.GetResultStatus()) != "" ||
+		exam.GetTotalScore() != 0 ||
+		exam.GetIsPassed() {
+		return false
+	}
+	return true
 }
 
 // ListExamHistory GET /api/exams/history

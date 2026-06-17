@@ -365,6 +365,8 @@ export const en: AppTranslations = {
     statusResultPublished: "Result published",
     statusQualified: "Qualified",
     statusUnqualified: "Not qualified",
+    statusWaitingExamConfirmation: "Waiting for exam provider confirmation",
+    waitingExamConfirmationDesc: "Your exam signup has been submitted. The exam provider has not confirmed the appointment yet, so you do not need to sign up again.",
     statusScheduled: "Exam Scheduled",
     statusOpen: "Exam Open to Schedule",
     notScheduledTitle: "Exam not scheduled yet",
