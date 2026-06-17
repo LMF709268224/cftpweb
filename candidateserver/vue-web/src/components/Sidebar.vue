@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, onUnmounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
 import { Languages, LogOut, Menu, Settings, User, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
-import { getCachedUnreadCount } from "@/lib/unreadCountCache"
+import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 
 const { t, lang, changeLanguage } = useTranslation()
@@ -13,6 +13,7 @@ const userName = ref(t.value.common.user)
 const unreadCount = ref(0)
 const menuOpen = ref(false)
 const mobileMenuOpen = ref(false)
+let stopUnreadCountListener: (() => void) | null = null
 
 const navRouteGroups: Record<string, string[]> = {
   "/": ["/"],
@@ -61,11 +62,18 @@ onMounted(async () => {
   }
   updateName()
   window.addEventListener("storage", updateName)
+  stopUnreadCountListener = onUnreadCountChanged((value) => {
+    unreadCount.value = value
+  })
   try {
     unreadCount.value = await getCachedUnreadCount()
   } catch {
     // Sidebar should never block page rendering.
   }
+})
+
+onUnmounted(() => {
+  stopUnreadCountListener?.()
 })
 
 async function handleLogout() {

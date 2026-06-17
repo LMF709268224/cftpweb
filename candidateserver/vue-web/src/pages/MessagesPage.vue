@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import { Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, Trash2 } from "lucide-vue-next"
+import { Bell, CheckCheck, ChevronRight, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, Trash2 } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
+import { setCachedUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 
 type Message = { id: string; type: string; title: string; content: string; time: string; isRead: boolean }
@@ -28,6 +29,10 @@ const typeConfig = computed(() => ({
 const filteredMessages = computed(() => selectedType.value ? messageList.value.filter((m) => m.type === selectedType.value) : messageList.value)
 const unreadCount = computed(() => messageList.value.filter((m) => !m.isRead).length)
 
+function syncUnreadCount() {
+  setCachedUnreadCount(unreadCount.value)
+}
+
 function configFor(type: string) {
   return typeConfig.value[type as keyof typeof typeConfig.value] || typeConfig.value.system
 }
@@ -42,6 +47,68 @@ function markReadMenuLabel() {
 
 function deleteMenuLabel() {
   return lang.value === "zh" ? "\u5220\u9664" : "Delete"
+}
+
+function splitBilingualText(value: string) {
+  const normalized = value
+    .replace(/\r\n/g, "\n")
+    .replace(/\s*\/\s*/g, "\n")
+    .split("\n")
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  if (normalized.length <= 1) return value.trim()
+
+  const scoreChinese = (part: string) => (part.match(/[\u3400-\u9fff]/g)?.length || 0) * 2 - (part.match(/[A-Za-z]/g)?.length || 0) * 0.15
+  const scoreEnglish = (part: string) => (part.match(/[A-Za-z]/g)?.length || 0) - (part.match(/[\u3400-\u9fff]/g)?.length || 0) * 1.5
+
+  if (lang.value === "zh") {
+    const preferred = [...normalized].sort((a, b) => scoreChinese(b) - scoreChinese(a))[0]
+    if (preferred) return preferred
+  }
+  if (lang.value !== "zh") {
+    const preferred = [...normalized].sort((a, b) => scoreEnglish(b) - scoreEnglish(a))[0]
+    if (preferred) return preferred
+  }
+  return normalized[0]
+}
+
+function cleanMarkdown(value: string) {
+  return value
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\[(.*?)\]\((.*?)\)/g, "$1")
+    .replace(/\{\{.*?\}\}/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function normalizeMessageTitle(value: string, fallback: string) {
+  const cleaned = cleanMarkdown(value || "")
+  if (!cleaned) return fallback
+  return splitBilingualText(cleaned)
+}
+
+function normalizeMessageContent(value: string) {
+  const cleaned = cleanMarkdown(value || "")
+  if (!cleaned) return ""
+
+  const sentences = cleaned
+    .replace(/([。！？!?])\s*/g, "$1\n")
+    .replace(/\.\s+/g, ".\n")
+    .split("\n")
+    .map((part) => part.trim())
+    .filter(Boolean)
+
+  const localized = sentences.filter((part) => {
+    const zhCount = part.match(/[\u3400-\u9fff]/g)?.length || 0
+    const enCount = part.match(/[A-Za-z]/g)?.length || 0
+    if (lang.value === "zh") return zhCount > 0 && zhCount >= enCount * 0.15
+    return enCount > 0 && zhCount === 0
+  })
+
+  if (localized.length > 0) return localized.join(" ")
+  return cleaned
 }
 
 function formatPayloadSummary(payload: unknown) {
@@ -94,8 +161,16 @@ async function fetchMessages() {
           title = m.title || title
         }
 
-        return { id: String(m.message_id || m.id), type, title, content, time: formatBackendDate(m.created_at), isRead: m.status === 1 }
+        return {
+          id: String(m.message_id || m.id),
+          type,
+          title: normalizeMessageTitle(title, configFor(type).label),
+          content: normalizeMessageContent(content),
+          time: formatBackendDate(m.created_at),
+          isRead: m.status === 1,
+        }
       })
+      syncUnreadCount()
     }
   } catch (e) {
     console.error(e)
@@ -110,6 +185,7 @@ async function markAllAsRead() {
   try {
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: unreadIds }) })
     messageList.value = messageList.value.map((m) => ({ ...m, isRead: true }))
+    syncUnreadCount()
     toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
     // apiClient handles toast.
@@ -120,6 +196,7 @@ async function markAsRead(id: string) {
   try {
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: [id] }) })
     messageList.value = messageList.value.map((m) => (m.id === id ? { ...m, isRead: true } : m))
+    syncUnreadCount()
     openMenuId.value = null
     toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
@@ -131,6 +208,7 @@ async function deleteMessage(id: string) {
   try {
     await apiClient("/api/messages/delete", { method: "POST", body: JSON.stringify({ message_ids: [id] }) })
     messageList.value = messageList.value.filter((m) => m.id !== id)
+    syncUnreadCount()
     openMenuId.value = null
     toast.success(t.value.messagesPage.deleteSuccess)
   } catch {
@@ -142,7 +220,14 @@ async function handleViewDetail(message: Message) {
   try {
     if (!message.isRead) await markAsRead(message.id)
     const detail = await apiClient(`/api/messages/${message.id}`)
-    selectedMessageDetail.value = { ...detail, time: formatBackendDate(detail?.created_at || "") }
+    const detailType = message.type
+    selectedMessageDetail.value = {
+      ...detail,
+      title: normalizeMessageTitle(detail?.title || message.title, configFor(detailType).label),
+      content: normalizeMessageContent(detail?.content || message.content),
+      typeLabel: configFor(detailType).label,
+      time: formatBackendDate(detail?.created_at || ""),
+    }
     detailModalOpen.value = true
   } catch {
     toast.error("Failed to load message detail")
@@ -199,19 +284,20 @@ onMounted(fetchMessages)
         <div
           v-for="message in filteredMessages"
           :key="message.id"
-          :class="['group flex cursor-pointer items-start gap-4 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead && 'bg-primary/5']"
+          :class="['group relative flex cursor-pointer items-start gap-4 border-l-4 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead ? 'border-primary bg-primary/5' : 'border-transparent']"
           @click="handleViewDetail(message)"
         >
-          <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', configFor(message.type).iconBg]">
+          <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', configFor(message.type).iconBg, !message.isRead && 'ring-2 ring-primary/25']">
             <component :is="configFor(message.type).icon" :class="['h-5 w-5', configFor(message.type).iconColor]" />
           </div>
           <div class="min-w-0 flex-1">
-            <div class="mb-1 flex items-center gap-2">
-              <Circle v-if="!message.isRead" class="h-2 w-2 fill-primary text-primary" />
-              <h3 :class="['font-medium text-card-foreground', !message.isRead && 'font-semibold']">{{ message.title || configFor(message.type).label }}</h3>
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+              <span v-if="!message.isRead" class="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow-sm shadow-primary/20">
+                {{ lang === 'zh' ? '未读' : 'Unread' }}
+              </span>
+              <h3 :class="['line-clamp-2 text-base text-card-foreground', !message.isRead ? 'font-bold' : 'font-semibold']">{{ message.title || configFor(message.type).label }}</h3>
               <span class="badge">{{ configFor(message.type).label }}</span>
             </div>
-            <p class="mb-2 line-clamp-2 text-sm text-muted-foreground">{{ message.content }}</p>
             <span class="text-xs text-muted-foreground">{{ message.time }}</span>
           </div>
           <div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
@@ -240,12 +326,15 @@ onMounted(fetchMessages)
       <div class="w-full max-w-xl rounded-[16px] bg-white p-4 shadow-2xl">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <h2 class="mb-2 text-xl font-semibold">{{ selectedMessageDetail?.title || t.messagesPage.systemNotice }}</h2>
+            <div class="mb-2 flex flex-wrap items-start gap-2">
+              <h2 class="min-w-0 flex-1 text-xl font-semibold leading-snug">{{ selectedMessageDetail?.title || t.messagesPage.systemNotice }}</h2>
+              <span v-if="selectedMessageDetail?.typeLabel" class="badge shrink-0">{{ selectedMessageDetail.typeLabel }}</span>
+            </div>
             <p class="text-sm text-muted-foreground">{{ selectedMessageDetail?.time }}</p>
           </div>
           <button class="text-xl leading-none text-muted-foreground transition-colors hover:text-foreground" @click="detailModalOpen = false">x</button>
         </div>
-        <div class="mt-4 border-t border-border pt-4 text-sm leading-relaxed text-foreground" v-html="selectedMessageDetail?.content || ''" />
+        <div class="mt-4 whitespace-pre-line border-t border-border pt-4 text-sm leading-relaxed text-foreground">{{ selectedMessageDetail?.content || '' }}</div>
       </div>
     </div>
   </AppShell>

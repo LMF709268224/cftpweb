@@ -2,6 +2,7 @@ import { apiClient } from "./apiClient"
 
 const unreadCountCacheKey = "candidate_unread_count_cache"
 const unreadCountCacheTTL = 30_000
+const unreadCountChangedEvent = "candidate-unread-count-changed"
 let unreadCountPromise: Promise<number> | null = null
 
 function readCachedUnreadCount() {
@@ -18,6 +19,10 @@ function readCachedUnreadCount() {
 
 function writeCachedUnreadCount(value: number) {
   localStorage.setItem(unreadCountCacheKey, JSON.stringify({ value, expiresAt: Date.now() + unreadCountCacheTTL }))
+}
+
+function dispatchUnreadCountChanged(value: number) {
+  window.dispatchEvent(new CustomEvent(unreadCountChangedEvent, { detail: { value } }))
 }
 
 export async function getCachedUnreadCount() {
@@ -37,4 +42,19 @@ export async function getCachedUnreadCount() {
   }
 
   return unreadCountPromise
+}
+
+export function setCachedUnreadCount(value: number) {
+  const normalized = Math.max(0, Number.isFinite(value) ? Math.trunc(value) : 0)
+  writeCachedUnreadCount(normalized)
+  dispatchUnreadCountChanged(normalized)
+}
+
+export function onUnreadCountChanged(handler: (value: number) => void) {
+  const listener = (event: Event) => {
+    const value = Number((event as CustomEvent<{ value?: number }>).detail?.value)
+    handler(Number.isFinite(value) ? value : 0)
+  }
+  window.addEventListener(unreadCountChangedEvent, listener)
+  return () => window.removeEventListener(unreadCountChangedEvent, listener)
 }
