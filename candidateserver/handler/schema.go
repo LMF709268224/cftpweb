@@ -585,6 +585,10 @@ type MessageListRsp struct {
 	HasMore  bool          `json:"has_more"`
 }
 
+type MessageUnreadCountRsp struct {
+	UnreadCount uint32 `json:"unread_count"`
+}
+
 type MessageOperationInput struct {
 	MessageIDs []string `json:"message_ids"`
 }

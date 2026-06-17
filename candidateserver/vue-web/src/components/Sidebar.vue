@@ -4,7 +4,7 @@ import { RouterLink, useRoute } from "vue-router"
 import { LogOut, Menu, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
-import { getCachedDashboard } from "@/lib/dashboardCache"
+import { getCachedUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 
 const { t, lang, changeLanguage } = useTranslation()
@@ -63,8 +63,7 @@ onMounted(async () => {
   updateName()
   window.addEventListener("storage", updateName)
   try {
-    const dashboard = await getCachedDashboard()
-    if (dashboard?.unread_messages_count !== undefined) unreadCount.value = dashboard.unread_messages_count
+    unreadCount.value = await getCachedUnreadCount()
   } catch {
     // Sidebar should never block page rendering.
   }
