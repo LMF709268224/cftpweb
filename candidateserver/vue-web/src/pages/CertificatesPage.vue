@@ -285,7 +285,7 @@ onMounted(async () => {
       </div>
       <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.certificatesPage.keepLearningTitle }}</h3>
       <p class="mb-5 max-w-md text-sm leading-6 text-muted-foreground">{{ t.certificatesPage.keepLearningDesc }}</p>
-      <RouterLink to="/courses" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20">
+      <RouterLink to="/certifications" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20">
         <ExternalLink class="h-4 w-4" />
         {{ t.certificatesPage.browseCourses }}
       </RouterLink>

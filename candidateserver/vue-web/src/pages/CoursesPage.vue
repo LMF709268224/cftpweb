@@ -320,7 +320,7 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex w-full shrink-0 items-center md:w-auto">
-            <RouterLink :to="`/courses/detail?id=${encodeURIComponent(course.id)}`" class="btn btn-primary w-full rounded-lg shadow-sm shadow-primary/20 md:w-auto">
+            <RouterLink :to="`/certifications/${encodeURIComponent(course.id)}`" class="btn btn-primary w-full rounded-lg shadow-sm shadow-primary/20 md:w-auto">
               {{ t.courses.viewDetails }} <ChevronRight class="h-4 w-4" />
             </RouterLink>
           </div>

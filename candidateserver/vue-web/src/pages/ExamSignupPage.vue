@@ -36,7 +36,7 @@ const formData = reactive({
   home_phone: "",
   work_phone: "",
 })
-const backLink = computed(() => pipelineId ? `/courses/detail?id=${encodeURIComponent(pipelineId)}` : courseId ? `/courses/learn?courseId=${encodeURIComponent(courseId)}` : "/courses")
+const backLink = computed(() => pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : "/certifications")
 const countryOptions = computed(() => {
   const locale = lang.value === "zh" ? "zh-CN" : "en"
   const displayNames = new Intl.DisplayNames([locale], { type: "region" })

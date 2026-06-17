@@ -97,7 +97,7 @@ const purchaseOpen = ref(false)
 const certificateLoading = ref(false)
 const scheduleLoading = ref(false)
 
-const pipelineId = computed(() => String(route.query.id || ""))
+const pipelineId = computed(() => String(route.params.pipelineId || route.query.id || ""))
 const pipeline = computed(() => detail.value?.config)
 const stages = computed<StageConfig[]>(() => pipeline.value?.stages || [])
 const totalUnits = computed(() => stages.value.reduce((total, stage) => total + (stage.units?.length || 0), 0))
@@ -171,8 +171,8 @@ function unitStateClass(unit: UnitConfig) {
 
 function learningHref(courseId?: string) {
   return courseId
-    ? `/courses/learn?courseId=${encodeURIComponent(courseId)}&pipelineId=${encodeURIComponent(pipelineId.value)}`
-    : "/courses"
+    ? `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(courseId)}`
+    : "/certifications"
 }
 
 function nextStepHref() {
@@ -187,9 +187,9 @@ function nextStepHref() {
     case "view_exam_result":
       return "/exams"
     case "view_certificate":
-      return instancePipelineId.value ? `/courses/detail?id=${encodeURIComponent(pipelineId.value)}` : "/certificates"
+      return instancePipelineId.value ? `/certifications/${encodeURIComponent(pipelineId.value)}` : "/certificates"
     default:
-      return "/courses"
+      return "/certifications"
   }
 }
 
@@ -322,7 +322,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
 
 <template>
   <AppShell content-class="p-4">
-    <RouterLink to="/courses" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+    <RouterLink to="/certifications" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
       <ArrowLeft class="h-4 w-4" />
       {{ t.courses.backToPipelines }}
     </RouterLink>
@@ -337,7 +337,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
           <h2 class="text-lg font-semibold text-foreground">{{ t.learning.courseUnavailableTitle }}</h2>
           <p class="mt-2 text-sm">{{ t.learning.courseUnavailableDesc }}</p>
         </div>
-        <RouterLink to="/courses" class="btn btn-primary mx-auto w-fit rounded-lg">
+        <RouterLink to="/certifications" class="btn btn-primary mx-auto w-fit rounded-lg">
           {{ t.courses.backToPipelines }}
         </RouterLink>
       </div>
@@ -376,7 +376,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
                 </div>
                 <p class="text-xs text-muted-foreground">{{ stageStatusHintLabel(t, currentStageStatus) }}</p>
               </div>
-              <RouterLink :to="`/courses/timeline?id=${encodeURIComponent(pipelineId)}`" class="btn btn-outline rounded-lg py-1.5 text-xs">
+              <RouterLink :to="`/certifications/${encodeURIComponent(pipelineId)}/timeline`" class="btn btn-outline rounded-lg py-1.5 text-xs">
                 {{ t.learning.viewTimeline }}
               </RouterLink>
             </div>
@@ -399,7 +399,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               <h3 class="text-base font-semibold text-foreground">{{ t.courses.noStagesTitle }}</h3>
               <p class="mt-2 text-sm">{{ t.courses.noStagesDesc }}</p>
             </div>
-            <RouterLink to="/courses" class="btn btn-primary mx-auto w-fit rounded-lg">
+            <RouterLink to="/certifications" class="btn btn-primary mx-auto w-fit rounded-lg">
               {{ t.courses.backToPipelines }}
             </RouterLink>
           </div>

@@ -30,8 +30,8 @@ const router = useRouter()
 const payload = ref<CourseResponse | null>(null)
 const loading = ref(false)
 
-const courseId = computed(() => String(route.query.courseId || ""))
-const pipelineId = computed(() => String(route.query.pipelineId || ""))
+const courseId = computed(() => String(route.params.courseId || route.query.courseId || ""))
+const pipelineId = computed(() => String(route.params.pipelineId || route.query.pipelineId || ""))
 const fallbackTitle = computed(() => String(route.query.title || "Course"))
 const courseTitle = computed(() => payload.value?.complete_course?.course?.title || fallbackTitle.value)
 const supplementaryMaterials = computed(() => {
@@ -70,10 +70,9 @@ function supplementaryTypeIcon(type: string) {
 }
 
 function backLink() {
-  const params = new URLSearchParams()
-  if (courseId.value) params.set("courseId", courseId.value)
-  if (pipelineId.value) params.set("pipelineId", pipelineId.value)
-  return params.toString() ? `/courses/learn?${params.toString()}` : "/courses"
+  return courseId.value && pipelineId.value
+    ? `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(courseId.value)}`
+    : "/certifications"
 }
 
 function goBack() {
@@ -84,11 +83,7 @@ function goBack() {
 function openResource(item: SupplementaryMaterialItem) {
   if (!item.url) return
   if (isPdfResourceUrl(item.url)) {
-    const params = new URLSearchParams({
-      src: item.url,
-      title: item.title || "Supplementary Material",
-    })
-    openPreviewTab(`/pdf-preview?${params.toString()}`)
+    openExternalPdfPreview(item.url, item.title || "Supplementary Material")
     return
   }
 
@@ -103,6 +98,13 @@ function openPreviewTab(url: string) {
   document.body.appendChild(link)
   link.click()
   link.remove()
+}
+
+function openExternalPdfPreview(src: string, title: string) {
+  const resourceKey = crypto.randomUUID()
+  sessionStorage.setItem(`external-pdf-preview-src:${resourceKey}`, src)
+  sessionStorage.setItem(`external-pdf-preview-title:${resourceKey}`, title)
+  openPreviewTab(`/pdf-preview/resources/${encodeURIComponent(resourceKey)}`)
 }
 
 async function loadCourse() {

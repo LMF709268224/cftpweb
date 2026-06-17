@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
 import { ArrowLeft, Clock } from "lucide-vue-next"
 import { timelineStatusLabel } from "@/lib/status-labels"
@@ -21,18 +21,18 @@ type TimelineLog = {
 
 const route = useRoute()
 const { t } = useTranslation()
-const pipelineId = String(route.query.id || "")
+const pipelineId = computed(() => String(route.params.pipelineId || route.query.id || ""))
 const logs = ref<TimelineLog[]>([])
 const loading = ref(false)
 
 async function loadTimeline() {
-  if (!pipelineId) {
+  if (!pipelineId.value) {
     logs.value = []
     return
   }
   loading.value = true
   try {
-    const res = await apiClient(`/api/mall/pipelines/${pipelineId}/timeline`)
+    const res = await apiClient(`/api/mall/pipelines/${pipelineId.value}/timeline`)
     logs.value = res?.logs || []
   } catch {
     logs.value = []
@@ -46,7 +46,7 @@ onMounted(loadTimeline)
 
 <template>
   <AppShell content-class="p-4">
-    <RouterLink :to="pipelineId ? `/courses/detail?id=${encodeURIComponent(pipelineId)}` : '/courses'" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+    <RouterLink :to="pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : '/certifications'" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
       <ArrowLeft class="h-4 w-4" />
       {{ t.learning.timelineBackToCourseDetails || t.common.back }}
     </RouterLink>

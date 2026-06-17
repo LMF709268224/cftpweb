@@ -50,7 +50,7 @@ const todoItems = computed(() =>
 )
 
 function goToCourses() {
-  void router.push("/courses")
+  void router.push("/certifications")
 }
 
 onMounted(async () => {
@@ -104,7 +104,7 @@ onMounted(async () => {
 
       <section class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatsCard :title="t.home.courseInProgress" :value="String(stats.courses_in_progress || 0)" :icon="BookOpen" variant="primary" :description="t.courses.tabs.my" href="/courses" />
+          <StatsCard :title="t.home.courseInProgress" :value="String(stats.courses_in_progress || 0)" :icon="BookOpen" variant="primary" :description="t.courses.tabs.my" href="/certifications" />
           <StatsCard :title="t.home.certified" :value="String(stats.certifications_earned || 0)" :icon="CheckCircle2" variant="warning" :description="t.sidebar.certificates" href="/certificates" />
           <StatsCard :title="t.home.unreadMessages" :value="String(unreadCount)" :icon="MessageSquare" variant="info" :description="t.home.unreadMessagesCount" href="/messages" />
         </div>
