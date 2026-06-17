@@ -566,11 +566,14 @@ type MessageItem struct {
 	UserId     string `json:"user_id"`     // 閼板啰鏁揑D
 	TemplateId string `json:"template_id"` // 濡剝婢業D
 	// payload 鐎涙ê鍋嶆稉?JSON 鐎涙顑佹稉璇х礉閸撳秶顏?Vue3 閻╁瓨甯?JSON.parse 閸楀啿褰?
-	Payload   string               `json:"payload"`
-	MsgType   gmsgpb.MsgType       `json:"msg_type"`
-	MsgSource gmsgpb.MsgSource     `json:"msg_source"`
-	SenderId  string               `json:"sender_id"`
-	Status    gmsgpb.MessageStatus `json:"status"`
+	Payload         string               `json:"payload"`
+	TemplatePayload string               `json:"template_payload,omitempty"`
+	Title           string               `json:"title,omitempty"`
+	Content         string               `json:"content,omitempty"`
+	MsgType         gmsgpb.MsgType       `json:"msg_type"`
+	MsgSource       gmsgpb.MsgSource     `json:"msg_source"`
+	SenderId        string               `json:"sender_id"`
+	Status          gmsgpb.MessageStatus `json:"status"`
 	// 閺冨爼妫挎担璺ㄦ暏 string 鐞涖劏鎻?(閺嶇厧绱? "2026-04-27T16:00:00Z")
 	CreatedAt string `json:"created_at"`
 }

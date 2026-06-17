@@ -23,11 +23,11 @@ const (
 	MessageService_MarkAsRead_FullMethodName         = "/gmsg.MessageService/MarkAsRead"
 	MessageService_DeleteMessages_FullMethodName     = "/gmsg.MessageService/DeleteMessages"
 	MessageService_ClearAllMessages_FullMethodName   = "/gmsg.MessageService/ClearAllMessages"
+	MessageService_GetMessage_FullMethodName         = "/gmsg.MessageService/GetMessage"
 	MessageService_SendMessage_FullMethodName        = "/gmsg.MessageService/SendMessage"
 	MessageService_RevokeMessage_FullMethodName      = "/gmsg.MessageService/RevokeMessage"
 	MessageService_ListMessagesAdmin_FullMethodName  = "/gmsg.MessageService/ListMessagesAdmin"
 	MessageService_GetMessageStats_FullMethodName    = "/gmsg.MessageService/GetMessageStats"
-	MessageService_GetMessageDetail_FullMethodName   = "/gmsg.MessageService/GetMessageDetail"
 	MessageService_CreateTemplate_FullMethodName     = "/gmsg.MessageService/CreateTemplate"
 	MessageService_GetTemplate_FullMethodName        = "/gmsg.MessageService/GetTemplate"
 	MessageService_UpdateTemplate_FullMethodName     = "/gmsg.MessageService/UpdateTemplate"
@@ -48,14 +48,13 @@ type MessageServiceClient interface {
 	MarkAsRead(ctx context.Context, in *MarkAsReadRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	DeleteMessages(ctx context.Context, in *DeleteMessagesRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	ClearAllMessages(ctx context.Context, in *ClearAllMessagesRequest, opts ...grpc.CallOption) (*CommonResponse, error)
+	GetMessage(ctx context.Context, in *GetMessageRequest, opts ...grpc.CallOption) (*MessageItem, error)
 	// --- 管理端：消息操作 ---
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
 	RevokeMessage(ctx context.Context, in *RevokeMessageRequest, opts ...grpc.CallOption) (*CommonResponse, error)
 	// --- 管理端：分页列出消息与计数 ---
 	ListMessagesAdmin(ctx context.Context, in *ListMessagesAdminRequest, opts ...grpc.CallOption) (*ListMessagesAdminResponse, error)
 	GetMessageStats(ctx context.Context, in *GetMessageStatsRequest, opts ...grpc.CallOption) (*GetMessageStatsResponse, error)
-	// 管理端：获取单条消息详情
-	GetMessageDetail(ctx context.Context, in *GetMessageDetailRequest, opts ...grpc.CallOption) (*Message, error)
 	// --- 管理端：模板 CRUD ---
 	CreateTemplate(ctx context.Context, in *CreateTemplateRequest, opts ...grpc.CallOption) (*Template, error)
 	GetTemplate(ctx context.Context, in *GetTemplateRequest, opts ...grpc.CallOption) (*Template, error)
@@ -117,6 +116,16 @@ func (c *messageServiceClient) ClearAllMessages(ctx context.Context, in *ClearAl
 	return out, nil
 }
 
+func (c *messageServiceClient) GetMessage(ctx context.Context, in *GetMessageRequest, opts ...grpc.CallOption) (*MessageItem, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MessageItem)
+	err := c.cc.Invoke(ctx, MessageService_GetMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *messageServiceClient) SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SendMessageResponse)
@@ -151,16 +160,6 @@ func (c *messageServiceClient) GetMessageStats(ctx context.Context, in *GetMessa
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetMessageStatsResponse)
 	err := c.cc.Invoke(ctx, MessageService_GetMessageStats_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *messageServiceClient) GetMessageDetail(ctx context.Context, in *GetMessageDetailRequest, opts ...grpc.CallOption) (*Message, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Message)
-	err := c.cc.Invoke(ctx, MessageService_GetMessageDetail_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -248,14 +247,13 @@ type MessageServiceServer interface {
 	MarkAsRead(context.Context, *MarkAsReadRequest) (*CommonResponse, error)
 	DeleteMessages(context.Context, *DeleteMessagesRequest) (*CommonResponse, error)
 	ClearAllMessages(context.Context, *ClearAllMessagesRequest) (*CommonResponse, error)
+	GetMessage(context.Context, *GetMessageRequest) (*MessageItem, error)
 	// --- 管理端：消息操作 ---
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
 	RevokeMessage(context.Context, *RevokeMessageRequest) (*CommonResponse, error)
 	// --- 管理端：分页列出消息与计数 ---
 	ListMessagesAdmin(context.Context, *ListMessagesAdminRequest) (*ListMessagesAdminResponse, error)
 	GetMessageStats(context.Context, *GetMessageStatsRequest) (*GetMessageStatsResponse, error)
-	// 管理端：获取单条消息详情
-	GetMessageDetail(context.Context, *GetMessageDetailRequest) (*Message, error)
 	// --- 管理端：模板 CRUD ---
 	CreateTemplate(context.Context, *CreateTemplateRequest) (*Template, error)
 	GetTemplate(context.Context, *GetTemplateRequest) (*Template, error)
@@ -289,6 +287,9 @@ func (UnimplementedMessageServiceServer) DeleteMessages(context.Context, *Delete
 func (UnimplementedMessageServiceServer) ClearAllMessages(context.Context, *ClearAllMessagesRequest) (*CommonResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ClearAllMessages not implemented")
 }
+func (UnimplementedMessageServiceServer) GetMessage(context.Context, *GetMessageRequest) (*MessageItem, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetMessage not implemented")
+}
 func (UnimplementedMessageServiceServer) SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SendMessage not implemented")
 }
@@ -300,9 +301,6 @@ func (UnimplementedMessageServiceServer) ListMessagesAdmin(context.Context, *Lis
 }
 func (UnimplementedMessageServiceServer) GetMessageStats(context.Context, *GetMessageStatsRequest) (*GetMessageStatsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetMessageStats not implemented")
-}
-func (UnimplementedMessageServiceServer) GetMessageDetail(context.Context, *GetMessageDetailRequest) (*Message, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetMessageDetail not implemented")
 }
 func (UnimplementedMessageServiceServer) CreateTemplate(context.Context, *CreateTemplateRequest) (*Template, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateTemplate not implemented")
@@ -418,6 +416,24 @@ func _MessageService_ClearAllMessages_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MessageService_GetMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MessageServiceServer).GetMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MessageService_GetMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MessageServiceServer).GetMessage(ctx, req.(*GetMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _MessageService_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendMessageRequest)
 	if err := dec(in); err != nil {
@@ -486,24 +502,6 @@ func _MessageService_GetMessageStats_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MessageServiceServer).GetMessageStats(ctx, req.(*GetMessageStatsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MessageService_GetMessageDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetMessageDetailRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MessageServiceServer).GetMessageDetail(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MessageService_GetMessageDetail_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MessageServiceServer).GetMessageDetail(ctx, req.(*GetMessageDetailRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -658,6 +656,10 @@ var MessageService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MessageService_ClearAllMessages_Handler,
 		},
 		{
+			MethodName: "GetMessage",
+			Handler:    _MessageService_GetMessage_Handler,
+		},
+		{
 			MethodName: "SendMessage",
 			Handler:    _MessageService_SendMessage_Handler,
 		},
@@ -672,10 +674,6 @@ var MessageService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMessageStats",
 			Handler:    _MessageService_GetMessageStats_Handler,
-		},
-		{
-			MethodName: "GetMessageDetail",
-			Handler:    _MessageService_GetMessageDetail_Handler,
 		},
 		{
 			MethodName: "CreateTemplate",

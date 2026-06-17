@@ -275,140 +275,6 @@ func (BuiltInMsgPathType) EnumDescriptor() ([]byte, []int) {
 	return file_msg_proto_rawDescGZIP(), []int{3}
 }
 
-type Message struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	Id           uint64                 `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                        // 自增ID, 主键
-	MessageId    string                 `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"`          // 消息ID
-	UserId       string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                   // 用户ID
-	TemplatePath string                 `protobuf:"bytes,4,opt,name=template_path,json=templatePath,proto3" json:"template_path,omitempty"` // 模板路径
-	// payload 存储为 JSON 字符串，前端 Vue3 直接 JSON.parse 即可
-	Payload   string        `protobuf:"bytes,5,opt,name=payload,proto3" json:"payload,omitempty"`
-	MsgType   MsgType       `protobuf:"varint,6,opt,name=msg_type,json=msgType,proto3,enum=gmsg.MsgType" json:"msg_type,omitempty"`
-	MsgSource MsgSource     `protobuf:"varint,7,opt,name=msg_source,json=msgSource,proto3,enum=gmsg.MsgSource" json:"msg_source,omitempty"`
-	SenderId  string        `protobuf:"bytes,8,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
-	Status    MessageStatus `protobuf:"varint,9,opt,name=status,proto3,enum=gmsg.MessageStatus" json:"status,omitempty"`
-	// 时间使用 string 表达 (格式: "2026-04-27T16:00:00Z")
-	CreatedAt     string `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	Version       uint32 `protobuf:"varint,11,opt,name=version,proto3" json:"version,omitempty"`                     // 乐观锁版本号
-	UpdatedAt     string `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"` // 最后修改时间
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Message) Reset() {
-	*x = Message{}
-	mi := &file_msg_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Message) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Message) ProtoMessage() {}
-
-func (x *Message) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Message.ProtoReflect.Descriptor instead.
-func (*Message) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *Message) GetId() uint64 {
-	if x != nil {
-		return x.Id
-	}
-	return 0
-}
-
-func (x *Message) GetMessageId() string {
-	if x != nil {
-		return x.MessageId
-	}
-	return ""
-}
-
-func (x *Message) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
-}
-
-func (x *Message) GetTemplatePath() string {
-	if x != nil {
-		return x.TemplatePath
-	}
-	return ""
-}
-
-func (x *Message) GetPayload() string {
-	if x != nil {
-		return x.Payload
-	}
-	return ""
-}
-
-func (x *Message) GetMsgType() MsgType {
-	if x != nil {
-		return x.MsgType
-	}
-	return MsgType_UNKNOWN_TYPE
-}
-
-func (x *Message) GetMsgSource() MsgSource {
-	if x != nil {
-		return x.MsgSource
-	}
-	return MsgSource_UNKNOWN_SOURCE
-}
-
-func (x *Message) GetSenderId() string {
-	if x != nil {
-		return x.SenderId
-	}
-	return ""
-}
-
-func (x *Message) GetStatus() MessageStatus {
-	if x != nil {
-		return x.Status
-	}
-	return MessageStatus_UNREAD
-}
-
-func (x *Message) GetCreatedAt() string {
-	if x != nil {
-		return x.CreatedAt
-	}
-	return ""
-}
-
-func (x *Message) GetVersion() uint32 {
-	if x != nil {
-		return x.Version
-	}
-	return 0
-}
-
-func (x *Message) GetUpdatedAt() string {
-	if x != nil {
-		return x.UpdatedAt
-	}
-	return ""
-}
-
 type Template struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Path            string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"` // 模板路径，唯一标识
@@ -425,7 +291,7 @@ type Template struct {
 
 func (x *Template) Reset() {
 	*x = Template{}
-	mi := &file_msg_proto_msgTypes[1]
+	mi := &file_msg_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -437,7 +303,7 @@ func (x *Template) String() string {
 func (*Template) ProtoMessage() {}
 
 func (x *Template) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[1]
+	mi := &file_msg_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -450,7 +316,7 @@ func (x *Template) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Template.ProtoReflect.Descriptor instead.
 func (*Template) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{1}
+	return file_msg_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Template) GetPath() string {
@@ -522,7 +388,7 @@ type TemplateSummary struct {
 
 func (x *TemplateSummary) Reset() {
 	*x = TemplateSummary{}
-	mi := &file_msg_proto_msgTypes[2]
+	mi := &file_msg_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -534,7 +400,7 @@ func (x *TemplateSummary) String() string {
 func (*TemplateSummary) ProtoMessage() {}
 
 func (x *TemplateSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[2]
+	mi := &file_msg_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,7 +413,7 @@ func (x *TemplateSummary) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TemplateSummary.ProtoReflect.Descriptor instead.
 func (*TemplateSummary) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{2}
+	return file_msg_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *TemplateSummary) GetPath() string {
@@ -596,7 +462,7 @@ type CommonResponse struct {
 
 func (x *CommonResponse) Reset() {
 	*x = CommonResponse{}
-	mi := &file_msg_proto_msgTypes[3]
+	mi := &file_msg_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -608,7 +474,7 @@ func (x *CommonResponse) String() string {
 func (*CommonResponse) ProtoMessage() {}
 
 func (x *CommonResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[3]
+	mi := &file_msg_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -621,7 +487,7 @@ func (x *CommonResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommonResponse.ProtoReflect.Descriptor instead.
 func (*CommonResponse) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{3}
+	return file_msg_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CommonResponse) GetSuccess() bool {
@@ -634,6 +500,58 @@ func (x *CommonResponse) GetSuccess() bool {
 func (x *CommonResponse) GetMessage() string {
 	if x != nil {
 		return x.Message
+	}
+	return ""
+}
+
+type GetMessageRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // 用户ID [required]
+	MessageId     string                 `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"` // 消息ID [required]
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetMessageRequest) Reset() {
+	*x = GetMessageRequest{}
+	mi := &file_msg_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetMessageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetMessageRequest) ProtoMessage() {}
+
+func (x *GetMessageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_msg_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetMessageRequest.ProtoReflect.Descriptor instead.
+func (*GetMessageRequest) Descriptor() ([]byte, []int) {
+	return file_msg_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetMessageRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *GetMessageRequest) GetMessageId() string {
+	if x != nil {
+		return x.MessageId
 	}
 	return ""
 }
@@ -1505,6 +1423,7 @@ type MessageItem struct {
 	SenderId      string                 `protobuf:"bytes,7,opt,name=sender_id,json=senderId,proto3" json:"sender_id,omitempty"`
 	Status        MessageStatus          `protobuf:"varint,8,opt,name=status,proto3,enum=gmsg.MessageStatus" json:"status,omitempty"`
 	CreatedAt     string                 `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	Payload       string                 `protobuf:"bytes,10,opt,name=payload,proto3" json:"payload,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1598,6 +1517,13 @@ func (x *MessageItem) GetStatus() MessageStatus {
 func (x *MessageItem) GetCreatedAt() string {
 	if x != nil {
 		return x.CreatedAt
+	}
+	return ""
+}
+
+func (x *MessageItem) GetPayload() string {
+	if x != nil {
+		return x.Payload
 	}
 	return ""
 }
@@ -1734,58 +1660,6 @@ func (x *GetMessageStatsResponse) GetStatusCounts() map[string]int64 {
 	return nil
 }
 
-type GetMessageDetailRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`          // 用户ID [required]
-	MessageId     string                 `protobuf:"bytes,2,opt,name=message_id,json=messageId,proto3" json:"message_id,omitempty"` // 消息ID [required]
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetMessageDetailRequest) Reset() {
-	*x = GetMessageDetailRequest{}
-	mi := &file_msg_proto_msgTypes[22]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetMessageDetailRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetMessageDetailRequest) ProtoMessage() {}
-
-func (x *GetMessageDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[22]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetMessageDetailRequest.ProtoReflect.Descriptor instead.
-func (*GetMessageDetailRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{22}
-}
-
-func (x *GetMessageDetailRequest) GetUserId() string {
-	if x != nil {
-		return x.UserId
-	}
-	return ""
-}
-
-func (x *GetMessageDetailRequest) GetMessageId() string {
-	if x != nil {
-		return x.MessageId
-	}
-	return ""
-}
-
 type GetTemplateDetailRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"` // 模板路径 [required]
@@ -1795,7 +1669,7 @@ type GetTemplateDetailRequest struct {
 
 func (x *GetTemplateDetailRequest) Reset() {
 	*x = GetTemplateDetailRequest{}
-	mi := &file_msg_proto_msgTypes[23]
+	mi := &file_msg_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1807,7 +1681,7 @@ func (x *GetTemplateDetailRequest) String() string {
 func (*GetTemplateDetailRequest) ProtoMessage() {}
 
 func (x *GetTemplateDetailRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[23]
+	mi := &file_msg_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1820,7 +1694,7 @@ func (x *GetTemplateDetailRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetTemplateDetailRequest.ProtoReflect.Descriptor instead.
 func (*GetTemplateDetailRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{23}
+	return file_msg_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *GetTemplateDetailRequest) GetPath() string {
@@ -1843,7 +1717,7 @@ type GetBuiltInPathRequest struct {
 
 func (x *GetBuiltInPathRequest) Reset() {
 	*x = GetBuiltInPathRequest{}
-	mi := &file_msg_proto_msgTypes[24]
+	mi := &file_msg_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1855,7 +1729,7 @@ func (x *GetBuiltInPathRequest) String() string {
 func (*GetBuiltInPathRequest) ProtoMessage() {}
 
 func (x *GetBuiltInPathRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[24]
+	mi := &file_msg_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1868,7 +1742,7 @@ func (x *GetBuiltInPathRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBuiltInPathRequest.ProtoReflect.Descriptor instead.
 func (*GetBuiltInPathRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{24}
+	return file_msg_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *GetBuiltInPathRequest) GetQuery() isGetBuiltInPathRequest_Query {
@@ -1924,7 +1798,7 @@ type BuiltInPathInfo struct {
 
 func (x *BuiltInPathInfo) Reset() {
 	*x = BuiltInPathInfo{}
-	mi := &file_msg_proto_msgTypes[25]
+	mi := &file_msg_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1936,7 +1810,7 @@ func (x *BuiltInPathInfo) String() string {
 func (*BuiltInPathInfo) ProtoMessage() {}
 
 func (x *BuiltInPathInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[25]
+	mi := &file_msg_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1949,7 +1823,7 @@ func (x *BuiltInPathInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BuiltInPathInfo.ProtoReflect.Descriptor instead.
 func (*BuiltInPathInfo) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{25}
+	return file_msg_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *BuiltInPathInfo) GetPathType() BuiltInMsgPathType {
@@ -1989,7 +1863,7 @@ type GetBuiltInPathResponse struct {
 
 func (x *GetBuiltInPathResponse) Reset() {
 	*x = GetBuiltInPathResponse{}
-	mi := &file_msg_proto_msgTypes[26]
+	mi := &file_msg_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2001,7 +1875,7 @@ func (x *GetBuiltInPathResponse) String() string {
 func (*GetBuiltInPathResponse) ProtoMessage() {}
 
 func (x *GetBuiltInPathResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[26]
+	mi := &file_msg_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2014,7 +1888,7 @@ func (x *GetBuiltInPathResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBuiltInPathResponse.ProtoReflect.Descriptor instead.
 func (*GetBuiltInPathResponse) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{26}
+	return file_msg_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *GetBuiltInPathResponse) GetInfo() *BuiltInPathInfo {
@@ -2032,7 +1906,7 @@ type GetAllBuiltInPathsRequest struct {
 
 func (x *GetAllBuiltInPathsRequest) Reset() {
 	*x = GetAllBuiltInPathsRequest{}
-	mi := &file_msg_proto_msgTypes[27]
+	mi := &file_msg_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2044,7 +1918,7 @@ func (x *GetAllBuiltInPathsRequest) String() string {
 func (*GetAllBuiltInPathsRequest) ProtoMessage() {}
 
 func (x *GetAllBuiltInPathsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[27]
+	mi := &file_msg_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2057,7 +1931,7 @@ func (x *GetAllBuiltInPathsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAllBuiltInPathsRequest.ProtoReflect.Descriptor instead.
 func (*GetAllBuiltInPathsRequest) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{27}
+	return file_msg_proto_rawDescGZIP(), []int{26}
 }
 
 type GetAllBuiltInPathsResponse struct {
@@ -2069,7 +1943,7 @@ type GetAllBuiltInPathsResponse struct {
 
 func (x *GetAllBuiltInPathsResponse) Reset() {
 	*x = GetAllBuiltInPathsResponse{}
-	mi := &file_msg_proto_msgTypes[28]
+	mi := &file_msg_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2081,7 +1955,7 @@ func (x *GetAllBuiltInPathsResponse) String() string {
 func (*GetAllBuiltInPathsResponse) ProtoMessage() {}
 
 func (x *GetAllBuiltInPathsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_msg_proto_msgTypes[28]
+	mi := &file_msg_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2094,7 +1968,7 @@ func (x *GetAllBuiltInPathsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetAllBuiltInPathsResponse.ProtoReflect.Descriptor instead.
 func (*GetAllBuiltInPathsResponse) Descriptor() ([]byte, []int) {
-	return file_msg_proto_rawDescGZIP(), []int{28}
+	return file_msg_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *GetAllBuiltInPathsResponse) GetPaths() []*BuiltInPathInfo {
@@ -2108,25 +1982,7 @@ var File_msg_proto protoreflect.FileDescriptor
 
 const file_msg_proto_rawDesc = "" +
 	"\n" +
-	"\tmsg.proto\x12\x04gmsg\"\x8c\x03\n" +
-	"\aMessage\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
-	"\n" +
-	"message_id\x18\x02 \x01(\tR\tmessageId\x12\x17\n" +
-	"\auser_id\x18\x03 \x01(\tR\x06userId\x12#\n" +
-	"\rtemplate_path\x18\x04 \x01(\tR\ftemplatePath\x12\x18\n" +
-	"\apayload\x18\x05 \x01(\tR\apayload\x12(\n" +
-	"\bmsg_type\x18\x06 \x01(\x0e2\r.gmsg.MsgTypeR\amsgType\x12.\n" +
-	"\n" +
-	"msg_source\x18\a \x01(\x0e2\x0f.gmsg.MsgSourceR\tmsgSource\x12\x1b\n" +
-	"\tsender_id\x18\b \x01(\tR\bsenderId\x12+\n" +
-	"\x06status\x18\t \x01(\x0e2\x13.gmsg.MessageStatusR\x06status\x12\x1d\n" +
-	"\n" +
-	"created_at\x18\n" +
-	" \x01(\tR\tcreatedAt\x12\x18\n" +
-	"\aversion\x18\v \x01(\rR\aversion\x12\x1d\n" +
-	"\n" +
-	"updated_at\x18\f \x01(\tR\tupdatedAt\"\x81\x02\n" +
+	"\tmsg.proto\x12\x04gmsg\"\x81\x02\n" +
 	"\bTemplate\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1b\n" +
 	"\ttitle_tpl\x18\x02 \x01(\tR\btitleTpl\x12\x1f\n" +
@@ -2149,7 +2005,11 @@ const file_msg_proto_rawDesc = "" +
 	"updated_at\x18\x05 \x01(\tR\tupdatedAt\"D\n" +
 	"\x0eCommonResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage\"\x9a\x01\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"K\n" +
+	"\x11GetMessageRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"message_id\x18\x02 \x01(\tR\tmessageId\"\x9a\x01\n" +
 	"\x13ListMessagesRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x120\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x13.gmsg.MessageStatusH\x00R\x06status\x88\x01\x01\x12\x14\n" +
@@ -2216,7 +2076,7 @@ const file_msg_proto_rawDesc = "" +
 	"\x06status\x18\x01 \x01(\x0e2\x13.gmsg.MessageStatusH\x00R\x06status\x88\x01\x01\x12\x12\n" +
 	"\x04page\x18\x02 \x01(\rR\x04page\x12\x1b\n" +
 	"\tpage_size\x18\x03 \x01(\rR\bpageSizeB\t\n" +
-	"\a_status\"\xbd\x02\n" +
+	"\a_status\"\xd7\x02\n" +
 	"\vMessageItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x04R\x02id\x12\x1d\n" +
 	"\n" +
@@ -2229,7 +2089,9 @@ const file_msg_proto_rawDesc = "" +
 	"\tsender_id\x18\a \x01(\tR\bsenderId\x12+\n" +
 	"\x06status\x18\b \x01(\x0e2\x13.gmsg.MessageStatusR\x06status\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\t \x01(\tR\tcreatedAt\"`\n" +
+	"created_at\x18\t \x01(\tR\tcreatedAt\x12\x18\n" +
+	"\apayload\x18\n" +
+	" \x01(\tR\apayload\"`\n" +
 	"\x19ListMessagesAdminResponse\x12-\n" +
 	"\bmessages\x18\x01 \x03(\v2\x11.gmsg.MessageItemR\bmessages\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\rR\x05total\"\x18\n" +
@@ -2238,11 +2100,7 @@ const file_msg_proto_rawDesc = "" +
 	"\rstatus_counts\x18\x01 \x03(\v2/.gmsg.GetMessageStatsResponse.StatusCountsEntryR\fstatusCounts\x1a?\n" +
 	"\x11StatusCountsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\"Q\n" +
-	"\x17GetMessageDetailRequest\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1d\n" +
-	"\n" +
-	"message_id\x18\x02 \x01(\tR\tmessageId\".\n" +
+	"\x05value\x18\x02 \x01(\x03R\x05value:\x028\x01\".\n" +
 	"\x18GetTemplateDetailRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"o\n" +
 	"\x15GetBuiltInPathRequest\x127\n" +
@@ -2295,18 +2153,19 @@ const file_msg_proto_rawDesc = "" +
 	"\x14GMALL_PAYMENT_FAILED\x10\x0e\x12\x1f\n" +
 	"\x1bGCREDS_APPLICATION_APPROVED\x10\x0f\x12\x1f\n" +
 	"\x1bGCREDS_APPLICATION_REJECTED\x10\x10\x12\x1f\n" +
-	"\x1bGCREDS_APPLICATION_REUPLOAD\x10\x112\xfd\b\n" +
+	"\x1bGCREDS_APPLICATION_REUPLOAD\x10\x112\xf5\b\n" +
 	"\x0eMessageService\x12E\n" +
 	"\fListMessages\x12\x19.gmsg.ListMessagesRequest\x1a\x1a.gmsg.ListMessagesResponse\x12;\n" +
 	"\n" +
 	"MarkAsRead\x12\x17.gmsg.MarkAsReadRequest\x1a\x14.gmsg.CommonResponse\x12C\n" +
 	"\x0eDeleteMessages\x12\x1b.gmsg.DeleteMessagesRequest\x1a\x14.gmsg.CommonResponse\x12G\n" +
-	"\x10ClearAllMessages\x12\x1d.gmsg.ClearAllMessagesRequest\x1a\x14.gmsg.CommonResponse\x12B\n" +
+	"\x10ClearAllMessages\x12\x1d.gmsg.ClearAllMessagesRequest\x1a\x14.gmsg.CommonResponse\x128\n" +
+	"\n" +
+	"GetMessage\x12\x17.gmsg.GetMessageRequest\x1a\x11.gmsg.MessageItem\x12B\n" +
 	"\vSendMessage\x12\x18.gmsg.SendMessageRequest\x1a\x19.gmsg.SendMessageResponse\x12A\n" +
 	"\rRevokeMessage\x12\x1a.gmsg.RevokeMessageRequest\x1a\x14.gmsg.CommonResponse\x12T\n" +
 	"\x11ListMessagesAdmin\x12\x1e.gmsg.ListMessagesAdminRequest\x1a\x1f.gmsg.ListMessagesAdminResponse\x12N\n" +
-	"\x0fGetMessageStats\x12\x1c.gmsg.GetMessageStatsRequest\x1a\x1d.gmsg.GetMessageStatsResponse\x12@\n" +
-	"\x10GetMessageDetail\x12\x1d.gmsg.GetMessageDetailRequest\x1a\r.gmsg.Message\x12=\n" +
+	"\x0fGetMessageStats\x12\x1c.gmsg.GetMessageStatsRequest\x1a\x1d.gmsg.GetMessageStatsResponse\x12=\n" +
 	"\x0eCreateTemplate\x12\x1b.gmsg.CreateTemplateRequest\x1a\x0e.gmsg.Template\x127\n" +
 	"\vGetTemplate\x12\x18.gmsg.GetTemplateRequest\x1a\x0e.gmsg.Template\x12=\n" +
 	"\x0eUpdateTemplate\x12\x1b.gmsg.UpdateTemplateRequest\x1a\x0e.gmsg.Template\x12H\n" +
@@ -2328,16 +2187,16 @@ func file_msg_proto_rawDescGZIP() []byte {
 }
 
 var file_msg_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_msg_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_msg_proto_goTypes = []any{
 	(MessageStatus)(0),                 // 0: gmsg.MessageStatus
 	(MsgType)(0),                       // 1: gmsg.MsgType
 	(MsgSource)(0),                     // 2: gmsg.MsgSource
 	(BuiltInMsgPathType)(0),            // 3: gmsg.BuiltInMsgPathType
-	(*Message)(nil),                    // 4: gmsg.Message
-	(*Template)(nil),                   // 5: gmsg.Template
-	(*TemplateSummary)(nil),            // 6: gmsg.TemplateSummary
-	(*CommonResponse)(nil),             // 7: gmsg.CommonResponse
+	(*Template)(nil),                   // 4: gmsg.Template
+	(*TemplateSummary)(nil),            // 5: gmsg.TemplateSummary
+	(*CommonResponse)(nil),             // 6: gmsg.CommonResponse
+	(*GetMessageRequest)(nil),          // 7: gmsg.GetMessageRequest
 	(*ListMessagesRequest)(nil),        // 8: gmsg.ListMessagesRequest
 	(*ListMessagesResponse)(nil),       // 9: gmsg.ListMessagesResponse
 	(*DeleteMessagesRequest)(nil),      // 10: gmsg.DeleteMessagesRequest
@@ -2356,72 +2215,68 @@ var file_msg_proto_goTypes = []any{
 	(*ListMessagesAdminResponse)(nil),  // 23: gmsg.ListMessagesAdminResponse
 	(*GetMessageStatsRequest)(nil),     // 24: gmsg.GetMessageStatsRequest
 	(*GetMessageStatsResponse)(nil),    // 25: gmsg.GetMessageStatsResponse
-	(*GetMessageDetailRequest)(nil),    // 26: gmsg.GetMessageDetailRequest
-	(*GetTemplateDetailRequest)(nil),   // 27: gmsg.GetTemplateDetailRequest
-	(*GetBuiltInPathRequest)(nil),      // 28: gmsg.GetBuiltInPathRequest
-	(*BuiltInPathInfo)(nil),            // 29: gmsg.BuiltInPathInfo
-	(*GetBuiltInPathResponse)(nil),     // 30: gmsg.GetBuiltInPathResponse
-	(*GetAllBuiltInPathsRequest)(nil),  // 31: gmsg.GetAllBuiltInPathsRequest
-	(*GetAllBuiltInPathsResponse)(nil), // 32: gmsg.GetAllBuiltInPathsResponse
-	nil,                                // 33: gmsg.GetMessageStatsResponse.StatusCountsEntry
+	(*GetTemplateDetailRequest)(nil),   // 26: gmsg.GetTemplateDetailRequest
+	(*GetBuiltInPathRequest)(nil),      // 27: gmsg.GetBuiltInPathRequest
+	(*BuiltInPathInfo)(nil),            // 28: gmsg.BuiltInPathInfo
+	(*GetBuiltInPathResponse)(nil),     // 29: gmsg.GetBuiltInPathResponse
+	(*GetAllBuiltInPathsRequest)(nil),  // 30: gmsg.GetAllBuiltInPathsRequest
+	(*GetAllBuiltInPathsResponse)(nil), // 31: gmsg.GetAllBuiltInPathsResponse
+	nil,                                // 32: gmsg.GetMessageStatsResponse.StatusCountsEntry
 }
 var file_msg_proto_depIdxs = []int32{
-	1,  // 0: gmsg.Message.msg_type:type_name -> gmsg.MsgType
-	2,  // 1: gmsg.Message.msg_source:type_name -> gmsg.MsgSource
-	0,  // 2: gmsg.Message.status:type_name -> gmsg.MessageStatus
-	0,  // 3: gmsg.ListMessagesRequest.status:type_name -> gmsg.MessageStatus
-	22, // 4: gmsg.ListMessagesResponse.messages:type_name -> gmsg.MessageItem
-	1,  // 5: gmsg.SendMessageRequest.msg_type:type_name -> gmsg.MsgType
-	2,  // 6: gmsg.SendMessageRequest.msg_source:type_name -> gmsg.MsgSource
-	3,  // 7: gmsg.SendMessageRequest.builtin_template_path:type_name -> gmsg.BuiltInMsgPathType
-	6,  // 8: gmsg.ListTemplatesResponse.templates:type_name -> gmsg.TemplateSummary
-	0,  // 9: gmsg.ListMessagesAdminRequest.status:type_name -> gmsg.MessageStatus
-	1,  // 10: gmsg.MessageItem.msg_type:type_name -> gmsg.MsgType
-	2,  // 11: gmsg.MessageItem.msg_source:type_name -> gmsg.MsgSource
-	0,  // 12: gmsg.MessageItem.status:type_name -> gmsg.MessageStatus
-	22, // 13: gmsg.ListMessagesAdminResponse.messages:type_name -> gmsg.MessageItem
-	33, // 14: gmsg.GetMessageStatsResponse.status_counts:type_name -> gmsg.GetMessageStatsResponse.StatusCountsEntry
-	3,  // 15: gmsg.GetBuiltInPathRequest.path_type:type_name -> gmsg.BuiltInMsgPathType
-	3,  // 16: gmsg.BuiltInPathInfo.path_type:type_name -> gmsg.BuiltInMsgPathType
-	29, // 17: gmsg.GetBuiltInPathResponse.info:type_name -> gmsg.BuiltInPathInfo
-	29, // 18: gmsg.GetAllBuiltInPathsResponse.paths:type_name -> gmsg.BuiltInPathInfo
-	8,  // 19: gmsg.MessageService.ListMessages:input_type -> gmsg.ListMessagesRequest
-	20, // 20: gmsg.MessageService.MarkAsRead:input_type -> gmsg.MarkAsReadRequest
-	10, // 21: gmsg.MessageService.DeleteMessages:input_type -> gmsg.DeleteMessagesRequest
-	11, // 22: gmsg.MessageService.ClearAllMessages:input_type -> gmsg.ClearAllMessagesRequest
-	12, // 23: gmsg.MessageService.SendMessage:input_type -> gmsg.SendMessageRequest
-	14, // 24: gmsg.MessageService.RevokeMessage:input_type -> gmsg.RevokeMessageRequest
-	21, // 25: gmsg.MessageService.ListMessagesAdmin:input_type -> gmsg.ListMessagesAdminRequest
-	24, // 26: gmsg.MessageService.GetMessageStats:input_type -> gmsg.GetMessageStatsRequest
-	26, // 27: gmsg.MessageService.GetMessageDetail:input_type -> gmsg.GetMessageDetailRequest
-	15, // 28: gmsg.MessageService.CreateTemplate:input_type -> gmsg.CreateTemplateRequest
-	16, // 29: gmsg.MessageService.GetTemplate:input_type -> gmsg.GetTemplateRequest
-	17, // 30: gmsg.MessageService.UpdateTemplate:input_type -> gmsg.UpdateTemplateRequest
-	18, // 31: gmsg.MessageService.ListTemplates:input_type -> gmsg.ListTemplatesRequest
-	27, // 32: gmsg.MessageService.GetTemplateDetail:input_type -> gmsg.GetTemplateDetailRequest
-	28, // 33: gmsg.MessageService.GetBuiltInPath:input_type -> gmsg.GetBuiltInPathRequest
-	31, // 34: gmsg.MessageService.GetAllBuiltInPaths:input_type -> gmsg.GetAllBuiltInPathsRequest
-	9,  // 35: gmsg.MessageService.ListMessages:output_type -> gmsg.ListMessagesResponse
-	7,  // 36: gmsg.MessageService.MarkAsRead:output_type -> gmsg.CommonResponse
-	7,  // 37: gmsg.MessageService.DeleteMessages:output_type -> gmsg.CommonResponse
-	7,  // 38: gmsg.MessageService.ClearAllMessages:output_type -> gmsg.CommonResponse
-	13, // 39: gmsg.MessageService.SendMessage:output_type -> gmsg.SendMessageResponse
-	7,  // 40: gmsg.MessageService.RevokeMessage:output_type -> gmsg.CommonResponse
-	23, // 41: gmsg.MessageService.ListMessagesAdmin:output_type -> gmsg.ListMessagesAdminResponse
-	25, // 42: gmsg.MessageService.GetMessageStats:output_type -> gmsg.GetMessageStatsResponse
-	4,  // 43: gmsg.MessageService.GetMessageDetail:output_type -> gmsg.Message
-	5,  // 44: gmsg.MessageService.CreateTemplate:output_type -> gmsg.Template
-	5,  // 45: gmsg.MessageService.GetTemplate:output_type -> gmsg.Template
-	5,  // 46: gmsg.MessageService.UpdateTemplate:output_type -> gmsg.Template
-	19, // 47: gmsg.MessageService.ListTemplates:output_type -> gmsg.ListTemplatesResponse
-	5,  // 48: gmsg.MessageService.GetTemplateDetail:output_type -> gmsg.Template
-	30, // 49: gmsg.MessageService.GetBuiltInPath:output_type -> gmsg.GetBuiltInPathResponse
-	32, // 50: gmsg.MessageService.GetAllBuiltInPaths:output_type -> gmsg.GetAllBuiltInPathsResponse
-	35, // [35:51] is the sub-list for method output_type
-	19, // [19:35] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	0,  // 0: gmsg.ListMessagesRequest.status:type_name -> gmsg.MessageStatus
+	22, // 1: gmsg.ListMessagesResponse.messages:type_name -> gmsg.MessageItem
+	1,  // 2: gmsg.SendMessageRequest.msg_type:type_name -> gmsg.MsgType
+	2,  // 3: gmsg.SendMessageRequest.msg_source:type_name -> gmsg.MsgSource
+	3,  // 4: gmsg.SendMessageRequest.builtin_template_path:type_name -> gmsg.BuiltInMsgPathType
+	5,  // 5: gmsg.ListTemplatesResponse.templates:type_name -> gmsg.TemplateSummary
+	0,  // 6: gmsg.ListMessagesAdminRequest.status:type_name -> gmsg.MessageStatus
+	1,  // 7: gmsg.MessageItem.msg_type:type_name -> gmsg.MsgType
+	2,  // 8: gmsg.MessageItem.msg_source:type_name -> gmsg.MsgSource
+	0,  // 9: gmsg.MessageItem.status:type_name -> gmsg.MessageStatus
+	22, // 10: gmsg.ListMessagesAdminResponse.messages:type_name -> gmsg.MessageItem
+	32, // 11: gmsg.GetMessageStatsResponse.status_counts:type_name -> gmsg.GetMessageStatsResponse.StatusCountsEntry
+	3,  // 12: gmsg.GetBuiltInPathRequest.path_type:type_name -> gmsg.BuiltInMsgPathType
+	3,  // 13: gmsg.BuiltInPathInfo.path_type:type_name -> gmsg.BuiltInMsgPathType
+	28, // 14: gmsg.GetBuiltInPathResponse.info:type_name -> gmsg.BuiltInPathInfo
+	28, // 15: gmsg.GetAllBuiltInPathsResponse.paths:type_name -> gmsg.BuiltInPathInfo
+	8,  // 16: gmsg.MessageService.ListMessages:input_type -> gmsg.ListMessagesRequest
+	20, // 17: gmsg.MessageService.MarkAsRead:input_type -> gmsg.MarkAsReadRequest
+	10, // 18: gmsg.MessageService.DeleteMessages:input_type -> gmsg.DeleteMessagesRequest
+	11, // 19: gmsg.MessageService.ClearAllMessages:input_type -> gmsg.ClearAllMessagesRequest
+	7,  // 20: gmsg.MessageService.GetMessage:input_type -> gmsg.GetMessageRequest
+	12, // 21: gmsg.MessageService.SendMessage:input_type -> gmsg.SendMessageRequest
+	14, // 22: gmsg.MessageService.RevokeMessage:input_type -> gmsg.RevokeMessageRequest
+	21, // 23: gmsg.MessageService.ListMessagesAdmin:input_type -> gmsg.ListMessagesAdminRequest
+	24, // 24: gmsg.MessageService.GetMessageStats:input_type -> gmsg.GetMessageStatsRequest
+	15, // 25: gmsg.MessageService.CreateTemplate:input_type -> gmsg.CreateTemplateRequest
+	16, // 26: gmsg.MessageService.GetTemplate:input_type -> gmsg.GetTemplateRequest
+	17, // 27: gmsg.MessageService.UpdateTemplate:input_type -> gmsg.UpdateTemplateRequest
+	18, // 28: gmsg.MessageService.ListTemplates:input_type -> gmsg.ListTemplatesRequest
+	26, // 29: gmsg.MessageService.GetTemplateDetail:input_type -> gmsg.GetTemplateDetailRequest
+	27, // 30: gmsg.MessageService.GetBuiltInPath:input_type -> gmsg.GetBuiltInPathRequest
+	30, // 31: gmsg.MessageService.GetAllBuiltInPaths:input_type -> gmsg.GetAllBuiltInPathsRequest
+	9,  // 32: gmsg.MessageService.ListMessages:output_type -> gmsg.ListMessagesResponse
+	6,  // 33: gmsg.MessageService.MarkAsRead:output_type -> gmsg.CommonResponse
+	6,  // 34: gmsg.MessageService.DeleteMessages:output_type -> gmsg.CommonResponse
+	6,  // 35: gmsg.MessageService.ClearAllMessages:output_type -> gmsg.CommonResponse
+	22, // 36: gmsg.MessageService.GetMessage:output_type -> gmsg.MessageItem
+	13, // 37: gmsg.MessageService.SendMessage:output_type -> gmsg.SendMessageResponse
+	6,  // 38: gmsg.MessageService.RevokeMessage:output_type -> gmsg.CommonResponse
+	23, // 39: gmsg.MessageService.ListMessagesAdmin:output_type -> gmsg.ListMessagesAdminResponse
+	25, // 40: gmsg.MessageService.GetMessageStats:output_type -> gmsg.GetMessageStatsResponse
+	4,  // 41: gmsg.MessageService.CreateTemplate:output_type -> gmsg.Template
+	4,  // 42: gmsg.MessageService.GetTemplate:output_type -> gmsg.Template
+	4,  // 43: gmsg.MessageService.UpdateTemplate:output_type -> gmsg.Template
+	19, // 44: gmsg.MessageService.ListTemplates:output_type -> gmsg.ListTemplatesResponse
+	4,  // 45: gmsg.MessageService.GetTemplateDetail:output_type -> gmsg.Template
+	29, // 46: gmsg.MessageService.GetBuiltInPath:output_type -> gmsg.GetBuiltInPathResponse
+	31, // 47: gmsg.MessageService.GetAllBuiltInPaths:output_type -> gmsg.GetAllBuiltInPathsResponse
+	32, // [32:48] is the sub-list for method output_type
+	16, // [16:32] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_msg_proto_init() }
@@ -2431,7 +2286,7 @@ func file_msg_proto_init() {
 	}
 	file_msg_proto_msgTypes[4].OneofWrappers = []any{}
 	file_msg_proto_msgTypes[17].OneofWrappers = []any{}
-	file_msg_proto_msgTypes[24].OneofWrappers = []any{
+	file_msg_proto_msgTypes[23].OneofWrappers = []any{
 		(*GetBuiltInPathRequest_PathType)(nil),
 		(*GetBuiltInPathRequest_Path)(nil),
 	}
@@ -2441,7 +2296,7 @@ func file_msg_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_msg_proto_rawDesc), len(file_msg_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   30,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

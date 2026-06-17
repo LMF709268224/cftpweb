@@ -19,38 +19,40 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CredentialService_CreateCredentialDefinition_FullMethodName    = "/gcreds.CredentialService/CreateCredentialDefinition"
-	CredentialService_GetCredentialDefinitionDetail_FullMethodName = "/gcreds.CredentialService/GetCredentialDefinitionDetail"
-	CredentialService_ListCredentialDefinitions_FullMethodName     = "/gcreds.CredentialService/ListCredentialDefinitions"
-	CredentialService_SubmitApplication_FullMethodName             = "/gcreds.CredentialService/SubmitApplication"
-	CredentialService_UpdateApplication_FullMethodName             = "/gcreds.CredentialService/UpdateApplication"
-	CredentialService_AuditApplication_FullMethodName              = "/gcreds.CredentialService/AuditApplication"
-	CredentialService_GetApplicationDetail_FullMethodName          = "/gcreds.CredentialService/GetApplicationDetail"
-	CredentialService_ListCandidateApplications_FullMethodName     = "/gcreds.CredentialService/ListCandidateApplications"
-	CredentialService_ListApplications_FullMethodName              = "/gcreds.CredentialService/ListApplications"
-	CredentialService_GrantUploadPermission_FullMethodName         = "/gcreds.CredentialService/GrantUploadPermission"
-	CredentialService_RevokeUploadPermission_FullMethodName        = "/gcreds.CredentialService/RevokeUploadPermission"
-	CredentialService_CheckUploadPermission_FullMethodName         = "/gcreds.CredentialService/CheckUploadPermission"
-	CredentialService_RequestUploadUrl_FullMethodName              = "/gcreds.CredentialService/RequestUploadUrl"
-	CredentialService_ListCredentials_FullMethodName               = "/gcreds.CredentialService/ListCredentials"
-	CredentialService_GetCredentialDetail_FullMethodName           = "/gcreds.CredentialService/GetCredentialDetail"
-	CredentialService_GetLatestCredential_FullMethodName           = "/gcreds.CredentialService/GetLatestCredential"
-	CredentialService_CheckCandidateQualification_FullMethodName   = "/gcreds.CredentialService/CheckCandidateQualification"
-	CredentialService_GetCredentialVersion_FullMethodName          = "/gcreds.CredentialService/GetCredentialVersion"
-	CredentialService_MarkExpired_FullMethodName                   = "/gcreds.CredentialService/MarkExpired"
-	CredentialService_RevokeCredential_FullMethodName              = "/gcreds.CredentialService/RevokeCredential"
-	CredentialService_CreatePdfTemplate_FullMethodName             = "/gcreds.CredentialService/CreatePdfTemplate"
-	CredentialService_UpdatePdfTemplate_FullMethodName             = "/gcreds.CredentialService/UpdatePdfTemplate"
-	CredentialService_GetPdfTemplate_FullMethodName                = "/gcreds.CredentialService/GetPdfTemplate"
-	CredentialService_GetPdfTemplateDetail_FullMethodName          = "/gcreds.CredentialService/GetPdfTemplateDetail"
-	CredentialService_ListPdfTemplates_FullMethodName              = "/gcreds.CredentialService/ListPdfTemplates"
-	CredentialService_CreatePdfRequest_FullMethodName              = "/gcreds.CredentialService/CreatePdfRequest"
-	CredentialService_UpdatePdfRequest_FullMethodName              = "/gcreds.CredentialService/UpdatePdfRequest"
-	CredentialService_GetPdfRequest_FullMethodName                 = "/gcreds.CredentialService/GetPdfRequest"
-	CredentialService_GetPdfRequestDetail_FullMethodName           = "/gcreds.CredentialService/GetPdfRequestDetail"
-	CredentialService_GetPdfCertificate_FullMethodName             = "/gcreds.CredentialService/GetPdfCertificate"
-	CredentialService_ListPdfRequests_FullMethodName               = "/gcreds.CredentialService/ListPdfRequests"
-	CredentialService_CheckResourcesExist_FullMethodName           = "/gcreds.CredentialService/CheckResourcesExist"
+	CredentialService_CreateCredentialDefinition_FullMethodName       = "/gcreds.CredentialService/CreateCredentialDefinition"
+	CredentialService_GetCredentialDefinitionDetail_FullMethodName    = "/gcreds.CredentialService/GetCredentialDefinitionDetail"
+	CredentialService_ListCredentialDefinitions_FullMethodName        = "/gcreds.CredentialService/ListCredentialDefinitions"
+	CredentialService_SubmitApplication_FullMethodName                = "/gcreds.CredentialService/SubmitApplication"
+	CredentialService_UpdateApplication_FullMethodName                = "/gcreds.CredentialService/UpdateApplication"
+	CredentialService_AuditApplication_FullMethodName                 = "/gcreds.CredentialService/AuditApplication"
+	CredentialService_GetApplicationDetail_FullMethodName             = "/gcreds.CredentialService/GetApplicationDetail"
+	CredentialService_ListCandidateApplications_FullMethodName        = "/gcreds.CredentialService/ListCandidateApplications"
+	CredentialService_ListCandidateCredentials_FullMethodName         = "/gcreds.CredentialService/ListCandidateCredentials"
+	CredentialService_ListCandidateEligibleDefinitions_FullMethodName = "/gcreds.CredentialService/ListCandidateEligibleDefinitions"
+	CredentialService_ListApplications_FullMethodName                 = "/gcreds.CredentialService/ListApplications"
+	CredentialService_GrantUploadPermission_FullMethodName            = "/gcreds.CredentialService/GrantUploadPermission"
+	CredentialService_RevokeUploadPermission_FullMethodName           = "/gcreds.CredentialService/RevokeUploadPermission"
+	CredentialService_CheckUploadPermission_FullMethodName            = "/gcreds.CredentialService/CheckUploadPermission"
+	CredentialService_RequestUploadUrl_FullMethodName                 = "/gcreds.CredentialService/RequestUploadUrl"
+	CredentialService_ListCredentials_FullMethodName                  = "/gcreds.CredentialService/ListCredentials"
+	CredentialService_GetCredentialDetail_FullMethodName              = "/gcreds.CredentialService/GetCredentialDetail"
+	CredentialService_GetLatestCredential_FullMethodName              = "/gcreds.CredentialService/GetLatestCredential"
+	CredentialService_CheckCandidateQualification_FullMethodName      = "/gcreds.CredentialService/CheckCandidateQualification"
+	CredentialService_GetCredentialVersion_FullMethodName             = "/gcreds.CredentialService/GetCredentialVersion"
+	CredentialService_MarkExpired_FullMethodName                      = "/gcreds.CredentialService/MarkExpired"
+	CredentialService_RevokeCredential_FullMethodName                 = "/gcreds.CredentialService/RevokeCredential"
+	CredentialService_CreatePdfTemplate_FullMethodName                = "/gcreds.CredentialService/CreatePdfTemplate"
+	CredentialService_UpdatePdfTemplate_FullMethodName                = "/gcreds.CredentialService/UpdatePdfTemplate"
+	CredentialService_GetPdfTemplate_FullMethodName                   = "/gcreds.CredentialService/GetPdfTemplate"
+	CredentialService_GetPdfTemplateDetail_FullMethodName             = "/gcreds.CredentialService/GetPdfTemplateDetail"
+	CredentialService_ListPdfTemplates_FullMethodName                 = "/gcreds.CredentialService/ListPdfTemplates"
+	CredentialService_CreatePdfRequest_FullMethodName                 = "/gcreds.CredentialService/CreatePdfRequest"
+	CredentialService_UpdatePdfRequest_FullMethodName                 = "/gcreds.CredentialService/UpdatePdfRequest"
+	CredentialService_GetPdfRequest_FullMethodName                    = "/gcreds.CredentialService/GetPdfRequest"
+	CredentialService_GetPdfRequestDetail_FullMethodName              = "/gcreds.CredentialService/GetPdfRequestDetail"
+	CredentialService_GetPdfCertificate_FullMethodName                = "/gcreds.CredentialService/GetPdfCertificate"
+	CredentialService_ListPdfRequests_FullMethodName                  = "/gcreds.CredentialService/ListPdfRequests"
+	CredentialService_CheckResourcesExist_FullMethodName              = "/gcreds.CredentialService/CheckResourcesExist"
 )
 
 // CredentialServiceClient is the client API for CredentialService service.
@@ -74,6 +76,10 @@ type CredentialServiceClient interface {
 	GetApplicationDetail(ctx context.Context, in *GetApplicationDetailRequest, opts ...grpc.CallOption) (*Application, error)
 	// 考生列举自己的申请结果
 	ListCandidateApplications(ctx context.Context, in *ListApplicationsRequest, opts ...grpc.CallOption) (*ListApplicationsResponse, error)
+	// 考生列出自己已经持有的有效资格
+	ListCandidateCredentials(ctx context.Context, in *ListCandidateCredentialsRequest, opts ...grpc.CallOption) (*ListCandidateCredentialsResponse, error)
+	// 考生列出自己可以申请的资格 (包含该资格当前的申请/持有状态)
+	ListCandidateEligibleDefinitions(ctx context.Context, in *ListCandidateEligibleDefinitionsRequest, opts ...grpc.CallOption) (*ListCandidateEligibleDefinitionsResponse, error)
 	// 分页及条件列出申请记录 (管理员用)
 	ListApplications(ctx context.Context, in *ListApplicationsRequest, opts ...grpc.CallOption) (*ListApplicationsResponse, error)
 	// 打开考生某个资格类型的资料上传权限
@@ -199,6 +205,26 @@ func (c *credentialServiceClient) ListCandidateApplications(ctx context.Context,
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListApplicationsResponse)
 	err := c.cc.Invoke(ctx, CredentialService_ListCandidateApplications_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) ListCandidateCredentials(ctx context.Context, in *ListCandidateCredentialsRequest, opts ...grpc.CallOption) (*ListCandidateCredentialsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCandidateCredentialsResponse)
+	err := c.cc.Invoke(ctx, CredentialService_ListCandidateCredentials_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *credentialServiceClient) ListCandidateEligibleDefinitions(ctx context.Context, in *ListCandidateEligibleDefinitionsRequest, opts ...grpc.CallOption) (*ListCandidateEligibleDefinitionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListCandidateEligibleDefinitionsResponse)
+	err := c.cc.Invoke(ctx, CredentialService_ListCandidateEligibleDefinitions_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -466,6 +492,10 @@ type CredentialServiceServer interface {
 	GetApplicationDetail(context.Context, *GetApplicationDetailRequest) (*Application, error)
 	// 考生列举自己的申请结果
 	ListCandidateApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error)
+	// 考生列出自己已经持有的有效资格
+	ListCandidateCredentials(context.Context, *ListCandidateCredentialsRequest) (*ListCandidateCredentialsResponse, error)
+	// 考生列出自己可以申请的资格 (包含该资格当前的申请/持有状态)
+	ListCandidateEligibleDefinitions(context.Context, *ListCandidateEligibleDefinitionsRequest) (*ListCandidateEligibleDefinitionsResponse, error)
 	// 分页及条件列出申请记录 (管理员用)
 	ListApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error)
 	// 打开考生某个资格类型的资料上传权限
@@ -540,6 +570,12 @@ func (UnimplementedCredentialServiceServer) GetApplicationDetail(context.Context
 }
 func (UnimplementedCredentialServiceServer) ListCandidateApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListCandidateApplications not implemented")
+}
+func (UnimplementedCredentialServiceServer) ListCandidateCredentials(context.Context, *ListCandidateCredentialsRequest) (*ListCandidateCredentialsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCandidateCredentials not implemented")
+}
+func (UnimplementedCredentialServiceServer) ListCandidateEligibleDefinitions(context.Context, *ListCandidateEligibleDefinitionsRequest) (*ListCandidateEligibleDefinitionsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListCandidateEligibleDefinitions not implemented")
 }
 func (UnimplementedCredentialServiceServer) ListApplications(context.Context, *ListApplicationsRequest) (*ListApplicationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListApplications not implemented")
@@ -774,6 +810,42 @@ func _CredentialService_ListCandidateApplications_Handler(srv interface{}, ctx c
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(CredentialServiceServer).ListCandidateApplications(ctx, req.(*ListApplicationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CredentialService_ListCandidateCredentials_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCandidateCredentialsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).ListCandidateCredentials(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_ListCandidateCredentials_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).ListCandidateCredentials(ctx, req.(*ListCandidateCredentialsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CredentialService_ListCandidateEligibleDefinitions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCandidateEligibleDefinitionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CredentialServiceServer).ListCandidateEligibleDefinitions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CredentialService_ListCandidateEligibleDefinitions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CredentialServiceServer).ListCandidateEligibleDefinitions(ctx, req.(*ListCandidateEligibleDefinitionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1248,6 +1320,14 @@ var CredentialService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListCandidateApplications",
 			Handler:    _CredentialService_ListCandidateApplications_Handler,
+		},
+		{
+			MethodName: "ListCandidateCredentials",
+			Handler:    _CredentialService_ListCandidateCredentials_Handler,
+		},
+		{
+			MethodName: "ListCandidateEligibleDefinitions",
+			Handler:    _CredentialService_ListCandidateEligibleDefinitions_Handler,
 		},
 		{
 			MethodName: "ListApplications",

@@ -174,7 +174,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/", h.ListMessages)
 			r.Put("/read", h.MarkMessagesRead)
 			r.Post("/delete", h.DeleteMessage)
-			r.Get("/{messageId}", h.GetMessageDetail)
+			r.Get("/{messageId}", h.GetMessage)
 		})
 
 		r.Route("/dashboard", func(r chi.Router) {

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -41,19 +42,24 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 
 	out := MessageListRsp{
 		Messages: make([]MessageItem, 0, len(rsp.GetMessages())),
+		HasMore:  rsp.GetHasMore(),
 	}
 	for _, msg := range rsp.GetMessages() {
+		title, content := h.renderMessageSummary(r.Context(), msg)
 		out.Messages = append(out.Messages, MessageItem{
-			Id:         msg.GetId(),
-			MessageId:  msg.GetMessageId(),
-			UserId:     msg.GetUserId(),
-			TemplateId: msg.GetTemplatePath(),
-			Payload:    "{}",
-			MsgType:    msg.GetMsgType(),
-			MsgSource:  msg.GetMsgSource(),
-			SenderId:   msg.GetSenderId(),
-			Status:     msg.GetStatus(),
-			CreatedAt:  msg.GetCreatedAt(),
+			Id:              msg.GetId(),
+			MessageId:       msg.GetMessageId(),
+			UserId:          msg.GetUserId(),
+			TemplateId:      msg.GetTemplatePath(),
+			Payload:         msg.GetPayload(),
+			TemplatePayload: msg.GetPayload(),
+			Title:           title,
+			Content:         content,
+			MsgType:         msg.GetMsgType(),
+			MsgSource:       msg.GetMsgSource(),
+			SenderId:        msg.GetSenderId(),
+			Status:          msg.GetStatus(),
+			CreatedAt:       msg.GetCreatedAt(),
 		})
 	}
 
@@ -102,7 +108,7 @@ func (h *Handler) DeleteMessage(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, nil)
 }
 
-func (h *Handler) GetMessageDetail(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) GetMessage(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 	messageID := chi.URLParam(r, "messageId")
 
@@ -111,7 +117,7 @@ func (h *Handler) GetMessageDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	msg, err := h.Gmsg.GetMessageDetail(r.Context(), &gmsgpb.GetMessageDetailRequest{
+	msg, err := h.Gmsg.GetMessage(r.Context(), &gmsgpb.GetMessageRequest{
 		UserId:    candidateID,
 		MessageId: messageID,
 	})
@@ -120,48 +126,96 @@ func (h *Handler) GetMessageDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	title := ""
-	content := ""
-
-	templatePath := msg.GetTemplatePath()
-	if templatePath != "" {
-		tResp, err := h.Gmsg.GetTemplate(r.Context(), &gmsgpb.GetTemplateRequest{Path: templatePath})
-		if err == nil && tResp != nil {
-			title = tResp.GetTitleTpl()
-			content = tResp.GetContentTpl()
-
-			if msg.GetPayload() != "" {
-				var vars map[string]interface{}
-				if err := json.Unmarshal([]byte(msg.GetPayload()), &vars); err == nil {
-					for k, v := range vars {
-						vStr := fmt.Sprintf("%v", v)
-						title = strings.ReplaceAll(title, "{{"+k+"}}", vStr)
-						content = strings.ReplaceAll(content, "{{"+k+"}}", vStr)
-					}
-				}
-			}
-		}
-	} else if msg.GetPayload() != "" {
-		var vars map[string]interface{}
-		if err := json.Unmarshal([]byte(msg.GetPayload()), &vars); err == nil {
-			if t, ok := vars["title"].(string); ok {
-				title = t
-			}
-			if c, ok := vars["content"].(string); ok {
-				content = c
-			}
-		}
-	}
+	title, content := h.renderMessageSummary(r.Context(), msg)
 
 	out := map[string]interface{}{
-		"id":         msg.GetId(),
-		"message_id": msg.GetMessageId(),
-		"msg_type":   msg.GetMsgType().String(),
-		"status":     msg.GetStatus().String(),
-		"created_at": msg.GetCreatedAt(),
-		"title":      title,
-		"content":    content,
-		"payload":    msg.GetPayload(),
+		"id":               msg.GetId(),
+		"message_id":       msg.GetMessageId(),
+		"msg_type":         msg.GetMsgType().String(),
+		"status":           msg.GetStatus().String(),
+		"created_at":       msg.GetCreatedAt(),
+		"title":            title,
+		"content":          content,
+		"payload":          msg.GetPayload(),
+		"template_payload": msg.GetPayload(),
 	}
 	WriteJSON(w, http.StatusOK, out)
+}
+
+func (h *Handler) renderMessageSummary(ctx context.Context, msg *gmsgpb.MessageItem) (string, string) {
+	if msg == nil {
+		return "", ""
+	}
+
+	var vars map[string]interface{}
+	if msg.GetPayload() != "" {
+		_ = json.Unmarshal([]byte(msg.GetPayload()), &vars)
+	}
+
+	title := ""
+	content := ""
+	if templatePath := msg.GetTemplatePath(); templatePath != "" {
+		if tResp, err := h.Gmsg.GetTemplate(ctx, &gmsgpb.GetTemplateRequest{Path: templatePath}); err == nil && tResp != nil {
+			title = renderTemplateString(tResp.GetTitleTpl(), vars)
+			content = renderTemplateString(tResp.GetContentTpl(), vars)
+		}
+	}
+
+	if title == "" {
+		title = stringFromPayload(vars, "title", "name", "subject")
+	}
+	if content == "" {
+		content = stringFromPayload(vars, "content", "message", "description", "remark")
+	}
+	if content == "" {
+		content = compactPayloadSummary(vars)
+	}
+	if content == "" {
+		content = msg.GetPayload()
+	}
+
+	return title, content
+}
+
+func renderTemplateString(tpl string, vars map[string]interface{}) string {
+	if tpl == "" || len(vars) == 0 {
+		return tpl
+	}
+	out := tpl
+	for k, v := range vars {
+		vStr := fmt.Sprintf("%v", v)
+		out = strings.ReplaceAll(out, "{{"+k+"}}", vStr)
+		out = strings.ReplaceAll(out, "{{ "+k+" }}", vStr)
+	}
+	return out
+}
+
+func stringFromPayload(vars map[string]interface{}, keys ...string) string {
+	for _, key := range keys {
+		if value, ok := vars[key]; ok {
+			text := strings.TrimSpace(fmt.Sprintf("%v", value))
+			if text != "" && text != "<nil>" {
+				return text
+			}
+		}
+	}
+	return ""
+}
+
+func compactPayloadSummary(vars map[string]interface{}) string {
+	if len(vars) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(vars))
+	for key, value := range vars {
+		text := strings.TrimSpace(fmt.Sprintf("%v", value))
+		if text == "" || text == "<nil>" {
+			continue
+		}
+		parts = append(parts, fmt.Sprintf("%s: %s", key, text))
+		if len(parts) >= 4 {
+			break
+		}
+	}
+	return strings.Join(parts, " · ")
 }

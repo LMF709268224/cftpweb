@@ -2603,6 +2603,7 @@ type MailTaskSummary struct {
 	TaskStatus     string                 `protobuf:"bytes,10,opt,name=task_status,json=taskStatus,proto3" json:"task_status,omitempty"`
 	FinalAt        string                 `protobuf:"bytes,11,opt,name=final_at,json=finalAt,proto3" json:"final_at,omitempty"`
 	CreatedAt      string                 `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	RetryCount     uint32                 `protobuf:"varint,13,opt,name=retry_count,json=retryCount,proto3" json:"retry_count,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -2719,6 +2720,13 @@ func (x *MailTaskSummary) GetCreatedAt() string {
 		return x.CreatedAt
 	}
 	return ""
+}
+
+func (x *MailTaskSummary) GetRetryCount() uint32 {
+	if x != nil {
+		return x.RetryCount
+	}
+	return 0
 }
 
 type GetMailTaskDetailReq struct {
@@ -5402,7 +5410,7 @@ const file_prog_proto_rawDesc = "" +
 	"\x06offset\x18\x04 \x01(\x05R\x06offset\"V\n" +
 	"\x10ListMailTasksRsp\x12,\n" +
 	"\x05tasks\x18\x01 \x03(\v2\x16.gprog.MailTaskSummaryR\x05tasks\x12\x14\n" +
-	"\x05total\x18\x02 \x01(\x05R\x05total\"\xaa\x03\n" +
+	"\x05total\x18\x02 \x01(\x05R\x05total\"\xcb\x03\n" +
 	"\x0fMailTaskSummary\x12$\n" +
 	"\x0email_task_ulid\x18\x01 \x01(\tR\fmailTaskUlid\x12!\n" +
 	"\fcandidate_id\x18\x02 \x01(\tR\vcandidateId\x12#\n" +
@@ -5419,7 +5427,9 @@ const file_prog_proto_rawDesc = "" +
 	"taskStatus\x12\x19\n" +
 	"\bfinal_at\x18\v \x01(\tR\afinalAt\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\f \x01(\tR\tcreatedAt\"<\n" +
+	"created_at\x18\f \x01(\tR\tcreatedAt\x12\x1f\n" +
+	"\vretry_count\x18\r \x01(\rR\n" +
+	"retryCount\"<\n" +
 	"\x14GetMailTaskDetailReq\x12$\n" +
 	"\x0email_task_ulid\x18\x01 \x01(\tR\fmailTaskUlid\"\x8a\x02\n" +
 	"\x14GetMailTaskDetailRsp\x120\n" +

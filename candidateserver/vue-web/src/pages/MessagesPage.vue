@@ -44,6 +44,27 @@ function deleteMenuLabel() {
   return lang.value === "zh" ? "\u5220\u9664" : "Delete"
 }
 
+function formatPayloadSummary(payload: unknown) {
+  if (!payload) return ""
+  if (typeof payload !== "string") return String(payload)
+  const trimmed = payload.trim()
+  if (!trimmed || trimmed === "{}") return ""
+  try {
+    const parsed = JSON.parse(trimmed)
+    if (!parsed || typeof parsed !== "object") return trimmed
+    if (typeof parsed.content === "string" && parsed.content.trim()) return parsed.content.trim()
+    if (typeof parsed.message === "string" && parsed.message.trim()) return parsed.message.trim()
+    if (typeof parsed.description === "string" && parsed.description.trim()) return parsed.description.trim()
+    return Object.entries(parsed)
+      .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== "")
+      .slice(0, 4)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join(" · ")
+  } catch {
+    return trimmed
+  }
+}
+
 async function fetchMessages() {
   loading.value = true
   try {
@@ -62,13 +83,15 @@ async function fetchMessages() {
         else if (type === "payment") title = t.value.messagesPage.payment
         else if (type === "other") title = t.value.messagesPage.other
 
-        let content = m.payload || ""
+        const payload = m.template_payload || m.payload
+        let content = m.content || formatPayloadSummary(payload)
         try {
-          const parsed = JSON.parse(m.payload)
-          title = parsed.title || title
-          content = parsed.content || content
+          const parsed = JSON.parse(payload)
+          title = m.title || parsed.title || title
+          content = m.content || parsed.content || content
         } catch {
           // payload can be plain text.
+          title = m.title || title
         }
 
         return { id: String(m.message_id || m.id), type, title, content, time: formatBackendDate(m.created_at), isRead: m.status === 1 }
@@ -118,7 +141,8 @@ async function deleteMessage(id: string) {
 async function handleViewDetail(message: Message) {
   try {
     if (!message.isRead) await markAsRead(message.id)
-    selectedMessageDetail.value = await apiClient(`/api/messages/${message.id}`)
+    const detail = await apiClient(`/api/messages/${message.id}`)
+    selectedMessageDetail.value = { ...detail, time: formatBackendDate(detail?.created_at || "") }
     detailModalOpen.value = true
   } catch {
     toast.error("Failed to load message detail")

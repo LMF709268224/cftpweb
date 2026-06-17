@@ -10,8 +10,11 @@ import (
 func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 
-	// 1. Get all definitions first
-	defsResp, err := h.Creds.ListCredentialDefinitions(r.Context(), &gcredspb.ListCredentialDefinitionsRequest{})
+	credsResp, err := h.Creds.ListCandidateCredentials(r.Context(), &gcredspb.ListCandidateCredentialsRequest{
+		CandidateId: candidateID,
+		Page:        1,
+		PageSize:    100,
+	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -21,33 +24,27 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 		Certificates: make([]CertificateItem, 0),
 	}
 
-	// 2. Iterate and get latest credential for each definition
-	for _, def := range defsResp.GetDefinitions() {
+	for _, cred := range credsResp.GetCredentials() {
 		item := CertificateItem{
-			CatalogId:   def.GetCredDefId(), // Map CredDefId to CatalogId for frontend compatibility
-			Name:        def.GetName(),
-			Description: def.GetCategory(),
+			CatalogId: cred.GetCredDefId(),
 		}
 
-		credResp, err := h.Creds.GetLatestCredential(r.Context(), &gcredspb.GetLatestCredentialRequest{
-			CandidateId: candidateID,
-			CredDefId:   def.GetCredDefId(), // Use new field
-		})
-
-		if err != nil {
-			// If not found, skip adding to final certificate list, or just leave empty
-			continue
+		if defResp, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
+			CredDefId: cred.GetCredDefId(),
+		}); err == nil && defResp != nil {
+			item.Name = defResp.GetName()
+			item.Description = defResp.GetDescription()
 		}
 
-		item.CredId = credResp.GetCredId()
-		item.CredGuid = credResp.GetCredGuid()
-		item.CandidateId = credResp.GetCandidateId()
-		item.Version = credResp.GetVersion()
-		item.Status = credResp.GetStatus()
-		item.AuditorId = credResp.GetAuditorId()
-		item.AuditRemark = credResp.GetAuditRemark()
-		item.ValidUntil = credResp.GetValidUntil()
-		item.CreatedAt = credResp.GetCreatedAt()
+		item.CredId = cred.GetCredId()
+		item.CredGuid = cred.GetCredGuid()
+		item.CandidateId = cred.GetCandidateId()
+		item.Version = cred.GetVersion()
+		item.Status = cred.GetStatus()
+		item.AuditorId = cred.GetAuditorId()
+		item.AuditRemark = cred.GetAuditRemark()
+		item.ValidUntil = cred.GetValidUntil()
+		item.CreatedAt = cred.GetCreatedAt()
 		if detailResp, err := h.Creds.GetCredentialDetail(r.Context(), &gcredspb.GetCredentialDetailRequest{
 			CredId: item.CredId,
 		}); err == nil {

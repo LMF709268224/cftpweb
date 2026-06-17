@@ -9,23 +9,48 @@ import (
 
 // ListCredentialDefinitions GET /api/credentials/definitions
 func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Request) {
-	req := &gcredspb.ListCredentialDefinitionsRequest{}
+	candidateID := CandidateID(r)
+	req := &gcredspb.ListCandidateEligibleDefinitionsRequest{
+		CandidateId: candidateID,
+	}
 
-	res, err := h.Creds.ListCredentialDefinitions(r.Context(), req)
+	res, err := h.Creds.ListCandidateEligibleDefinitions(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
-	details := make([]*gcredspb.CredentialDefinition, 0, len(res.Definitions))
-	for _, def := range res.Definitions {
+	details := make([]map[string]interface{}, 0, len(res.GetDefinitions()))
+	for _, def := range res.GetDefinitions() {
 		detailReq := &gcredspb.GetCredentialDefinitionDetailRequest{
-			CredDefId: def.CredDefId,
+			CredDefId: def.GetCredDefId(),
 		}
 		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
 		if err == nil && detailRes != nil {
-			details = append(details, detailRes)
+			details = append(details, map[string]interface{}{
+				"cred_def_id":               detailRes.GetCredDefId(),
+				"name":                      detailRes.GetName(),
+				"description":               detailRes.GetDescription(),
+				"file_constraints":          detailRes.GetFileConstraints(),
+				"category":                  detailRes.GetCategory(),
+				"respath":                   detailRes.GetRespath(),
+				"latest_application_status": def.GetLatestApplicationStatus(),
+				"latest_application_id":     def.GetLatestApplicationId(),
+				"current_credential_status": def.GetCurrentCredentialStatus(),
+				"current_credential_id":     def.GetCurrentCredentialId(),
+			})
+			continue
 		}
+		details = append(details, map[string]interface{}{
+			"cred_def_id":               def.GetCredDefId(),
+			"name":                      def.GetName(),
+			"description":               def.GetDescription(),
+			"category":                  def.GetCategory(),
+			"latest_application_status": def.GetLatestApplicationStatus(),
+			"latest_application_id":     def.GetLatestApplicationId(),
+			"current_credential_status": def.GetCurrentCredentialStatus(),
+			"current_credential_id":     def.GetCurrentCredentialId(),
+		})
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
