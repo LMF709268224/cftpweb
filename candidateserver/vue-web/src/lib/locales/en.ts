@@ -616,3 +616,14 @@ export const en: AppTranslations = {
     unlockFailed: "Unlock failed. Please try again later or contact support."
   }
 }
+
+Object.assign(en.certificatesPage, {
+  celebrationModalTitle: "Congratulations!",
+  celebrationModalHeadline: "You have earned your CFtP professional certificate",
+  celebrationModalDesc:
+    "Your learning achievement has officially become a professional certificate. You can now download your honor certificate or share this milestone in one click.",
+  celebrationModalDownload: "Download Your Honor Certificate",
+  celebrationModalShare: "Share in One Click",
+  celebrationModalDismiss: "Maybe later",
+  shareText: "I have earned my CFtP professional certification. Take a look at my achievement.",
+})

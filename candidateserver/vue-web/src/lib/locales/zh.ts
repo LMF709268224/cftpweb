@@ -616,3 +616,13 @@ export const zh = {
 }
 
 export type AppTranslations = typeof zh;
+
+Object.assign(zh.certificatesPage, {
+  celebrationModalTitle: "恭喜！",
+  celebrationModalHeadline: "您已获得 CFtP 专业认证证书",
+  celebrationModalDesc: "您的学习成果已经正式转化为专业证书。现在可以下载您的荣誉证书，或一键分享这一值得庆祝的成就。",
+  celebrationModalDownload: "下载您的荣誉证书",
+  celebrationModalShare: "一键分享",
+  celebrationModalDismiss: "稍后再说",
+  shareText: "我已获得 CFtP 专业认证，欢迎查看我的学习成果。",
+});
