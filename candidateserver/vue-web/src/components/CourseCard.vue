@@ -174,5 +174,5 @@ const accessState = computed(() => {
     </div>
   </component>
 
-  <PurchaseDialog v-model:open="showPurchaseDialog" :course-name="title" :pipeline-id="id" />
+  <PurchaseDialog v-model:open="showPurchaseDialog" :course-name="title" :description="description" :pipeline-id="id" />
 </template>

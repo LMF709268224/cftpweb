@@ -41,6 +41,7 @@ type PipelineConfig = {
   pipeline_guid?: string
   version?: number
   name?: string
+  description?: string
   category_tips?: string
   unlock_stripe_price_id?: string
   package_stripe_price_id?: string
@@ -351,6 +352,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
 
         <div>
           <h1 class="mb-2 text-2xl font-bold text-foreground">{{ pipeline.name || t.common.unknownCourse }}</h1>
+          <p v-if="pipeline.description" class="mb-4 max-w-3xl text-sm leading-6 text-muted-foreground">{{ pipeline.description }}</p>
 
           <div class="mb-5 flex flex-wrap gap-6 text-sm text-muted-foreground">
             <div class="flex items-center gap-1.5">
@@ -498,6 +500,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
       <PurchaseDialog
         v-model:open="purchaseOpen"
         :course-name="pipeline.name || t.common.unknownCourse"
+        :description="pipeline.description || ''"
         :pipeline-id="pipeline.pipeline_id || pipelineId"
       />
     </template>

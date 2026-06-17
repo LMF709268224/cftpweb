@@ -42,6 +42,7 @@ type PipelineConfig struct {
 	Respath               string                 `protobuf:"bytes,20,opt,name=respath,proto3" json:"respath,omitempty"`                                                              // 权限资源路径 [required]
 	ThumbnailObjectKey    string                 `protobuf:"bytes,21,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`            // 封面图 S3 object key
 	ThumbnailFileHash     string                 `protobuf:"bytes,22,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`               // 封面图 SHA256 file hash
+	Description           string                 `protobuf:"bytes,23,opt,name=description,proto3" json:"description,omitempty"`                                                      // 管线描述/简介 [optional]
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -198,6 +199,13 @@ func (x *PipelineConfig) GetThumbnailObjectKey() string {
 func (x *PipelineConfig) GetThumbnailFileHash() string {
 	if x != nil {
 		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *PipelineConfig) GetDescription() string {
+	if x != nil {
+		return x.Description
 	}
 	return ""
 }
@@ -504,6 +512,7 @@ type CreatePipelineDraftRequest struct {
 	Respath            string                 `protobuf:"bytes,6,opt,name=respath,proto3" json:"respath,omitempty"`                                                   // 权限资源路径 [required]
 	ThumbnailObjectKey string                 `protobuf:"bytes,7,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"` // 封面图 S3 object key [optional]
 	ThumbnailFileHash  string                 `protobuf:"bytes,8,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`    // 封面图 SHA256 file hash [optional]
+	Description        string                 `protobuf:"bytes,9,opt,name=description,proto3" json:"description,omitempty"`                                           // 管线描述/简介 [optional]
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -583,6 +592,13 @@ func (x *CreatePipelineDraftRequest) GetThumbnailObjectKey() string {
 func (x *CreatePipelineDraftRequest) GetThumbnailFileHash() string {
 	if x != nil {
 		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *CreatePipelineDraftRequest) GetDescription() string {
+	if x != nil {
+		return x.Description
 	}
 	return ""
 }
@@ -889,6 +905,7 @@ type UpdateMetadataRequest struct {
 	UnitUpdates           []*UnitStripeUpdate    `protobuf:"bytes,6,rep,name=unit_updates,json=unitUpdates,proto3" json:"unit_updates,omitempty"`                                         // Unit-level Stripe updates [optional]
 	ThumbnailObjectKey    *string                `protobuf:"bytes,7,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3,oneof" json:"thumbnail_object_key,omitempty"`            // 封面图 S3 object key [optional]
 	ThumbnailFileHash     *string                `protobuf:"bytes,8,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3,oneof" json:"thumbnail_file_hash,omitempty"`               // 封面图 SHA256 file hash [optional]
+	Description           *string                `protobuf:"bytes,9,opt,name=description,proto3,oneof" json:"description,omitempty"`                                                      // 管线描述/简介 [optional]
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -975,6 +992,13 @@ func (x *UpdateMetadataRequest) GetThumbnailObjectKey() string {
 func (x *UpdateMetadataRequest) GetThumbnailFileHash() string {
 	if x != nil && x.ThumbnailFileHash != nil {
 		return *x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *UpdateMetadataRequest) GetDescription() string {
+	if x != nil && x.Description != nil {
+		return *x.Description
 	}
 	return ""
 }
@@ -1460,6 +1484,7 @@ type PipelineSummary struct {
 	UpdatedAt          string                 `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	ThumbnailObjectKey string                 `protobuf:"bytes,10,opt,name=thumbnail_object_key,json=thumbnailObjectKey,proto3" json:"thumbnail_object_key,omitempty"`
 	ThumbnailFileHash  string                 `protobuf:"bytes,11,opt,name=thumbnail_file_hash,json=thumbnailFileHash,proto3" json:"thumbnail_file_hash,omitempty"`
+	Description        string                 `protobuf:"bytes,12,opt,name=description,proto3" json:"description,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -1567,6 +1592,13 @@ func (x *PipelineSummary) GetThumbnailObjectKey() string {
 func (x *PipelineSummary) GetThumbnailFileHash() string {
 	if x != nil {
 		return x.ThumbnailFileHash
+	}
+	return ""
+}
+
+func (x *PipelineSummary) GetDescription() string {
+	if x != nil {
+		return x.Description
 	}
 	return ""
 }
@@ -2424,7 +2456,7 @@ var File_cc_proto protoreflect.FileDescriptor
 
 const file_cc_proto_rawDesc = "" +
 	"\n" +
-	"\bcc.proto\x12\x03gcc\x1a\x1bgoogle/protobuf/empty.proto\"\xdc\x05\n" +
+	"\bcc.proto\x12\x03gcc\x1a\x1bgoogle/protobuf/empty.proto\"\xfe\x05\n" +
 	"\x0ePipelineConfig\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
 	"pipelineId\x12#\n" +
@@ -2448,7 +2480,8 @@ const file_cc_proto_rawDesc = "" +
 	"\x0epackage_coupon\x18\x13 \x01(\tR\rpackageCoupon\x12\x18\n" +
 	"\arespath\x18\x14 \x01(\tR\arespath\x120\n" +
 	"\x14thumbnail_object_key\x18\x15 \x01(\tR\x12thumbnailObjectKey\x12.\n" +
-	"\x13thumbnail_file_hash\x18\x16 \x01(\tR\x11thumbnailFileHashJ\x04\b\x0f\x10\x10J\x04\b\x10\x10\x11\"\x82\x01\n" +
+	"\x13thumbnail_file_hash\x18\x16 \x01(\tR\x11thumbnailFileHash\x12 \n" +
+	"\vdescription\x18\x17 \x01(\tR\vdescriptionJ\x04\b\x0f\x10\x10J\x04\b\x10\x10\x11\"\x82\x01\n" +
 	"\vStageConfig\x12\x19\n" +
 	"\bstage_id\x18\x01 \x01(\tR\astageId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
@@ -2477,7 +2510,7 @@ const file_cc_proto_rawDesc = "" +
 	"\tname_hint\x18\x02 \x01(\tR\bnameHint\x12&\n" +
 	"\x0fpdf_template_id\x18\x03 \x01(\tR\rpdfTemplateId\x127\n" +
 	"\x18review_stripe_product_id\x18\x04 \x01(\tR\x15reviewStripeProductId\x123\n" +
-	"\x16review_stripe_price_id\x18\x05 \x01(\tR\x13reviewStripePriceId\"\x9d\x02\n" +
+	"\x16review_stripe_price_id\x18\x05 \x01(\tR\x13reviewStripePriceId\"\xbf\x02\n" +
 	"\x1aCreatePipelineDraftRequest\x12#\n" +
 	"\rcategory_tips\x18\x01 \x01(\tR\fcategoryTips\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1f\n" +
@@ -2486,7 +2519,8 @@ const file_cc_proto_rawDesc = "" +
 	"\rpipeline_guid\x18\x05 \x01(\tR\fpipelineGuid\x12\x18\n" +
 	"\arespath\x18\x06 \x01(\tR\arespath\x120\n" +
 	"\x14thumbnail_object_key\x18\a \x01(\tR\x12thumbnailObjectKey\x12.\n" +
-	"\x13thumbnail_file_hash\x18\b \x01(\tR\x11thumbnailFileHashJ\x04\b\x03\x10\x04\"~\n" +
+	"\x13thumbnail_file_hash\x18\b \x01(\tR\x11thumbnailFileHash\x12 \n" +
+	"\vdescription\x18\t \x01(\tR\vdescriptionJ\x04\b\x03\x10\x04\"~\n" +
 	"\x1dDuplicatePipelineDraftRequest\x12(\n" +
 	"\x10from_pipeline_id\x18\x01 \x01(\tR\x0efromPipelineId\x12\x1f\n" +
 	"\vpipeline_id\x18\x02 \x01(\tR\n" +
@@ -2513,7 +2547,7 @@ const file_cc_proto_rawDesc = "" +
 	"pipelineId\"8\n" +
 	"\x15DeletePipelineRequest\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
-	"pipelineId\"\xa7\x04\n" +
+	"pipelineId\"\xde\x04\n" +
 	"\x15UpdateMetadataRequest\x12\x1b\n" +
 	"\ttarget_id\x18\x01 \x01(\tR\btargetId\x12\x1e\n" +
 	"\bnew_name\x18\x02 \x01(\tH\x00R\anewName\x88\x01\x01\x12<\n" +
@@ -2522,13 +2556,15 @@ const file_cc_proto_rawDesc = "" +
 	"\x0epackage_coupon\x18\x05 \x01(\tH\x03R\rpackageCoupon\x88\x01\x01\x128\n" +
 	"\funit_updates\x18\x06 \x03(\v2\x15.gcc.UnitStripeUpdateR\vunitUpdates\x125\n" +
 	"\x14thumbnail_object_key\x18\a \x01(\tH\x04R\x12thumbnailObjectKey\x88\x01\x01\x123\n" +
-	"\x13thumbnail_file_hash\x18\b \x01(\tH\x05R\x11thumbnailFileHash\x88\x01\x01B\v\n" +
+	"\x13thumbnail_file_hash\x18\b \x01(\tH\x05R\x11thumbnailFileHash\x88\x01\x01\x12%\n" +
+	"\vdescription\x18\t \x01(\tH\x06R\vdescription\x88\x01\x01B\v\n" +
 	"\t_new_nameB\x1b\n" +
 	"\x19_unlock_stripe_product_idB\x19\n" +
 	"\x17_unlock_stripe_price_idB\x11\n" +
 	"\x0f_package_couponB\x17\n" +
 	"\x15_thumbnail_object_keyB\x16\n" +
-	"\x14_thumbnail_file_hash\"\xa5\x04\n" +
+	"\x14_thumbnail_file_hashB\x0e\n" +
+	"\f_description\"\xa5\x04\n" +
 	"\x10UnitStripeUpdate\x12\x17\n" +
 	"\aunit_id\x18\x01 \x01(\tR\x06unitId\x12/\n" +
 	"\x11stripe_product_id\x18\x02 \x01(\tH\x00R\x0fstripeProductId\x88\x01\x01\x12+\n" +
@@ -2570,7 +2606,7 @@ const file_cc_proto_rawDesc = "" +
 	"\x06status\x18\x05 \x01(\tH\x00R\x06status\x88\x01\x01B\t\n" +
 	"\a_status\"K\n" +
 	"\x15ListPipelinesResponse\x122\n" +
-	"\tpipelines\x18\x01 \x03(\v2\x14.gcc.PipelineSummaryR\tpipelines\"\x81\x03\n" +
+	"\tpipelines\x18\x01 \x03(\v2\x14.gcc.PipelineSummaryR\tpipelines\"\xa3\x03\n" +
 	"\x0fPipelineSummary\x12\x1f\n" +
 	"\vpipeline_id\x18\x01 \x01(\tR\n" +
 	"pipelineId\x12#\n" +
@@ -2587,7 +2623,8 @@ const file_cc_proto_rawDesc = "" +
 	"updated_at\x18\t \x01(\tR\tupdatedAt\x120\n" +
 	"\x14thumbnail_object_key\x18\n" +
 	" \x01(\tR\x12thumbnailObjectKey\x12.\n" +
-	"\x13thumbnail_file_hash\x18\v \x01(\tR\x11thumbnailFileHash\"\xda\x01\n" +
+	"\x13thumbnail_file_hash\x18\v \x01(\tR\x11thumbnailFileHash\x12 \n" +
+	"\vdescription\x18\f \x01(\tR\vdescription\"\xda\x01\n" +
 	"\fStageSummary\x12\x19\n" +
 	"\bstage_id\x18\x01 \x01(\tR\astageId\x12\x1f\n" +
 	"\vpipeline_id\x18\x02 \x01(\tR\n" +
