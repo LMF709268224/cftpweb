@@ -22,6 +22,7 @@ const QuizPage = () => import("@/pages/QuizPage.vue")
 const ResourcePackDetailPage = () => import("@/pages/ResourcePackDetailPage.vue")
 const ResourcePacksPage = () => import("@/pages/ResourcePacksPage.vue")
 const PdfPreviewPage = () => import("@/pages/PdfPreviewPage.vue")
+const VideoPreviewPage = () => import("@/pages/VideoPreviewPage.vue")
 const InvoiceRedirectPage = () => import("@/pages/InvoiceRedirectPage.vue")
 
 function firstRouteValue(value: unknown) {
@@ -95,6 +96,7 @@ export const router = createRouter({
     { path: "/resource-packs/detail", redirect: redirectResourcePackDetail },
     { path: "/resource-packs/:packId", component: ResourcePackDetailPage },
     { path: "/resource-pack-files/:fileId/preview", component: PdfPreviewPage },
+    { path: "/video-preview/resource-pack-files/:fileId", component: VideoPreviewPage },
     { path: "/credentials", component: CredentialsPage },
     { path: "/certificates", component: CertificatesPage },
     { path: "/orders", component: OrdersPage },

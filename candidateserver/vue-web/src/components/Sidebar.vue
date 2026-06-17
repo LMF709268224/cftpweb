@@ -4,7 +4,7 @@ import { RouterLink, useRoute } from "vue-router"
 import { Languages, LogOut, Menu, Settings, User, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
-import { getCachedUnreadCount } from "@/lib/unreadCountCache"
+import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 
 const { t, lang, changeLanguage } = useTranslation()
@@ -14,6 +14,7 @@ const unreadCount = ref(0)
 const menuOpen = ref(false)
 const mobileMenuOpen = ref(false)
 const menuContainer = ref<HTMLElement | null>(null)
+let stopUnreadCountListener: (() => void) | null = null
 
 const navRouteGroups: Record<string, string[]> = {
   "/": ["/"],
@@ -27,6 +28,7 @@ const navRouteGroups: Record<string, string[]> = {
     "/resource-packs",
     "/resource-pack-files",
     "/pdf-preview/resources",
+    "/video-preview/resource-pack-files",
   ],
   "/credentials": ["/credentials"],
   "/certificates": ["/certificates"],
@@ -70,6 +72,9 @@ onMounted(async () => {
   updateName()
   window.addEventListener("storage", updateName)
   window.addEventListener("pointerdown", handlePointerDown)
+  stopUnreadCountListener = onUnreadCountChanged((value) => {
+    unreadCount.value = value
+  })
   try {
     unreadCount.value = await getCachedUnreadCount()
   } catch {
@@ -80,6 +85,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener("storage", updateName)
   window.removeEventListener("pointerdown", handlePointerDown)
+  stopUnreadCountListener?.()
 })
 
 async function handleLogout() {
