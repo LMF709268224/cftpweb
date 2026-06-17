@@ -152,9 +152,9 @@ const runtime = ref<any>(null)
 const scheduleLoading = ref(false)
 const lessonContentExpanded = ref(true)
 
-const courseId = computed(() => String(route.query.courseId || ""))
-const pipelineId = computed(() => String(route.query.pipelineId || ""))
-const routeLessonId = computed(() => String(route.query.lessonId || ""))
+const courseId = computed(() => String(route.params.courseId || route.query.courseId || ""))
+const pipelineId = computed(() => String(route.params.pipelineId || route.query.pipelineId || ""))
+const routeLessonId = computed(() => String(route.params.lessonId || route.query.lessonId || ""))
 const completeCourse = computed(() => payload.value?.complete_course)
 const course = computed<Course | undefined>(() => completeCourse.value?.course)
 const chapters = computed<ChapterDetail[]>(() => completeCourse.value?.chapters || [])
@@ -529,11 +529,7 @@ function openSupplementaryPreview(item: SupplementaryMaterialItem) {
     return
   }
 
-  const params = new URLSearchParams({
-    src: item.url,
-    title: item.title || "Supplementary Material",
-  })
-  openPreviewTab(`/pdf-preview?${params.toString()}`)
+  openExternalPdfPreview(item.url, item.title || "Supplementary Material")
 }
 
 async function loadCourse() {
@@ -659,12 +655,8 @@ async function markCompleted() {
 
 async function openLessonPdf() {
   if (!lesson.value?.lesson_id) return
-  const params = new URLSearchParams({ lessonId: lesson.value.lesson_id })
-  if (lesson.value.title) {
-    params.set("title", lesson.value.title)
-  }
-  const previewUrl = `/pdf-preview?${params.toString()}`
-  openPreviewTab(previewUrl)
+  sessionStorage.setItem(`lesson-pdf-preview-title:${lesson.value.lesson_id}`, lesson.value.title || "PDF Preview")
+  openPreviewTab(`/pdf-preview/lessons/${encodeURIComponent(lesson.value.lesson_id)}`)
 }
 
 async function openInlinePdf(url: string) {
@@ -679,6 +671,13 @@ function openPreviewTab(url: string) {
   document.body.appendChild(link)
   link.click()
   link.remove()
+}
+
+function openExternalPdfPreview(src: string, title: string) {
+  const resourceKey = crypto.randomUUID()
+  sessionStorage.setItem(`external-pdf-preview-src:${resourceKey}`, src)
+  sessionStorage.setItem(`external-pdf-preview-title:${resourceKey}`, title)
+  openPreviewTab(`/pdf-preview/resources/${encodeURIComponent(resourceKey)}`)
 }
 
 async function openMaterial(material: CourseMaterialSummary) {
@@ -732,8 +731,8 @@ function scrollToBottom() {
 function nextStepLink() {
   if (nextStepState.value.action === "continue_learning") {
     return nextLearningLessonId.value
-      ? `/courses/learn?courseId=${encodeURIComponent(nextStep.value?.course_id || courseId.value)}&pipelineId=${encodeURIComponent(pipelineId.value)}&lessonId=${encodeURIComponent(nextLearningLessonId.value)}`
-      : `/courses/learn?courseId=${encodeURIComponent(courseId.value)}&pipelineId=${encodeURIComponent(pipelineId.value)}`
+      ? `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(nextStep.value?.course_id || courseId.value)}/lessons/${encodeURIComponent(nextLearningLessonId.value)}`
+      : `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(courseId.value)}`
   }
   if (nextStepState.value.action === "view_certificate") return "/certificates"
   if (nextStepState.value.action === "signup_exam") {
@@ -787,7 +786,7 @@ watch(selectedMaterial, () => {
 <template>
   <AppShell content-class="p-4">
     <div class="mb-6 flex items-center justify-between gap-4">
-      <RouterLink :to="pipelineId ? `/courses/detail?id=${encodeURIComponent(pipelineId)}` : '/courses'" class="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+      <RouterLink :to="pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : '/certifications'" class="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
         <ArrowLeft class="h-4 w-4" />
         {{ t.learning.backToCourse }}
       </RouterLink>
@@ -808,7 +807,7 @@ watch(selectedMaterial, () => {
           <h2 class="text-lg font-semibold text-foreground">{{ t.learning.courseUnavailableTitle }}</h2>
           <p class="mt-2 text-sm">{{ t.learning.courseUnavailableDesc }}</p>
         </div>
-        <RouterLink :to="pipelineId ? `/courses/detail?id=${encodeURIComponent(pipelineId)}` : '/courses'" class="btn btn-primary mx-auto w-fit rounded-lg">
+        <RouterLink :to="pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : '/certifications'" class="btn btn-primary mx-auto w-fit rounded-lg">
           {{ pipelineId ? t.learning.backToCourse : t.courses.backToPipelines }}
         </RouterLink>
       </div>

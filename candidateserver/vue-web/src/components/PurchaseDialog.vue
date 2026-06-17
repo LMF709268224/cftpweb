@@ -367,8 +367,8 @@ async function initiatePayment() {
       body: JSON.stringify({
         biz_type: bizType,
         biz_ref_ulid: activeOrder.value.orderId,
-        success_url: `${origin}/courses?${successParams.toString()}`,
-        cancel_url: `${origin}/courses?${cancelParams.toString()}`,
+        success_url: `${origin}/certifications?${successParams.toString()}`,
+        cancel_url: `${origin}/certifications?${cancelParams.toString()}`,
         coupon_codes: [],
       }),
     })

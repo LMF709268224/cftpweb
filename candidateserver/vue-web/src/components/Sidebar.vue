@@ -18,7 +18,7 @@ const activeSettingsTab = computed(() => String(route.query.tab || "profile"))
 
 const navItems = computed(() => [
   { href: "/", label: t.value.sidebar.home },
-  { href: "/courses", label: t.value.sidebar.courses },
+  { href: "/certifications", label: t.value.sidebar.courses },
   { href: "/exams", label: t.value.sidebar.exams },
   { href: "/resource-packs", label: lang.value === "zh" ? "资源包" : "Resources" },
   { href: "/credentials", label: t.value.sidebar.credentials },

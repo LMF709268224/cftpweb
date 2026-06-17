@@ -63,7 +63,7 @@ function handleOrderClick(order: OrderItem) {
     selectedPipelineId.value = order.pipelineId
     showPurchaseDialog.value = true
   } else if (order.status === "completed" && order.pipelineId) {
-    router.push(`/courses/detail?id=${encodeURIComponent(order.pipelineId)}`)
+    router.push(`/certifications/${encodeURIComponent(order.pipelineId)}`)
   }
 }
 

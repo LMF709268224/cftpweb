@@ -18,16 +18,30 @@ const errorMessage = ref("")
 let slowPreviewTimer: number | undefined
 
 const routeFileId = computed(() => String(route.params.fileId || ""))
+const routeLessonId = computed(() => String(route.params.lessonId || route.query.lessonId || ""))
+const routeResourceKey = computed(() => String(route.params.resourceKey || ""))
 const storedResourceTitle = computed(() =>
   routeFileId.value ? sessionStorage.getItem(`resource-pack-file-preview-title:${routeFileId.value}`) || "" : "",
 )
-const title = computed(() => String(route.query.title || storedResourceTitle.value || "PDF Preview"))
+const storedLessonTitle = computed(() =>
+  routeLessonId.value ? sessionStorage.getItem(`lesson-pdf-preview-title:${routeLessonId.value}`) || "" : "",
+)
+const storedExternalTitle = computed(() =>
+  routeResourceKey.value ? sessionStorage.getItem(`external-pdf-preview-title:${routeResourceKey.value}`) || "" : "",
+)
+const title = computed(() => String(route.query.title || storedResourceTitle.value || storedLessonTitle.value || storedExternalTitle.value || "PDF Preview"))
 const source = computed(() => {
   const fileId = routeFileId.value
   if (fileId) return `/api/resource-pack-files/${encodeURIComponent(fileId)}/preview-url`
 
-  const lessonId = String(route.query.lessonId || "")
+  const lessonId = routeLessonId.value
   if (lessonId) return `/api/pipeline/lessons/${encodeURIComponent(lessonId)}/preview-url`
+
+  const resourceKey = routeResourceKey.value
+  if (resourceKey) {
+    const src = sessionStorage.getItem(`external-pdf-preview-src:${resourceKey}`) || ""
+    return src ? `/api/pipeline/resource-preview-url?src=${encodeURIComponent(src)}` : ""
+  }
 
   const src = String(route.query.src || "")
   if (src) return `/api/pipeline/resource-preview-url?src=${encodeURIComponent(src)}`
@@ -98,7 +112,7 @@ function handleViewerReady() {
 
 function goBack() {
   if (window.history.length > 1) router.back()
-  else router.push("/courses")
+  else router.push("/certifications")
 }
 
 watch(source, loadPdf, { immediate: true })
