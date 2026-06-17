@@ -180,19 +180,31 @@ async function loadFiles(pageToken = "") {
   }
 }
 
-function openFile(file: ResourcePackFile) {
+async function openFile(file: ResourcePackFile) {
   if (!file.file_id) return
-  if (normalizedType(file.file_type) !== 2) {
-    toast.error(copy.value.noViewUrl)
-    return
-  }
   openingFileId.value = file.file_id
-  sessionStorage.setItem(`resource-pack-file-preview-title:${file.file_id}`, file.title || file.file_name || file.file_id)
-  const target = router.resolve(`/resource-pack-files/${encodeURIComponent(file.file_id)}/preview`)
-  window.open(target.href, "_blank", "noopener,noreferrer")
-  window.setTimeout(() => {
-    if (openingFileId.value === file.file_id) openingFileId.value = ""
-  }, 800)
+  try {
+    if (normalizedType(file.file_type) === 2) {
+      sessionStorage.setItem(`resource-pack-file-preview-title:${file.file_id}`, file.title || file.file_name || file.file_id)
+      const target = router.resolve(`/resource-pack-files/${encodeURIComponent(file.file_id)}/preview`)
+      window.open(target.href, "_blank", "noopener,noreferrer")
+      return
+    }
+
+    const resp = await apiClient(`/api/resource-pack-files/${encodeURIComponent(file.file_id)}/view-url`)
+    const viewUrl = String(resp?.view_url || resp?.url || "").trim()
+    if (!viewUrl) {
+      toast.error(copy.value.noViewUrl)
+      return
+    }
+    window.open(viewUrl, "_blank", "noopener,noreferrer")
+  } catch {
+    // apiClient already shows localized errors.
+  } finally {
+    window.setTimeout(() => {
+      if (openingFileId.value === file.file_id) openingFileId.value = ""
+    }, 800)
+  }
 }
 
 watch(packId, () => {
@@ -284,7 +296,7 @@ onMounted(() => {
           </div>
           <button
             class="btn btn-primary w-full rounded-xl shadow-sm shadow-primary/20"
-            :disabled="openingFileId === file.file_id || normalizedType(file.file_type) !== 2"
+            :disabled="openingFileId === file.file_id"
             @click="openFile(file)"
           >
             <RefreshCw v-if="openingFileId === file.file_id" class="h-4 w-4 animate-spin" />
