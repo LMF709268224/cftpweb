@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
 import { Languages, LogOut, Menu, Settings, User, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
@@ -13,6 +13,7 @@ const userName = ref(t.value.common.user)
 const unreadCount = ref(0)
 const menuOpen = ref(false)
 const mobileMenuOpen = ref(false)
+const menuContainer = ref<HTMLElement | null>(null)
 
 const navRouteGroups: Record<string, string[]> = {
   "/": ["/"],
@@ -54,17 +55,31 @@ const navItems = computed(() => [
   { href: "/messages", label: t.value.sidebar.messages, badge: unreadCount.value > 0 ? unreadCount.value : undefined },
 ])
 
+function updateName() {
+  userName.value = localStorage.getItem("user_name") || t.value.common.user
+}
+
+function handlePointerDown(event: PointerEvent) {
+  if (!menuOpen.value) return
+  const target = event.target as Node | null
+  if (target && menuContainer.value?.contains(target)) return
+  menuOpen.value = false
+}
+
 onMounted(async () => {
-  const updateName = () => {
-    userName.value = localStorage.getItem("user_name") || t.value.common.user
-  }
   updateName()
   window.addEventListener("storage", updateName)
+  window.addEventListener("pointerdown", handlePointerDown)
   try {
     unreadCount.value = await getCachedUnreadCount()
   } catch {
     // Sidebar should never block page rendering.
   }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("storage", updateName)
+  window.removeEventListener("pointerdown", handlePointerDown)
 })
 
 async function handleLogout() {
@@ -162,7 +177,7 @@ async function handleLogout() {
     </nav>
   </aside>
 
-  <div class="fixed bottom-5 left-5 z-50">
+  <div ref="menuContainer" class="fixed bottom-5 left-5 z-50">
     <div v-if="menuOpen" class="mb-3 w-44 rounded-xl border border-border bg-white p-1.5 shadow-xl shadow-slate-950/10">
       <RouterLink
         to="/settings?tab=profile"
