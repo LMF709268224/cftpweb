@@ -154,14 +154,14 @@ func (h *Handler) GetMessageDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out := map[string]interface{}{
-		"id":          msg.GetId(),
-		"message_id":  msg.GetMessageId(),
-		"msg_type":    msg.GetMsgType().String(),
-		"status":      msg.GetStatus().String(),
-		"created_at":  msg.GetCreatedAt(),
-		"title":       title,
-		"content":     content,
-		"payload":     msg.GetPayload(),
+		"id":         msg.GetId(),
+		"message_id": msg.GetMessageId(),
+		"msg_type":   msg.GetMsgType().String(),
+		"status":     msg.GetStatus().String(),
+		"created_at": msg.GetCreatedAt(),
+		"title":      title,
+		"content":    content,
+		"payload":    msg.GetPayload(),
 	}
 	WriteJSON(w, http.StatusOK, out)
 }

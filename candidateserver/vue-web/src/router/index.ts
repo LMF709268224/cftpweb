@@ -41,6 +41,8 @@ export const router = createRouter({
     { path: "/records", component: RecordsPage },
     { path: "/resource-packs", component: ResourcePacksPage },
     { path: "/resource-packs/detail", component: ResourcePackDetailPage },
+    { path: "/resource-packs/:packId", component: ResourcePackDetailPage },
+    { path: "/resource-pack-files/:fileId/preview", component: PdfPreviewPage },
     { path: "/credentials", component: CredentialsPage },
     { path: "/certificates", component: CertificatesPage },
     { path: "/orders", component: OrdersPage },

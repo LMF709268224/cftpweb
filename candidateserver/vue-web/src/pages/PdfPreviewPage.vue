@@ -17,8 +17,15 @@ const slowPreview = ref(false)
 const errorMessage = ref("")
 let slowPreviewTimer: number | undefined
 
-const title = computed(() => String(route.query.title || "PDF Preview"))
+const routeFileId = computed(() => String(route.params.fileId || ""))
+const storedResourceTitle = computed(() =>
+  routeFileId.value ? sessionStorage.getItem(`resource-pack-file-preview-title:${routeFileId.value}`) || "" : "",
+)
+const title = computed(() => String(route.query.title || storedResourceTitle.value || "PDF Preview"))
 const source = computed(() => {
+  const fileId = routeFileId.value
+  if (fileId) return `/api/resource-pack-files/${encodeURIComponent(fileId)}/preview-url`
+
   const lessonId = String(route.query.lessonId || "")
   if (lessonId) return `/api/pipeline/lessons/${encodeURIComponent(lessonId)}/preview-url`
 

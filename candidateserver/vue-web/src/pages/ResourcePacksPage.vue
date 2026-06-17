@@ -107,7 +107,7 @@ onMounted(() => {
         v-for="pack in filteredPacks"
         :key="pack.pack_id"
         class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
-        :to="`/resource-packs/detail?id=${encodeURIComponent(pack.pack_id || '')}`"
+        :to="`/resource-packs/${encodeURIComponent(pack.pack_id || '')}`"
       >
         <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
         <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
