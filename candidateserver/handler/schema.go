@@ -504,6 +504,8 @@ type QueryInvoiceRsp struct {
 type OrderItem struct {
 	OrderID              string  `json:"order_id"`
 	ProductName          string  `json:"product_name"`
+	BizType              string  `json:"biz_type,omitempty"`
+	BizRefUlid           string  `json:"biz_ref_ulid,omitempty"`
 	Status               string  `json:"status"` // completed / pending / cancelled
 	RawStatus            string  `json:"raw_status"`
 	PipelineID           string  `json:"pipeline_id"`
@@ -511,6 +513,7 @@ type OrderItem struct {
 	PaymentMethod        string  `json:"payment_method"`
 	Amount               float64 `json:"amount"`
 	Currency             string  `json:"currency"`
+	PayOrderUlid         string  `json:"pay_order_ulid,omitempty"`
 	PipelinePayOrderUlid string  `json:"pipeline_pay_order_ulid,omitempty"`
 	CanViewInvoice       bool    `json:"can_view_invoice"`
 }
