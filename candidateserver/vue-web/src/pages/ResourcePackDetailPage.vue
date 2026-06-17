@@ -190,6 +190,12 @@ async function openFile(file: ResourcePackFile) {
       window.open(target.href, "_blank", "noopener,noreferrer")
       return
     }
+    if (normalizedType(file.file_type) === 1) {
+      sessionStorage.setItem(`resource-pack-file-preview-title:${file.file_id}`, file.title || file.file_name || file.file_id)
+      const target = router.resolve(`/video-preview/resource-pack-files/${encodeURIComponent(file.file_id)}`)
+      window.open(target.href, "_blank", "noopener,noreferrer")
+      return
+    }
 
     const resp = await apiClient(`/api/resource-pack-files/${encodeURIComponent(file.file_id)}/view-url`)
     const viewUrl = String(resp?.view_url || resp?.url || "").trim()

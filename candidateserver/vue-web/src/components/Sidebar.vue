@@ -26,6 +26,7 @@ const navRouteGroups: Record<string, string[]> = {
     "/resource-packs",
     "/resource-pack-files",
     "/pdf-preview/resources",
+    "/video-preview/resource-pack-files",
   ],
   "/credentials": ["/credentials"],
   "/certificates": ["/certificates"],
