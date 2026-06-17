@@ -49,6 +49,10 @@ function deleteMenuLabel() {
   return lang.value === "zh" ? "\u5220\u9664" : "Delete"
 }
 
+function unreadLabel() {
+  return lang.value === "zh" ? "\u672a\u8bfb" : "Unread"
+}
+
 function splitBilingualText(value: string) {
   const normalized = value
     .replace(/\r\n/g, "\n")
@@ -89,45 +93,6 @@ function localizedMessageTitle(value: string, fallback: string) {
   return splitBilingualText(cleaned)
 }
 
-function normalizeMessageContent(value: string) {
-  const cleaned = cleanMarkdown(value || "")
-  if (!cleaned) return ""
-
-  const sentences = cleaned
-    .replace(/([ã€‚ï¼ï¼??])\s*/g, "$1\n")
-    .replace(/\.\s+/g, ".\n")
-    .split("\n")
-    .map((part) => part.trim())
-    .filter(Boolean)
-
-  const localized = sentences.filter((part) => {
-    const zhCount = part.match(/[\u3400-\u9fff]/g)?.length || 0
-    const enCount = part.match(/[A-Za-z]/g)?.length || 0
-    if (lang.value === "zh") return zhCount > 0 && zhCount >= enCount * 0.15
-    return enCount > 0 && zhCount === 0
-  })
-
-  if (localized.length > 0) return localized.join(" ")
-  return cleaned
-}
-
-function localizedMessageContent(value: string) {
-  const normalized = String(value || "").replace(/\r\n/g, "\n").trim()
-  if (!normalized) return ""
-
-  const blocks = normalized
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-
-  if (blocks.length <= 1) return normalized
-
-  const scoreChinese = (part: string) => (part.match(/[\u3400-\u9fff]/g)?.length || 0) * 2 - (part.match(/[A-Za-z]/g)?.length || 0) * 0.08
-  const scoreEnglish = (part: string) => (part.match(/[A-Za-z]/g)?.length || 0) - (part.match(/[\u3400-\u9fff]/g)?.length || 0) * 1.2
-  const selected = [...blocks].sort((a, b) => (lang.value === "zh" ? scoreChinese(b) - scoreChinese(a) : scoreEnglish(b) - scoreEnglish(a)))[0]
-  return selected || normalized
-}
-
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -145,7 +110,7 @@ function renderInlineMarkdown(value: string) {
 }
 
 function markdownToHtml(markdown: string) {
-  const source = localizedMessageContent(markdown)
+  const source = String(markdown || "").replace(/\r\n/g, "\n").trim()
   if (!source) return ""
 
   const lines = source.split("\n")
@@ -200,7 +165,7 @@ function formatPayloadSummary(payload: unknown) {
       .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== "")
       .slice(0, 4)
       .map(([key, value]) => `${key}: ${value}`)
-      .join(" Â· ")
+      .join(" / ")
   } catch {
     return trimmed
   }
@@ -367,7 +332,7 @@ onMounted(fetchMessages)
           <div class="min-w-0 flex-1">
             <div class="mb-2 flex flex-wrap items-center gap-2">
               <span v-if="!message.isRead" class="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow-sm shadow-primary/20">
-                {{ lang === 'zh' ? 'Î´¶Á' : 'Unread' }}
+                {{ unreadLabel() }}
               </span>
               <h3 :class="['line-clamp-2 text-base text-card-foreground', !message.isRead ? 'font-bold' : 'font-semibold']">{{ localizedMessageTitle(message.rawTitle, configFor(message.type).label) }}</h3>
               <span class="badge">{{ configFor(message.type).label }}</span>
