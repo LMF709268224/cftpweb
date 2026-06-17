@@ -90,6 +90,7 @@ function mapCandidatePipeline(pipeline: any) {
     instanceId: pipeline.pipeline_ulid,
     configId: pipeline.pipeline_cc_ulid,
     title: certificationDisplayName(pipeline.pipeline_name) || pipeline.pipeline_cc_ulid || pipeline.pipeline_ulid || t.value.common.unknownCourse,
+    description: String(pipeline.description || "").trim(),
     currentStage: pipeline.current_stage_name || pipeline.current_stage_ulid,
     progress: pipeline.progress_available ? Math.round(Number(pipeline.progress)) : undefined,
     progressAvailable: Boolean(pipeline.progress_available),
@@ -130,7 +131,7 @@ async function fetchData() {
           return {
             id: p.pipeline_id,
             title: certificationDisplayName(p.name) || t.value.common.unknownCourse,
-            description: firstStageNames || `${stages.length} ${t.value.courses.stages} · ${unitCount} ${t.value.courses.units}`,
+            description: String(p.description || "").trim() || firstStageNames || `${stages.length} ${t.value.courses.stages} · ${unitCount} ${t.value.courses.units}`,
             provider: p.category_tips || t.value.courses.certificationPath,
             isPurchased: false,
             image,

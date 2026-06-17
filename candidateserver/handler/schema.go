@@ -109,6 +109,7 @@ type PipelineConfig struct {
 	Version                uint32          `json:"version,omitempty"`       // 閻楀牊婀伴崣?[required]
 	Name                   string          `json:"name,omitempty"`          // 缁狅紕鍤庨崥宥囆?[required]
 	CategoryTips           string          `json:"category_tips,omitempty"` // 閸掑棛琚幓鎰仛 [required]
+	Description            string          `json:"description,omitempty"`
 	ThumbnailObjectKey     string          `json:"thumbnail_object_key,omitempty"`
 	ThumbnailFileHash      string          `json:"thumbnail_file_hash,omitempty"`
 	UnlockFee              int64           `json:"unlock_fee,omitempty"`       // 鐟欙綁鏀ｇ拹鍦暏閿涘苯宕熸担宥忕窗閸?[required]
@@ -175,6 +176,7 @@ type PipelineSummary struct {
 	PipelineName      string                 `json:"pipeline_name,omitempty"`
 	Status            gprogpb.PipelineStatus `json:"status,omitempty"`             // pipeline 瑜版挸澧犻悩鑸碘偓?[required]
 	CurrentStageUlid  string                 `json:"current_stage_ulid,omitempty"` // 瑜版挸澧?stage 鐎圭偘绶?ULID [optional]
+	Description       string                 `json:"description,omitempty"`
 	CurrentStageName  string                 `json:"current_stage_name,omitempty"`
 	Progress          float64                `json:"progress"` // 瑜版挸澧犻梼鑸殿唽閻ㄥ嫬顒熸稊鐘虹箻鎼?(0-100)
 	ProgressAvailable bool                   `json:"progress_available,omitempty"`

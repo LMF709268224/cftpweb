@@ -147,6 +147,7 @@ func (h *Handler) ListMyPipelines(w http.ResponseWriter, r *http.Request) {
 			Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: summary.PipelineCcUlid},
 		}); configErr == nil {
 			summary.PipelineName = strings.TrimSpace(config.GetName())
+			summary.Description = strings.TrimSpace(config.GetDescription())
 			if progress, ok := pipelineProgressFromCourseEnrollments(config, enrollmentProgress); ok {
 				summary.ProgressAvailable = true
 				summary.Progress = progress

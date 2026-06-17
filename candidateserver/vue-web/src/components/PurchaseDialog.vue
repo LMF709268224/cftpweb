@@ -51,6 +51,7 @@ type ActiveOrder = {
 const props = defineProps<{
   open: boolean
   courseName: string
+  description?: string
   pipelineId: string
 }>()
 
@@ -404,6 +405,7 @@ async function initiatePayment() {
     <div class="max-h-[86vh] w-full max-w-[620px] overflow-hidden rounded-xl bg-card shadow-2xl">
       <div class="border-b border-border px-6 pb-4 pt-6">
         <h2 class="text-xl font-semibold">{{ copy.title }}: {{ courseName }}</h2>
+        <p v-if="description" class="mt-2 text-sm leading-6 text-muted-foreground">{{ description }}</p>
       </div>
 
       <div class="max-h-[72vh] space-y-5 overflow-y-auto px-6 py-5">
