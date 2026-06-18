@@ -35,7 +35,7 @@ export const zh = {
   sidebar: {
     systemBrand: "CFtP",
     systemName: "培训系统",
-    home: "首页",
+    home: "仪表盘",
     courses: "认证",
     membership: "会员",
     exams: "考试",

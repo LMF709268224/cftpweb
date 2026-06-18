@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
-import { useRouter } from "vue-router"
-import { BookOpen, CheckCircle2, Home, MessageSquare } from "lucide-vue-next"
+import { BookOpen, CheckCircle2, PanelLeft, MessageSquare } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import StatsCard from "@/components/StatsCard.vue"
 import TodoList from "@/components/TodoList.vue"
@@ -18,22 +17,18 @@ type DashboardStats = {
 }
 
 const { t, lang } = useTranslation()
-const router = useRouter()
 const userName = ref("...")
 const unreadCount = ref(0)
 const stats = ref<DashboardStats>({})
-const welcomeSeparator = computed(() => (lang.value === "zh" ? "\uFF0C" : ", "))
 
 const guideCopy = computed(() => lang.value === "zh"
   ? {
-      title: "欢迎来到 CFtP",
-      subtitle: "查看你的认证、学习进度、考试和证书状态，快速进入下一步。",
-      buyCourses: "购买认证",
+      title: "欢迎来到门户",
+      subtitle: "探索我们的认证、课程、网络研讨会、洞察和报告，持续提升你的专业知识。",
     }
   : {
-      title: "Welcome to CFtP",
-      subtitle: "Review your certifications, learning progress, exams, and certificate status at a glance.",
-      buyCourses: "Buy Certifications",
+      title: "Welcome to Portal",
+      subtitle: "Explore our collection of certifications, courses, webinars, insights and reports to advance your knowledge.",
     },
 )
 const statsActionCopy = computed(() => lang.value === "zh"
@@ -60,10 +55,6 @@ const todoItems = computed(() =>
       ]
     : [],
 )
-
-function goToCourses() {
-  void router.push("/certifications")
-}
 
 onMounted(async () => {
   const token = getAccessToken()
@@ -101,11 +92,10 @@ onMounted(async () => {
       <div class="mb-4 px-1 py-3 md:py-5">
         <div class="flex items-start gap-3">
           <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-            <Home class="h-6 w-6" />
+            <PanelLeft class="h-6 w-6" />
           </div>
           <div>
             <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.sidebar.home }}</h1>
-            <p class="mt-2 text-muted-foreground">{{ t.home.welcomeBack }}{{ welcomeSeparator }}{{ userName }}</p>
           </div>
         </div>
       </div>
@@ -113,12 +103,6 @@ onMounted(async () => {
       <section class="relative rounded-[16px] bg-white px-4 py-6 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:px-8 md:py-8">
         <h2 class="text-2xl font-bold tracking-tight text-primary md:text-3xl">{{ guideCopy.title }}</h2>
         <p class="mx-auto mt-3 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">{{ guideCopy.subtitle }}</p>
-        <button
-          class="mt-5 inline-flex h-9 items-center justify-center rounded-lg border border-primary/20 bg-white/80 px-5 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/10 md:absolute md:right-6 md:top-6 md:mt-0"
-          @click="goToCourses"
-        >
-          {{ guideCopy.buyCourses }}
-        </button>
       </section>
 
       <section class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">

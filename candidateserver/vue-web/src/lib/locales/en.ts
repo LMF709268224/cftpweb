@@ -37,7 +37,7 @@ export const en: AppTranslations = {
   sidebar: {
     systemBrand: "CFtP",
     systemName: "Training System",
-    home: "Home",
+    home: "Dashboard",
     courses: "Certifications",
     membership: "Membership",
     exams: "Exams",
