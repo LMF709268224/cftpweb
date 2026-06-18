@@ -18,6 +18,8 @@ type OrderItem = {
   date: string
   amount: string
   currency: string
+  bizType: string
+  bizRefUlid: string
   status: OrderStatus
   rawStatus: string
   pipelineId: string
@@ -42,6 +44,7 @@ const page = ref(1)
 const pageSize = 10
 const totalOrders = ref(0)
 const totalPages = ref(0)
+const selectedBizType = ref("")
 const invoiceLoading = ref<string | null>(null)
 const showPurchaseDialog = ref(false)
 const selectedCourseName = ref("")
@@ -56,6 +59,14 @@ const orderRangeLabel = computed(() => {
   const end = Math.min(page.value * pageSize, totalOrders.value)
   return `${start}-${end} / ${totalOrders.value}`
 })
+const orderTypeOptions = computed(() => [
+  { value: "", label: lang.value === "zh" ? "\u5168\u90e8\u8ba2\u5355" : "All Orders" },
+  { value: "PIPELINE_PAYMENT", label: orderTypeLabel("PIPELINE_PAYMENT") },
+  { value: "STAGE_PAYMENT", label: orderTypeLabel("STAGE_PAYMENT") },
+  { value: "COURSE_RETAKE_PAYMENT", label: orderTypeLabel("COURSE_RETAKE_PAYMENT") },
+  { value: "PIPELINE_UNLOCK", label: orderTypeLabel("PIPELINE_UNLOCK") },
+  { value: "CREDENTIAL_APPLICATION", label: orderTypeLabel("CREDENTIAL_APPLICATION") },
+])
 
 function orderStatusBadgeClass(order: OrderItem) {
   if (order.status === "completed" || order.rawStatus === "COMPLETED") {
@@ -65,11 +76,12 @@ function orderStatusBadgeClass(order: OrderItem) {
 }
 
 function handleOrderClick(order: OrderItem) {
-  if (order.status !== "completed" && order.pipelineId) {
+  if (order.bizType !== "PIPELINE_PAYMENT" || !order.pipelineId) return
+  if (order.status !== "completed") {
     selectedCourseName.value = order.items.join(", ")
     selectedPipelineId.value = order.pipelineId
     showPurchaseDialog.value = true
-  } else if (order.status === "completed" && order.pipelineId) {
+  } else {
     router.push(`/certifications/${encodeURIComponent(order.pipelineId)}`)
   }
 }
@@ -96,6 +108,25 @@ function formatMoney(amount: number, currency = "USD") {
   }
 }
 
+function orderTypeLabel(bizType?: string) {
+  const normalized = String(bizType || "").toUpperCase()
+  const zh = lang.value === "zh"
+  switch (normalized) {
+    case "PIPELINE_PAYMENT":
+      return zh ? "\u7ba1\u7ebf\u8ba2\u5355" : "Pipeline Order"
+    case "STAGE_PAYMENT":
+      return zh ? "\u9636\u6bb5\u8ba2\u5355" : "Stage Order"
+    case "COURSE_RETAKE_PAYMENT":
+      return zh ? "\u91cd\u8003\u8ba2\u5355" : "Retake Order"
+    case "PIPELINE_UNLOCK":
+      return zh ? "\u7ba1\u7ebf\u89e3\u9501\u8ba2\u5355" : "Pipeline Unlock Order"
+    case "CREDENTIAL_APPLICATION":
+      return zh ? "\u8d44\u683c\u7533\u8bf7\u8ba2\u5355" : "Credential Application Order"
+    default:
+      return normalized || (zh ? "\u5176\u4ed6\u8ba2\u5355" : "Other Order")
+  }
+}
+
 async function fetchOrders() {
   loading.value = true
   try {
@@ -103,6 +134,7 @@ async function fetchOrders() {
       page: String(page.value),
       page_size: String(pageSize),
     })
+    if (selectedBizType.value) params.set("biz_type", selectedBizType.value)
     const res = await apiClient(`/api/orders?${params.toString()}`)
     totalSpent.value = Number(res.total_amount || 0)
     completedCount.value = Number(res.completed || 0)
@@ -111,11 +143,13 @@ async function fetchOrders() {
     if (Array.isArray(res.orders)) {
       orders.value = res.orders.map((o: any) => ({
         id: o.order_id,
-        invoiceOrderId: o.pipeline_pay_order_ulid || "",
-        canViewInvoice: Boolean(o.can_view_invoice && o.pipeline_pay_order_ulid),
-        items: [o.product_name],
+        invoiceOrderId: o.pay_order_ulid || o.pipeline_pay_order_ulid || "",
+        canViewInvoice: Boolean(o.pay_order_ulid || o.pipeline_pay_order_ulid || o.can_view_invoice),
+        items: [o.product_name || orderTypeLabel(o.biz_type)],
         date: o.created_at,
         currency: (o.currency || "USD").toUpperCase(),
+        bizType: o.biz_type || "",
+        bizRefUlid: o.biz_ref_ulid || "",
         amount: o.amount > 0 ? formatMoney(o.amount, o.currency || "USD") : "-",
         status: (o.status in statusConfig ? o.status : "pending") as OrderStatus,
         rawStatus: o.raw_status,
@@ -135,15 +169,21 @@ async function fetchOrders() {
   }
 }
 
+function changeOrderType(value: string) {
+  selectedBizType.value = value
+  page.value = 1
+  void fetchOrders()
+}
+
 function goToPage(nextPage: number) {
   if (loading.value) return
   if (nextPage < 1 || (totalPages.value > 0 && nextPage > totalPages.value)) return
   page.value = nextPage
-  fetchOrders()
+  void fetchOrders()
 }
 
 onMounted(() => {
-  fetchOrders()
+  void fetchOrders()
 })
 </script>
 
@@ -191,24 +231,43 @@ onMounted(() => {
     </div>
 
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-col gap-3 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
         <div class="flex items-center gap-3">
           <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10"><Receipt class="h-4 w-4 text-primary" /></div>
           <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
         </div>
-        <div class="text-sm text-muted-foreground">{{ orderRangeLabel }}</div>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="option in orderTypeOptions"
+              :key="option.value || 'ALL'"
+              :class="['rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors', selectedBizType === option.value ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/40 hover:text-primary']"
+              @click="changeOrderType(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+          <div class="whitespace-nowrap text-sm text-muted-foreground">{{ orderRangeLabel }}</div>
+        </div>
       </div>
+
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground"><Loader2 class="h-5 w-5 animate-spin" /> {{ t.common.loading }}</div>
       <div v-else-if="orders.length === 0" class="flex flex-col items-center justify-center px-4 py-14 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10"><Package class="h-8 w-8 text-primary" /></div>
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.orders.noOrders }}</h3>
         <p class="max-w-md text-sm text-muted-foreground">{{ t.orders.noOrdersDesc }}</p>
       </div>
-      <div v-else>
-        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="group flex cursor-pointer items-center justify-between border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10">
+      <div v-else class="space-y-2">
+        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="group flex cursor-pointer items-center justify-between px-4 py-4 transition-colors hover:bg-primary/10">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
-            <div><h3 class="mb-1 font-medium text-card-foreground">{{ order.items.join(", ") }}</h3><p class="text-sm text-muted-foreground">{{ order.date }}</p></div>
+            <div>
+              <div class="mb-1 flex flex-wrap items-center gap-2">
+                <h3 class="font-medium text-card-foreground">{{ order.items.join(", ") }}</h3>
+                <span class="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary">{{ orderTypeLabel(order.bizType) }}</span>
+              </div>
+              <p class="text-sm text-muted-foreground">{{ order.date }}</p>
+            </div>
           </div>
           <div class="grid shrink-0 grid-cols-[96px_86px_36px_20px] items-center gap-3">
             <div class="flex justify-center">
@@ -217,7 +276,7 @@ onMounted(() => {
               </span>
             </div>
             <div class="text-right"><p class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p></div>
-            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-primary/10 hover:text-primary transition-colors text-muted-foreground" title="查看发票 / View Invoice">
+            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary" title="View Invoice">
               <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin text-primary" />
               <FileText v-else class="h-4 w-4" />
               <span class="sr-only">{{ invoiceOpeningLabel }}</span>
