@@ -16,6 +16,7 @@ const resubmitAppId = ref("")
 const isApplyOpen = ref(false)
 const uploadedFiles = ref<Record<string, { name: string; url: string; ext: string; hash: string; size: number }>>({})
 const isSubmitting = ref(false)
+const uploadingConstraintName = ref("")
 const UPLOAD_TIMEOUT_MS = 30000
 
 async function sha256Hex(file: File) {
@@ -64,6 +65,8 @@ function triggerFileInput(constraintName: string) {
 }
 
 async function handleFileUpload(constraintName: string, file: File) {
+  if (uploadingConstraintName.value) return
+  uploadingConstraintName.value = constraintName
   const fileExt = file.name.includes(".") ? "." + file.name.split(".").pop() : ""
   try {
     const fileHash = await sha256Hex(file)
@@ -77,6 +80,8 @@ async function handleFileUpload(constraintName: string, file: File) {
     uploadedFiles.value = { ...uploadedFiles.value, [constraintName]: { name: file.name, url: res.file_key, ext: fileExt, hash: fileHash, size: file.size } }
   } catch {
     alert(t.value.credentialsPage.uploadFailed)
+  } finally {
+    uploadingConstraintName.value = ""
   }
 }
 
@@ -230,7 +235,8 @@ onMounted(fetchData)
                 <span :class="['badge border-transparent', constraint.is_required ? 'bg-destructive text-destructive-foreground' : 'bg-secondary text-secondary-foreground']">{{ constraint.is_required ? t.credentialsPage.required : t.credentialsPage.optional }}</span>
               </div>
               <div class="mt-2 flex items-center gap-2">
-                <button type="button" class="btn btn-outline cursor-pointer rounded-lg px-3 py-1.5 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="triggerFileInput(constraint.name)">
+                <button type="button" class="btn btn-outline cursor-pointer rounded-lg px-3 py-1.5 text-xs hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="Boolean(uploadingConstraintName)" @click="triggerFileInput(constraint.name)">
+                  <Loader2 v-if="uploadingConstraintName === constraint.name" class="h-4 w-4 animate-spin" />
                   {{ t.credentialsPage.chooseFile }}
                 </button>
                 <span class="max-w-[200px] truncate text-sm text-muted-foreground" :title="uploadedFiles[constraint.name] ? uploadedFiles[constraint.name].name : t.credentialsPage.noFileChosen">

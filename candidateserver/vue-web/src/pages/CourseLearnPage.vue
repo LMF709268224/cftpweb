@@ -157,6 +157,8 @@ const progressRecords = ref<ProgressRecord[]>([])
 const selectedMaterialId = ref("")
 const openingMaterialId = ref("")
 const downloadingMaterialId = ref("")
+const startingQuizId = ref("")
+const markingLessonComplete = ref(false)
 const activeMaterialGroup = ref<MaterialGroupKey>("all")
 const runtime = ref<any>(null)
 const scheduleLoading = ref(false)
@@ -784,12 +786,16 @@ async function refreshProgress(showToast = false) {
 }
 
 async function startQuiz(quizId: string) {
+  if (!quizId || startingQuizId.value) return
+  startingQuizId.value = quizId
   try {
     const res = await apiClient(`/api/quizzes/${quizId}/take`, { method: "POST" })
-    if (res?.attempt_id) router.push(`/quizzes?attemptId=${encodeURIComponent(res.attempt_id)}`)
+    if (res?.attempt_id) await router.push(`/quizzes?attemptId=${encodeURIComponent(res.attempt_id)}`)
     else toast.error(t.value.common.error)
   } catch {
     toast.error(t.value.common.error)
+  } finally {
+    startingQuizId.value = ""
   }
 }
 
@@ -873,6 +879,7 @@ function openExternalLesson() {
 }
 
 async function markCompleted() {
+  if (markingLessonComplete.value) return
   if (!lesson.value?.lesson_id) return
   if (currentLessonCompleted.value) {
     toast.success(t.value.learning.completedTag)
@@ -882,12 +889,15 @@ async function markCompleted() {
     toast.warning(t.value.learning.nextStepTakeQuizDesc)
     return
   }
+  markingLessonComplete.value = true
   try {
     await apiClient(`/api/pipeline/lessons/${lesson.value.lesson_id}/complete`, { method: "POST" })
     toast.success(t.value.common.success)
     await refreshProgress(false)
   } catch {
     // apiClient handles localized errors.
+  } finally {
+    markingLessonComplete.value = false
   }
 }
 
@@ -1348,7 +1358,8 @@ watch(selectedMaterial, () => {
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
                   <div class="mt-auto pt-3">
-                    <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed" @click="startQuiz(task.quizId)">
+                    <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
+                      <Loader2 v-if="startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
                   </div>
@@ -1376,7 +1387,8 @@ watch(selectedMaterial, () => {
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
                   <div class="mt-auto pt-3">
-                    <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed" @click="startQuiz(task.quizId)">
+                    <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
+                      <Loader2 v-if="startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
                   </div>
@@ -1445,10 +1457,11 @@ watch(selectedMaterial, () => {
                     'btn',
                     currentLessonCompleted ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 disabled:opacity-100' : 'btn-primary',
                   ]"
-                  :disabled="currentLessonCompleted"
+                  :disabled="currentLessonCompleted || markingLessonComplete"
                   @click="markCompleted"
                 >
-                  <CheckCircle2 class="h-4 w-4" />
+                  <Loader2 v-if="markingLessonComplete" class="h-4 w-4 animate-spin" />
+                  <CheckCircle2 v-else class="h-4 w-4" />
                   {{ currentLessonCompleted ? t.learning.completedTag : t.learning.completeLesson }}
                 </button>
               </div>
