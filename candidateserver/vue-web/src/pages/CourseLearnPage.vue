@@ -155,6 +155,8 @@ const activeLessonId = ref("")
 const syncState = ref<SyncProgressRsp | null>(null)
 const progressRecords = ref<ProgressRecord[]>([])
 const selectedMaterialId = ref("")
+const openingMaterialId = ref("")
+const downloadingMaterialId = ref("")
 const activeMaterialGroup = ref<MaterialGroupKey>("all")
 const runtime = ref<any>(null)
 const scheduleLoading = ref(false)
@@ -919,6 +921,8 @@ function openExternalPdfPreview(src: string, title: string) {
 
 async function openMaterial(material: CourseMaterialSummary) {
   if (!material.material_id) return
+  if (openingMaterialId.value) return
+  openingMaterialId.value = material.material_id
   try {
     const res = await apiClient(`/api/pipeline/materials/${material.material_id}/url`)
     if (res?.url) {
@@ -930,11 +934,15 @@ async function openMaterial(material: CourseMaterialSummary) {
     } else toast.error(t.value.common.error)
   } catch {
     // apiClient handles localized errors.
+  } finally {
+    openingMaterialId.value = ""
   }
 }
 
 async function downloadMaterial(material: CourseMaterialSummary) {
   if (!material.material_id) return
+  if (downloadingMaterialId.value) return
+  downloadingMaterialId.value = material.material_id
   try {
     const res = await apiClient(`/api/pipeline/materials/${material.material_id}/url`)
     if (!res?.url) {
@@ -950,6 +958,8 @@ async function downloadMaterial(material: CourseMaterialSummary) {
     link.remove()
   } catch {
     // apiClient handles localized errors.
+  } finally {
+    downloadingMaterialId.value = ""
   }
 }
 
@@ -1630,12 +1640,14 @@ watch(selectedMaterial, () => {
                   </div>
 
                   <div class="flex flex-wrap gap-2">
-                    <button class="btn btn-primary" @click="openMaterial(selectedMaterial)">
-                      <Play class="h-4 w-4" />
+                    <button class="btn btn-primary" :disabled="openingMaterialId === selectedMaterial.material_id" @click="openMaterial(selectedMaterial)">
+                      <Loader2 v-if="openingMaterialId === selectedMaterial.material_id" class="h-4 w-4 animate-spin" />
+                      <Play v-else class="h-4 w-4" />
                       {{ t.learning.openMaterial }}
                     </button>
-                    <button class="btn btn-outline" @click="downloadMaterial(selectedMaterial)">
-                      <Download class="h-4 w-4" />
+                    <button class="btn btn-outline" :disabled="downloadingMaterialId === selectedMaterial.material_id" @click="downloadMaterial(selectedMaterial)">
+                      <Loader2 v-if="downloadingMaterialId === selectedMaterial.material_id" class="h-4 w-4 animate-spin" />
+                      <Download v-else class="h-4 w-4" />
                       {{ t.learning.downloadMaterial }}
                     </button>
                   </div>

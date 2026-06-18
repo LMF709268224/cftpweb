@@ -13,6 +13,7 @@ import {
   FileIcon,
   FileText,
   GraduationCap,
+  Loader2,
   Play,
   Search,
   SlidersHorizontal,
@@ -34,6 +35,7 @@ const allCourses = ref<any[]>([])
 const myCourses = ref<any[]>([])
 const learningResources = ref<any[]>([])
 const loading = ref(false)
+const openingResourceId = ref("")
 
 const emptyCopy = computed(() => lang.value === "zh"
   ? {
@@ -176,12 +178,16 @@ async function fetchData() {
 
 async function openResource(resource: any) {
   if (!resource?.id) return
+  if (openingResourceId.value) return
+  openingResourceId.value = resource.id
   try {
     const res = await apiClient(`/api/pipeline/materials/${resource.id}/url`)
     if (res?.url) window.open(res.url, "_blank", "noopener,noreferrer")
     else toast.error(t.value.common.error)
   } catch {
     // apiClient handles localized errors.
+  } finally {
+    openingResourceId.value = ""
   }
 }
 
@@ -379,12 +385,16 @@ onMounted(() => {
             </div>
             <span class="w-10 text-right text-muted-foreground">{{ resource.progress }}%</span>
           </div>
-          <button class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" @click.stop="openResource(resource)">
-            <Play v-if="resource.type === 'video'" class="h-3.5 w-3.5" />
+          <button class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" :disabled="Boolean(openingResourceId)" @click.stop="openResource(resource)">
+            <Loader2 v-if="openingResourceId === resource.id" class="h-3.5 w-3.5 animate-spin" />
+            <Play v-else-if="resource.type === 'video'" class="h-3.5 w-3.5" />
             <Eye v-else class="h-3.5 w-3.5" />
             {{ resource.type === 'video' ? t.courses.watch : t.courses.read }}
           </button>
-          <button class="btn btn-ghost px-2" @click.stop="openResource(resource)"><Download class="h-4 w-4" /></button>
+          <button class="btn btn-ghost px-2" :disabled="Boolean(openingResourceId)" @click.stop="openResource(resource)">
+            <Loader2 v-if="openingResourceId === resource.id" class="h-4 w-4 animate-spin" />
+            <Download v-else class="h-4 w-4" />
+          </button>
           <button class="btn btn-ghost px-2" @click.stop><Bookmark class="h-4 w-4" /></button>
         </div>
       </div>
