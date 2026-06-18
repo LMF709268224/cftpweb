@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
+import { openPaymentBridge } from "@/lib/payment"
 import { toast } from "vue-sonner"
 import {
   AlertCircle,
@@ -548,15 +549,6 @@ function canApplyRetake(exam: any) {
   return Boolean(exam?.course_unit_ulid && exam?.course_unit_cc_ulid && isExamFailedUnit(exam) && exam?.retake_eligible)
 }
 
-function stripeCheckoutUrl(paymentKey: unknown) {
-  if (typeof paymentKey !== "string") return ""
-  const value = paymentKey.trim()
-  if (!value) return ""
-  if (/^https:\/\/checkout\.stripe\.com\//i.test(value)) return value
-  if (value.startsWith("/c/pay/")) return `https://checkout.stripe.com${value}`
-  return ""
-}
-
 function noResultLabel() {
   return (t.value.examsPage as any).statusNoResult || t.value.examsPage.statusPending
 }
@@ -850,13 +842,15 @@ async function handleInlineApplyRetake(exam: any) {
       }),
     })
     if (payment?.payment_required && !payment?.paid) {
-      const checkoutUrl = stripeCheckoutUrl(payment.payment_key)
-      if (checkoutUrl) {
-        toast.info(t.value.common.loading)
-        window.open(checkoutUrl, "_blank", "noopener,noreferrer")
-        return
-      }
-      toast.info(payment.message || t.value.examsPage.applyRetake)
+          openPaymentBridge({
+        paymentKey: payment.payment_key,
+        orderId: payment.course_retake_order_ulid,
+        bizType: "COURSE_RETAKE_PAYMENT",
+        bizRefUlid: payment.course_retake_order_ulid,
+        source: "retake",
+        returnPath: window.location.pathname,
+      })
+      toast.info(t.value.common.loading)
       return
     }
     await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake`, { method: "POST" })

@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch, nextTick } from "vue"
+import { computed, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { AlertCircle, Building2, CheckCircle2, CreditCard, Lock, Loader2, ShoppingCart } from "lucide-vue-next"
 import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
+import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
-
-declare global {
-  interface Window {
-    Stripe: any;
-  }
-}
 
 type PaymentMethod = "stripe" | "bank"
 type MallAction = "purchase" | "unlock"
@@ -66,10 +61,14 @@ const eligibility = ref<EligibilityPreview | null>(null)
 const activeOrder = ref<ActiveOrder | null>(null)
 const paymentPreview = ref<PaymentPreview | null>(null)
 const previewError = ref("")
-const embeddedClientSecret = ref("")
-const embeddedCheckoutLoading = ref(false)
-let stripeCheckoutInstance: any = null
-let stripeCheckoutMountToken = 0
+const activePaymentSession = ref<{
+  bizType: string
+  bizRefUlid: string
+  orderId: string
+  source: string
+  returnPath: string
+  extraReturnParams?: Record<string, string>
+} | null>(null)
 
 const selectedExemptionsJson = JSON.stringify({ stages: [] })
 const copy = computed(() => t.value.purchaseDialog || {})
@@ -83,44 +82,13 @@ watch(() => props.open, (open) => {
   if (open && props.pipelineId) {
     void loadEligibility()
   } else {
-    destroyStripeCheckout(true)
+    activePaymentSession.value = null
   }
 })
 
 function close() {
-  destroyStripeCheckout(true)
+  activePaymentSession.value = null
   emit("update:open", false)
-}
-
-onBeforeUnmount(() => {
-  destroyStripeCheckout(true)
-})
-
-function clearCheckoutContainer() {
-  const container = document.getElementById("checkout")
-  if (container) container.innerHTML = ""
-}
-
-function destroyStripeCheckout(clearClientSecret = false) {
-  stripeCheckoutMountToken += 1
-  const checkout = stripeCheckoutInstance
-  stripeCheckoutInstance = null
-  if (checkout) {
-    try {
-      if (typeof checkout.destroy === "function") {
-        checkout.destroy()
-      } else if (typeof checkout.unmount === "function") {
-        checkout.unmount()
-      }
-    } catch (error) {
-      console.error("Failed to destroy Stripe embedded checkout", error)
-    }
-  }
-  clearCheckoutContainer()
-  if (clearClientSecret) {
-    embeddedClientSecret.value = ""
-    embeddedCheckoutLoading.value = false
-  }
 }
 
 function normalizedStatus(status: unknown) {
@@ -134,21 +102,6 @@ function isCompletedStatus(status: unknown) {
 function isFailedStatus(status: unknown) {
   const value = normalizedStatus(status)
   return value.includes("FAILED") || value.includes("CANCEL") || value.includes("REJECT")
-}
-
-function stripeCheckoutUrl(paymentKey: unknown) {
-  if (typeof paymentKey !== "string") return ""
-  const value = paymentKey.trim()
-  if (!value) return ""
-  if (/^https:\/\/checkout\.stripe\.com\//i.test(value)) return value
-  if (value.startsWith("/c/pay/")) return `https://checkout.stripe.com${value}`
-  return ""
-}
-
-function stripeEmbeddedClientSecret(paymentKey: unknown) {
-  if (typeof paymentKey !== "string") return ""
-  const value = paymentKey.trim()
-  return value.startsWith("cs_") ? value : ""
 }
 
 function formatMoney(amount?: number, currency = "usd") {
@@ -186,7 +139,7 @@ async function loadEligibility() {
   activeOrder.value = null
   paymentPreview.value = null
   previewError.value = ""
-  destroyStripeCheckout(true)
+  activePaymentSession.value = null
   try {
     const res: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
     eligibility.value = res
@@ -324,90 +277,24 @@ function rememberPendingMallPayment() {
   }))
 }
 
-async function mountStripeCheckout(clientSecret: string) {
-  destroyStripeCheckout(false)
-  embeddedCheckoutLoading.value = true
-  const mountToken = stripeCheckoutMountToken
-  let mounted = false
-  try {
-    const configRes = await apiClient("/api/public/config")
-    const pk = configRes.stripe_publishable_key
-    if (!pk) {
-      toast.error(copy.value.stripePublishableKeyMissing || "Missing Stripe publishable key")
-      return
-    }
-
-    await nextTick()
-    const stripe = window.Stripe(pk)
-    const checkout = await stripe.initEmbeddedCheckout({
-      fetchClientSecret: async () => clientSecret
-    })
-    if (mountToken !== stripeCheckoutMountToken) {
-      if (typeof checkout.destroy === "function") checkout.destroy()
-      return
-    }
-    stripeCheckoutInstance = checkout
-    checkout.mount("#checkout")
-    mounted = true
-    window.setTimeout(() => {
-      if (mountToken === stripeCheckoutMountToken) embeddedCheckoutLoading.value = false
-    }, 500)
-  } catch (err: any) {
-    console.error(err)
-    toast.error(err.message || String(err))
-  } finally {
-    if (!mounted && mountToken === stripeCheckoutMountToken) embeddedCheckoutLoading.value = false
-  }
-}
-
 async function initiatePayment() {
   if (!activeOrder.value?.orderId) return
   const bizType = activeOrder.value.action === "unlock" ? "PIPELINE_UNLOCK" : "PIPELINE_PAYMENT"
+  if (paymentMethod.value !== "stripe") {
+    toast.error(copy.value.unsupportedPaymentKey)
+    return
+  }
   paymentLoading.value = true
   try {
-    destroyStripeCheckout(true)
-    const origin = window.location.origin
-    const successParams = new URLSearchParams({
-      payment_status: "success",
-      payment_action: activeOrder.value.action,
-      order_id: activeOrder.value.orderId,
-      pipeline_id: props.pipelineId,
-    })
-    const cancelParams = new URLSearchParams({
-      payment_status: "cancelled",
-      payment_action: activeOrder.value.action,
-      order_id: activeOrder.value.orderId,
-      pipeline_id: props.pipelineId,
-    })
-    const res = await apiClient("/api/mall/payments/initiate", {
-      method: "POST",
-      body: JSON.stringify({
-        biz_type: bizType,
-        biz_ref_ulid: activeOrder.value.orderId,
-        success_url: `${origin}/certifications?${successParams.toString()}`,
-        cancel_url: `${origin}/certifications?${cancelParams.toString()}`,
-        coupon_codes: [],
-      }),
-    })
-    const paymentKey = res.payment_key
-    if (!paymentKey) {
-      toast.error(copy.value.paymentSessionFailed)
-      return
+    rememberPendingMallPayment()
+    activePaymentSession.value = {
+      bizType,
+      bizRefUlid: activeOrder.value.orderId,
+      orderId: activeOrder.value.orderId,
+      source: activeOrder.value.action,
+      returnPath: "/certifications",
+      extraReturnParams: { pipeline_id: props.pipelineId },
     }
-    const checkoutUrl = stripeCheckoutUrl(paymentKey)
-    if (paymentMethod.value === "stripe" && checkoutUrl) {
-      rememberPendingMallPayment()
-      window.location.href = checkoutUrl
-      return
-    }
-    const clientSecret = stripeEmbeddedClientSecret(paymentKey)
-    if (paymentMethod.value === "stripe" && clientSecret) {
-      rememberPendingMallPayment()
-      embeddedClientSecret.value = clientSecret
-      mountStripeCheckout(clientSecret)
-      return
-    }
-    toast.error(copy.value.unsupportedPaymentKey)
   } catch (error) {
     console.error(error)
   } finally {
@@ -516,7 +403,7 @@ async function initiatePayment() {
           <p class="mt-2">{{ previewError }}</p>
         </div>
 
-        <div v-if="embeddedClientSecret" class="space-y-3">
+        <div v-if="activePaymentSession" class="space-y-3">
           <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
             <div class="flex items-center gap-2 font-semibold"><CreditCard class="h-4 w-4" />{{ copy.embeddedCheckoutTitle }}</div>
             <p class="mt-2">{{ copy.embeddedCheckoutDesc }}</p>
@@ -524,16 +411,18 @@ async function initiatePayment() {
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
             <strong>⚠️ 测试环境提示：</strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验。
           </div>
-          <div class="relative min-h-[400px] rounded-lg border bg-white p-4 text-sm text-muted-foreground">
-            <div v-if="embeddedCheckoutLoading" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg bg-white">
-              <Loader2 class="h-6 w-6 animate-spin text-primary" />
-              <span>{{ copy.embeddedCheckoutLoading || t.common.loading }}</span>
-            </div>
-            <div id="checkout"></div>
-          </div>
+          <PaymentSessionPanel
+            :biz-type="activePaymentSession.bizType"
+            :biz-ref-ulid="activePaymentSession.bizRefUlid"
+            :order-id="activePaymentSession.orderId"
+            :source="activePaymentSession.source"
+            :return-path="activePaymentSession.returnPath"
+            :extra-return-params="activePaymentSession.extraReturnParams"
+            min-height-class="min-h-[420px]"
+          />
         </div>
 
-        <div v-if="activeOrder && paymentPreview && !embeddedClientSecret" class="space-y-3">
+        <div v-if="activeOrder && paymentPreview && !activePaymentSession" class="space-y-3">
           <label class="text-sm font-medium text-foreground">{{ t.common.purchaseDialogPaymentMethod }}</label>
           <div class="space-y-2">
             <button
@@ -591,7 +480,7 @@ async function initiatePayment() {
         <button v-if="activeOrder && previewError" class="btn btn-outline" :disabled="actionLoading" @click="previewPayment(activeOrder.action, activeOrder.orderId)">
           {{ copy.retryPreview }}
         </button>
-        <button v-if="activeOrder && paymentPreview && !embeddedClientSecret" class="btn btn-primary" :disabled="paymentLoading" @click="initiatePayment">
+        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-primary" :disabled="paymentLoading" @click="initiatePayment">
           <Loader2 v-if="paymentLoading" class="h-4 w-4 animate-spin" />
           <CreditCard v-else class="h-4 w-4" />
           {{ copy.payNow }}

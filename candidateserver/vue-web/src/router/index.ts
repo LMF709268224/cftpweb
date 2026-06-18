@@ -24,6 +24,7 @@ const ResourcePacksPage = () => import("@/pages/ResourcePacksPage.vue")
 const PdfPreviewPage = () => import("@/pages/PdfPreviewPage.vue")
 const VideoPreviewPage = () => import("@/pages/VideoPreviewPage.vue")
 const InvoiceRedirectPage = () => import("@/pages/InvoiceRedirectPage.vue")
+const PaymentBridgePage = () => import("@/pages/PaymentBridgePage.vue")
 
 function firstRouteValue(value: unknown) {
   if (Array.isArray(value)) return String(value[0] || "")
@@ -107,5 +108,6 @@ export const router = createRouter({
     { path: "/pdf-preview/resources/:resourceKey", component: PdfPreviewPage },
     { path: "/pdf-preview", component: PdfPreviewPage },
     { path: "/invoice-redirect", component: InvoiceRedirectPage },
+    { path: "/payment-bridge", component: PaymentBridgePage },
   ],
 })
