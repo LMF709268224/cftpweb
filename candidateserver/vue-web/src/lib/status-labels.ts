@@ -234,7 +234,7 @@ export const MALL_ORDER_STATUS_LABELS: StatusLabelMap = {
   "WAIT_UNLOCK_PAYMENT": "orders.statusWaitPayment",
   "UPLOAD_READY": "orders.statusUploadReady",
   "UNDER_REVIEW": "orders.statusWaitReview",
-  "RESOLVED": "orders.statusResolved",
+  "RESOLVED": "orders.statusCompleted",
   "PAID": "orders.statusPaid",
   "COMPLETED": "orders.statusCompleted",
   "FAILED": "orders.statusFailed",

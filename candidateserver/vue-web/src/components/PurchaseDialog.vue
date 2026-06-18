@@ -458,6 +458,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
   if (!props.pipelineId || !qualId) return
   const loadingKey = applicationLoadingKey(unit, qual)
   credentialApplicationLoadingKey.value = loadingKey
+  activePaymentSession.value = null
   try {
     const existingApplication = await latestCredentialApplication(qualId)
     if (existingApplication?.status) {
@@ -494,17 +495,6 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
       qualIds: [qualId],
     }
 
-    if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key || order?.pay_order_ulid) {
-      activePaymentSession.value = {
-        bizType: "CREDENTIAL_APPLICATION",
-        bizRefUlid: orderId,
-        orderId,
-        source: "credential_application",
-        returnPath: "/credentials",
-        extraReturnParams: { qual_ids: qualId, application_order_ulid: orderId },
-      }
-      return
-    }
     if (isUploadReadyStatus(orderStatus)) {
       if (await hasCredentialUploadPermission(qualId)) {
         window.location.assign(qualificationUploadUrl(qualId, orderId))
@@ -520,6 +510,17 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     if (isCredentialApplicationResolvedStatus(orderStatus)) {
       toast.info(order?.message || copy.value.refreshEligibility)
       await loadExemptionOptions()
+      return
+    }
+    if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
+      activePaymentSession.value = {
+        bizType: "CREDENTIAL_APPLICATION",
+        bizRefUlid: orderId,
+        orderId,
+        source: "credential_application",
+        returnPath: "/credentials",
+        extraReturnParams: { qual_ids: qualId, application_order_ulid: orderId },
+      }
       return
     }
     toast.info(order?.message || copy.value.qualificationApplicationCreated)
