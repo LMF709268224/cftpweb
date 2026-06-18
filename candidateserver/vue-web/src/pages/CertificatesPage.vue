@@ -261,19 +261,20 @@ onMounted(async () => {
           </div>
         </div>
         <div class="p-4">
-          <div class="mb-4 grid grid-cols-2 gap-4">
-            <div class="rounded-lg bg-[#f7fbfc] p-3">
+          <div class="mb-4 grid grid-cols-2 gap-3">
+            <div class="rounded-[14px] bg-[#eef3f8] p-3">
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
               <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ cert.issueDate }}</p>
             </div>
-            <div class="rounded-lg bg-[#f7fbfc] p-3">
+            <div class="rounded-[14px] bg-[#eef3f8] p-3">
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.expiryDate }}</p>
               <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ cert.expiryDate }}</p>
             </div>
           </div>
-          <div class="mb-4 rounded-lg bg-[#f7fbfc] p-3">
-            <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.certificateId }}</p>
-            <p class="font-mono text-sm text-card-foreground">{{ cert.credentialId }}</p>
+          <div class="mb-4 flex items-center gap-2 px-1 text-sm text-muted-foreground">
+            <span class="text-base leading-none text-muted-foreground">#</span>
+            <span>{{ t.certificatesPage.certificateId }}</span>
+            <span class="font-mono text-xs font-semibold text-card-foreground">{{ cert.credentialId }}</span>
           </div>
           <div class="flex gap-3">
             <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20" :disabled="!cert.pdfUrl" @click="openCertificate(cert.pdfUrl)">
