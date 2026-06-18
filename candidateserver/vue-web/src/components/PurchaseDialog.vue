@@ -61,11 +61,13 @@ const paymentMethod = ref<PaymentMethod>("stripe")
 const eligibilityLoading = ref(false)
 const actionLoading = ref(false)
 const paymentLoading = ref(false)
+const previewLoading = ref(false)
 const eligibility = ref<EligibilityPreview | null>(null)
 const activeOrder = ref<ActiveOrder | null>(null)
 const paymentPreview = ref<PaymentPreview | null>(null)
 const previewError = ref("")
 const embeddedClientSecret = ref("")
+const embeddedCheckoutLoading = ref(false)
 let stripeCheckoutInstance: any = null
 let stripeCheckoutMountToken = 0
 
@@ -115,7 +117,10 @@ function destroyStripeCheckout(clearClientSecret = false) {
     }
   }
   clearCheckoutContainer()
-  if (clearClientSecret) embeddedClientSecret.value = ""
+  if (clearClientSecret) {
+    embeddedClientSecret.value = ""
+    embeddedCheckoutLoading.value = false
+  }
 }
 
 function normalizedStatus(status: unknown) {
@@ -195,6 +200,7 @@ async function loadEligibility() {
 
 async function previewPayment(action: MallAction, orderId: string) {
   previewError.value = ""
+  previewLoading.value = true
   const bizType = action === "unlock" ? "PIPELINE_UNLOCK" : "PIPELINE_PAYMENT"
   try {
     paymentPreview.value = await apiClient("/api/mall/payments/preview", {
@@ -204,6 +210,8 @@ async function previewPayment(action: MallAction, orderId: string) {
   } catch {
     paymentPreview.value = null
     previewError.value = copy.value.pricePreviewFailed || t.value.common.error
+  } finally {
+    previewLoading.value = false
   }
 }
 
@@ -318,7 +326,9 @@ function rememberPendingMallPayment() {
 
 async function mountStripeCheckout(clientSecret: string) {
   destroyStripeCheckout(false)
+  embeddedCheckoutLoading.value = true
   const mountToken = stripeCheckoutMountToken
+  let mounted = false
   try {
     const configRes = await apiClient("/api/public/config")
     const pk = configRes.stripe_publishable_key
@@ -338,9 +348,15 @@ async function mountStripeCheckout(clientSecret: string) {
     }
     stripeCheckoutInstance = checkout
     checkout.mount("#checkout")
+    mounted = true
+    window.setTimeout(() => {
+      if (mountToken === stripeCheckoutMountToken) embeddedCheckoutLoading.value = false
+    }, 500)
   } catch (err: any) {
     console.error(err)
     toast.error(err.message || String(err))
+  } finally {
+    if (!mounted && mountToken === stripeCheckoutMountToken) embeddedCheckoutLoading.value = false
   }
 }
 
@@ -466,6 +482,13 @@ async function initiatePayment() {
           <p v-if="activeOrder.message" class="mt-2 text-sm text-muted-foreground">{{ activeOrder.message }}</p>
         </div>
 
+        <div v-if="previewLoading && activeOrder && !paymentPreview" class="rounded-lg border border-border bg-muted/30 p-4">
+          <div class="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 class="h-4 w-4 animate-spin text-primary" />
+            <span>{{ copy.pricePreviewTitle || t.common.loading }}</span>
+          </div>
+        </div>
+
         <div v-if="paymentPreview" class="rounded-lg border border-border bg-muted/30 p-4">
           <div class="mb-3 text-sm font-semibold text-foreground">{{ copy.pricePreviewTitle }}</div>
           <div class="space-y-2 text-sm">
@@ -501,7 +524,11 @@ async function initiatePayment() {
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
             <strong>⚠️ 测试环境提示：</strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验。
           </div>
-          <div class="rounded-lg border bg-white p-4 text-sm text-muted-foreground min-h-[400px]">
+          <div class="relative min-h-[400px] rounded-lg border bg-white p-4 text-sm text-muted-foreground">
+            <div v-if="embeddedCheckoutLoading" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 rounded-lg bg-white">
+              <Loader2 class="h-6 w-6 animate-spin text-primary" />
+              <span>{{ copy.embeddedCheckoutLoading || t.common.loading }}</span>
+            </div>
             <div id="checkout"></div>
           </div>
         </div>
