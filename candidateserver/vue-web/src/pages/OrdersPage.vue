@@ -231,9 +231,8 @@ onMounted(() => {
     </div>
 
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="flex flex-col gap-3 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
-        <div class="flex items-center gap-3">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10"><Receipt class="h-4 w-4 text-primary" /></div>
+      <div class="flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex items-center">
           <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
         </div>
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -257,8 +256,8 @@ onMounted(() => {
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.orders.noOrders }}</h3>
         <p class="max-w-md text-sm text-muted-foreground">{{ t.orders.noOrdersDesc }}</p>
       </div>
-      <div v-else class="space-y-2">
-        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="group flex cursor-pointer items-center justify-between px-4 py-4 transition-colors hover:bg-primary/10">
+      <div v-else>
+        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="group flex cursor-pointer items-center justify-between border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
             <div>
