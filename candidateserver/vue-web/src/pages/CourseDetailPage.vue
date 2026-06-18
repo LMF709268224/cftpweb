@@ -11,7 +11,6 @@ import {
   CreditCard,
   ExternalLink,
   Loader2,
-  Lock,
   Play,
   Sparkles,
 } from "lucide-vue-next"
@@ -119,7 +118,7 @@ const nextStepAction = computed(() =>
 )
 const isPipelineTerminal = computed(() => pipelineIsTerminal(pipelineStatus.value))
 const firstCourseId = computed(() =>
-  stages.value.flatMap((stage) => stage.units || []).find((unit) => unit.glms_course_id)?.glms_course_id || "",
+  stages.value.flatMap((stage) => visibleStageUnits(stage)).find((unit) => unit.glms_course_id)?.glms_course_id || "",
 )
 const stageListLoading = computed(() => courseSummariesLoading.value)
 
@@ -142,6 +141,19 @@ const activeStageIndex = computed(() => {
 function pipelineIsTerminal(status?: string | number | null) {
   const normalized = String(status ?? "").trim()
   return normalized === "3" || normalized === "4"
+}
+
+function hasRuntimeStatus(status?: string | number | null) {
+  const normalized = String(status ?? "").trim()
+  return normalized !== "" && normalized !== "0"
+}
+
+function canShowUnit(unit: UnitConfig) {
+  return purchased.value && hasRuntimeStatus(unit.runtime_status)
+}
+
+function visibleStageUnits(stage: StageConfig) {
+  return (stage.units || []).filter(canShowUnit)
 }
 
 function stageStatusLabel(status?: string | number | null) {
@@ -257,7 +269,7 @@ async function loadCourseSummaries() {
   const courseIds = Array.from(
     new Set(
       stages.value
-        .flatMap((stage) => stage.units || [])
+        .flatMap((stage) => visibleStageUnits(stage))
         .map((unit) => unit.glms_course_id)
         .filter((id): id is string => Boolean(id)),
     ),
@@ -458,22 +470,16 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
             </div>
           </div>
 
-          <div>
+          <div v-if="visibleStageUnits(stage).length > 0">
             <component
-              :is="purchased && unit.glms_course_id && (stageIndex <= activeStageIndex || activeStageIndex >= stages.length) ? RouterLink : 'div'"
-              v-for="(unit, unitIndex) in stage.units || []"
+              :is="unit.glms_course_id ? RouterLink : 'div'"
+              v-for="(unit, unitIndex) in visibleStageUnits(stage)"
               :key="unit.unit_id || unit.glms_course_id || `${stageIndex}-${unitIndex}`"
               :to="learningHref(unit.glms_course_id)"
-              :class="[
-                'flex items-center justify-between gap-4 border-t border-slate-50 px-5 py-4 first:border-t-0',
-                purchased && unit.glms_course_id && (stageIndex <= activeStageIndex || activeStageIndex >= stages.length)
-                  ? 'transition-colors hover:bg-slate-50'
-                  : 'opacity-75',
-              ]"
+              class="flex items-center justify-between gap-4 border-t border-slate-50 px-5 py-4 transition-colors first:border-t-0 hover:bg-slate-50"
             >
               <div class="flex items-center gap-3">
                 <div
-                  v-if="purchased && unit.glms_course_id && (stageIndex <= activeStageIndex || activeStageIndex >= stages.length)"
                   :class="[
                     'flex h-8 w-8 items-center justify-center rounded-full',
                     purchased && stageIndex === activeStageIndex && (!nextStep.course_id || unit.glms_course_id === nextStep.course_id)
@@ -482,9 +488,6 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
                   ]"
                 >
                   <Play class="h-3.5 w-3.5 fill-current" />
-                </div>
-                <div v-else class="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                  <Lock class="h-3.5 w-3.5" />
                 </div>
                 <div>
                   <div class="font-medium text-foreground">
@@ -505,7 +508,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               <div class="flex flex-wrap items-center justify-end gap-2">
                 <span :class="['badge', unitStateClass(unit)]">{{ t.learning.unitStatusLabel }}: {{ unitStateText(unit) }}</span>
                 <span
-                  v-if="purchased && unit.glms_course_id && (stageIndex <= activeStageIndex || activeStageIndex >= stages.length)"
+                  v-if="unit.glms_course_id"
                   class="badge border-primary bg-primary text-primary-foreground"
                 >
                   {{ t.courses.openLearning }}
