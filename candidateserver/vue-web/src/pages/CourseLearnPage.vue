@@ -149,6 +149,7 @@ const { t } = useTranslation()
 
 const payload = ref<CourseCompleteResponse | null>(null)
 const loading = ref(false)
+const initializing = ref(false)
 const syncing = ref(false)
 const activeLessonId = ref("")
 const syncState = ref<SyncProgressRsp | null>(null)
@@ -170,6 +171,7 @@ const courseCertificateError = ref("")
 const courseId = computed(() => String(route.params.courseId || route.query.courseId || ""))
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.pipelineId || ""))
 const routeLessonId = computed(() => String(route.params.lessonId || route.query.lessonId || ""))
+const pageLoading = computed(() => loading.value || initializing.value)
 const completeCourse = computed(() => payload.value?.complete_course)
 const course = computed<Course | undefined>(() => completeCourse.value?.course)
 const chapters = computed<ChapterDetail[]>(() => completeCourse.value?.chapters || [])
@@ -980,23 +982,33 @@ function nextStepLink() {
 }
 
 onMounted(async () => {
-  activeLessonId.value = routeLessonId.value
-  await loadCourse()
-  if (courseId.value) {
-    await loadProgress()
-    await syncProgress(courseId.value, false)
+  initializing.value = true
+  try {
+    activeLessonId.value = routeLessonId.value
+    await loadCourse()
+    if (courseId.value) {
+      await loadProgress()
+      await syncProgress(courseId.value, false)
+    }
+    await loadRuntime()
+  } finally {
+    initializing.value = false
   }
-  await loadRuntime()
 })
 
 watch(courseId, async () => {
-  activeLessonId.value = routeLessonId.value
-  selectedMaterialId.value = ""
-  courseExamsLoaded.value = false
-  courseExams.value = []
-  await loadCourse()
-  await loadProgress()
-  await syncProgress(courseId.value, false)
+  initializing.value = true
+  try {
+    activeLessonId.value = routeLessonId.value
+    selectedMaterialId.value = ""
+    courseExamsLoaded.value = false
+    courseExams.value = []
+    await loadCourse()
+    await loadProgress()
+    await syncProgress(courseId.value, false)
+  } finally {
+    initializing.value = false
+  }
 })
 
 watch(pipelineId, loadRuntime)
@@ -1033,7 +1045,7 @@ watch(selectedMaterial, () => {
       </button>
     </div>
 
-    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+    <div v-if="pageLoading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <Loader2 class="h-5 w-5 animate-spin" />
       <span>{{ t.common.loading }}</span>
     </div>
