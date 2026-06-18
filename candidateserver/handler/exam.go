@@ -362,18 +362,13 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 }
 
 func shouldShowWaitingExamConfirmation(exam *gexampb.ExamInfo) bool {
-	if exam == nil || strings.TrimSpace(exam.GetLastTermurlTimestamp()) == "" {
+	if exam == nil {
 		return false
 	}
-	if strings.TrimSpace(exam.GetConfirmationNumber()) != "" ||
-		strings.TrimSpace(exam.GetAppointmentStartTime()) != "" ||
-		strings.TrimSpace(exam.GetAppointmentEndTime()) != "" ||
-		strings.TrimSpace(exam.GetSiteName()) != "" {
+	if !strings.EqualFold(strings.TrimSpace(exam.GetExamStatus()), "OPEN") {
 		return false
 	}
-	if strings.TrimSpace(exam.GetResultStatus()) != "" ||
-		exam.GetTotalScore() != 0 ||
-		exam.GetIsPassed() {
+	if strings.TrimSpace(exam.GetLastTermurlTimestamp()) == "" {
 		return false
 	}
 	return true
