@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { PackageOpen, RefreshCw, Search } from "lucide-vue-next"
+import { ArrowRight, CalendarClock, PackageOpen, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -113,21 +113,29 @@ onMounted(() => {
       <RouterLink
         v-for="pack in filteredPacks"
         :key="pack.pack_id"
-        class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
+        class="group relative overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
         :to="`/resource-packs/${encodeURIComponent(pack.pack_id || '')}`"
       >
-        <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
-        <div class="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
-          <PackageOpen class="h-6 w-6" />
+        <div class="relative flex h-24 items-end overflow-hidden px-4 pb-3 text-white bg-[linear-gradient(135deg,rgb(11,31,69)_0%,rgb(27,69,141)_55%,rgb(58,111,192)_100%)]">
+          <span class="relative z-10 inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
+            {{ lang === 'zh' ? '资料包' : 'Resource Pack' }}
+          </span>
+          <PackageOpen class="absolute right-5 top-1/2 h-9 w-9 -translate-y-1/2 text-white/35 transition-transform group-hover:scale-105" />
         </div>
-        <h2 class="line-clamp-2 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ pack.title || pack.pack_id }}</h2>
-        <p class="mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-muted-foreground">{{ pack.description || copy.emptyDesc }}</p>
-        <div class="mt-4 space-y-2 text-xs text-muted-foreground">
-          <p v-if="pack.respath">{{ copy.path }}: <span class="font-medium text-card-foreground">{{ pack.respath }}</span></p>
-          <p v-if="pack.updated_at">{{ copy.updated }}: {{ pack.updated_at }}</p>
-        </div>
-        <div class="mt-4 flex h-9 w-full items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors group-hover:bg-primary/90">
-          {{ copy.open }}
+        <div class="p-4">
+          <h2 class="line-clamp-2 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ pack.title || pack.pack_id }}</h2>
+          <p class="mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-muted-foreground">{{ pack.description || copy.emptyDesc }}</p>
+          <div class="mt-4 space-y-2 text-xs text-muted-foreground">
+            <p v-if="pack.respath">{{ copy.path }}: <span class="font-medium text-card-foreground">{{ pack.respath }}</span></p>
+            <p v-if="pack.updated_at" class="flex items-center gap-1.5">
+              <CalendarClock class="h-3.5 w-3.5" />
+              <span>{{ copy.updated }}: {{ pack.updated_at }}</span>
+            </p>
+          </div>
+          <div class="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors group-hover:bg-primary/90">
+            {{ copy.open }}
+            <ArrowRight class="h-4 w-4" />
+          </div>
         </div>
       </RouterLink>
     </section>
