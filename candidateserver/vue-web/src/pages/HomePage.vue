@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
-import { BookOpen, CheckCircle2, PanelLeft, MessageSquare } from "lucide-vue-next"
+import { BookOpen, CheckCircle2, MessageSquare, PanelLeft } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import StatsCard from "@/components/StatsCard.vue"
 import TodoList from "@/components/TodoList.vue"
@@ -31,6 +31,7 @@ const guideCopy = computed(() => lang.value === "zh"
       subtitle: "Explore our collection of certifications, courses, webinars, insights and reports to advance your knowledge.",
     },
 )
+
 const statsActionCopy = computed(() => lang.value === "zh"
   ? {
       certifications: "查看认证详情",
@@ -43,13 +44,14 @@ const statsActionCopy = computed(() => lang.value === "zh"
       messages: "View messages",
     },
 )
+
 const todoItems = computed(() =>
   unreadCount.value > 0
     ? [
         {
           id: "message-unread",
           icon: "message" as const,
-          title: lang.value === "zh" ? `\u4f60\u6709 ${unreadCount.value} \u6761\u672a\u8bfb\u6d88\u606f` : `You have ${unreadCount.value} unread messages`,
+          title: lang.value === "zh" ? `你有 ${unreadCount.value} 条未读消息` : `You have ${unreadCount.value} unread messages`,
           action: { label: t.value.home.view, href: "/messages" },
         },
       ]
@@ -87,33 +89,31 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppShell content-class="p-4">
-    <div class="space-y-4">
-      <div class="mb-4 px-1 py-3 md:py-5">
-        <div class="flex items-start gap-3">
-          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-            <PanelLeft class="h-6 w-6" />
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <PanelLeft class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.sidebar.home }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <section class="w-full text-center">
+          <h1 class="text-3xl font-bold tracking-tight text-[#6847ff] md:text-4xl">{{ guideCopy.title }}</h1>
+          <p class="mx-auto mt-4 max-w-4xl text-base leading-7 text-slate-700">{{ guideCopy.subtitle }}</p>
+        </section>
+
+        <section class="mt-10 w-full">
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <StatsCard :title="t.home.courseInProgress" :value="String(stats.courses_in_progress || 0)" :icon="BookOpen" variant="primary" :description="t.courses.tabs.my" :action-label="statsActionCopy.certifications" href="/certifications" />
+            <StatsCard :title="t.home.certified" :value="String(stats.certifications_earned || 0)" :icon="CheckCircle2" variant="warning" :description="t.sidebar.certificates" :action-label="statsActionCopy.certificates" href="/certificates" />
+            <StatsCard :title="t.home.unreadMessages" :value="String(unreadCount)" :icon="MessageSquare" variant="info" :description="t.home.unreadMessagesCount" :action-label="statsActionCopy.messages" href="/messages" />
           </div>
-          <div>
-            <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.sidebar.home }}</h1>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      <section class="relative rounded-[16px] bg-white px-4 py-6 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:px-8 md:py-8">
-        <h2 class="text-2xl font-bold tracking-tight text-primary md:text-3xl">{{ guideCopy.title }}</h2>
-        <p class="mx-auto mt-3 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">{{ guideCopy.subtitle }}</p>
-      </section>
-
-      <section class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatsCard :title="t.home.courseInProgress" :value="String(stats.courses_in_progress || 0)" :icon="BookOpen" variant="primary" :description="t.courses.tabs.my" :action-label="statsActionCopy.certifications" href="/certifications" />
-          <StatsCard :title="t.home.certified" :value="String(stats.certifications_earned || 0)" :icon="CheckCircle2" variant="warning" :description="t.sidebar.certificates" :action-label="statsActionCopy.certificates" href="/certificates" />
-          <StatsCard :title="t.home.unreadMessages" :value="String(unreadCount)" :icon="MessageSquare" variant="info" :description="t.home.unreadMessagesCount" :action-label="statsActionCopy.messages" href="/messages" />
-        </div>
-      </section>
-
-      <TodoList :items="todoItems" />
+        <section class="mt-6 w-full">
+          <TodoList :items="todoItems" />
+        </section>
+      </main>
     </div>
   </AppShell>
 </template>
