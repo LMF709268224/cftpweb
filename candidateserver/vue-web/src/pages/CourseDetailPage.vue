@@ -94,6 +94,7 @@ const detail = ref<PipelineDetail | null>(null)
 const courseSummaries = ref<Record<string, CourseSummary>>({})
 const firstCourseThumbnail = ref("")
 const loading = ref(false)
+const courseSummariesLoading = ref(false)
 const purchaseOpen = ref(false)
 const certificateLoading = ref(false)
 const scheduleLoading = ref(false)
@@ -120,6 +121,7 @@ const isPipelineTerminal = computed(() => pipelineIsTerminal(pipelineStatus.valu
 const firstCourseId = computed(() =>
   stages.value.flatMap((stage) => stage.units || []).find((unit) => unit.glms_course_id)?.glms_course_id || "",
 )
+const stageListLoading = computed(() => courseSummariesLoading.value)
 
 const activeStageIndex = computed(() => {
   if (!purchased.value || stages.value.length === 0) return -1
@@ -248,6 +250,7 @@ async function loadDetail() {
 
 async function loadCourseSummaries() {
   if (!purchased.value) {
+    courseSummariesLoading.value = false
     courseSummaries.value = {}
     return
   }
@@ -260,21 +263,27 @@ async function loadCourseSummaries() {
     ),
   )
   if (courseIds.length === 0) {
+    courseSummariesLoading.value = false
     courseSummaries.value = {}
     return
   }
 
-  const items = await Promise.all(
-    courseIds.map(async (courseId) => {
-      try {
-        const res = await apiClient(`/api/mall/courses/${courseId}`)
-        return [courseId, res?.course || res] as const
-      } catch {
-        return [courseId, null] as const
-      }
-    }),
-  )
-  courseSummaries.value = Object.fromEntries(items.filter(([, course]) => Boolean(course))) as Record<string, CourseSummary>
+  courseSummariesLoading.value = true
+  try {
+    const items = await Promise.all(
+      courseIds.map(async (courseId) => {
+        try {
+          const res = await apiClient(`/api/mall/courses/${courseId}`)
+          return [courseId, res?.course || res] as const
+        } catch {
+          return [courseId, null] as const
+        }
+      }),
+    )
+    courseSummaries.value = Object.fromEntries(items.filter(([, course]) => Boolean(course))) as Record<string, CourseSummary>
+  } finally {
+    courseSummariesLoading.value = false
+  }
 }
 
 async function loadFirstCourseThumbnail() {
@@ -395,7 +404,11 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
           <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ stages.length }} {{ t.courses.stages }} / {{ totalUnits }} {{ t.courses.units }}</span>
         </div>
 
-        <div v-if="stages.length === 0" class="rounded-md bg-slate-50 p-8 text-center text-muted-foreground">
+        <div v-if="stageListLoading" class="flex items-center justify-center gap-2 rounded-md bg-slate-50 p-8 text-sm text-muted-foreground">
+          <Loader2 class="h-5 w-5 animate-spin text-primary" />
+          <span>{{ t.common.loading }}</span>
+        </div>
+        <div v-else-if="stages.length === 0" class="rounded-md bg-slate-50 p-8 text-center text-muted-foreground">
           <div class="mx-auto max-w-md space-y-4">
             <div>
               <h3 class="text-base font-semibold text-foreground">{{ t.courses.noStagesTitle }}</h3>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { Award, ClipboardList, FileCheck2, GraduationCap, Home, Languages, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, User, X } from "lucide-vue-next"
+import { Award, ClipboardList, FileCheck2, GraduationCap, Home, Languages, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, User, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
 import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
@@ -13,6 +13,7 @@ const userName = ref(t.value.common.user)
 const unreadCount = ref(0)
 const menuOpen = ref(false)
 const mobileMenuOpen = ref(false)
+const logoutLoading = ref(false)
 const menuContainer = ref<HTMLElement | null>(null)
 let stopUnreadCountListener: (() => void) | null = null
 
@@ -104,6 +105,8 @@ onBeforeUnmount(() => {
 })
 
 async function handleLogout() {
+  if (logoutLoading.value) return
+  logoutLoading.value = true
   try {
     await apiClient("/api/auth/logout", { method: "POST" })
   } catch {
@@ -245,8 +248,9 @@ async function handleLogout() {
         {{ t.sidebar.switchLang }}
       </button>
       <div class="my-1 h-px bg-border" />
-      <button class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50" @click="handleLogout">
-        <LogOut class="h-4 w-4" />
+      <button class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70" :disabled="logoutLoading" @click="handleLogout">
+        <Loader2 v-if="logoutLoading" class="h-4 w-4 animate-spin" />
+        <LogOut v-else class="h-4 w-4" />
         {{ t.sidebar.logout }}
       </button>
     </div>
