@@ -417,8 +417,12 @@ export const zh = {
     statusProcessing: "处理中",
     statusWaitPayment: "等待支付",
     statusWaitInstantiate: "处理中",
+    statusWaitExemptionSelection: "等待选择免考",
     statusWaitReview: "等待审核",
     statusWaitReviewFeePayment: "等待支付审核费",
+    statusUploadReady: "可上传材料",
+    statusResolved: "已结案",
+    statusPaid: "已支付，处理中",
     statusCancelled: "已取消",
     statusFailed: "失败",
     statusPendingCreate: "等待创建",
@@ -617,7 +621,21 @@ export const zh = {
     unsupportedPaymentKey: "暂不支持的支付凭证类型，请稍后重试。",
     purchaseCompleted: "购买成功，认证已开通。",
     purchaseFailed: "购买失败，请稍后重试或联系管理员。",
-    unlockFailed: "解锁失败，请稍后重试或联系管理员。"
+    unlockFailed: "解锁失败，请稍后重试或联系管理员。",
+    exemptionsTitle: "免考选择",
+    exemptionsDesc: "如果你已经持有满足条件的资格，可以在购买前选择对应课程单元免考；未选择则按完整认证购买。",
+    exemptionsChecking: "正在检查可免考资格...",
+    exemptionsLoadFailed: "免考资格检查失败",
+    exemptionsFallback: "可以继续按完整认证购买；如需免考，请稍后重新打开购买窗口再试。",
+    noExemptions: "这个认证当前没有可选择的免考课程单元。",
+    selectedExemptions: "项免考",
+    stageLabel: "阶段",
+    exemptionUnits: "个可免考单元",
+    exemptionEligible: "可免考",
+    exemptionMissing: "缺少资格",
+    exemptionMissingHint: "你暂未持有该免考所需的有效资格。",
+    goApplyQualification: "去资格申请",
+    unknownQualification: "未知资格"
   }
 }
 

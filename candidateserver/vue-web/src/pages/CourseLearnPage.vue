@@ -35,6 +35,7 @@ import {
   timelineStatusLabelWithDiagnostics,
 } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { formatBackendDate } from "@/lib/utils"
@@ -171,6 +172,16 @@ const courseExams = ref<any[]>([])
 const courseCertificateLoading = ref(false)
 const courseCertificateUrl = ref("")
 const courseCertificateError = ref("")
+const retakePaymentSession = ref<{
+  paymentKey?: string
+  orderId?: string
+  bizType: string
+  bizRefUlid: string
+  source: string
+  returnPath: string
+  extraReturnParams?: Record<string, string>
+} | null>(null)
+const retakePaymentDialogOpen = ref(false)
 
 const courseId = computed(() => String(route.params.courseId || route.query.courseId || ""))
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.pipelineId || ""))
@@ -548,15 +559,6 @@ function canApplyRetake(exam: any) {
   return Boolean(exam?.course_unit_ulid && exam?.course_unit_cc_ulid && isExamFailedUnit(exam) && exam?.retake_eligible)
 }
 
-function stripeCheckoutUrl(paymentKey: unknown) {
-  if (typeof paymentKey !== "string") return ""
-  const value = paymentKey.trim()
-  if (!value) return ""
-  if (/^https:\/\/checkout\.stripe\.com\//i.test(value)) return value
-  if (value.startsWith("/c/pay/")) return `https://checkout.stripe.com${value}`
-  return ""
-}
-
 function noResultLabel() {
   return (t.value.examsPage as any).statusNoResult || t.value.examsPage.statusPending
 }
@@ -850,13 +852,19 @@ async function handleInlineApplyRetake(exam: any) {
       }),
     })
     if (payment?.payment_required && !payment?.paid) {
-      const checkoutUrl = stripeCheckoutUrl(payment.payment_key)
-      if (checkoutUrl) {
-        toast.info(t.value.common.loading)
-        window.open(checkoutUrl, "_blank", "noopener,noreferrer")
-        return
+      retakePaymentSession.value = {
+        paymentKey: payment.payment_key,
+        orderId: payment.course_retake_order_ulid,
+        bizType: "COURSE_RETAKE_PAYMENT",
+        bizRefUlid: payment.course_retake_order_ulid,
+        source: "retake",
+        returnPath: window.location.pathname,
+        extraReturnParams: {
+          courseId: courseId.value,
+          pipelineId: pipelineId.value,
+        },
       }
-      toast.info(payment.message || t.value.examsPage.applyRetake)
+      retakePaymentDialogOpen.value = true
       return
     }
     await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake`, { method: "POST" })
@@ -1675,5 +1683,18 @@ watch(selectedMaterial, () => {
         </div>
       </section>
     </div>
+    <PaymentSessionDialog
+      v-if="retakePaymentSession"
+      v-model:open="retakePaymentDialogOpen"
+      :title="t.examsPage.applyRetake"
+      :subtitle="retakePaymentSession.orderId"
+      :payment-key="retakePaymentSession.paymentKey"
+      :biz-type="retakePaymentSession.bizType"
+      :biz-ref-ulid="retakePaymentSession.bizRefUlid"
+      :order-id="retakePaymentSession.orderId"
+      :source="retakePaymentSession.source"
+      :return-path="retakePaymentSession.returnPath"
+      :extra-return-params="retakePaymentSession.extraReturnParams"
+    />
   </AppShell>
 </template>

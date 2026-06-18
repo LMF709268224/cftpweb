@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
-import { CheckCircle2, ChevronRight, FileText, Loader2, Package, Receipt, ShoppingCart } from "lucide-vue-next"
+import { CheckCircle2, ChevronRight, CreditCard, FileText, Loader2, Package, Receipt, ShoppingCart } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -46,6 +47,15 @@ const totalOrders = ref(0)
 const totalPages = ref(0)
 const selectedBizType = ref("")
 const invoiceLoading = ref<string | null>(null)
+const paymentLoading = ref<string | null>(null)
+const orderPaymentDialogOpen = ref(false)
+const orderPaymentSession = ref<{
+  orderId: string
+  bizType: string
+  bizRefUlid: string
+  source: string
+  returnPath: string
+} | null>(null)
 const showPurchaseDialog = ref(false)
 const selectedCourseName = ref("")
 const selectedPipelineId = ref("")
@@ -68,6 +78,17 @@ const orderTypeOptions = computed(() => [
   { value: "CREDENTIAL_APPLICATION", label: orderTypeLabel("CREDENTIAL_APPLICATION") },
 ])
 
+const payableOrderStatuses = new Set([
+  "WAIT_PIPELINE_PAYMENT",
+  "WAIT_STAGE_PAYMENT",
+  "WAIT_RETAKE_PAYMENT",
+  "WAIT_UNLOCK_PAYMENT",
+  "WAIT_REVIEW_FEE_PAYMENT",
+  "PENDING_PAYMENT",
+  "WAIT_PAY",
+  "UNPAID",
+])
+
 function orderStatusBadgeClass(order: OrderItem) {
   if (order.status === "completed" || order.rawStatus === "COMPLETED") {
     return "border-[#6CE9A6] bg-[#ECFDF3] text-[#027A48]"
@@ -84,6 +105,29 @@ function handleOrderClick(order: OrderItem) {
   } else {
     router.push(`/certifications/${encodeURIComponent(order.pipelineId)}`)
   }
+}
+
+function canContinuePayment(order: OrderItem) {
+  if (!order.bizType || !order.bizRefUlid) return false
+  const rawStatus = String(order.rawStatus || "").toUpperCase()
+  if (order.status === "completed" || rawStatus.includes("COMPLETED")) return false
+  return payableOrderStatuses.has(rawStatus)
+}
+
+function continuePayment(order: OrderItem) {
+  if (!canContinuePayment(order) || paymentLoading.value) return
+  paymentLoading.value = order.id
+  orderPaymentSession.value = {
+    orderId: order.id,
+    bizType: order.bizType,
+    bizRefUlid: order.bizRefUlid,
+    source: "orders",
+    returnPath: "/orders",
+  }
+  orderPaymentDialogOpen.value = true
+  window.setTimeout(() => {
+    if (paymentLoading.value === order.id) paymentLoading.value = null
+  }, 300)
 }
 
 async function viewInvoice(orderId: string) {
@@ -268,13 +312,19 @@ onMounted(() => {
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
           </div>
-          <div class="grid shrink-0 grid-cols-[96px_86px_36px_20px] items-center gap-3">
+          <div class="grid shrink-0 grid-cols-[96px_86px_36px_36px_20px] items-center gap-3">
             <div class="flex justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.rawStatus) }}
               </span>
             </div>
             <div class="text-right"><p class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p></div>
+            <button v-if="canContinuePayment(order)" @click.stop="continuePayment(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary/10" :title="lang === 'zh' ? '继续支付' : 'Continue payment'">
+              <Loader2 v-if="paymentLoading === order.id" class="h-4 w-4 animate-spin" />
+              <CreditCard v-else class="h-4 w-4" />
+              <span class="sr-only">{{ lang === 'zh' ? '继续支付' : 'Continue payment' }}</span>
+            </button>
+            <span v-else class="h-9 w-9" />
             <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary" title="View Invoice">
               <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin text-primary" />
               <FileText v-else class="h-4 w-4" />
@@ -305,6 +355,17 @@ onMounted(() => {
       v-model:open="showPurchaseDialog"
       :course-name="selectedCourseName"
       :pipeline-id="selectedPipelineId"
+    />
+    <PaymentSessionDialog
+      v-if="orderPaymentSession"
+      v-model:open="orderPaymentDialogOpen"
+      :title="lang === 'zh' ? '继续支付' : 'Continue payment'"
+      :subtitle="orderPaymentSession.orderId"
+      :biz-type="orderPaymentSession.bizType"
+      :biz-ref-ulid="orderPaymentSession.bizRefUlid"
+      :order-id="orderPaymentSession.orderId"
+      :source="orderPaymentSession.source"
+      :return-path="orderPaymentSession.returnPath"
     />
   </AppShell>
 </template>
