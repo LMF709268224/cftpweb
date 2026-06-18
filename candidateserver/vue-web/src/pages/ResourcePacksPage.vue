@@ -65,6 +65,17 @@ const filteredPacks = computed(() => {
   )
 })
 
+function formatDate(value?: string) {
+  if (!value) return ""
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString(lang.value === "zh" ? "zh-CN" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  })
+}
+
 async function loadPacks(pageToken = "") {
   loading.value = true
   try {
@@ -129,7 +140,7 @@ onMounted(() => {
             <p v-if="pack.respath">{{ copy.path }}: <span class="font-medium text-card-foreground">{{ pack.respath }}</span></p>
             <p v-if="pack.updated_at" class="flex items-center gap-1.5">
               <CalendarClock class="h-3.5 w-3.5" />
-              <span>{{ copy.updated }}: {{ pack.updated_at }}</span>
+              <span>{{ copy.updated }}: {{ formatDate(pack.updated_at) }}</span>
             </p>
           </div>
           <div class="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors group-hover:bg-primary/90">
