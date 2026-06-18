@@ -37,6 +37,7 @@ import {
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
+import { formatBackendDate } from "@/lib/utils"
 import {
   normalizeSupplementaryMaterials,
   parseSupplementaryMaterialItems,
@@ -228,6 +229,18 @@ const courseRuntimeUnitUlid = computed(() => {
   return nextStep.value?.course_unit_ulid || ""
 })
 const hasCertificateTab = computed(() => nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value))
+const courseCertificateSummary = computed(() => {
+  const instance = runtime.value?.instance || {}
+  const config = runtime.value?.config || {}
+  const issuedAt = instance.completed_at || instance.updated_at || instance.created_at || config.created_at || ""
+  return {
+    name: config.name || course.value?.title || t.value.learning.actionViewCertificate,
+    description: config.description || course.value?.description || t.value.learning.nextStepViewCertificateDesc,
+    issueDate: issuedAt ? formatBackendDate(issuedAt).split(" ")[0] : t.value.common.na,
+    expiryDate: t.value.common.permanent,
+    credentialId: instance.pipeline_ulid || pipelineId.value || t.value.common.na,
+  }
+})
 
 const courseHasExam = computed(() => {
   const stages = runtime.value?.config?.stages || []
@@ -721,6 +734,11 @@ async function loadCourseCertificate() {
   }
 }
 
+function openCourseCertificate() {
+  if (!courseCertificateUrl.value) return
+  window.open(courseCertificateUrl.value, "_blank", "noopener,noreferrer")
+}
+
 async function syncProgress(targetCourseId = courseId.value, showToast = false) {
   if (!targetCourseId) return
   syncing.value = true
@@ -1187,8 +1205,47 @@ watch(selectedMaterial, () => {
             <Loader2 class="h-5 w-5 animate-spin" />
             <span>{{ t.common.loading }}</span>
           </div>
-          <div v-else-if="courseCertificateUrl" class="overflow-hidden rounded-md border border-slate-200 bg-slate-50">
-            <iframe :src="courseCertificateUrl" class="h-[720px] w-full border-0 bg-white" :title="t.learning.actionViewCertificate" />
+          <div v-else-if="courseCertificateUrl" class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.06)]">
+            <div class="relative bg-primary p-4 text-white">
+              <div class="relative flex items-start justify-between">
+                <div>
+                  <span class="badge mb-3 border-0 bg-white/20 text-white">
+                    <CheckCircle2 class="mr-1 h-3 w-3" />
+                    {{ t.certificatesPage.active }}
+                  </span>
+                  <h3 class="mb-1 text-xl font-bold">{{ courseCertificateSummary.name }}</h3>
+                  <p class="text-sm text-white/80">{{ courseCertificateSummary.description }}</p>
+                </div>
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                  <Award class="h-6 w-6" />
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div class="rounded-lg bg-[#f7fbfc] p-3">
+                  <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
+                  <p class="flex items-center gap-1.5 font-medium text-card-foreground"><CalendarClock class="h-4 w-4 text-muted-foreground" /> {{ courseCertificateSummary.issueDate }}</p>
+                </div>
+                <div class="rounded-lg bg-[#f7fbfc] p-3">
+                  <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.expiryDate }}</p>
+                  <p class="flex items-center gap-1.5 font-medium text-card-foreground"><CalendarClock class="h-4 w-4 text-muted-foreground" /> {{ courseCertificateSummary.expiryDate }}</p>
+                </div>
+              </div>
+              <div class="mb-4 rounded-lg bg-[#f7fbfc] p-3">
+                <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.certificateId }}</p>
+                <p class="break-all font-mono text-sm text-card-foreground">{{ courseCertificateSummary.credentialId }}</p>
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20" @click="openCourseCertificate">
+                  <Download class="h-4 w-4" />
+                  {{ t.certificatesPage.downloadCertificate }}
+                </button>
+                <button class="btn btn-outline rounded-lg px-3" @click="openCourseCertificate">
+                  <ExternalLink class="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
           <div v-else class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
             <Award class="mx-auto mb-3 h-8 w-8 text-primary" />
