@@ -623,7 +623,21 @@ export const en: AppTranslations = {
     unsupportedPaymentKey: "Unsupported payment credential type. Please try again later.",
     purchaseCompleted: "Purchase successful. The certification is now active.",
     purchaseFailed: "Purchase failed. Please try again later or contact support.",
-    unlockFailed: "Unlock failed. Please try again later or contact support."
+    unlockFailed: "Unlock failed. Please try again later or contact support.",
+    exemptionsTitle: "Exemption selection",
+    exemptionsDesc: "If you already hold qualifying credentials, you can exempt matching course units before purchase. Leave everything unchecked to buy the full certification.",
+    exemptionsChecking: "Checking exemption qualifications...",
+    exemptionsLoadFailed: "Failed to check exemption qualifications",
+    exemptionsFallback: "You can continue purchasing the full certification. If you need exemptions, reopen this dialog and try again later.",
+    noExemptions: "This certification does not currently have selectable exemption units.",
+    selectedExemptions: "exemptions selected",
+    stageLabel: "Stage",
+    exemptionUnits: "exemption units",
+    exemptionEligible: "Eligible",
+    exemptionMissing: "Missing qualification",
+    exemptionMissingHint: "You do not currently hold an active qualification required for this exemption.",
+    goApplyQualification: "Apply for qualification",
+    unknownQualification: "Unknown qualification"
   }
 }
 

@@ -43,6 +43,37 @@ type ActiveOrder = {
   message?: string
 }
 
+type ExemptionQual = {
+  qual_id: string
+  name?: string
+  description?: string
+  category?: string
+  eligible?: boolean
+  credential_status?: string
+  message?: string
+}
+
+type ExemptionUnit = {
+  unit_id: string
+  unit_name?: string
+  allow_exemption?: boolean
+  exemption_quals?: ExemptionQual[]
+  qualified?: boolean
+  message?: string
+}
+
+type ExemptionStage = {
+  index: number
+  stage_id: string
+  stage_name?: string
+  sort_order?: number
+  units?: ExemptionUnit[]
+}
+
+type ExemptionOptions = {
+  stages?: ExemptionStage[]
+}
+
 const props = defineProps<{
   open: boolean
   courseName: string
@@ -57,10 +88,14 @@ const eligibilityLoading = ref(false)
 const actionLoading = ref(false)
 const paymentLoading = ref(false)
 const previewLoading = ref(false)
+const exemptionLoading = ref(false)
 const eligibility = ref<EligibilityPreview | null>(null)
+const exemptionOptions = ref<ExemptionOptions | null>(null)
 const activeOrder = ref<ActiveOrder | null>(null)
 const paymentPreview = ref<PaymentPreview | null>(null)
 const previewError = ref("")
+const exemptionError = ref("")
+const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const activePaymentSession = ref<{
   bizType: string
   bizRefUlid: string
@@ -70,13 +105,15 @@ const activePaymentSession = ref<{
   extraReturnParams?: Record<string, string>
 } | null>(null)
 
-const selectedExemptionsJson = JSON.stringify({ stages: [] })
 const copy = computed(() => t.value.purchaseDialog || {})
 const blockers = computed(() => eligibility.value?.blockers || [])
 const canPurchase = computed(() => Boolean(eligibility.value?.can_purchase))
 const canUnlock = computed(() => Boolean(eligibility.value?.can_unlock))
 const cannotContinue = computed(() => Boolean(eligibility.value && !canPurchase.value && !canUnlock.value))
 const hasInProgressOrder = computed(() => blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
+const exemptionStages = computed(() => exemptionOptions.value?.stages?.filter((stage) => (stage.units?.length || 0) > 0) || [])
+const hasExemptionOptions = computed(() => exemptionStages.value.length > 0)
+const selectedExemptionCount = computed(() => Object.values(selectedExemptionUnitIds.value).filter(Boolean).length)
 
 watch(() => props.open, (open) => {
   if (open && props.pipelineId) {
@@ -126,6 +163,60 @@ function blockerTitle(blocker: EligibilityBlocker) {
   return blocker.description || blocker.blocker_type || copy.value.unknownBlocker || t.value.common.unknown
 }
 
+function qualLabel(qual: ExemptionQual) {
+  return qual.name || qual.qual_id || copy.value.unknownQualification || t.value.common.unknown
+}
+
+function resetExemptionSelection() {
+  exemptionOptions.value = null
+  exemptionError.value = ""
+  selectedExemptionUnitIds.value = {}
+}
+
+function pruneSelectedExemptions(options: ExemptionOptions | null) {
+  const allowed = new Set<string>()
+  for (const stage of options?.stages || []) {
+    for (const unit of stage.units || []) {
+      if (unit.qualified && unit.unit_id) {
+        allowed.add(unit.unit_id)
+      }
+    }
+  }
+  const next: Record<string, boolean> = {}
+  for (const [unitId, selected] of Object.entries(selectedExemptionUnitIds.value)) {
+    if (selected && allowed.has(unitId)) {
+      next[unitId] = true
+    }
+  }
+  selectedExemptionUnitIds.value = next
+}
+
+function onExemptionToggle(unit: ExemptionUnit, event: Event) {
+  const input = event.target as HTMLInputElement | null
+  if (!unit.qualified || !unit.unit_id) return
+  selectedExemptionUnitIds.value = {
+    ...selectedExemptionUnitIds.value,
+    [unit.unit_id]: Boolean(input?.checked),
+  }
+}
+
+function buildSelectedExemptionsJson() {
+  const stages = exemptionStages.value
+    .map((stage) => {
+      const exemptedUnitIds = (stage.units || [])
+        .filter((unit) => unit.qualified && unit.unit_id && selectedExemptionUnitIds.value[unit.unit_id])
+        .map((unit) => unit.unit_id)
+      return {
+        index: stage.index,
+        stage_cc_ulid: stage.stage_id,
+        exempted_unit_cc_ulids: exemptedUnitIds,
+      }
+    })
+    .filter((stage) => stage.exempted_unit_cc_ulids.length > 0)
+
+  return JSON.stringify({ stages })
+}
+
 function orderIdFromDetail(order: any) {
   return order?.pipeline_order_ulid || order?.summary?.pipeline_order_ulid || ""
 }
@@ -143,11 +234,33 @@ async function loadEligibility() {
   try {
     const res: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
     eligibility.value = res
+    if (res.can_purchase && !res.blockers?.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE")) {
+      await loadExemptionOptions()
+    } else {
+      resetExemptionSelection()
+    }
     if (res.blockers?.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE")) {
       await loadActiveOrder()
     }
   } finally {
     eligibilityLoading.value = false
+  }
+}
+
+async function loadExemptionOptions() {
+  exemptionLoading.value = true
+  exemptionError.value = ""
+  try {
+    const res: ExemptionOptions = await apiClient(`/api/mall/pipelines/${props.pipelineId}/exemptions`)
+    exemptionOptions.value = res
+    pruneSelectedExemptions(res)
+  } catch (error) {
+    console.error(error)
+    exemptionOptions.value = null
+    exemptionError.value = copy.value.exemptionsLoadFailed || t.value.common.error
+    selectedExemptionUnitIds.value = {}
+  } finally {
+    exemptionLoading.value = false
   }
 }
 
@@ -199,7 +312,7 @@ async function createPurchaseOrder() {
       method: "POST",
       body: JSON.stringify({
         payment_mode: "FULL_PIPELINE",
-        candidate_selected_exemptions_json: selectedExemptionsJson,
+        candidate_selected_exemptions_json: buildSelectedExemptionsJson(),
       }),
     })
     const orderId = order.pipeline_order_ulid
@@ -356,6 +469,81 @@ async function initiatePayment() {
               </div>
             </li>
           </ul>
+        </div>
+
+        <div v-if="canPurchase && !activeOrder" class="rounded-lg border border-border bg-muted/20 p-4">
+          <div class="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold text-foreground">{{ copy.exemptionsTitle }}</div>
+              <p class="mt-1 text-xs leading-5 text-muted-foreground">{{ copy.exemptionsDesc }}</p>
+            </div>
+            <span v-if="selectedExemptionCount > 0" class="badge border-emerald-200 bg-emerald-50 text-xs text-emerald-700">
+              {{ selectedExemptionCount }} {{ copy.selectedExemptions }}
+            </span>
+          </div>
+
+          <div v-if="exemptionLoading" class="flex items-center gap-2 rounded-lg bg-background/70 p-3 text-sm text-muted-foreground">
+            <Loader2 class="h-4 w-4 animate-spin text-primary" />
+            {{ copy.exemptionsChecking }}
+          </div>
+          <div v-else-if="exemptionError" class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <div class="flex items-center gap-2 font-semibold"><AlertCircle class="h-4 w-4" />{{ copy.exemptionsLoadFailed }}</div>
+            <p class="mt-2">{{ copy.exemptionsFallback }}</p>
+          </div>
+          <div v-else-if="!hasExemptionOptions" class="rounded-lg bg-background/70 p-3 text-sm text-muted-foreground">
+            {{ copy.noExemptions }}
+          </div>
+          <div v-else class="space-y-3">
+            <div v-for="stage in exemptionStages" :key="stage.stage_id || stage.index" class="rounded-lg border border-border bg-background p-3">
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <div class="text-sm font-semibold text-foreground">{{ stage.stage_name || `${copy.stageLabel} ${stage.index + 1}` }}</div>
+                <span class="badge text-xs">{{ stage.units?.length || 0 }} {{ copy.exemptionUnits }}</span>
+              </div>
+              <div class="space-y-2">
+                <label
+                  v-for="unit in stage.units"
+                  :key="unit.unit_id"
+                  :class="[
+                    'flex gap-3 rounded-lg border p-3 transition-colors',
+                    unit.qualified ? 'cursor-pointer border-emerald-200 bg-emerald-50/40 hover:border-emerald-300' : 'border-border bg-muted/30 opacity-75',
+                  ]"
+                >
+                  <input
+                    type="checkbox"
+                    class="mt-1 h-4 w-4 rounded border-border text-primary"
+                    :checked="Boolean(selectedExemptionUnitIds[unit.unit_id])"
+                    :disabled="!unit.qualified"
+                    @change="onExemptionToggle(unit, $event)"
+                  />
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="text-sm font-semibold text-foreground">{{ unit.unit_name || unit.unit_id }}</span>
+                      <span v-if="unit.qualified" class="badge border-emerald-200 bg-emerald-50 text-xs text-emerald-700">{{ copy.exemptionEligible }}</span>
+                      <span v-else class="badge border-amber-200 bg-amber-50 text-xs text-amber-700">{{ copy.exemptionMissing }}</span>
+                    </div>
+                    <div class="mt-2 flex flex-wrap gap-1.5">
+                      <span
+                        v-for="qual in unit.exemption_quals || []"
+                        :key="qual.qual_id"
+                        :class="[
+                          'rounded-full border px-2 py-1 text-xs',
+                          qual.eligible ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-border bg-muted text-muted-foreground',
+                        ]"
+                      >
+                        {{ qualLabel(qual) }}
+                      </span>
+                    </div>
+                    <div v-if="!unit.qualified" class="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span>{{ copy.exemptionMissingHint }}</span>
+                      <a class="font-semibold text-primary hover:underline" href="/credentials" target="_blank" rel="noopener noreferrer">
+                        {{ copy.goApplyQualification }}
+                      </a>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div v-if="activeOrder" class="rounded-lg border border-border bg-muted/30 p-4">

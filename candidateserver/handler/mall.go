@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
+	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gprog "github.com/afnandelfin620-star/cftptest/cftp/gprog"
@@ -747,6 +748,135 @@ func (h *Handler) CheckPipelineEligibility(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	WriteJSON(w, http.StatusOK, resp)
+}
+
+// GetPipelineExemptionOptions GET /api/mall/pipelines/{pipelineId}/exemptions
+func (h *Handler) GetPipelineExemptionOptions(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	pipelineID := strings.TrimSpace(chi.URLParam(r, "pipelineId"))
+	if !requireRequestField(w, pipelineID, "pipeline_id") {
+		return
+	}
+
+	pipeline, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
+		Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineID},
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	out := PipelineExemptionOptionsRsp{
+		Stages: make([]PipelineExemptionStage, 0, len(pipeline.GetStages())),
+	}
+	defCache := map[string]*gcredspb.CredentialDefinition{}
+	checkCache := map[string]*gcredspb.CheckCandidateQualificationResponse{}
+
+	for stageIndex, stage := range pipeline.GetStages() {
+		stageOut := PipelineExemptionStage{
+			Index:     int32(stageIndex),
+			StageId:   stage.GetStageId(),
+			StageName: stage.GetName(),
+			SortOrder: stage.GetSortOrder(),
+			Units:     []PipelineExemptionUnit{},
+		}
+		for _, unit := range stage.GetUnits() {
+			qualIDs := compactStrings(unit.GetExemptionQuals())
+			if !unit.GetAllowExemption() || len(qualIDs) == 0 {
+				continue
+			}
+			unitOut := PipelineExemptionUnit{
+				UnitId:         unit.GetUnitId(),
+				UnitName:       unit.GetName(),
+				AllowExemption: true,
+				ExemptionQuals: make([]PipelineExemptionQual, 0, len(qualIDs)),
+			}
+			for _, qualID := range qualIDs {
+				def := getCachedCredentialDefinition(r, h, defCache, qualID)
+				check := getCachedCandidateQualification(r, h, checkCache, candidateID, qualID)
+				qualOut := PipelineExemptionQual{
+					QualId: qualID,
+				}
+				if def != nil {
+					qualOut.Name = def.GetName()
+					qualOut.Description = def.GetDescription()
+					qualOut.Category = def.GetCategory()
+				}
+				if qualOut.Name == "" {
+					qualOut.Name = qualID
+				}
+				if check != nil {
+					qualOut.Eligible = check.GetEligible()
+					qualOut.CredentialStatus = check.GetCredentialStatus().String()
+					qualOut.Message = check.GetMessage()
+				} else {
+					qualOut.Message = "qualification status unavailable"
+				}
+				if qualOut.Eligible {
+					unitOut.Qualified = true
+				}
+				unitOut.ExemptionQuals = append(unitOut.ExemptionQuals, qualOut)
+			}
+			if unitOut.Qualified {
+				unitOut.Message = "eligible for exemption"
+			} else {
+				unitOut.Message = "missing active qualification for exemption"
+			}
+			stageOut.Units = append(stageOut.Units, unitOut)
+		}
+		if len(stageOut.Units) > 0 {
+			out.Stages = append(out.Stages, stageOut)
+		}
+	}
+
+	WriteJSON(w, http.StatusOK, out)
+}
+
+func compactStrings(values []string) []string {
+	out := make([]string, 0, len(values))
+	seen := map[string]bool{}
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value == "" || seen[value] {
+			continue
+		}
+		seen[value] = true
+		out = append(out, value)
+	}
+	return out
+}
+
+func getCachedCredentialDefinition(r *http.Request, h *Handler, cache map[string]*gcredspb.CredentialDefinition, qualID string) *gcredspb.CredentialDefinition {
+	if def, ok := cache[qualID]; ok {
+		return def
+	}
+	def, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
+		CredDefId: qualID,
+	})
+	if err != nil {
+		slog.Warn("Failed to load credential definition for exemption option", "error", err, "qual_id", qualID)
+		cache[qualID] = nil
+		return nil
+	}
+	cache[qualID] = def
+	return def
+}
+
+func getCachedCandidateQualification(r *http.Request, h *Handler, cache map[string]*gcredspb.CheckCandidateQualificationResponse, candidateID string, qualID string) *gcredspb.CheckCandidateQualificationResponse {
+	if check, ok := cache[qualID]; ok {
+		return check
+	}
+	check, err := h.Creds.CheckCandidateQualification(r.Context(), &gcredspb.CheckCandidateQualificationRequest{
+		CandidateId: candidateID,
+		CredDefId:   qualID,
+	})
+	if err != nil {
+		slog.Warn("Failed to check candidate qualification for exemption option", "error", err, "candidate_id", candidateID, "qual_id", qualID)
+		cache[qualID] = nil
+		return nil
+	}
+	cache[qualID] = check
+	return check
 }
 
 // UnlockPipeline POST /api/mall/pipelines/{pipelineId}/unlock

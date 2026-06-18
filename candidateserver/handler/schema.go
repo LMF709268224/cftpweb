@@ -549,6 +549,37 @@ type PurchasePipelineReq struct {
 	CandidateSelectedExemptionsJson string `json:"candidate_selected_exemptions_json"`
 }
 
+type PipelineExemptionOptionsRsp struct {
+	Stages []PipelineExemptionStage `json:"stages"`
+}
+
+type PipelineExemptionStage struct {
+	Index     int32                   `json:"index"`
+	StageId   string                  `json:"stage_id"`
+	StageName string                  `json:"stage_name,omitempty"`
+	SortOrder int32                   `json:"sort_order,omitempty"`
+	Units     []PipelineExemptionUnit `json:"units"`
+}
+
+type PipelineExemptionUnit struct {
+	UnitId         string                  `json:"unit_id"`
+	UnitName       string                  `json:"unit_name,omitempty"`
+	AllowExemption bool                    `json:"allow_exemption"`
+	ExemptionQuals []PipelineExemptionQual `json:"exemption_quals"`
+	Qualified      bool                    `json:"qualified"`
+	Message        string                  `json:"message,omitempty"`
+}
+
+type PipelineExemptionQual struct {
+	QualId           string `json:"qual_id"`
+	Name             string `json:"name,omitempty"`
+	Description      string `json:"description,omitempty"`
+	Category         string `json:"category,omitempty"`
+	Eligible         bool   `json:"eligible"`
+	CredentialStatus string `json:"credential_status,omitempty"`
+	Message          string `json:"message,omitempty"`
+}
+
 type PurchasePipelineRsp struct {
 	PipelineOrderUlid    string `json:"pipeline_order_ulid"`
 	OrderStatus          string `json:"order_status"`

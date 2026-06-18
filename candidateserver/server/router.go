@@ -82,6 +82,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Post("/{pipelineId}/unlock", h.UnlockPipeline)
 				r.Get("/{pipelineId}/active-order", h.GetActivePipelineOrder)
 				r.Get("/{pipelineId}/eligibility", h.CheckPipelineEligibility)
+				r.Get("/{pipelineId}/exemptions", h.GetPipelineExemptionOptions)
 			})
 			r.Route("/payments", func(r chi.Router) {
 				r.Post("/preview", h.PreviewPayment)
