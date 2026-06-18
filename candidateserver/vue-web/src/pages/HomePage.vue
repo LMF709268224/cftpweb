@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import type { Component } from "vue"
 import { Award, BookOpen, ClipboardList, PackageOpen, PanelLeft, Receipt } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -27,7 +28,19 @@ const guideCopy = computed(() => lang.value === "zh"
     },
 )
 
-const portalCards = computed(() => {
+type CardColor = "orange" | "purple" | "blue" | "teal" | "green"
+type PortalCard = {
+  key: string
+  title: string
+  value: number
+  action: string
+  href: string
+  icon: Component
+  color: CardColor
+  featured: boolean
+}
+
+const portalCards = computed<PortalCard[]>(() => {
   const zh = lang.value === "zh"
   return [
     {
