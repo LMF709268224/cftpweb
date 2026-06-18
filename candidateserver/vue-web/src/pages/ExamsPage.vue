@@ -5,10 +5,10 @@ import { toast } from "vue-sonner"
 import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, History, Loader2, RefreshCw, Search, ShieldCheck } from "lucide-vue-next"
 import { EXAM_STATUS_LABELS, normalizeEnumValueUpper, statusBadgeClassForStatusValue, statusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
-import { openPaymentBridge } from "@/lib/payment"
 
 type TabId = "current" | "history" | "exemption" | "records"
 
@@ -22,6 +22,15 @@ const retakeLoadingUnitId = ref<string | null>(null)
 const search = ref("")
 const exams = ref<any[]>([])
 const total = ref(0)
+const retakePaymentSession = ref<{
+  paymentKey?: string
+  orderId?: string
+  bizType: string
+  bizRefUlid: string
+  source: string
+  returnPath: string
+} | null>(null)
+const retakePaymentDialogOpen = ref(false)
 
 const tabs = computed(() => [
   { id: "current" as TabId, icon: CalendarClock, label: t.value.examsPage.currentTab },
@@ -156,15 +165,15 @@ async function handleApplyRetake(exam: any) {
       }),
     })
     if (payment?.payment_required && !payment?.paid) {
-      openPaymentBridge({
+      retakePaymentSession.value = {
         paymentKey: payment.payment_key,
         orderId: payment.course_retake_order_ulid,
         bizType: "COURSE_RETAKE_PAYMENT",
         bizRefUlid: payment.course_retake_order_ulid,
         source: "retake",
         returnPath: "/exams",
-      })
-      toast.info(t.value.common.loading)
+      }
+      retakePaymentDialogOpen.value = true
       return
     }
     await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake`, { method: "POST" })
@@ -313,5 +322,17 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    <PaymentSessionDialog
+      v-if="retakePaymentSession"
+      v-model:open="retakePaymentDialogOpen"
+      :title="t.examsPage.applyRetake"
+      :subtitle="retakePaymentSession.orderId"
+      :payment-key="retakePaymentSession.paymentKey"
+      :biz-type="retakePaymentSession.bizType"
+      :biz-ref-ulid="retakePaymentSession.bizRefUlid"
+      :order-id="retakePaymentSession.orderId"
+      :source="retakePaymentSession.source"
+      :return-path="retakePaymentSession.returnPath"
+    />
   </AppShell>
 </template>

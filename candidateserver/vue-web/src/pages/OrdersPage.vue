@@ -4,10 +4,10 @@ import { useRouter } from "vue-router"
 import { CheckCircle2, ChevronRight, CreditCard, FileText, Loader2, Package, Receipt, ShoppingCart } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
-import { openPaymentBridge } from "@/lib/payment"
 
 type OrderStatus = keyof typeof statusConfig
 
@@ -48,6 +48,14 @@ const totalPages = ref(0)
 const selectedBizType = ref("")
 const invoiceLoading = ref<string | null>(null)
 const paymentLoading = ref<string | null>(null)
+const orderPaymentDialogOpen = ref(false)
+const orderPaymentSession = ref<{
+  orderId: string
+  bizType: string
+  bizRefUlid: string
+  source: string
+  returnPath: string
+} | null>(null)
 const showPurchaseDialog = ref(false)
 const selectedCourseName = ref("")
 const selectedPipelineId = ref("")
@@ -109,16 +117,17 @@ function canContinuePayment(order: OrderItem) {
 function continuePayment(order: OrderItem) {
   if (!canContinuePayment(order) || paymentLoading.value) return
   paymentLoading.value = order.id
-  openPaymentBridge({
+  orderPaymentSession.value = {
     orderId: order.id,
     bizType: order.bizType,
     bizRefUlid: order.bizRefUlid,
     source: "orders",
     returnPath: "/orders",
-  })
+  }
+  orderPaymentDialogOpen.value = true
   window.setTimeout(() => {
     if (paymentLoading.value === order.id) paymentLoading.value = null
-  }, 1200)
+  }, 300)
 }
 
 async function viewInvoice(orderId: string) {
@@ -346,6 +355,17 @@ onMounted(() => {
       v-model:open="showPurchaseDialog"
       :course-name="selectedCourseName"
       :pipeline-id="selectedPipelineId"
+    />
+    <PaymentSessionDialog
+      v-if="orderPaymentSession"
+      v-model:open="orderPaymentDialogOpen"
+      :title="lang === 'zh' ? '继续支付' : 'Continue payment'"
+      :subtitle="orderPaymentSession.orderId"
+      :biz-type="orderPaymentSession.bizType"
+      :biz-ref-ulid="orderPaymentSession.bizRefUlid"
+      :order-id="orderPaymentSession.orderId"
+      :source="orderPaymentSession.source"
+      :return-path="orderPaymentSession.returnPath"
     />
   </AppShell>
 </template>
