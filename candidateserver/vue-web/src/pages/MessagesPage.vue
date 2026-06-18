@@ -17,6 +17,9 @@ const selectedMessageDetail = ref<any>(null)
 const messageList = ref<Message[]>([])
 const openMenuId = ref<string | null>(null)
 const loading = ref(true)
+const markAllLoading = ref(false)
+const messageActionLoadingId = ref<string | null>(null)
+const detailLoadingId = ref<string | null>(null)
 
 const typeConfig = computed(() => ({
   system: { icon: Bell, iconBg: "bg-primary/10", iconColor: "text-primary", label: t.value.messagesPage.systemNotice },
@@ -219,8 +222,10 @@ async function fetchMessages() {
 }
 
 async function markAllAsRead() {
+  if (markAllLoading.value) return
   const unreadIds = messageList.value.filter((m) => !m.isRead).map((m) => m.id)
   if (unreadIds.length === 0) return
+  markAllLoading.value = true
   try {
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: unreadIds }) })
     messageList.value = messageList.value.map((m) => ({ ...m, isRead: true }))
@@ -228,22 +233,30 @@ async function markAllAsRead() {
     toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
     // apiClient handles toast.
+  } finally {
+    markAllLoading.value = false
   }
 }
 
-async function markAsRead(id: string) {
+async function markAsRead(id: string, showToast = true) {
+  if (messageActionLoadingId.value === id) return
+  messageActionLoadingId.value = id
   try {
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: [id] }) })
     messageList.value = messageList.value.map((m) => (m.id === id ? { ...m, isRead: true } : m))
     syncUnreadCount()
     openMenuId.value = null
-    toast.success(t.value.messagesPage.markReadSuccess)
+    if (showToast) toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
     // apiClient handles toast.
+  } finally {
+    if (messageActionLoadingId.value === id) messageActionLoadingId.value = null
   }
 }
 
 async function deleteMessage(id: string) {
+  if (messageActionLoadingId.value === id) return
+  messageActionLoadingId.value = id
   try {
     await apiClient("/api/messages/delete", { method: "POST", body: JSON.stringify({ message_ids: [id] }) })
     messageList.value = messageList.value.filter((m) => m.id !== id)
@@ -252,12 +265,16 @@ async function deleteMessage(id: string) {
     toast.success(t.value.messagesPage.deleteSuccess)
   } catch {
     // apiClient handles toast.
+  } finally {
+    if (messageActionLoadingId.value === id) messageActionLoadingId.value = null
   }
 }
 
 async function handleViewDetail(message: Message) {
+  if (detailLoadingId.value || messageActionLoadingId.value === message.id) return
+  detailLoadingId.value = message.id
   try {
-    if (!message.isRead) await markAsRead(message.id)
+    if (!message.isRead) await markAsRead(message.id, false)
     const detail = await apiClient(`/api/messages/${message.id}`)
     const detailType = message.type
     selectedMessageDetail.value = {
@@ -270,6 +287,8 @@ async function handleViewDetail(message: Message) {
     detailModalOpen.value = true
   } catch {
     toast.error("Failed to load message detail")
+  } finally {
+    if (detailLoadingId.value === message.id) detailLoadingId.value = null
   }
 }
 
@@ -289,7 +308,11 @@ onMounted(fetchMessages)
         </div>
       </div>
       <div v-if="unreadCount > 0" class="mt-4 flex justify-end">
-        <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="markAllAsRead"><CheckCheck class="h-4 w-4" /> {{ t.messagesPage.markAllAsRead }}</button>
+        <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="markAllLoading" @click="markAllAsRead">
+          <Loader2 v-if="markAllLoading" class="h-4 w-4 animate-spin" />
+          <CheckCheck v-else class="h-4 w-4" />
+          {{ t.messagesPage.markAllAsRead }}
+        </button>
       </div>
     </div>
 
@@ -330,7 +353,7 @@ onMounted(fetchMessages)
         <div
           v-for="message in filteredMessages"
           :key="message.id"
-          :class="['group relative flex cursor-pointer items-start gap-4 border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead ? 'bg-primary/5' : '']"
+          :class="['group relative flex cursor-pointer items-start gap-4 border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead ? 'bg-primary/5' : '', detailLoadingId === message.id ? 'pointer-events-none opacity-75' : '']"
           @click="handleViewDetail(message)"
         >
           <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', configFor(message.type).iconBg, !message.isRead && 'ring-2 ring-primary/25']">
@@ -346,23 +369,26 @@ onMounted(fetchMessages)
             </div>
             <span class="text-xs text-muted-foreground">{{ message.time }}</span>
           </div>
-          <div class="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <div :class="['flex items-center gap-2 transition-opacity group-hover:opacity-100', detailLoadingId === message.id ? 'opacity-100' : 'opacity-0']">
             <div class="relative">
-              <button class="btn btn-ghost h-8 rounded-lg px-2" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
+              <button class="btn btn-ghost h-8 rounded-lg px-2" :disabled="messageActionLoadingId === message.id || detailLoadingId === message.id" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
                 <MoreHorizontal class="h-4 w-4" />
               </button>
               <div v-if="openMenuId === message.id" class="absolute right-0 top-9 z-50 min-w-36 overflow-hidden rounded-lg bg-white p-1 shadow-md" @click.stop>
-                <button v-if="!message.isRead" class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm hover:bg-muted" @click="markAsRead(message.id)">
-                  <CheckCheck class="mr-2 h-4 w-4" />
+                <button v-if="!message.isRead" class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60" :disabled="messageActionLoadingId === message.id" @click="markAsRead(message.id)">
+                  <Loader2 v-if="messageActionLoadingId === message.id" class="mr-2 h-4 w-4 animate-spin" />
+                  <CheckCheck v-else class="mr-2 h-4 w-4" />
                   {{ markReadMenuLabel() }}
                 </button>
-                <button class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm text-destructive hover:bg-muted" @click="deleteMessage(message.id)">
-                  <Trash2 class="mr-2 h-4 w-4" />
+                <button class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm text-destructive hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60" :disabled="messageActionLoadingId === message.id" @click="deleteMessage(message.id)">
+                  <Loader2 v-if="messageActionLoadingId === message.id" class="mr-2 h-4 w-4 animate-spin" />
+                  <Trash2 v-else class="mr-2 h-4 w-4" />
                   {{ deleteMenuLabel() }}
                 </button>
               </div>
             </div>
-            <ChevronRight class="h-5 w-5 text-muted-foreground" />
+            <Loader2 v-if="detailLoadingId === message.id" class="h-5 w-5 animate-spin text-primary" />
+            <ChevronRight v-else class="h-5 w-5 text-muted-foreground" />
           </div>
         </div>
       </div>
