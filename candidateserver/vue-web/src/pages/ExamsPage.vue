@@ -81,6 +81,13 @@ function resultPublishedLabel() {
 function passStatusLabel(exam: any) {
   return exam.is_passed ? (t.value.examsPage as any).statusQualified || t.value.examsPage.statusPassed : (t.value.examsPage as any).statusUnqualified || t.value.examsPage.statusFailed
 }
+function examStatusBadgeClass(status?: string | number | null) {
+  const normalized = normalizedExamStatus(status)
+  if (normalized.includes("PASSED") || normalized.includes("DONE") || normalized.includes("SUCCESS")) {
+    return "border-[#6CE9A6] bg-[#ECFDF3] text-[#027A48]"
+  }
+  return statusBadgeClassForStatusValue(status)
+}
 
 async function loadExams(tab: TabId = activeTab.value, keyword = search.value) {
   if (tab === "exemption" || tab === "records") {
@@ -195,10 +202,10 @@ onMounted(() => {
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span v-if="shouldShowExamStatus(exam.exam_status)" :class="['badge', statusBadgeClassForStatusValue(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
-                  <span v-if="hasExamResult(exam)" :class="['badge', statusBadgeClassForStatusValue('DONE')]">{{ resultPublishedLabel() }}</span>
+                  <span v-if="shouldShowExamStatus(exam.exam_status)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
+                  <span v-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
                   <span v-else :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
-                  <span v-if="hasExplicitPassStatus(exam)" :class="['badge gap-1', statusBadgeClassForStatusValue(exam.is_passed ? 'SUCCESS' : 'FAILED')]">
+                  <span v-if="hasExplicitPassStatus(exam)" :class="['badge gap-1', exam.is_passed ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
                     <CheckCircle2 v-if="exam.is_passed" class="h-3 w-3" />
                     {{ passStatusLabel(exam) }}
                   </span>
