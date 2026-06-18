@@ -267,22 +267,18 @@ onMounted(() => {
               loading="lazy"
             />
             <div v-else :class="['flex h-full w-full flex-col justify-between bg-gradient-to-br p-5 text-white', fallbackCoverClass(file.file_type)]">
-              <div class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-                <component :is="fileTypeIcon(file.file_type)" class="h-6 w-6" />
-              </div>
+              <div class="h-12 w-12" />
               <div>
                 <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Global Fintech Institute</div>
                 <h2 class="line-clamp-5 text-2xl font-black leading-tight">{{ file.title || file.file_name || file.file_id }}</h2>
               </div>
               <div class="text-xs font-semibold text-white/70">{{ fileTypeLabel(file.file_type) }}</div>
             </div>
+            <div class="absolute left-5 top-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/90 text-primary shadow-sm backdrop-blur">
+              <component :is="fileTypeIcon(file.file_type)" class="h-6 w-6" />
+            </div>
+            <span :class="['absolute right-5 top-5 rounded-full border px-2.5 py-1 text-xs font-bold shadow-sm backdrop-blur', fileTypePillClass(file.file_type)]">{{ fileTypeLabel(file.file_type) }}</span>
             <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent p-4 text-white">
-              <div class="mb-2 flex items-center justify-between gap-3">
-                <span :class="['rounded-full border px-2.5 py-1 text-xs font-bold backdrop-blur', fileTypePillClass(file.file_type)]">{{ fileTypeLabel(file.file_type) }}</span>
-                <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-lg transition-transform group-hover:scale-110">
-                  <Eye class="h-4 w-4" />
-                </span>
-              </div>
               <h2 class="line-clamp-2 text-base font-bold leading-tight">{{ file.title || file.file_name || file.file_id }}</h2>
               <p v-if="file.description || file.file_name" class="mt-1 line-clamp-2 text-xs leading-5 text-white/80">{{ file.description || file.file_name }}</p>
             </div>
