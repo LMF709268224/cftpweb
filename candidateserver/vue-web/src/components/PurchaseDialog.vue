@@ -159,6 +159,29 @@ function isCredentialApplicationPaymentStatus(status: unknown) {
   return normalizedStatus(status).includes("WAIT_REVIEW_FEE_PAYMENT")
 }
 
+function isCredentialApplicationUnderReviewStatus(status: unknown) {
+  return normalizedStatus(status).includes("UNDER_REVIEW")
+}
+
+function isCredentialApplicationResolvedStatus(status: unknown) {
+  return normalizedStatus(status).includes("RESOLVED")
+}
+
+function isApplicationPendingStatus(status: unknown) {
+  const value = normalizedStatus(status)
+  return value === "PENDING" || value.includes("APPLICATION_STATUS_PENDING")
+}
+
+function isApplicationApprovedStatus(status: unknown) {
+  const value = normalizedStatus(status)
+  return value === "APPROVED" || value.includes("APPLICATION_STATUS_APPROVED")
+}
+
+function isApplicationResubmitStatus(status: unknown) {
+  const value = normalizedStatus(status)
+  return value.includes("REUPLOAD") || value.includes("RESUBMIT") || value.includes("NEEDS_RESUBMIT")
+}
+
 function formatMoney(amount?: number, currency = "usd") {
   if (typeof amount !== "number") return "-"
   return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "usd" }).format(amount / 100)
@@ -245,6 +268,33 @@ function orderIdFromDetail(order: any) {
 
 function orderStatusFromDetail(order: any) {
   return order?.order_status || order?.summary?.order_status || ""
+}
+
+function qualificationUploadUrl(qualId: string, orderId = "", appId = "") {
+  const params = new URLSearchParams({ qual_ids: qualId })
+  if (orderId) params.set("application_order_ulid", orderId)
+  if (appId) params.set("application_id", appId)
+  return `/credentials?${params.toString()}`
+}
+
+async function latestCredentialApplication(qualId: string) {
+  try {
+    const res = await apiClient(`/api/credentials/applications?cred_def_id=${encodeURIComponent(qualId)}`)
+    return (res?.applications || [])[0] || null
+  } catch (error) {
+    console.error(error)
+    return null
+  }
+}
+
+async function hasCredentialUploadPermission(qualId: string) {
+  try {
+    const res = await apiClient(`/api/credentials/upload-permission?cred_def_id=${encodeURIComponent(qualId)}`)
+    return Boolean(res?.granted)
+  } catch (error) {
+    console.error(error)
+    return false
+  }
 }
 
 async function loadEligibility() {
@@ -408,7 +458,25 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
   if (!props.pipelineId || !qualId) return
   const loadingKey = applicationLoadingKey(unit, qual)
   credentialApplicationLoadingKey.value = loadingKey
+  activePaymentSession.value = null
   try {
+    const existingApplication = await latestCredentialApplication(qualId)
+    if (existingApplication?.status) {
+      if (isApplicationPendingStatus(existingApplication.status)) {
+        toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果。")
+        return
+      }
+      if (isApplicationApprovedStatus(existingApplication.status)) {
+        toast.success(copy.value.qualificationAlreadyApproved || "资格已审核通过，正在重新检查免考资格。")
+        await loadExemptionOptions()
+        return
+      }
+      if (isApplicationResubmitStatus(existingApplication.status)) {
+        window.location.assign(qualificationUploadUrl(qualId, "", existingApplication.app_id || ""))
+        return
+      }
+    }
+
     const order = await apiClient("/api/credentials/application-orders", {
       method: "POST",
       body: JSON.stringify({
@@ -426,13 +494,25 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
       message: order?.message,
       qualIds: [qualId],
     }
-    if (isUploadReadyStatus(orderStatus) || normalizedStatus(orderStatus).includes("UNDER_REVIEW") || normalizedStatus(orderStatus).includes("RESOLVED")) {
-      const params = new URLSearchParams({ qual_ids: qualId })
-      if (orderId) params.set("application_order_ulid", orderId)
-      window.location.assign(`/credentials?${params.toString()}`)
+
+    if (isUploadReadyStatus(orderStatus)) {
+      if (await hasCredentialUploadPermission(qualId)) {
+        window.location.assign(qualificationUploadUrl(qualId, orderId))
+        return
+      }
+      toast.info(copy.value.qualificationUploadNotReady || "资格申请订单已存在，但当前资格还没有开放资料上传，请先完成审核费支付或稍后重试。")
       return
     }
-    if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key || order?.pay_order_ulid) {
+    if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
+      toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果。")
+      return
+    }
+    if (isCredentialApplicationResolvedStatus(orderStatus)) {
+      toast.info(order?.message || copy.value.refreshEligibility)
+      await loadExemptionOptions()
+      return
+    }
+    if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
       activePaymentSession.value = {
         bizType: "CREDENTIAL_APPLICATION",
         bizRefUlid: orderId,
