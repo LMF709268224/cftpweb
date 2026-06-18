@@ -580,6 +580,11 @@ type PipelineExemptionQual struct {
 	Message          string `json:"message,omitempty"`
 }
 
+type CreateCredentialApplicationOrderReq struct {
+	PipelineCcUlid string   `json:"pipeline_cc_ulid"`
+	QualIds        []string `json:"qual_ids"`
+}
+
 type PurchasePipelineRsp struct {
 	PipelineOrderUlid    string `json:"pipeline_order_ulid"`
 	OrderStatus          string `json:"order_status"`

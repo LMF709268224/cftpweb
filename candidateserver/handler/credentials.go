@@ -3,13 +3,41 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 )
 
 // ListCredentialDefinitions GET /api/credentials/definitions
 func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
+	qualIDs := compactStrings(strings.Split(r.URL.Query().Get("qual_ids"), ","))
+	if len(qualIDs) > 0 {
+		details := make([]map[string]interface{}, 0, len(qualIDs))
+		for _, qualID := range qualIDs {
+			def, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
+				CredDefId: qualID,
+			})
+			if err != nil {
+				HandleGrpcError(w, err)
+				return
+			}
+			details = append(details, map[string]interface{}{
+				"cred_def_id":      def.GetCredDefId(),
+				"name":             def.GetName(),
+				"description":      def.GetDescription(),
+				"file_constraints": def.GetFileConstraints(),
+				"category":         def.GetCategory(),
+				"respath":          def.GetRespath(),
+			})
+		}
+		WriteJSON(w, http.StatusOK, map[string]interface{}{
+			"definitions": details,
+		})
+		return
+	}
+
 	req := &gcredspb.ListCandidateEligibleDefinitionsRequest{
 		CandidateId: candidateID,
 	}
@@ -56,6 +84,38 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"definitions": details,
 	})
+}
+
+// CreateCredentialApplicationOrder POST /api/credentials/application-orders
+func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+
+	var body CreateCredentialApplicationOrderReq
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
+		return
+	}
+	body.PipelineCcUlid = strings.TrimSpace(body.PipelineCcUlid)
+	body.QualIds = compactStrings(body.QualIds)
+	if !requireRequestField(w, body.PipelineCcUlid, "pipeline_cc_ulid") {
+		return
+	}
+	if len(body.QualIds) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field \"qual_ids\" is required but was empty")
+		return
+	}
+
+	res, err := h.Mall.CreateCredentialApplicationOrder(r.Context(), &mallpb.CreateCredentialApplicationOrderRequest{
+		CandidateUlid:  candidateID,
+		PipelineCcUlid: body.PipelineCcUlid,
+		QualIds:        body.QualIds,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	res.PaymentKey = formatPaymentKey(res.GetPaymentKey())
+	WriteJSON(w, http.StatusCreated, res)
 }
 
 // ListCandidateApplications GET /api/credentials/applications

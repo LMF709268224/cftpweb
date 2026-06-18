@@ -89,6 +89,7 @@ const actionLoading = ref(false)
 const paymentLoading = ref(false)
 const previewLoading = ref(false)
 const exemptionLoading = ref(false)
+const credentialApplicationLoadingKey = ref("")
 const eligibility = ref<EligibilityPreview | null>(null)
 const exemptionOptions = ref<ExemptionOptions | null>(null)
 const activeOrder = ref<ActiveOrder | null>(null)
@@ -103,6 +104,14 @@ const activePaymentSession = ref<{
   source: string
   returnPath: string
   extraReturnParams?: Record<string, string>
+} | null>(null)
+const credentialApplicationOrder = ref<{
+  applicationOrderUlid: string
+  orderStatus?: string
+  payOrderUlid?: string
+  paymentKey?: string
+  message?: string
+  qualIds: string[]
 } | null>(null)
 
 const copy = computed(() => t.value.purchaseDialog || {})
@@ -125,6 +134,7 @@ watch(() => props.open, (open) => {
 
 function close() {
   activePaymentSession.value = null
+  credentialApplicationOrder.value = null
   emit("update:open", false)
 }
 
@@ -139,6 +149,14 @@ function isCompletedStatus(status: unknown) {
 function isFailedStatus(status: unknown) {
   const value = normalizedStatus(status)
   return value.includes("FAILED") || value.includes("CANCEL") || value.includes("REJECT")
+}
+
+function isUploadReadyStatus(status: unknown) {
+  return normalizedStatus(status).includes("UPLOAD_READY")
+}
+
+function isCredentialApplicationPaymentStatus(status: unknown) {
+  return normalizedStatus(status).includes("WAIT_REVIEW_FEE_PAYMENT")
 }
 
 function formatMoney(amount?: number, currency = "usd") {
@@ -165,6 +183,10 @@ function blockerTitle(blocker: EligibilityBlocker) {
 
 function qualLabel(qual: ExemptionQual) {
   return qual.name || qual.qual_id || copy.value.unknownQualification || t.value.common.unknown
+}
+
+function applicationLoadingKey(unit: ExemptionUnit, qual: ExemptionQual) {
+  return `${unit.unit_id || "unit"}:${qual.qual_id || "qual"}`
 }
 
 function resetExemptionSelection() {
@@ -381,6 +403,54 @@ async function createUnlockOrder() {
   }
 }
 
+async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: ExemptionQual) {
+  const qualId = String(qual.qual_id || "").trim()
+  if (!props.pipelineId || !qualId) return
+  const loadingKey = applicationLoadingKey(unit, qual)
+  credentialApplicationLoadingKey.value = loadingKey
+  try {
+    const order = await apiClient("/api/credentials/application-orders", {
+      method: "POST",
+      body: JSON.stringify({
+        pipeline_cc_ulid: props.pipelineId,
+        qual_ids: [qualId],
+      }),
+    })
+    const orderId = String(order?.application_order_ulid || "").trim()
+    const orderStatus = String(order?.order_status || "")
+    credentialApplicationOrder.value = {
+      applicationOrderUlid: orderId,
+      orderStatus,
+      payOrderUlid: order?.pay_order_ulid,
+      paymentKey: order?.payment_key,
+      message: order?.message,
+      qualIds: [qualId],
+    }
+    if (isUploadReadyStatus(orderStatus) || normalizedStatus(orderStatus).includes("UNDER_REVIEW") || normalizedStatus(orderStatus).includes("RESOLVED")) {
+      const params = new URLSearchParams({ qual_ids: qualId })
+      if (orderId) params.set("application_order_ulid", orderId)
+      window.location.assign(`/credentials?${params.toString()}`)
+      return
+    }
+    if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key || order?.pay_order_ulid) {
+      activePaymentSession.value = {
+        bizType: "CREDENTIAL_APPLICATION",
+        bizRefUlid: orderId,
+        orderId,
+        source: "credential_application",
+        returnPath: "/credentials",
+        extraReturnParams: { qual_ids: qualId, application_order_ulid: orderId },
+      }
+      return
+    }
+    toast.info(order?.message || copy.value.qualificationApplicationCreated)
+  } catch (error) {
+    console.error(error)
+  } finally {
+    credentialApplicationLoadingKey.value = ""
+  }
+}
+
 function rememberPendingMallPayment() {
   if (!activeOrder.value?.orderId) return
   localStorage.setItem("pending_mall_payment", JSON.stringify({
@@ -535,9 +605,17 @@ async function initiatePayment() {
                     </div>
                     <div v-if="!unit.qualified" class="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span>{{ copy.exemptionMissingHint }}</span>
-                      <a class="font-semibold text-primary hover:underline" href="/credentials" target="_blank" rel="noopener noreferrer">
+                      <button
+                        v-for="qual in unit.exemption_quals || []"
+                        :key="`apply-${unit.unit_id}-${qual.qual_id}`"
+                        type="button"
+                        class="inline-flex items-center gap-1 rounded-md px-1.5 py-1 font-semibold text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                        :disabled="credentialApplicationLoadingKey === applicationLoadingKey(unit, qual)"
+                        @click.prevent="createCredentialApplicationOrder(unit, qual)"
+                      >
+                        <Loader2 v-if="credentialApplicationLoadingKey === applicationLoadingKey(unit, qual)" class="h-3 w-3 animate-spin" />
                         {{ copy.goApplyQualification }}
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </label>
@@ -593,8 +671,8 @@ async function initiatePayment() {
 
         <div v-if="activePaymentSession" class="space-y-3">
           <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-            <div class="flex items-center gap-2 font-semibold"><CreditCard class="h-4 w-4" />{{ copy.embeddedCheckoutTitle }}</div>
-            <p class="mt-2">{{ copy.embeddedCheckoutDesc }}</p>
+            <div class="flex items-center gap-2 font-semibold"><CreditCard class="h-4 w-4" />{{ credentialApplicationOrder ? copy.qualificationPaymentTitle : copy.embeddedCheckoutTitle }}</div>
+            <p class="mt-2">{{ credentialApplicationOrder ? copy.qualificationPaymentDesc : copy.embeddedCheckoutDesc }}</p>
           </div>
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
             <strong>⚠️ 测试环境提示：</strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验。

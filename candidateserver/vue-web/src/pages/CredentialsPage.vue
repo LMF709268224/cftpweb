@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue"
+import { useRoute } from "vue-router"
 import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, XCircle } from "lucide-vue-next"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusBadgeClassForStatus, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
@@ -8,6 +9,7 @@ import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
 const { t } = useTranslation()
+const route = useRoute()
 const definitions = ref<any[]>([])
 const applications = ref<any[]>([])
 const loading = ref(true)
@@ -38,9 +40,14 @@ async function uploadWithTimeout(url: string, init: RequestInit) {
 async function fetchData() {
   loading.value = true
   try {
-    const [defsRes, appsRes] = await Promise.all([apiClient("/api/credentials/definitions"), apiClient("/api/credentials/applications")])
+    const qualIds = String(route.query.qual_ids || "").trim()
+    const definitionsEndpoint = qualIds ? `/api/credentials/definitions?qual_ids=${encodeURIComponent(qualIds)}` : "/api/credentials/definitions"
+    const [defsRes, appsRes] = await Promise.all([apiClient(definitionsEndpoint), apiClient("/api/credentials/applications")])
     definitions.value = defsRes?.definitions || []
     applications.value = appsRes?.applications || []
+    if (qualIds && definitions.value.length === 1 && !isApplyOpen.value) {
+      handleApplyClick(definitions.value[0])
+    }
   } finally {
     loading.value = false
   }
