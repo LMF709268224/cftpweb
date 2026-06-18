@@ -226,7 +226,7 @@ onMounted(() => {
 
 <template>
   <AppShell content-class="p-0">
-    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+    <div class="page-panel">
       <header class="flex h-16 items-center border-b border-border bg-white px-5">
         <FileArchive class="mr-4 h-4 w-4 text-slate-700" />
         <span class="text-sm font-medium text-foreground">{{ copy.title }}</span>

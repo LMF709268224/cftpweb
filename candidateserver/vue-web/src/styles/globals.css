@@ -127,6 +127,11 @@
     width: 100%;
   }
 
+  .page-panel {
+    @apply bg-white lg:overflow-hidden lg:rounded-xl lg:border lg:border-border;
+    min-height: calc(100vh - 5rem);
+  }
+
   .app-side-card {
     max-height: calc(100vh - 122px);
     scrollbar-width: thin;
@@ -151,8 +156,11 @@
       max-width: none;
       margin-left: 0;
       margin-right: 0;
-      padding-left: 264px;
-      padding-top: 0;
+      padding: 1rem 1rem 1rem 280px;
+    }
+
+    .page-panel {
+      min-height: calc(100vh - 2rem);
     }
 
     .app-side-card {

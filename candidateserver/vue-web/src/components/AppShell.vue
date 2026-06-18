@@ -7,7 +7,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="min-h-screen bg-background">
+  <div class="bg-background">
     <Sidebar />
     <main class="page-main">
       <div :class="contentClass || 'px-4 py-4'">
