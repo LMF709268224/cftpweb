@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
-import { BookOpen, CheckCircle2, MessageSquare } from "lucide-vue-next"
+import { BookOpen, CheckCircle2, Home, MessageSquare } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import StatsCard from "@/components/StatsCard.vue"
 import TodoList from "@/components/TodoList.vue"
@@ -87,8 +87,15 @@ onMounted(async () => {
   <AppShell content-class="p-4">
     <div class="space-y-4">
       <div class="mb-4 px-1 py-3 md:py-5">
-        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.sidebar.home }}</h1>
-        <p class="mt-2 text-muted-foreground">{{ t.home.welcomeBack }}{{ welcomeSeparator }}{{ userName }}</p>
+        <div class="flex items-start gap-3">
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+            <Home class="h-6 w-6" />
+          </div>
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.sidebar.home }}</h1>
+            <p class="mt-2 text-muted-foreground">{{ t.home.welcomeBack }}{{ welcomeSeparator }}{{ userName }}</p>
+          </div>
+        </div>
       </div>
 
       <section class="relative rounded-[16px] bg-white px-4 py-6 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:px-8 md:py-8">

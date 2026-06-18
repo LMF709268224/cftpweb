@@ -148,8 +148,15 @@ onMounted(() => {
     </div>
 
     <div class="mb-4 px-1 py-3 md:py-5">
-      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.orders.title }}</h1>
-      <p class="mt-2 text-muted-foreground">{{ t.orders.subtitle }}</p>
+      <div class="flex items-start gap-3">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+          <Receipt class="h-6 w-6" />
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.orders.title }}</h1>
+          <p class="mt-2 text-muted-foreground">{{ t.orders.subtitle }}</p>
+        </div>
+      </div>
     </div>
 
     <div class="mb-4 grid gap-4 sm:grid-cols-3">
