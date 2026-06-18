@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { AlertCircle, BookOpen, CheckCircle2, ChevronRight, Clock, Lock, Play, ShoppingCart, Users } from "lucide-vue-next"
+import { AlertCircle, BookOpen, CheckCircle2, Clock, Lock, ShoppingCart, Users } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -34,18 +34,41 @@ const eligibility = ref<EligibilityPreview | null>(null)
 const eligibilityLoading = ref(false)
 
 const blockers = computed(() => eligibility.value?.blockers || [])
-const effectivePurchased = computed(() => Boolean(props.isPurchased || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")))
-const resolvedStatusLabel = computed(() => props.statusValue !== undefined ? statusLabel(t.value, CANDIDATE_PIPELINE_STATUS_LABELS, props.statusValue) : props.statusLabel)
+const effectivePurchased = computed(() =>
+  Boolean(props.isPurchased || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")),
+)
+const hasInProgressOrder = computed(() => blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
+const resolvedStatusLabel = computed(() =>
+  props.statusValue !== undefined ? statusLabel(t.value, CANDIDATE_PIPELINE_STATUS_LABELS, props.statusValue) : props.statusLabel,
+)
+
 const cardCopy = computed(() => ({
-  ready: lang.value === "zh" ? "可购买认证" : "Ready to buy",
-  unlock: lang.value === "zh" ? "需要先解锁" : "Unlock required",
-  blocked: lang.value === "zh" ? "暂不可购买" : "Unavailable",
-  checking: lang.value === "zh" ? "检查中" : "Checking",
-  missingQualification: lang.value === "zh" ? "缺少解锁资格" : "Missing unlock qualification",
-  alreadyPurchased: lang.value === "zh" ? "已购买" : "Already purchased",
-  inProgressPurchase: lang.value === "zh" ? "有未完成订单" : "Order in progress",
-  pipelineNotFound: lang.value === "zh" ? "认证已不可用" : "No longer available",
+  ready: lang.value === "zh" ? "\u53ef\u8d2d\u4e70\u8ba4\u8bc1" : "Ready to buy",
+  unlock: lang.value === "zh" ? "\u9700\u8981\u5148\u89e3\u9501" : "Unlock required",
+  blocked: lang.value === "zh" ? "\u6682\u4e0d\u53ef\u8d2d\u4e70" : "Unavailable",
+  checking: lang.value === "zh" ? "\u68c0\u67e5\u4e2d" : "Checking",
+  missingQualification: lang.value === "zh" ? "\u7f3a\u5c11\u89e3\u9501\u8d44\u683c" : "Missing unlock qualification",
+  alreadyPurchased: lang.value === "zh" ? "\u5df2\u8d2d\u4e70" : "Already purchased",
+  inProgressPurchase: lang.value === "zh" ? "\u6709\u672a\u5b8c\u6210\u8ba2\u5355" : "Order in progress",
+  pipelineNotFound: lang.value === "zh" ? "\u8ba4\u8bc1\u5df2\u4e0d\u53ef\u7528" : "No longer available",
 }))
+
+const actionCopy = computed(() => {
+  if (effectivePurchased.value) return lang.value === "zh" ? "\u8fdb\u5165\u8ba4\u8bc1" : "Enter Certification"
+  if (hasInProgressOrder.value) return lang.value === "zh" ? "\u7ee7\u7eed\u652f\u4ed8" : "Continue Payment"
+  if (eligibility.value?.can_unlock) return lang.value === "zh" ? "\u53bb\u89e3\u9501" : "Unlock"
+  if (eligibility.value?.can_purchase) return lang.value === "zh" ? "\u53bb\u8d2d\u4e70" : "Buy Now"
+  if (eligibilityLoading.value && !eligibility.value) return lang.value === "zh" ? "\u68c0\u67e5\u4e2d" : "Checking"
+  if (eligibility.value) return lang.value === "zh" ? "\u6682\u4e0d\u53ef\u8d2d\u4e70" : "Unavailable"
+  return lang.value === "zh" ? "\u67e5\u770b\u8d2d\u4e70\u72b6\u6001" : "Check Status"
+})
+
+const actionClass = computed(() => {
+  if (eligibility.value && !effectivePurchased.value && !eligibility.value.can_purchase && !eligibility.value.can_unlock && !hasInProgressOrder.value) {
+    return "bg-slate-200 text-slate-500"
+  }
+  return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
+})
 
 onMounted(async () => {
   if (props.isPurchased || !props.id) return
@@ -70,10 +93,18 @@ function blockerText(blocker?: EligibilityBlocker) {
 
 const accessState = computed(() => {
   if (effectivePurchased.value) return null
-  if (eligibilityLoading.value && !eligibility.value) return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
-  if (eligibility.value?.can_purchase) return { label: cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
-  if (eligibility.value?.can_unlock) return { label: cardCopy.value.unlock, icon: Lock, className: "border-blue-200 bg-blue-50 text-blue-700", hint: "" }
-  if (eligibility.value) return { label: cardCopy.value.blocked, icon: AlertCircle, className: "border-amber-200 bg-amber-50 text-amber-800", hint: blockerText(blockers.value[0]) }
+  if (eligibilityLoading.value && !eligibility.value) {
+    return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
+  }
+  if (eligibility.value?.can_purchase) {
+    return { label: cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
+  }
+  if (eligibility.value?.can_unlock) {
+    return { label: cardCopy.value.unlock, icon: Lock, className: "border-blue-200 bg-blue-50 text-blue-700", hint: "" }
+  }
+  if (eligibility.value) {
+    return { label: cardCopy.value.blocked, icon: AlertCircle, className: "border-amber-200 bg-amber-50 text-amber-800", hint: blockerText(blockers.value[0]) }
+  }
   return null
 })
 </script>
@@ -82,16 +113,15 @@ const accessState = computed(() => {
   <component
     :is="effectivePurchased ? RouterLink : 'div'"
     :to="effectivePurchased ? `/certifications/${encodeURIComponent(id)}` : undefined"
-    class="group flex h-full flex-col overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
+    class="group flex h-full flex-col overflow-hidden rounded-[16px] border-2 border-[#dfe4ea] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="!effectivePurchased && (showPurchaseDialog = true)"
   >
-    <div class="relative h-36 overflow-hidden bg-[#eaf5f7] sm:h-40 xl:h-44">
+    <div class="relative h-36 overflow-hidden bg-white sm:h-40 xl:h-44">
       <template v-if="image">
-        <img :src="image" :alt="title" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/45 via-slate-950/5 to-transparent" />
+        <img :src="image" :alt="title" class="h-full w-full scale-[1.65] object-contain px-2 py-3 transition-transform duration-500 group-hover:scale-[1.72]" />
       </template>
-      <div v-else class="flex h-full items-center justify-center bg-[#eaf5f7]">
+      <div v-else class="flex h-full items-center justify-center bg-white">
         <div class="flex h-16 w-16 items-center justify-center rounded-xl bg-white text-primary shadow-sm">
           <BookOpen class="h-9 w-9" />
         </div>
@@ -109,10 +139,6 @@ const accessState = computed(() => {
         <span v-else class="badge border-white/70 bg-white/90 text-primary shadow-sm backdrop-blur">
           {{ t.courses.pipeline }}
         </span>
-        <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/95 text-primary shadow-sm backdrop-blur transition-transform duration-300 group-hover:scale-105">
-          <Play v-if="effectivePurchased" class="h-4 w-4 fill-current" />
-          <ShoppingCart v-else class="h-4 w-4" />
-        </div>
       </div>
     </div>
 
@@ -164,12 +190,15 @@ const accessState = computed(() => {
         </div>
       </div>
 
-      <div class="mt-auto flex items-center justify-between border-t border-border pt-4">
-        <div class="min-w-0 flex items-center gap-2">
-          <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">CF</div>
-          <span class="truncate text-sm text-muted-foreground">{{ provider }}</span>
+      <div class="mt-auto border-t border-border pt-4">
+        <div
+          :class="[
+            'flex h-10 w-full items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all duration-300',
+            actionClass,
+          ]"
+        >
+          <span>{{ actionCopy }}</span>
         </div>
-        <ChevronRight class="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
       </div>
     </div>
   </component>
