@@ -5,6 +5,7 @@ import { toast } from "vue-sonner"
 import { ArrowLeft, CalendarDays, Eye, FileArchive, FileText, Play, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
+import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
 type ResourcePackFile = {
@@ -127,17 +128,6 @@ function formatSize(size?: number) {
   if (!size) return "-"
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`
   return `${(size / 1024 / 1024).toFixed(1)} MB`
-}
-
-function formatDate(value?: string) {
-  if (!value) return ""
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString(lang.value === "zh" ? "zh-CN" : "en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  })
 }
 
 function thumbnailFor(file: ResourcePackFile) {
@@ -304,7 +294,7 @@ onMounted(() => {
             <span>{{ copy.size }}: {{ formatSize(file.file_size) }}</span>
             <span v-if="file.updated_at" class="inline-flex items-center gap-1">
               <CalendarDays class="h-3.5 w-3.5" />
-              {{ formatDate(file.updated_at) }}
+              {{ formatBackendDateOnly(file.updated_at) }}
             </span>
           </div>
           <button

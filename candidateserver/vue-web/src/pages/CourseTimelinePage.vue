@@ -5,6 +5,7 @@ import { ArrowLeft, Clock, Loader2 } from "lucide-vue-next"
 import { timelineStatusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
+import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
 type TimelineLog = {
@@ -75,7 +76,7 @@ onMounted(loadTimeline)
           <div class="mb-2 flex flex-wrap items-center gap-2">
             <span class="badge">{{ log.entity_type || t.common.unknown }}</span>
             <span class="badge border-0 bg-primary/10 text-primary">{{ log.event_type || t.common.unknown }}</span>
-            <span class="text-sm text-muted-foreground">{{ log.created_at || t.common.unknown }}</span>
+            <span class="text-sm text-muted-foreground">{{ formatBackendDate(log.created_at) || t.common.unknown }}</span>
           </div>
           <div class="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span>{{ timelineStatusLabel(t, log.entity_type, log.from_status) }}</span>

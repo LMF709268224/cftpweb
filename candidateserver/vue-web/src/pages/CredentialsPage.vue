@@ -5,7 +5,7 @@ import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, XCircle } fr
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusBadgeClassForStatus, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
-import { formatBackendDate } from "@/lib/utils"
+import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
 const { t } = useTranslation()
@@ -272,7 +272,7 @@ onMounted(fetchData)
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
               <button v-if="canResubmit(app.status)" class="btn btn-primary cursor-pointer rounded-lg py-1 text-xs shadow-sm shadow-primary/20" @click="handleApplyClick(definitions.find((d) => d.cred_def_id === app.cred_def_id), app.app_id)">{{ t.credentialsPage.appStatusResubmit }}</button>
-              <span v-else class="text-xs text-muted-foreground">{{ formatBackendDate(app.created_at).split(" ")[0] || t.common.na }}</span>
+              <span v-else class="text-xs text-muted-foreground">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>
         </div>

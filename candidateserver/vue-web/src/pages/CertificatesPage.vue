@@ -5,7 +5,7 @@ import { Award, Calendar, CheckCircle2, Download, ExternalLink, Eye, Loader2, Sh
 import AppShell from "@/components/AppShell.vue"
 import rewGif from "@/assets/rew.gif"
 import { apiClient } from "@/lib/apiClient"
-import { formatBackendDate } from "@/lib/utils"
+import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
 const { t } = useTranslation()
@@ -128,8 +128,8 @@ onMounted(async () => {
           validUntilMs: cert.valid_until ? new Date(cert.valid_until).getTime() : 0,
           name: cert.name,
           description: cert.description || "",
-          issueDate: cert.created_at ? formatBackendDate(cert.created_at).split(" ")[0] : t.value.common.na,
-          expiryDate: cert.valid_until ? formatBackendDate(cert.valid_until).split(" ")[0] : t.value.common.permanent,
+          issueDate: cert.created_at ? formatBackendDateOnly(cert.created_at) : t.value.common.na,
+          expiryDate: cert.valid_until ? formatBackendDateOnly(cert.valid_until) : t.value.common.permanent,
           credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
           pdfUrl:
             cert.files?.find(

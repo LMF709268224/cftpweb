@@ -23,6 +23,7 @@ import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel, timelineStatusBadgeClass
 import AppShell from "@/components/AppShell.vue"
 import CourseCard from "@/components/CourseCard.vue"
 import { apiClient } from "@/lib/apiClient"
+import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
 const { t, lang } = useTranslation()
@@ -110,8 +111,8 @@ function mapCandidatePipeline(pipeline: any) {
     progress: pipeline.progress_available ? Math.round(Number(pipeline.progress)) : undefined,
     progressAvailable: Boolean(pipeline.progress_available),
     statusValue: pipeline.status,
-    startedAt: pipeline.started_at,
-    completedAt: pipeline.completed_at,
+    startedAt: formatBackendDate(pipeline.started_at),
+    completedAt: formatBackendDate(pipeline.completed_at),
   }
 }
 

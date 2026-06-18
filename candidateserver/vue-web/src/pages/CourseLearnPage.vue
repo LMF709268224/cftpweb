@@ -38,7 +38,7 @@ import AppShell from "@/components/AppShell.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
-import { formatBackendDate } from "@/lib/utils"
+import { formatBackendDate, formatBackendDateOnly } from "@/lib/utils"
 import {
   normalizeSupplementaryMaterials,
   parseSupplementaryMaterialItems,
@@ -254,7 +254,7 @@ const courseCertificateSummary = computed(() => {
   return {
     name: config.name || course.value?.title || t.value.learning.actionViewCertificate,
     description: config.description || course.value?.description || t.value.learning.nextStepViewCertificateDesc,
-    issueDate: issuedAt ? formatBackendDate(issuedAt).split(" ")[0] : t.value.common.na,
+    issueDate: issuedAt ? formatBackendDateOnly(issuedAt) : t.value.common.na,
     expiryDate: t.value.common.permanent,
     credentialId: instance.pipeline_ulid || pipelineId.value || t.value.common.na,
   }
@@ -1226,8 +1226,8 @@ watch(selectedMaterial, () => {
                   <div class="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
                     <div v-if="hasText(exam.confirmation_number)"><span class="font-medium text-foreground">{{ t.examsPage.confirmationNumber }}:</span> {{ exam.confirmation_number }}</div>
                     <div v-if="hasText(exam.site_name)"><span class="font-medium text-foreground">{{ t.examsPage.site }}:</span> {{ exam.site_name }}</div>
-                    <div v-if="hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ exam.appointment_start_time }}</div>
-                    <div v-if="hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ exam.appointment_end_time }}</div>
+                    <div v-if="hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
+                    <div v-if="hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
                     <div v-if="isWaitingExamConfirmation(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
                       <div class="flex items-start gap-2">
                         <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />

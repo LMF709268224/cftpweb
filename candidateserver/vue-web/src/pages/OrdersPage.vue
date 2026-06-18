@@ -7,6 +7,7 @@ import AppShell from "@/components/AppShell.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
+import { formatBackendDateMinute } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
 type OrderStatus = keyof typeof statusConfig
@@ -190,7 +191,7 @@ async function fetchOrders() {
         invoiceOrderId: o.pay_order_ulid || o.pipeline_pay_order_ulid || "",
         canViewInvoice: Boolean(o.pay_order_ulid || o.pipeline_pay_order_ulid || o.can_view_invoice),
         items: [o.product_name || orderTypeLabel(o.biz_type)],
-        date: o.created_at,
+        date: formatBackendDateMinute(o.created_at),
         currency: (o.currency || "USD").toUpperCase(),
         bizType: o.biz_type || "",
         bizRefUlid: o.biz_ref_ulid || "",
