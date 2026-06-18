@@ -251,6 +251,7 @@ onMounted(fetchData)
         <div class="flex justify-end gap-3">
           <button class="btn btn-outline cursor-pointer rounded-lg" @click="isApplyOpen = false">{{ t.common.cancel }}</button>
           <button class="btn btn-primary cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed" :disabled="isSubmitting || !(selectedDef?.file_constraints?.every((c: any) => !c.is_required || uploadedFiles[c.name]) && selectedDef?.file_constraints?.length > 0)" @click="handleSubmitApplication">
+            <Loader2 v-if="isSubmitting" class="h-4 w-4 animate-spin" />
             {{ isSubmitting ? t.credentialsPage.submitting : t.credentialsPage.submitApplication }}
           </button>
         </div>

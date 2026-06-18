@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, Send } from "lucide-vue-next"
+import { ArrowLeft, Loader2, Send } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -412,13 +412,13 @@ async function handleSubmit() {
         <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 text-sm text-muted-foreground">
           <p>{{ t.examSignup.syncToProfileHint }}</p>
           <button type="button" class="btn btn-outline mt-3" :disabled="syncLoading || loading" @click="handleSyncToProfile">
-            <template v-if="syncLoading">{{ t.examSignup.syncingToProfile }}</template>
+            <template v-if="syncLoading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.syncingToProfile }}</template>
             <template v-else>{{ t.examSignup.syncToProfile }}</template>
           </button>
         </div>
         <div class="flex justify-end pt-2">
           <button class="btn btn-primary w-full sm:w-auto" :disabled="loading">
-            <template v-if="loading">{{ t.examSignup.submitting }}</template>
+            <template v-if="loading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.submitting }}</template>
             <template v-else><Send class="mr-2 h-4 w-4" /> {{ t.examSignup.submit }}</template>
           </button>
         </div>

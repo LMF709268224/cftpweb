@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { ArrowLeft, Clock } from "lucide-vue-next"
+import { ArrowLeft, Clock, Loader2 } from "lucide-vue-next"
 import { timelineStatusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -52,7 +52,10 @@ onMounted(loadTimeline)
     </RouterLink>
 
     <div class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div v-if="loading" class="py-16 text-center text-muted-foreground">{{ t.common.loading }}</div>
+      <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+        <Loader2 class="h-5 w-5 animate-spin text-primary" />
+        <span>{{ t.common.loading }}</span>
+      </div>
       <div v-else-if="logs.length === 0" class="flex flex-col items-center justify-center py-14 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
           <Clock class="h-8 w-8 text-muted-foreground" />
