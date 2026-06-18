@@ -121,14 +121,36 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 // ListCandidateApplications GET /api/credentials/applications
 func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
+	credDefID := strings.TrimSpace(r.URL.Query().Get("cred_def_id"))
 
 	req := &gcredspb.ListApplicationsRequest{
 		CandidateId: candidateID,
+		CredDefId:   credDefID,
 		Page:        1,
 		PageSize:    100, // For now, get all applications for candidate
 	}
 
 	res, err := h.Creds.ListApplications(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, res)
+}
+
+// CheckUploadPermission GET /api/credentials/upload-permission
+func (h *Handler) CheckUploadPermission(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	credDefID := strings.TrimSpace(r.URL.Query().Get("cred_def_id"))
+	if !requireRequestFields(w, candidateID, "candidate_id", credDefID, "cred_def_id") {
+		return
+	}
+
+	res, err := h.Creds.CheckUploadPermission(r.Context(), &gcredspb.CheckUploadPermissionRequest{
+		CandidateId: candidateID,
+		CredDefId:   credDefID,
+	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
