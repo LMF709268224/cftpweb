@@ -132,7 +132,14 @@ async function handleLogout() {
         <span class="text-[14px] font-semibold text-[#003A70]">Global Fintech Institute</span>
       </RouterLink>
 
-      <div class="h-10 w-10" />
+      <button
+        class="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-border bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+        type="button"
+        @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
+      >
+        <Languages class="h-4 w-4" />
+        <span>{{ lang === "zh" ? "EN" : "中" }}</span>
+      </button>
     </div>
   </header>
 
@@ -243,10 +250,6 @@ async function handleLogout() {
         <Settings class="h-4 w-4" />
         {{ t.sidebar.settings }}
       </RouterLink>
-      <button class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-sidebar-accent hover:text-primary" @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')">
-        <Languages class="h-4 w-4" />
-        {{ t.sidebar.switchLang }}
-      </button>
       <div class="my-1 h-px bg-border" />
       <button class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70" :disabled="logoutLoading" @click="handleLogout">
         <Loader2 v-if="logoutLoading" class="h-4 w-4 animate-spin" />
@@ -254,6 +257,15 @@ async function handleLogout() {
         {{ t.sidebar.logout }}
       </button>
     </div>
+
+    <button
+      class="absolute bottom-1 left-16 hidden h-10 min-w-[132px] cursor-pointer items-center justify-center gap-2 rounded-full border border-border bg-white/95 px-4 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary lg:flex"
+      type="button"
+      @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
+    >
+      <Languages class="h-4 w-4" />
+      <span>{{ lang === "zh" ? "中文 / EN" : "EN / 中文" }}</span>
+    </button>
 
     <button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-primary text-lg font-black text-white shadow-lg shadow-primary/25 transition-transform hover:scale-105" @click="menuOpen = !menuOpen">
       {{ userName.charAt(0).toUpperCase() }}
