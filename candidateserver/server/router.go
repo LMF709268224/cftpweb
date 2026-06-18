@@ -139,6 +139,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Route("/units/{courseUnitUlid}", func(r chi.Router) {
 				r.Post("/signup", h.SignupExam)
 				r.Post("/retake", h.ApplyRetake)
+				r.Post("/retake-payment", h.PrepareRetakePayment)
 				r.Post("/exemption", h.ApplyExemption)
 			})
 

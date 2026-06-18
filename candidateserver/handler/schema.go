@@ -271,6 +271,24 @@ type ApplyRetakeInput struct {
 	CourseUnitULID string `json:"course_unit_ulid"`
 }
 
+type PrepareRetakePaymentInput struct {
+	CourseUnitCcULID string `json:"course_unit_cc_ulid"`
+	RetriedCount     uint32 `json:"retried_count"`
+	SuccessURL       string `json:"success_url"`
+	CancelURL        string `json:"cancel_url"`
+}
+
+type PrepareRetakePaymentRsp struct {
+	CourseRetakeOrderUlid string `json:"course_retake_order_ulid,omitempty"`
+	OrderStatus           string `json:"order_status,omitempty"`
+	PayOrderUlid          string `json:"pay_order_ulid,omitempty"`
+	PaymentKey            string `json:"payment_key,omitempty"`
+	PaymentRequired       bool   `json:"payment_required"`
+	Paid                  bool   `json:"paid"`
+	ReusedExisting        bool   `json:"reused_existing,omitempty"`
+	Message               string `json:"message,omitempty"`
+}
+
 // ===================== 妫ｆ牠銆?(Dashboard) =====================
 
 type DashboardRsp struct {

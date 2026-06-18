@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	"github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -84,6 +85,83 @@ func (h *Handler) ApplyRetake(w http.ResponseWriter, r *http.Request) {
 		CourseUnitUlid:   resp.GetCourseUnitUlid(),
 		CourseUnitStatus: resp.GetCourseUnitStatus(),
 		Message:          resp.GetMessage(),
+	})
+}
+
+// PrepareRetakePayment POST /api/exams/units/{courseUnitUlid}/retake-payment
+func (h *Handler) PrepareRetakePayment(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	courseUnitUlid := strings.TrimSpace(chi.URLParam(r, "courseUnitUlid"))
+
+	var input PrepareRetakePaymentInput
+	if err := ReadJSON(r, &input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
+		return
+	}
+	input.CourseUnitCcULID = strings.TrimSpace(input.CourseUnitCcULID)
+	input.SuccessURL = strings.TrimSpace(input.SuccessURL)
+	input.CancelURL = strings.TrimSpace(input.CancelURL)
+	if !requireRequestFields(w, candidateID, "candidate_id", courseUnitUlid, "course_unit_ulid", input.CourseUnitCcULID, "course_unit_cc_ulid") {
+		return
+	}
+
+	statusResp, err := h.Mall.GetCourseUnitRetakePaymentStatus(r.Context(), &mallpb.GetCourseUnitRetakePaymentStatusRequest{
+		CourseUnitUlid:   courseUnitUlid,
+		CourseUnitCcUlid: input.CourseUnitCcULID,
+		RetriedCount:     input.RetriedCount,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	if statusResp.GetPaid() {
+		WriteJSON(w, http.StatusOK, PrepareRetakePaymentRsp{
+			PaymentRequired: false,
+			Paid:            true,
+			Message:         statusResp.GetMessage(),
+		})
+		return
+	}
+
+	orderResp, err := h.Mall.CreateCourseRetakeOrder(r.Context(), &mallpb.CreateCourseRetakeOrderRequest{
+		CourseUnitUlid:   courseUnitUlid,
+		CourseUnitCcUlid: input.CourseUnitCcULID,
+		CandidateUlid:    candidateID,
+		RetriedCount:     input.RetriedCount,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	paymentKey := formatPaymentKey(orderResp.GetPaymentKey())
+	payOrderUlid := orderResp.GetPayOrderUlid()
+	if paymentKey == "" && orderResp.GetCourseRetakeOrderUlid() != "" {
+		initResp, err := h.Mall.InitiatePayment(r.Context(), &mallpb.InitiatePaymentRequest{
+			BizType:    orderBizCourseRetakePayment,
+			BizRefUlid: orderResp.GetCourseRetakeOrderUlid(),
+			SuccessUrl: input.SuccessURL,
+			CancelUrl:  input.CancelURL,
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		paymentKey = formatPaymentKey(initResp.GetPaymentKey())
+		if initResp.GetPayOrderUlid() != "" {
+			payOrderUlid = initResp.GetPayOrderUlid()
+		}
+	}
+
+	WriteJSON(w, http.StatusOK, PrepareRetakePaymentRsp{
+		CourseRetakeOrderUlid: orderResp.GetCourseRetakeOrderUlid(),
+		OrderStatus:           orderResp.GetOrderStatus(),
+		PayOrderUlid:          payOrderUlid,
+		PaymentKey:            paymentKey,
+		PaymentRequired:       true,
+		Paid:                  false,
+		ReusedExisting:        orderResp.GetReusedExisting(),
+		Message:               orderResp.GetMessage(),
 	})
 }
 

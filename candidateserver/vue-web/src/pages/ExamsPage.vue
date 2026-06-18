@@ -77,7 +77,15 @@ function isExamFailedUnit(exam: any) {
   return normalizeEnumValueUpper(exam.course_unit_status).includes("EXAM_FAILED")
 }
 function canApplyRetake(exam: any) {
-  return Boolean(exam.course_unit_ulid && isExamFailedUnit(exam) && exam.retake_eligible)
+  return Boolean(exam.course_unit_ulid && exam.course_unit_cc_ulid && isExamFailedUnit(exam) && exam.retake_eligible)
+}
+function stripeCheckoutUrl(paymentKey: unknown) {
+  if (typeof paymentKey !== "string") return ""
+  const value = paymentKey.trim()
+  if (!value) return ""
+  if (/^https:\/\/checkout\.stripe\.com\//i.test(value)) return value
+  if (value.startsWith("/c/pay/")) return `https://checkout.stripe.com${value}`
+  return ""
 }
 
 function noResultLabel() {
@@ -145,6 +153,26 @@ async function handleApplyRetake(exam: any) {
   if (!canApplyRetake(exam) || retakeLoadingUnitId.value) return
   retakeLoadingUnitId.value = exam.course_unit_ulid
   try {
+    const currentUrl = window.location.href
+    const payment = await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake-payment`, {
+      method: "POST",
+      body: JSON.stringify({
+        course_unit_cc_ulid: exam.course_unit_cc_ulid,
+        retried_count: exam.next_retried_count || exam.retried_count || 0,
+        success_url: currentUrl,
+        cancel_url: currentUrl,
+      }),
+    })
+    if (payment?.payment_required && !payment?.paid) {
+      const checkoutUrl = stripeCheckoutUrl(payment.payment_key)
+      if (checkoutUrl) {
+        toast.info(t.value.common.loading)
+        window.open(checkoutUrl, "_blank", "noopener,noreferrer")
+        return
+      }
+      toast.info(payment.message || t.value.examsPage.applyRetake)
+      return
+    }
     await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake`, { method: "POST" })
     toast.success(t.value.examsPage.retakeApplied)
     await router.push(`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || "")}`)
