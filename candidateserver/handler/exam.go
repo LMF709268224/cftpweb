@@ -298,7 +298,7 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 			examStatus = "WAITING_EXAM_CONFIRMATION"
 		}
 
-		out.Exams = append(out.Exams, ExamListItem{
+		item := ExamListItem{
 			ExamId:               exam.GetExamId(),
 			ProgramCode:          exam.GetProgramCode(),
 			ExamCode:             exam.GetExamCode(),
@@ -315,7 +315,47 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 			SiteName:             exam.GetSiteName(),
 			LastTermurlTimestamp: exam.GetLastTermurlTimestamp(),
 			LastTermurlType:      exam.GetLastTermurlType(),
-		})
+		}
+
+		if detail, err := h.Gexam.GetExamDetail(r.Context(), &gexampb.GetExamRequest{ExamId: exam.GetExamId()}); err == nil && detail != nil {
+			item.PipelineUlid = detail.GetPipelineUlid()
+			item.CourseUnitUlid = detail.GetCourseUnitUlid()
+		} else if err != nil {
+			slog.Warn("ListExams get exam detail failed", "exam_id", exam.GetExamId(), "error", err)
+		}
+
+		if item.CourseUnitUlid != "" {
+			unit, err := h.Gprog.GetCourseUnitDetail(r.Context(), &gprog.GetCourseUnitDetailReq{
+				CourseUnitUlid: item.CourseUnitUlid,
+			})
+			if err != nil {
+				slog.Warn("ListExams get course unit detail failed", "exam_id", exam.GetExamId(), "course_unit_ulid", item.CourseUnitUlid, "error", err)
+			} else if unit != nil {
+				item.CourseUnitCcUlid = unit.GetCourseUnitCcUlid()
+				item.CourseUnitStatus = unit.GetStatus().String()
+				item.RetriedCount = unit.GetRetriedCount()
+				if item.PipelineUlid == "" {
+					item.PipelineUlid = unit.GetPipelineUlid()
+				}
+
+				if unit.GetStatus() == gprog.CourseUnitStatus_COURSE_UNIT_STATUS_EXAM_FAILED && unit.GetCourseUnitCcUlid() != "" {
+					eligibility, err := h.Gprog.ValidateRetakeEligibility(r.Context(), &gprog.ValidateRetakeEligibilityReq{
+						CandidateUlid:    candidateID,
+						CourseUnitUlid:   unit.GetCourseUnitUlid(),
+						CourseUnitCcUlid: unit.GetCourseUnitCcUlid(),
+					})
+					if err != nil {
+						slog.Warn("ListExams validate retake eligibility failed", "exam_id", exam.GetExamId(), "course_unit_ulid", item.CourseUnitUlid, "error", err)
+					} else if eligibility != nil {
+						item.RetakeEligible = eligibility.GetEligible()
+						item.RetakeMessage = eligibility.GetMessage()
+						item.NextRetriedCount = eligibility.GetNextRetriedCount()
+					}
+				}
+			}
+		}
+
+		out.Exams = append(out.Exams, item)
 	}
 
 	WriteJSON(w, http.StatusOK, out)

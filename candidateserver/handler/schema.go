@@ -390,6 +390,14 @@ type ExamResultDetailRsp struct {
 
 type ExamListItem struct {
 	ExamId               string  `json:"exam_id,omitempty"`
+	PipelineUlid         string  `json:"pipeline_ulid,omitempty"`
+	CourseUnitUlid       string  `json:"course_unit_ulid,omitempty"`
+	CourseUnitCcUlid     string  `json:"course_unit_cc_ulid,omitempty"`
+	CourseUnitStatus     string  `json:"course_unit_status,omitempty"`
+	RetriedCount         uint32  `json:"retried_count,omitempty"`
+	RetakeEligible       bool    `json:"retake_eligible,omitempty"`
+	RetakeMessage        string  `json:"retake_message,omitempty"`
+	NextRetriedCount     uint32  `json:"next_retried_count,omitempty"`
 	ProgramCode          string  `json:"program_code,omitempty"`
 	ExamCode             string  `json:"exam_code,omitempty"`
 	ExamStatus           string  `json:"exam_status,omitempty"`

@@ -343,6 +343,8 @@ const nextStepState = computed(() => {
   if (nextStep.value?.action) return nextStepDisplayFromAction(nextStep.value.action)
   return nextStepDisplay(nextUnitStatus.value, Boolean(nextLearningLessonId.value), Boolean(nextStep.value?.allow_retake), hasPendingQuizzes.value)
 })
+const sidebarNextActions = new Set(["signup_exam", "schedule_exam", "view_exam_schedule", "apply_retake", "view_exam_result", "view_certificate"])
+const showSidebarNextAction = computed(() => sidebarNextActions.has(nextStepState.value.action))
 
 const filteredMaterials = computed(() => {
   if (activeMaterialGroup.value === "all") return materials.value
@@ -792,7 +794,6 @@ watch(selectedMaterial, () => {
     </div>
     <div v-else class="space-y-6">
       <section class="rounded-md bg-white p-6">
-        <div class="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
         <div class="min-w-0">
           <h1 class="text-2xl font-bold text-foreground">{{ course.title || t.common.unknownCourse }}</h1>
           <p class="mt-2 text-sm text-muted-foreground">{{ course.description || t.common.na }}</p>
@@ -800,8 +801,27 @@ watch(selectedMaterial, () => {
             <span class="inline-flex items-center gap-1.5"><BookOpen class="h-4 w-4" />{{ chapters.length }} {{ t.learning.chapters }}</span>
             <span class="inline-flex items-center gap-1.5"><Clock class="h-4 w-4" />{{ lessons.length }} {{ t.learning.lessons }}</span>
             <span class="inline-flex items-center gap-1.5 text-primary"><CheckCircle2 class="h-4 w-4" />{{ progressPercentage }}%</span>
-            <span v-if="courseHasExam" class="inline-flex items-center gap-1.5 text-amber-600"><FileText class="h-4 w-4" />包含认证考试</span>
-            <span v-else class="inline-flex items-center gap-1.5 text-slate-500"><FileText class="h-4 w-4" />仅需学习</span>
+            <span v-if="courseHasExam" class="inline-flex items-center gap-1.5 text-amber-600"><FileText class="h-4 w-4" />{{ t.learning.phaseExam }}</span>
+            <span v-else class="inline-flex items-center gap-1.5 text-slate-500"><FileText class="h-4 w-4" />{{ t.learning.phaseLearning }}</span>
+          </div>
+          <div class="mt-4 flex flex-wrap gap-2 text-xs">
+            <span :class="['badge', timelineStatusBadgeClassForStatus('PIPELINE', pipelineStatus)]">
+              {{ t.learning.pipelineStatusLabel }}: {{ pipelineStatusLabel(pipelineStatus) }}
+            </span>
+            <span v-if="!isPipelineTerminal && currentStageName" class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.currentStageNameLabel }}: {{ currentStageName }}</span>
+            <span
+              v-if="!isPipelineTerminal && currentStageStatus !== undefined && currentStageStatus !== ''"
+              :class="['badge', timelineStatusBadgeClassForStatus('STAGE', currentStageStatus)]"
+            >
+              {{ t.learning.currentStageStatusLabel }}: {{ stageStatusLabel(currentStageStatus) }}
+            </span>
+            <span
+              v-if="!isPipelineTerminal && currentUnitStatus !== undefined && currentUnitStatus !== ''"
+              :class="['badge', timelineStatusBadgeClassForStatus('COURSE_UNIT', currentUnitStatus)]"
+            >
+              {{ t.learning.unitStatusLabel }}: {{ courseUnitStatusLabel(currentUnitStatus) }}
+            </span>
+            <span v-if="showSidebarNextAction" class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.nextStepActionLabel }}: {{ nextStepState.label }}</span>
           </div>
 
           <div class="mt-5 space-y-3 rounded-md bg-slate-50 p-4">
@@ -819,66 +839,7 @@ watch(selectedMaterial, () => {
             </div>
           </div>
         </div>
-
-        <div class="grid gap-4 lg:grid-cols-2 xl:grid-cols-1">
-          <div class="rounded-md bg-slate-50 p-4">
-            <div class="mb-2 flex items-center gap-2 text-sm font-semibold text-foreground">
-              <Sparkles class="h-4 w-4 text-primary" />
-              {{ t.learning.statusSummaryTitle }}
-            </div>
-            <p class="text-xs text-muted-foreground">{{ isPipelineTerminal ? nextStepState.desc : stageStatusHintLabel(t, currentStageStatus) }}</p>
-            <div class="mt-3 flex flex-wrap gap-2 text-xs">
-              <span :class="['badge', timelineStatusBadgeClassForStatus('PIPELINE', pipelineStatus)]">
-                {{ t.learning.pipelineStatusLabel }}: {{ pipelineStatusLabel(pipelineStatus) }}
-              </span>
-              <span v-if="!isPipelineTerminal && currentStageName" class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.currentStageNameLabel }}: {{ currentStageName }}</span>
-              <span
-                v-if="!isPipelineTerminal && currentStageStatus !== undefined && currentStageStatus !== ''"
-                :class="['badge', timelineStatusBadgeClassForStatus('STAGE', currentStageStatus)]"
-              >
-                {{ t.learning.currentStageStatusLabel }}: {{ stageStatusLabel(currentStageStatus) }}
-              </span>
-              <span
-                v-if="!isPipelineTerminal && currentUnitStatus !== undefined && currentUnitStatus !== ''"
-                :class="['badge', timelineStatusBadgeClassForStatus('COURSE_UNIT', currentUnitStatus)]"
-              >
-                {{ t.learning.unitStatusLabel }}: {{ courseUnitStatusLabel(currentUnitStatus) }}
-              </span>
-              <span class="badge border-slate-200 bg-white text-slate-700">{{ t.learning.nextStepActionLabel }}: {{ nextStepState.label }}</span>
-            </div>
-          </div>
-
-          <div v-if="nextStepState.action || nextUnitStatus" class="rounded-md bg-slate-50 p-4">
-            <div class="flex flex-col gap-3">
-              <div>
-                <div class="mb-1 flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <Sparkles class="h-4 w-4 text-primary" />
-                  {{ t.learning.nextStepTitle }}
-                </div>
-                <div class="text-sm text-muted-foreground">{{ nextStepState.desc }}</div>
-              </div>
-              <button v-if="nextStepState.action === 'schedule_exam'" class="btn btn-primary w-fit rounded-lg py-1.5 text-xs" :disabled="scheduleLoading" @click="handleScheduleExam">
-                {{ nextStepState.label }}
-                <ArrowRight class="ml-1 h-4 w-4" />
-              </button>
-              <button v-else-if="nextStepState.action === 'take_quiz'" class="btn btn-primary w-fit rounded-lg py-1.5 text-xs" @click="scrollToBottom">
-                {{ nextStepState.label }}
-                <ArrowRight class="ml-1 h-4 w-4" />
-              </button>
-              <button v-else-if="nextStepState.action === 'wait_sync'" class="btn btn-primary w-fit rounded-lg py-1.5 text-xs" :disabled="syncing" @click="refreshProgress(true)">
-                <Loader2 v-if="syncing" class="mr-1 h-4 w-4 animate-spin" />
-                {{ nextStepState.label }}
-              </button>
-              <RouterLink v-else :to="nextStepLink()" class="btn btn-primary w-fit rounded-lg py-1.5 text-xs">
-                {{ nextStepState.label }}
-                <ArrowRight class="ml-1 h-4 w-4" />
-              </RouterLink>
-            </div>
-          </div>
-        </div>
-        </div>
       </section>
-
       <section id="course-learn-content" class="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)]">
         <aside class="rounded-md bg-white p-4 xl:sticky xl:top-4 xl:self-start">
           <div class="space-y-2">
@@ -905,6 +866,22 @@ watch(selectedMaterial, () => {
               <span class="min-w-0 flex-1 font-semibold">{{ tab.label }}</span>
               <span v-if="tab.count > 0" class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ tab.count }}</span>
             </button>
+          </div>
+          <div v-if="showSidebarNextAction" class="mt-3 rounded-md border border-primary/25 bg-primary/5 p-3">
+            <div class="mb-1 flex items-center gap-2 text-sm font-semibold text-primary">
+              <Sparkles class="h-4 w-4" />
+              {{ t.learning.nextStepTitle }}
+            </div>
+            <p class="mb-3 text-xs leading-5 text-muted-foreground">{{ nextStepState.desc }}</p>
+            <button v-if="nextStepState.action === 'schedule_exam'" class="btn btn-primary w-full rounded-lg py-2 text-xs" :disabled="scheduleLoading" @click="handleScheduleExam">
+              <Loader2 v-if="scheduleLoading" class="mr-1 h-4 w-4 animate-spin" />
+              {{ nextStepState.label }}
+              <ArrowRight class="ml-1 h-4 w-4" />
+            </button>
+            <RouterLink v-else :to="nextStepLink()" class="btn btn-primary w-full rounded-lg py-2 text-xs">
+              {{ nextStepState.label }}
+              <ArrowRight class="ml-1 h-4 w-4" />
+            </RouterLink>
           </div>
         </aside>
 

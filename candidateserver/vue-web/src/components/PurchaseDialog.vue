@@ -402,13 +402,13 @@ async function initiatePayment() {
 
 <template>
   <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="close">
-    <div class="max-h-[86vh] w-full max-w-[620px] overflow-hidden rounded-xl bg-card shadow-2xl">
-      <div class="border-b border-border px-6 pb-4 pt-6">
+    <div class="flex max-h-[86vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-card shadow-2xl">
+      <div class="shrink-0 border-b border-border px-6 pb-4 pt-6">
         <h2 class="text-xl font-semibold">{{ copy.title }}: {{ courseName }}</h2>
         <p v-if="description" class="mt-2 text-sm leading-6 text-muted-foreground">{{ description }}</p>
       </div>
 
-      <div class="max-h-[72vh] space-y-5 overflow-y-auto px-6 py-5">
+      <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
         <div class="flex items-center justify-between border-b border-border/50 py-2">
           <span class="text-sm text-muted-foreground">{{ t.common.purchaseDialogCourse }}</span>
           <span class="text-sm font-medium text-foreground">{{ courseName }}</span>
@@ -545,7 +545,7 @@ async function initiatePayment() {
         </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 border-t border-border bg-muted/30 px-6 py-4">
+      <div class="shrink-0 flex items-center justify-end gap-3 border-t border-border bg-muted/30 px-6 py-4">
         <button class="btn btn-outline" @click="close">{{ t.common.cancel }}</button>
         <button v-if="cannotContinue" class="btn btn-outline" :disabled="eligibilityLoading" @click="loadEligibility">
           <Loader2 v-if="eligibilityLoading" class="h-4 w-4 animate-spin" />

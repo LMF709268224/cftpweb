@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
-import { RouterLink, useRoute } from "vue-router"
+import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, History, Loader2, RefreshCw, Search, ShieldCheck } from "lucide-vue-next"
 import { EXAM_STATUS_LABELS, normalizeEnumValueUpper, statusBadgeClassForStatusValue, statusLabel } from "@/lib/status-labels"
@@ -13,9 +13,11 @@ type TabId = "current" | "history" | "exemption" | "records"
 
 const { t } = useTranslation()
 const route = useRoute()
+const router = useRouter()
 const activeTab = ref<TabId>("current")
 const loading = ref(false)
 const scheduleLoadingExamId = ref<string | null>(null)
+const retakeLoadingUnitId = ref<string | null>(null)
 const search = ref("")
 const exams = ref<any[]>([])
 const total = ref(0)
@@ -70,6 +72,12 @@ function canScheduleExam(exam: any) {
 }
 function isWaitingExamConfirmation(exam: any) {
   return normalizedExamStatus(exam.exam_status) === "WAITING_EXAM_CONFIRMATION"
+}
+function isExamFailedUnit(exam: any) {
+  return normalizeEnumValueUpper(exam.course_unit_status).includes("EXAM_FAILED")
+}
+function canApplyRetake(exam: any) {
+  return Boolean(exam.course_unit_ulid && isExamFailedUnit(exam) && exam.retake_eligible)
 }
 
 function noResultLabel() {
@@ -130,6 +138,20 @@ async function handleScheduleExam(exam: any) {
     toast.error(t.value.examsPage.scheduleFailed)
   } finally {
     scheduleLoadingExamId.value = null
+  }
+}
+
+async function handleApplyRetake(exam: any) {
+  if (!canApplyRetake(exam) || retakeLoadingUnitId.value) return
+  retakeLoadingUnitId.value = exam.course_unit_ulid
+  try {
+    await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake`, { method: "POST" })
+    toast.success(t.value.examsPage.retakeApplied)
+    await router.push(`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || "")}`)
+  } catch {
+    // apiClient has already shown the localized error.
+  } finally {
+    retakeLoadingUnitId.value = null
   }
 }
 
@@ -238,11 +260,25 @@ onMounted(() => {
                       </div>
                     </div>
                   </div>
+                  <div v-if="isExamFailedUnit(exam)" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700 sm:col-span-2">
+                    <div class="flex items-start gap-2">
+                      <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
+                      <div>
+                        <div class="font-medium text-red-800">{{ t.examsPage.examFailedTitle }}</div>
+                        <div class="mt-1 text-xs">{{ exam.retake_message || t.examsPage.examFailedDesc }}</div>
+                      </div>
+                    </div>
+                  </div>
                   <div><span class="font-medium text-foreground">{{ t.examsPage.candidate }}:</span> {{ [exam.candidate_first_name, exam.candidate_last_name].filter(Boolean).join(" ") || exam.candidate_email || t.common.unknown }}</div>
                   <div v-if="hasExamResult(exam)"><span class="font-medium text-foreground">{{ t.examsPage.score }}:</span> {{ typeof exam.total_score === 'number' ? exam.total_score.toFixed(2) : t.common.unknown }}</div>
                 </div>
               </div>
               <div class="flex flex-wrap gap-2">
+                <button v-if="canApplyRetake(exam)" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" :disabled="retakeLoadingUnitId === exam.course_unit_ulid" @click="handleApplyRetake(exam)">
+                  <Loader2 v-if="retakeLoadingUnitId === exam.course_unit_ulid" class="h-4 w-4 animate-spin" />
+                  <RefreshCw v-else class="h-4 w-4" />
+                  {{ t.examsPage.applyRetake }}
+                </button>
                 <button v-if="canScheduleExam(exam)" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleScheduleExam(exam)">
                   <Loader2 v-if="scheduleLoadingExamId === exam.exam_id" class="h-4 w-4 animate-spin" />
                   <ExternalLink v-else class="h-4 w-4" />
