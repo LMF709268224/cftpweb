@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import type { Component } from "vue"
 import { Award, BookOpen, ClipboardList, PackageOpen, PanelLeft, Receipt } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -16,6 +17,19 @@ const counts = ref({
   orders: 0,
 })
 
+type CardColor = "orange" | "purple" | "blue" | "teal" | "green"
+
+type PortalCard = {
+  key: string
+  title: string
+  value: number
+  action: string
+  href: string
+  icon: Component
+  color: CardColor
+  featured: boolean
+}
+
 const guideCopy = computed(() => lang.value === "zh"
   ? {
       title: "欢迎来到门户",
@@ -27,7 +41,7 @@ const guideCopy = computed(() => lang.value === "zh"
     },
 )
 
-const portalCards = computed(() => {
+const portalCards = computed<PortalCard[]>(() => {
   const zh = lang.value === "zh"
   return [
     {
@@ -89,30 +103,35 @@ const cardStyles = {
   orange: {
     panel: "from-[#fffdf2] to-[#fff3b8]",
     border: "border-[#f4e6b8]",
+    hoverBorder: "hover:border-[#f6c85a]",
     text: "text-[#c55a00]",
     number: "text-[#934000]",
   },
   purple: {
     panel: "from-[#fbf5ff] to-[#f0e0ff]",
     border: "border-[#e5d8f3]",
+    hoverBorder: "hover:border-[#c084fc]",
     text: "text-[#8b22ff]",
     number: "text-[#6514c7]",
   },
   blue: {
     panel: "from-[#f4f9ff] to-[#dbeafe]",
     border: "border-[#dbe4f0]",
+    hoverBorder: "hover:border-[#93c5fd]",
     text: "text-[#2563ff]",
     number: "text-[#1e40af]",
   },
   teal: {
     panel: "from-[#effdfa] to-[#ccfbef]",
     border: "border-[#cae9e3]",
+    hoverBorder: "hover:border-[#5eead4]",
     text: "text-[#0f8d7e]",
     number: "text-[#0f766e]",
   },
   green: {
     panel: "from-[#f0fdf4] to-[#dcfce7]",
     border: "border-[#d7eadc]",
+    hoverBorder: "hover:border-[#86efac]",
     text: "text-[#16a34a]",
     number: "text-[#166534]",
   },
@@ -174,17 +193,18 @@ onMounted(async () => {
           <p class="mx-auto mt-4 max-w-5xl text-lg leading-8 text-slate-600">{{ guideCopy.subtitle }}</p>
         </section>
 
-        <section class="mx-auto mt-12 w-full max-w-[1240px]">
+        <section class="mx-auto mt-12 w-full max-w-[1380px]">
           <div class="flex flex-col gap-8">
-            <div class="flex flex-col items-center justify-center gap-8 lg:flex-row">
+            <div class="flex flex-col items-center justify-center gap-6 lg:flex-row">
               <RouterLink
                 v-for="card in featuredCards"
                 :key="card.key"
                 :to="card.href"
                 :class="[
-                  'group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(15,23,42,0.14)] lg:basis-[30%] lg:grow-0 lg:shrink-0',
+                  'portal-stat-card group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:scale-[1.035] hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)] lg:basis-[34%] lg:grow-0 lg:shrink-0',
                   cardStyles[card.color].panel,
                   cardStyles[card.color].border,
+                  cardStyles[card.color].hoverBorder,
                 ]"
               >
                 <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
@@ -194,22 +214,23 @@ onMounted(async () => {
               </RouterLink>
             </div>
 
-            <div class="flex flex-col items-center justify-center gap-8 lg:flex-row">
-            <RouterLink
-              v-for="card in secondaryCards"
-              :key="card.key"
-              :to="card.href"
-              :class="[
-                'group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(15,23,42,0.14)] lg:basis-[26%] lg:grow-0 lg:shrink-0',
-                cardStyles[card.color].panel,
-                cardStyles[card.color].border,
-              ]"
-            >
-              <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
-              <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
-              <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">{{ card.value }}</p>
-              <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
-            </RouterLink>
+            <div class="flex flex-col items-center justify-center gap-6 lg:flex-row">
+              <RouterLink
+                v-for="card in secondaryCards"
+                :key="card.key"
+                :to="card.href"
+                :class="[
+                  'portal-stat-card group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:scale-[1.035] hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)] lg:basis-[29%] lg:grow-0 lg:shrink-0',
+                  cardStyles[card.color].panel,
+                  cardStyles[card.color].border,
+                  cardStyles[card.color].hoverBorder,
+                ]"
+              >
+                <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
+                <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
+                <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">{{ card.value }}</p>
+                <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
+              </RouterLink>
             </div>
           </div>
         </section>
@@ -217,3 +238,28 @@ onMounted(async () => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+.portal-stat-card :deep(svg) {
+  height: 24px;
+  width: 24px;
+}
+
+.portal-stat-card h2 {
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.portal-stat-card p:first-of-type {
+  margin-top: 36px;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.portal-stat-card p:last-of-type {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 16px;
+}
+</style>
