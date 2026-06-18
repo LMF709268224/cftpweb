@@ -17,18 +17,6 @@ const counts = ref({
   orders: 0,
 })
 
-type CardColor = "orange" | "purple" | "blue" | "teal" | "green"
-
-type PortalCard = {
-  key: string
-  title: string
-  value: number
-  action: string
-  href: string
-  icon: Component
-  color: CardColor
-  featured: boolean
-}
 
 const guideCopy = computed(() => lang.value === "zh"
   ? {
@@ -40,6 +28,18 @@ const guideCopy = computed(() => lang.value === "zh"
       subtitle: "Explore our collection of certifications, courses, webinars, insights and reports to advance your knowledge.",
     },
 )
+
+type CardColor = "orange" | "purple" | "blue" | "teal" | "green"
+type PortalCard = {
+  key: string
+  title: string
+  value: number
+  action: string
+  href: string
+  icon: Component
+  color: CardColor
+  featured: boolean
+}
 
 const portalCards = computed<PortalCard[]>(() => {
   const zh = lang.value === "zh"

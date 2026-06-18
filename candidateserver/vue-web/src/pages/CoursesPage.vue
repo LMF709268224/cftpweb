@@ -57,6 +57,18 @@ const emptyCopy = computed(() => lang.value === "zh"
       noResourceSearchDesc: "Try another keyword or resource type.",
     })
 
+const myCertificationCopy = computed(() => lang.value === "zh"
+  ? {
+      status: "状态",
+      details: "查看详情",
+      viewDetailsHint: "点击查看认证信息",
+    }
+  : {
+      status: "Status",
+      details: "View Details",
+      viewDetailsHint: "Click to view certification details",
+    })
+
 const tabs = computed(() => [
   { id: "all", label: t.value.courses.tabs.all },
   { id: "my", label: t.value.courses.tabs.my },
@@ -300,43 +312,55 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="activeTab === 'my'" class="space-y-4">
+    <div v-if="activeTab === 'my'">
       <div v-if="loading && myCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
       </div>
-      <div v-for="course in myCourses" :key="course.id" class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
-        <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
-        <div class="flex flex-wrap gap-4 md:flex-nowrap">
-          <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <BookOpen class="h-7 w-7" />
-          </div>
-          <div class="flex min-w-0 flex-1 flex-col justify-between">
-            <div>
-              <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                <h3 class="text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ course.title || t.common.unknownCourse }}</h3>
-                <span :class="['badge w-fit whitespace-nowrap', timelineStatusBadgeClassForStatus('PIPELINE', course.statusValue)]">
+      <div v-else-if="myCourses.length > 0" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div
+          v-for="course in myCourses"
+          :key="course.id"
+          class="group flex min-h-[300px] flex-col rounded-[18px] border border-[#dfe4ea] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_16px_34px_rgba(15,23,42,0.12)]"
+        >
+          <div class="flex-1">
+            <h3 class="line-clamp-2 text-xl font-bold leading-tight tracking-tight text-[#111827] transition-colors group-hover:text-primary">
+              {{ course.title || t.common.unknownCourse }}
+            </h3>
+
+            <div class="mt-8 space-y-5 text-base text-[#4b5563]">
+              <div class="flex items-center justify-between gap-4">
+                <span>{{ myCertificationCopy.status }}:</span>
+                <span :class="['rounded-lg px-3 py-1.5 text-sm font-semibold', timelineStatusBadgeClassForStatus('PIPELINE', course.statusValue)]">
                   {{ statusLabel(t, CANDIDATE_PIPELINE_STATUS_LABELS, course.statusValue) }}
                 </span>
               </div>
-              <div v-if="course.progressAvailable" class="mt-4">
-                <div class="mb-2 flex items-center justify-between text-sm">
-                  <span class="text-muted-foreground">{{ t.courses.courseProgress }}</span>
-                  <span class="font-medium text-foreground">{{ course.progress }}%</span>
-                </div>
-                <div class="h-2 overflow-hidden rounded-full bg-muted">
-                  <div class="h-full rounded-full bg-primary transition-all duration-500" :style="{ width: `${course.progress}%` }" />
-                </div>
+            </div>
+
+            <div v-if="course.progressAvailable" class="mt-7">
+              <div class="mb-2 flex items-center justify-between text-sm">
+                <span class="text-muted-foreground">{{ t.courses.courseProgress }}</span>
+                <span class="font-semibold text-foreground">{{ course.progress }}%</span>
+              </div>
+              <div class="h-2 overflow-hidden rounded-full bg-muted">
+                <div class="h-full rounded-full bg-primary transition-all duration-500" :style="{ width: `${course.progress}%` }" />
               </div>
             </div>
-            <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
+
+            <div v-if="course.currentStage || course.startedAt || course.completedAt" class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
               <span v-if="course.currentStage">{{ t.courses.stage }}: {{ course.currentStage }}</span>
               <span v-if="course.startedAt">{{ course.startedAt }}</span>
               <span v-if="course.completedAt">{{ course.completedAt }}</span>
             </div>
           </div>
-          <div class="flex w-full shrink-0 items-center md:w-auto">
-            <RouterLink :to="`/certifications/${encodeURIComponent(course.id)}`" class="btn btn-primary w-full rounded-lg shadow-sm shadow-primary/20 md:w-auto">
-              {{ t.courses.viewDetails }} <ChevronRight class="h-4 w-4" />
+
+          <div class="mt-6">
+            <RouterLink
+              :to="`/certifications/${encodeURIComponent(course.id)}`"
+              class="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 text-base font-bold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90"
+              :title="myCertificationCopy.viewDetailsHint"
+            >
+              <Eye class="h-5 w-5" />
+              {{ myCertificationCopy.details }}
             </RouterLink>
           </div>
         </div>
