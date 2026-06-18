@@ -1,25 +1,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
-import { BookOpen, CheckCircle2, MessageSquare, PanelLeft } from "lucide-vue-next"
+import { Award, BookOpen, ClipboardList, PackageOpen, PanelLeft, Receipt } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
-import StatsCard from "@/components/StatsCard.vue"
-import TodoList from "@/components/TodoList.vue"
 import { apiClient } from "@/lib/apiClient"
 import { getAccessToken } from "@/lib/authStorage"
-import { getCachedDashboard } from "@/lib/dashboardCache"
 import { useTranslation } from "@/lib/language"
-
-type DashboardStats = {
-  courses_in_progress?: number
-  certifications_earned?: number
-  membership_level?: string
-  unread_messages?: number
-}
 
 const { t, lang } = useTranslation()
 const userName = ref("...")
-const unreadCount = ref(0)
-const stats = ref<DashboardStats>({})
+const counts = ref({
+  certifications: 0,
+  courses: 0,
+  exams: 0,
+  resourcePacks: 0,
+  orders: 0,
+})
 
 const guideCopy = computed(() => lang.value === "zh"
   ? {
@@ -32,31 +27,106 @@ const guideCopy = computed(() => lang.value === "zh"
     },
 )
 
-const statsActionCopy = computed(() => lang.value === "zh"
-  ? {
-      certifications: "查看认证详情",
-      certificates: "查看证书",
-      messages: "查看消息",
-    }
-  : {
-      certifications: "View certifications",
-      certificates: "View certificates",
-      messages: "View messages",
+const portalCards = computed(() => {
+  const zh = lang.value === "zh"
+  return [
+    {
+      key: "certifications",
+      title: zh ? "已完成认证" : "Completed Certifications",
+      value: counts.value.certifications,
+      action: zh ? "点击查看认证" : "Click to explore certifications",
+      href: "/certifications",
+      icon: Award,
+      color: "orange",
+      featured: true,
     },
-)
+    {
+      key: "courses",
+      title: zh ? "课程进行中" : "Courses in Progress",
+      value: counts.value.courses,
+      action: zh ? "点击查看课程资料" : "Click to explore courses",
+      href: "/certifications",
+      icon: BookOpen,
+      color: "purple",
+      featured: true,
+    },
+    {
+      key: "exams",
+      title: zh ? "考试数" : "Available Exams",
+      value: counts.value.exams,
+      action: zh ? "点击查看考试" : "Click to explore exams",
+      href: "/exams",
+      icon: ClipboardList,
+      color: "blue",
+      featured: false,
+    },
+    {
+      key: "resourcePacks",
+      title: zh ? "资源包数" : "Resource Packs",
+      value: counts.value.resourcePacks,
+      action: zh ? "点击查看资源包" : "Click to explore resource packs",
+      href: "/resource-packs",
+      icon: PackageOpen,
+      color: "teal",
+      featured: false,
+    },
+    {
+      key: "orders",
+      title: zh ? "订单数" : "Orders",
+      value: counts.value.orders,
+      action: zh ? "点击查看订单" : "Click to view orders",
+      href: "/orders",
+      icon: Receipt,
+      color: "green",
+      featured: false,
+    },
+  ]
+})
+const featuredCards = computed(() => portalCards.value.filter((card) => card.featured))
+const secondaryCards = computed(() => portalCards.value.filter((card) => !card.featured))
 
-const todoItems = computed(() =>
-  unreadCount.value > 0
-    ? [
-        {
-          id: "message-unread",
-          icon: "message" as const,
-          title: lang.value === "zh" ? `你有 ${unreadCount.value} 条未读消息` : `You have ${unreadCount.value} unread messages`,
-          action: { label: t.value.home.view, href: "/messages" },
-        },
-      ]
-    : [],
-)
+const cardStyles = {
+  orange: {
+    panel: "from-[#fffdf2] to-[#fff3b8]",
+    border: "border-[#f4e6b8]",
+    text: "text-[#c55a00]",
+    number: "text-[#934000]",
+  },
+  purple: {
+    panel: "from-[#fbf5ff] to-[#f0e0ff]",
+    border: "border-[#e5d8f3]",
+    text: "text-[#8b22ff]",
+    number: "text-[#6514c7]",
+  },
+  blue: {
+    panel: "from-[#f4f9ff] to-[#dbeafe]",
+    border: "border-[#dbe4f0]",
+    text: "text-[#2563ff]",
+    number: "text-[#1e40af]",
+  },
+  teal: {
+    panel: "from-[#effdfa] to-[#ccfbef]",
+    border: "border-[#cae9e3]",
+    text: "text-[#0f8d7e]",
+    number: "text-[#0f766e]",
+  },
+  green: {
+    panel: "from-[#f0fdf4] to-[#dcfce7]",
+    border: "border-[#d7eadc]",
+    text: "text-[#16a34a]",
+    number: "text-[#166534]",
+  },
+} as const
+
+async function countFromRequest(endpoint: string, listKey: string) {
+  try {
+    const res = await apiClient(endpoint)
+    return Array.isArray(res?.[listKey]) ? res[listKey].length : 0
+  } catch (err) {
+    console.error(`Failed to load ${endpoint}:`, err)
+    return 0
+  }
+}
 
 onMounted(async () => {
   const token = getAccessToken()
@@ -78,13 +148,15 @@ onMounted(async () => {
     if (localName) userName.value = localName
   }
 
-  try {
-    const dashboard = await getCachedDashboard()
-    if (dashboard?.unread_messages_count !== undefined) unreadCount.value = dashboard.unread_messages_count
-    if (dashboard?.stats) stats.value = dashboard.stats
-  } catch (err) {
-    console.error(err)
-  }
+  const [certifications, courses, exams, resourcePacks, orders] = await Promise.all([
+    countFromRequest("/api/pipeline", "list"),
+    countFromRequest("/api/pipeline/materials", "materials"),
+    countFromRequest("/api/exams?page=1&page_size=50", "exams"),
+    countFromRequest("/api/resource-packs?page_size=50", "packs"),
+    countFromRequest("/api/orders?page=1&page_size=50", "orders"),
+  ])
+
+  counts.value = { certifications, courses, exams, resourcePacks, orders }
 })
 </script>
 
@@ -96,22 +168,50 @@ onMounted(async () => {
         <span class="text-sm font-medium text-foreground">{{ t.sidebar.home }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
+      <main class="px-5 py-10 md:px-8 lg:px-10">
         <section class="w-full text-center">
-          <h1 class="text-3xl font-bold tracking-tight text-[#6847ff] md:text-4xl">{{ guideCopy.title }}</h1>
-          <p class="mx-auto mt-4 max-w-4xl text-base leading-7 text-slate-700">{{ guideCopy.subtitle }}</p>
+          <h1 class="text-4xl font-bold tracking-tight text-[#6847ff] md:text-5xl">{{ guideCopy.title }}</h1>
+          <p class="mx-auto mt-4 max-w-5xl text-lg leading-8 text-slate-600">{{ guideCopy.subtitle }}</p>
         </section>
 
-        <section class="mt-10 w-full">
-          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <StatsCard :title="t.home.courseInProgress" :value="String(stats.courses_in_progress || 0)" :icon="BookOpen" variant="primary" :description="t.courses.tabs.my" :action-label="statsActionCopy.certifications" href="/certifications" />
-            <StatsCard :title="t.home.certified" :value="String(stats.certifications_earned || 0)" :icon="CheckCircle2" variant="warning" :description="t.sidebar.certificates" :action-label="statsActionCopy.certificates" href="/certificates" />
-            <StatsCard :title="t.home.unreadMessages" :value="String(unreadCount)" :icon="MessageSquare" variant="info" :description="t.home.unreadMessagesCount" :action-label="statsActionCopy.messages" href="/messages" />
+        <section class="mx-auto mt-12 w-full max-w-[1240px]">
+          <div class="flex flex-col gap-8">
+            <div class="flex flex-col items-center justify-center gap-8 lg:flex-row">
+              <RouterLink
+                v-for="card in featuredCards"
+                :key="card.key"
+                :to="card.href"
+                :class="[
+                  'group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(15,23,42,0.14)] lg:basis-[30%] lg:grow-0 lg:shrink-0',
+                  cardStyles[card.color].panel,
+                  cardStyles[card.color].border,
+                ]"
+              >
+                <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
+                <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
+                <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">{{ card.value }}</p>
+                <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
+              </RouterLink>
+            </div>
+
+            <div class="flex flex-col items-center justify-center gap-8 lg:flex-row">
+            <RouterLink
+              v-for="card in secondaryCards"
+              :key="card.key"
+              :to="card.href"
+              :class="[
+                'group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_34px_rgba(15,23,42,0.14)] lg:basis-[26%] lg:grow-0 lg:shrink-0',
+                cardStyles[card.color].panel,
+                cardStyles[card.color].border,
+              ]"
+            >
+              <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
+              <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
+              <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">{{ card.value }}</p>
+              <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
+            </RouterLink>
+            </div>
           </div>
-        </section>
-
-        <section class="mt-6 w-full">
-          <TodoList :items="todoItems" />
         </section>
       </main>
     </div>
