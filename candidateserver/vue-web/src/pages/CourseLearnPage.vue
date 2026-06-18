@@ -3,9 +3,12 @@ import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
+  Award,
   BookOpen,
+  CalendarClock,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -22,8 +25,11 @@ import {
 } from "lucide-vue-next"
 import {
   CANDIDATE_COURSE_STATUS_LABELS,
+  EXAM_STATUS_LABELS,
   courseUnitNextStepActionFromStatus,
+  normalizeEnumValueUpper,
   stageStatusHintLabel,
+  statusBadgeClassForStatusValue,
   statusLabel,
   timelineStatusBadgeClassForStatus,
   timelineStatusLabelWithDiagnostics,
@@ -134,7 +140,7 @@ type ProgressRecord = {
 }
 
 type MaterialGroupKey = "all" | "textbook" | "slides" | "reference" | "other"
-type LearnContentTabKey = "lesson" | "quiz" | "materials"
+type LearnContentTabKey = "lesson" | "quiz" | "materials" | "exam" | "certificate"
 
 const route = useRoute()
 const router = useRouter()
@@ -150,8 +156,14 @@ const selectedMaterialId = ref("")
 const activeMaterialGroup = ref<MaterialGroupKey>("all")
 const runtime = ref<any>(null)
 const scheduleLoading = ref(false)
+const retakeLoadingUnitId = ref<string | null>(null)
 const lessonContentExpanded = ref(true)
 const activeContentTab = ref<LearnContentTabKey>("lesson")
+const courseExamsLoading = ref(false)
+const courseExams = ref<any[]>([])
+const courseCertificateLoading = ref(false)
+const courseCertificateUrl = ref("")
+const courseCertificateError = ref("")
 
 const courseId = computed(() => String(route.params.courseId || route.query.courseId || ""))
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.pipelineId || ""))
@@ -201,6 +213,21 @@ const currentStageStatus = computed(() => runtime.value?.current_stage_status)
 const currentUnitStatus = computed(() => runtime.value?.current_unit_status)
 const nextUnitStatus = computed(() => nextStep.value?.status || currentUnitStatus.value)
 const currentLessonRawCompleted = computed(() => Boolean(lesson.value?.lesson_id && completedLessonIds.value.has(lesson.value.lesson_id)))
+const courseRuntimeUnit = computed(() => {
+  const stages = runtime.value?.config?.stages || []
+  for (const stage of stages) {
+    for (const unit of stage.units || []) {
+      if (unit.glms_course_id === courseId.value || unit.course_id === courseId.value) return unit
+    }
+  }
+  return null
+})
+const courseRuntimeUnitStatus = computed(() => courseRuntimeUnit.value?.runtime_status || nextUnitStatus.value)
+const courseRuntimeUnitUlid = computed(() => {
+  if (nextStep.value?.course_id && nextStep.value.course_id !== courseId.value) return ""
+  return nextStep.value?.course_unit_ulid || ""
+})
+const hasCertificateTab = computed(() => nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value))
 
 const courseHasExam = computed(() => {
   const stages = runtime.value?.config?.stages || []
@@ -213,6 +240,7 @@ const courseHasExam = computed(() => {
   }
   return false
 })
+const hasExamTab = computed(() => courseHasExam.value || ["signup_exam", "schedule_exam", "view_exam_schedule", "apply_retake", "view_exam_result"].includes(nextStepState.value.action))
 
 const totalQuizzesCount = computed(() => {
   let count = courseQuizzes.value.length
@@ -322,6 +350,22 @@ const learnContentTabs = computed(() => [
         label: t.value.learning.allQuizzesTitle,
         icon: Target,
         count: quizTasks.value.length,
+      }]
+    : []),
+  ...(hasExamTab.value
+    ? [{
+        id: "exam" as const,
+        label: t.value.sidebar.exams,
+        icon: CalendarClock,
+        count: courseExams.value.length,
+      }]
+    : []),
+  ...(hasCertificateTab.value
+    ? [{
+        id: "certificate" as const,
+        label: t.value.learning.actionViewCertificate,
+        icon: Award,
+        count: courseCertificateUrl.value ? 1 : 0,
       }]
     : []),
   {
@@ -434,6 +478,69 @@ function courseUnitStatusLabel(status?: string | number | null) {
 
 function pipelineStatusLabel(status?: string | number | null) {
   return timelineStatusLabelWithDiagnostics(t.value, "PIPELINE", status)
+}
+
+function normalizedExamStatus(status?: string | number | null) {
+  return normalizeEnumValueUpper(status)
+}
+
+function shouldShowExamStatus(status?: string | number | null) {
+  const normalized = normalizedExamStatus(status)
+  return Boolean(normalized && !["NONE", "UNKNOWN", "UNSPECIFIED"].some((item) => normalized.includes(item)))
+}
+
+function hasExamResult(exam: any) {
+  const normalized = normalizedExamStatus(exam?.result_status)
+  return typeof exam?.total_score === "number" || exam?.is_passed === true || ["DONE", "PASSED", "FAILED", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
+}
+
+function hasExplicitPassStatus(exam: any) {
+  return typeof exam?.is_passed === "boolean"
+}
+
+function hasText(value?: string | null) {
+  return Boolean(value?.trim())
+}
+
+function hasAppointmentDetails(exam: any) {
+  return hasText(exam?.confirmation_number) || hasText(exam?.site_name) || hasText(exam?.appointment_start_time) || hasText(exam?.appointment_end_time)
+}
+
+function canScheduleExam(exam: any) {
+  const status = normalizedExamStatus(exam?.exam_status)
+  return Boolean(exam?.exam_id && status && status.includes("OPEN"))
+}
+
+function isWaitingExamConfirmation(exam: any) {
+  return normalizedExamStatus(exam?.exam_status) === "WAITING_EXAM_CONFIRMATION"
+}
+
+function isExamFailedUnit(exam: any) {
+  return normalizeEnumValueUpper(exam?.course_unit_status).includes("EXAM_FAILED")
+}
+
+function canApplyRetake(exam: any) {
+  return Boolean(exam?.course_unit_ulid && isExamFailedUnit(exam) && exam?.retake_eligible)
+}
+
+function noResultLabel() {
+  return (t.value.examsPage as any).statusNoResult || t.value.examsPage.statusPending
+}
+
+function resultPublishedLabel() {
+  return (t.value.examsPage as any).statusResultPublished || t.value.examsPage.statusPending
+}
+
+function passStatusLabel(exam: any) {
+  return exam.is_passed ? (t.value.examsPage as any).statusQualified || t.value.examsPage.statusPassed : (t.value.examsPage as any).statusUnqualified || t.value.examsPage.statusFailed
+}
+
+function examStatusBadgeClass(status?: string | number | null) {
+  const normalized = normalizedExamStatus(status)
+  if (normalized.includes("PASSED") || normalized.includes("DONE") || normalized.includes("SUCCESS")) {
+    return "border-[#6CE9A6] bg-[#ECFDF3] text-[#027A48]"
+  }
+  return statusBadgeClassForStatusValue(status)
 }
 
 function lessonTypeLabel(lessonType?: number) {
@@ -569,6 +676,51 @@ async function loadRuntime() {
   }
 }
 
+async function loadCourseExams() {
+  if (!hasExamTab.value) {
+    courseExams.value = []
+    return
+  }
+  if (!courseRuntimeUnitUlid.value) {
+    courseExams.value = []
+    return
+  }
+  courseExamsLoading.value = true
+  try {
+    const params = new URLSearchParams({
+      page: "1",
+      page_size: "20",
+      course_unit_ulid: courseRuntimeUnitUlid.value,
+    })
+    const res = await apiClient(`/api/exams?${params.toString()}`)
+    courseExams.value = res?.exams || []
+  } catch {
+    courseExams.value = []
+  } finally {
+    courseExamsLoading.value = false
+  }
+}
+
+async function loadCourseCertificate() {
+  if (!hasCertificateTab.value || !runtime.value?.instance?.pipeline_ulid) {
+    courseCertificateUrl.value = ""
+    courseCertificateError.value = ""
+    return
+  }
+  courseCertificateLoading.value = true
+  courseCertificateError.value = ""
+  try {
+    const res = await apiClient(`/api/pipeline/${encodeURIComponent(runtime.value.instance.pipeline_ulid)}/certificate-url`)
+    courseCertificateUrl.value = res?.view_url || ""
+    if (!courseCertificateUrl.value) courseCertificateError.value = t.value.certificatesPage.certificateGenerating
+  } catch {
+    courseCertificateUrl.value = ""
+    courseCertificateError.value = t.value.certificatesPage.certificateGenerating
+  } finally {
+    courseCertificateLoading.value = false
+  }
+}
+
 async function syncProgress(targetCourseId = courseId.value, showToast = false) {
   if (!targetCourseId) return
   syncing.value = true
@@ -587,6 +739,8 @@ async function refreshProgress(showToast = false) {
   await loadProgress()
   await loadCourse()
   await loadRuntime()
+  if (activeContentTab.value === "exam") await loadCourseExams()
+  if (activeContentTab.value === "certificate") await loadCourseCertificate()
 }
 
 async function startQuiz(quizId: string) {
@@ -610,6 +764,42 @@ async function handleScheduleExam() {
     else toast.error(t.value.common.error)
   } finally {
     scheduleLoading.value = false
+  }
+}
+
+async function handleInlineScheduleExam(exam: any) {
+  if (!exam?.exam_id || scheduleLoading.value) return
+  scheduleLoading.value = true
+  try {
+    const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
+    const params = new URLSearchParams({ url_type: "schd", term_url_base: termUrlBase })
+    if (runtime.value?.instance?.pipeline_ulid) params.set("pipeline_ulid", runtime.value.instance.pipeline_ulid)
+    if (exam.course_unit_ulid || courseRuntimeUnitUlid.value) params.set("course_ulid", exam.course_unit_ulid || courseRuntimeUnitUlid.value)
+    const res = await apiClient(`/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-url?${params.toString()}`)
+    if (res?.url) {
+      toast.info(t.value.examsPage.scheduleRedirecting)
+      window.open(res.url, "_blank", "noopener,noreferrer")
+    } else {
+      toast.error(t.value.examsPage.scheduleURLMissing)
+    }
+  } catch {
+    toast.error(t.value.examsPage.scheduleFailed)
+  } finally {
+    scheduleLoading.value = false
+  }
+}
+
+async function handleInlineApplyRetake(exam: any) {
+  if (!canApplyRetake(exam) || retakeLoadingUnitId.value) return
+  retakeLoadingUnitId.value = exam.course_unit_ulid
+  try {
+    await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake`, { method: "POST" })
+    toast.success(t.value.examsPage.retakeApplied)
+    await router.push(`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || pipelineId.value)}&courseId=${encodeURIComponent(courseId.value)}`)
+  } catch {
+    // apiClient handles localized errors.
+  } finally {
+    retakeLoadingUnitId.value = null
   }
 }
 
@@ -752,6 +942,14 @@ watch(courseId, async () => {
 })
 
 watch(pipelineId, loadRuntime)
+watch(activeContentTab, async (tab) => {
+  if (tab === "exam") await loadCourseExams()
+  if (tab === "certificate") await loadCourseCertificate()
+})
+watch([runtime, courseId], async () => {
+  if (activeContentTab.value === "exam") await loadCourseExams()
+  if (activeContentTab.value === "certificate") await loadCourseCertificate()
+})
 watch(lessons, () => {
   if (!activeLessonId.value && lessons.value.length > 0) activeLessonId.value = lessons.value[0].lesson?.lesson_id || ""
 })
@@ -867,25 +1065,138 @@ watch(selectedMaterial, () => {
               <span v-if="tab.count > 0" class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ tab.count }}</span>
             </button>
           </div>
-          <div v-if="showSidebarNextAction" class="mt-3 rounded-md border border-primary/25 bg-primary/5 p-3">
-            <div class="mb-1 flex items-center gap-2 text-sm font-semibold text-primary">
-              <Sparkles class="h-4 w-4" />
-              {{ t.learning.nextStepTitle }}
+        </aside>
+
+        <div class="min-w-0 space-y-4">
+        <div v-if="activeContentTab === 'exam'" class="rounded-md bg-white p-6">
+          <div class="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <div class="mb-2 flex items-center gap-2">
+                <CalendarClock class="h-5 w-5 text-primary" />
+                <h2 class="text-xl font-semibold text-foreground">{{ t.sidebar.exams }}</h2>
+              </div>
+              <p class="text-sm text-muted-foreground">{{ t.learning.nextStepGoToExamsDesc }}</p>
             </div>
-            <p class="mb-3 text-xs leading-5 text-muted-foreground">{{ nextStepState.desc }}</p>
-            <button v-if="nextStepState.action === 'schedule_exam'" class="btn btn-primary w-full rounded-lg py-2 text-xs" :disabled="scheduleLoading" @click="handleScheduleExam">
-              <Loader2 v-if="scheduleLoading" class="mr-1 h-4 w-4 animate-spin" />
-              {{ nextStepState.label }}
-              <ArrowRight class="ml-1 h-4 w-4" />
-            </button>
-            <RouterLink v-else :to="nextStepLink()" class="btn btn-primary w-full rounded-lg py-2 text-xs">
+            <span v-if="courseRuntimeUnitStatus" :class="['badge shrink-0', timelineStatusBadgeClassForStatus('COURSE_UNIT', courseRuntimeUnitStatus)]">
+              {{ courseUnitStatusLabel(courseRuntimeUnitStatus) }}
+            </span>
+          </div>
+
+          <div v-if="courseExamsLoading" class="flex items-center justify-center gap-2 rounded-md bg-slate-50 py-12 text-muted-foreground">
+            <Loader2 class="h-5 w-5 animate-spin" />
+            <span>{{ t.common.loading }}</span>
+          </div>
+          <div v-else-if="!courseRuntimeUnitUlid" class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+            <AlertCircle class="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+            <h3 class="font-semibold text-foreground">{{ nextStepState.label }}</h3>
+            <p class="mt-2 text-sm text-muted-foreground">{{ nextStepState.desc }}</p>
+          </div>
+          <div v-else-if="courseExams.length === 0" class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+            <CalendarClock class="mx-auto mb-3 h-8 w-8 text-primary" />
+            <h3 class="font-semibold text-foreground">{{ t.examsPage.noExams }}</h3>
+            <p class="mt-2 text-sm text-muted-foreground">{{ t.examsPage.noExamsDesc }}</p>
+            <RouterLink
+              v-if="nextStepState.action === 'signup_exam'"
+              :to="nextStepLink()"
+              class="btn btn-primary mx-auto mt-4 w-fit rounded-lg"
+            >
               {{ nextStepState.label }}
               <ArrowRight class="ml-1 h-4 w-4" />
             </RouterLink>
           </div>
-        </aside>
+          <div v-else class="space-y-3">
+            <div v-for="exam in courseExams" :key="exam.exam_id" class="rounded-md border border-slate-100 bg-slate-50 p-4">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div class="min-w-0 space-y-3">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span v-if="shouldShowExamStatus(exam.exam_status)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
+                    <span v-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
+                    <span v-else :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
+                    <span v-if="hasExplicitPassStatus(exam)" :class="['badge gap-1', exam.is_passed ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
+                      <CheckCircle2 v-if="exam.is_passed" class="h-3 w-3" />
+                      {{ passStatusLabel(exam) }}
+                    </span>
+                  </div>
+                  <h3 class="text-lg font-semibold text-foreground">{{ exam.exam_code || exam.program_code || exam.exam_id || t.common.unknown }}</h3>
+                  <div class="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                    <div v-if="hasText(exam.confirmation_number)"><span class="font-medium text-foreground">{{ t.examsPage.confirmationNumber }}:</span> {{ exam.confirmation_number }}</div>
+                    <div v-if="hasText(exam.site_name)"><span class="font-medium text-foreground">{{ t.examsPage.site }}:</span> {{ exam.site_name }}</div>
+                    <div v-if="hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ exam.appointment_start_time }}</div>
+                    <div v-if="hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ exam.appointment_end_time }}</div>
+                    <div v-if="isWaitingExamConfirmation(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
+                      <div class="flex items-start gap-2">
+                        <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
+                        <div class="text-xs">{{ t.examsPage.waitingExamConfirmationDesc }}</div>
+                      </div>
+                    </div>
+                    <div v-if="!isWaitingExamConfirmation(exam) && !hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
+                      <div class="flex items-start gap-2">
+                        <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
+                        <div>
+                          <div class="font-medium text-blue-800">{{ t.examsPage.notScheduledTitle }}</div>
+                          <div class="mt-1 text-xs">{{ t.examsPage.notScheduledDesc }}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="isExamFailedUnit(exam)" class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-red-700 sm:col-span-2">
+                      <div class="flex items-start gap-2">
+                        <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
+                        <div>
+                          <div class="font-medium text-red-800">{{ t.examsPage.examFailedTitle }}</div>
+                          <div class="mt-1 text-xs">{{ exam.retake_message || t.examsPage.examFailedDesc }}</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="hasExamResult(exam)"><span class="font-medium text-foreground">{{ t.examsPage.score }}:</span> {{ typeof exam.total_score === 'number' ? exam.total_score.toFixed(2) : t.common.unknown }}</div>
+                  </div>
+                </div>
+                <div class="flex shrink-0 flex-wrap gap-2">
+                  <button v-if="canApplyRetake(exam)" class="btn btn-primary rounded-lg" :disabled="retakeLoadingUnitId === exam.course_unit_ulid" @click="handleInlineApplyRetake(exam)">
+                    <Loader2 v-if="retakeLoadingUnitId === exam.course_unit_ulid" class="h-4 w-4 animate-spin" />
+                    <RefreshCw v-else class="h-4 w-4" />
+                    {{ t.examsPage.applyRetake }}
+                  </button>
+                  <button v-if="canScheduleExam(exam)" class="btn btn-primary rounded-lg" :disabled="scheduleLoading" @click="handleInlineScheduleExam(exam)">
+                    <Loader2 v-if="scheduleLoading" class="h-4 w-4 animate-spin" />
+                    <ExternalLink v-else class="h-4 w-4" />
+                    {{ t.learning.actionScheduleExam }}
+                  </button>
+                  <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary rounded-lg">{{ t.examsPage.viewResult }}</RouterLink>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <div class="min-w-0 space-y-4">
+        <div v-if="activeContentTab === 'certificate'" class="rounded-md bg-white p-6">
+          <div class="mb-4 flex items-center justify-between gap-4">
+            <div>
+              <div class="mb-2 flex items-center gap-2">
+                <Award class="h-5 w-5 text-primary" />
+                <h2 class="text-xl font-semibold text-foreground">{{ t.learning.actionViewCertificate }}</h2>
+              </div>
+              <p class="text-sm text-muted-foreground">{{ t.learning.nextStepViewCertificateDesc }}</p>
+            </div>
+            <button class="btn btn-outline rounded-lg py-1.5 text-xs" :disabled="courseCertificateLoading" @click="loadCourseCertificate">
+              <Loader2 v-if="courseCertificateLoading" class="h-4 w-4 animate-spin" />
+              <RefreshCw v-else class="h-4 w-4" />
+              {{ t.examsPage.refresh }}
+            </button>
+          </div>
+          <div v-if="courseCertificateLoading" class="flex items-center justify-center gap-2 rounded-md bg-slate-50 py-12 text-muted-foreground">
+            <Loader2 class="h-5 w-5 animate-spin" />
+            <span>{{ t.common.loading }}</span>
+          </div>
+          <div v-else-if="courseCertificateUrl" class="overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+            <iframe :src="courseCertificateUrl" class="h-[720px] w-full border-0 bg-white" :title="t.learning.actionViewCertificate" />
+          </div>
+          <div v-else class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+            <Award class="mx-auto mb-3 h-8 w-8 text-primary" />
+            <h3 class="font-semibold text-foreground">{{ t.certificatesPage.certificateGenerating }}</h3>
+            <p class="mt-2 text-sm text-muted-foreground">{{ courseCertificateError || t.learning.nextStepViewCertificateDesc }}</p>
+          </div>
+        </div>
+
         <div v-if="activeContentTab === 'quiz'" class="rounded-md bg-white p-6">
           <div class="mb-4 flex items-center justify-between gap-4">
             <div>
