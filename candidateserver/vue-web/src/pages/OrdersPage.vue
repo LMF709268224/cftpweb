@@ -57,6 +57,13 @@ const orderRangeLabel = computed(() => {
   return `${start}-${end} / ${totalOrders.value}`
 })
 
+function orderStatusBadgeClass(order: OrderItem) {
+  if (order.status === "completed" || order.rawStatus === "COMPLETED") {
+    return "border-[#6CE9A6] bg-[#ECFDF3] text-[#027A48]"
+  }
+  return timelineStatusBadgeClassForStatus("MALL_ORDER", order.rawStatus)
+}
+
 function handleOrderClick(order: OrderItem) {
   if (order.status !== "completed" && order.pipelineId) {
     selectedCourseName.value = order.items.join(", ")
@@ -160,31 +167,31 @@ onMounted(() => {
     </div>
 
     <div class="mb-4 grid gap-4 sm:grid-cols-3">
-      <div class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
-        <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
-        <div class="flex items-center gap-4">
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 transition-transform group-hover:scale-105"><ShoppingCart class="h-6 w-6 text-primary" /></div>
-          <div><p class="text-2xl font-bold text-card-foreground">{{ totalOrders }}</p><p class="text-sm text-muted-foreground">{{ t.orders.totalOrders }}</p></div>
+        <div class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+          <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
+          <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 transition-transform group-hover:scale-105"><ShoppingCart class="h-6 w-6 text-primary" /></div>
+            <div><p class="text-2xl font-bold text-card-foreground">{{ totalOrders }}</p><p class="text-sm text-muted-foreground">{{ t.orders.totalOrders }}</p></div>
+          </div>
         </div>
-      </div>
-      <div class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
-        <div class="absolute left-0 top-0 h-full w-1 bg-emerald-500/60" />
-        <div class="flex items-center gap-4">
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 transition-transform group-hover:scale-105"><CheckCircle2 class="h-6 w-6 text-emerald-600" /></div>
-          <div><p class="text-2xl font-bold text-card-foreground">{{ completedCount }}</p><p class="text-sm text-muted-foreground">{{ t.orders.completed }}</p></div>
+        <div class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+          <div class="absolute left-0 top-0 h-full w-1 bg-emerald-500/60" />
+          <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 transition-transform group-hover:scale-105"><CheckCircle2 class="h-6 w-6 text-emerald-600" /></div>
+            <div><p class="text-2xl font-bold text-card-foreground">{{ completedCount }}</p><p class="text-sm text-muted-foreground">{{ t.orders.completed }}</p></div>
+          </div>
         </div>
-      </div>
-      <div class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
-        <div class="absolute left-0 top-0 h-full w-1 bg-amber-500/60" />
-        <div class="flex items-center gap-4">
-          <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 transition-transform group-hover:scale-105"><Receipt class="h-6 w-6 text-amber-600" /></div>
-          <div><p class="text-2xl font-bold text-card-foreground">{{ totalSpentLabel }}</p><p class="text-sm text-muted-foreground">{{ t.orders.totalSpent }}</p></div>
+        <div class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
+          <div class="absolute left-0 top-0 h-full w-1 bg-amber-500/60" />
+          <div class="flex items-center gap-4">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 transition-transform group-hover:scale-105"><Receipt class="h-6 w-6 text-amber-600" /></div>
+            <div><p class="text-2xl font-bold text-card-foreground">{{ totalSpentLabel }}</p><p class="text-sm text-muted-foreground">{{ t.orders.totalSpent }}</p></div>
+          </div>
         </div>
-      </div>
     </div>
 
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="flex flex-col gap-3 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div class="flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div class="flex items-center gap-3">
           <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10"><Receipt class="h-4 w-4 text-primary" /></div>
           <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
@@ -197,15 +204,15 @@ onMounted(() => {
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.orders.noOrders }}</h3>
         <p class="max-w-md text-sm text-muted-foreground">{{ t.orders.noOrdersDesc }}</p>
       </div>
-      <div v-else class="space-y-2">
-        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="group flex items-center justify-between px-4 py-4 transition-colors hover:bg-primary/10 cursor-pointer">
+      <div v-else>
+        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="group flex cursor-pointer items-center justify-between border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10">
           <div class="flex items-center gap-4">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
             <div><h3 class="mb-1 font-medium text-card-foreground">{{ order.items.join(", ") }}</h3><p class="text-sm text-muted-foreground">{{ order.date }}</p></div>
           </div>
           <div class="grid shrink-0 grid-cols-[96px_86px_36px_20px] items-center gap-3">
             <div class="flex justify-center">
-              <span class="badge text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', order.rawStatus)">
+              <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.rawStatus) }}
               </span>
             </div>
@@ -220,7 +227,7 @@ onMounted(() => {
             <ChevronRight class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
           </div>
         </div>
-        <div class="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-sm text-muted-foreground">
+        <div class="flex items-center justify-between px-4 py-3 text-sm text-muted-foreground">
           <span>{{ orderRangeLabel }}</span>
           <div class="flex items-center gap-2">
             <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page <= 1 || loading" @click="goToPage(page - 1)">

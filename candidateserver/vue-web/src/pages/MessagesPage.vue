@@ -293,30 +293,30 @@ onMounted(fetchMessages)
       </div>
     </div>
 
-    <div class="mb-4 rounded-md bg-white px-8 pt-6">
-      <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
-        <button
-          :class="['relative cursor-pointer whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === null ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-          @click="selectedType = null"
-        >
-          {{ t.messagesPage.all }} <span class="ml-2 text-sm text-muted-foreground">{{ messageList.length }}</span>
-          <span v-if="selectedType === null" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
-        </button>
-        <button
-          v-for="(config, type) in typeConfig"
-          :key="type"
-          :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === type ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-          @click="selectedType = type"
-        >
-          <component :is="config.icon" class="h-4 w-4" />
-          {{ config.label }}
-          <span class="text-sm text-muted-foreground">{{ messageList.filter((m) => m.type === type).length }}</span>
-          <span v-if="selectedType === type" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
-        </button>
-      </div>
-    </div>
-
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+      <div class="border-b border-slate-100 bg-white px-4 pt-4 md:px-8 md:pt-6">
+        <div class="flex flex-wrap gap-10">
+          <button
+            :class="['relative cursor-pointer whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === null ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            @click="selectedType = null"
+          >
+            {{ t.messagesPage.all }} <span class="ml-2 text-sm text-muted-foreground">{{ messageList.length }}</span>
+            <span v-if="selectedType === null" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+          </button>
+          <button
+            v-for="(config, type) in typeConfig"
+            :key="type"
+            :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === type ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            @click="selectedType = type"
+          >
+            <component :is="config.icon" class="h-4 w-4" />
+            {{ config.label }}
+            <span class="text-sm text-muted-foreground">{{ messageList.filter((m) => m.type === type).length }}</span>
+            <span v-if="selectedType === type" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+          </button>
+        </div>
+      </div>
+
       <div v-if="loading" class="flex items-center justify-center gap-2 px-4 py-16 text-muted-foreground">
         <Loader2 class="h-5 w-5 animate-spin text-primary" />
         <span>{{ t.common.loading }}</span>
@@ -326,11 +326,11 @@ onMounted(fetchMessages)
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.messagesPage.noMessages }}</h3>
         <p class="text-muted-foreground">{{ t.messagesPage.noMessagesDesc }}</p>
       </div>
-      <div v-else class="space-y-2">
+      <div v-else>
         <div
           v-for="message in filteredMessages"
           :key="message.id"
-          :class="['group relative flex cursor-pointer items-start gap-4 border-l-4 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead ? 'border-primary bg-primary/5' : 'border-transparent']"
+          :class="['group relative flex cursor-pointer items-start gap-4 border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead ? 'bg-primary/5' : '']"
           @click="handleViewDetail(message)"
         >
           <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', configFor(message.type).iconBg, !message.isRead && 'ring-2 ring-primary/25']">
