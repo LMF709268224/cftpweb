@@ -161,6 +161,7 @@ const retakeLoadingUnitId = ref<string | null>(null)
 const lessonContentExpanded = ref(true)
 const activeContentTab = ref<LearnContentTabKey>("lesson")
 const courseExamsLoading = ref(false)
+const courseExamsLoaded = ref(false)
 const courseExams = ref<any[]>([])
 const courseCertificateLoading = ref(false)
 const courseCertificateUrl = ref("")
@@ -254,6 +255,11 @@ const courseHasExam = computed(() => {
   return false
 })
 const hasExamTab = computed(() => courseHasExam.value || ["signup_exam", "schedule_exam", "view_exam_schedule", "apply_retake", "view_exam_result"].includes(nextStepState.value.action))
+const courseExamTabCount = computed(() => {
+  if (courseExams.value.length > 0) return courseExams.value.length
+  if (!courseExamsLoaded.value && hasExamTab.value) return 1
+  return 0
+})
 
 const totalQuizzesCount = computed(() => {
   let count = courseQuizzes.value.length
@@ -370,7 +376,7 @@ const learnContentTabs = computed(() => [
         id: "exam" as const,
         label: t.value.sidebar.exams,
         icon: CalendarClock,
-        count: courseExams.value.length,
+        count: courseExamTabCount.value,
       }]
     : []),
   ...(hasCertificateTab.value
@@ -533,7 +539,16 @@ function isExamFailedUnit(exam: any) {
 }
 
 function canApplyRetake(exam: any) {
-  return Boolean(exam?.course_unit_ulid && isExamFailedUnit(exam) && exam?.retake_eligible)
+  return Boolean(exam?.course_unit_ulid && exam?.course_unit_cc_ulid && isExamFailedUnit(exam) && exam?.retake_eligible)
+}
+
+function stripeCheckoutUrl(paymentKey: unknown) {
+  if (typeof paymentKey !== "string") return ""
+  const value = paymentKey.trim()
+  if (!value) return ""
+  if (/^https:\/\/checkout\.stripe\.com\//i.test(value)) return value
+  if (value.startsWith("/c/pay/")) return `https://checkout.stripe.com${value}`
+  return ""
 }
 
 function noResultLabel() {
@@ -692,10 +707,12 @@ async function loadRuntime() {
 async function loadCourseExams() {
   if (!hasExamTab.value) {
     courseExams.value = []
+    courseExamsLoaded.value = false
     return
   }
   if (!courseRuntimeUnitUlid.value) {
     courseExams.value = []
+    courseExamsLoaded.value = true
     return
   }
   courseExamsLoading.value = true
@@ -710,6 +727,7 @@ async function loadCourseExams() {
   } catch {
     courseExams.value = []
   } finally {
+    courseExamsLoaded.value = true
     courseExamsLoading.value = false
   }
 }
@@ -811,6 +829,26 @@ async function handleInlineApplyRetake(exam: any) {
   if (!canApplyRetake(exam) || retakeLoadingUnitId.value) return
   retakeLoadingUnitId.value = exam.course_unit_ulid
   try {
+    const currentUrl = window.location.href
+    const payment = await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake-payment`, {
+      method: "POST",
+      body: JSON.stringify({
+        course_unit_cc_ulid: exam.course_unit_cc_ulid,
+        retried_count: exam.next_retried_count || exam.retried_count || 0,
+        success_url: currentUrl,
+        cancel_url: currentUrl,
+      }),
+    })
+    if (payment?.payment_required && !payment?.paid) {
+      const checkoutUrl = stripeCheckoutUrl(payment.payment_key)
+      if (checkoutUrl) {
+        toast.info(t.value.common.loading)
+        window.open(checkoutUrl, "_blank", "noopener,noreferrer")
+        return
+      }
+      toast.info(payment.message || t.value.examsPage.applyRetake)
+      return
+    }
     await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake`, { method: "POST" })
     toast.success(t.value.examsPage.retakeApplied)
     await router.push(`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || pipelineId.value)}&courseId=${encodeURIComponent(courseId.value)}`)
@@ -954,6 +992,8 @@ onMounted(async () => {
 watch(courseId, async () => {
   activeLessonId.value = routeLessonId.value
   selectedMaterialId.value = ""
+  courseExamsLoaded.value = false
+  courseExams.value = []
   await loadCourse()
   await loadProgress()
   await syncProgress(courseId.value, false)

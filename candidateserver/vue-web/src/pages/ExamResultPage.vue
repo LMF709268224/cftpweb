@@ -64,7 +64,7 @@ onMounted(async () => {
         </div>
         <div class="mt-6 flex flex-wrap gap-2">
           <RouterLink to="/exams" class="btn btn-primary"><ClipboardList class="h-4 w-4" /> {{ t.examsPage.backToExams }}</RouterLink>
-          <RouterLink to="/certificates" class="btn btn-outline">{{ t.examsPage.viewCertificate }} <ExternalLink class="h-4 w-4" /></RouterLink>
+          <RouterLink v-if="result.is_passed" to="/certificates" class="btn btn-outline">{{ t.examsPage.viewCertificate }} <ExternalLink class="h-4 w-4" /></RouterLink>
         </div>
       </section>
     </div>
