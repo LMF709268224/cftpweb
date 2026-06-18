@@ -317,11 +317,11 @@ onMounted(() => {
       <div v-if="loading && myCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
       </div>
-      <div v-else-if="myCourses.length > 0" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <div v-else-if="myCourses.length > 0" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
         <div
           v-for="course in myCourses"
           :key="course.id"
-          class="group flex min-h-[300px] flex-col rounded-[18px] border border-[#dfe4ea] bg-white p-5 shadow-[0_2px_8px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-[0_16px_34px_rgba(15,23,42,0.12)]"
+          class="group flex min-h-[300px] flex-col rounded-[18px] border-2 border-[#dfe4ea] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
         >
           <div class="flex-1">
             <h3 class="line-clamp-2 text-xl font-bold leading-tight tracking-tight text-[#111827] transition-colors group-hover:text-primary">
@@ -357,7 +357,7 @@ onMounted(() => {
           <div class="mt-6">
             <RouterLink
               :to="`/certifications/${encodeURIComponent(course.id)}`"
-              class="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 text-base font-bold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90"
+              class="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90"
               :title="myCertificationCopy.viewDetailsHint"
             >
               <Eye class="h-5 w-5" />
