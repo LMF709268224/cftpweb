@@ -27,11 +27,18 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppShell content-class="p-4">
-    <RouterLink to="/exams" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-      <ArrowLeft class="h-4 w-4" />
-      {{ t.examsPage.backToExams }}
-    </RouterLink>
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <ClipboardList class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.examsPage.resultTitle }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <RouterLink to="/exams" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+          <ArrowLeft class="h-4 w-4" />
+          {{ t.examsPage.backToExams }}
+        </RouterLink>
 
     <div v-if="loading" class="flex items-center gap-2 text-muted-foreground">
       <Loader2 class="h-4 w-4 animate-spin" /> {{ t.common.loading }}
@@ -67,6 +74,8 @@ onMounted(async () => {
           <RouterLink v-if="result.is_passed" to="/certificates" class="btn btn-outline">{{ t.examsPage.viewCertificate }} <ExternalLink class="h-4 w-4" /></RouterLink>
         </div>
       </section>
+    </div>
+      </main>
     </div>
   </AppShell>
 </template>

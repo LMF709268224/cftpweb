@@ -32,17 +32,18 @@ const membershipLevels = computed(() => [
 </script>
 
 <template>
-  <AppShell content-class="p-4">
-    <div class="mb-4 overflow-hidden rounded-[16px] bg-white shadow-[0_12px_30px_rgba(15,74,82,0.06)]">
-      <div class="bg-gradient-to-r from-[#ecfbf7] via-white to-[#f4fbff] p-4">
-        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-          <Crown class="h-3.5 w-3.5" />
-          {{ t.sidebar.membership }}
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <Crown class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.membership.title }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <div class="mb-6">
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.membership.title }}</h1>
+          <p class="mt-2 text-muted-foreground">{{ t.membership.subtitle }}</p>
         </div>
-        <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.membership.title }}</h1>
-        <p class="mt-2 text-muted-foreground">{{ t.membership.subtitle }}</p>
-      </div>
-    </div>
 
     <div class="mb-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="flex items-center gap-3">
@@ -119,6 +120,8 @@ const membershipLevels = computed(() => [
         <h3 class="mb-2 text-lg font-semibold text-foreground">{{ activeTab === 'settings' ? t.membership.tabs.settings : t.membership.tabs.orders }}</h3>
         <p class="text-muted-foreground">{{ t.membership.devNotice }}</p>
       </div>
+    </div>
+      </main>
     </div>
   </AppShell>
 </template>

@@ -196,23 +196,25 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppShell content-class="p-4">
-    <div class="mb-4 px-1 py-3 md:py-5">
-      <div class="flex items-start gap-3">
-        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-          <CalendarClock class="h-6 w-6" />
-        </div>
-        <div>
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
-          <p class="mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
-        </div>
-      </div>
-      <div class="mt-4 flex justify-end">
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <CalendarClock class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.examsPage.title }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
+            <p class="mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
+          </div>
+          <div class="flex justify-end">
         <RouterLink to="/certifications" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90">
           {{ t.courses.browseCoursesBtn }} <ExternalLink class="h-4 w-4" />
         </RouterLink>
-      </div>
-    </div>
+          </div>
+        </div>
 
     <div class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
       <div class="relative flex-1 sm:max-w-md">
@@ -334,5 +336,7 @@ onMounted(() => {
       :source="retakePaymentSession.source"
       :return-path="retakePaymentSession.returnPath"
     />
+      </main>
+    </div>
   </AppShell>
 </template>

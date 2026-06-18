@@ -225,27 +225,34 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppShell content-class="p-4">
-    <section class="mb-6">
-      <RouterLink to="/resource-packs" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
-        <ArrowLeft class="h-4 w-4" />
-        {{ copy.back }}
-      </RouterLink>
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-            <FileArchive class="h-3.5 w-3.5" />
-            {{ packId || copy.missing }}
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <FileArchive class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ copy.title }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <section class="mb-6">
+          <RouterLink to="/resource-packs" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-primary">
+            <ArrowLeft class="h-4 w-4" />
+            {{ copy.back }}
+          </RouterLink>
+          <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                <FileArchive class="h-3.5 w-3.5" />
+                {{ packId || copy.missing }}
+              </div>
+              <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
+              <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
+            </div>
+            <button class="btn btn-outline rounded-lg bg-white shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="!packId || loading" @click="loadFiles()">
+              <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
+              {{ copy.refresh }}
+            </button>
           </div>
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
-          <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
-        </div>
-        <button class="btn btn-outline rounded-lg bg-white shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="!packId || loading" @click="loadFiles()">
-          <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
-          {{ copy.refresh }}
-        </button>
-      </div>
-    </section>
+        </section>
 
     <section class="mb-5 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="relative">
@@ -329,6 +336,8 @@ onMounted(() => {
       <button class="btn btn-outline rounded-lg" :disabled="loading" @click="loadFiles(nextPageToken)">
         {{ loading ? copy.loading : copy.loadMore }}
       </button>
+    </div>
+      </main>
     </div>
   </AppShell>
 </template>

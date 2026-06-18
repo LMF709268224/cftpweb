@@ -96,18 +96,18 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppShell content-class="p-4">
-    <div class="mb-4 px-1 py-3 md:py-5">
-      <div class="flex items-start gap-3">
-        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-          <PackageOpen class="h-6 w-6" />
-        </div>
-        <div>
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <PackageOpen class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ copy.title }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <div class="mb-6">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
           <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
         </div>
-      </div>
-    </div>
 
     <section class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
       <div class="relative flex-1 sm:max-w-md">
@@ -167,10 +167,12 @@ onMounted(() => {
       </button>
     </section>
 
-    <div v-if="nextPageToken" class="mt-4 text-center">
-      <button class="btn btn-outline rounded-lg" :disabled="loading" @click="loadPacks(nextPageToken)">
-        {{ loading ? copy.loading : copy.loadMore }}
-      </button>
+        <div v-if="nextPageToken" class="mt-4 text-center">
+          <button class="btn btn-outline rounded-lg" :disabled="loading" @click="loadPacks(nextPageToken)">
+            {{ loading ? copy.loading : copy.loadMore }}
+          </button>
+        </div>
+      </main>
     </div>
   </AppShell>
 </template>

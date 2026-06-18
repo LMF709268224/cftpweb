@@ -1060,18 +1060,25 @@ watch(selectedMaterial, () => {
 </script>
 
 <template>
-  <AppShell content-class="p-4">
-    <div class="mb-6 flex items-center justify-between gap-4">
-      <RouterLink :to="pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : '/certifications'" class="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-        <ArrowLeft class="h-4 w-4" />
-        {{ t.learning.backToCourse }}
-      </RouterLink>
-      <button v-if="course" class="btn btn-outline rounded-lg py-1.5 text-xs" :disabled="syncing" @click="refreshProgress(true)">
-        <Loader2 v-if="syncing" class="h-4 w-4 animate-spin" />
-        <RefreshCw v-else class="h-4 w-4" />
-        {{ t.learning.syncProgress }}
-      </button>
-    </div>
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <BookOpen class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ course?.title || t.common.unknownCourse }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <div class="mb-6 flex items-center justify-between gap-4">
+          <RouterLink :to="pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : '/certifications'" class="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+            <ArrowLeft class="h-4 w-4" />
+            {{ t.learning.backToCourse }}
+          </RouterLink>
+          <button v-if="course" class="btn btn-outline rounded-lg py-1.5 text-xs" :disabled="syncing" @click="refreshProgress(true)">
+            <Loader2 v-if="syncing" class="h-4 w-4 animate-spin" />
+            <RefreshCw v-else class="h-4 w-4" />
+            {{ t.learning.syncProgress }}
+          </button>
+        </div>
 
     <div v-if="pageLoading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <Loader2 class="h-5 w-5 animate-spin" />
@@ -1696,5 +1703,7 @@ watch(selectedMaterial, () => {
       :return-path="retakePaymentSession.returnPath"
       :extra-return-params="retakePaymentSession.extraReturnParams"
     />
+      </main>
+    </div>
   </AppShell>
 </template>

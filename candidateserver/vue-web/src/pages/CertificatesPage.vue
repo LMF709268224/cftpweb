@@ -161,7 +161,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AppShell content-class="p-4">
+  <AppShell content-class="p-0">
     <div
       v-if="celebrationVisible && featuredCertificate"
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
@@ -228,17 +228,17 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="mb-4 px-1 py-3 md:py-5">
-      <div class="flex items-start gap-3">
-        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-          <Award class="h-6 w-6" />
-        </div>
-        <div>
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <Award class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.certificatesPage.title }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <div class="mb-6">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.certificatesPage.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.certificatesPage.subtitle }}</p>
         </div>
-      </div>
-    </div>
 
     <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <Loader2 class="h-5 w-5 animate-spin" />
@@ -297,6 +297,8 @@ onMounted(async () => {
         <ExternalLink class="h-4 w-4" />
         {{ t.certificatesPage.browseCourses }}
       </RouterLink>
+    </div>
+      </main>
     </div>
   </AppShell>
 </template>

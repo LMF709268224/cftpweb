@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { Loader2 } from "lucide-vue-next"
+import { Loader2, Settings } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
@@ -304,10 +304,17 @@ async function handleUpdatePassword() {
 </script>
 
 <template>
-  <AppShell content-class="p-4">
-    <div class="mb-4 flex items-center justify-between space-y-2">
-      <h1 class="text-3xl font-bold tracking-tight">{{ t.settings.title }}</h1>
-    </div>
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <Settings class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.settings.title }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <div class="mb-6 flex items-center justify-between space-y-2">
+          <h1 class="text-3xl font-bold tracking-tight">{{ t.settings.title }}</h1>
+        </div>
     <div class="space-y-4">
       <div class="rounded-md bg-white px-8 pt-6">
         <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
@@ -415,6 +422,8 @@ async function handleUpdatePassword() {
         </form>
         </div>
       </div>
+    </div>
+      </main>
     </div>
   </AppShell>
 </template>

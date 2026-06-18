@@ -73,7 +73,14 @@ onMounted(loadPaper)
 </script>
 
 <template>
-  <AppShell content-class="p-4">
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <FileText class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.learning?.quizPrefix }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
     <div v-if="loading" class="flex min-h-[60vh] items-center justify-center">
       <div class="flex items-center gap-3 rounded-2xl bg-white px-5 py-4 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <Loader2 class="h-5 w-5 animate-spin text-primary" />
@@ -164,6 +171,8 @@ onMounted(loadPaper)
           {{ submitting ? t.common.loading : t.learning?.quizSubmit }}
         </button>
       </div>
+    </div>
+      </main>
     </div>
   </AppShell>
 </template>

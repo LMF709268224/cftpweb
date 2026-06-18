@@ -45,11 +45,18 @@ onMounted(loadTimeline)
 </script>
 
 <template>
-  <AppShell content-class="p-4">
-    <RouterLink :to="pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : '/certifications'" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-      <ArrowLeft class="h-4 w-4" />
-      {{ t.learning.timelineBackToCourseDetails || t.common.back }}
-    </RouterLink>
+  <AppShell content-class="p-0">
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <Clock class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.learning.pipelineTimelineEmpty || t.common.na }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <RouterLink :to="pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : '/certifications'" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+          <ArrowLeft class="h-4 w-4" />
+          {{ t.learning.timelineBackToCourseDetails || t.common.back }}
+        </RouterLink>
 
     <div class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
@@ -79,6 +86,8 @@ onMounted(loadTimeline)
           <div class="mt-2 text-xs text-muted-foreground">{{ log.trigger_source || t.common.unknown }}</div>
         </div>
       </div>
+    </div>
+      </main>
     </div>
   </AppShell>
 </template>

@@ -232,23 +232,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <AppShell content-class="p-4">
+  <AppShell content-class="p-0">
     <div v-if="invoiceLoading" class="fixed right-5 top-5 z-50 flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-[0_16px_40px_rgba(15,74,82,0.14)]">
       <Loader2 class="h-4 w-4 animate-spin text-emerald-500" />
       <span>{{ invoiceOpeningLabel }}</span>
     </div>
 
-    <div class="mb-4 px-1 py-3 md:py-5">
-      <div class="flex items-start gap-3">
-        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
-          <Receipt class="h-6 w-6" />
-        </div>
-        <div>
+    <div class="min-h-screen bg-white lg:m-4 lg:overflow-hidden lg:rounded-xl lg:border lg:border-border">
+      <header class="flex h-16 items-center border-b border-border bg-white px-5">
+        <Receipt class="mr-4 h-4 w-4 text-slate-700" />
+        <span class="text-sm font-medium text-foreground">{{ t.orders.title }}</span>
+      </header>
+
+      <main class="px-5 py-8 md:px-8 lg:px-10">
+        <div class="mb-6">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.orders.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.orders.subtitle }}</p>
         </div>
-      </div>
-    </div>
 
     <div class="mb-4 grid gap-4 sm:grid-cols-3">
         <div class="group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:ring-primary/25 hover:shadow-md hover:shadow-primary/10">
@@ -348,6 +348,9 @@ onMounted(() => {
           </div>
         </div>
       </div>
+    </div>
+
+      </main>
     </div>
 
     <PurchaseDialog
