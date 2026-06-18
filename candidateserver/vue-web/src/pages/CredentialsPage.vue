@@ -55,6 +55,8 @@ async function fetchData() {
 
 function handleApplyClick(def: any, appId = "") {
   if (!def) return
+  const existing = latestApplicationForDef(def.cred_def_id)
+  if (!appId && existing && !canStartNewApplication(existing.status)) return
   resubmitAppId.value = appId
   selectedDef.value = def
   uploadedFiles.value = {}
@@ -146,6 +148,49 @@ function canResubmit(status: string) {
   return ["REUPLOAD", "RESUBMIT", "NEEDS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD", "APPLICATION_STATUS_RESUBMIT"].includes(s)
 }
 
+  function isPendingReviewStatus(status: string) {
+  const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
+  return ["PENDING", "APPLICATION_STATUS_PENDING"].includes(s)
+}
+
+function isApprovedStatus(status: string) {
+  const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
+  return ["APPROVED", "APPLICATION_STATUS_APPROVED"].includes(s)
+}
+
+function canStartNewApplication(status: string) {
+  const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
+  return !["PENDING", "APPLICATION_STATUS_PENDING", "APPROVED", "APPLICATION_STATUS_APPROVED"].includes(s)
+}
+
+function latestApplicationForDef(credDefId: string) {
+  const matches = applications.value.filter((app) => app.cred_def_id === credDefId)
+  return matches[0] || null
+}
+
+function applicationActionLabel(def: any) {
+  const existing = latestApplicationForDef(def.cred_def_id)
+  if (!existing) return t.value.credentialsPage.applyNow
+  if (isPendingReviewStatus(existing.status)) return t.value.credentialsPage.applicationPendingHint
+  if (isApprovedStatus(existing.status)) return t.value.credentialsPage.applicationApprovedHint
+  if (canResubmit(existing.status)) return t.value.credentialsPage.appStatusResubmit
+  return t.value.credentialsPage.applyNow
+}
+
+function isApplicationActionDisabled(def: any) {
+  const existing = latestApplicationForDef(def.cred_def_id)
+  return Boolean(existing && !canStartNewApplication(existing.status) && !canResubmit(existing.status))
+}
+
+function handleDefinitionAction(def: any) {
+  const existing = latestApplicationForDef(def.cred_def_id)
+  if (existing && canResubmit(existing.status)) {
+    handleApplyClick(def, existing.app_id)
+    return
+  }
+  handleApplyClick(def)
+}
+
 onMounted(fetchData)
 </script>
 
@@ -187,7 +232,15 @@ onMounted(fetchData)
             </div>
             <div class="flex flex-1 flex-col p-4 pt-0">
               <p class="flex-1 text-sm leading-6 text-muted-foreground">{{ def.description }}</p>
-              <button class="btn btn-primary mt-4 w-full cursor-pointer rounded-lg shadow-sm shadow-primary/20" @click="handleApplyClick(def)">{{ t.credentialsPage.applyNow }}</button>
+              <div v-if="latestApplicationForDef(def.cred_def_id)" class="mt-3">
+                <span :class="['badge w-fit gap-1', statusBadgeClassForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, latestApplicationForDef(def.cred_def_id)?.status)]">
+                  <component :is="statusIcon(latestApplicationForDef(def.cred_def_id)?.status)" class="h-4 w-4 text-black" />
+                  {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, latestApplicationForDef(def.cred_def_id)?.status, 'credentialsPage.appStatusUnknown') }}
+                </span>
+              </div>
+              <button class="btn btn-primary mt-4 w-full cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isApplicationActionDisabled(def)" @click="handleDefinitionAction(def)">
+                {{ applicationActionLabel(def) }}
+              </button>
             </div>
           </div>
         </div>
