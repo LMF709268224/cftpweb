@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { Languages, LogOut, Menu, Settings, User, X } from "lucide-vue-next"
+import { Award, ClipboardList, FileCheck2, GraduationCap, Home, Languages, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, User, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
 import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
@@ -47,15 +47,30 @@ function isNavItemActive(href: string) {
 }
 
 const navItems = computed(() => [
-  { href: "/", label: t.value.sidebar.home },
-  { href: "/certifications", label: t.value.sidebar.courses },
-  { href: "/exams", label: t.value.sidebar.exams },
-  { href: "/resource-packs", label: lang.value === "zh" ? "资源包" : "Resources" },
-  { href: "/credentials", label: t.value.sidebar.credentials },
-  { href: "/certificates", label: t.value.sidebar.certificates },
-  { href: "/orders", label: t.value.sidebar.orders },
-  { href: "/messages", label: t.value.sidebar.messages, badge: unreadCount.value > 0 ? unreadCount.value : undefined },
+  { href: "/", label: t.value.sidebar.home, group: "" },
+  { href: "/certifications", label: t.value.sidebar.courses, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
+  { href: "/exams", label: t.value.sidebar.exams, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
+  { href: "/resource-packs", label: lang.value === "zh" ? "资源包" : "Resources", group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
+  { href: "/credentials", label: t.value.sidebar.credentials, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
+  { href: "/certificates", label: t.value.sidebar.certificates, group: lang.value === "zh" ? "我的" : "Mine" },
+  { href: "/orders", label: t.value.sidebar.orders, group: lang.value === "zh" ? "我的" : "Mine" },
+  { href: "/messages", label: t.value.sidebar.messages, group: lang.value === "zh" ? "我的" : "Mine", badge: unreadCount.value > 0 ? unreadCount.value : undefined },
 ])
+
+const navIconByHref = {
+  "/": Home,
+  "/certifications": GraduationCap,
+  "/exams": ClipboardList,
+  "/resource-packs": Package,
+  "/credentials": FileCheck2,
+  "/certificates": Award,
+  "/orders": ShoppingBag,
+  "/messages": MessageSquare,
+}
+
+function navIconFor(href: string) {
+  return navIconByHref[href as keyof typeof navIconByHref] || Home
+}
 
 function updateName() {
   userName.value = localStorage.getItem("user_name") || t.value.common.user
@@ -136,19 +151,31 @@ async function handleLogout() {
       </div>
 
       <nav class="space-y-1 px-3 py-4 text-[15px] text-sidebar-foreground">
-        <RouterLink
-          v-for="item in navItems"
+        <div
+          v-for="(item, index) in navItems"
           :key="item.href"
-          :to="item.href"
-          :class="[
-            'flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-            isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground' : '',
-          ]"
-          @click="mobileMenuOpen = false"
         >
-          <span>{{ item.label }}</span>
-          <span v-if="item.badge" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
-        </RouterLink>
+          <div
+            v-if="item.group && item.group !== navItems[index - 1]?.group"
+            class="px-4 pb-1 pt-4 text-[11px] font-bold text-slate-400"
+          >
+            {{ item.group }}
+          </div>
+          <RouterLink
+            :to="item.href"
+            :class="[
+              'group/nav-item flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors duration-200',
+              isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground' : 'hover:bg-[#F3F6FA] hover:text-sidebar-foreground',
+            ]"
+            @click="mobileMenuOpen = false"
+          >
+            <span class="flex min-w-0 items-center gap-3">
+              <component :is="navIconFor(item.href)" :class="['h-[18px] w-[18px] shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#667085] group-hover/nav-item:scale-[1.06] group-hover/nav-item:text-[#111827]']" :stroke-width="1.8" />
+              <span class="truncate">{{ item.label }}</span>
+            </span>
+            <span v-if="item.badge" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
+          </RouterLink>
+        </div>
       </nav>
     </aside>
   </div>
@@ -167,19 +194,31 @@ async function handleLogout() {
     <div class="h-px bg-sidebar-border" />
 
     <div class="px-5 pb-3 pt-5 text-xs font-bold uppercase tracking-wide text-slate-400">Menu</div>
-    <nav class="space-y-1 px-3 text-sm text-sidebar-foreground">
-      <RouterLink
-        v-for="item in navItems"
+    <nav class="space-y-1 px-3 text-[15px] text-sidebar-foreground">
+      <div
+        v-for="(item, index) in navItems"
         :key="item.href"
-        :to="item.href"
-        :class="[
-          'flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-          isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground' : '',
-        ]"
       >
-        <span>{{ item.label }}</span>
-        <span v-if="item.badge" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
-      </RouterLink>
+        <div
+          v-if="item.group && item.group !== navItems[index - 1]?.group"
+          class="px-3 pb-1 pt-4 text-[11px] font-bold text-slate-400"
+        >
+          {{ item.group }}
+        </div>
+        <RouterLink
+          :to="item.href"
+          :class="[
+            'group/nav-item flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-200',
+            isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground' : 'hover:bg-[#F3F6FA] hover:text-sidebar-foreground',
+          ]"
+        >
+          <span class="flex min-w-0 items-center gap-3">
+            <component :is="navIconFor(item.href)" :class="['h-[18px] w-[18px] shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#667085] group-hover/nav-item:scale-[1.06] group-hover/nav-item:text-[#111827]']" :stroke-width="1.8" />
+            <span class="truncate">{{ item.label }}</span>
+          </span>
+          <span v-if="item.badge" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
+        </RouterLink>
+      </div>
     </nav>
   </aside>
 
