@@ -27,13 +27,25 @@ const welcomeSeparator = computed(() => (lang.value === "zh" ? "\uFF0C" : ", "))
 const guideCopy = computed(() => lang.value === "zh"
   ? {
       title: "欢迎来到 CFtP",
-      subtitle: "你的第一步是进入认证中心，选择并购买适合自己的认证课程；完成学习后，再按流程提交资格材料、预约考试，最终在证书中心查看认证结果。",
+      subtitle: "查看你的认证、学习进度、考试和证书状态，快速进入下一步。",
       buyCourses: "购买认证",
     }
   : {
       title: "Welcome to CFtP",
-      subtitle: "Your first step is to enter the certification center and choose the right certification path. After learning, submit qualification files, schedule exams, and review your certificate result.",
+      subtitle: "Review your certifications, learning progress, exams, and certificate status at a glance.",
       buyCourses: "Buy Certifications",
+    },
+)
+const statsActionCopy = computed(() => lang.value === "zh"
+  ? {
+      certifications: "查看认证详情",
+      certificates: "查看证书",
+      messages: "查看消息",
+    }
+  : {
+      certifications: "View certifications",
+      certificates: "View certificates",
+      messages: "View messages",
     },
 )
 const todoItems = computed(() =>
@@ -102,7 +114,7 @@ onMounted(async () => {
         <h2 class="text-2xl font-bold tracking-tight text-primary md:text-3xl">{{ guideCopy.title }}</h2>
         <p class="mx-auto mt-3 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">{{ guideCopy.subtitle }}</p>
         <button
-          class="mt-5 inline-flex h-9 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90 md:absolute md:right-6 md:top-6 md:mt-0"
+          class="mt-5 inline-flex h-9 items-center justify-center rounded-lg border border-primary/20 bg-white/80 px-5 text-sm font-semibold text-primary shadow-sm transition-colors hover:bg-primary/10 md:absolute md:right-6 md:top-6 md:mt-0"
           @click="goToCourses"
         >
           {{ guideCopy.buyCourses }}
@@ -111,9 +123,9 @@ onMounted(async () => {
 
       <section class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <StatsCard :title="t.home.courseInProgress" :value="String(stats.courses_in_progress || 0)" :icon="BookOpen" variant="primary" :description="t.courses.tabs.my" href="/certifications" />
-          <StatsCard :title="t.home.certified" :value="String(stats.certifications_earned || 0)" :icon="CheckCircle2" variant="warning" :description="t.sidebar.certificates" href="/certificates" />
-          <StatsCard :title="t.home.unreadMessages" :value="String(unreadCount)" :icon="MessageSquare" variant="info" :description="t.home.unreadMessagesCount" href="/messages" />
+          <StatsCard :title="t.home.courseInProgress" :value="String(stats.courses_in_progress || 0)" :icon="BookOpen" variant="primary" :description="t.courses.tabs.my" :action-label="statsActionCopy.certifications" href="/certifications" />
+          <StatsCard :title="t.home.certified" :value="String(stats.certifications_earned || 0)" :icon="CheckCircle2" variant="warning" :description="t.sidebar.certificates" :action-label="statsActionCopy.certificates" href="/certificates" />
+          <StatsCard :title="t.home.unreadMessages" :value="String(unreadCount)" :icon="MessageSquare" variant="info" :description="t.home.unreadMessagesCount" :action-label="statsActionCopy.messages" href="/messages" />
         </div>
       </section>
 

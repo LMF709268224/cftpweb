@@ -6,6 +6,7 @@ import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
 import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
+import brandLogo from "@/assets/favicon.png"
 
 const { t, lang, changeLanguage } = useTranslation()
 const route = useRoute()
@@ -126,8 +127,9 @@ async function handleLogout() {
         <Menu class="h-5 w-5" />
       </button>
 
-      <RouterLink to="/" class="flex h-9 w-14 items-center justify-center rounded-md bg-primary text-xl font-black tracking-tight text-white shadow-sm">
-        CFtP
+      <RouterLink to="/" class="flex items-center gap-3">
+        <img :src="brandLogo" alt="Global Fintech Institute" class="h-8 w-8 rounded-lg object-contain" />
+        <span class="text-[14px] font-semibold text-[#003A70]">Global Fintech Institute</span>
       </RouterLink>
 
       <div class="h-10 w-10" />
@@ -138,8 +140,9 @@ async function handleLogout() {
     <div class="absolute inset-0 bg-slate-950/35" @click="mobileMenuOpen = false" />
     <aside class="app-side-card absolute left-0 top-0 h-full w-[248px] max-w-[78vw] max-h-none overflow-y-auto rounded-none border-r border-sidebar-border bg-sidebar shadow-2xl shadow-slate-950/20">
       <div class="flex h-20 items-center justify-between px-5">
-        <RouterLink to="/" class="flex h-9 w-14 items-center justify-center rounded-md bg-primary text-xl font-black tracking-tight text-white shadow-sm" @click="mobileMenuOpen = false">
-          CFtP
+        <RouterLink to="/" class="flex items-center gap-3" @click="mobileMenuOpen = false">
+          <img :src="brandLogo" alt="Global Fintech Institute" class="h-8 w-8 rounded-lg object-contain" />
+          <span class="text-[14px] font-semibold text-[#003A70]">Global Fintech Institute</span>
         </RouterLink>
         <button class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-sidebar-accent hover:text-primary" @click="mobileMenuOpen = false">
           <X class="h-5 w-5" />
@@ -183,14 +186,11 @@ async function handleLogout() {
     </aside>
   </div>
 
-  <aside class="app-side-card fixed left-0 top-0 z-30 hidden h-screen w-[240px] overflow-y-auto border-r border-sidebar-border bg-sidebar lg:block">
-    <RouterLink to="/" class="flex h-24 items-center gap-3 px-5">
-      <div class="flex h-9 w-11 items-center justify-center rounded-md bg-primary text-base font-black tracking-tight text-white shadow-sm">
-        CFtP
-      </div>
-      <div class="min-w-0">
-        <div class="truncate text-sm font-bold leading-5 text-foreground">CFtP</div>
-        <div class="truncate text-xs text-muted-foreground">{{ lang === "zh" ? "培训系统" : "Training Portal" }}</div>
+  <aside class="app-side-card fixed left-0 top-0 z-30 hidden h-screen w-[264px] overflow-y-auto border-r border-sidebar-border bg-sidebar lg:block">
+    <RouterLink to="/" class="flex h-20 items-center gap-2.5 px-6">
+      <img :src="brandLogo" alt="Global Fintech Institute" class="h-8 w-8 rounded-lg object-contain" />
+      <div class="min-w-0 flex-1 whitespace-nowrap text-[14px] font-semibold leading-5 text-[#003A70]">
+        Global Fintech Institute
       </div>
     </RouterLink>
 
