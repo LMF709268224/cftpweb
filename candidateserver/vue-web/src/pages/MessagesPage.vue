@@ -279,8 +279,15 @@ onMounted(fetchMessages)
 <template>
   <AppShell content-class="p-4">
     <div class="mb-4 px-1 py-3 md:py-5">
-      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
-      <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
+      <div class="flex items-start gap-3">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+          <MessageSquare class="h-6 w-6" />
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
+          <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
+        </div>
+      </div>
       <div v-if="unreadCount > 0" class="mt-4 flex justify-end">
         <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="markAllAsRead"><CheckCheck class="h-4 w-4" /> {{ t.messagesPage.markAllAsRead }}</button>
       </div>

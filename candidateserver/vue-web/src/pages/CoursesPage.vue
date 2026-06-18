@@ -12,6 +12,7 @@ import {
   Eye,
   FileIcon,
   FileText,
+  GraduationCap,
   Play,
   Search,
   SlidersHorizontal,
@@ -231,8 +232,15 @@ onMounted(() => {
 <template>
   <AppShell content-class="p-4">
     <div class="mb-4 px-1 py-3 md:py-5">
-      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.courses.title }}</h1>
-      <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
+      <div class="flex items-start gap-3">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+          <GraduationCap class="h-6 w-6" />
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.courses.title }}</h1>
+          <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
+        </div>
+      </div>
     </div>
 
     <div class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">

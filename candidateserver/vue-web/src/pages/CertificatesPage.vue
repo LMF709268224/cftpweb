@@ -229,8 +229,15 @@ onMounted(async () => {
     </div>
 
     <div class="mb-4 px-1 py-3 md:py-5">
-      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.certificatesPage.title }}</h1>
-      <p class="mt-2 text-muted-foreground">{{ t.certificatesPage.subtitle }}</p>
+      <div class="flex items-start gap-3">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+          <Award class="h-6 w-6" />
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.certificatesPage.title }}</h1>
+          <p class="mt-2 text-muted-foreground">{{ t.certificatesPage.subtitle }}</p>
+        </div>
+      </div>
     </div>
 
     <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
