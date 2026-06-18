@@ -241,8 +241,8 @@ onMounted(async () => {
 
 <style scoped>
 .portal-stat-card :deep(svg) {
-  height: 24px;
-  width: 24px;
+  height: 24px !important;
+  width: 24px !important;
 }
 
 .portal-stat-card h2 {
