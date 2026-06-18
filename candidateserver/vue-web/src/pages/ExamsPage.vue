@@ -145,8 +145,15 @@ onMounted(() => {
 <template>
   <AppShell content-class="p-4">
     <div class="mb-4 px-1 py-3 md:py-5">
-      <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
-      <p class="mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
+      <div class="flex items-start gap-3">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent text-primary">
+          <CalendarClock class="h-6 w-6" />
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
+          <p class="mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
+        </div>
+      </div>
       <div class="mt-4 flex justify-end">
         <RouterLink to="/certifications" class="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90">
           {{ t.courses.browseCoursesBtn }} <ExternalLink class="h-4 w-4" />
