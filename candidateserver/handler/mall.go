@@ -99,13 +99,11 @@ func (h *Handler) GetPipelineDetail(w http.ResponseWriter, r *http.Request) {
 		Config: toPipelineConfig(gccResp, nil),
 	}
 
-	// 2. 灏濊瘯鑾峰彇鑰冪敓鐨勫疄渚嬭繘搴︼紙濡傛灉宸茶喘涔帮級
 	progResp, err := h.Gprog.ListCandidatePipelines(ctx, &gprogpb.ListCandidatePipelinesReq{
 		CandidateUlid: candidateID,
 	})
 	if err == nil {
 		for _, p := range progResp.GetPipelines() {
-			// 閲嶈锛氫娇鐢ㄦ煡鍑烘潵鐨勯厤缃?ID (PipelineId) 杩涜鍖归厤
 			if p.GetPipelineCcUlid() == gccResp.GetPipelineId() {
 				out.Instance = toPipelineSummary(p)
 				break

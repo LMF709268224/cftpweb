@@ -568,11 +568,6 @@ func (h *Handler) PreviewLessonPDFPublic(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if !isValidPreviewResourceURL(preview.SourceURL) {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid preview url")
-		return
-	}
-
 	h.streamPDFPreview(w, r, preview.SourceURL, preview.Filename, "lesson", lessonID)
 }
 
@@ -641,11 +636,6 @@ func (h *Handler) PreviewResourceURLPublic(w http.ResponseWriter, r *http.Reques
 		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
 		return
 	}
-	if !isValidPreviewResourceURL(preview.SourceURL) {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid resource url")
-		return
-	}
-
 	h.streamPDFPreview(w, r, preview.SourceURL, preview.Filename, "resource", resourceURL)
 }
 
@@ -657,11 +647,6 @@ func (h *Handler) PreviewResourcePackFilePDFPublic(w http.ResponseWriter, r *htt
 		WriteError(w, http.StatusUnauthorized, ErrUnauthorized, "invalid or expired preview token")
 		return
 	}
-	if !isValidPreviewResourceURL(preview.SourceURL) {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid preview url")
-		return
-	}
-
 	h.streamPDFPreview(w, r, preview.SourceURL, preview.Filename, "resource-pack-file", fileID)
 }
 

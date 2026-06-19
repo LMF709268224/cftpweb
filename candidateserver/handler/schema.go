@@ -7,8 +7,6 @@ import (
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 )
 
-// ===================== 濞夈劌鍞介惂璇茬秿 (Auth) =====================
-
 type LoginInput struct {
 	Code  string `json:"code"`
 	State string `json:"state"`
@@ -26,8 +24,6 @@ type LoginRsp struct {
 type UserInfo struct {
 	Name string `json:"name"`
 }
-
-// ===================== 閻劍鍩?(User) =====================
 
 type UserMeRsp struct {
 	Name        string   `json:"name"`
@@ -87,15 +83,13 @@ type BaseRsp struct {
 	Msg  string `json:"msg"`
 }
 
-// ===================== 閸熷棗鐓?=====================
-
 type ListPipelinesRsp struct {
 	Pipelines []PipelineConfig `json:"pipelines,omitempty"`
 }
 
 type PipelineDetailRsp struct {
 	Config   PipelineConfig   `json:"config"`
-	Instance PipelineSummary  `json:"instance,omitempty"` // ????????????????????
+	Instance PipelineSummary  `json:"instance,omitempty"`
 	NextStep PipelineNextStep `json:"next_step,omitempty"`
 }
 
@@ -104,37 +98,37 @@ type PipelineConfig struct {
 	UnlockStripePriceId    string          `json:"unlock_stripe_price_id,omitempty"`
 	PackageStripeProductId string          `json:"package_stripe_product_id,omitempty"`
 	PackageStripePriceId   string          `json:"package_stripe_price_id,omitempty"`
-	PipelineId             string          `json:"pipeline_id,omitempty"`   // ULID (閻楀牊婀伴崬顖欑ID) [required]
-	PipelineGuid           string          `json:"pipeline_guid,omitempty"` // ULID (娑撴艾濮熼崬顖欑ID) [required]
-	Version                uint32          `json:"version,omitempty"`       // 閻楀牊婀伴崣?[required]
-	Name                   string          `json:"name,omitempty"`          // 缁狅紕鍤庨崥宥囆?[required]
-	CategoryTips           string          `json:"category_tips,omitempty"` // 閸掑棛琚幓鎰仛 [required]
+	PipelineId             string          `json:"pipeline_id,omitempty"`
+	PipelineGuid           string          `json:"pipeline_guid,omitempty"` // ULID (业务唯一ID) [required]
+	Version                uint32          `json:"version,omitempty"`       // 版本号 [required]
+	Name                   string          `json:"name,omitempty"`          // 资格类别名称 [required]
+	CategoryTips           string          `json:"category_tips,omitempty"` // 分类提示 [required]
 	Description            string          `json:"description,omitempty"`
 	ThumbnailObjectKey     string          `json:"thumbnail_object_key,omitempty"`
 	ThumbnailFileHash      string          `json:"thumbnail_file_hash,omitempty"`
-	UnlockFee              int64           `json:"unlock_fee,omitempty"`       // 鐟欙綁鏀ｇ拹鍦暏閿涘苯宕熸担宥忕窗閸?[required]
-	PackageDiscount        int32           `json:"package_discount,omitempty"` // 婵傛顦甸幎妯诲⒏閿涘苯宕熸担宥忕窗閸╄櫣鍋ｉ敍?500 = 95%閿涘required]
-	UnlockQuals            []Qualification `json:"unlock_quals,omitempty"`     // 鐟欙綁鏀ｉ弶鈥叉 [required]
-	CertQuals              []Qualification `json:"cert_quals,omitempty"`       // 鐠囦椒鍔熺憰浣圭湴 [required]
-	Stages                 []StageConfig   `json:"stages,omitempty"`           // 闂冭埖顔岄柊宥囩枂 [required]
-	Status                 string          `json:"status,omitempty"`           // 閻樿埖鈧?[required]
-	IsCurrent              bool            `json:"is_current,omitempty"`       // 閺勵垰鎯佹稉鍝勭秼閸撳秶澧楅張?[required]
-	CreatedAt              string          `json:"created_at,omitempty"`       // 閸掓稑缂撻弮鍫曟？ [required]
-	FinalQuals             []Qualification `json:"final_quals,omitempty"`      // 缂佹挷绗熺挧鍕壐 [required]
+	UnlockFee              int64           `json:"unlock_fee,omitempty"`       // 解锁费用，单位：分 [required]
+	PackageDiscount        int32           `json:"package_discount,omitempty"` // 套餐折扣，单位：基点（9500 = 95%）[required]
+	UnlockQuals            []Qualification `json:"unlock_quals,omitempty"`     // 解锁条件 [required]
+	CertQuals              []Qualification `json:"cert_quals,omitempty"`       // 证书要求 [required]
+	Stages                 []StageConfig   `json:"stages,omitempty"`           // 阶段配置 [required]
+	Status                 string          `json:"status,omitempty"`           // 资格状态 [required]
+	IsCurrent              bool            `json:"is_current,omitempty"`       // 是否为当前版本 [required]
+	CreatedAt              string          `json:"created_at,omitempty"`       // 创建时间 RFC3339 格式字符串 [optional]
+	FinalQuals             []Qualification `json:"final_quals,omitempty"`      // 结业资格 [required]
 	PurchaseCount          *int32          `json:"purchase_count,omitempty"`
 }
 
 type Qualification struct {
-	QualId   string `json:"qual_id,omitempty"`   // 鐠у嫭鐗?ULID 鐎电懓绨瞘cred娑擃厾娈慶red catalog id [required]
-	NameHint string `json:"name_hint,omitempty"` // 鐠у嫭鐗搁崥宥囆?[required]
+	QualId   string `json:"qual_id,omitempty"`   // 资格 ULID 对应gcred中的cred catalog id [required]
+	NameHint string `json:"name_hint,omitempty"` // 资格名称 [required]
 }
 
 type StageConfig struct {
 	RuntimeStatus gprogpb.StageStatus `json:"runtime_status,omitempty"`
-	StageId       string              `json:"stage_id,omitempty"`   // 缁狅紕鍤庨梼鑸殿唽閻?ULID [required]
-	Name          string              `json:"name,omitempty"`       // 闂冭埖顔岄崥宥囆?[required]
-	SortOrder     int32               `json:"sort_order,omitempty"` // 閹烘帒绨い鍝勭碍 [required]
-	Units         []UnitConfig        `json:"units,omitempty"`      // 閸楁洖鍘撻柊宥囩枂 [required]
+	StageId       string              `json:"stage_id,omitempty"`   // 管线阶段的 ULID [required]
+	Name          string              `json:"name,omitempty"`       // 资格类别名称 [required]
+	SortOrder     int32               `json:"sort_order,omitempty"` // 排序顺序 [required]
+	Units         []UnitConfig        `json:"units,omitempty"`      // 单元配置 [required]
 }
 type UnitConfig struct {
 	RuntimeStatus            gprog.CourseUnitStatus `json:"runtime_status,omitempty"`
@@ -165,33 +159,33 @@ type UnitConfig struct {
 }
 
 type ListMyPipelinesRsp struct {
-	List []PipelineSummary `json:"list,omitempty"` // pipeline 閹芥顩﹂崚妤勩€?[required]
+	List []PipelineSummary `json:"list,omitempty"` // pipeline 摘要列表 [required]
 }
 
 // PipelineSummary pipeline 閹芥顩?
 type PipelineSummary struct {
-	PipelineUlid      string                 `json:"pipeline_ulid,omitempty"`    // pipeline 鐎圭偘绶?ULID [required]
-	CandidateUlid     string                 `json:"candidate_ulid,omitempty"`   // 閼板啰鏁?ULID [required]
-	PipelineCcUlid    string                 `json:"pipeline_cc_ulid,omitempty"` // gcc 娑?pipeline 闁板秶鐤?ULID [required]
+	PipelineUlid      string                 `json:"pipeline_ulid,omitempty"`    // pipeline 实例 ULID [required]
+	CandidateUlid     string                 `json:"candidate_ulid,omitempty"`   // 考生 ULID [required]
+	PipelineCcUlid    string                 `json:"pipeline_cc_ulid,omitempty"` // gcc 中 pipeline 配置 ULID [required]
 	PipelineName      string                 `json:"pipeline_name,omitempty"`
-	Status            gprogpb.PipelineStatus `json:"status,omitempty"`             // pipeline 瑜版挸澧犻悩鑸碘偓?[required]
-	CurrentStageUlid  string                 `json:"current_stage_ulid,omitempty"` // 瑜版挸澧?stage 鐎圭偘绶?ULID [optional]
+	Status            gprogpb.PipelineStatus `json:"status,omitempty"`             // 资格状态 [required]
+	CurrentStageUlid  string                 `json:"current_stage_ulid,omitempty"` // 当前 stage 实例 ULID [required]
 	Description       string                 `json:"description,omitempty"`
 	CurrentStageName  string                 `json:"current_stage_name,omitempty"`
-	Progress          float64                `json:"progress"` // 瑜版挸澧犻梼鑸殿唽閻ㄥ嫬顒熸稊鐘虹箻鎼?(0-100)
+	Progress          float64                `json:"progress"` // 当前阶段的学习进度 (0-100)
 	ProgressAvailable bool                   `json:"progress_available,omitempty"`
 	LmsProgress       uint32                 `json:"lms_progress,omitempty"` // LMS 鐠囧墽鈻兼潻娑樺閻ф儳鍨庡В?[optional]
-	StartedAt         string                 `json:"started_at,omitempty"`   // pipeline 瀵偓婵妞傞梻杈剧礉RFC3339 [optional]
-	CompletedAt       string                 `json:"completed_at,omitempty"` // pipeline 鐎瑰本鍨氶弮鍫曟？閿涘FC3339 [optional]
-	CreatedAt         string                 `json:"created_at,omitempty"`   // pipeline 閸掓稑缂撻弮鍫曟？閿涘FC3339 [required]
+	StartedAt         string                 `json:"started_at,omitempty"`   // pipeline 开始时间，RFC3339 [optional]
+	CompletedAt       string                 `json:"completed_at,omitempty"` // pipeline 完成时间，RFC3339 [optional]
+	CreatedAt         string                 `json:"created_at,omitempty"`   // 创建时间 RFC3339 格式字符串 [optional]
 }
 
 type PipelineCreateRsp struct {
-	PipelineUlid       string                 `json:"pipeline_ulid,omitempty"`        // pipeline 鐎圭偘绶?ULID [required]
-	PipelineStatus     gprogpb.PipelineStatus `json:"pipeline_status,omitempty"`      // pipeline 瑜版挸澧犻悩鑸碘偓?[required]
-	CurrentStageUlid   string                 `json:"current_stage_ulid,omitempty"`   // 瑜版挸澧?stage 鐎圭偘绶?ULID閿涘矁瀚㈤弮鐘插灟娑撹櫣鈹?[optional]
-	CurrentStageStatus gprogpb.StageStatus    `json:"current_stage_status,omitempty"` // 瑜版挸澧?stage 閻樿埖鈧緤绱濋懟銉︽￥閸掓瑤璐?UNSPECIFIED [required]
-	Message            string                 `json:"message,omitempty"`              // 娴滆櫣琚崣顖濐嚢鐠囧瓨妲?[required]
+	PipelineUlid       string                 `json:"pipeline_ulid,omitempty"`        // pipeline 实例 ULID [required]
+	PipelineStatus     gprogpb.PipelineStatus `json:"pipeline_status,omitempty"`      // pipeline 当前状态 [required]
+	CurrentStageUlid   string                 `json:"current_stage_ulid,omitempty"`   // 当前 stage 实例 ULID [required]
+	CurrentStageStatus gprogpb.StageStatus    `json:"current_stage_status,omitempty"` // 当前 stage 状态 [required]
+	Message            string                 `json:"message,omitempty"`              // 人类可读的说明
 }
 
 type PipelineRuntimeRsp struct {
@@ -289,7 +283,7 @@ type PrepareRetakePaymentRsp struct {
 	Message               string `json:"message,omitempty"`
 }
 
-// ===================== 妫ｆ牠銆?(Dashboard) =====================
+// ===================== 首页 (Dashboard) =====================
 
 type DashboardRsp struct {
 	CandidateName       string            `json:"candidate_name"`
@@ -327,7 +321,7 @@ type DashboardStats struct {
 	UnreadMessages       int    `json:"unread_messages"`
 }
 
-// ===================== 鐎涳缚绡勬潻娑樺 (Progress) =====================
+// ===================== 学习进度 (Progress) =====================
 
 type ProgressRecordInput struct {
 	MaterialID      string  `json:"material_id"`
@@ -385,19 +379,19 @@ type MaterialListRsp struct {
 }
 
 type GetProgressRsp struct {
-	Records []ProgressRecord `json:"records,omitempty"` // 鏉╂稑瀹崇拋鏉跨秿閸掓銆?[required]
+	Records []ProgressRecord `json:"records,omitempty"` // 进度记录列表 [required]
 }
 
 type ProgressRecord struct {
-	CandidateId     string  `json:"candidate_id,omitempty"`      // 閼板啰鏁揑D [required]
-	MaterialId      string  `json:"material_id,omitempty"`       // 鐠у嫭鏋D [required]
-	CoursePackageId string  `json:"course_package_id,omitempty"` // 鐠у嫭鏋￠崠鍖 [required]
-	ProgressType    string  `json:"progress_type,omitempty"`     // 鏉╂稑瀹崇猾璇茬€?[required]
-	ProgressValue   float64 `json:"progress_value,omitempty"`    // 鏉╂稑瀹抽崐纭风窗鐟欏棝顣舵稉铏诡潡閺佸府绱濋弬鍥ㄣ€傛稉铏规閸掑棙鐦?[required]
-	RecordedAt      string  `json:"recorded_at,omitempty"`       // 鐠佹澘缍嶉弮鍫曟？ RFC3339 [required]
+	CandidateId     string  `json:"candidate_id,omitempty"`      // 考生逻辑 ID (ULID)
+	MaterialId      string  `json:"material_id,omitempty"`       // 资料ID [required]
+	CoursePackageId string  `json:"course_package_id,omitempty"` // 资料包ID [required]
+	ProgressType    string  `json:"progress_type,omitempty"`     // 进度类型 [required]
+	ProgressValue   float64 `json:"progress_value,omitempty"`    // 进度值：视频为秒数，文档为百分比 [required]
+	RecordedAt      string  `json:"recorded_at,omitempty"`       // 记录时间 RFC3339 [required]
 }
 
-// ===================== 閼板啳鐦?(Exams) =====================
+// ===================== 考试 (Exams) =====================
 
 type ExamResultDetailRsp struct {
 	ExamId           string  `json:"exam_id,omitempty"`
@@ -439,16 +433,16 @@ type ListExamsRsp struct {
 }
 
 type CandidateSignupExamRsp struct {
-	CourseUnitUlid   string                 `json:"course_unit_ulid,omitempty"`   // course unit 鐎圭偘绶?ULID [required]
-	CourseUnitStatus gprog.CourseUnitStatus `json:"course_unit_status,omitempty"` // course unit 瑜版挸澧犻悩鑸碘偓?[required]
-	Message          string                 `json:"message,omitempty"`            // 娴滆櫣琚崣顖濐嚢鐠囧瓨妲?[required]
+	CourseUnitUlid   string                 `json:"course_unit_ulid,omitempty"`   // course unit 实例 ULID [required]
+	CourseUnitStatus gprog.CourseUnitStatus `json:"course_unit_status,omitempty"` // course unit 当前状态 [required]
+	Message          string                 `json:"message,omitempty"`            // 人类可读的说明
 }
 
 // CandidateApplyRetake
 type CandidateApplyRetakeRsp struct {
-	CourseUnitUlid   string                 `json:"course_unit_ulid,omitempty"`   // course unit 鐎圭偘绶?ULID [required]
-	CourseUnitStatus gprog.CourseUnitStatus `json:"course_unit_status,omitempty"` // course unit 瑜版挸澧犻悩鑸碘偓?[required]
-	Message          string                 `json:"message,omitempty"`            // 娴滆櫣琚崣顖濐嚢鐠囧瓨妲?[required]
+	CourseUnitUlid   string                 `json:"course_unit_ulid,omitempty"`   // course unit 实例 ULID [required]
+	CourseUnitStatus gprog.CourseUnitStatus `json:"course_unit_status,omitempty"` // course unit 当前状态 [required]
+	Message          string                 `json:"message,omitempty"`            // 人类可读的说明
 }
 
 type GetScheduleURLRsp struct {
@@ -474,22 +468,22 @@ type ExamResultRsp struct {
 	ScoreDetailsRaw string      `json:"score_details_raw,omitempty"`
 }
 
-// ===================== 閺€顖欑帛 (Payments) =====================
+// ===================== 支付 (Payments) =====================
 
 type LineItemInput struct {
-	Name        string `json:"name"`        // 閸熷棗鎼ч崥宥囆為敍灞筋洤 "Level 1 鐠併倛鐦夐懓鍐槸鐠愬湱鏁?
-	Description string `json:"description"` // 閸熷棗鎼х拠锔剧矎閹诲繗鍫?
-	UnitAmount  int64  `json:"unit_amount"` // 閸熷棗鎼ч崡鏇氱幆閿涘牆宕熸担宥忕窗閸掑棴绱濇俊?100 娴狅綀銆?1.00 閸忓喛绱?
-	Quantity    int64  `json:"quantity"`    // 鐠愵厺鎷遍弫浼村櫤
-	Currency    string `json:"currency"`    // 鐠愌冪鐢胶顫掗敍灞筋洤 "usd", "cny"
+	Name        string `json:"name"`        // 商品名称，如 "Level 1 认证考试费用"
+	Description string `json:"description"` // 商品详细描述
+	UnitAmount  int64  `json:"unit_amount"` // 商品单价（单位：分，如 100 代表 1.00 元）
+	Quantity    int64  `json:"quantity"`    // 购买数量
+	Currency    string `json:"currency"`    // 货币币种，如 "usd", "cny"
 }
 
 type CreatePaymentInput struct {
 	// OrderID    string            `json:"order_id"`
-	LineItems  []LineItemInput   `json:"line_items"`  // 鐠併垹宕熼崠鍛儓閻ㄥ嫬鏅㈤崫浣稿灙鐞?
-	Metadata   map[string]string `json:"metadata"`    // 閹碘晛鐫嶉崗鍐╂殶閹诡噯绱濋棁鈧崠鍛儓 pipeline_ulid, stage_ulid 娴犮儰绌堕崶鐐剁殶鐎电澶?
-	SuccessURL string            `json:"success_url"` // 閺€顖欑帛閹存劕濮涢崥搴ｆ畱鐠哄疇娴嗛崷鏉挎絻
-	CancelURL  string            `json:"cancel_url"`  // 閺€顖欑帛閸欐牗绉烽崥搴ｆ畱鏉╂柨娲栭崷鏉挎絻
+	LineItems  []LineItemInput   `json:"line_items"`  // 订单包含的商品列表
+	Metadata   map[string]string `json:"metadata"`    // 扩展元数据，需包含 pipeline_ulid, stage_ulid 以便回调对账
+	SuccessURL string            `json:"success_url"` // 支付成功后的跳转地址
+	CancelURL  string            `json:"cancel_url"`  // 支付取消后的返回地址
 }
 
 type CreatePaymentRsp struct {
@@ -513,7 +507,7 @@ type CancelPaymentRsp struct {
 	Message string `json:"message"`
 }
 
-// ===================== 閸欐垹銈?(Invoices) =====================
+// ===================== 发票 (Invoices) =====================
 
 type QueryInvoiceRsp struct {
 	InvoiceNumber string  `json:"invoice_number"`
@@ -525,7 +519,7 @@ type QueryInvoiceRsp struct {
 	InvoiceUrl    string  `json:"invoice_url"`
 }
 
-// ===================== 鐠併垹宕?(Orders) =====================
+// ===================== 订单 (Orders) =====================
 
 type OrderItem struct {
 	OrderID              string  `json:"order_id"`
@@ -620,19 +614,19 @@ type OrderListRsp struct {
 	Orders      []OrderItem `json:"orders"`
 }
 
-// ===================== 濞戝牊浼?(Messages) =====================
+// ===================== 消息 (Messages) =====================
 
 type MessageListInput struct {
-	Limit  int `json:"limit"`   //  濮ｅ繘銆夐弫浼村櫤閿涘矂绮拋?20
-	LastId int `json:"last_id"` // 娑撳﹣绔存い鍨付閸氬海娈慽d
+	Limit  int `json:"limit"`   // 每页数量，默认 20
+	LastId int `json:"last_id"` // 上一页最后的id
 }
 
 type MessageItem struct {
-	Id         uint64 `json:"id"`          // 閼奉亜顤僆D, 娑撳鏁?
-	MessageId  string `json:"message_id"`  // 濞戝牊浼匢D
-	UserId     string `json:"user_id"`     // 閼板啰鏁揑D
-	TemplateId string `json:"template_id"` // 濡剝婢業D
-	// payload 鐎涙ê鍋嶆稉?JSON 鐎涙顑佹稉璇х礉閸撳秶顏?Vue3 閻╁瓨甯?JSON.parse 閸楀啿褰?
+	Id         uint64 `json:"id"`          // 自增ID, 主键
+	MessageId  string `json:"message_id"`  // 消息ID
+	UserId     string `json:"user_id"`     // 考生ID
+	TemplateId string `json:"template_id"` // 模板ID
+	// payload 存储为 JSON 字符串，前端 Vue3 直接 JSON.parse 即可
 	Payload         string               `json:"payload"`
 	TemplatePayload string               `json:"template_payload,omitempty"`
 	Title           string               `json:"title,omitempty"`
@@ -641,7 +635,7 @@ type MessageItem struct {
 	MsgSource       gmsgpb.MsgSource     `json:"msg_source"`
 	SenderId        string               `json:"sender_id"`
 	Status          gmsgpb.MessageStatus `json:"status"`
-	// 閺冨爼妫挎担璺ㄦ暏 string 鐞涖劏鎻?(閺嶇厧绱? "2026-04-27T16:00:00Z")
+	// 时间使用 string 表达 (格式: "2026-04-27T16:00:00Z")
 	CreatedAt string `json:"created_at"`
 }
 
@@ -658,7 +652,7 @@ type MessageOperationInput struct {
 	MessageIDs []string `json:"message_ids"`
 }
 
-// ===================== 娴兼艾鎲?(Membership) =====================
+// ===================== 会员 (Membership) =====================
 
 type MembershipRsp struct {
 	Level        string   `json:"level"` // student / certified / charterholder
@@ -668,53 +662,53 @@ type MembershipRsp struct {
 	Benefits     []string `json:"benefits"`
 }
 
-// ===================== 鐠囦椒鍔?(Certificates) =====================
+// ===================== 证书 (Certificates) =====================
 
 type ListCredentialsRsp struct {
 	Credentials []CredentialsItem `json:"credentials"`
 }
 
 type CredentialsItem struct {
-	CatalogId   string `json:"catalog_id,omitempty"`  // 鐠у嫭鐗哥猾璇插焼ID ULID [required]
-	Name        string `json:"name,omitempty"`        // 鐠у嫭鐗哥猾璇插焼閸氬秶袨 [required]
-	Description string `json:"description,omitempty"` // 鐠у嫭鐗哥猾璇插焼閹诲繗鍫?[required]
+	CatalogId   string `json:"catalog_id,omitempty"`  // 资格类别ID ULID [required]
+	Name        string `json:"name,omitempty"`        // 资格类别名称 [required]
+	Description string `json:"description,omitempty"` // 资格类别描述 [required]
 
-	Eligible         bool                    `json:"eligible,omitempty"`          // 閺勵垰鎯侀幐浣规箒閺堝鏅ョ挧鍕壐
-	CredentialStatus gcreds.CredentialStatus `json:"credential_status,omitempty"` // 瑜版挸澧犵挧鍕壐閻樿埖鈧緤绱遍懟銉︽￥鐠佹澘缍嶉崚娆庤礋 UNSPECIFIED
-	Message          string                  `json:"message,omitempty"`           // 娴滆櫣琚崣顖濐嚢閻ㄥ嫯顕╅弰?
+	Eligible         bool                    `json:"eligible,omitempty"`          // 是否持有有效资格
+	CredentialStatus gcreds.CredentialStatus `json:"credential_status,omitempty"` // 当前资格状态；若无记录则为 UNSPECIFIED
+	Message          string                  `json:"message,omitempty"`           // 人类可读的说明
 
-	CertificateInfo // 鐠囦椒鍔熸穱鈩冧紖 [optional]
+	CertificateInfo // 证书信息 [optional]
 }
 
 type CertificateFileInfo struct {
 	FileHash  string                    `json:"file_hash,omitempty"`  // SHA256 [required]
-	FileName  string                    `json:"file_name,omitempty"`  // 閺傚洣娆㈤崥?[required]
-	FileType  gcreds.CredentialFileType `json:"file_type,omitempty"`  // 閺傚洣娆㈢猾璇茬€?[required]
-	FileExt   string                    `json:"file_ext,omitempty"`   // 閺傚洣娆㈤幍鈺佺潔閸?[required]
-	FileSize  uint64                    `json:"file_size,omitempty"`  // 閺傚洣娆㈡径褍鐨?[required]
-	FileUsage string                    `json:"file_usage,omitempty"` // 閺傚洣娆㈤悽銊┾偓? 婵?"front_view" [optional]
+	FileName  string                    `json:"file_name,omitempty"`  // 文件名 [required]
+	FileType  gcreds.CredentialFileType `json:"file_type,omitempty"`  // 文件类型 [required]
+	FileExt   string                    `json:"file_ext,omitempty"`   // 文件扩展名 [required]
+	FileSize  uint64                    `json:"file_size,omitempty"`  // 文件大小 [required]
+	FileUsage string                    `json:"file_usage,omitempty"` // 文件用途, 如 "front_view" [optional]
 	ViewUrl   string                    `json:"view_url,omitempty"`   // 閺傚洣娆㈤崣顖濐問闂傤噣鎽奸幒?[optional]
 }
 
 type CertificateInfo struct {
-	CredId      string                  `json:"cred_id,omitempty"`      // 閸烆垯绔碔D ULID [required]
-	CredGuid    string                  `json:"cred_guid,omitempty"`    // 鐠恒劎澧楅張顑跨瑹閸斺€虫暜娑撯偓 ID
-	CandidateId string                  `json:"candidate_id,omitempty"` // 閼板啰鏁撻柅鏄忕帆 ID (ULID)
-	Version     uint32                  `json:"version,omitempty"`      // 閻楀牊婀伴崣?[required]
-	Status      gcreds.CredentialStatus `json:"status,omitempty"`       // 鐠у嫭鐗搁悩鑸碘偓?[required]
-	Files       []CertificateFileInfo   `json:"files,omitempty"`        // 閺傚洣娆㈤崚妤勩€?[required]
-	AuditorId   string                  `json:"auditor_id,omitempty"`   // 鐎光剝鐗虫禍绡扗 ULID [optional]
-	AuditRemark string                  `json:"audit_remark,omitempty"` // 鐎光剝鐗虫径鍥ㄦ暈 [optional]
-	ValidUntil  string                  `json:"valid_until,omitempty"`  // 閺堝鏅ラ張?RFC3339 閺嶇厧绱＄€涙顑佹稉?[optional]
-	CreatedAt   string                  `json:"created_at,omitempty"`   // 閸掓稑缂撻弮鍫曟？ RFC3339 閺嶇厧绱＄€涙顑佹稉?[optional]
+	CredId      string                  `json:"cred_id,omitempty"`      // 唯一ID ULID [required]
+	CredGuid    string                  `json:"cred_guid,omitempty"`    // 跨版本业务唯一 ID
+	CandidateId string                  `json:"candidate_id,omitempty"` // 考生逻辑 ID (ULID)
+	Version     uint32                  `json:"version,omitempty"`      // 版本号 [required]
+	Status      gcreds.CredentialStatus `json:"status,omitempty"`       // 资格状态 [required]
+	Files       []CertificateFileInfo   `json:"files,omitempty"`        // 文件列表 [required]
+	AuditorId   string                  `json:"auditor_id,omitempty"`   // 审核人ID ULID [optional]
+	AuditRemark string                  `json:"audit_remark,omitempty"` // 审核备注 [optional]
+	ValidUntil  string                  `json:"valid_until,omitempty"`  // 有效期 RFC3339 格式字符串 [optional]
+	CreatedAt   string                  `json:"created_at,omitempty"`   // 创建时间 RFC3339 格式字符串 [optional]
 }
 
 type CertificateItem struct {
-	CatalogId   string `json:"catalog_id,omitempty"`  // 鐠у嫭鐗哥猾璇插焼ID ULID [required]
-	Name        string `json:"name,omitempty"`        // 鐠у嫭鐗哥猾璇插焼閸氬秶袨 [required]
-	Description string `json:"description,omitempty"` // 鐠у嫭鐗哥猾璇插焼閹诲繗鍫?[required]
+	CatalogId   string `json:"catalog_id,omitempty"`  // 资格类别ID ULID [required]
+	Name        string `json:"name,omitempty"`        // 资格类别名称 [required]
+	Description string `json:"description,omitempty"` // 资格类别描述 [required]
 
-	CertificateInfo // 鐠囦椒鍔熸穱鈩冧紖 [optional]
+	CertificateInfo // 证书信息 [optional]
 }
 
 type ListCertificatesRsp struct {

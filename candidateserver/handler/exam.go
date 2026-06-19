@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
+
+	"candidateserver/config"
 
 	"github.com/go-chi/chi/v5"
 
@@ -15,6 +18,8 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
+
+const examCallbackPath = "/api/public/webhooks/exams/callback"
 
 // SignupExam POST /api/exams/units/{courseUnitUlid}/signup
 func (h *Handler) SignupExam(w http.ResponseWriter, r *http.Request) {
@@ -177,11 +182,7 @@ func (h *Handler) GetScheduleURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 后端自行构建回调基准地址，不再依赖前端传入，提升安全性和整洁度
-	scheme := "https"
-	if r.Header.Get("X-Forwarded-Proto") == "http" || (r.TLS == nil && r.Header.Get("X-Forwarded-Proto") == "") {
-		scheme = "http"
-	}
-	termURLBase := scheme + "://" + r.Host + "/api/public/webhooks/exams/callback"
+	termURLBase := examCallbackBaseURL(r)
 
 	if pipelineULID == "" && courseULID == "" {
 		if !requireRequestFields(w, candidateID, "candidate_id", examID, "exam_id") {
@@ -218,6 +219,22 @@ func (h *Handler) GetScheduleURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, GetScheduleURLRsp{URL: resp.GetUrl()})
+}
+
+func examCallbackBaseURL(r *http.Request) string {
+	if configured := strings.TrimSpace(os.Getenv(config.EnvExamCallbackBaseURL)); configured != "" {
+		configured = strings.TrimRight(configured, "/")
+		if strings.HasSuffix(configured, examCallbackPath) {
+			return configured
+		}
+		return configured + examCallbackPath
+	}
+
+	scheme := "https"
+	if r.Header.Get("X-Forwarded-Proto") == "http" || (r.TLS == nil && r.Header.Get("X-Forwarded-Proto") == "") {
+		scheme = "http"
+	}
+	return scheme + "://" + r.Host + examCallbackPath
 }
 
 // GetExamResult GET /api/exams/{examId}/result

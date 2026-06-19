@@ -49,6 +49,8 @@ const (
 	EnvGcredsGrpcAddr = "GCREDS_GRPC_ADDR"
 	// GEXAM_GRPC_ADDR gexam 考试服务地址
 	EnvGexamGrpcAddr = "GEXAM_GRPC_ADDR"
+	// EXAM_CALLBACK_BASE_URL public origin or full callback URL for third-party exam callbacks.
+	EnvExamCallbackBaseURL = "EXAM_CALLBACK_BASE_URL"
 	// GMID_GRPC_ADDR gmid ID映射服务地址
 	EnvGmidGrpcAddr = "GMID_GRPC_ADDR"
 	// GPAY_GRPC_ADDR gpay 支付服务地址
