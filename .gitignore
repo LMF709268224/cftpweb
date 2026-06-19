@@ -21,3 +21,10 @@ ztest/
 CLAUDE.md
 deployment/
 scratch/
+
+# Go Workspace and Binaries
+go.work
+go.work.sum
+candweb/candweb
+candbff/candbff
+candweb/vue-web/dist/
