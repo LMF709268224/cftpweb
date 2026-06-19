@@ -24,11 +24,11 @@
   --input: #d6deea;
   --ring: #1b458d;
   --radius: 0.75rem;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #344054;
-  --sidebar-accent: #e6efff;
+  --sidebar: #dfeaff;
+  --sidebar-foreground: #2f5597;
+  --sidebar-accent: #bfd4fb;
   --sidebar-accent-foreground: #1b458d;
-  --sidebar-border: #e4e9f2;
+  --sidebar-border: #ccdaee;
 }
 
 @theme inline {
@@ -156,7 +156,7 @@
       max-width: none;
       margin-left: 0;
       margin-right: 0;
-      padding: 1rem 1rem 1rem 280px;
+      padding: 1rem 1rem 1rem 296px;
     }
 
     .page-panel {

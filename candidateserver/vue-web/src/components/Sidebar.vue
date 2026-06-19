@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { Award, ClipboardList, FileCheck2, GraduationCap, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, User, X } from "lucide-vue-next"
+import { Award, ChevronUp, ClipboardList, FileCheck2, GraduationCap, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
 import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
+import { useUser } from "@/lib/user"
 import brandLogo from "@/assets/favicon.png"
 
 const { t, lang, changeLanguage } = useTranslation()
+const { currentUser, fetchUser } = useUser()
 const route = useRoute()
 const userName = ref(t.value.common.user)
+const userEmail = computed(() => currentUser.value?.email || "")
 const unreadCount = ref(0)
 const menuOpen = ref(false)
 const mobileMenuOpen = ref(false)
@@ -87,6 +90,7 @@ function handlePointerDown(event: PointerEvent) {
 
 onMounted(async () => {
   updateName()
+  fetchUser()
   window.addEventListener("storage", updateName)
   window.addEventListener("pointerdown", handlePointerDown)
   stopUnreadCountListener = onUnreadCountChanged((value) => {
@@ -145,10 +149,12 @@ async function handleLogout() {
 
   <div v-if="mobileMenuOpen" class="fixed inset-0 z-50 lg:hidden">
     <div class="absolute inset-0 bg-slate-950/35" @click="mobileMenuOpen = false" />
-    <aside class="app-side-card absolute left-0 top-0 h-full w-[248px] max-w-[78vw] max-h-none overflow-y-auto rounded-none border-r border-sidebar-border bg-sidebar shadow-2xl shadow-slate-950/20">
+    <aside class="app-side-card absolute left-0 top-0 flex h-full w-[280px] max-w-[82vw] max-h-none flex-col overflow-y-auto rounded-none border-r border-sidebar-border bg-sidebar shadow-2xl shadow-slate-950/20">
       <div class="flex h-20 items-center justify-between px-5">
         <RouterLink to="/" class="flex items-center gap-3" @click="mobileMenuOpen = false">
-          <img :src="brandLogo" alt="Global Fintech Institute" class="h-8 w-8 rounded-lg object-contain" />
+          <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
+            <img :src="brandLogo" alt="Global Fintech Institute" class="h-7 w-7 rounded-md object-contain" />
+          </span>
           <span class="text-[14px] font-semibold text-[#003A70]">Global Fintech Institute</span>
         </RouterLink>
         <button class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-sidebar-accent hover:text-primary" @click="mobileMenuOpen = false">
@@ -156,118 +162,161 @@ async function handleLogout() {
         </button>
       </div>
 
-      <div class="border-y border-sidebar-border px-5 py-6 text-center">
-        <div class="mx-auto flex h-[54px] w-[54px] items-center justify-center rounded-full bg-primary/10 text-2xl font-black text-primary">
-          {{ userName.charAt(0).toUpperCase() }}
-        </div>
-        <h2 class="mt-3 truncate text-sm font-bold text-foreground">{{ userName }}</h2>
-      </div>
-
-      <nav class="space-y-1 px-3 py-4 text-[15px] text-sidebar-foreground">
+      <nav class="flex-1 space-y-1 px-4 py-4 text-[15px] text-sidebar-foreground">
+        <div class="px-1 pb-2 pt-1 text-xs font-medium text-[#5878ad]">Menu</div>
         <div
           v-for="(item, index) in navItems"
           :key="item.href"
         >
           <div
             v-if="item.group && item.group !== navItems[index - 1]?.group"
-            class="px-4 pb-1 pt-4 text-[11px] font-bold text-slate-400"
+            class="px-4 pb-1 pt-4 text-xs font-medium text-[#5878ad]"
           >
             {{ item.group }}
           </div>
           <RouterLink
             :to="item.href"
             :class="[
-              'group/nav-item flex items-center justify-between rounded-lg px-4 py-2.5 transition-colors duration-200',
-              isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground' : 'hover:bg-[#F3F6FA] hover:text-sidebar-foreground',
+              'group/nav-item flex items-center justify-between rounded-xl px-4 py-2.5 transition-colors duration-200',
+              isNavItemActive(item.href) ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : 'hover:bg-white/50 hover:text-sidebar-accent-foreground',
             ]"
             @click="mobileMenuOpen = false"
           >
             <span class="flex min-w-0 items-center gap-3">
-              <component :is="navIconFor(item.href)" :class="['h-[18px] w-[18px] shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#667085] group-hover/nav-item:scale-[1.06] group-hover/nav-item:text-[#111827]']" :stroke-width="1.8" />
+              <component :is="navIconFor(item.href)" :class="['h-[18px] w-[18px] shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#2f5597] group-hover/nav-item:scale-[1.05] group-hover/nav-item:text-sidebar-accent-foreground']" :stroke-width="1.9" />
               <span class="truncate">{{ item.label }}</span>
             </span>
             <span v-if="item.badge" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
           </RouterLink>
         </div>
       </nav>
+
+      <div class="px-4 pb-5">
+        <button
+          class="mb-3 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 text-sm font-semibold text-[#2f5597] shadow-sm backdrop-blur transition-colors hover:bg-white"
+          type="button"
+          @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
+        >
+          <Languages class="h-4 w-4" />
+          <span>{{ lang === "zh" ? "中文 / EN" : "EN / 中文" }}</span>
+        </button>
+
+        <button
+          class="flex h-12 w-full items-center gap-4 rounded-2xl px-4 text-left transition-colors hover:bg-sidebar-accent"
+          :class="menuOpen ? 'bg-sidebar-accent' : ''"
+          type="button"
+          @pointerdown.stop
+          @click="menuOpen = !menuOpen"
+        >
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eeeeee] text-sm font-bold text-black">
+            {{ userName.charAt(0).toUpperCase() }}
+          </span>
+          <span class="min-w-0 flex-1 truncate text-sm font-medium text-sidebar-accent-foreground">{{ userName }}</span>
+          <ChevronUp class="h-4 w-4 shrink-0 text-sidebar-accent-foreground transition-transform" :class="menuOpen ? '' : 'rotate-180'" :stroke-width="2" />
+        </button>
+      </div>
     </aside>
   </div>
 
-  <aside class="app-side-card fixed left-0 top-0 z-30 hidden h-screen w-[264px] overflow-y-auto border-r border-sidebar-border bg-sidebar lg:block">
-    <RouterLink to="/" class="flex h-20 items-center gap-2.5 px-6">
-      <img :src="brandLogo" alt="Global Fintech Institute" class="h-8 w-8 rounded-lg object-contain" />
+  <aside class="app-side-card fixed left-0 top-0 z-30 hidden h-screen w-[280px] overflow-y-auto border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
+    <RouterLink to="/" class="flex h-20 items-center gap-4 px-8">
+      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
+        <img :src="brandLogo" alt="Global Fintech Institute" class="h-7 w-7 rounded-md object-contain" />
+      </span>
       <div class="min-w-0 flex-1 whitespace-nowrap text-[14px] font-semibold leading-5 text-[#003A70]">
         Global Fintech Institute
       </div>
     </RouterLink>
 
-    <div class="h-px bg-sidebar-border" />
-
-    <div class="px-5 pb-3 pt-5 text-xs font-bold uppercase tracking-wide text-slate-400">Menu</div>
-    <nav class="space-y-1 px-3 text-[15px] text-sidebar-foreground">
+    <nav class="flex-1 space-y-1 px-4 py-3 text-[15px] text-sidebar-foreground">
+      <div class="px-1 pb-2 text-xs font-medium text-[#5878ad]">Menu</div>
       <div
         v-for="(item, index) in navItems"
         :key="item.href"
       >
         <div
           v-if="item.group && item.group !== navItems[index - 1]?.group"
-          class="px-3 pb-1 pt-4 text-[11px] font-bold text-slate-400"
+          class="px-4 pb-1 pt-4 text-xs font-medium text-[#5878ad]"
         >
           {{ item.group }}
         </div>
         <RouterLink
           :to="item.href"
           :class="[
-            'group/nav-item flex items-center justify-between rounded-lg px-3 py-2.5 transition-colors duration-200',
-            isNavItemActive(item.href) ? 'bg-sidebar-accent font-semibold text-sidebar-accent-foreground' : 'hover:bg-[#F3F6FA] hover:text-sidebar-foreground',
+            'group/nav-item flex items-center justify-between rounded-xl px-4 py-2.5 transition-colors duration-200',
+            isNavItemActive(item.href) ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : 'hover:bg-white/50 hover:text-sidebar-accent-foreground',
           ]"
         >
           <span class="flex min-w-0 items-center gap-3">
-            <component :is="navIconFor(item.href)" :class="['h-[18px] w-[18px] shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#667085] group-hover/nav-item:scale-[1.06] group-hover/nav-item:text-[#111827]']" :stroke-width="1.8" />
+            <component :is="navIconFor(item.href)" :class="['h-[18px] w-[18px] shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#2f5597] group-hover/nav-item:scale-[1.05] group-hover/nav-item:text-sidebar-accent-foreground']" :stroke-width="1.9" />
             <span class="truncate">{{ item.label }}</span>
           </span>
           <span v-if="item.badge" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
         </RouterLink>
       </div>
     </nav>
+
+    <div class="px-5 pb-6">
+      <button
+        class="mb-3 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 text-sm font-semibold text-[#2f5597] shadow-sm backdrop-blur transition-colors hover:bg-white"
+        type="button"
+        @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
+      >
+        <Languages class="h-4 w-4" />
+        <span>{{ lang === "zh" ? "中文 / EN" : "EN / 中文" }}</span>
+      </button>
+
+      <button
+        class="flex h-12 w-full items-center gap-4 rounded-2xl px-4 text-left transition-colors hover:bg-sidebar-accent"
+        :class="menuOpen ? 'bg-sidebar-accent' : ''"
+        type="button"
+        @pointerdown.stop
+        @click="menuOpen = !menuOpen"
+      >
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eeeeee] text-sm font-bold text-black">
+          {{ userName.charAt(0).toUpperCase() }}
+        </span>
+        <span class="min-w-0 flex-1 truncate text-sm font-medium text-sidebar-accent-foreground">{{ userName }}</span>
+        <ChevronUp class="h-4 w-4 shrink-0 text-sidebar-accent-foreground transition-transform" :class="menuOpen ? '' : 'rotate-180'" :stroke-width="2" />
+      </button>
+    </div>
   </aside>
 
   <div ref="menuContainer" class="fixed bottom-5 left-5 z-50">
-    <div v-if="menuOpen" class="mb-3 w-44 rounded-xl border border-border bg-white p-1.5 shadow-xl shadow-slate-950/10">
+    <div v-if="menuOpen" class="mb-2 w-[240px] overflow-hidden rounded-2xl border border-border bg-white shadow-xl shadow-slate-950/10 lg:mb-[60px]">
       <RouterLink
         to="/settings?tab=profile"
-        class="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-sidebar-accent hover:text-primary"
+        class="flex h-[76px] cursor-pointer items-center gap-4 border-b border-border px-4 text-slate-900 transition-colors hover:bg-slate-50"
         @click="menuOpen = false"
       >
-        <User class="h-4 w-4" />
-        {{ t.sidebar.profile }}
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eeeeee] text-sm font-bold text-black">
+          {{ userName.charAt(0).toUpperCase() }}
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block truncate text-sm font-semibold leading-5">{{ userName }}</span>
+          <span v-if="userEmail" class="mt-0.5 block truncate text-xs leading-4 text-slate-500">{{ userEmail }}</span>
+        </span>
       </RouterLink>
       <RouterLink
         to="/settings?tab=account"
-        class="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-sidebar-accent hover:text-primary"
+        class="group/menu-row flex h-12 cursor-pointer items-center px-2 text-sm text-slate-900"
         @click="menuOpen = false"
       >
-        <Settings class="h-4 w-4" />
-        {{ t.sidebar.settings }}
+        <span class="flex h-8 w-full items-center gap-4 rounded-lg px-3 transition-colors group-hover/menu-row:bg-primary group-hover/menu-row:text-white">
+          <Settings class="h-5 w-5 text-slate-500 transition-colors group-hover/menu-row:text-white" />
+          <span>{{ t.sidebar.settings }}</span>
+        </span>
       </RouterLink>
-      <div class="my-1 h-px bg-border" />
-      <button class="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-70" :disabled="logoutLoading" @click="handleLogout">
-        <Loader2 v-if="logoutLoading" class="h-4 w-4 animate-spin" />
-        <LogOut v-else class="h-4 w-4" />
-        {{ t.sidebar.logout }}
+      <button class="group/menu-row flex h-12 w-full cursor-pointer items-center border-t border-border px-2 text-left text-sm text-slate-900 disabled:cursor-not-allowed disabled:opacity-70" :disabled="logoutLoading" @click="handleLogout">
+        <span class="flex h-8 w-full items-center gap-4 rounded-lg px-3 transition-colors group-hover/menu-row:bg-primary group-hover/menu-row:text-white">
+          <Loader2 v-if="logoutLoading" class="h-5 w-5 animate-spin text-slate-500 transition-colors group-hover/menu-row:text-white" />
+          <LogOut v-else class="h-5 w-5 text-slate-500 transition-colors group-hover/menu-row:text-white" />
+          <span>{{ t.sidebar.logout }}</span>
+        </span>
       </button>
     </div>
 
-    <button
-      class="absolute bottom-1 left-16 hidden h-10 min-w-[132px] cursor-pointer items-center justify-center gap-2 rounded-full border border-border bg-white/95 px-4 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur transition-colors hover:border-primary/30 hover:bg-primary/5 hover:text-primary lg:flex"
-      type="button"
-      @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
-    >
-      <Languages class="h-4 w-4" />
-      <span>{{ lang === "zh" ? "中文 / EN" : "EN / 中文" }}</span>
-    </button>
-
-    <button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-primary text-lg font-black text-white shadow-lg shadow-primary/25 transition-transform hover:scale-105" @click="menuOpen = !menuOpen">
+    <button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-primary text-lg font-black text-white shadow-lg shadow-primary/25 transition-transform hover:scale-105 lg:hidden" @click="menuOpen = !menuOpen">
       {{ userName.charAt(0).toUpperCase() }}
     </button>
   </div>
