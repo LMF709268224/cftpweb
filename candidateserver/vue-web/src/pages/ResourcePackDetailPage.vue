@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
-import { ArrowLeft, CalendarDays, Eye, FileArchive, FileText, Play, RefreshCw, Search } from "lucide-vue-next"
+import { ArrowLeft, CalendarDays, Clock, Eye, FileArchive, Play, RefreshCw, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateOnly } from "@/lib/utils"
@@ -16,6 +16,9 @@ type ResourcePackFile = {
   file_type?: number | string
   file_name?: string
   file_size?: number
+  duration?: string | number
+  duration_seconds?: string | number
+  duration_min?: string | number
   sort_order?: number
   updated_at?: string
   created_at?: string
@@ -101,21 +104,6 @@ function fileTypeLabel(type?: number | string) {
   return "File"
 }
 
-function fileTypeIcon(type?: number | string) {
-  const normalized = normalizedType(type)
-  if (normalized === 1) return Play
-  if (normalized === 2) return FileText
-  return FileArchive
-}
-
-function fileTypePillClass(type?: number | string) {
-  const normalized = normalizedType(type)
-  if (normalized === 1) return "border-rose-200 bg-rose-50 text-rose-700"
-  if (normalized === 2) return "border-blue-200 bg-blue-50 text-blue-700"
-  if (normalized === 3) return "border-amber-200 bg-amber-50 text-amber-700"
-  return "border-slate-200 bg-slate-50 text-slate-700"
-}
-
 function fallbackCoverClass(type?: number | string) {
   const normalized = normalizedType(type)
   if (normalized === 1) return "from-rose-500 via-orange-400 to-slate-900"
@@ -128,6 +116,28 @@ function formatSize(size?: number) {
   if (!size) return "-"
   if (size < 1024 * 1024) return `${Math.round(size / 1024)} KB`
   return `${(size / 1024 / 1024).toFixed(1)} MB`
+}
+
+function formatDuration(file: ResourcePackFile) {
+  const rawDuration = file.duration ?? file.duration_seconds
+  if (typeof rawDuration === "string" && rawDuration.trim()) {
+    const numeric = Number(rawDuration)
+    if (!Number.isFinite(numeric)) return rawDuration.trim()
+  }
+
+  const seconds = Number(rawDuration || 0)
+  if (Number.isFinite(seconds) && seconds > 0) {
+    const hours = Math.floor(seconds / 3600)
+    const minutes = Math.floor((seconds % 3600) / 60)
+    const restSeconds = Math.floor(seconds % 60)
+    if (hours > 0) return `${hours}:${String(minutes).padStart(2, "0")}:${String(restSeconds).padStart(2, "0")}`
+    return `${minutes}:${String(restSeconds).padStart(2, "0")}`
+  }
+
+  const minutes = Number(file.duration_min || 0)
+  if (Number.isFinite(minutes) && minutes > 0) return `${Math.floor(minutes)} min`
+
+  return "Unknown"
 }
 
 function thumbnailFor(file: ResourcePackFile) {
@@ -251,14 +261,24 @@ onMounted(() => {
       </div>
     </section>
 
-    <section v-if="filteredFiles.length" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+    <section v-if="filteredFiles.length" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
       <article
         v-for="file in filteredFiles"
         :key="file.file_id"
-        class="group overflow-hidden rounded-[18px] bg-white shadow-[0_16px_34px_rgba(15,74,82,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(15,74,82,0.14)]"
+        :class="[
+          'group overflow-hidden transition-all hover:-translate-y-0.5',
+          normalizedType(file.file_type) === 2
+            ? 'bg-transparent'
+            : 'rounded-[18px] border border-border bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)] hover:shadow-[0_16px_34px_rgba(15,23,42,0.12)]',
+        ]"
       >
-        <button class="block w-full text-left" :disabled="openingFileId === file.file_id" @click="openFile(file)">
-          <div class="relative aspect-[4/5] overflow-hidden bg-slate-900">
+        <button
+          v-if="normalizedType(file.file_type) === 2"
+          class="block w-full text-left"
+          :disabled="openingFileId === file.file_id"
+          @click="openFile(file)"
+        >
+          <div class="relative aspect-[0.72/1] overflow-hidden border border-border bg-slate-900 shadow-[0_10px_24px_rgba(15,23,42,0.14)]">
             <img
               v-if="thumbnailFor(file)"
               :src="thumbnailFor(file)"
@@ -266,43 +286,79 @@ onMounted(() => {
               class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
               loading="lazy"
             />
-            <div v-else :class="['flex h-full w-full flex-col justify-between bg-gradient-to-br p-5 text-white', fallbackCoverClass(file.file_type)]">
-              <div class="h-12 w-12" />
-              <div>
-                <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Global Fintech Institute</div>
-                <h2 class="line-clamp-5 text-2xl font-black leading-tight">{{ file.title || file.file_name || file.file_id }}</h2>
-              </div>
-              <div class="text-xs font-semibold text-white/70">{{ fileTypeLabel(file.file_type) }}</div>
+            <div v-else :class="['flex h-full w-full flex-col justify-end bg-gradient-to-br p-5 text-white', fallbackCoverClass(file.file_type)]">
+              <h2 class="line-clamp-4 text-2xl font-black leading-tight">{{ file.title || file.file_name || file.file_id }}</h2>
             </div>
-            <div class="absolute left-5 top-5 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/90 text-primary shadow-sm backdrop-blur">
-              <component :is="fileTypeIcon(file.file_type)" class="h-6 w-6" />
+
+            <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-950/78 via-slate-950/32 to-transparent" />
+
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <span class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg backdrop-blur">
+                <Eye class="h-8 w-8" :stroke-width="2.5" />
+              </span>
             </div>
-            <span :class="['absolute right-5 top-5 rounded-full border px-2.5 py-1 text-xs font-bold shadow-sm backdrop-blur', fileTypePillClass(file.file_type)]">{{ fileTypeLabel(file.file_type) }}</span>
-            <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent p-4 text-white">
-              <h2 class="line-clamp-2 text-base font-bold leading-tight">{{ file.title || file.file_name || file.file_id }}</h2>
-              <p v-if="file.description || file.file_name" class="mt-1 line-clamp-2 text-xs leading-5 text-white/80">{{ file.description || file.file_name }}</p>
+
+            <div class="absolute bottom-6 left-5 right-5 text-white">
+              <h2 class="line-clamp-2 text-lg font-black leading-tight text-white">{{ file.title || file.file_name || file.file_id }}</h2>
+              <p v-if="file.description || file.file_name" class="mt-2 line-clamp-2 text-sm font-semibold leading-5 text-white">{{ file.description || file.file_name }}</p>
             </div>
+          </div>
+
+          <div v-if="file.updated_at" class="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+            <CalendarDays class="h-4 w-4 shrink-0" />
+            <span class="truncate">{{ formatBackendDateOnly(file.updated_at) }}</span>
           </div>
         </button>
 
-        <div class="space-y-3 p-4">
-          <div class="flex flex-wrap gap-2 text-xs text-muted-foreground">
-            <span>{{ copy.size }}: {{ formatSize(file.file_size) }}</span>
-            <span v-if="file.updated_at" class="inline-flex items-center gap-1">
-              <CalendarDays class="h-3.5 w-3.5" />
-              {{ formatBackendDateOnly(file.updated_at) }}
-            </span>
-          </div>
-          <button
-            class="btn btn-primary w-full rounded-xl shadow-sm shadow-primary/20"
-            :disabled="openingFileId === file.file_id"
-            @click="openFile(file)"
-          >
-            <RefreshCw v-if="openingFileId === file.file_id" class="h-4 w-4 animate-spin" />
-            <Eye v-else class="h-4 w-4" />
-            {{ openingFileId === file.file_id ? copy.loadingPreview : copy.preview }}
+        <template v-else>
+          <button class="block w-full text-left" :disabled="openingFileId === file.file_id" @click="openFile(file)">
+            <div class="relative aspect-[2.2/1] overflow-hidden bg-slate-900">
+              <img
+                v-if="thumbnailFor(file)"
+                :src="thumbnailFor(file)"
+                :alt="file.title || file.file_name || file.file_id"
+                class="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+              <div v-else :class="['flex h-full w-full flex-col justify-between bg-gradient-to-br p-6 text-white', fallbackCoverClass(file.file_type)]">
+                <div />
+                <div>
+                  <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Global Fintech Institute</div>
+                  <h2 class="line-clamp-3 text-2xl font-black leading-tight">{{ file.title || file.file_name || file.file_id }}</h2>
+                </div>
+                <div />
+              </div>
+
+              <span class="absolute left-5 top-5 rounded-xl bg-white/95 px-3.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm backdrop-blur">
+                {{ fileTypeLabel(file.file_type) }}
+              </span>
+
+              <div class="absolute inset-0 flex items-center justify-center bg-slate-950/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                <span class="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg backdrop-blur">
+                  <Play v-if="normalizedType(file.file_type) === 1" class="h-7 w-7 fill-none" :stroke-width="2.4" />
+                  <Eye v-else class="h-7 w-7" :stroke-width="2.4" />
+                </span>
+              </div>
+            </div>
           </button>
-        </div>
+
+          <button class="block w-full px-4 py-4 text-left" :disabled="openingFileId === file.file_id" @click="openFile(file)">
+            <h2 class="line-clamp-2 min-h-[2.75rem] text-base font-bold leading-snug text-foreground transition-colors group-hover:text-primary">{{ file.title || file.file_name || file.file_id }}</h2>
+            <p v-if="file.description || file.file_name" class="mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground">{{ file.description || file.file_name }}</p>
+            <div class="mt-3 flex items-center justify-between gap-4 text-sm text-muted-foreground">
+              <span v-if="file.updated_at" class="inline-flex min-w-0 items-center gap-2">
+                <CalendarDays class="h-4 w-4 shrink-0" />
+                <span class="truncate">{{ formatBackendDateOnly(file.updated_at) }}</span>
+              </span>
+              <span v-else />
+              <span v-if="normalizedType(file.file_type) === 1" class="inline-flex min-w-0 items-center gap-2">
+                <Clock class="h-4 w-4 shrink-0" />
+                <span class="truncate">{{ formatDuration(file) }}</span>
+              </span>
+              <span v-else class="truncate">{{ copy.size }}: {{ formatSize(file.file_size) }}</span>
+            </div>
+          </button>
+        </template>
       </article>
     </section>
 
