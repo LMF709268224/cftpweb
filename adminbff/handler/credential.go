@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
 )
 
 // ----------------- Credential Definitions -----------------

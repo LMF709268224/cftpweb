@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	mallpb "github.com/LMF709268224/cftpproto/gmall"
 	"github.com/go-chi/chi/v5"
 )
 

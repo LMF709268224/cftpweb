@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
+	gpaypb "github.com/LMF709268224/cftpproto/gpay"
 )
 
 type InvoiceItem struct {

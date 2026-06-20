@@ -12,7 +12,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
+	gmailpb "github.com/LMF709268224/cftpproto/gmail"
 )
 
 type SendMailInput struct {

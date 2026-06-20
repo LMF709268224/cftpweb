@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
+	gexampb "github.com/LMF709268224/cftpproto/gexam"
 )
 
 func (h *Handler) ListWebhookMessages(w http.ResponseWriter, r *http.Request) {

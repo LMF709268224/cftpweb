@@ -2,7 +2,7 @@ package server
 
 import (
 	"candbff/config"
-	"github.com/afnandelfin620-star/cftptest/cftp/util"
+	"github.com/LMF709268224/cftpproto/util"
 	"log/slog"
 	"strings"
 

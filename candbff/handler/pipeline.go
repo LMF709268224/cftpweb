@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
-	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
-	gprog "github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	gccpb "github.com/LMF709268224/cftpproto/gcc"
+	lmspb "github.com/LMF709268224/cftpproto/glms"
+	gprog "github.com/LMF709268224/cftpproto/gprog"
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

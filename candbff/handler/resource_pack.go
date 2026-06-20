@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
+	lmspb "github.com/LMF709268224/cftpproto/glms"
 )
 
 // ListResourcePacks GET /api/resource-packs

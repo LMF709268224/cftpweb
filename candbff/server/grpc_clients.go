@@ -1,21 +1,21 @@
 package server
 
 import (
-	"github.com/afnandelfin620-star/cftptest/cftp/util"
+	"github.com/LMF709268224/cftpproto/util"
 	"log/slog"
 
 	"candbff/config"
 
-	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
-	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
-	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
-	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
-	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
-	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
-	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
-	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
-	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
-	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
+	gccpb "github.com/LMF709268224/cftpproto/gcc"
+	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
+	gexampb "github.com/LMF709268224/cftpproto/gexam"
+	lmspb "github.com/LMF709268224/cftpproto/glms"
+	mallpb "github.com/LMF709268224/cftpproto/gmall"
+	gmbrpb "github.com/LMF709268224/cftpproto/gmbr"
+	gmidpb "github.com/LMF709268224/cftpproto/gmid"
+	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
+	gpaypb "github.com/LMF709268224/cftpproto/gpay"
+	gprogpb "github.com/LMF709268224/cftpproto/gprog"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

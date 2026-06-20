@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
+	gccpb "github.com/LMF709268224/cftpproto/gcc"
 )
 
 // ListPipelines GET /api/pipelines

@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
 )
 
 func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {

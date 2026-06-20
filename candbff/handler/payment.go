@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
-	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gccpb "github.com/LMF709268224/cftpproto/gcc"
+	mallpb "github.com/LMF709268224/cftpproto/gmall"
 )
 
 const (

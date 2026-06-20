@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	gprogpb "github.com/LMF709268224/cftpproto/gprog"
 	"github.com/go-chi/chi/v5"
 )
 

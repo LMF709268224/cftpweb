@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
-	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
+	gprogpb "github.com/LMF709268224/cftpproto/gprog"
 )
 
 // Dashboard  GET /api/dashboard

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
+	lmspb "github.com/LMF709268224/cftpproto/glms"
 )
 
 // ListLmsResourcePacks GET /api/lms/resource-packs

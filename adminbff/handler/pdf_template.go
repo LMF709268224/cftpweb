@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
 )
 
 // ListPdfTemplates GET /api/pdf-templates

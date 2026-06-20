@@ -8,7 +8,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
 )
 
 type SendMessageInput struct {

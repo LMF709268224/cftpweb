@@ -12,9 +12,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
-	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
-	"github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	gexampb "github.com/LMF709268224/cftpproto/gexam"
+	mallpb "github.com/LMF709268224/cftpproto/gmall"
+	"github.com/LMF709268224/cftpproto/gprog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

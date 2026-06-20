@@ -8,13 +8,12 @@ import (
 	"regexp"
 	"strings"
 
-
-	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
-	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
-	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
-	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
-	gprog "github.com/afnandelfin620-star/cftptest/cftp/gprog"
-	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	gccpb "github.com/LMF709268224/cftpproto/gcc"
+	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
+	lmspb "github.com/LMF709268224/cftpproto/glms"
+	mallpb "github.com/LMF709268224/cftpproto/gmall"
+	gprog "github.com/LMF709268224/cftpproto/gprog"
+	gprogpb "github.com/LMF709268224/cftpproto/gprog"
 
 	"github.com/go-chi/chi/v5"
 )

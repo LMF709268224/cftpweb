@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
+	gpaypb "github.com/LMF709268224/cftpproto/gpay"
 	"github.com/go-chi/chi/v5"
 )
 

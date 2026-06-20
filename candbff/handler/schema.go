@@ -1,10 +1,10 @@
 package handler
 
 import (
-	gcreds "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
-	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
-	"github.com/afnandelfin620-star/cftptest/cftp/gprog"
-	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	gcreds "github.com/LMF709268224/cftpproto/gcreds"
+	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
+	"github.com/LMF709268224/cftpproto/gprog"
+	gprogpb "github.com/LMF709268224/cftpproto/gprog"
 )
 
 type LoginInput struct {

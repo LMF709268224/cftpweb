@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
-	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
+	mallpb "github.com/LMF709268224/cftpproto/gmall"
 )
 
 // ListCredentialDefinitions GET /api/credentials/definitions
@@ -56,20 +56,20 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
 		if err == nil && detailRes != nil {
 			details = append(details, map[string]interface{}{
-				"cred_def_id":               detailRes.GetCredDefId(),
-				"name":                      detailRes.GetName(),
-				"description":               detailRes.GetDescription(),
-				"file_constraints":          detailRes.GetFileConstraints(),
-				"category":                  detailRes.GetCategory(),
-				"respath":                   detailRes.GetRespath(),
+				"cred_def_id":      detailRes.GetCredDefId(),
+				"name":             detailRes.GetName(),
+				"description":      detailRes.GetDescription(),
+				"file_constraints": detailRes.GetFileConstraints(),
+				"category":         detailRes.GetCategory(),
+				"respath":          detailRes.GetRespath(),
 			})
 			continue
 		}
 		details = append(details, map[string]interface{}{
-			"cred_def_id":               def.GetCredDefId(),
-			"name":                      def.GetName(),
-			"description":               def.GetDescription(),
-			"category":                  def.GetCategory(),
+			"cred_def_id": def.GetCredDefId(),
+			"name":        def.GetName(),
+			"description": def.GetDescription(),
+			"category":    def.GetCategory(),
 		})
 	}
 
