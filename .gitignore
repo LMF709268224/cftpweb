@@ -32,6 +32,9 @@ go.work
 go.work.sum
 candweb/candweb
 candbff/candbff
+adminweb/adminweb
+adminbff/adminbff
+*.tar
 candweb/vue-web/dist/
 candidateserver/vue-web/dist/
 candidateserver/vue-web/vite-dev.*.log
