@@ -2,6 +2,7 @@
 node_modules/
 npm-debug.log
 yarn-error.log
+*.log
 .pnp
 .pnp.js
 
@@ -17,6 +18,10 @@ build/
 *.swo
 *.tsbuildinfo
 *.exe
+fix.py
+fix_*.py
+garbled.txt
+log.txt
 ztest/
 CLAUDE.md
 deployment/
@@ -27,4 +32,7 @@ go.work
 go.work.sum
 candweb/candweb
 candbff/candbff
-candweb/vue-web/dist/
+candweb/vue-web/dist/
+candidateserver/vue-web/dist/
+candidateserver/vue-web/vite-dev.*.log
+candidateserver/vue-web/tsconfig.tsbuildinfo
