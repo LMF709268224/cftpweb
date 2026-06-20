@@ -9,8 +9,8 @@ cd "${SCRIPT_DIR}"
 
 echo "Building admin frontend..."
 cd web
-pnpm install
-pnpm build
+npm ci
+npm run build
 cd ..
 
 echo "Cleaning old binary and building ${SERVICE_NAME}..."
