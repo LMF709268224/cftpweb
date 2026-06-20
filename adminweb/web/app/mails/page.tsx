@@ -8,7 +8,7 @@ import { useTranslation } from "@/lib/useLanguage"
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Send, List, FileText } from "lucide-react"
-import { statusBadgeClassForStatusValue } from "@cftpweb/shared"
+import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
 
 function MailDetailPreview({ mailId }: { mailId: string }) {
   const { t } = useTranslation()

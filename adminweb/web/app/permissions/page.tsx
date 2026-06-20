@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/lib/useLanguage"
 import { ShieldAlert, Search, ShieldCheck, UserX, Clock, AlertTriangle } from "lucide-react"
-import { statusBadgeClassForStatusValue } from "@cftpweb/shared"
+import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
 
 export default function PermissionsPage() {
   const { t } = useTranslation()

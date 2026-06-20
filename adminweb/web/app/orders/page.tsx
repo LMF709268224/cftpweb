@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { ShoppingCart, RefreshCw, Search } from "lucide-react"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/useLanguage"
-import { statusBadgeClassForStatusValue } from "@cftpweb/shared"
+import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
 import { Input } from "@/components/ui/input"
 
 type AdminOrder = Record<string, any>

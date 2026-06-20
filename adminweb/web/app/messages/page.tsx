@@ -8,7 +8,7 @@ import { useTranslation } from "@/lib/useLanguage"
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Send, List, FileText } from "lucide-react"
-import { MESSAGE_STATUS_LABELS, MESSAGE_STATUS_ENUM_NAMES, statusBadgeClassForStatus, statusLabelWithDiagnostics } from "@cftpweb/shared"
+import { MESSAGE_STATUS_LABELS, MESSAGE_STATUS_ENUM_NAMES, statusBadgeClassForStatus, statusLabelWithDiagnostics } from "@/lib/status-labels"
 
 export default function AdminMessagesPage() {
   const { t } = useTranslation()

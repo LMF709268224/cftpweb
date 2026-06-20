@@ -13,7 +13,7 @@ import { Sidebar } from "@/components/sidebar"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { statusBadgeClassForStatusValue } from "@cftpweb/shared"
+import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
 
 interface FileInfo {
   file_name: string

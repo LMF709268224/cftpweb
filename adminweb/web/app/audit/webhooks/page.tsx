@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Activity, RefreshCw, Search, RotateCcw } from "lucide-react"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/useLanguage"
-import { statusBadgeClassForStatusValue } from "@cftpweb/shared"
+import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
 
 function WebhookDetailPreview({ msgFp }: { msgFp: string }) {
   const { t } = useTranslation()

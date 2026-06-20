@@ -2,7 +2,6 @@ const isBuild = process.env.NODE_ENV === "production"
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@cftpweb/shared"],
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw } from "lucide-react"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/useLanguage"
-import { statusBadgeClassForStatusValue } from "@cftpweb/shared"
+import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
 
 export default function PdfRequestsPage() {
   const { t } = useTranslation()

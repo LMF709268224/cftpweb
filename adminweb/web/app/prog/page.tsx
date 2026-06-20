@@ -35,7 +35,7 @@ import {
   STAGE_STATUS_ENUM_NAMES,
   statusLabel,
   statusLabelWithDiagnostics,
-} from "@cftpweb/shared"
+} from "@/lib/status-labels"
 
 type ProgActionKind = "trigger-next-stage" | "terminate-pipeline" | "force-completed" | "force-signup-exam"
 

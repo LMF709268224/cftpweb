@@ -27,7 +27,7 @@ import {
   normalizeEnumValue,
   statusBadgeClassForStatusValue,
   statusLabel,
-} from "@cftpweb/shared"
+} from "@/lib/status-labels"
 
 type LmsCourse = {
   course_id: string
