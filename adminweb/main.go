@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-//go:embed web/build
+//go:embed all:web/build
 var embedFS embed.FS
 
 func main() {
@@ -52,6 +52,11 @@ func main() {
 				return
 			}
 			f.Close()
+		}
+
+		if strings.HasPrefix(r.URL.Path, "/_next/") || strings.HasPrefix(r.URL.Path, "/assets/") {
+			http.NotFound(w, r)
+			return
 		}
 
 		// 2. Next.js Static Export routing helper
