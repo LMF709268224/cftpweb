@@ -464,16 +464,9 @@ func (h *Handler) GetLessonPreviewURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	expiresAt := time.Now().Add(time.Hour * 24).Unix()
-	filename := sanitizeFilename(lesson.GetTitle()) + ".pdf"
-	token := h.signPDFPreviewToken(candidateID, "lesson", lessonID, viewURL, filename, expiresAt)
-	params := url.Values{}
-	params.Set("token", token)
-	previewURL := "/api/public/pdf-preview/lessons/" + url.PathEscape(lessonID) + "?" + params.Encode()
-
 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
-		URL:       previewURL,
-		ExpiresAt: firstNonEmpty(viewResp.GetExpiresAt(), time.Unix(expiresAt, 0).UTC().Format(time.RFC3339)),
+		URL:       viewURL,
+		ExpiresAt: viewResp.GetExpiresAt(),
 		Title:     lesson.GetTitle(),
 	})
 }
@@ -489,15 +482,8 @@ func (h *Handler) GetResourcePreviewURL(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	expiresAt := time.Now().Add(time.Hour).Unix()
-	token := h.signPDFPreviewToken(candidateID, "resource", resourceURL, resourceURL, "resource.pdf", expiresAt)
-	params := url.Values{}
-	params.Set("src", resourceURL)
-	params.Set("token", token)
-
 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
-		URL:       "/api/public/pdf-preview/resource?" + params.Encode(),
-		ExpiresAt: time.Unix(expiresAt, 0).UTC().Format(time.RFC3339),
+		URL: resourceURL,
 	})
 }
 

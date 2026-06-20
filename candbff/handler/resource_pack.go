@@ -2,10 +2,8 @@ package handler
 
 import (
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
@@ -131,19 +129,9 @@ func (h *Handler) GetResourcePackFilePreviewURL(w http.ResponseWriter, r *http.R
 	}
 
 	title := firstNonEmpty(strings.TrimSpace(file.GetTitle()), strings.TrimSpace(file.GetFileName()), fileID)
-	expiresAt := time.Now().Add(time.Hour * 24).Unix()
-	filename := sanitizeFilename(title)
-	if !strings.HasSuffix(strings.ToLower(filename), ".pdf") {
-		filename += ".pdf"
-	}
-	token := h.signPDFPreviewToken(candidateID, "resource-pack-file", fileID, viewURL, filename, expiresAt)
-	params := url.Values{}
-	params.Set("token", token)
-	previewURL := "/api/public/pdf-preview/resource-pack-files/" + url.PathEscape(fileID) + "?" + params.Encode()
-
 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
-		URL:       previewURL,
-		ExpiresAt: time.Unix(expiresAt, 0).UTC().Format(time.RFC3339),
+		URL:       viewURL,
+		ExpiresAt: viewResp.GetExpiresAt(),
 		Title:     title,
 	})
 }
