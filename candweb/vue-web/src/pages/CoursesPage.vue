@@ -317,7 +317,7 @@ onMounted(() => {
       <div v-if="loading && allCourses.length === 0" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <Clock class="h-5 w-5 animate-spin" /> <span>{{ t.common.loading }}</span>
       </div>
-      <div v-else-if="filteredCourses.length > 0" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div v-else-if="filteredCourses.length > 0" class="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
         <CourseCard v-for="course in filteredCourses" :key="`${course.id}-${course.eligibilityRefreshKey || 0}`" v-bind="course" />
       </div>
       <div v-else class="flex flex-col items-center justify-center rounded-[16px] bg-white py-16 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">

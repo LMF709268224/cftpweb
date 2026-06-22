@@ -136,14 +136,6 @@ const accessState = computed(() => {
         {{ t.courses.purchased }}
       </span>
 
-      <div class="absolute inset-x-3 bottom-3 flex items-center justify-between">
-        <span v-if="versionLabel" class="badge border-white/70 bg-white/90 text-foreground shadow-sm backdrop-blur">
-          {{ versionLabel }}
-        </span>
-        <span v-else class="badge border-white/70 bg-white/90 text-primary shadow-sm backdrop-blur">
-          {{ t.courses.pipeline }}
-        </span>
-      </div>
     </div>
 
     <div class="flex flex-1 flex-col p-5">
@@ -163,9 +155,13 @@ const accessState = computed(() => {
           <div v-if="accessState.hint" class="mt-1 text-[11px] opacity-80">{{ accessState.hint }}</div>
         </div>
 
-        <div v-if="priceLabel" class="flex items-center justify-between rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs text-sky-800">
-          <span>{{ cardCopy.estimatedPrice }}</span>
-          <span class="font-semibold">{{ priceLabel }}</span>
+        <div v-if="priceLabel" class="space-y-0.5">
+          <div class="text-sm font-medium leading-5 text-[#4a4f59]">
+            {{ cardCopy.estimatedPrice }}
+          </div>
+          <div class="whitespace-nowrap text-[22px] font-bold leading-tight tracking-tight text-[#101114] xl:text-[24px] 2xl:text-[26px]">
+            {{ priceLabel }}
+          </div>
         </div>
 
         <div v-if="effectivePurchased && progress !== undefined">
