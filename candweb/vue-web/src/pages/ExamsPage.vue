@@ -59,28 +59,55 @@ const filtered = computed(() => exams.value.filter((exam) => [
 function normalizedExamStatus(status?: string | number | null) {
   return normalizeEnumValueUpper(status)
 }
+function normalizedCourseUnitStatus(status?: string | number | null) {
+  return normalizeEnumValueUpper(status)
+}
+function isWaitingSignupExamUnit(exam: any) {
+  const status = normalizedCourseUnitStatus(exam.course_unit_status)
+  return status === "2" || status.includes("WAITING_SIGNUP_EXAM")
+}
+function isExamOpenUnit(exam: any) {
+  const status = normalizedCourseUnitStatus(exam.course_unit_status)
+  return status === "3" || status.includes("EXAM_OPEN")
+}
+function isCurrentExamRestarted(exam: any) {
+  return isWaitingSignupExamUnit(exam) || isExamOpenUnit(exam)
+}
+function shouldUseCurrentCourseUnitState(exam: any) {
+  return activeTab.value !== "history" && isCurrentExamRestarted(exam)
+}
 function shouldShowExamStatus(status?: string | number | null) {
   const normalized = normalizedExamStatus(status)
   return Boolean(normalized && !["NONE", "UNKNOWN", "UNSPECIFIED"].some((item) => normalized.includes(item)))
 }
+function shouldShowStoredExamDetails(exam: any) {
+  return !shouldUseCurrentCourseUnitState(exam)
+}
 function hasExamResult(exam: any) {
+  if (shouldUseCurrentCourseUnitState(exam)) return false
   const normalized = normalizedExamStatus(exam.result_status)
   return typeof exam.total_score === "number" || exam.is_passed === true || ["DONE", "PASSED", "FAILED", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
 }
 function hasExplicitPassStatus(exam: any) {
+  if (shouldUseCurrentCourseUnitState(exam)) return false
   return typeof exam.is_passed === "boolean"
 }
 function hasText(value?: string | null) {
   return Boolean(value?.trim())
 }
 function hasAppointmentDetails(exam: any) {
+  if (!shouldShowStoredExamDetails(exam)) return false
   return hasText(exam.confirmation_number) || hasText(exam.site_name) || hasText(exam.appointment_start_time) || hasText(exam.appointment_end_time)
 }
 function canScheduleExam(exam: any) {
   const status = normalizedExamStatus(exam.exam_status)
-  return Boolean(exam.exam_id && status && status.includes("OPEN"))
+  return Boolean(exam.exam_id && ((status && status.includes("OPEN")) || (activeTab.value !== "history" && isExamOpenUnit(exam))))
+}
+function canSignupExam(exam: any) {
+  return Boolean(activeTab.value !== "history" && exam.course_unit_ulid && isWaitingSignupExamUnit(exam))
 }
 function isWaitingExamConfirmation(exam: any) {
+  if (!shouldShowStoredExamDetails(exam)) return false
   return normalizedExamStatus(exam.exam_status) === "WAITING_EXAM_CONFIRMATION"
 }
 function isExamFailedUnit(exam: any) {
@@ -269,7 +296,7 @@ onMounted(() => {
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span v-if="shouldShowExamStatus(exam.exam_status)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
+                  <span v-if="shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam.exam_status)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
                   <span v-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
                   <span v-else :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
                   <span v-if="hasExplicitPassStatus(exam)" :class="['badge gap-1', exam.is_passed ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
@@ -279,10 +306,10 @@ onMounted(() => {
                 </div>
                 <h3 class="text-lg font-semibold text-foreground">{{ exam.exam_code || exam.program_code || exam.exam_id || t.common.unknown }}</h3>
                 <div class="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
-                  <div v-if="hasText(exam.confirmation_number)"><span class="font-medium text-foreground">{{ t.examsPage.confirmationNumber }}:</span> {{ exam.confirmation_number }}</div>
-                  <div v-if="hasText(exam.site_name)"><span class="font-medium text-foreground">{{ t.examsPage.site }}:</span> {{ exam.site_name }}</div>
-                  <div v-if="hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
-                  <div v-if="hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.confirmation_number)"><span class="font-medium text-foreground">{{ t.examsPage.confirmationNumber }}:</span> {{ exam.confirmation_number }}</div>
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.site_name)"><span class="font-medium text-foreground">{{ t.examsPage.site }}:</span> {{ exam.site_name }}</div>
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
                   <div v-if="isWaitingExamConfirmation(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
                     <div class="flex items-start gap-2">
                       <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
@@ -312,6 +339,9 @@ onMounted(() => {
                 </div>
               </div>
               <div class="flex flex-wrap gap-2">
+                <RouterLink v-if="canSignupExam(exam)" :to="`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || '')}`" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20">
+                  {{ t.learning.actionSignupExam }}
+                </RouterLink>
                 <button v-if="canApplyRetake(exam)" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" :disabled="retakeLoadingUnitId === exam.course_unit_ulid" @click="handleApplyRetake(exam)">
                   <Loader2 v-if="retakeLoadingUnitId === exam.course_unit_ulid" class="h-4 w-4 animate-spin" />
                   <RefreshCw v-else class="h-4 w-4" />
