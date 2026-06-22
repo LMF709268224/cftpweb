@@ -80,6 +80,12 @@ async function loadPacks(pageToken = "") {
   }
 }
 
+function rememberPack(pack: ResourcePack) {
+  if (!pack.pack_id) return
+  sessionStorage.setItem(`resource-pack-title:${pack.pack_id}`, pack.title || "")
+  sessionStorage.setItem(`resource-pack-respath:${pack.pack_id}`, pack.respath || "")
+}
+
 onMounted(() => {
   void loadPacks()
 })
@@ -116,6 +122,7 @@ onMounted(() => {
         :key="pack.pack_id"
         class="group relative overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
         :to="`/resource-packs/${encodeURIComponent(pack.pack_id || '')}`"
+        @click="rememberPack(pack)"
       >
         <div class="relative flex h-24 items-end overflow-hidden px-4 pb-3 text-white bg-[linear-gradient(135deg,rgb(11,31,69)_0%,rgb(27,69,141)_55%,rgb(58,111,192)_100%)]">
           <span class="relative z-10 inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">

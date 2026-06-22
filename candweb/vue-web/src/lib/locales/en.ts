@@ -119,8 +119,8 @@ export const en: AppTranslations = {
     devNotice: "This feature is currently under development. Stay tuned!",
   },
   courses: {
-    title: "Certification Center",
-    subtitle: "Browse, purchase, and learn certifications",
+    title: "Certifications",
+    subtitle: "Professional certifications you have enrolled in and your progress.",
     searchPlaceholder: "Search certifications...",
     filterBtn: "Filter",
     completedAll: "Completed All Lessons",

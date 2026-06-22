@@ -117,8 +117,8 @@ export const zh = {
     devNotice: "此功能正在开发中，敬请期待",
   },
   courses: {
-    title: "认证中心",
-    subtitle: "浏览、购买和学习认证",
+    title: "认证",
+    subtitle: "您已报名的专业认证及学习进度。",
     searchPlaceholder: "搜索认证...",
     filterBtn: "筛选",
     completedAll: "已完成全部课程",
