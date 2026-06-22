@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { Award, ChevronUp, ClipboardList, FileCheck2, GraduationCap, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, X } from "lucide-vue-next"
+import { Award, ChevronUp, ClipboardList, FileCheck2, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
 import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
@@ -64,7 +64,7 @@ const navItems = computed(() => [
 
 const navIconByHref = {
   "/": LayoutDashboard,
-  "/certifications": GraduationCap,
+  "/certifications": Award,
   "/exams": ClipboardList,
   "/resource-packs": Package,
   "/credentials": FileCheck2,
@@ -162,7 +162,7 @@ async function handleLogout() {
         </button>
       </div>
 
-      <nav class="flex-1 space-y-1 px-4 py-4 text-[15px] text-sidebar-foreground">
+      <nav class="flex-1 space-y-1 px-4 py-4 text-[14px] text-sidebar-foreground">
         <div class="px-1 pb-2 pt-1 text-xs font-medium text-[#5878ad]">Menu</div>
         <div
           v-for="(item, index) in navItems"
@@ -183,7 +183,7 @@ async function handleLogout() {
             @click="mobileMenuOpen = false"
           >
             <span class="flex min-w-0 items-center gap-3">
-              <component :is="navIconFor(item.href)" :class="['h-[18px] w-[18px] shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#2f5597] group-hover/nav-item:scale-[1.05] group-hover/nav-item:text-sidebar-accent-foreground']" :stroke-width="1.9" />
+              <component :is="navIconFor(item.href)" :class="['h-4 w-4 shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#2f5597] group-hover/nav-item:scale-[1.05] group-hover/nav-item:text-sidebar-accent-foreground']" :stroke-width="1.9" />
               <span class="truncate">{{ item.label }}</span>
             </span>
             <span v-if="item.badge" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
@@ -228,7 +228,7 @@ async function handleLogout() {
       </div>
     </RouterLink>
 
-    <nav class="flex-1 space-y-1 px-4 py-3 text-[15px] text-sidebar-foreground">
+    <nav class="flex-1 space-y-1 px-4 py-3 text-[14px] text-sidebar-foreground">
       <div class="px-1 pb-2 text-xs font-medium text-[#5878ad]">Menu</div>
       <div
         v-for="(item, index) in navItems"
@@ -248,7 +248,7 @@ async function handleLogout() {
           ]"
         >
           <span class="flex min-w-0 items-center gap-3">
-            <component :is="navIconFor(item.href)" :class="['h-[18px] w-[18px] shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#2f5597] group-hover/nav-item:scale-[1.05] group-hover/nav-item:text-sidebar-accent-foreground']" :stroke-width="1.9" />
+            <component :is="navIconFor(item.href)" :class="['h-4 w-4 shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#2f5597] group-hover/nav-item:scale-[1.05] group-hover/nav-item:text-sidebar-accent-foreground']" :stroke-width="1.9" />
             <span class="truncate">{{ item.label }}</span>
           </span>
           <span v-if="item.badge" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
