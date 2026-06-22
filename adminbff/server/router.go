@@ -262,6 +262,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/stage-orders", h.ListStageOrders)
 			r.Get("/orders", h.ListOrders)
 			r.Get("/invoices", h.ListInvoices)
+			r.Get("/bundle-orders", h.ListBundleOrders)
 			r.Route("/bundles", func(r chi.Router) {
 				r.Get("/", h.ListBundles)
 				r.Post("/", h.CreateBundle)
@@ -273,7 +274,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Post("/upload-url", h.CreateBundleUploadURL)
 			})
 			r.Route("/bundle-orders", func(r chi.Router) {
-				r.Get("", h.ListBundleOrders)
 				r.Get("/", h.ListBundleOrders)
 				r.Get("/{bundle_order_ulid}/summary", h.GetBundleOrderSummary)
 				r.Get("/{bundle_order_ulid}", h.GetBundleOrderDetail)
