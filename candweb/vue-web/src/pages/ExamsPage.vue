@@ -71,7 +71,7 @@ function isExamOpenUnit(exam: any) {
   return status === "3" || status.includes("EXAM_OPEN")
 }
 function isCurrentExamRestarted(exam: any) {
-  return isWaitingSignupExamUnit(exam) || isExamOpenUnit(exam)
+  return isWaitingSignupExamUnit(exam)
 }
 function shouldUseCurrentCourseUnitState(exam: any) {
   return activeTab.value !== "history" && isCurrentExamRestarted(exam)
@@ -95,11 +95,18 @@ function hasExplicitPassStatus(exam: any) {
 function hasText(value?: string | null) {
   return Boolean(value?.trim())
 }
+function hasTermUrlReturn(exam: any) {
+  return hasText(exam.last_termurl_timestamp)
+}
+function isWaitingScheduleSync(exam: any) {
+  return activeTab.value !== "history" && hasTermUrlReturn(exam) && !hasExamResult(exam)
+}
 function hasAppointmentDetails(exam: any) {
   if (!shouldShowStoredExamDetails(exam)) return false
   return hasText(exam.confirmation_number) || hasText(exam.site_name) || hasText(exam.appointment_start_time) || hasText(exam.appointment_end_time)
 }
 function canScheduleExam(exam: any) {
+  if (hasExamResult(exam) || isWaitingScheduleSync(exam)) return false
   const status = normalizedExamStatus(exam.exam_status)
   return Boolean(exam.exam_id && ((status && status.includes("OPEN")) || (activeTab.value !== "history" && isExamOpenUnit(exam))))
 }
@@ -121,6 +128,15 @@ function noResultLabel() {
 }
 function resultPublishedLabel() {
   return (t.value.examsPage as any).statusResultPublished || t.value.examsPage.statusPending
+}
+function scheduleSyncPendingLabel() {
+  return (t.value.examsPage as any).statusScheduleSyncPending || t.value.examsPage.statusWaitingExamConfirmation
+}
+function scheduleSyncPendingTitle() {
+  return (t.value.examsPage as any).scheduleSyncPendingTitle || scheduleSyncPendingLabel()
+}
+function scheduleSyncPendingDesc() {
+  return (t.value.examsPage as any).scheduleSyncPendingDesc || t.value.examsPage.waitingExamConfirmationDesc
 }
 function passStatusLabel(exam: any) {
   return exam.is_passed ? (t.value.examsPage as any).statusQualified || t.value.examsPage.statusPassed : (t.value.examsPage as any).statusUnqualified || t.value.examsPage.statusFailed
@@ -297,7 +313,8 @@ onMounted(() => {
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam.exam_status)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
-                  <span v-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
+                  <span v-if="isWaitingScheduleSync(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ scheduleSyncPendingLabel() }}</span>
+                  <span v-else-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
                   <span v-else :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
                   <span v-if="hasExplicitPassStatus(exam)" :class="['badge gap-1', exam.is_passed ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
                     <CheckCircle2 v-if="exam.is_passed" class="h-3 w-3" />
@@ -310,7 +327,16 @@ onMounted(() => {
                   <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.site_name)"><span class="font-medium text-foreground">{{ t.examsPage.site }}:</span> {{ exam.site_name }}</div>
                   <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
                   <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
-                  <div v-if="isWaitingExamConfirmation(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
+                  <div v-if="isWaitingScheduleSync(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
+                    <div class="flex items-start gap-2">
+                      <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
+                      <div>
+                        <div class="font-medium text-amber-900">{{ scheduleSyncPendingTitle() }}</div>
+                        <div class="mt-1 text-xs">{{ scheduleSyncPendingDesc() }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else-if="isWaitingExamConfirmation(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
                     <div class="flex items-start gap-2">
                       <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
                       <div class="text-xs">{{ t.examsPage.waitingExamConfirmationDesc }}</div>
