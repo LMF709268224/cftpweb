@@ -189,8 +189,8 @@ onMounted(async () => {
 
       <main class="px-5 py-10 md:px-8 lg:px-10">
         <section class="w-full text-center">
-          <h1 class="text-4xl font-bold tracking-tight text-[#6847ff] md:text-5xl">{{ guideCopy.title }}</h1>
-          <p class="mx-auto mt-4 max-w-5xl text-lg leading-8 text-slate-600">{{ guideCopy.subtitle }}</p>
+          <h1 class="text-[36px] font-bold leading-tight tracking-tight text-[#6847ff]">{{ guideCopy.title }}</h1>
+          <p class="mx-auto mt-4 max-w-5xl text-lg leading-8 text-[#4a4f59]">{{ guideCopy.subtitle }}</p>
         </section>
 
         <section class="mx-auto mt-12 w-full max-w-[1380px]">

@@ -5,17 +5,17 @@
 
 :root {
   --background: #e6efff;
-  --foreground: #101828;
+  --foreground: #101114;
   --card: oklch(1 0 0);
-  --card-foreground: #101828;
+  --card-foreground: #101114;
   --popover: oklch(1 0 0);
-  --popover-foreground: #101828;
+  --popover-foreground: #101114;
   --primary: #1b458d;
   --primary-foreground: oklch(0.99 0 0);
   --secondary: #fff1f1;
   --secondary-foreground: #8f1d1d;
   --muted: #e6efff;
-  --muted-foreground: #667085;
+  --muted-foreground: #4a4f59;
   --accent: #e6efff;
   --accent-foreground: #1b458d;
   --destructive: oklch(0.55 0.22 25);
