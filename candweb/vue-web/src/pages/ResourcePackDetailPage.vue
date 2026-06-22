@@ -38,10 +38,27 @@ const thumbnailLoading = ref<Record<string, boolean>>({})
 const nextPageToken = ref("")
 
 const packId = computed(() => String(route.params.packId || route.query.id || ""))
+const storedPackTitle = computed(() => (packId.value ? sessionStorage.getItem(`resource-pack-title:${packId.value}`) || "" : ""))
+const storedPackRespath = computed(() => (packId.value ? sessionStorage.getItem(`resource-pack-respath:${packId.value}`) || "" : ""))
+const isInsightsPack = computed(() =>
+  `${storedPackTitle.value} ${storedPackRespath.value}`.toLowerCase().includes("insight"),
+)
+const isWebinarsPack = computed(() =>
+  `${storedPackTitle.value} ${storedPackRespath.value}`.toLowerCase().includes("webinar"),
+)
+const isReportsPack = computed(() =>
+  `${storedPackTitle.value} ${storedPackRespath.value}`.toLowerCase().includes("report"),
+)
 const copy = computed(() => lang.value === "zh"
   ? {
-      title: "资源包详情",
-      subtitle: "浏览你有权限访问的报告、视频和资料，点击卡片即可在线预览。",
+      title: isWebinarsPack.value ? "网络研讨会" : isReportsPack.value ? "报告" : "资源包详情",
+      subtitle: isInsightsPack.value
+        ? "会员专属行业洞察与分析"
+        : isWebinarsPack.value
+          ? "来自领先金融科技专家的独家网络研讨会"
+          : isReportsPack.value
+            ? "会员专属行业报告与研究"
+          : "浏览你有权限访问的报告、视频和资料，点击卡片即可在线预览。",
       back: "返回资源包",
       search: "搜索资源标题或说明",
       emptyTitle: "这个资源包暂无文件",
@@ -60,8 +77,14 @@ const copy = computed(() => lang.value === "zh"
       noViewUrl: "暂时无法打开预览，请稍后再试。",
     }
   : {
-      title: "Resource Pack Detail",
-      subtitle: "Browse reports, videos, and materials you are allowed to access. Click a card to preview online.",
+      title: isWebinarsPack.value ? "Webinars" : isReportsPack.value ? "Reports" : "Resource Pack Detail",
+      subtitle: isInsightsPack.value
+        ? "Exclusive industry insights and analysis for members"
+        : isWebinarsPack.value
+          ? "Exclusive webinars from leading fintech experts"
+          : isReportsPack.value
+            ? "Exclusive industry reports and research for members"
+          : "Browse reports, videos, and materials you are allowed to access. Click a card to preview online.",
       back: "Back to packs",
       search: "Search resources",
       emptyTitle: "No files in this pack",
