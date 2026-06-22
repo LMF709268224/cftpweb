@@ -70,6 +70,8 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 		return
 	}
 
+	slog.Error("gRPC error encountered", "error", err)
+
 	st, ok := status.FromError(err)
 	if !ok {
 		WriteError(w, http.StatusInternalServerError, ErrInternal, err.Error())
@@ -88,7 +90,7 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 		errorCode = ErrInvalidRequest
 	case codes.AlreadyExists:
 		httpStatus = http.StatusConflict
-		errorCode = ErrInvalidRequest // 鎴栬€呭畾涔夊叿浣撶殑 ALREADY_EXISTS
+		errorCode = ErrInvalidRequest
 	case codes.FailedPrecondition:
 		httpStatus = http.StatusConflict
 		errorCode = ErrPrecondition
@@ -100,7 +102,7 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 		errorCode = ErrUnauthorized
 	case codes.ResourceExhausted:
 		httpStatus = http.StatusTooManyRequests
-		errorCode = ErrInternal // 鎴栧畾涔夊叿浣撶殑 RESOURCE_EXHAUSTED
+		errorCode = ErrInternal
 	case codes.Unavailable:
 		httpStatus = http.StatusServiceUnavailable
 		errorCode = ErrServiceUnavailable
