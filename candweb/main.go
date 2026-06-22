@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
+	pathpkg "path"
 	"strings"
 )
 
@@ -28,7 +28,7 @@ func main() {
 	fileServer := http.FileServer(http.FS(distFS))
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := filepath.Clean(r.URL.Path)
+		path := pathpkg.Clean(r.URL.Path)
 		if path == "." || path == "/" {
 			path = "index.html"
 		} else {
@@ -41,7 +41,6 @@ func main() {
 			stat, err := f.Stat()
 			f.Close()
 			if err == nil && !stat.IsDir() {
-				// Cache control headers
 				if strings.HasPrefix(r.URL.Path, "/assets/") {
 					w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 					if strings.HasSuffix(path, ".js") {
@@ -49,6 +48,8 @@ func main() {
 					} else if strings.HasSuffix(path, ".css") {
 						w.Header().Set("Content-Type", "text/css; charset=utf-8")
 					}
+				} else if path == "index.html" || strings.HasSuffix(path, ".html") {
+					w.Header().Set("Cache-Control", "no-cache")
 				} else {
 					w.Header().Set("Cache-Control", "public, max-age=86400")
 				}
