@@ -10,12 +10,12 @@ require (
 )
 
 require (
-	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260622015257-4cdbd9c6af3d
+	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260622045728-4c6755a0bc04
 	github.com/casdoor/casdoor-go-sdk v1.46.0
+	github.com/oklog/ulid/v2 v2.1.1
 )
 
 require (
-	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/sony/gobreaker v1.0.0 // indirect
 	golang.org/x/net v0.54.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect

@@ -92,6 +92,24 @@ function certificationDisplayName(value?: string) {
   return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "认证")
 }
 
+function formatDisplayAmount(amount: number, currency = "USD") {
+  const normalizedCurrency = String(currency || "USD").trim().toUpperCase()
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: normalizedCurrency }).format(amount / 100)
+  } catch {
+    return `${normalizedCurrency} ${(amount / 100).toLocaleString()}`
+  }
+}
+
+function bundlePriceLabel(bundle: any) {
+  const min = Number(bundle?.display_amount_min || 0)
+  const max = Number(bundle?.display_amount_max || 0)
+  const currency = String(bundle?.display_currency || "USD").trim()
+  if (min <= 0 && max <= 0) return ""
+  if (max > 0 && max !== min) return `${formatDisplayAmount(min, currency)} - ${formatDisplayAmount(max, currency)}`
+  return formatDisplayAmount(min || max, currency)
+}
+
 function setResourceFilter(filter: (typeof resourceFilters)[number]) {
   resourceFilter.value = filter
 }
@@ -152,6 +170,7 @@ async function fetchData() {
             provider: b.category_tips || t.value.courses.certificationPath,
             isPurchased: false,
             image,
+            priceLabel: bundlePriceLabel(b),
             students: typeof b.purchase_count === "number" ? b.purchase_count : undefined,
             versionLabel: `${t.value.courses.version} ${b.version || 0}`,
             stats: [
