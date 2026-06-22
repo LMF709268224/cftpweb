@@ -261,9 +261,48 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/stage-orders", h.ListStageOrders)
 			r.Get("/orders", h.ListOrders)
 			r.Get("/invoices", h.ListInvoices)
+			r.Route("/bundles", func(r chi.Router) {
+				r.Get("/", h.ListBundles)
+				r.Post("/", h.CreateBundle)
+				r.Get("/{bundle_ulid}", h.GetBundle)
+				r.Put("/{bundle_ulid}/meta", h.UpdateBundleMeta)
+				r.Put("/pricing", h.UpdateBundlePricing)
+				r.Post("/{bundle_ulid}/publish", h.PublishBundle)
+				r.Post("/{bundle_ulid}/deprecate", h.DeprecateBundle)
+				r.Post("/upload-url", h.CreateBundleUploadURL)
+			})
+			r.Route("/bundle-orders", func(r chi.Router) {
+				r.Get("/", h.ListBundleOrders)
+				r.Get("/{bundle_order_ulid}/summary", h.GetBundleOrderSummary)
+				r.Get("/{bundle_order_ulid}", h.GetBundleOrderDetail)
+				r.Post("/purge", h.AdminPurgeCandidateBundle)
+			})
 		})
 
 		// ===== Webhook 瀹¤ (Exam Webhooks) =====
+		// ===== Memberships =====
+		r.Route("/memberships", func(r chi.Router) {
+			r.Get("/", h.ListMemberships)
+			r.Post("/", h.AdminCreateMembershipConfig)
+			r.Put("/", h.AdminUpdateMembershipConfig)
+			r.Get("/active", h.GetActiveMembership)
+			r.Get("/users", h.ListUserMemberships)
+			r.Get("/billings", h.ListMembershipBillings)
+			r.Post("/grant", h.AdminGrantMembership)
+			r.Post("/revoke", h.AdminRevokeMembership)
+			r.Post("/purge", h.AdminPurgeCandidateMembership)
+			r.Get("/{membership_ulid}", h.GetMembership)
+			r.Post("/{membership_ulid}/publish", h.AdminPublishMembershipConfig)
+			r.Post("/{membership_ulid}/deprecate", h.AdminDeprecateMembershipConfig)
+			r.Route("/mails", func(r chi.Router) {
+				r.Get("/", h.ListMembershipMails)
+				r.Get("/{mail_ulid}", h.GetMembershipMailDetail)
+				r.Post("/retry", h.RetryMembershipMail)
+				r.Post("/ignore", h.IgnoreMembershipMail)
+			})
+		})
+
+		// ===== Webhook Audit =====
 		r.Route("/audit/webhooks", func(r chi.Router) {
 			r.Get("/", h.ListWebhookMessages)
 			r.Get("/detail", h.GetWebhookMessageDetail)

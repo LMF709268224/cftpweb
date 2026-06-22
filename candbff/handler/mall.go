@@ -16,6 +16,7 @@ import (
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/oklog/ulid/v2"
 )
 
 // ListPipelines  GET /api/mall/pipelines
@@ -490,6 +491,7 @@ func (h *Handler) CreateBundleOrder(w http.ResponseWriter, r *http.Request) {
 		BundleCcUlid:           bundleId,
 		PaymentMode:            req.PaymentMode,
 		SelectedExemptionsJson: req.SelectedExemptionsJson,
+		BundleOrderUlid:        ulid.Make().String(),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

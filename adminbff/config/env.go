@@ -55,6 +55,8 @@ const (
 	EnvGmailGrpcAddr = "GMAIL_GRPC_ADDR"
 	// GPAY_GRPC_ADDR gpay 鏀粯鏈嶅姟鍦板潃
 	EnvGpayGrpcAddr = "GPAY_GRPC_ADDR"
+	// GMBR_GRPC_ADDR gmbr membership service address
+	EnvGmbrGrpcAddr = "GMBR_GRPC_ADDR"
 
 	// 鈹€鈹€ CORS 鈹€鈹€
 	// CORS_ALLOWED_ORIGINS  鍏佽鐨勮法鍩熸潵婧愶紝閫楀彿鍒嗛殧锛岄粯璁?"*" 鍏佽鎵€鏈?

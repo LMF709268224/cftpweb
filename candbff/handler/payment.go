@@ -17,6 +17,7 @@ const (
 	orderBizCourseRetakePayment  = "COURSE_RETAKE_PAYMENT"
 	orderBizPipelineUnlock       = "PIPELINE_UNLOCK"
 	orderBizCredentialApply      = "CREDENTIAL_APPLICATION"
+	orderBizBundlePurchase       = "BUNDLE_PURCHASE"
 	defaultCandidateOrderPageMax = 50
 )
 
@@ -26,6 +27,7 @@ var candidateOrderBizTypes = []string{
 	orderBizCourseRetakePayment,
 	orderBizPipelineUnlock,
 	orderBizCredentialApply,
+	orderBizBundlePurchase,
 }
 
 // GetOrder GET /api/orders/{orderId}
@@ -222,6 +224,16 @@ func (h *Handler) listCandidateOrdersByType(
 			return nil, 0, err
 		}
 		return h.buildCredentialApplicationOrderItems(r, resp.GetItems(), paymentSummaryCache, previewCache), int(resp.GetTotal()), nil
+	case orderBizBundlePurchase:
+		resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
+			CandidateUlid: candidateID,
+			Limit:         int32(pageSize),
+			Offset:        int32(offset),
+		})
+		if err != nil {
+			return nil, 0, err
+		}
+		return h.buildBundleOrderItems(r, resp.GetItems(), paymentSummaryCache, previewCache), int(resp.GetTotal()), nil
 	default:
 		return []OrderItem{}, 0, nil
 	}
@@ -380,6 +392,33 @@ func (h *Handler) buildCredentialApplicationOrderItems(
 			RawStatus:      item.GetOrderStatus(),
 			CreatedAt:      item.GetCreatedAt(),
 			PreviewBizType: orderBizCredentialApply,
+		}, paymentSummaryCache, previewCache))
+	}
+	return out
+}
+
+func (h *Handler) buildBundleOrderItems(
+	r *http.Request,
+	items []*mallpb.BundleOrderSummary,
+	paymentSummaryCache map[string]paymentSummary,
+	previewCache map[string]paymentPreview,
+) []OrderItem {
+	out := make([]OrderItem, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		bizRefULID := strings.TrimSpace(item.GetBundleOrderUlid())
+		out = append(out, h.buildOrderItem(r, orderBuildInput{
+			OrderID:        bizRefULID,
+			ProductName:    orderProductName(orderBizBundlePurchase, strings.TrimSpace(item.GetBundleUlid())),
+			BizType:        orderBizBundlePurchase,
+			BizRefUlid:     bizRefULID,
+			PayOrderUlid:   strings.TrimSpace(item.GetBundlePayOrderUlid()),
+			RawStatus:      item.GetOrderStatus(),
+			CreatedAt:      item.GetCreatedAt(),
+			PaymentMethod:  item.GetPaymentMode(),
+			PreviewBizType: orderBizBundlePurchase,
 		}, paymentSummaryCache, previewCache))
 	}
 	return out
@@ -586,6 +625,8 @@ func orderBizTypeLabel(bizType string) string {
 		return "Pipeline Unlock Order"
 	case orderBizCredentialApply:
 		return "Credential Application Order"
+	case orderBizBundlePurchase:
+		return "Bundle Purchase"
 	default:
 		return strings.TrimSpace(bizType)
 	}
