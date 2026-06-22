@@ -92,13 +92,17 @@ const filteredFiles = computed(() => {
   )
 })
 
+const isVideoGrid = computed(() =>
+  filteredFiles.value.length > 0 && filteredFiles.value.every((file) => normalizedType(file.file_type) === 1),
+)
+
 function normalizedType(type?: number | string) {
   return Number(type)
 }
 
 function fileTypeLabel(type?: number | string) {
   const normalized = normalizedType(type)
-  if (normalized === 1) return "Video"
+  if (normalized === 1) return "Webinar"
   if (normalized === 2) return "PDF"
   if (normalized === 3) return "ZIP"
   return "File"
@@ -261,7 +265,13 @@ onMounted(() => {
       </div>
     </section>
 
-    <section v-if="filteredFiles.length" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+    <section
+      v-if="filteredFiles.length"
+      :class="[
+        'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+        isVideoGrid ? '' : '2xl:grid-cols-5',
+      ]"
+    >
       <article
         v-for="file in filteredFiles"
         :key="file.file_id"
