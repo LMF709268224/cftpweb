@@ -90,10 +90,15 @@ function handlePointerDown(event: PointerEvent) {
   menuOpen.value = false
 }
 
+function openMobileSidebar() {
+  mobileMenuOpen.value = true
+}
+
 onMounted(async () => {
   initializeSidebarCollapse()
   updateName()
   fetchUser()
+  window.addEventListener("open-mobile-sidebar", openMobileSidebar)
   window.addEventListener("storage", updateName)
   window.addEventListener("pointerdown", handlePointerDown)
   stopUnreadCountListener = onUnreadCountChanged((value) => {
@@ -107,6 +112,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.removeEventListener("open-mobile-sidebar", openMobileSidebar)
   window.removeEventListener("storage", updateName)
   window.removeEventListener("pointerdown", handlePointerDown)
   stopUnreadCountListener?.()
@@ -128,7 +134,7 @@ async function handleLogout() {
 </script>
 
 <template>
-  <header class="fixed left-0 right-0 top-0 z-40 flex h-20 items-center border-b border-border bg-white lg:hidden">
+  <header class="hidden">
     <div class="flex w-full items-center justify-between px-4">
       <button class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary/15" @click="mobileMenuOpen = true">
         <Menu class="h-5 w-5" />
@@ -180,8 +186,8 @@ async function handleLogout() {
           <RouterLink
             :to="item.href"
             :class="[
-              'group/nav-item flex items-center justify-between rounded-xl px-4 py-2.5 transition-colors duration-200',
-              isNavItemActive(item.href) ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : 'hover:bg-white/50 hover:text-sidebar-accent-foreground',
+              'group/nav-item flex h-8 items-center justify-between rounded-xl px-4 transition-colors duration-200',
+              isNavItemActive(item.href) ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : 'hover:bg-[#bfd4fb] hover:text-sidebar-accent-foreground',
             ]"
             @click="mobileMenuOpen = false"
           >
@@ -196,7 +202,7 @@ async function handleLogout() {
 
       <div class="px-4 pb-5">
         <button
-          class="mb-3 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 text-sm font-semibold text-[#2f5597] shadow-sm backdrop-blur transition-colors hover:bg-white"
+          class="mb-3 flex h-8 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 text-sm font-semibold text-[#2f5597] shadow-sm backdrop-blur transition-colors hover:bg-white"
           type="button"
           @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
         >
@@ -259,9 +265,9 @@ async function handleLogout() {
           :to="item.href"
           :title="isSidebarCollapsed ? item.label : undefined"
           :class="[
-            'group/nav-item relative flex items-center rounded-xl py-2.5 transition-colors duration-200',
+            'group/nav-item relative flex h-8 items-center rounded-xl transition-colors duration-200',
             isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-4',
-            isNavItemActive(item.href) ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : 'hover:bg-white/50 hover:text-sidebar-accent-foreground',
+            isNavItemActive(item.href) ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : 'hover:bg-[#bfd4fb] hover:text-sidebar-accent-foreground',
           ]"
         >
           <span :class="['flex min-w-0 items-center', isSidebarCollapsed ? 'justify-center' : 'gap-3']">
@@ -277,7 +283,7 @@ async function handleLogout() {
     <div :class="[isSidebarCollapsed ? 'px-3' : 'px-5', 'pb-6']">
       <button
         :class="[
-          'mb-3 flex h-10 w-full cursor-pointer items-center justify-center gap-2 border border-white/70 bg-white/75 text-sm font-semibold text-[#2f5597] shadow-sm backdrop-blur transition-colors hover:bg-white',
+          'mb-3 flex h-8 w-full cursor-pointer items-center justify-center gap-2 border border-white/70 bg-white/75 text-sm font-semibold text-[#2f5597] shadow-sm backdrop-blur transition-colors hover:bg-white',
           isSidebarCollapsed ? 'rounded-xl px-0' : 'rounded-full px-4',
         ]"
         type="button"
