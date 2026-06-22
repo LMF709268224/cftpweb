@@ -26,6 +26,7 @@ const props = defineProps<{
   statusLabel?: string
   statusValue?: string | number
   versionLabel?: string
+  priceLabel?: string
   stats?: CourseCardStat[]
 }>()
 
@@ -52,6 +53,7 @@ const cardCopy = computed(() => ({
   alreadyPurchased: lang.value === "zh" ? "\u5df2\u8d2d\u4e70" : "Already purchased",
   inProgressPurchase: lang.value === "zh" ? "\u6709\u672a\u5b8c\u6210\u8ba2\u5355" : "Order in progress",
   pipelineNotFound: lang.value === "zh" ? "\u8ba4\u8bc1\u5df2\u4e0d\u53ef\u7528" : "No longer available",
+  estimatedPrice: lang.value === "zh" ? "\u9884\u4f30\u4ef7\u683c" : "Estimated price",
 }))
 
 const actionCopy = computed(() => {
@@ -159,6 +161,11 @@ const accessState = computed(() => {
             {{ accessState.label }}
           </div>
           <div v-if="accessState.hint" class="mt-1 text-[11px] opacity-80">{{ accessState.hint }}</div>
+        </div>
+
+        <div v-if="priceLabel" class="flex items-center justify-between rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-xs text-sky-800">
+          <span>{{ cardCopy.estimatedPrice }}</span>
+          <span class="font-semibold">{{ priceLabel }}</span>
         </div>
 
         <div v-if="effectivePurchased && progress !== undefined">
