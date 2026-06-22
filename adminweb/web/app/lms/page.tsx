@@ -437,6 +437,132 @@ const emptyMaterialForm: MaterialForm = {
 
 const courseListPageSize = 20
 
+function firstString(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim()
+    if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  }
+  return ""
+}
+
+function aliasIds<T>(value: T, aliases: Record<string, string[]>): T {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value
+  const next: Record<string, any> = { ...(value as Record<string, any>) }
+  for (const [target, keys] of Object.entries(aliases)) {
+    if (!firstString(next[target])) {
+      next[target] = firstString(...keys.map((key) => next[key]))
+    }
+  }
+  return next as T
+}
+
+function courseIdOf(value: any) {
+  return firstString(value?.course_id, value?.course_ulid, value?.courseUlid)
+}
+
+function chapterIdOf(value: any) {
+  return firstString(value?.chapter_id, value?.chapter_ulid, value?.chapterUlid)
+}
+
+function lessonIdOf(value: any) {
+  return firstString(value?.lesson_id, value?.lesson_ulid, value?.lessonUlid)
+}
+
+function quizIdOf(value: any) {
+  return firstString(value?.quiz_id, value?.quiz_ulid, value?.quizUlid)
+}
+
+function questionIdOf(value: any) {
+  return firstString(value?.question_id, value?.question_ulid, value?.questionUlid)
+}
+
+function optionIdOf(value: any) {
+  return firstString(value?.option_id, value?.option_ulid, value?.optionUlid)
+}
+
+function materialIdOf(value: any) {
+  return firstString(value?.material_id, value?.material_ulid, value?.materialUlid)
+}
+
+function normalizeLmsCourse<T>(course: T): T {
+  return aliasIds(course, { course_id: ["course_id", "course_ulid", "courseUlid"] })
+}
+
+function normalizeChapter<T>(chapter: T): T {
+  return aliasIds(chapter, {
+    chapter_id: ["chapter_id", "chapter_ulid", "chapterUlid"],
+    course_id: ["course_id", "course_ulid", "courseUlid"],
+  })
+}
+
+function normalizeLesson<T>(lesson: T): T {
+  return aliasIds(lesson, {
+    lesson_id: ["lesson_id", "lesson_ulid", "lessonUlid"],
+    chapter_id: ["chapter_id", "chapter_ulid", "chapterUlid"],
+  })
+}
+
+function normalizeQuiz<T>(quiz: T): T {
+  return aliasIds(quiz, { quiz_id: ["quiz_id", "quiz_ulid", "quizUlid"] })
+}
+
+function normalizeQuizQuestion<T>(question: T): T {
+  return aliasIds(question, {
+    question_id: ["question_id", "question_ulid", "questionUlid"],
+    quiz_id: ["quiz_id", "quiz_ulid", "quizUlid"],
+  })
+}
+
+function normalizeQuizOption<T>(option: T): T {
+  return aliasIds(option, {
+    option_id: ["option_id", "option_ulid", "optionUlid"],
+    question_id: ["question_id", "question_ulid", "questionUlid"],
+  })
+}
+
+function normalizeCourseMaterial<T>(material: T): T {
+  return aliasIds(material, {
+    material_id: ["material_id", "material_ulid", "materialUlid"],
+    course_id: ["course_id", "course_ulid", "courseUlid"],
+  })
+}
+
+function normalizeCourseSupplementaryMaterial<T>(material: T): T {
+  return normalizeCourseMaterial(material)
+}
+
+function normalizeCourseEnrollment<T>(enrollment: T): T {
+  return aliasIds(enrollment, { course_id: ["course_id", "course_ulid", "courseUlid"] })
+}
+
+function normalizeCandidateProgress<T>(progress: T): T {
+  return aliasIds(progress, { course_id: ["course_id", "course_ulid", "courseUlid"] })
+}
+
+function normalizeLessonProgress<T>(progress: T): T {
+  return aliasIds(progress, { lesson_id: ["lesson_id", "lesson_ulid", "lessonUlid"] })
+}
+
+function normalizeChapterProgress<T>(progress: T): T {
+  return aliasIds(progress, {
+    chapter_id: ["chapter_id", "chapter_ulid", "chapterUlid"],
+    course_id: ["course_id", "course_ulid", "courseUlid"],
+  })
+}
+
+function normalizeQuizAttempt<T>(attempt: T): T {
+  return aliasIds(attempt, { quiz_id: ["quiz_id", "quiz_ulid", "quizUlid"] })
+}
+
+function normalizeBrokenAsset<T>(asset: T): T {
+  return aliasIds(asset, {
+    course_id: ["course_id", "course_ulid", "courseUlid"],
+    chapter_id: ["chapter_id", "chapter_ulid", "chapterUlid"],
+    lesson_id: ["lesson_id", "lesson_ulid", "lessonUlid"],
+    material_id: ["material_id", "material_ulid", "materialUlid"],
+  })
+}
+
 async function sha256Hex(file: File) {
   const buffer = await file.arrayBuffer()
   const hash = await crypto.subtle.digest("SHA-256", buffer)
@@ -593,7 +719,7 @@ export function QuizManager({
         quizzable_id: qId,
       })
       const res = await apiClient(`/api/lms/quizzes?${params.toString()}`)
-      const nextQuizzes = res?.quizzes || []
+      const nextQuizzes = (res?.quizzes || []).map(normalizeQuiz)
       setQuizzes(nextQuizzes)
       if (selectedQuizId && !nextQuizzes.some((quiz: Quiz) => quiz.quiz_id === selectedQuizId)) {
       }
@@ -643,7 +769,7 @@ export function QuizManager({
           body: JSON.stringify(payload),
         })
         toast.success(page.quizCreateSuccess)
-        nextQuizId = res?.quiz_id || ""
+        nextQuizId = quizIdOf(res)
       }
       
         setSelectedQuizId(nextQuizId)
@@ -675,7 +801,7 @@ export function QuizManager({
     setQuestionsLoading(true)
     try {
       const res = await apiClient(`/api/lms/quizzes/${quizId}/questions`)
-      const nextQuestions = res?.questions || []
+      const nextQuestions = (res?.questions || []).map(normalizeQuizQuestion)
       setQuestions(nextQuestions)
       if (selectedQuestionId && !nextQuestions.some((question: QuizQuestion) => question.question_id === selectedQuestionId)) {
       }
@@ -718,7 +844,7 @@ export function QuizManager({
           body: JSON.stringify(payload),
         })
         toast.success(page.questionCreateSuccess)
-        nextQuestionId = res?.question_id || ""
+        nextQuestionId = questionIdOf(res)
       }
       setSelectedQuestionId(nextQuestionId)
       await loadQuestions(selectedQuiz.quiz_id)
@@ -757,7 +883,7 @@ export function QuizManager({
     setOptionsLoading(true)
     try {
       const res = await apiClient(`/api/lms/questions/${questionId}/options`)
-      setOptions(res?.options || [])
+      setOptions((res?.options || []).map(normalizeQuizOption))
     } finally {
       setOptionsLoading(false)
     }
@@ -794,7 +920,7 @@ export function QuizManager({
           body: JSON.stringify(payload),
         })
         toast.success(page.optionCreateSuccess)
-        nextOptionId = res?.option_id || ""
+        nextOptionId = optionIdOf(res)
       }
       setSelectedOptionId(nextOptionId)
       await loadOptions(selectedQuestion.question_id)
@@ -1268,7 +1394,7 @@ export default function LmsCoursesPage() {
       if (pageToken) params.set("page_token", pageToken)
       const query = params.toString()
       const res = await apiClient(`/api/lms/courses${query ? `?${query}` : ""}`)
-      const nextCourses = res?.courses || []
+      const nextCourses = (res?.courses || []).map(normalizeLmsCourse)
       setCourseListNextPageToken(res?.next_page_token || "")
       setCourses((prevCourses) => {
         const mergedCourses = pageToken ? [...prevCourses, ...nextCourses] : nextCourses
@@ -1331,7 +1457,7 @@ export default function LmsCoursesPage() {
       }),
     })
 
-    const draftCourse = res?.course_id ? res : null
+    const draftCourse = courseIdOf(res) ? normalizeLmsCourse(res) : null
     if (!draftCourse?.course_id) {
       throw new Error("create draft failed")
     }
@@ -1398,8 +1524,9 @@ export default function LmsCoursesPage() {
         )
       }
       setImportOpen(false)
-      if (res?.course_id) {
-        setSelectedId(res.course_id)
+      const importedCourseId = courseIdOf(res)
+      if (importedCourseId) {
+        setSelectedId(importedCourseId)
       }
       await loadCourses()
       if (importScope === "quiz" && selectedChapter) {
@@ -1449,7 +1576,7 @@ export default function LmsCoursesPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formToPayload(form)),
         })
-        setSelectedId(res?.course_id || "")
+        setSelectedId(courseIdOf(res))
         toast.success(page.createSuccess)
       }
       await loadCourses()
@@ -1466,12 +1593,13 @@ export default function LmsCoursesPage() {
     setSupplementaryMaterialLoading(true)
     try {
       const res = await apiClient(`/api/lms/courses/${courseId}/supplementary-material`)
-      setSupplementaryMaterial(res?.material || null)
-      if (res?.material) {
+      const material = res?.material ? normalizeCourseSupplementaryMaterial(res.material) : null
+      setSupplementaryMaterial(material)
+      if (material) {
         setSupplementaryMaterialForm({
-          material_id: res.material.material_id || "",
-          kind: res.material.kind ? String(res.material.kind) : "",
-          data_json: res.material.data_json || "",
+          material_id: material.material_id || "",
+          kind: material.kind ? String(material.kind) : "",
+          data_json: material.data_json || "",
         })
       } else {
         setSupplementaryMaterialForm({ material_id: "", kind: "", data_json: "" })
@@ -1534,7 +1662,7 @@ export default function LmsCoursesPage() {
     setMaterialsLoading(true)
     try {
       const res = await apiClient(`/api/lms/courses/${courseId}/materials`)
-      const nextMaterials = res?.materials || []
+      const nextMaterials = (res?.materials || []).map(normalizeCourseMaterial)
       setMaterials(nextMaterials)
       const matchedMaterial = nextMaterials.find((material: CourseMaterial) => material.material_id === preferredMaterialId)
       if (matchedMaterial) {
@@ -1566,7 +1694,7 @@ export default function LmsCoursesPage() {
 
   const loadMaterialDetail = async (materialId: string) => {
     const res = await apiClient(`/api/lms/materials/${materialId}`)
-    return (res?.material || null) as CourseMaterial | null
+    return (res?.material ? normalizeCourseMaterial(res.material) : null) as CourseMaterial | null
   }
 
   const loadMaterialForEdit = async (material: CourseMaterial) => {
@@ -1696,7 +1824,7 @@ export default function LmsCoursesPage() {
         }
       )
       toast.success(isEditing ? page.materialUpdateSuccess : page.materialCreateSuccess)
-      const nextMaterialId = res?.material_id || materialId
+      const nextMaterialId = materialIdOf(res) || materialId
       setMaterialForm(emptyMaterialForm)
       await loadMaterials(selectedCourse.course_id, nextMaterialId)
       await loadCourseDetail()
@@ -1809,7 +1937,7 @@ export default function LmsCoursesPage() {
 
   const validatePublishReadiness = async (courseId: string) => {
     const chapterRes = await apiClient(`/api/lms/courses/${courseId}/chapters`)
-    const nextChapters: Chapter[] = chapterRes?.chapters || []
+    const nextChapters: Chapter[] = (chapterRes?.chapters || []).map(normalizeChapter)
     setChapters(nextChapters)
 
     if (nextChapters.length === 0) {
@@ -1822,8 +1950,8 @@ export default function LmsCoursesPage() {
         apiClient(`/api/lms/chapters/${chapter.chapter_id}/lessons`),
         apiClient(`/api/lms/quizzes?${new URLSearchParams({ quizzable_type: "2", quizzable_id: chapter.chapter_id }).toString()}`),
       ])
-      const nextLessons: Lesson[] = lessonRes?.lessons || []
-      const nextQuizzes: Quiz[] = quizRes?.quizzes || []
+      const nextLessons: Lesson[] = (lessonRes?.lessons || []).map(normalizeLesson)
+      const nextQuizzes: Quiz[] = (quizRes?.quizzes || []).map(normalizeQuiz)
       const activeQuizzes = nextQuizzes.filter((quiz) => quiz.is_active !== false)
 
       if (nextLessons.length === 0 && activeQuizzes.length === 0) {
@@ -1834,7 +1962,7 @@ export default function LmsCoursesPage() {
 
       for (const quiz of activeQuizzes) {
         const questionRes = await apiClient(`/api/lms/quizzes/${quiz.quiz_id}/questions`)
-        const nextQuestions: QuizQuestion[] = questionRes?.questions || []
+        const nextQuestions: QuizQuestion[] = (questionRes?.questions || []).map(normalizeQuizQuestion)
         if (nextQuestions.length === 0) {
           showQuizQuestions(chapter, nextLessons, nextQuizzes, quiz, nextQuestions)
           toast.error(page.quizMissingQuestions.replace("{{quiz}}", quiz.title || quiz.quiz_id))
@@ -1846,7 +1974,7 @@ export default function LmsCoursesPage() {
           if (!isChoiceQuestion) continue
 
           const optionRes = await apiClient(`/api/lms/questions/${question.question_id}/options`)
-          const nextOptions: QuizOption[] = optionRes?.options || []
+          const nextOptions: QuizOption[] = (optionRes?.options || []).map(normalizeQuizOption)
           const correctCount = nextOptions.filter((option) => option.is_correct).length
 
           if (nextOptions.length < 2) {
@@ -1915,7 +2043,8 @@ export default function LmsCoursesPage() {
     setPreviewLoading(true)
     try {
       const res = await apiClient(`/api/lms/courses/${selectedCourse.course_id}/complete`)
-      setPreview(res?.complete_course || res)
+      const completeCourse = res?.complete_course || res
+      setPreview(completeCourse?.course ? { ...completeCourse, course: normalizeLmsCourse(completeCourse.course) } : completeCourse)
     } finally {
       setPreviewLoading(false)
     }
@@ -1926,7 +2055,8 @@ export default function LmsCoursesPage() {
     setCourseDetailLoading(true)
     try {
       const res = await apiClient(`/api/lms/courses/${selectedCourse.course_id}/detail`)
-      setCourseDetail(res?.course_detail || res)
+      const detail = res?.course_detail || res
+      setCourseDetail(detail?.course ? { ...detail, course: normalizeLmsCourse(detail.course) } : detail)
     } finally {
       setCourseDetailLoading(false)
     }
@@ -1937,7 +2067,7 @@ export default function LmsCoursesPage() {
     setChaptersLoading(true)
     try {
       const res = await apiClient(`/api/lms/courses/${courseId}/chapters`)
-      const nextChapters = res?.chapters || []
+      const nextChapters = (res?.chapters || []).map(normalizeChapter)
       setChapters(nextChapters)
       if (selectedChapterId && !nextChapters.some((chapter: Chapter) => chapter.chapter_id === selectedChapterId)) {
         setSelectedChapterId("")
@@ -2020,7 +2150,7 @@ export default function LmsCoursesPage() {
     setLessonsLoading(true)
     try {
       const res = await apiClient(`/api/lms/chapters/${chapterId}/lessons`)
-      setLessons(res?.lessons || [])
+      setLessons((res?.lessons || []).map(normalizeLesson))
     } finally {
       setLessonsLoading(false)
     }
@@ -2063,7 +2193,7 @@ export default function LmsCoursesPage() {
           body: JSON.stringify(payload),
         })
         toast.success(page.lessonCreateSuccess)
-        nextLessonId = res?.lesson_id || ""
+        nextLessonId = lessonIdOf(res)
       }
       setLessonForm(emptyLessonForm)
       setSelectedLessonId(nextLessonId)
@@ -2091,7 +2221,7 @@ export default function LmsCoursesPage() {
       const params = new URLSearchParams({ page_size: "50" })
       if (enrollmentStatus !== "all") params.set("status", enrollmentStatus)
       const res = await apiClient(`/api/lms/courses/${selectedCourse.course_id}/enrollments?${params.toString()}`)
-      setEnrollments(res?.enrollments || [])
+      setEnrollments((res?.enrollments || []).map(normalizeCourseEnrollment))
       setProgressDetail(null)
       setEnrollmentDetail(null)
       setLessonProgress([])
@@ -2192,7 +2322,7 @@ export default function LmsCoursesPage() {
     setEnrollmentDetailLoadingFor(enrollment.enrollment_id)
     try {
       const res = await apiClient(`/api/lms/enrollments/${enrollment.enrollment_id}`)
-      setEnrollmentDetail(res?.enrollment || res)
+      setEnrollmentDetail(normalizeCourseEnrollment(res?.enrollment || res))
     } finally {
       setEnrollmentDetailLoadingFor("")
     }
@@ -2203,7 +2333,7 @@ export default function LmsCoursesPage() {
     setProgressLoadingFor(candidateId)
     try {
       const res = await apiClient(`/api/lms/courses/${selectedCourse.course_id}/candidates/${candidateId}/progress`)
-      setProgressDetail(res)
+      setProgressDetail(normalizeCandidateProgress(res))
     } finally {
       setProgressLoadingFor("")
     }
@@ -2218,7 +2348,7 @@ export default function LmsCoursesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ candidate_id: candidateId }),
       })
-      setProgressDetail(res)
+      setProgressDetail(normalizeCandidateProgress(res))
       toast.success(page.syncProgressSuccess)
       await loadCourseEnrollments()
     } finally {
@@ -2232,7 +2362,7 @@ export default function LmsCoursesPage() {
     try {
       const params = new URLSearchParams({ candidate_id: candidateId, page_size: "50" })
       const res = await apiClient(`/api/lms/lesson-progress?${params.toString()}`)
-      setLessonProgress(res?.progress || [])
+      setLessonProgress((res?.progress || []).map(normalizeLessonProgress))
       setLessonProgressDetail(null)
     } finally {
       setLessonProgressLoadingFor("")
@@ -2246,7 +2376,7 @@ export default function LmsCoursesPage() {
     try {
       const params = new URLSearchParams({ candidate_id: candidateID })
       const res = await apiClient(`/api/lms/lessons/${item.lesson_id}/progress?${params.toString()}`)
-      setLessonProgressDetail(res?.progress || res)
+      setLessonProgressDetail(normalizeLessonProgress(res?.progress || res))
     } finally {
       setLessonProgressLoadingFor("")
     }
@@ -2261,7 +2391,7 @@ export default function LmsCoursesPage() {
     try {
       const params = new URLSearchParams({ candidate_id: candidateId })
       const res = await apiClient(`/api/lms/chapters/${chapterId}/progress?${params.toString()}`)
-      setChapterProgress(res?.progress || res?.chapter_progress || res)
+      setChapterProgress(normalizeChapterProgress(res?.progress || res?.chapter_progress || res))
     } finally {
       setChapterProgressLoadingFor("")
     }
@@ -2274,7 +2404,7 @@ export default function LmsCoursesPage() {
     setQuizAttemptsLoadingFor(attempt.attempt_id)
     try {
       const res = await apiClient(`/api/lms/quiz-attempts/${attempt.attempt_id}`)
-      setQuizAttemptDetail(res?.attempt || res)
+      setQuizAttemptDetail(normalizeQuizAttempt(res?.attempt || res))
     } finally {
       setQuizAttemptsLoadingFor("")
     }
@@ -2288,7 +2418,8 @@ export default function LmsCoursesPage() {
       if (brokenAssetType !== "all") params.set("asset_type", brokenAssetType)
       if (assetStatus !== "all") params.set("status", assetStatus)
       const res = await apiClient(`/api/lms/assets?${params.toString()}`)
-      setBrokenAssets(pageToken ? [...brokenAssets, ...(res?.assets || [])] : res?.assets || [])
+      const nextAssets = (res?.assets || []).map(normalizeBrokenAsset)
+      setBrokenAssets(pageToken ? [...brokenAssets, ...nextAssets] : nextAssets)
       setBrokenAssetsNextPageToken(res?.next_page_token || "")
     } finally {
       setBrokenAssetsLoading(false)
@@ -2304,7 +2435,7 @@ export default function LmsCoursesPage() {
     try {
       const params = new URLSearchParams({ object_key: asset.object_key, associated_id: asset.associated_id })
       const res = await apiClient(`/api/lms/assets/detail?${params.toString()}`)
-      setAssetDetail(res?.asset || res)
+      setAssetDetail(normalizeBrokenAsset(res?.asset || res))
     } finally {
       setAssetDetailLoadingFor("")
     }

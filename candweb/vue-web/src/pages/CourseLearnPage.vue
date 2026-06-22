@@ -65,6 +65,8 @@ type CompleteCourse = {
 
 type Course = {
   course_id?: string
+  course_ulid?: string
+  courseUlid?: string
   title?: string
   description?: string
   category_tips?: string
@@ -74,6 +76,8 @@ type Course = {
 type ChapterDetail = {
   chapter?: {
     chapter_id?: string
+    chapter_ulid?: string
+    chapterUlid?: string
     title?: string
     sort_order?: number
   }
@@ -90,6 +94,8 @@ type LessonDetail = {
 
 type Lesson = {
   lesson_id?: string
+  lesson_ulid?: string
+  lessonUlid?: string
   title?: string
   lesson_type?: number
   body?: string
@@ -99,7 +105,11 @@ type Lesson = {
 
 type CourseMaterialSummary = {
   material_id?: string
+  material_ulid?: string
+  materialUlid?: string
   course_id?: string
+  course_ulid?: string
+  courseUlid?: string
   title?: string
   material_type?: number
   file_object_key?: string
@@ -110,6 +120,8 @@ type CourseMaterialSummary = {
 
 type QuizProgressItem = {
   quiz_id?: string
+  quiz_ulid?: string
+  quizUlid?: string
   is_passed?: boolean
   status?: string
   attempt_id?: string
@@ -139,6 +151,8 @@ type SyncProgressRsp = {
 
 type ProgressRecord = {
   material_id?: string
+  material_ulid?: string
+  materialUlid?: string
 }
 
 type MaterialGroupKey = "all" | "textbook" | "slides" | "reference" | "other"
@@ -206,20 +220,52 @@ const totalMaterialCount = computed(() => materials.value.length + supplementary
 const courseQuizzes = computed<any[]>(() => completeCourse.value?.quizzes || [])
 const quizProgress = computed(() => payload.value?.quiz_progress || {})
 
+function firstString(...values: unknown[]) {
+  for (const value of values) {
+    const normalized = String(value || "").trim()
+    if (normalized) return normalized
+  }
+  return ""
+}
+
+function courseIdOf(value?: Course | Record<string, unknown>) {
+  return firstString(value?.course_id, value?.course_ulid, value?.courseUlid)
+}
+
+function chapterIdOf(value?: ChapterDetail["chapter"] | Record<string, unknown>) {
+  return firstString(value?.chapter_id, value?.chapter_ulid, value?.chapterUlid)
+}
+
+function lessonIdOf(value?: Lesson | Record<string, unknown>) {
+  return firstString(value?.lesson_id, value?.lesson_ulid, value?.lessonUlid)
+}
+
+function materialIdOf(value?: CourseMaterialSummary | Record<string, unknown>) {
+  return firstString(value?.material_id, value?.material_ulid, value?.materialUlid)
+}
+
+function quizIdOf(value?: Record<string, unknown>) {
+  return firstString(value?.quiz_id, value?.quiz_ulid, value?.quizUlid)
+}
+
+function progressLessonIdOf(value?: ProgressRecord | Record<string, unknown>) {
+  return firstString(value?.material_id, value?.material_ulid, value?.materialUlid)
+}
+
 const lessons = computed<LessonDetail[]>(() =>
   chapters.value.flatMap((chapter, chapterIndex) =>
     (chapter.lessons || []).map((lessonDetail) => ({
       chapterTitle: chapter.chapter?.title || t.value.learning.chapters,
-      chapterId: chapter.chapter?.chapter_id || `chapter-${chapterIndex}`,
+      chapterId: chapterIdOf(chapter.chapter) || `chapter-${chapterIndex}`,
       ...lessonDetail,
     })),
   ),
 )
 
-const activeLesson = computed(() => lessons.value.find((item) => item.lesson?.lesson_id === activeLessonId.value) || lessons.value[0])
+const activeLesson = computed(() => lessons.value.find((item) => lessonIdOf(item.lesson) === activeLessonId.value) || lessons.value[0])
 const lesson = computed(() => activeLesson.value?.lesson)
 const completedLessonIds = computed(() =>
-  new Set(progressRecords.value.map((record) => record.material_id).filter((value): value is string => Boolean(value))),
+  new Set(progressRecords.value.map(progressLessonIdOf).filter((value): value is string => Boolean(value))),
 )
 const progressPercentage = computed(() => syncState.value?.progress_percentage ?? 0)
 const completedLessonsCount = computed(() => syncState.value?.completed_lessons_count ?? completedLessonIds.value.size)
@@ -231,19 +277,21 @@ const currentStageName = computed(() => runtime.value?.current_stage_name || "")
 const currentStageStatus = computed(() => runtime.value?.current_stage_status)
 const currentUnitStatus = computed(() => runtime.value?.current_unit_status)
 const nextUnitStatus = computed(() => nextStep.value?.status || currentUnitStatus.value)
-const currentLessonRawCompleted = computed(() => Boolean(lesson.value?.lesson_id && completedLessonIds.value.has(lesson.value.lesson_id)))
+const currentLessonId = computed(() => lessonIdOf(lesson.value))
+const currentLessonRawCompleted = computed(() => Boolean(currentLessonId.value && completedLessonIds.value.has(currentLessonId.value)))
 const courseRuntimeUnit = computed(() => {
   const stages = runtime.value?.config?.stages || []
   for (const stage of stages) {
     for (const unit of stage.units || []) {
-      if (unit.glms_course_id === courseId.value || unit.course_id === courseId.value) return unit
+      if (unit.glms_course_id === courseId.value || unit.course_id === courseId.value || unit.course_ulid === courseId.value || unit.courseUlid === courseId.value) return unit
     }
   }
   return null
 })
 const courseRuntimeUnitStatus = computed(() => courseRuntimeUnit.value?.runtime_status || nextUnitStatus.value)
 const courseRuntimeUnitUlid = computed(() => {
-  if (nextStep.value?.course_id && nextStep.value.course_id !== courseId.value) return ""
+  const nextCourseId = firstString(nextStep.value?.course_id, nextStep.value?.course_ulid, nextStep.value?.courseUlid)
+  if (nextCourseId && nextCourseId !== courseId.value) return ""
   return nextStep.value?.course_unit_ulid || ""
 })
 const hasCertificateTab = computed(() => nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value))
@@ -264,7 +312,7 @@ const courseHasExam = computed(() => {
   const stages = runtime.value?.config?.stages || []
   for (const stage of stages) {
     for (const unit of stage.units || []) {
-      if (unit.glms_course_id === courseId.value || unit.course_id === courseId.value) {
+      if (unit.glms_course_id === courseId.value || unit.course_id === courseId.value || unit.course_ulid === courseId.value || unit.courseUlid === courseId.value) {
         return Boolean(unit.exam_id || unit.program)
       }
     }
@@ -297,7 +345,7 @@ const quizTasks = computed<QuizTask[]>(() => {
   const tasks: QuizTask[] = []
   courseQuizzes.value.forEach((quizDetail: any, index: number) => {
     const quiz = quizDetail.quiz || quizDetail || {}
-    const quizId = quiz.quiz_id || ""
+    const quizId = quizIdOf(quiz)
     tasks.push({
       key: quizId || `course-quiz-${index}`,
       quizId,
@@ -309,11 +357,11 @@ const quizTasks = computed<QuizTask[]>(() => {
     })
   })
   chapters.value.forEach((chapter, chapterIndex) => {
-    const chapterId = chapter.chapter?.chapter_id || `chapter-${chapterIndex}`
+    const chapterId = chapterIdOf(chapter.chapter) || `chapter-${chapterIndex}`
     const chapterTitle = chapter.chapter?.title || `${t.value.learning.chapterPrefix} ${chapterIndex + 1}`
     ;(chapter.quizzes || []).forEach((quizDetail: any, index: number) => {
       const quiz = quizDetail.quiz || quizDetail || {}
-      const quizId = quiz.quiz_id || ""
+      const quizId = quizIdOf(quiz)
       tasks.push({
         key: quizId || `chapter-${chapterIndex}-quiz-${index}`,
         quizId,
@@ -330,7 +378,7 @@ const quizTasks = computed<QuizTask[]>(() => {
       const lessonTitle = lessonDetail.lesson?.title || `${t.value.learning.unknownLesson} ${lessonIndex + 1}`
       ;(lessonDetail.quizzes || []).forEach((quizDetail: any, index: number) => {
         const quiz = quizDetail.quiz || quizDetail || {}
-        const quizId = quiz.quiz_id || ""
+        const quizId = quizIdOf(quiz)
         tasks.push({
           key: quizId || `lesson-${chapterIndex}-${lessonIndex}-quiz-${index}`,
           quizId,
@@ -340,7 +388,7 @@ const quizTasks = computed<QuizTask[]>(() => {
           ownerTitle: lessonTitle,
           chapterId,
           chapterTitle,
-          lessonId: lessonDetail.lesson?.lesson_id,
+          lessonId: lessonIdOf(lessonDetail.lesson),
           lessonTitle,
           completed: quizCompleted(quizId),
         })
@@ -413,7 +461,7 @@ const learnContentTabs = computed(() => [
 ])
 const nextLearningLessonId = computed(() => {
   for (const item of lessons.value) {
-    const candidate = item.lesson?.lesson_id
+    const candidate = lessonIdOf(item.lesson)
     if (candidate && !lessonFullyCompleted(candidate)) return candidate
   }
   return ""
@@ -445,8 +493,8 @@ const groupedMaterials = computed(() => {
 })
 const selectedMaterial = computed(() => {
   return (
-    filteredMaterials.value.find((item) => item.material_id === selectedMaterialId.value) ||
-    materials.value.find((item) => item.material_id === selectedMaterialId.value) ||
+    filteredMaterials.value.find((item) => materialIdOf(item) === selectedMaterialId.value) ||
+    materials.value.find((item) => materialIdOf(item) === selectedMaterialId.value) ||
     filteredMaterials.value[0] ||
     materials.value[0]
   )
@@ -677,11 +725,12 @@ async function loadCourse() {
     if (!activeLessonId.value) {
       const firstLesson = res?.complete_course?.chapters
         ?.flatMap((chapter: ChapterDetail) => chapter.lessons || [])
-        .find((item: LessonDetail) => item.lesson?.lesson_id)
-      activeLessonId.value = firstLesson?.lesson?.lesson_id || ""
+        .find((item: LessonDetail) => lessonIdOf(item.lesson))
+      activeLessonId.value = lessonIdOf(firstLesson?.lesson)
     }
-    const firstMaterial = res?.complete_course?.materials?.find((item: CourseMaterialSummary) => item.material_id)
-    if (!selectedMaterialId.value && firstMaterial?.material_id) selectedMaterialId.value = firstMaterial.material_id
+    const firstMaterial = res?.complete_course?.materials?.find((item: CourseMaterialSummary) => materialIdOf(item))
+    const firstMaterialId = materialIdOf(firstMaterial)
+    if (!selectedMaterialId.value && firstMaterialId) selectedMaterialId.value = firstMaterialId
   } finally {
     loading.value = false
   }
@@ -788,7 +837,10 @@ async function refreshProgress(showToast = false) {
 }
 
 async function startQuiz(quizId: string) {
-  if (!quizId || startingQuizId.value) return
+  if (!quizId || startingQuizId.value) {
+    if (!quizId) toast.error(t.value.common.error)
+    return
+  }
   startingQuizId.value = quizId
   try {
     const res = await apiClient(`/api/quizzes/${quizId}/take`, { method: "POST" })
@@ -888,18 +940,22 @@ function openExternalLesson() {
 
 async function markCompleted() {
   if (markingLessonComplete.value) return
-  if (!lesson.value?.lesson_id) return
+  const lessonId = currentLessonId.value
+  if (!lessonId) {
+    toast.error(t.value.common.error)
+    return
+  }
   if (currentLessonCompleted.value) {
     toast.success(t.value.learning.completedTag)
     return
   }
-  if (lessonHasPendingQuizzes(lesson.value.lesson_id)) {
+  if (lessonHasPendingQuizzes(lessonId)) {
     toast.warning(t.value.learning.nextStepTakeQuizDesc)
     return
   }
   markingLessonComplete.value = true
   try {
-    await apiClient(`/api/pipeline/lessons/${lesson.value.lesson_id}/complete`, { method: "POST" })
+    await apiClient(`/api/pipeline/lessons/${lessonId}/complete`, { method: "POST" })
     toast.success(t.value.common.success)
     await refreshProgress(false)
   } catch {
@@ -911,9 +967,13 @@ async function markCompleted() {
 
 
 async function openLessonPdf() {
-  if (!lesson.value?.lesson_id) return
-  sessionStorage.setItem(`lesson-pdf-preview-title:${lesson.value.lesson_id}`, lesson.value.title || "PDF Preview")
-  openPreviewTab(`/pdf-preview/lessons/${encodeURIComponent(lesson.value.lesson_id)}`)
+  const lessonId = currentLessonId.value
+  if (!lessonId) {
+    toast.error(t.value.common.error)
+    return
+  }
+  sessionStorage.setItem(`lesson-pdf-preview-title:${lessonId}`, lesson.value?.title || "PDF Preview")
+  openPreviewTab(`/pdf-preview/lessons/${encodeURIComponent(lessonId)}`)
 }
 
 async function openInlinePdf(url: string) {
@@ -936,11 +996,12 @@ function openExternalPdfPreview(src: string, title: string) {
 }
 
 async function openMaterial(material: CourseMaterialSummary) {
-  if (!material.material_id) return
+  const materialId = materialIdOf(material)
+  if (!materialId) return
   if (openingMaterialId.value) return
-  openingMaterialId.value = material.material_id
+  openingMaterialId.value = materialId
   try {
-    const res = await apiClient(`/api/pipeline/materials/${material.material_id}/url`)
+    const res = await apiClient(`/api/pipeline/materials/${materialId}/url`)
     if (res?.url) {
       if (material.material_type === 3) {
         await openInlinePdf(res.url)
@@ -956,11 +1017,12 @@ async function openMaterial(material: CourseMaterialSummary) {
 }
 
 async function downloadMaterial(material: CourseMaterialSummary) {
-  if (!material.material_id) return
+  const materialId = materialIdOf(material)
+  if (!materialId) return
   if (downloadingMaterialId.value) return
-  downloadingMaterialId.value = material.material_id
+  downloadingMaterialId.value = materialId
   try {
-    const res = await apiClient(`/api/pipeline/materials/${material.material_id}/url`)
+    const res = await apiClient(`/api/pipeline/materials/${materialId}/url`)
     if (!res?.url) {
       toast.error(t.value.common.error)
       return
@@ -983,7 +1045,7 @@ async function selectLesson(lessonId?: string) {
   if (lessonId) activeLessonId.value = lessonId
   activeContentTab.value = "lesson"
   activeMaterialGroup.value = "all"
-  if (materials.value.length > 0 && !selectedMaterialId.value) selectedMaterialId.value = materials.value[0].material_id || ""
+  if (materials.value.length > 0 && !selectedMaterialId.value) selectedMaterialId.value = materialIdOf(materials.value[0])
   await refreshProgress(false)
 }
 
@@ -996,8 +1058,9 @@ function scrollToBottom() {
 
 function nextStepLink() {
   if (nextStepState.value.action === "continue_learning") {
+    const nextCourseId = firstString(nextStep.value?.course_id, nextStep.value?.course_ulid, nextStep.value?.courseUlid) || courseId.value
     return nextLearningLessonId.value
-      ? `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(nextStep.value?.course_id || courseId.value)}/lessons/${encodeURIComponent(nextLearningLessonId.value)}`
+      ? `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(nextCourseId)}/lessons/${encodeURIComponent(nextLearningLessonId.value)}`
       : `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(courseId.value)}`
   }
   if (nextStepState.value.action === "view_certificate") return "/certificates"
@@ -1047,13 +1110,14 @@ watch([runtime, courseId], async () => {
   if (activeContentTab.value === "certificate") await loadCourseCertificate()
 })
 watch(lessons, () => {
-  if (!activeLessonId.value && lessons.value.length > 0) activeLessonId.value = lessons.value[0].lesson?.lesson_id || ""
+  if (!activeLessonId.value && lessons.value.length > 0) activeLessonId.value = lessonIdOf(lessons.value[0].lesson)
 })
 watch(materials, () => {
-  if (!selectedMaterialId.value && materials.value.length > 0) selectedMaterialId.value = materials.value[0].material_id || ""
+  if (!selectedMaterialId.value && materials.value.length > 0) selectedMaterialId.value = materialIdOf(materials.value[0])
 })
 watch(selectedMaterial, () => {
-  if (selectedMaterial.value?.material_id) selectedMaterialId.value = selectedMaterial.value.material_id
+  const materialId = materialIdOf(selectedMaterial.value)
+  if (materialId) selectedMaterialId.value = materialId
 })
 </script>
 
@@ -1372,7 +1436,7 @@ watch(selectedMaterial, () => {
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
                   <div class="mt-auto pt-3">
                     <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
-                      <Loader2 v-if="startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
+                      <Loader2 v-if="task.quizId && startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
                   </div>
@@ -1401,7 +1465,7 @@ watch(selectedMaterial, () => {
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
                   <div class="mt-auto pt-3">
                     <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
-                      <Loader2 v-if="startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
+                      <Loader2 v-if="task.quizId && startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
                   </div>
@@ -1426,23 +1490,23 @@ watch(selectedMaterial, () => {
             <div v-else class="space-y-2">
               <button
                 v-for="(lessonDetail, index) in lessons"
-                :key="lessonDetail.lesson?.lesson_id || `lesson-${index}`"
+                :key="lessonIdOf(lessonDetail.lesson) || `lesson-${index}`"
                 type="button"
                 :class="[
                   'flex w-full items-start gap-3 rounded-md border px-3 py-3 text-left text-sm transition-all',
-                  lessonDetail.lesson?.lesson_id === activeLessonId
+                  lessonIdOf(lessonDetail.lesson) === activeLessonId
                     ? 'border-primary/30 bg-primary/10 text-primary shadow-sm'
                     : 'border-slate-100 bg-slate-50 text-slate-700 hover:border-primary/20 hover:bg-white',
                 ]"
-                @click="selectLesson(lessonDetail.lesson?.lesson_id)"
+                @click="selectLesson(lessonIdOf(lessonDetail.lesson))"
               >
                 <span
                   :class="[
                     'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-xs font-semibold',
-                    lessonFullyCompleted(lessonDetail.lesson?.lesson_id) ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-primary',
+                    lessonFullyCompleted(lessonIdOf(lessonDetail.lesson)) ? 'bg-emerald-100 text-emerald-700' : 'bg-white text-primary',
                   ]"
                 >
-                  <CheckCircle2 v-if="lessonFullyCompleted(lessonDetail.lesson?.lesson_id)" class="h-4 w-4" />
+                  <CheckCircle2 v-if="lessonFullyCompleted(lessonIdOf(lessonDetail.lesson))" class="h-4 w-4" />
                   <span v-else>{{ index + 1 }}</span>
                 </span>
                 <span class="min-w-0 flex-1">
@@ -1450,7 +1514,7 @@ watch(selectedMaterial, () => {
                   <span v-if="lessonDetail.chapterTitle" class="mt-1 block truncate text-xs text-muted-foreground">{{ lessonDetail.chapterTitle }}</span>
                   <span class="mt-2 flex flex-wrap gap-1.5">
                     <span class="badge border-primary/15 bg-primary/10 text-[11px] text-primary">{{ lessonTypeLabel(lessonDetail.lesson?.lesson_type) }}</span>
-                    <span v-if="lessonHasPendingQuizzes(lessonDetail.lesson?.lesson_id)" class="badge border-amber-200 bg-amber-50 text-[11px] text-amber-700">{{ t.learning.quizScopeLesson }}</span>
+                    <span v-if="lessonHasPendingQuizzes(lessonIdOf(lessonDetail.lesson))" class="badge border-amber-200 bg-amber-50 text-[11px] text-amber-700">{{ t.learning.quizScopeLesson }}</span>
                   </span>
                 </span>
               </button>
@@ -1614,13 +1678,13 @@ watch(selectedMaterial, () => {
                 <div class="space-y-2">
                   <button
                     v-for="material in filteredMaterials"
-                    :key="material.material_id || material.title"
+                    :key="materialIdOf(material) || material.title"
                     type="button"
                     :class="[
                       'w-full rounded-md border px-3 py-3 text-left transition-colors',
-                      material.material_id === selectedMaterialId ? 'border-primary bg-white' : 'border-slate-100 bg-white hover:bg-slate-100',
+                      materialIdOf(material) === selectedMaterialId ? 'border-primary bg-white' : 'border-slate-100 bg-white hover:bg-slate-100',
                     ]"
-                    @click="selectedMaterialId = material.material_id || ''"
+                    @click="selectedMaterialId = materialIdOf(material)"
                   >
                     <div class="mb-1 flex items-center gap-2">
                       <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ materialTypeLabel(material.material_type) }}</span>
@@ -1666,13 +1730,13 @@ watch(selectedMaterial, () => {
                   </div>
 
                   <div class="flex flex-wrap gap-2">
-                    <button class="btn btn-primary" :disabled="openingMaterialId === selectedMaterial.material_id" @click="openMaterial(selectedMaterial)">
-                      <Loader2 v-if="openingMaterialId === selectedMaterial.material_id" class="h-4 w-4 animate-spin" />
+                    <button class="btn btn-primary" :disabled="openingMaterialId === materialIdOf(selectedMaterial)" @click="openMaterial(selectedMaterial)">
+                      <Loader2 v-if="openingMaterialId === materialIdOf(selectedMaterial)" class="h-4 w-4 animate-spin" />
                       <Play v-else class="h-4 w-4" />
                       {{ t.learning.openMaterial }}
                     </button>
-                    <button class="btn btn-outline" :disabled="downloadingMaterialId === selectedMaterial.material_id" @click="downloadMaterial(selectedMaterial)">
-                      <Loader2 v-if="downloadingMaterialId === selectedMaterial.material_id" class="h-4 w-4 animate-spin" />
+                    <button class="btn btn-outline" :disabled="downloadingMaterialId === materialIdOf(selectedMaterial)" @click="downloadMaterial(selectedMaterial)">
+                      <Loader2 v-if="downloadingMaterialId === materialIdOf(selectedMaterial)" class="h-4 w-4 animate-spin" />
                       <Download v-else class="h-4 w-4" />
                       {{ t.learning.downloadMaterial }}
                     </button>

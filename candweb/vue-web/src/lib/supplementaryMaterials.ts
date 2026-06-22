@@ -1,8 +1,12 @@
 export type SupplementaryMaterial = {
   material_id?: string
+  material_ulid?: string
   materialId?: string
+  materialUlid?: string
   course_id?: string
+  course_ulid?: string
   courseId?: string
+  courseUlid?: string
   kind?: string
   data_json?: string | unknown[] | Record<string, unknown>
   dataJson?: string | unknown[] | Record<string, unknown>
@@ -39,11 +43,11 @@ export function parseSupplementaryMaterialItems(materials: SupplementaryMaterial
       const type = stringFromRecord(record, ["type", "material_type", "resource_type", "kind"]) || "Material"
       const chapter = stringFromRecord(record, ["chapter", "chapter_title", "chapterTitle", "section"]) || fallbackChapter
       const url = stringFromRecord(record, ["resource_link", "resourceLink", "url", "link", "href", "external_url", "externalUrl"])
-      const materialId = material.material_id || material.materialId || "supplementary"
+      const materialId = material.material_id || material.material_ulid || material.materialId || material.materialUlid || "supplementary"
       const fallbackKey = `${materialId}-${materialIndex}-${recordIndex}`
 
       return {
-        key: stringFromRecord(record, ["id", "material_id", "materialId", "resource_id", "resourceId", "key"]) || fallbackKey,
+        key: stringFromRecord(record, ["id", "material_id", "material_ulid", "materialId", "materialUlid", "resource_id", "resource_ulid", "resourceId", "resourceUlid", "key"]) || fallbackKey,
         chapter,
         type,
         title: title || "Untitled material",
