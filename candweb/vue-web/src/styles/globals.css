@@ -132,6 +132,14 @@
     min-height: calc(100vh - 5rem);
   }
 
+  .page-panel > header {
+    border-bottom-color: color-mix(in srgb, #c2d8ff 50%, transparent) !important;
+  }
+
+  .page-panel > main {
+    padding: 1.5rem !important;
+  }
+
   .app-side-card {
     max-height: calc(100vh - 122px);
     scrollbar-width: thin;
