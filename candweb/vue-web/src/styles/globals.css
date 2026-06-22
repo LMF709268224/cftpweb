@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: #eef3f9;
+  --background: #e6efff;
   --foreground: #101828;
   --card: oklch(1 0 0);
   --card-foreground: #101828;
@@ -129,6 +129,8 @@
 
   .page-panel {
     @apply bg-white lg:overflow-hidden lg:rounded-xl lg:border lg:border-border;
+    background-color: #f9fafb !important;
+    border-color: #e5e7eb !important;
     min-height: calc(100vh - 5rem);
   }
 
@@ -197,22 +199,22 @@
       max-width: none;
       margin-left: 0;
       margin-right: 0;
-      padding: 1rem 1rem 1rem 296px;
+      padding: 0.5rem 0.5rem 0.5rem 288px;
     }
 
     .app-sidebar-toggle {
       position: fixed;
-      left: calc(296px + 1.25rem);
-      top: 2rem;
+      left: calc(288px + 1.25rem);
+      top: 1.5rem;
       z-index: 45;
     }
 
     body.sidebar-collapsed .page-main {
-      padding-left: 80px;
+      padding-left: 72px;
     }
 
     body.sidebar-collapsed .app-sidebar-toggle {
-      left: calc(80px + 1.25rem);
+      left: calc(72px + 1.25rem);
     }
 
     body.sidebar-collapsed .app-side-card > div:last-of-type button span:not(:first-child),
@@ -222,7 +224,7 @@
     }
 
     .page-panel {
-      min-height: calc(100vh - 2rem);
+      min-height: calc(100vh - 1rem);
     }
 
     .app-side-card {
