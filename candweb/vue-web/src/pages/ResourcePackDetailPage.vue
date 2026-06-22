@@ -303,8 +303,8 @@ onMounted(() => {
             <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-slate-950/78 via-slate-950/32 to-transparent" />
 
             <div class="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-              <span class="inline-flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg backdrop-blur">
-                <Eye class="h-8 w-8" :stroke-width="2.5" />
+              <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg backdrop-blur">
+                <Eye class="h-6 w-6" :stroke-width="2.5" />
               </span>
             </div>
 
@@ -344,9 +344,14 @@ onMounted(() => {
               </span>
 
               <div class="absolute inset-0 flex items-center justify-center bg-slate-950/10 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                <span class="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg backdrop-blur">
-                  <Play v-if="normalizedType(file.file_type) === 1" class="h-7 w-7 fill-none" :stroke-width="2.4" />
-                  <Eye v-else class="h-7 w-7" :stroke-width="2.4" />
+                <span
+                  :class="[
+                    'inline-flex items-center justify-center rounded-full bg-white/95 text-slate-950 shadow-lg backdrop-blur',
+                    normalizedType(file.file_type) === 1 ? 'h-9 w-9' : 'h-12 w-12',
+                  ]"
+                >
+                  <Play v-if="normalizedType(file.file_type) === 1" class="h-5 w-5 fill-none" :stroke-width="2.4" />
+                  <Eye v-else class="h-6 w-6" :stroke-width="2.4" />
                 </span>
               </div>
             </div>
