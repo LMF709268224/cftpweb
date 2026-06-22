@@ -139,28 +139,34 @@ const accessState = computed(() => {
     </div>
 
     <div class="flex flex-1 flex-col p-5">
-      <h3 class="mb-2 line-clamp-1 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ title }}</h3>
-      <p class="mb-4 line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{{ description }}</p>
+      <div class="mb-4 min-h-[84px]">
+        <h3 class="mb-2 line-clamp-1 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ title }}</h3>
+        <p class="line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{{ description }}</p>
+      </div>
 
-      <div class="mb-4 min-h-[58px] space-y-3">
+      <div class="mb-4 flex min-h-[146px] flex-col justify-start space-y-3">
         <div v-if="resolvedStatusLabel" class="flex flex-wrap gap-2">
           <span class="badge border-primary/20 bg-primary/10 text-primary">{{ resolvedStatusLabel }}</span>
         </div>
 
-        <div v-if="accessState" :class="['rounded-lg border px-3 py-2 text-xs', accessState.className]">
-          <div class="flex items-center gap-1.5 font-medium">
-            <component :is="accessState.icon" class="h-3.5 w-3.5" />
-            {{ accessState.label }}
+        <div class="min-h-[52px]">
+          <div v-if="accessState" :class="['rounded-lg border px-3 py-2 text-xs', accessState.className]">
+            <div class="flex items-center gap-1.5 font-medium">
+              <component :is="accessState.icon" class="h-3.5 w-3.5" />
+              {{ accessState.label }}
+            </div>
+            <div v-if="accessState.hint" class="mt-1 text-[11px] opacity-80">{{ accessState.hint }}</div>
           </div>
-          <div v-if="accessState.hint" class="mt-1 text-[11px] opacity-80">{{ accessState.hint }}</div>
         </div>
 
-        <div v-if="priceLabel" class="space-y-0.5">
-          <div class="text-sm font-medium leading-5 text-[#4a4f59]">
-            {{ cardCopy.estimatedPrice }}
-          </div>
-          <div class="whitespace-nowrap text-[22px] font-bold leading-tight tracking-tight text-[#101114] xl:text-[24px] 2xl:text-[26px]">
-            {{ priceLabel }}
+        <div class="min-h-[56px]">
+          <div v-if="priceLabel" class="space-y-0.5">
+            <div class="text-sm font-medium leading-5 text-[#4a4f59]">
+              {{ cardCopy.estimatedPrice }}
+            </div>
+            <div class="whitespace-nowrap text-[22px] font-bold leading-tight tracking-tight text-[#101114] xl:text-[24px] 2xl:text-[26px]">
+              {{ priceLabel }}
+            </div>
           </div>
         </div>
 
