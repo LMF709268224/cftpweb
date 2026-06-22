@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from "vue"
-import { PanelLeft } from "lucide-vue-next"
 import Sidebar from "./Sidebar.vue"
 import { disposeSidebarCollapse, initializeSidebarCollapse, useSidebarCollapse } from "@/lib/sidebar"
 
@@ -10,7 +9,10 @@ defineProps<{
 
 const { isSidebarCollapsed, toggleSidebarCollapsed } = useSidebarCollapse()
 
-function handleSidebarToggle() {
+function handleSidebarToggleEvent(event: Event) {
+  const target = event.target as Element | null
+  if (!target?.closest(".page-panel > header > svg:first-child")) return
+
   if (typeof window !== "undefined" && !window.matchMedia("(min-width: 1024px)").matches) {
     window.dispatchEvent(new Event("open-mobile-sidebar"))
     return
@@ -21,9 +23,11 @@ function handleSidebarToggle() {
 
 onMounted(() => {
   initializeSidebarCollapse()
+  document.addEventListener("click", handleSidebarToggleEvent)
 })
 
 onBeforeUnmount(() => {
+  document.removeEventListener("click", handleSidebarToggleEvent)
   disposeSidebarCollapse()
 })
 </script>
@@ -31,15 +35,6 @@ onBeforeUnmount(() => {
 <template>
   <div class="bg-background">
     <Sidebar />
-    <button
-      class="app-sidebar-toggle inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-800 transition-colors duration-200 hover:bg-[#004f8f] hover:text-white"
-      :aria-label="isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-      :title="isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
-      type="button"
-      @click="handleSidebarToggle"
-    >
-      <PanelLeft class="h-4 w-4" :stroke-width="2" />
-    </button>
     <main class="page-main">
       <div :class="contentClass || 'px-4 py-4'">
         <slot />
