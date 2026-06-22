@@ -279,6 +279,10 @@ const currentUnitStatus = computed(() => runtime.value?.current_unit_status)
 const nextUnitStatus = computed(() => nextStep.value?.status || currentUnitStatus.value)
 const currentLessonId = computed(() => lessonIdOf(lesson.value))
 const currentLessonRawCompleted = computed(() => Boolean(currentLessonId.value && completedLessonIds.value.has(currentLessonId.value)))
+const pipelineHasCertificate = computed(() => {
+  const certQuals = runtime.value?.config?.cert_quals || runtime.value?.config?.final_quals || []
+  return Array.isArray(certQuals) && certQuals.some((qual) => firstString(qual?.qual_id, qual?.qualId))
+})
 const courseRuntimeUnit = computed(() => {
   const stages = runtime.value?.config?.stages || []
   for (const stage of stages) {
@@ -294,7 +298,7 @@ const courseRuntimeUnitUlid = computed(() => {
   if (nextCourseId && nextCourseId !== courseId.value) return ""
   return nextStep.value?.course_unit_ulid || ""
 })
-const hasCertificateTab = computed(() => nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value))
+const hasCertificateTab = computed(() => pipelineHasCertificate.value && (nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value)))
 const courseCertificateSummary = computed(() => {
   const instance = runtime.value?.instance || {}
   const config = runtime.value?.config || {}
@@ -523,6 +527,8 @@ function nextStepDisplayFromAction(action?: string) {
       return { action, label: t.value.learning.actionViewExamResult, desc: t.value.learning.nextStepGoToExamsDesc }
     case "view_certificate":
       return { action, label: t.value.learning.actionViewCertificate, desc: t.value.learning.nextStepViewCertificateDesc }
+    case "completed":
+      return { action, label: t.value.learning.completedTag, desc: t.value.learning.nextStepDesc }
     default:
       return { action: "", label: t.value.common.unknown, desc: t.value.learning.nextStepDesc }
   }
