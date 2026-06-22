@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-//go:embed vue-web/dist
+//go:embed all:vue-web/dist
 var embedFS embed.FS
 
 func main() {
