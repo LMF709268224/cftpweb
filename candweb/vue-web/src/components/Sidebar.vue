@@ -230,26 +230,27 @@ async function handleLogout() {
   <aside
     :class="[
       'app-side-card fixed left-0 top-0 z-30 hidden h-screen overflow-y-auto border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-out lg:flex lg:flex-col',
-      isSidebarCollapsed ? 'w-16' : 'w-[280px]',
+      isSidebarCollapsed ? 'w-14' : 'w-[280px]',
     ]"
   >
     <RouterLink
       to="/"
       :class="[
-        'flex h-20 items-center transition-all duration-300',
+        'flex items-center transition-all duration-300',
+        isSidebarCollapsed ? 'h-14' : 'h-20',
         isSidebarCollapsed ? 'justify-center px-0' : 'gap-4 px-8',
       ]"
       :title="isSidebarCollapsed ? 'Global Fintech Institute' : undefined"
     >
-      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
-        <img :src="brandLogo" alt="Global Fintech Institute" class="h-7 w-7 rounded-md object-contain" />
+      <span :class="['flex shrink-0 items-center justify-center rounded-lg bg-white shadow-sm', isSidebarCollapsed ? 'h-8 w-8' : 'h-9 w-9']">
+        <img :src="brandLogo" alt="Global Fintech Institute" :class="['rounded-md object-contain', isSidebarCollapsed ? 'h-7 w-7' : 'h-7 w-7']" />
       </span>
       <div v-if="!isSidebarCollapsed" class="min-w-0 flex-1 whitespace-nowrap text-[14px] font-semibold leading-5 text-[#003A70]">
         Global Fintech Institute
       </div>
     </RouterLink>
 
-    <nav :class="['flex-1 space-y-1 py-3 text-[14px] text-sidebar-foreground', isSidebarCollapsed ? 'px-3' : 'px-4']">
+    <nav :class="['flex-1 space-y-1 text-[14px] text-sidebar-foreground', isSidebarCollapsed ? 'px-0 py-0' : 'px-4 py-3']">
       <div v-if="!isSidebarCollapsed" class="px-1 pb-2 text-xs font-medium text-[#5878ad]">Menu</div>
       <div
         v-for="(item, index) in navItems"
@@ -266,7 +267,7 @@ async function handleLogout() {
           :title="isSidebarCollapsed ? item.label : undefined"
           :class="[
             'group/nav-item relative flex h-8 items-center rounded-xl transition-colors duration-200',
-            isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-4',
+            isSidebarCollapsed ? 'mx-auto w-8 justify-center px-0' : 'justify-between px-4',
             isNavItemActive(item.href) ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : 'hover:bg-[#bfd4fb] hover:text-sidebar-accent-foreground',
           ]"
         >
@@ -280,11 +281,11 @@ async function handleLogout() {
       </div>
     </nav>
 
-    <div :class="[isSidebarCollapsed ? 'px-3' : 'px-5', 'pb-6']">
+    <div :class="[isSidebarCollapsed ? 'px-0' : 'px-5', 'pb-6']">
       <button
         :class="[
           'mb-3 flex h-8 w-full cursor-pointer items-center justify-center gap-2 border border-white/70 bg-white/75 text-sm font-semibold text-[#2f5597] shadow-sm backdrop-blur transition-colors hover:bg-white',
-          isSidebarCollapsed ? 'rounded-xl px-0' : 'rounded-full px-4',
+          isSidebarCollapsed ? 'mx-auto w-8 rounded-xl px-0' : 'rounded-full px-4',
         ]"
         type="button"
         @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
@@ -297,7 +298,7 @@ async function handleLogout() {
       <button
         :class="[
           'flex h-12 w-full items-center rounded-2xl text-left transition-colors hover:bg-sidebar-accent',
-          isSidebarCollapsed ? 'justify-center px-0' : 'gap-4 px-4',
+          isSidebarCollapsed ? 'mx-auto h-8 w-8 justify-center px-0' : 'gap-4 px-4',
           menuOpen ? 'bg-sidebar-accent' : '',
         ]"
         type="button"

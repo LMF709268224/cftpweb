@@ -203,7 +203,7 @@
     }
 
     body.sidebar-collapsed .page-main {
-      padding-left: 72px;
+      padding-left: 64px;
     }
 
     body.sidebar-collapsed .app-side-card > div:last-of-type button span:not(:first-child),
