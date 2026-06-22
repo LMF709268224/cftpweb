@@ -617,10 +617,10 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 	if instance != nil {
 		out.PipelineStatus = instance.GetStatus()
 	}
+	issuesCertificate := pipelineIssuesCertificate(config)
 	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED ||
 		out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_ISSUING_CERT {
-		out.Action = "view_certificate"
-		out.Message = "view the certificate"
+		fillCompletedPipelineNextStep(&out, issuesCertificate)
 		return out
 	}
 	if config == nil {
@@ -630,8 +630,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 	if runtime == nil || runtime.GetPipeline() == nil {
 		firstUnit := firstConfigUnit(config)
 		if firstUnit == nil {
-			out.Action = "view_certificate"
-			out.Message = "pipeline has no units"
+			fillCompletedPipelineNextStep(&out, issuesCertificate)
 			return out
 		}
 		fillNextStepFromUnit(&out, nil, firstUnit, "")
@@ -669,8 +668,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 	if len(stageDetails) == 0 {
 		firstUnit := firstConfigUnit(config)
 		if firstUnit == nil {
-			out.Action = "view_certificate"
-			out.Message = "pipeline has no units"
+			fillCompletedPipelineNextStep(&out, issuesCertificate)
 			return out
 		}
 		fillNextStepFromUnit(&out, nil, firstUnit, "")
@@ -712,8 +710,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 
 	if pickUnit == nil {
 		if runtime.GetPipeline().GetStatus() == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED {
-			out.Action = "view_certificate"
-			out.Message = "pipeline completed"
+			fillCompletedPipelineNextStep(&out, issuesCertificate)
 		} else {
 			firstUnit := firstConfigUnit(config)
 			if firstUnit != nil {
@@ -752,8 +749,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 		}
 	case gprog.CourseUnitStatus_COURSE_UNIT_STATUS_COMPLETED:
 		if runtime.GetPipeline().GetStatus() == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED {
-			out.Action = "view_certificate"
-			out.Message = "view the certificate"
+			fillCompletedPipelineNextStep(&out, issuesCertificate)
 		} else {
 			out.Action = "signup_exam"
 			out.Message = "go to exams and sign up"
@@ -764,6 +760,31 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 	}
 
 	return out
+}
+
+func pipelineIssuesCertificate(config *gccpb.PipelineConfig) bool {
+	if config == nil {
+		return false
+	}
+	for _, qual := range config.GetCertsQuals() {
+		if strings.TrimSpace(qual.GetQualUlid()) != "" {
+			return true
+		}
+	}
+	return false
+}
+
+func fillCompletedPipelineNextStep(out *PipelineNextStep, issuesCertificate bool) {
+	if out == nil {
+		return
+	}
+	if issuesCertificate {
+		out.Action = "view_certificate"
+		out.Message = "view the certificate"
+		return
+	}
+	out.Action = "completed"
+	out.Message = "pipeline completed"
 }
 
 func pickNextRuntimeUnit(stage *gprogpb.StageDetail) *gprogpb.CourseUnitSummary {

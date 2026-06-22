@@ -185,43 +185,7 @@ func (h *Handler) GetPipelineCertificateViewURL(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	if runtimePipelineULID := h.runtimePipelineULIDForCertificate(r.Context(), candidateID, pipelineULID); runtimePipelineULID != "" {
-		retryResp, retryErr := h.Gprog.GetPipelineCertificateViewURL(r.Context(), &gprog.GetPipelineCertificateViewURLReq{
-			CandidateUlid: candidateID,
-			PipelineUlid:  runtimePipelineULID,
-		})
-		if retryErr == nil {
-			WriteJSON(w, http.StatusOK, map[string]string{"view_url": strings.TrimSpace(retryResp.GetViewUrl())})
-			return
-		}
-		slog.Warn("retry pipeline certificate url with runtime pipeline failed", "error", retryErr, "candidate_id", candidateID, "input_pipeline_ulid", pipelineULID, "runtime_pipeline_ulid", runtimePipelineULID)
-	}
-
-	slog.Warn("failed to get pipeline certificate url", "error", err, "candidate_id", candidateID, "pipeline_ulid", pipelineULID)
 	HandleGrpcError(w, err)
-}
-
-func (h *Handler) runtimePipelineULIDForCertificate(ctx context.Context, candidateID, pipelineULID string) string {
-	resp, err := h.Gprog.ListCandidatePipelines(ctx, &gprog.ListCandidatePipelinesReq{
-		CandidateUlid: candidateID,
-	})
-	if err != nil {
-		slog.Warn("failed to resolve candidate runtime pipeline for certificate url", "error", err, "candidate_id", candidateID, "pipeline_ulid", pipelineULID)
-		return ""
-	}
-
-	for _, pipeline := range resp.GetPipelines() {
-		if pipeline == nil {
-			continue
-		}
-		if strings.TrimSpace(pipeline.GetPipelineUlid()) == pipelineULID {
-			return ""
-		}
-		if strings.TrimSpace(pipeline.GetPipelineCcUlid()) == pipelineULID {
-			return strings.TrimSpace(pipeline.GetPipelineUlid())
-		}
-	}
-	return ""
 }
 
 func (h *Handler) ListMaterials(w http.ResponseWriter, r *http.Request) {

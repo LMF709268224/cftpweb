@@ -70,8 +70,6 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 		return
 	}
 
-	slog.Error("gRPC error encountered", "error", err)
-
 	st, ok := status.FromError(err)
 	if !ok {
 		WriteError(w, http.StatusInternalServerError, ErrInternal, err.Error())

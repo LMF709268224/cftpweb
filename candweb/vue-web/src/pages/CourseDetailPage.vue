@@ -203,6 +203,8 @@ function nextStepHref() {
       return "/exams"
     case "view_certificate":
       return instancePipelineId.value ? `/certifications/${encodeURIComponent(pipelineId.value)}` : "/certificates"
+    case "completed":
+      return "/certifications"
     default:
       return "/certifications"
   }
@@ -224,6 +226,8 @@ function nextStepLabel() {
       return t.value.learning.actionViewExamResult
     case "view_certificate":
       return t.value.courses.viewCertificate
+    case "completed":
+      return t.value.learning.completedTag
     default:
       return t.value.courses.viewDetails
   }
@@ -241,6 +245,8 @@ function nextStepDescription() {
       return t.value.learning.nextStepGoToExamsDesc
     case "view_certificate":
       return t.value.learning.nextStepViewCertificateDesc
+    case "completed":
+      return t.value.learning.nextStepDesc
     default:
       return t.value.learning.nextStepDesc
   }
