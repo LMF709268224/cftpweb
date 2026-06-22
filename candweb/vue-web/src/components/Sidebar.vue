@@ -6,11 +6,13 @@ import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
 import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
+import { initializeSidebarCollapse, useSidebarCollapse } from "@/lib/sidebar"
 import { useUser } from "@/lib/user"
 import brandLogo from "@/assets/favicon.png"
 
 const { t, lang, changeLanguage } = useTranslation()
 const { currentUser, fetchUser } = useUser()
+const { isSidebarCollapsed } = useSidebarCollapse()
 const route = useRoute()
 const userName = ref(t.value.common.user)
 const userEmail = computed(() => currentUser.value?.email || "")
@@ -89,6 +91,7 @@ function handlePointerDown(event: PointerEvent) {
 }
 
 onMounted(async () => {
+  initializeSidebarCollapse()
   updateName()
   fetchUser()
   window.addEventListener("storage", updateName)
@@ -218,66 +221,89 @@ async function handleLogout() {
     </aside>
   </div>
 
-  <aside class="app-side-card fixed left-0 top-0 z-30 hidden h-screen w-[280px] overflow-y-auto border-r border-sidebar-border bg-sidebar lg:flex lg:flex-col">
-    <RouterLink to="/" class="flex h-20 items-center gap-4 px-8">
+  <aside
+    :class="[
+      'app-side-card fixed left-0 top-0 z-30 hidden h-screen overflow-y-auto border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-out lg:flex lg:flex-col',
+      isSidebarCollapsed ? 'w-16' : 'w-[280px]',
+    ]"
+  >
+    <RouterLink
+      to="/"
+      :class="[
+        'flex h-20 items-center transition-all duration-300',
+        isSidebarCollapsed ? 'justify-center px-0' : 'gap-4 px-8',
+      ]"
+      :title="isSidebarCollapsed ? 'Global Fintech Institute' : undefined"
+    >
       <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white shadow-sm">
         <img :src="brandLogo" alt="Global Fintech Institute" class="h-7 w-7 rounded-md object-contain" />
       </span>
-      <div class="min-w-0 flex-1 whitespace-nowrap text-[14px] font-semibold leading-5 text-[#003A70]">
+      <div v-if="!isSidebarCollapsed" class="min-w-0 flex-1 whitespace-nowrap text-[14px] font-semibold leading-5 text-[#003A70]">
         Global Fintech Institute
       </div>
     </RouterLink>
 
-    <nav class="flex-1 space-y-1 px-4 py-3 text-[14px] text-sidebar-foreground">
-      <div class="px-1 pb-2 text-xs font-medium text-[#5878ad]">Menu</div>
+    <nav :class="['flex-1 space-y-1 py-3 text-[14px] text-sidebar-foreground', isSidebarCollapsed ? 'px-3' : 'px-4']">
+      <div v-if="!isSidebarCollapsed" class="px-1 pb-2 text-xs font-medium text-[#5878ad]">Menu</div>
       <div
         v-for="(item, index) in navItems"
         :key="item.href"
       >
         <div
-          v-if="item.group && item.group !== navItems[index - 1]?.group"
+          v-if="!isSidebarCollapsed && item.group && item.group !== navItems[index - 1]?.group"
           class="px-4 pb-1 pt-4 text-xs font-medium text-[#5878ad]"
         >
           {{ item.group }}
         </div>
         <RouterLink
           :to="item.href"
+          :title="isSidebarCollapsed ? item.label : undefined"
           :class="[
-            'group/nav-item flex items-center justify-between rounded-xl px-4 py-2.5 transition-colors duration-200',
+            'group/nav-item relative flex items-center rounded-xl py-2.5 transition-colors duration-200',
+            isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-4',
             isNavItemActive(item.href) ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground' : 'hover:bg-white/50 hover:text-sidebar-accent-foreground',
           ]"
         >
-          <span class="flex min-w-0 items-center gap-3">
+          <span :class="['flex min-w-0 items-center', isSidebarCollapsed ? 'justify-center' : 'gap-3']">
             <component :is="navIconFor(item.href)" :class="['h-4 w-4 shrink-0 transition-all duration-200 ease-out', isNavItemActive(item.href) ? 'text-sidebar-accent-foreground' : 'text-[#2f5597] group-hover/nav-item:scale-[1.05] group-hover/nav-item:text-sidebar-accent-foreground']" :stroke-width="1.9" />
-            <span class="truncate">{{ item.label }}</span>
+            <span v-if="!isSidebarCollapsed" class="truncate">{{ item.label }}</span>
           </span>
-          <span v-if="item.badge" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
+          <span v-if="item.badge && !isSidebarCollapsed" class="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-semibold text-primary">{{ item.badge }}</span>
+          <span v-if="item.badge && isSidebarCollapsed" class="absolute right-1.5 top-1.5 min-w-4 rounded-full bg-primary px-1 text-center text-[10px] font-bold leading-4 text-white">{{ item.badge }}</span>
         </RouterLink>
       </div>
     </nav>
 
-    <div class="px-5 pb-6">
+    <div :class="[isSidebarCollapsed ? 'px-3' : 'px-5', 'pb-6']">
       <button
-        class="mb-3 flex h-10 w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 text-sm font-semibold text-[#2f5597] shadow-sm backdrop-blur transition-colors hover:bg-white"
+        :class="[
+          'mb-3 flex h-10 w-full cursor-pointer items-center justify-center gap-2 border border-white/70 bg-white/75 text-sm font-semibold text-[#2f5597] shadow-sm backdrop-blur transition-colors hover:bg-white',
+          isSidebarCollapsed ? 'rounded-xl px-0' : 'rounded-full px-4',
+        ]"
         type="button"
         @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
+        :title="lang === 'zh' ? 'English' : '中文'"
       >
         <Languages class="h-4 w-4" />
         <span>{{ lang === "zh" ? "中文 / EN" : "EN / 中文" }}</span>
       </button>
 
       <button
-        class="flex h-12 w-full items-center gap-4 rounded-2xl px-4 text-left transition-colors hover:bg-sidebar-accent"
-        :class="menuOpen ? 'bg-sidebar-accent' : ''"
+        :class="[
+          'flex h-12 w-full items-center rounded-2xl text-left transition-colors hover:bg-sidebar-accent',
+          isSidebarCollapsed ? 'justify-center px-0' : 'gap-4 px-4',
+          menuOpen ? 'bg-sidebar-accent' : '',
+        ]"
         type="button"
         @pointerdown.stop
         @click="menuOpen = !menuOpen"
+        :title="isSidebarCollapsed ? userName : undefined"
       >
         <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#eeeeee] text-sm font-bold text-black">
           {{ userName.charAt(0).toUpperCase() }}
         </span>
-        <span class="min-w-0 flex-1 truncate text-sm font-medium text-sidebar-accent-foreground">{{ userName }}</span>
-        <ChevronUp class="h-4 w-4 shrink-0 text-sidebar-accent-foreground transition-transform" :class="menuOpen ? '' : 'rotate-180'" :stroke-width="2" />
+        <span v-if="!isSidebarCollapsed" class="min-w-0 flex-1 truncate text-sm font-medium text-sidebar-accent-foreground">{{ userName }}</span>
+        <ChevronUp v-if="!isSidebarCollapsed" class="h-4 w-4 shrink-0 text-sidebar-accent-foreground transition-transform" :class="menuOpen ? '' : 'rotate-180'" :stroke-width="2" />
       </button>
     </div>
   </aside>
