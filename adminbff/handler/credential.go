@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
+	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 )
 
 // ----------------- Credential Definitions -----------------
@@ -168,11 +168,11 @@ func (h *Handler) AuditApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &gcredspb.AuditApplicationRequest{
-		AppId:         body.ApplicationId,
+		AppUlid:       body.ApplicationId,
 		Approved:      body.Approved,
 		AuditRemark:   body.RejectReason,
 		AllowReupload: body.RequireResubmit,
-		AuditorId:     candidateID,
+		AuditorUlid:   candidateID,
 		ValidUntil:    time.Now().AddDate(2, 0, 0).Format(time.RFC3339),
 	}
 

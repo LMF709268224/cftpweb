@@ -12,9 +12,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	gexampb "github.com/LMF709268224/cftpproto/gexam"
-	mallpb "github.com/LMF709268224/cftpproto/gmall"
-	"github.com/LMF709268224/cftpproto/gprog"
+	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	"github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -191,7 +191,7 @@ func (h *Handler) GetScheduleURL(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		resp, err := h.Gexam.GetScheduleURL(r.Context(), &gexampb.GetURLRequest{
-			ExamId:      examID,
+			ExamUlid:    examID,
 			TermUrlBase: termURLBase,
 			UrlType:     examURLTypeForGexam(urlType),
 		})
@@ -209,11 +209,11 @@ func (h *Handler) GetScheduleURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gprog.GetExamURL(r.Context(), &gprog.GetURLRequest{
-		CandidateId:  candidateID,
-		PipelineUlid: pipelineULID,
-		CourseUlid:   courseULID,
-		UrlType:      urlType,
-		TermUrlBase:  termURLBase,
+		CandidateUlid: candidateID,
+		PipelineUlid:  pipelineULID,
+		CourseUlid:    courseULID,
+		UrlType:       urlType,
+		TermUrlBase:   termURLBase,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -248,7 +248,7 @@ func (h *Handler) GetExamResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gexam.GetExamResultDetail(r.Context(), &gexampb.GetExamRequest{
-		ExamId: examID,
+		ExamUlid: examID,
 	})
 	if err != nil {
 		if status.Code(err) == codes.NotFound {
@@ -265,7 +265,7 @@ func (h *Handler) GetExamResult(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, ExamResultRsp{
-		ExamID:          resp.GetExamId(),
+		ExamID:          resp.GetExamUlid(),
 		TotalScore:      resp.GetTotalScore(),
 		IsPassed:        resp.GetIsPassed(),
 		HasResult:       true,
@@ -292,7 +292,7 @@ func (h *Handler) TermUrlCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
-		ExamId:       examID,
+		ExamUlid:     examID,
 		UrlType:      input.URLType,
 		CallbackBody: input.CallbackBody,
 	})
@@ -302,7 +302,7 @@ func (h *Handler) TermUrlCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, TermUrlCallbackRsp{
-		ExamID:     resp.GetExamId(),
+		ExamID:     resp.GetExamUlid(),
 		ExamStatus: resp.GetExamStatus(),
 	})
 }
@@ -317,7 +317,7 @@ func (h *Handler) TermUrlRedirectCallback(w http.ResponseWriter, r *http.Request
 			callbackBody = "{}"
 		}
 		_, _ = h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
-			ExamId:       examID,
+			ExamUlid:     examID,
 			UrlType:      urlType,
 			CallbackBody: callbackBody,
 		})
@@ -372,7 +372,7 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 		req.CourseUnitUlid = &courseUnitUlid
 	}
 	if candidateID != "" {
-		req.CandidateId = &candidateID
+		req.CandidateUlid = &candidateID
 	}
 
 	resp, err := h.Gexam.ListExams(r.Context(), req)
@@ -396,7 +396,7 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 		}
 
 		item := ExamListItem{
-			ExamId:               exam.GetExamId(),
+			ExamUlid:             exam.GetExamUlid(),
 			ProgramCode:          exam.GetProgramCode(),
 			ExamCode:             exam.GetExamCode(),
 			ExamStatus:           examStatus,
@@ -414,11 +414,11 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 			LastTermurlType:      exam.GetLastTermurlType(),
 		}
 
-		if detail, err := h.Gexam.GetExamDetail(r.Context(), &gexampb.GetExamRequest{ExamId: exam.GetExamId()}); err == nil && detail != nil {
+		if detail, err := h.Gexam.GetExamDetail(r.Context(), &gexampb.GetExamRequest{ExamUlid: exam.GetExamUlid()}); err == nil && detail != nil {
 			item.PipelineUlid = detail.GetPipelineUlid()
 			item.CourseUnitUlid = detail.GetCourseUnitUlid()
 		} else if err != nil {
-			slog.Warn("ListExams get exam detail failed", "exam_id", exam.GetExamId(), "error", err)
+			slog.Warn("ListExams get exam detail failed", "exam_id", exam.GetExamUlid(), "error", err)
 		}
 
 		if item.CourseUnitUlid != "" {
@@ -426,7 +426,7 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 				CourseUnitUlid: item.CourseUnitUlid,
 			})
 			if err != nil {
-				slog.Warn("ListExams get course unit detail failed", "exam_id", exam.GetExamId(), "course_unit_ulid", item.CourseUnitUlid, "error", err)
+				slog.Warn("ListExams get course unit detail failed", "exam_id", exam.GetExamUlid(), "course_unit_ulid", item.CourseUnitUlid, "error", err)
 			} else if unit != nil {
 				item.CourseUnitCcUlid = unit.GetCourseUnitCcUlid()
 				item.CourseUnitStatus = unit.GetStatus().String()
@@ -442,7 +442,7 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 						CourseUnitCcUlid: unit.GetCourseUnitCcUlid(),
 					})
 					if err != nil {
-						slog.Warn("ListExams validate retake eligibility failed", "exam_id", exam.GetExamId(), "course_unit_ulid", item.CourseUnitUlid, "error", err)
+						slog.Warn("ListExams validate retake eligibility failed", "exam_id", exam.GetExamUlid(), "course_unit_ulid", item.CourseUnitUlid, "error", err)
 					} else if eligibility != nil {
 						item.RetakeEligible = eligibility.GetEligible()
 						item.RetakeMessage = eligibility.GetMessage()
@@ -632,7 +632,7 @@ func (h *Handler) ThirdPartyExamCallback(w http.ResponseWriter, r *http.Request)
 
 	// 4. 将结果发送给 gprog 的 ExamUrlCallback
 	resp, err := h.Gprog.ExamUrlCallback(r.Context(), &gprog.ExamUrlCallbackReq{
-		ExamId:       examId,
+		ExamUlid:     examId,
 		UrlType:      urlType,
 		CallbackBody: string(bodyJson),
 	})

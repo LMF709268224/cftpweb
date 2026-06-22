@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	gccpb "github.com/LMF709268224/cftpproto/gcc"
-	mallpb "github.com/LMF709268224/cftpproto/gmall"
+	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 )
 
 const (
@@ -513,7 +513,7 @@ func (h *Handler) pipelineName(r *http.Request, pipelineULID string, cache map[s
 	}
 	name := pipelineULID
 	if resp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-		Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineULID},
+		Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineULID},
 	}); err == nil && resp != nil && strings.TrimSpace(resp.GetName()) != "" {
 		name = resp.GetName()
 	}

@@ -196,8 +196,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/stats", h.GetDashboardStats)
 		})
 
-
-
 		r.Route("/records", func(r chi.Router) {
 			r.Get("/", h.ListRecords)
 			r.Post("/", h.CreateRecord)
@@ -209,4 +207,3 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	})
 	return r
 }
-

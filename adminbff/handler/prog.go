@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	gprogpb "github.com/LMF709268224/cftpproto/gprog"
+	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -65,7 +65,7 @@ func (h *Handler) AdminTriggerProgNextStage(w http.ResponseWriter, r *http.Reque
 
 	resp, err := h.Gprog.AdminTriggerNextStage(r.Context(), &gprogpb.AdminTriggerNextStageReq{
 		PipelineUlid:  pipelineULID,
-		AdminId:       adminID,
+		AdminUlid:     adminID,
 		ReasonMessage: strings.TrimSpace(input.ReasonMessage),
 	})
 	if err != nil {
@@ -180,7 +180,7 @@ func (h *Handler) AdminTerminatePipeline(w http.ResponseWriter, r *http.Request)
 
 	resp, err := h.Gprog.AdminTerminatePipeline(r.Context(), &gprogpb.AdminTerminatePipelineReq{
 		PipelineUlid:  pipelineULID,
-		AdminId:       adminID,
+		AdminUlid:     adminID,
 		ReasonMessage: strings.TrimSpace(input.ReasonMessage),
 	})
 	if err != nil {
@@ -230,7 +230,7 @@ func (h *Handler) AdminForceCourseCompleted(w http.ResponseWriter, r *http.Reque
 
 	resp, err := h.Gprog.AdminForceCourseCompleted(r.Context(), &gprogpb.AdminForceCourseCompletedReq{
 		CourseUnitUlid: courseUnitULID,
-		AdminId:        adminID,
+		AdminUlid:      adminID,
 		ReasonMessage:  strings.TrimSpace(input.ReasonMessage),
 	})
 	if err != nil {
@@ -261,7 +261,7 @@ func (h *Handler) AdminForceCourseSignupExam(w http.ResponseWriter, r *http.Requ
 
 	resp, err := h.Gprog.AdminForceCourseSignupExam(r.Context(), &gprogpb.AdminForceCourseSignupExamReq{
 		CourseUnitUlid: courseUnitULID,
-		AdminId:        adminID,
+		AdminUlid:      adminID,
 		ReasonMessage:  strings.TrimSpace(input.ReasonMessage),
 	})
 	if err != nil {

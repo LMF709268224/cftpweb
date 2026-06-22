@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
+	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 )
 
 // ListCertificates GET /api/certificates 证书列表
@@ -11,9 +11,9 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 
 	credsResp, err := h.Creds.ListCandidateCredentials(r.Context(), &gcredspb.ListCandidateCredentialsRequest{
-		CandidateId: candidateID,
-		Page:        1,
-		PageSize:    100,
+		CandidateUlid: candidateID,
+		Page:          1,
+		PageSize:      100,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -26,27 +26,27 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 
 	for _, cred := range credsResp.GetCredentials() {
 		item := CertificateItem{
-			CatalogId: cred.GetCredDefId(),
+			CatalogId: cred.GetCredDefUlid(),
 		}
 
 		if defResp, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
-			CredDefId: cred.GetCredDefId(),
+			CredDefUlid: cred.GetCredDefUlid(),
 		}); err == nil && defResp != nil {
 			item.Name = defResp.GetName()
 			item.Description = defResp.GetDescription()
 		}
 
-		item.CredId = cred.GetCredId()
+		item.CredUlid = cred.GetCredUlid()
 		item.CredGuid = cred.GetCredGuid()
-		item.CandidateId = cred.GetCandidateId()
+		item.CandidateUlid = cred.GetCandidateUlid()
 		item.Version = cred.GetVersion()
 		item.Status = cred.GetStatus()
-		item.AuditorId = cred.GetAuditorId()
+		item.AuditorUlid = cred.GetAuditorUlid()
 		item.AuditRemark = cred.GetAuditRemark()
 		item.ValidUntil = cred.GetValidUntil()
 		item.CreatedAt = cred.GetCreatedAt()
 		if detailResp, err := h.Creds.GetCredentialDetail(r.Context(), &gcredspb.GetCredentialDetailRequest{
-			CredId: item.CredId,
+			CredUlid: item.CredUlid,
 		}); err == nil {
 			item.Files = toCertificateFiles(detailResp.GetFiles())
 		}

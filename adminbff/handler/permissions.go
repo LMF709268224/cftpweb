@@ -3,13 +3,13 @@ package handler
 import (
 	"net/http"
 
-	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
+	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 )
 
 type PermissionReq struct {
-	CandidateId string `json:"candidate_id"`
-	CredDefId   string `json:"cred_def_id"`
-	Reason      string `json:"reason"`
+	CandidateUlid string `json:"candidate_id"`
+	CredDefUlid   string `json:"cred_def_id"`
+	Reason        string `json:"reason"`
 }
 
 // GrantUploadPermission POST /api/permissions/grant
@@ -20,15 +20,15 @@ func (h *Handler) GrantUploadPermission(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Get actual OperatorId from session
+	// Get actual operator ULID from session.
 	operatorID := AdminID(r)
 
 	req := &gcredspb.GrantUploadPermissionRequest{
-		CandidateId:  body.CandidateId,
-		CredDefId:    body.CredDefId,
-		OperatorId:   operatorID,
-		Reason:       body.Reason,
-		SourceSystem: "admin_ui",
+		CandidateUlid: body.CandidateUlid,
+		CredDefUlid:   body.CredDefUlid,
+		OperatorUlid:  operatorID,
+		Reason:        body.Reason,
+		SourceSystem:  "admin_ui",
 	}
 
 	res, err := h.Creds.GrantUploadPermission(r.Context(), req)
@@ -51,11 +51,11 @@ func (h *Handler) RevokeUploadPermission(w http.ResponseWriter, r *http.Request)
 	operatorID := AdminID(r)
 
 	req := &gcredspb.RevokeUploadPermissionRequest{
-		CandidateId:  body.CandidateId,
-		CredDefId:    body.CredDefId,
-		OperatorId:   operatorID,
-		Reason:       body.Reason,
-		SourceSystem: "admin_ui",
+		CandidateUlid: body.CandidateUlid,
+		CredDefUlid:   body.CredDefUlid,
+		OperatorUlid:  operatorID,
+		Reason:        body.Reason,
+		SourceSystem:  "admin_ui",
 	}
 
 	res, err := h.Creds.RevokeUploadPermission(r.Context(), req)
@@ -78,8 +78,8 @@ func (h *Handler) CheckCandidateQualification(w http.ResponseWriter, r *http.Req
 	}
 
 	req := &gcredspb.CheckCandidateQualificationRequest{
-		CandidateId: candidateId,
-		CredDefId:   credDefId,
+		CandidateUlid: candidateId,
+		CredDefUlid:   credDefId,
 	}
 
 	res, err := h.Creds.CheckCandidateQualification(r.Context(), req)
@@ -92,9 +92,9 @@ func (h *Handler) CheckCandidateQualification(w http.ResponseWriter, r *http.Req
 }
 
 type MarkExpiredReq struct {
-	CandidateId string `json:"candidate_id"`
-	CredDefId   string `json:"cred_def_id"`
-	Reason      string `json:"reason"`
+	CandidateUlid string `json:"candidate_id"`
+	CredDefUlid   string `json:"cred_def_id"`
+	Reason        string `json:"reason"`
 }
 
 // MarkExpired POST /api/permissions/mark-expired
@@ -108,10 +108,10 @@ func (h *Handler) MarkExpired(w http.ResponseWriter, r *http.Request) {
 	auditorID := AdminID(r)
 
 	req := &gcredspb.MarkExpiredRequest{
-		CandidateId: body.CandidateId,
-		CredDefId:   body.CredDefId,
-		AuditorId:   auditorID,
-		Reason:      body.Reason,
+		CandidateUlid: body.CandidateUlid,
+		CredDefUlid:   body.CredDefUlid,
+		AuditorUlid:   auditorID,
+		Reason:        body.Reason,
 	}
 
 	res, err := h.Creds.MarkExpired(r.Context(), req)
@@ -134,10 +134,10 @@ func (h *Handler) RevokeCredential(w http.ResponseWriter, r *http.Request) {
 	auditorID := AdminID(r)
 
 	req := &gcredspb.RevokeCredentialRequest{
-		CandidateId: body.CandidateId,
-		CredDefId:   body.CredDefId,
-		AuditorId:   auditorID,
-		Reason:      body.Reason,
+		CandidateUlid: body.CandidateUlid,
+		CredDefUlid:   body.CredDefUlid,
+		AuditorUlid:   auditorID,
+		Reason:        body.Reason,
 	}
 
 	res, err := h.Creds.RevokeCredential(r.Context(), req)

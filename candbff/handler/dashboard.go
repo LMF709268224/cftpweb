@@ -3,8 +3,8 @@ package handler
 import (
 	"net/http"
 
-	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
-	gprogpb "github.com/LMF709268224/cftpproto/gprog"
+	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 )
 
 // Dashboard  GET /api/dashboard
@@ -39,9 +39,9 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 
 	// 2. 获取未读消息数
 	msgResp, err := h.Gmsg.ListMessages(ctx, &gmsgpb.ListMessagesRequest{
-		UserId: candidateID,
-		Status: gmsgpb.MessageStatus_UNREAD.Enum(),
-		Limit:  99,
+		UserUlid: candidateID,
+		Status:   gmsgpb.MessageStatus_UNREAD.Enum(),
+		Limit:    99,
 	})
 	if err == nil {
 		out.UnreadMessagesCount = uint32(len(msgResp.GetMessages()))

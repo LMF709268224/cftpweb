@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	gmbrpb "github.com/LMF709268224/cftpproto/gmbr"
+	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 )
 
 // GetActiveMembership GET /api/membership/active
@@ -87,10 +87,10 @@ func (h *Handler) ListMembershipBillings(w http.ResponseWriter, r *http.Request)
 	}
 
 	resp, err := h.Gmbr.ListMembershipBillings(r.Context(), &gmbrpb.ListMembershipBillingsRequest{
-		CandidateUlid:      candidateID,
-		MembershipRecordId: membershipRecordID,
-		Page:               int32(page),
-		PageSize:           int32(pageSize),
+		CandidateUlid:        candidateID,
+		MembershipRecordUlid: membershipRecordID,
+		Page:                 int32(page),
+		PageSize:             int32(pageSize),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -131,8 +131,9 @@ func (h *Handler) CancelMembership(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gmbr.CancelMembership(r.Context(), &gmbrpb.CancelMembershipRequest{
-		MembershipRecordId: req.MembershipRecordID,
-		Reason:             req.Reason,
+		MembershipRecordUlid: req.MembershipRecordID,
+		CandidateUlid:        candidateID,
+		Reason:               req.Reason,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

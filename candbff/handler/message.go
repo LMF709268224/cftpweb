@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
+	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 )
 
 func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
@@ -31,9 +31,9 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	rsp, err := h.Gmsg.ListMessages(r.Context(), &gmsgpb.ListMessagesRequest{
-		UserId: candidateID,
-		Limit:  uint32(limit),
-		LastId: lastID,
+		UserUlid: candidateID,
+		Limit:    uint32(limit),
+		LastId:   lastID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -48,8 +48,8 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 		title, content := h.renderMessageSummary(r.Context(), msg)
 		out.Messages = append(out.Messages, MessageItem{
 			Id:              msg.GetId(),
-			MessageId:       msg.GetMessageId(),
-			UserId:          msg.GetUserId(),
+			MessageId:       msg.GetMessageUlid(),
+			UserUlid:        msg.GetUserUlid(),
 			TemplateId:      msg.GetTemplatePath(),
 			Payload:         msg.GetPayload(),
 			TemplatePayload: msg.GetPayload(),
@@ -57,7 +57,7 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 			Content:         content,
 			MsgType:         msg.GetMsgType(),
 			MsgSource:       msg.GetMsgSource(),
-			SenderId:        msg.GetSenderId(),
+			SenderId:        msg.GetSenderUlid(),
 			Status:          msg.GetStatus(),
 			CreatedAt:       msg.GetCreatedAt(),
 		})
@@ -70,9 +70,9 @@ func (h *Handler) GetUnreadMessageCount(w http.ResponseWriter, r *http.Request) 
 	candidateID := CandidateID(r)
 
 	rsp, err := h.Gmsg.ListMessages(r.Context(), &gmsgpb.ListMessagesRequest{
-		UserId: candidateID,
-		Status: gmsgpb.MessageStatus_UNREAD.Enum(),
-		Limit:  99,
+		UserUlid: candidateID,
+		Status:   gmsgpb.MessageStatus_UNREAD.Enum(),
+		Limit:    99,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -94,7 +94,7 @@ func (h *Handler) MarkMessagesRead(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := h.Gmsg.MarkAsRead(r.Context(), &gmsgpb.MarkAsReadRequest{
-		UserId:     candidateID,
+		UserUlid:   candidateID,
 		MessageIds: input.MessageIDs,
 	})
 	if err != nil {
@@ -115,7 +115,7 @@ func (h *Handler) DeleteMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, err := h.Gmsg.DeleteMessages(r.Context(), &gmsgpb.DeleteMessagesRequest{
-		UserId:     candidateID,
+		UserUlid:   candidateID,
 		MessageIds: input.MessageIDs,
 	})
 	if err != nil {
@@ -136,8 +136,8 @@ func (h *Handler) GetMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	msg, err := h.Gmsg.GetMessage(r.Context(), &gmsgpb.GetMessageRequest{
-		UserId:    candidateID,
-		MessageId: messageID,
+		UserUlid:    candidateID,
+		MessageUlid: messageID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -148,7 +148,7 @@ func (h *Handler) GetMessage(w http.ResponseWriter, r *http.Request) {
 
 	out := map[string]interface{}{
 		"id":               msg.GetId(),
-		"message_id":       msg.GetMessageId(),
+		"message_id":       msg.GetMessageUlid(),
 		"msg_type":         msg.GetMsgType().String(),
 		"status":           msg.GetStatus().String(),
 		"created_at":       msg.GetCreatedAt(),

@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	gccpb "github.com/LMF709268224/cftpproto/gcc"
-	lmspb "github.com/LMF709268224/cftpproto/glms"
-	gprog "github.com/LMF709268224/cftpproto/gprog"
+	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
+	gprog "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -144,7 +144,7 @@ func (h *Handler) ListMyPipelines(w http.ResponseWriter, r *http.Request) {
 	for _, p := range resp.GetPipelines() {
 		summary := toPipelineSummary(p)
 		if config, configErr := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-			Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: summary.PipelineCcUlid},
+			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: summary.PipelineCcUlid},
 		}); configErr == nil {
 			summary.PipelineName = strings.TrimSpace(config.GetName())
 			summary.Description = strings.TrimSpace(config.GetDescription())
@@ -206,8 +206,8 @@ func (h *Handler) ListMaterials(w http.ResponseWriter, r *http.Request) {
 	for _, courseID := range courseIDs {
 		title := courseID
 		summaryResp, err := h.Lms.GetCourseSummary(r.Context(), &lmspb.GetCourseSummaryCandidateRequest{
-			CandidateId: CandidateID(r),
-			CourseId:    courseID,
+			CandidateUlid: CandidateID(r),
+			CourseUlid:    courseID,
 		})
 		if err == nil {
 			if t := strings.TrimSpace(summaryResp.GetCourse().GetTitle()); t != "" {
@@ -216,8 +216,8 @@ func (h *Handler) ListMaterials(w http.ResponseWriter, r *http.Request) {
 		}
 
 		resp, err := h.Lms.ListCourseMaterials(r.Context(), &lmspb.ListCourseMaterialsCandidateRequest{
-			CandidateId: CandidateID(r),
-			CourseId:    courseID,
+			CandidateUlid: CandidateID(r),
+			CourseUlid:    courseID,
 		})
 		if err != nil {
 			slog.Warn("failed to list candidate course materials", "error", err, "course_id", courseID)
@@ -239,8 +239,8 @@ func (h *Handler) GetAccessURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	materialResp, err := h.Lms.GetCourseMaterial(r.Context(), &lmspb.GetCourseMaterialCandidateRequest{
-		CandidateId: CandidateID(r),
-		MaterialId:  materialID,
+		CandidateUlid: CandidateID(r),
+		MaterialUlid:  materialID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -251,7 +251,7 @@ func (h *Handler) GetAccessURL(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusNotFound, ErrNotFound, "material not found")
 		return
 	}
-	if !requireRequestFields(w, material.GetCourseId(), "course_id", material.GetFileObjectKey(), "file_object_key") {
+	if !requireRequestFields(w, material.GetCourseUlid(), "course_id", material.GetFileObjectKey(), "file_object_key") {
 		return
 	}
 
@@ -260,14 +260,14 @@ func (h *Handler) GetAccessURL(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	if !slices.Contains(courseIDs, material.GetCourseId()) {
+	if !slices.Contains(courseIDs, material.GetCourseUlid()) {
 		WriteError(w, http.StatusForbidden, ErrForbidden, "material is not available for current candidate")
 		return
 	}
 
 	viewResp, err := h.Lms.CreateViewURL(r.Context(), &lmspb.CreateViewURLCandidateRequest{
-		CandidateId: CandidateID(r),
-		ObjectKey:   material.GetFileObjectKey(),
+		CandidateUlid: CandidateID(r),
+		ObjectKey:     material.GetFileObjectKey(),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -298,8 +298,8 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.GetCompleteCourse(r.Context(), &lmspb.GetCompleteCourseCandidateRequest{
-		CandidateId: CandidateID(r),
-		CourseId:    courseID,
+		CandidateUlid: CandidateID(r),
+		CourseUlid:    courseID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -310,15 +310,15 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 
 	if len(completeCourse.GetMaterials()) == 0 {
 		matResp, err := h.Lms.ListCourseMaterials(r.Context(), &lmspb.ListCourseMaterialsCandidateRequest{
-			CandidateId: candidateID,
-			CourseId:    courseID,
+			CandidateUlid: candidateID,
+			CourseUlid:    courseID,
 		})
 		if err == nil && matResp != nil {
 			var materials []*lmspb.CourseMaterial
 			for _, summary := range matResp.GetMaterials() {
 				materials = append(materials, &lmspb.CourseMaterial{
-					MaterialId:    summary.GetMaterialId(),
-					CourseId:      summary.GetCourseId(),
+					MaterialUlid:  summary.GetMaterialUlid(),
+					CourseUlid:    summary.GetCourseUlid(),
 					Title:         summary.GetTitle(),
 					MaterialType:  summary.GetMaterialType(),
 					FileObjectKey: summary.GetFileObjectKey(),
@@ -336,7 +336,7 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 
 	if completeCourse.GetSupplementaryMaterial() == nil {
 		suppResp, err := h.Lms.GetCourseSupplementaryMaterialAdmin(r.Context(), &lmspb.GetCourseSupplementaryMaterialRequest{
-			CourseId: courseID,
+			CourseUlid: courseID,
 		})
 		if err == nil && suppResp != nil && suppResp.GetMaterial() != nil {
 			completeCourse.SupplementaryMaterial = suppResp.GetMaterial()
@@ -360,8 +360,8 @@ func (h *Handler) CompletePipelineLesson(w http.ResponseWriter, r *http.Request)
 	}
 
 	resp, err := h.Lms.CompleteLessonLearning(r.Context(), &lmspb.CompleteLessonLearningRequest{
-		CandidateId: candidateID,
-		LessonId:    lessonID,
+		CandidateUlid: candidateID,
+		LessonUlid:    lessonID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -389,10 +389,10 @@ func (h *Handler) ListCandidateEnrollments(w http.ResponseWriter, r *http.Reques
 	}
 
 	resp, err := h.Lms.ListCandidateEnrollments(r.Context(), &lmspb.ListCandidateEnrollmentsRequest{
-		CandidateId: candidateID,
-		Status:      status,
-		PageSize:    pageSize,
-		PageToken:   pageToken,
+		CandidateUlid: candidateID,
+		Status:        status,
+		PageSize:      pageSize,
+		PageToken:     pageToken,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -409,8 +409,8 @@ func (h *Handler) GetPipelineLessonDetail(w http.ResponseWriter, r *http.Request
 	}
 
 	resp, err := h.Lms.GetLessonDetail(r.Context(), &lmspb.GetLessonDetailCandidateRequest{
-		CandidateId: CandidateID(r),
-		LessonId:    lessonID,
+		CandidateUlid: CandidateID(r),
+		LessonUlid:    lessonID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -758,8 +758,8 @@ func isValidPreviewResourceURL(resourceURL string) bool {
 
 func (h *Handler) lessonViewURL(ctx context.Context, candidateID, lessonID string) (*lmspb.CreateViewURLResponse, *lmspb.Lesson, error) {
 	lessonResp, err := h.Lms.GetLessonDetail(ctx, &lmspb.GetLessonDetailCandidateRequest{
-		CandidateId: candidateID,
-		LessonId:    lessonID,
+		CandidateUlid: candidateID,
+		LessonUlid:    lessonID,
 	})
 	if err != nil {
 		return nil, nil, err
@@ -773,8 +773,8 @@ func (h *Handler) lessonViewURL(ctx context.Context, candidateID, lessonID strin
 	}
 
 	viewResp, err := h.Lms.CreateViewURL(ctx, &lmspb.CreateViewURLCandidateRequest{
-		CandidateId: candidateID,
-		ObjectKey:   lesson.GetMediaObjectKey(),
+		CandidateUlid: candidateID,
+		ObjectKey:     lesson.GetMediaObjectKey(),
 	})
 	if err != nil {
 		return nil, nil, err
@@ -798,8 +798,8 @@ func (h *Handler) GetCandidateEnrollmentDetail(w http.ResponseWriter, r *http.Re
 	}
 
 	resp, err := h.Lms.GetCandidateEnrollmentDetail(r.Context(), &lmspb.GetCandidateEnrollmentDetailRequest{
-		CandidateId:  candidateID,
-		EnrollmentId: enrollmentID,
+		CandidateUlid: candidateID,
+		EnrollmentId:  enrollmentID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -811,14 +811,14 @@ func (h *Handler) GetCandidateEnrollmentDetail(w http.ResponseWriter, r *http.Re
 
 func (h *Handler) findEnrollmentIdByCourse(ctx context.Context, candidateID, courseID string) (string, error) {
 	resp, err := h.Lms.ListCandidateEnrollments(ctx, &lmspb.ListCandidateEnrollmentsRequest{
-		CandidateId: candidateID,
-		PageSize:    1000,
+		CandidateUlid: candidateID,
+		PageSize:      1000,
 	})
 	if err != nil {
 		return "", err
 	}
 	for _, e := range resp.GetEnrollments() {
-		if e.GetCourseId() == courseID {
+		if e.GetCourseUlid() == courseID {
 			return e.GetEnrollmentId(), nil
 		}
 	}
@@ -843,8 +843,8 @@ func (h *Handler) SyncCourseProgress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.GetCandidateEnrollmentDetail(r.Context(), &lmspb.GetCandidateEnrollmentDetailRequest{
-		CandidateId:  candidateID,
-		EnrollmentId: enrollmentID,
+		CandidateUlid: candidateID,
+		EnrollmentId:  enrollmentID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -885,8 +885,8 @@ func (h *Handler) ReportProgress(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		resp, err := h.Lms.CompleteLessonLearning(r.Context(), &lmspb.CompleteLessonLearningRequest{
-			CandidateId: candidateID,
-			LessonId:    materialID,
+			CandidateUlid: candidateID,
+			LessonUlid:    materialID,
 		})
 		if err != nil {
 			rejected++
@@ -909,8 +909,8 @@ func (h *Handler) GetProgress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.ListCandidateEnrollments(r.Context(), &lmspb.ListCandidateEnrollmentsRequest{
-		CandidateId: candidateID,
-		PageSize:    1000,
+		CandidateUlid: candidateID,
+		PageSize:      1000,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -922,8 +922,8 @@ func (h *Handler) GetProgress(w http.ResponseWriter, r *http.Request) {
 
 	for _, e := range resp.GetEnrollments() {
 		detail, err := h.Lms.GetCandidateEnrollmentDetail(r.Context(), &lmspb.GetCandidateEnrollmentDetailRequest{
-			CandidateId:  candidateID,
-			EnrollmentId: e.GetEnrollmentId(),
+			CandidateUlid: candidateID,
+			EnrollmentId:  e.GetEnrollmentId(),
 		})
 		if err != nil {
 			continue
@@ -934,9 +934,9 @@ func (h *Handler) GetProgress(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			records = append(records, ProgressRecord{
-				CandidateId:     candidateID,
-				MaterialId:      lessonId,
-				CoursePackageId: e.GetCourseId(),
+				CandidateUlid:   candidateID,
+				MaterialUlid:    lessonId,
+				CoursePackageId: e.GetCourseUlid(),
 				ProgressType:    "completed",
 				ProgressValue:   100,
 			})
@@ -982,7 +982,7 @@ func pipelineProgressFromCourseEnrollments(config *gccpb.PipelineConfig, enrollm
 			if unit == nil {
 				continue
 			}
-			courseID := strings.TrimSpace(unit.GetGlmsCourseId())
+			courseID := strings.TrimSpace(unit.GetGlmsCourseUlid())
 			if courseID == "" {
 				continue
 			}
@@ -1023,8 +1023,8 @@ func currentStageNameFromRuntime(config *gccpb.PipelineConfig, runtime *gprog.Ge
 
 func (h *Handler) candidateEnrollmentProgressByCourse(r *http.Request, candidateID string) (map[string]uint32, error) {
 	resp, err := h.Lms.ListCandidateEnrollments(r.Context(), &lmspb.ListCandidateEnrollmentsRequest{
-		CandidateId: candidateID,
-		PageSize:    200,
+		CandidateUlid: candidateID,
+		PageSize:      200,
 	})
 	if err != nil {
 		return nil, err
@@ -1035,7 +1035,7 @@ func (h *Handler) candidateEnrollmentProgressByCourse(r *http.Request, candidate
 		if enrollment == nil {
 			continue
 		}
-		courseID := strings.TrimSpace(enrollment.GetCourseId())
+		courseID := strings.TrimSpace(enrollment.GetCourseUlid())
 		if courseID == "" {
 			continue
 		}
@@ -1064,7 +1064,7 @@ func (h *Handler) candidateCourseIDs(r *http.Request, candidateID string) ([]str
 			continue
 		}
 		config, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-			Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineID},
+			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 		})
 		if err != nil {
 			slog.Warn("failed to get candidate pipeline config", "error", err, "pipeline_id", pipelineID)
@@ -1072,7 +1072,7 @@ func (h *Handler) candidateCourseIDs(r *http.Request, candidateID string) ([]str
 		}
 		for _, stage := range config.GetStages() {
 			for _, unit := range stage.GetUnits() {
-				courseID := strings.TrimSpace(unit.GetGlmsCourseId())
+				courseID := strings.TrimSpace(unit.GetGlmsCourseUlid())
 				if courseID == "" {
 					continue
 				}
@@ -1093,8 +1093,8 @@ func materialSummaryToListItem(material *lmspb.CourseMaterialSummary, courseTitl
 		return MaterialListItem{}
 	}
 	return MaterialListItem{
-		ID:          material.GetMaterialId(),
-		CourseID:    material.GetCourseId(),
+		ID:          material.GetMaterialUlid(),
+		CourseID:    material.GetCourseUlid(),
 		CourseTitle: courseTitle,
 		Title:       material.GetTitle(),
 		Type:        int32(material.GetMaterialType()),
@@ -1110,8 +1110,8 @@ func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, cour
 	for _, quizID := range quizIDs {
 		item := QuizProgressItem{QuizID: quizID}
 		resp, err := h.Lms.ListQuizAttemptsAdmin(r.Context(), &lmspb.ListQuizAttemptsRequest{
-			QuizId:   quizID,
-			UserId:   candidateID,
+			QuizUlid: quizID,
+			UserUlid: candidateID,
 			PageSize: 20,
 		})
 		if err != nil {
@@ -1149,7 +1149,7 @@ func collectCourseQuizIDs(course *lmspb.CompleteCourse) []string {
 		if detail == nil || detail.GetQuiz() == nil {
 			return
 		}
-		quizID := strings.TrimSpace(detail.GetQuiz().GetQuizId())
+		quizID := strings.TrimSpace(detail.GetQuiz().GetQuizUlid())
 		if quizID == "" {
 			return
 		}
