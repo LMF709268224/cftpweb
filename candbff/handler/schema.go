@@ -404,6 +404,7 @@ type ExamResultDetailRsp struct {
 type ExamListItem struct {
 	ExamUlid             string  `json:"exam_id,omitempty"`
 	PipelineUlid         string  `json:"pipeline_ulid,omitempty"`
+	BundleOrderUlid      string  `json:"bundle_order_ulid,omitempty"`
 	CourseUnitUlid       string  `json:"course_unit_ulid,omitempty"`
 	CourseUnitCcUlid     string  `json:"course_unit_cc_ulid,omitempty"`
 	CourseUnitStatus     string  `json:"course_unit_status,omitempty"`

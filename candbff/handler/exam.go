@@ -385,6 +385,7 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 		Exams: make([]ExamListItem, 0, len(resp.GetExams())),
 		Total: resp.GetTotal(),
 	}
+	bundleOrdersByPipeline := h.completedBundleOrdersByPipeline(r, candidateID)
 	for _, exam := range resp.GetExams() {
 		if exam == nil {
 			continue
@@ -434,6 +435,11 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 				if item.PipelineUlid == "" {
 					item.PipelineUlid = unit.GetPipelineUlid()
 				}
+				if item.BundleOrderUlid == "" && item.PipelineUlid != "" {
+					if pipelineCcUlid := h.pipelineConfigIDFromRuntime(r, item.PipelineUlid); pipelineCcUlid != "" {
+						item.BundleOrderUlid = bundleOrdersByPipeline[pipelineCcUlid]
+					}
+				}
 
 				if unit.GetStatus() == gprog.CourseUnitStatus_COURSE_UNIT_STATUS_EXAM_FAILED && unit.GetCourseUnitCcUlid() != "" {
 					eligibility, err := h.Gprog.ValidateRetakeEligibility(r.Context(), &gprog.ValidateRetakeEligibilityReq{
@@ -456,6 +462,61 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, out)
+}
+
+func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID string) map[string]string {
+	out := make(map[string]string)
+	createdAtByPipeline := make(map[string]string)
+	if strings.TrimSpace(candidateID) == "" {
+		return out
+	}
+	resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
+		CandidateUlid: candidateID,
+		Limit:         100,
+	})
+	if err != nil {
+		slog.Warn("ListExams list bundle orders failed", "candidate_id", candidateID, "error", err)
+		return out
+	}
+	for _, order := range resp.GetItems() {
+		if order == nil || strings.TrimSpace(order.GetBundleOrderUlid()) == "" {
+			continue
+		}
+		if candidateOrderStatus(order.GetOrderStatus()) != "completed" {
+			continue
+		}
+		bundle, err := h.Mall.GetBundle(r.Context(), &mallpb.GetBundleRequest{
+			Query: &mallpb.GetBundleRequest_BundleUlid{BundleUlid: order.GetBundleUlid()},
+		})
+		if err != nil {
+			slog.Warn("ListExams get bundle for order failed", "bundle_id", order.GetBundleUlid(), "bundle_order_ulid", order.GetBundleOrderUlid(), "error", err)
+			continue
+		}
+		pipelineCcUlid := h.extractPipelineID(bundle.GetBundle())
+		if pipelineCcUlid == "" {
+			continue
+		}
+		if out[pipelineCcUlid] == "" || strings.Compare(order.GetCreatedAt(), createdAtByPipeline[pipelineCcUlid]) > 0 {
+			out[pipelineCcUlid] = order.GetBundleOrderUlid()
+			createdAtByPipeline[pipelineCcUlid] = order.GetCreatedAt()
+		}
+	}
+	return out
+}
+
+func (h *Handler) pipelineConfigIDFromRuntime(r *http.Request, pipelineUlid string) string {
+	pipelineUlid = strings.TrimSpace(pipelineUlid)
+	if pipelineUlid == "" {
+		return ""
+	}
+	resp, err := h.Gprog.GetPipelineDetail(r.Context(), &gprog.GetPipelineDetailReq{
+		PipelineUlid: pipelineUlid,
+	})
+	if err != nil {
+		slog.Warn("ListExams get pipeline detail failed", "pipeline_ulid", pipelineUlid, "error", err)
+		return ""
+	}
+	return strings.TrimSpace(resp.GetPipeline().GetPipelineCcUlid())
 }
 
 func shouldShowWaitingExamConfirmation(exam *gexampb.ExamInfo) bool {

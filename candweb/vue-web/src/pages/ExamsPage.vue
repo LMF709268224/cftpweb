@@ -152,6 +152,10 @@ async function handleScheduleExam(exam: any) {
 
 async function handleApplyRetake(exam: any) {
   if (!canApplyRetake(exam) || retakeLoadingUnitId.value) return
+  if (!exam.bundle_order_ulid) {
+    toast.error(t.value.common.error)
+    return
+  }
   retakeLoadingUnitId.value = exam.course_unit_ulid
   try {
     const currentUrl = window.location.href
@@ -159,6 +163,7 @@ async function handleApplyRetake(exam: any) {
       method: "POST",
       body: JSON.stringify({
         course_unit_cc_ulid: exam.course_unit_cc_ulid,
+        bundle_order_ulid: exam.bundle_order_ulid,
         retried_count: exam.next_retried_count || exam.retried_count || 0,
         success_url: currentUrl,
         cancel_url: currentUrl,
