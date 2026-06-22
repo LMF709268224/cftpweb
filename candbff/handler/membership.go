@@ -70,7 +70,10 @@ func (h *Handler) ListMembershipBillings(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	membershipRecordID := strings.TrimSpace(r.URL.Query().Get("membership_record_id"))
+	membershipRecordULID := strings.TrimSpace(r.URL.Query().Get("membership_record_ulid"))
+	if membershipRecordULID == "" {
+		membershipRecordULID = strings.TrimSpace(r.URL.Query().Get("membership_record_id"))
+	}
 
 	page := 1
 	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
@@ -88,7 +91,7 @@ func (h *Handler) ListMembershipBillings(w http.ResponseWriter, r *http.Request)
 
 	resp, err := h.Gmbr.ListMembershipBillings(r.Context(), &gmbrpb.ListMembershipBillingsRequest{
 		CandidateUlid:        candidateID,
-		MembershipRecordUlid: membershipRecordID,
+		MembershipRecordUlid: membershipRecordULID,
 		Page:                 int32(page),
 		PageSize:             int32(pageSize),
 	})
@@ -102,8 +105,9 @@ func (h *Handler) ListMembershipBillings(w http.ResponseWriter, r *http.Request)
 
 // CancelMembershipReq membership cancellation request payload
 type CancelMembershipReq struct {
-	MembershipRecordID string `json:"membership_record_id"`
-	Reason             string `json:"reason"`
+	MembershipRecordID   string `json:"membership_record_id"`
+	MembershipRecordULID string `json:"membership_record_ulid"`
+	Reason               string `json:"reason"`
 }
 
 // CancelMembership POST /api/membership/cancel
@@ -120,10 +124,10 @@ func (h *Handler) CancelMembership(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.MembershipRecordID = strings.TrimSpace(req.MembershipRecordID)
+	req.MembershipRecordULID = strings.TrimSpace(firstNonEmpty(req.MembershipRecordULID, req.MembershipRecordID))
 	req.Reason = strings.TrimSpace(req.Reason)
-	if req.MembershipRecordID == "" {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'membership_record_id' is required")
+	if req.MembershipRecordULID == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'membership_record_ulid' is required")
 		return
 	}
 	if req.Reason == "" {
@@ -131,7 +135,7 @@ func (h *Handler) CancelMembership(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gmbr.CancelMembership(r.Context(), &gmbrpb.CancelMembershipRequest{
-		MembershipRecordUlid: req.MembershipRecordID,
+		MembershipRecordUlid: req.MembershipRecordULID,
 		CandidateUlid:        candidateID,
 		Reason:               req.Reason,
 	})
