@@ -18,7 +18,30 @@ const answers = ref<Record<string, string[]>>({})
 const result = ref<any>(null)
 
 const questions = computed(() => paper.value?.questions || [])
-const allAnswered = computed(() => questions.value.every((q: any) => (answers.value[q.question_id]?.length || 0) > 0))
+const allAnswered = computed(() => questions.value.every((q: any) => (answers.value[questionIdOf(q)]?.length || 0) > 0))
+
+function firstString(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim()
+    if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  }
+  return ""
+}
+
+function questionIdOf(question: any) {
+  return firstString(question?.question_id, question?.question_ulid, question?.questionUlid)
+}
+
+function optionIdOf(option: any) {
+  return firstString(option?.option_id, option?.option_ulid, option?.optionUlid)
+}
+
+function normalizeQuestion(question: any) {
+  const options = Array.isArray(question?.options)
+    ? question.options.map((option: any) => ({ ...option, option_id: optionIdOf(option) }))
+    : question?.options
+  return { ...question, question_id: questionIdOf(question), options }
+}
 
 function formatQuizQuestionCount(current: number, total: number) {
   return (t.value.learning?.quizQuestionCount || "")
@@ -39,7 +62,11 @@ async function loadPaper() {
   }
   loading.value = true
   try {
-    paper.value = await apiClient(`/api/quizzes/attempts/${attemptId.value}/paper`)
+    const res = await apiClient(`/api/quizzes/attempts/${attemptId.value}/paper`)
+    paper.value = {
+      ...res,
+      questions: Array.isArray(res?.questions) ? res.questions.map(normalizeQuestion) : [],
+    }
   } finally {
     loading.value = false
   }
