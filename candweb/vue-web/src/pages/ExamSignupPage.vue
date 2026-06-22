@@ -259,9 +259,8 @@ function buildProfilePayload(current: any) {
   }
 }
 
-onMounted(async () => {
+async function loadProfile() {
   try {
-    await loadLocationData()
     const res = await apiClient("/api/user/me")
     if (res) {
       applyProfileToForm(res)
@@ -269,6 +268,13 @@ onMounted(async () => {
   } catch (err) {
     console.error("Failed to load user profile", err)
   }
+}
+
+onMounted(() => {
+  void loadProfile()
+  void loadLocationData()
+    .then(() => syncLocationSelectionFromForm())
+    .catch((err) => console.error("Failed to load location data", err))
 })
 
 watch(lang, () => {
