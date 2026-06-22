@@ -16,7 +16,6 @@ import {
   Loader2,
   Play,
   Search,
-  SlidersHorizontal,
   Video,
 } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
@@ -285,12 +284,12 @@ onMounted(() => {
           <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
         </div>
 
-    <div class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
+    <div v-if="activeTab === 'resources'" class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between">
       <div class="relative flex-1 sm:max-w-md">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="searchQuery" class="input pl-10" :placeholder="t.courses.searchPlaceholder" />
       </div>
-      <div v-if="activeTab === 'resources'" class="flex flex-wrap gap-2">
+      <div class="flex flex-wrap gap-2">
         <button v-for="filter in resourceFilters" :key="filter" :class="['btn rounded-lg', resourceFilter === filter ? 'btn-primary shadow-sm shadow-primary/20' : 'btn-outline']" @click="setResourceFilter(filter)">
           <Video v-if="filter === 'video'" class="h-3.5 w-3.5" />
           <FileText v-if="filter === 'pdf'" class="h-3.5 w-3.5" />
@@ -298,9 +297,6 @@ onMounted(() => {
           {{ filter === 'all' ? t.messagesPage.all : courseTypeLabel(filter) }}
         </button>
       </div>
-      <button v-else class="btn btn-outline rounded-lg">
-        <SlidersHorizontal class="h-4 w-4" /> {{ t.courses.filterBtn }}
-      </button>
     </div>
 
     <div class="mb-4 rounded-md bg-white px-4 pt-4 md:px-8 md:pt-6">
