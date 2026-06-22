@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	gpaypb "github.com/LMF709268224/cftpproto/gpay"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -26,8 +26,8 @@ func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "orderId")
 
 	resp, err := h.Gpay.GetInvoice(r.Context(), &gpaypb.GetInvoiceRequest{
-		Lookup: &gpaypb.GetInvoiceRequest_OrderId{
-			OrderId: orderID,
+		Lookup: &gpaypb.GetInvoiceRequest_OrderUlid{
+			OrderUlid: orderID,
 		},
 	})
 	if err != nil {
@@ -55,8 +55,8 @@ func (h *Handler) DownloadPdf(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gpay.GetInvoice(r.Context(), &gpaypb.GetInvoiceRequest{
-		Lookup: &gpaypb.GetInvoiceRequest_OrderId{
-			OrderId: orderID,
+		Lookup: &gpaypb.GetInvoiceRequest_OrderUlid{
+			OrderUlid: orderID,
 		},
 	})
 	if err != nil {

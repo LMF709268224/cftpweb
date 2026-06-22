@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
-	mallpb "github.com/LMF709268224/cftpproto/gmall"
+	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 )
 
 // ListCredentialDefinitions GET /api/credentials/definitions
@@ -17,14 +17,14 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 		details := make([]map[string]interface{}, 0, len(qualIDs))
 		for _, qualID := range qualIDs {
 			def, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
-				CredDefId: qualID,
+				CredDefUlid: qualID,
 			})
 			if err != nil {
 				HandleGrpcError(w, err)
 				return
 			}
 			details = append(details, map[string]interface{}{
-				"cred_def_id":      def.GetCredDefId(),
+				"cred_def_id":      def.GetCredDefUlid(),
 				"name":             def.GetName(),
 				"description":      def.GetDescription(),
 				"file_constraints": def.GetFileConstraints(),
@@ -39,7 +39,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 	}
 
 	req := &gcredspb.ListCandidateEligibleDefinitionsRequest{
-		CandidateId: candidateID,
+		CandidateUlid: candidateID,
 	}
 
 	res, err := h.Creds.ListCandidateEligibleDefinitions(r.Context(), req)
@@ -51,12 +51,12 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 	details := make([]map[string]interface{}, 0, len(res.GetDefinitions()))
 	for _, def := range res.GetDefinitions() {
 		detailReq := &gcredspb.GetCredentialDefinitionDetailRequest{
-			CredDefId: def.GetCredDefId(),
+			CredDefUlid: def.GetCredDefUlid(),
 		}
 		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
 		if err == nil && detailRes != nil {
 			details = append(details, map[string]interface{}{
-				"cred_def_id":      detailRes.GetCredDefId(),
+				"cred_def_id":      detailRes.GetCredDefUlid(),
 				"name":             detailRes.GetName(),
 				"description":      detailRes.GetDescription(),
 				"file_constraints": detailRes.GetFileConstraints(),
@@ -66,7 +66,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 			continue
 		}
 		details = append(details, map[string]interface{}{
-			"cred_def_id": def.GetCredDefId(),
+			"cred_def_id": def.GetCredDefUlid(),
 			"name":        def.GetName(),
 			"description": def.GetDescription(),
 			"category":    def.GetCategory(),
@@ -88,11 +88,11 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 		return
 	}
 	body.PipelineCcUlid = strings.TrimSpace(body.PipelineCcUlid)
-	body.QualIds = compactStrings(body.QualIds)
+	body.QualUlids = compactStrings(body.QualUlids)
 	if !requireRequestField(w, body.PipelineCcUlid, "pipeline_cc_ulid") {
 		return
 	}
-	if len(body.QualIds) == 0 {
+	if len(body.QualUlids) == 0 {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field \"qual_ids\" is required but was empty")
 		return
 	}
@@ -100,7 +100,7 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 	res, err := h.Mall.CreateCredentialApplicationOrder(r.Context(), &mallpb.CreateCredentialApplicationOrderRequest{
 		CandidateUlid:  candidateID,
 		PipelineCcUlid: body.PipelineCcUlid,
-		QualIds:        body.QualIds,
+		QualUlids:      body.QualUlids,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -116,10 +116,10 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 	credDefID := strings.TrimSpace(r.URL.Query().Get("cred_def_id"))
 
 	req := &gcredspb.ListApplicationsRequest{
-		CandidateId: candidateID,
-		CredDefId:   credDefID,
-		Page:        1,
-		PageSize:    100, // For now, get all applications for candidate
+		CandidateUlid: candidateID,
+		CredDefUlid:   credDefID,
+		Page:          1,
+		PageSize:      100, // For now, get all applications for candidate
 	}
 
 	res, err := h.Creds.ListApplications(r.Context(), req)
@@ -140,8 +140,8 @@ func (h *Handler) CheckUploadPermission(w http.ResponseWriter, r *http.Request) 
 	}
 
 	res, err := h.Creds.CheckUploadPermission(r.Context(), &gcredspb.CheckUploadPermissionRequest{
-		CandidateId: candidateID,
-		CredDefId:   credDefID,
+		CandidateUlid: candidateID,
+		CredDefUlid:   credDefID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -152,7 +152,7 @@ func (h *Handler) CheckUploadPermission(w http.ResponseWriter, r *http.Request) 
 }
 
 type RequestUploadUrlReq struct {
-	CredDefId   string `json:"cred_def_id"`
+	CredDefUlid string `json:"cred_def_id"`
 	FileHash    string `json:"file_hash"`
 	FileExt     string `json:"file_ext"`
 	ContentType string `json:"content_type"`
@@ -170,7 +170,7 @@ func (h *Handler) RequestUploadUrl(w http.ResponseWriter, r *http.Request) {
 	}
 	if !requireRequestFields(
 		w,
-		body.CredDefId, "cred_def_id",
+		body.CredDefUlid, "cred_def_id",
 		body.FileHash, "file_hash",
 		body.FileExt, "file_ext",
 		body.ContentType, "content_type",
@@ -180,12 +180,12 @@ func (h *Handler) RequestUploadUrl(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &gcredspb.RequestUploadUrlRequest{
-		CandidateId: candidateID,
-		CredDefId:   body.CredDefId,
-		FileHash:    body.FileHash,
-		FileExt:     body.FileExt,
-		ContentType: body.ContentType,
-		FileUsage:   body.FileUsage,
+		CandidateUlid: candidateID,
+		CredDefUlid:   body.CredDefUlid,
+		FileHash:      body.FileHash,
+		FileExt:       body.FileExt,
+		ContentType:   body.ContentType,
+		FileUsage:     body.FileUsage,
 	}
 
 	res, err := h.Creds.RequestUploadUrl(r.Context(), req)
@@ -198,8 +198,8 @@ func (h *Handler) RequestUploadUrl(w http.ResponseWriter, r *http.Request) {
 }
 
 type SubmitApplicationReq struct {
-	CredDefId string `json:"cred_def_id"`
-	Files     []struct {
+	CredDefUlid string `json:"cred_def_id"`
+	Files       []struct {
 		FileHash  string `json:"file_hash"`
 		FileName  string `json:"file_name"`
 		FileType  int32  `json:"file_type"`
@@ -218,7 +218,7 @@ func (h *Handler) SubmitApplication(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
-	if !requireRequestField(w, body.CredDefId, "cred_def_id") {
+	if !requireRequestField(w, body.CredDefUlid, "cred_def_id") {
 		return
 	}
 
@@ -244,9 +244,9 @@ func (h *Handler) SubmitApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &gcredspb.SubmitApplicationRequest{
-		CandidateId: candidateID,
-		CredDefId:   body.CredDefId,
-		Files:       pbFiles,
+		CandidateUlid: candidateID,
+		CredDefUlid:   body.CredDefUlid,
+		Files:         pbFiles,
 	}
 
 	res, err := h.Creds.SubmitApplication(r.Context(), req)
@@ -259,8 +259,8 @@ func (h *Handler) SubmitApplication(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpdateApplicationReq struct {
-	AppId string `json:"app_id"`
-	Files []struct {
+	AppUlid string `json:"app_id"`
+	Files   []struct {
 		FileHash  string `json:"file_hash"`
 		FileName  string `json:"file_name"`
 		FileType  int32  `json:"file_type"`
@@ -279,7 +279,7 @@ func (h *Handler) UpdateApplication(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
-	if !requireRequestField(w, body.AppId, "app_id") {
+	if !requireRequestField(w, body.AppUlid, "app_id") {
 		return
 	}
 
@@ -305,9 +305,9 @@ func (h *Handler) UpdateApplication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &gcredspb.UpdateApplicationRequest{
-		AppId:       body.AppId,
-		CandidateId: candidateID,
-		Files:       pbFiles,
+		AppUlid:       body.AppUlid,
+		CandidateUlid: candidateID,
+		Files:         pbFiles,
 	}
 
 	res, err := h.Creds.UpdateApplication(r.Context(), req)

@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	lmspb "github.com/LMF709268224/cftpproto/glms"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -134,13 +134,13 @@ func validateLmsUploadURLPayload(w http.ResponseWriter, req *lmspb.CreateUploadU
 	}
 	switch req.UploadType {
 	case lmspb.UploadType_UPLOAD_TYPE_COURSE_THUMBNAIL:
-		return requireRequestField(w, req.CourseId, "course_id")
+		return requireRequestField(w, req.CourseUlid, "course_id")
 	case lmspb.UploadType_UPLOAD_TYPE_COURSE_MATERIAL:
-		return requireRequestFields(w, req.CourseId, "course_id", req.MaterialId, "material_id")
+		return requireRequestFields(w, req.CourseUlid, "course_id", req.MaterialUlid, "material_id")
 	case lmspb.UploadType_UPLOAD_TYPE_LESSON_ASSET:
-		return requireRequestFields(w, req.CourseId, "course_id", req.ChapterId, "chapter_id", req.LessonId, "lesson_id")
+		return requireRequestFields(w, req.CourseUlid, "course_id", req.ChapterUlid, "chapter_id", req.LessonUlid, "lesson_id")
 	case lmspb.UploadType_UPLOAD_TYPE_QUIZ_ASSET:
-		return requireRequestFields(w, req.CourseId, "course_id", req.QuizId, "quiz_id")
+		return requireRequestFields(w, req.CourseUlid, "course_id", req.QuizUlid, "quiz_id")
 	default:
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "upload_type is required")
 		return false
@@ -166,19 +166,19 @@ func (h *Handler) ListLmsCourses(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateLmsCourse(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		lmspb.CreateCourseDraftRequest
-		FromCourseId string `json:"from_course_id"`
+		FromCourseUlid string `json:"from_course_id"`
 	}
 	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	if strings.TrimSpace(input.FromCourseId) != "" {
+	if strings.TrimSpace(input.FromCourseUlid) != "" {
 		req := &lmspb.DuplicateCourseDraftRequest{
-			FromCourseId: strings.TrimSpace(input.FromCourseId),
-			CourseId:     newLmsID(),
-			Title:        input.Title,
+			FromCourseUlid: strings.TrimSpace(input.FromCourseUlid),
+			CourseUlid:     newLmsID(),
+			Title:          input.Title,
 		}
-		if !requireRequestFields(w, req.FromCourseId, "from_course_id", req.Title, "title") {
+		if !requireRequestFields(w, req.FromCourseUlid, "from_course_id", req.Title, "title") {
 			return
 		}
 		resp, err := h.Lms.DuplicateCourseDraftAdmin(r.Context(), req)
@@ -191,7 +191,7 @@ func (h *Handler) CreateLmsCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := input.CreateCourseDraftRequest
-	req.CourseId = newLmsID()
+	req.CourseUlid = newLmsID()
 	if !requireRequestField(w, req.Title, "title") {
 		return
 	}
@@ -211,7 +211,7 @@ func (h *Handler) GetLmsCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetCourseSummaryAdmin(r.Context(), &lmspb.GetCourseRequest{
-		CourseId: courseID,
+		CourseUlid: courseID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -227,7 +227,7 @@ func (h *Handler) GetLmsCourseDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetCourseDetailAdmin(r.Context(), &lmspb.GetCourseDetailRequest{
-		CourseId: courseID,
+		CourseUlid: courseID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -243,7 +243,7 @@ func (h *Handler) GetCompleteLmsCourse(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetCompleteCourseAdmin(r.Context(), &lmspb.GetCompleteCourseRequest{
-		CourseId: courseID,
+		CourseUlid: courseID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -263,7 +263,7 @@ func (h *Handler) UpdateLmsCourse(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.CourseId = courseID
+	req.CourseUlid = courseID
 	if !requireRequestField(w, req.Title, "title") || !requirePositiveVersion(w, req.Version) {
 		return
 	}
@@ -292,8 +292,8 @@ func (h *Handler) DeleteLmsCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.DeleteCourseAdmin(r.Context(), &lmspb.DeleteCourseRequest{
-		CourseId: courseID,
-		Version:  version,
+		CourseUlid: courseID,
+		Version:    version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -318,8 +318,8 @@ func (h *Handler) PublishLmsCourse(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.PublishCourseAdmin(r.Context(), &lmspb.PublishCourseRequest{
-		CourseId: courseID,
-		Version:  body.Version,
+		CourseUlid: courseID,
+		Version:    body.Version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -335,10 +335,10 @@ func (h *Handler) ListLmsCourseEnrollmentsForAdmin(w http.ResponseWriter, r *htt
 		return
 	}
 	resp, err := h.Lms.ListCourseEnrollmentsForAdmin(r.Context(), &lmspb.ListCourseEnrollmentsForAdminRequest{
-		CourseId:  courseID,
-		Status:    r.URL.Query().Get("status"),
-		PageSize:  parseUint32Query(r, "page_size"),
-		PageToken: r.URL.Query().Get("page_token"),
+		CourseUlid: courseID,
+		Status:     r.URL.Query().Get("status"),
+		PageSize:   parseUint32Query(r, "page_size"),
+		PageToken:  r.URL.Query().Get("page_token"),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -358,8 +358,8 @@ func (h *Handler) GetLmsCandidateProgressForAdmin(w http.ResponseWriter, r *http
 		return
 	}
 	resp, err := h.Lms.GetCandidateProgressForAdmin(r.Context(), &lmspb.GetCandidateProgressForAdminRequest{
-		CandidateId: candidateID,
-		CourseId:    courseID,
+		CandidateUlid: candidateID,
+		CourseUlid:    courseID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -371,12 +371,12 @@ func (h *Handler) GetLmsCandidateProgressForAdmin(w http.ResponseWriter, r *http
 // ListLmsCourseEnrollments GET /api/lms/enrollments
 func (h *Handler) ListLmsCourseEnrollments(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Lms.ListCourseEnrollmentsAdmin(r.Context(), &lmspb.ListCourseEnrollmentsRequest{
-		CandidateId: r.URL.Query().Get("candidate_id"),
-		CourseId:    r.URL.Query().Get("course_id"),
-		BizUnit:     r.URL.Query().Get("biz_unit"),
-		Status:      r.URL.Query().Get("status"),
-		PageSize:    parseUint32Query(r, "page_size"),
-		PageToken:   r.URL.Query().Get("page_token"),
+		CandidateUlid: r.URL.Query().Get("candidate_id"),
+		CourseUlid:    r.URL.Query().Get("course_id"),
+		BizUnit:       r.URL.Query().Get("biz_unit"),
+		Status:        r.URL.Query().Get("status"),
+		PageSize:      parseUint32Query(r, "page_size"),
+		PageToken:     r.URL.Query().Get("page_token"),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -408,11 +408,11 @@ func (h *Handler) ListLmsLessonProgress(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	resp, err := h.Lms.ListLessonProgressAdmin(r.Context(), &lmspb.ListLessonProgressRequest{
-		CandidateId: candidateID,
-		LessonId:    r.URL.Query().Get("lesson_id"),
-		Status:      r.URL.Query().Get("status"),
-		PageSize:    parseUint32Query(r, "page_size"),
-		PageToken:   r.URL.Query().Get("page_token"),
+		CandidateUlid: candidateID,
+		LessonUlid:    r.URL.Query().Get("lesson_id"),
+		Status:        r.URL.Query().Get("status"),
+		PageSize:      parseUint32Query(r, "page_size"),
+		PageToken:     r.URL.Query().Get("page_token"),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -432,8 +432,8 @@ func (h *Handler) GetLmsLessonProgressDetail(w http.ResponseWriter, r *http.Requ
 		return
 	}
 	resp, err := h.Lms.GetLessonProgressDetailAdmin(r.Context(), &lmspb.GetLessonProgressDetailRequest{
-		UserId:   candidateID,
-		LessonId: lessonID,
+		UserUlid:   candidateID,
+		LessonUlid: lessonID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -450,10 +450,10 @@ func (h *Handler) ListLmsChapterProgress(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	resp, err := h.Lms.ListChapterProgressAdmin(r.Context(), &lmspb.ListChapterProgressRequest{
-		CandidateId: candidateID,
-		CourseId:    courseID,
-		PageSize:    parseUint32Query(r, "page_size"),
-		PageToken:   r.URL.Query().Get("page_token"),
+		CandidateUlid: candidateID,
+		CourseUlid:    courseID,
+		PageSize:      parseUint32Query(r, "page_size"),
+		PageToken:     r.URL.Query().Get("page_token"),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -473,8 +473,8 @@ func (h *Handler) GetLmsChapterProgressDetail(w http.ResponseWriter, r *http.Req
 		return
 	}
 	resp, err := h.Lms.GetChapterProgressDetailAdmin(r.Context(), &lmspb.GetChapterProgressDetailRequest{
-		CandidateId: candidateID,
-		ChapterId:   chapterID,
+		CandidateUlid: candidateID,
+		ChapterUlid:   chapterID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -490,8 +490,8 @@ func (h *Handler) ListLmsQuizAttempts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.ListQuizAttemptsAdmin(r.Context(), &lmspb.ListQuizAttemptsRequest{
-		QuizId:    quizID,
-		UserId:    r.URL.Query().Get("candidate_id"),
+		QuizUlid:  quizID,
+		UserUlid:  r.URL.Query().Get("candidate_id"),
 		Status:    r.URL.Query().Get("status"),
 		PageSize:  parseUint32Query(r, "page_size"),
 		PageToken: r.URL.Query().Get("page_token"),
@@ -526,7 +526,7 @@ func (h *Handler) ListLmsCourseMaterials(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	resp, err := h.Lms.ListCourseMaterialsAdmin(r.Context(), &lmspb.ListCourseMaterialsRequest{
-		CourseId: courseID,
+		CourseUlid: courseID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -542,14 +542,14 @@ func (h *Handler) BatchEnrollLmsCandidateCourses(w http.ResponseWriter, r *http.
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	if len(req.CourseIds) == 0 {
+	if len(req.CourseUlids) == 0 {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "course_ids is required")
 		return
 	}
 	if req.BizUnit == "" {
 		req.BizUnit = "adminserver"
 	}
-	if !requireRequestFields(w, req.CandidateId, "candidate_id", req.BizUnit, "biz_unit") {
+	if !requireRequestFields(w, req.CandidateUlid, "candidate_id", req.BizUnit, "biz_unit") {
 		return
 	}
 	resp, err := h.Lms.BatchEnrollCandidateCoursesAdmin(r.Context(), &req)
@@ -571,8 +571,8 @@ func (h *Handler) SyncLmsCourseProgress(w http.ResponseWriter, r *http.Request) 
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.CourseId = courseID
-	if !requireRequestFields(w, req.CandidateId, "candidate_id", req.CourseId, "course_id") {
+	req.CourseUlid = courseID
+	if !requireRequestFields(w, req.CandidateUlid, "candidate_id", req.CourseUlid, "course_id") {
 		return
 	}
 	resp, err := h.Lms.SyncCourseProgressAdmin(r.Context(), &req)
@@ -594,10 +594,10 @@ func (h *Handler) CreateLmsCourseMaterial(w http.ResponseWriter, r *http.Request
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	if strings.TrimSpace(req.MaterialId) == "" {
-		req.MaterialId = newLmsID()
+	if strings.TrimSpace(req.MaterialUlid) == "" {
+		req.MaterialUlid = newLmsID()
 	}
-	req.CourseId = courseID
+	req.CourseUlid = courseID
 	if !requireRequestFields(w, req.Title, "title", req.FileObjectKey, "file_object_key") {
 		return
 	}
@@ -621,7 +621,7 @@ func (h *Handler) GetLmsCourseMaterial(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetCourseMaterialAdmin(r.Context(), &lmspb.GetCourseMaterialRequest{
-		MaterialId: materialID,
+		MaterialUlid: materialID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -641,7 +641,7 @@ func (h *Handler) UpdateLmsCourseMaterial(w http.ResponseWriter, r *http.Request
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.MaterialId = materialID
+	req.MaterialUlid = materialID
 	if !requireRequestFields(w, req.Title, "title", req.FileObjectKey, "file_object_key") || !requirePositiveVersion(w, req.Version) {
 		return
 	}
@@ -674,8 +674,8 @@ func (h *Handler) DeleteLmsCourseMaterial(w http.ResponseWriter, r *http.Request
 	}
 
 	resp, err := h.Lms.DeleteCourseMaterialAdmin(r.Context(), &lmspb.DeleteCourseMaterialRequest{
-		MaterialId: materialID,
-		Version:    version,
+		MaterialUlid: materialID,
+		Version:      version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -695,7 +695,7 @@ func (h *Handler) ReorderLmsCourseMaterials(w http.ResponseWriter, r *http.Reque
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.CourseId = courseID
+	req.CourseUlid = courseID
 	if !requireReorderItems(w, req.Items) {
 		return
 	}
@@ -715,7 +715,7 @@ func (h *Handler) ListLmsChapters(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.ListChaptersAdmin(r.Context(), &lmspb.ListChaptersRequest{
-		CourseId: courseID,
+		CourseUlid: courseID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -735,8 +735,8 @@ func (h *Handler) CreateLmsChapter(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.ChapterId = newLmsID()
-	req.CourseId = courseID
+	req.ChapterUlid = newLmsID()
+	req.CourseUlid = courseID
 	if !requireRequestField(w, req.Title, "title") {
 		return
 	}
@@ -756,7 +756,7 @@ func (h *Handler) GetLmsChapter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetChapterAdmin(r.Context(), &lmspb.GetChapterRequest{
-		ChapterId: chapterID,
+		ChapterUlid: chapterID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -776,7 +776,7 @@ func (h *Handler) UpdateLmsChapter(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.ChapterId = chapterID
+	req.ChapterUlid = chapterID
 	if !requireRequestField(w, req.Title, "title") || !requirePositiveVersion(w, req.Version) {
 		return
 	}
@@ -805,8 +805,8 @@ func (h *Handler) DeleteLmsChapter(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.DeleteChapterAdmin(r.Context(), &lmspb.DeleteChapterRequest{
-		ChapterId: chapterID,
-		Version:   version,
+		ChapterUlid: chapterID,
+		Version:     version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -826,7 +826,7 @@ func (h *Handler) ReorderLmsChapters(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.CourseId = courseID
+	req.CourseUlid = courseID
 	if !requireReorderItems(w, req.Items) {
 		return
 	}
@@ -846,7 +846,7 @@ func (h *Handler) ListLmsLessons(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.ListLessonsAdmin(r.Context(), &lmspb.ListLessonsRequest{
-		ChapterId: chapterID,
+		ChapterUlid: chapterID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -866,8 +866,8 @@ func (h *Handler) CreateLmsLesson(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.LessonId = newLmsID()
-	req.ChapterId = chapterID
+	req.LessonUlid = newLmsID()
+	req.ChapterUlid = chapterID
 	if strings.TrimSpace(req.MetaJson) == "" {
 		req.MetaJson = "{}"
 	}
@@ -897,7 +897,7 @@ func (h *Handler) GetLmsLesson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetLessonAdmin(r.Context(), &lmspb.GetLessonRequest{
-		LessonId: lessonID,
+		LessonUlid: lessonID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -917,7 +917,7 @@ func (h *Handler) UpdateLmsLesson(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.LessonId = lessonID
+	req.LessonUlid = lessonID
 	if strings.TrimSpace(req.MetaJson) == "" {
 		req.MetaJson = "{}"
 	}
@@ -956,8 +956,8 @@ func (h *Handler) DeleteLmsLesson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.DeleteLessonAdmin(r.Context(), &lmspb.DeleteLessonRequest{
-		LessonId: lessonID,
-		Version:  version,
+		LessonUlid: lessonID,
+		Version:    version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -977,7 +977,7 @@ func (h *Handler) ReorderLmsLessons(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.ChapterId = chapterID
+	req.ChapterUlid = chapterID
 	if !requireReorderItems(w, req.Items) {
 		return
 	}
@@ -994,7 +994,7 @@ func (h *Handler) ReorderLmsLessons(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListLmsPrerequisites(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Lms.ListPrerequisitesAdmin(r.Context(), &lmspb.ListPrerequisitesRequest{
 		TargetEntityType: lmspb.EntityType(parseEnumQuery(r, "target_entity_type")),
-		TargetEntityId:   r.URL.Query().Get("target_entity_id"),
+		TargetEntityUlid: r.URL.Query().Get("target_entity_id"),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1010,8 +1010,8 @@ func (h *Handler) CreateLmsPrerequisite(w http.ResponseWriter, r *http.Request) 
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.PrerequisiteId = newLmsID()
-	if !validateLmsPrerequisitePayload(w, req.RequiredEntityType, req.RequiredEntityId, req.RequiredResult, req.TargetEntityType, req.TargetEntityId) {
+	req.PrerequisiteUlid = newLmsID()
+	if !validateLmsPrerequisitePayload(w, req.RequiredEntityType, req.RequiredEntityUlid, req.RequiredResult, req.TargetEntityType, req.TargetEntityUlid) {
 		return
 	}
 
@@ -1030,7 +1030,7 @@ func (h *Handler) GetLmsPrerequisite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetPrerequisiteAdmin(r.Context(), &lmspb.GetPrerequisiteRequest{
-		PrerequisiteId: prerequisiteID,
+		PrerequisiteUlid: prerequisiteID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1050,8 +1050,8 @@ func (h *Handler) UpdateLmsPrerequisite(w http.ResponseWriter, r *http.Request) 
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.PrerequisiteId = prerequisiteID
-	if !validateLmsPrerequisitePayload(w, req.RequiredEntityType, req.RequiredEntityId, req.RequiredResult, req.TargetEntityType, req.TargetEntityId) || !requirePositiveVersion(w, req.Version) {
+	req.PrerequisiteUlid = prerequisiteID
+	if !validateLmsPrerequisitePayload(w, req.RequiredEntityType, req.RequiredEntityUlid, req.RequiredResult, req.TargetEntityType, req.TargetEntityUlid) || !requirePositiveVersion(w, req.Version) {
 		return
 	}
 
@@ -1079,8 +1079,8 @@ func (h *Handler) DeleteLmsPrerequisite(w http.ResponseWriter, r *http.Request) 
 	}
 
 	resp, err := h.Lms.DeletePrerequisiteAdmin(r.Context(), &lmspb.DeletePrerequisiteRequest{
-		PrerequisiteId: prerequisiteID,
-		Version:        version,
+		PrerequisiteUlid: prerequisiteID,
+		Version:          version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1093,7 +1093,7 @@ func (h *Handler) DeleteLmsPrerequisite(w http.ResponseWriter, r *http.Request) 
 func (h *Handler) ListLmsQuizzes(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Lms.ListQuizzesAdmin(r.Context(), &lmspb.ListQuizzesRequest{
 		QuizzableType: lmspb.QuizzableType(parseEnumQuery(r, "quizzable_type")),
-		QuizzableId:   r.URL.Query().Get("quizzable_id"),
+		QuizzableUlid: r.URL.Query().Get("quizzable_id"),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1109,8 +1109,8 @@ func (h *Handler) CreateLmsQuiz(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.QuizId = newLmsID()
-	if !requireRequestFields(w, req.Title, "title", req.QuizzableId, "quizzable_id") {
+	req.QuizUlid = newLmsID()
+	if !requireRequestFields(w, req.Title, "title", req.QuizzableUlid, "quizzable_id") {
 		return
 	}
 	if req.QuizzableType == lmspb.QuizzableType_QUIZZABLE_TYPE_UNSPECIFIED {
@@ -1133,7 +1133,7 @@ func (h *Handler) GetLmsQuiz(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetQuizAdmin(r.Context(), &lmspb.GetQuizRequest{
-		QuizId: quizID,
+		QuizUlid: quizID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1153,7 +1153,7 @@ func (h *Handler) UpdateLmsQuiz(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.QuizId = quizID
+	req.QuizUlid = quizID
 	if !requireRequestField(w, req.Title, "title") || !requirePositiveVersion(w, req.Version) {
 		return
 	}
@@ -1182,8 +1182,8 @@ func (h *Handler) DeleteLmsQuiz(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.DeleteQuizAdmin(r.Context(), &lmspb.DeleteQuizRequest{
-		QuizId:  quizID,
-		Version: version,
+		QuizUlid: quizID,
+		Version:  version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1199,7 +1199,7 @@ func (h *Handler) ListLmsQuizQuestions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.ListQuizQuestionsAdmin(r.Context(), &lmspb.ListQuizQuestionsRequest{
-		QuizId: quizID,
+		QuizUlid: quizID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1219,8 +1219,8 @@ func (h *Handler) CreateLmsQuizQuestion(w http.ResponseWriter, r *http.Request) 
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.QuestionId = newLmsID()
-	req.QuizId = quizID
+	req.QuestionUlid = newLmsID()
+	req.QuizUlid = quizID
 	if strings.TrimSpace(req.MediaItemsJson) == "" {
 		req.MediaItemsJson = "[]"
 	}
@@ -1247,7 +1247,7 @@ func (h *Handler) GetLmsQuizQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetQuizQuestionAdmin(r.Context(), &lmspb.GetQuizQuestionRequest{
-		QuestionId: questionID,
+		QuestionUlid: questionID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1267,7 +1267,7 @@ func (h *Handler) UpdateLmsQuizQuestion(w http.ResponseWriter, r *http.Request) 
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.QuestionId = questionID
+	req.QuestionUlid = questionID
 	if strings.TrimSpace(req.MediaItemsJson) == "" {
 		req.MediaItemsJson = "[]"
 	}
@@ -1303,8 +1303,8 @@ func (h *Handler) DeleteLmsQuizQuestion(w http.ResponseWriter, r *http.Request) 
 	}
 
 	resp, err := h.Lms.DeleteQuizQuestionAdmin(r.Context(), &lmspb.DeleteQuizQuestionRequest{
-		QuestionId: questionID,
-		Version:    version,
+		QuestionUlid: questionID,
+		Version:      version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1324,7 +1324,7 @@ func (h *Handler) ReorderLmsQuizQuestions(w http.ResponseWriter, r *http.Request
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.QuizId = quizID
+	req.QuizUlid = quizID
 	if !requireReorderItems(w, req.Items) {
 		return
 	}
@@ -1344,7 +1344,7 @@ func (h *Handler) ListLmsQuizOptions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.ListQuizOptionsAdmin(r.Context(), &lmspb.ListQuizOptionsRequest{
-		QuestionId: questionID,
+		QuestionUlid: questionID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1364,8 +1364,8 @@ func (h *Handler) CreateLmsQuizOption(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.OptionId = newLmsID()
-	req.QuestionId = questionID
+	req.OptionUlid = newLmsID()
+	req.QuestionUlid = questionID
 	if !requireRequestField(w, req.OptionText, "option_text") {
 		return
 	}
@@ -1385,7 +1385,7 @@ func (h *Handler) GetLmsQuizOption(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Lms.GetQuizOptionAdmin(r.Context(), &lmspb.GetQuizOptionRequest{
-		OptionId: optionID,
+		OptionUlid: optionID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1405,7 +1405,7 @@ func (h *Handler) UpdateLmsQuizOption(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.OptionId = optionID
+	req.OptionUlid = optionID
 	if !requireRequestField(w, req.OptionText, "option_text") || !requirePositiveVersion(w, req.Version) {
 		return
 	}
@@ -1434,8 +1434,8 @@ func (h *Handler) DeleteLmsQuizOption(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.DeleteQuizOptionAdmin(r.Context(), &lmspb.DeleteQuizOptionRequest{
-		OptionId: optionID,
-		Version:  version,
+		OptionUlid: optionID,
+		Version:    version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1455,7 +1455,7 @@ func (h *Handler) ReorderLmsQuizOptions(w http.ResponseWriter, r *http.Request) 
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.QuestionId = questionID
+	req.QuestionUlid = questionID
 	if !requireReorderItems(w, req.Items) {
 		return
 	}
@@ -1582,10 +1582,10 @@ func (h *Handler) CreateLmsCourseSupplementaryMaterial(w http.ResponseWriter, r 
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	if req.MaterialId == "" {
-		req.MaterialId = newLmsID()
+	if req.MaterialUlid == "" {
+		req.MaterialUlid = newLmsID()
 	}
-	req.CourseId = courseID
+	req.CourseUlid = courseID
 	if !requireRequestFields(w, req.Kind, "kind", req.DataJson, "data_json") {
 		return
 	}
@@ -1605,7 +1605,7 @@ func (h *Handler) GetLmsCourseSupplementaryMaterial(w http.ResponseWriter, r *ht
 		return
 	}
 	resp, err := h.Lms.GetCourseSupplementaryMaterialAdmin(r.Context(), &lmspb.GetCourseSupplementaryMaterialRequest{
-		CourseId: courseID,
+		CourseUlid: courseID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1625,7 +1625,7 @@ func (h *Handler) UpdateLmsCourseSupplementaryMaterial(w http.ResponseWriter, r 
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.MaterialId = materialID
+	req.MaterialUlid = materialID
 	if !requireRequestFields(w, req.Kind, "kind", req.DataJson, "data_json") || !requirePositiveVersion(w, req.Version) {
 		return
 	}
@@ -1653,8 +1653,8 @@ func (h *Handler) DeleteLmsCourseSupplementaryMaterial(w http.ResponseWriter, r 
 	}
 
 	resp, err := h.Lms.DeleteCourseSupplementaryMaterialAdmin(r.Context(), &lmspb.DeleteCourseSupplementaryMaterialRequest{
-		MaterialId: materialID,
-		Version:    version,
+		MaterialUlid: materialID,
+		Version:      version,
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1674,12 +1674,12 @@ func (h *Handler) GrantLmsCourseAccessPermission(w http.ResponseWriter, r *http.
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.CourseId = courseID
-	req.OperatorId = AdminID(r)
-	if !requireRequestFields(w, req.CandidateId, "candidate_id", req.BizUnit, "biz_unit") {
+	req.CourseUlid = courseID
+	req.OperatorUlid = AdminID(r)
+	if !requireRequestFields(w, req.CandidateUlid, "candidate_id", req.BizUnit, "biz_unit") {
 		return
 	}
-	if !requireRequestField(w, req.OperatorId, "operator_id") {
+	if !requireRequestField(w, req.OperatorUlid, "operator_id") {
 		return
 	}
 
@@ -1702,12 +1702,12 @@ func (h *Handler) RevokeLmsCourseAccessPermission(w http.ResponseWriter, r *http
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.CourseId = courseID
-	req.OperatorId = AdminID(r)
-	if !requireRequestFields(w, req.CandidateId, "candidate_id", req.BizUnit, "biz_unit") {
+	req.CourseUlid = courseID
+	req.OperatorUlid = AdminID(r)
+	if !requireRequestFields(w, req.CandidateUlid, "candidate_id", req.BizUnit, "biz_unit") {
 		return
 	}
-	if !requireRequestField(w, req.OperatorId, "operator_id") {
+	if !requireRequestField(w, req.OperatorUlid, "operator_id") {
 		return
 	}
 

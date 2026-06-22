@@ -8,12 +8,12 @@ import (
 	"regexp"
 	"strings"
 
-	gccpb "github.com/LMF709268224/cftpproto/gcc"
-	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
-	lmspb "github.com/LMF709268224/cftpproto/glms"
-	mallpb "github.com/LMF709268224/cftpproto/gmall"
-	gprog "github.com/LMF709268224/cftpproto/gprog"
-	gprogpb "github.com/LMF709268224/cftpproto/gprog"
+	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
+	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gprog "github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -36,10 +36,10 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 	for _, pipeline := range resp.GetPipelines() {
 		var pipelineForOutput *gccpb.PipelineConfig
 		detailResp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-			Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipeline.GetPipelineId()},
+			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipeline.GetPipelineUlid()},
 		})
 		if err != nil {
-			slog.Warn("Failed to get pipeline detail for mall list", "error", err, "pipeline_id", pipeline.GetPipelineId())
+			slog.Warn("Failed to get pipeline detail for mall list", "error", err, "pipeline_id", pipeline.GetPipelineUlid())
 		} else {
 			pipelineForOutput = detailResp
 		}
@@ -48,15 +48,15 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 		}
 
 		finalEligibilityResp, err := h.Gcc.GetPipelineFinalEligibility(r.Context(), &gccpb.GetPipelineFinalEligibilityRequest{
-			PipelineId: pipeline.GetPipelineId(),
+			PipelineUlid: pipeline.GetPipelineUlid(),
 		})
 		if err != nil {
-			slog.Error("Failed to get pipeline final eligibility", "error", err, "pipeline_id", pipeline.GetPipelineId())
+			slog.Error("Failed to get pipeline final eligibility", "error", err, "pipeline_id", pipeline.GetPipelineUlid())
 			continue
 		}
 
 		config := toPipelineConfig(pipelineForOutput, finalEligibilityResp.GetCerts())
-		if count, ok := h.pipelinePurchaseCount(r, config.PipelineId); ok {
+		if count, ok := h.pipelinePurchaseCount(r, config.PipelineUlid); ok {
 			config.PurchaseCount = &count
 		}
 		out.Pipelines = append(out.Pipelines, config)
@@ -91,7 +91,7 @@ func (h *Handler) GetPipelineDetail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	// 1. load static pipeline config
 	gccResp, err := h.Gcc.GetPipeline(ctx, &gccpb.GetPipelineRequest{
-		Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineID},
+		Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -107,7 +107,7 @@ func (h *Handler) GetPipelineDetail(w http.ResponseWriter, r *http.Request) {
 	})
 	if err == nil {
 		for _, p := range progResp.GetPipelines() {
-			if p.GetPipelineCcUlid() == gccResp.GetPipelineId() {
+			if p.GetPipelineCcUlid() == gccResp.GetPipelineUlid() {
 				out.Instance = toPipelineSummary(p)
 				break
 			}
@@ -127,7 +127,7 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	gccResp, err := h.Gcc.GetPipeline(ctx, &gccpb.GetPipelineRequest{
-		Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineID},
+		Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -147,7 +147,7 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, p := range progResp.GetPipelines() {
-		if p.GetPipelineCcUlid() != gccResp.GetPipelineId() {
+		if p.GetPipelineCcUlid() != gccResp.GetPipelineUlid() {
 			continue
 		}
 		out.Instance = toPipelineSummary(p)
@@ -201,7 +201,7 @@ func mergeRuntimeStatuses(config *PipelineConfig, runtime *gprog.GetPipelineDeta
 	}
 	stageIndexes := make(map[string]int, len(config.Stages))
 	for index := range config.Stages {
-		stageID := strings.TrimSpace(config.Stages[index].StageId)
+		stageID := strings.TrimSpace(config.Stages[index].StageUlid)
 		if stageID == "" {
 			continue
 		}
@@ -221,7 +221,7 @@ func mergeRuntimeStatuses(config *PipelineConfig, runtime *gprog.GetPipelineDeta
 
 		unitIndexes := make(map[string]int, len(config.Stages[stageIndex].Units))
 		for unitIndex := range config.Stages[stageIndex].Units {
-			unitID := strings.TrimSpace(config.Stages[stageIndex].Units[unitIndex].UnitId)
+			unitID := strings.TrimSpace(config.Stages[stageIndex].Units[unitIndex].UnitUlid)
 			if unitID == "" {
 				continue
 			}
@@ -249,8 +249,8 @@ func (h *Handler) GetMallCourseSummary(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.GetCourseSummary(r.Context(), &lmspb.GetCourseSummaryCandidateRequest{
-		CandidateId: CandidateID(r),
-		CourseId:    courseID,
+		CandidateUlid: CandidateID(r),
+		CourseUlid:    courseID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -267,7 +267,7 @@ func (h *Handler) GetMallCourseThumbnailURL(w http.ResponseWriter, r *http.Reque
 	}
 
 	summaryResp, err := h.Lms.GetCourseSummaryAdmin(r.Context(), &lmspb.GetCourseRequest{
-		CourseId: courseID,
+		CourseUlid: courseID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -301,7 +301,7 @@ func (h *Handler) GetMallPipelineThumbnailURL(w http.ResponseWriter, r *http.Req
 	}
 
 	// pipelineResp, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-	// 	Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineID},
+	// 	Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 	// })
 	// if err != nil {
 	// 	HandleGrpcError(w, err)
@@ -315,7 +315,7 @@ func (h *Handler) GetMallPipelineThumbnailURL(w http.ResponseWriter, r *http.Req
 	// }
 
 	viewResp, err := h.Gcc.GetPublicURL(r.Context(), &gccpb.GetPublicURLRequest{
-		PipelineId: pipelineID,
+		PipelineUlid: pipelineID,
 	})
 	if err != nil {
 		slog.Warn("Failed to get pipeline thumbnail url", "error", err, "pipeline_id", pipelineID)
@@ -357,7 +357,7 @@ func (h *Handler) GetBundleDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	resp, err := h.Mall.GetBundle(r.Context(), &mallpb.GetBundleRequest{
-		Query: &mallpb.GetBundleRequest_BundleId{BundleId: bundleId},
+		Query: &mallpb.GetBundleRequest_BundleUlid{BundleUlid: bundleId},
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -419,7 +419,7 @@ func (h *Handler) extractPipelineID(bundle *mallpb.BundleInfo) string {
 
 func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo) map[string]interface{} {
 	m := map[string]interface{}{
-		"bundle_id":            b.GetBundleId(),
+		"bundle_id":            b.GetBundleUlid(),
 		"bundle_gpath":         b.GetBundleGpath(),
 		"version":              b.GetVersion(),
 		"name":                 b.GetName(),
@@ -442,7 +442,7 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo) map[st
 	if pipelineID != "" {
 		m["pipeline_id"] = pipelineID
 		pipeline, err := h.Gcc.GetPipeline(ctx, &gccpb.GetPipelineRequest{
-			Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineID},
+			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 		})
 		if err == nil && pipeline != nil {
 			m["stages"] = toStages(pipeline.GetStages())
@@ -460,7 +460,7 @@ func (h *Handler) GetBundleThumbnailURL(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	resp, err := h.Mall.GetBundleThumbnailURL(r.Context(), &mallpb.GetBundleThumbnailURLRequest{
-		BundleId: bundleId,
+		BundleUlid: bundleId,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -487,7 +487,7 @@ func (h *Handler) CreateBundleOrder(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := h.Mall.CreateBundleOrder(r.Context(), &mallpb.CreateBundleOrderRequest{
 		CandidateUlid:          candidateID,
-		BundleId:               bundleId,
+		BundleCcUlid:           bundleId,
 		PaymentMode:            req.PaymentMode,
 		SelectedExemptionsJson: req.SelectedExemptionsJson,
 	})
@@ -509,7 +509,7 @@ func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification)
 	}
 
 	return PipelineConfig{
-		PipelineId:            p.GetPipelineId(),
+		PipelineUlid:          p.GetPipelineUlid(),
 		PipelineGuid:          "",
 		Version:               p.GetVersion(),
 		Name:                  p.GetName(),
@@ -534,7 +534,7 @@ func pipelineSummaryToConfig(p *gccpb.PipelineSummary) *gccpb.PipelineConfig {
 		return nil
 	}
 	return &gccpb.PipelineConfig{
-		PipelineId:         p.GetPipelineId(),
+		PipelineUlid:       p.GetPipelineUlid(),
 		Version:            p.GetVersion(),
 		Name:               p.GetName(),
 		Description:        p.GetDescription(),
@@ -555,7 +555,7 @@ func toUnlockQuals(quals []*gccpb.Qualification) []Qualification {
 	out := make([]Qualification, 0, len(quals))
 	for _, qual := range quals {
 		out = append(out, Qualification{
-			QualId:   qual.GetQualId(),
+			QualId:   qual.GetQualUlid(),
 			NameHint: qual.GetNameHint(),
 		})
 	}
@@ -570,7 +570,7 @@ func toStages(stages []*gccpb.StageConfig) []StageConfig {
 	out := make([]StageConfig, 0, len(stages))
 	for _, stage := range stages {
 		out = append(out, StageConfig{
-			StageId:   stage.GetStageId(),
+			StageUlid: stage.GetStageUlid(),
 			Name:      stage.GetName(),
 			SortOrder: stage.GetSortOrder(),
 			Units:     toUnits(stage.GetUnits()),
@@ -587,7 +587,7 @@ func toUnits(units []*gccpb.UnitConfig) []UnitConfig {
 	out := make([]UnitConfig, 0, len(units))
 	for _, unit := range units {
 		out = append(out, UnitConfig{
-			UnitId:                   unit.GetUnitId(),
+			UnitUlid:                 unit.GetUnitUlid(),
 			Name:                     unit.GetName(),
 			ExemptionQuals:           unit.GetExemptionQuals(),
 			AllowExemption:           unit.GetAllowExemption(),
@@ -598,9 +598,9 @@ func toUnits(units []*gccpb.UnitConfig) []UnitConfig {
 			ExemptionStripePriceId:   "",
 			RetakeStripeProductId:    "",
 			RetakeStripePriceId:      "",
-			GlmsCourseId:             unit.GetGlmsCourseId(),
+			GlmsCourseUlid:           unit.GetGlmsCourseUlid(),
 			Program:                  unit.GetProgram(),
-			ExamId:                   unit.GetExamId(),
+			ExamUlid:                 unit.GetExamUlid(),
 			FormCode:                 unit.GetFormCode(),
 		})
 	}
@@ -630,7 +630,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 			return out
 		}
 		fillNextStepFromUnit(&out, nil, firstUnit, "")
-		if strings.TrimSpace(firstUnit.GetGlmsCourseId()) != "" {
+		if strings.TrimSpace(firstUnit.GetGlmsCourseUlid()) != "" {
 			out.Action = "continue_learning"
 			out.Message = "continue learning this course"
 		} else {
@@ -651,7 +651,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 				if firstUnit != nil {
 					fillNextStepFromUnit(&out, stage, firstUnit, stageConfigNameByID(config, stage.GetStage().GetStageCcUlid()))
 				} else {
-					out.StageId = stage.GetStage().GetStageUlid()
+					out.StageUlid = stage.GetStage().GetStageUlid()
 					out.StageName = stageConfigNameByID(config, stage.GetStage().GetStageCcUlid())
 				}
 				out.Action = "wait_candidate"
@@ -679,24 +679,24 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 		currentStageUlid = strings.TrimSpace(runtime.GetPipeline().GetCurrentStageUlid())
 	}
 
-	pickStageIdx := -1
+	pickStageUlidx := -1
 	for idx, stage := range stageDetails {
 		if stage == nil || stage.GetStage() == nil {
 			continue
 		}
 		if currentStageUlid != "" && stage.GetStage().GetStageUlid() == currentStageUlid {
-			pickStageIdx = idx
+			pickStageUlidx = idx
 			break
 		}
 	}
-	if pickStageIdx < 0 {
-		pickStageIdx = 0
+	if pickStageUlidx < 0 {
+		pickStageUlidx = 0
 	}
 
-	pickStage := stageDetails[pickStageIdx]
+	pickStage := stageDetails[pickStageUlidx]
 	pickUnit := pickNextRuntimeUnit(pickStage)
 	if pickUnit == nil {
-		for idx := pickStageIdx + 1; idx < len(stageDetails); idx++ {
+		for idx := pickStageUlidx + 1; idx < len(stageDetails); idx++ {
 			pickUnit = pickNextRuntimeUnit(stageDetails[idx])
 			if pickUnit != nil {
 				pickStage = stageDetails[idx]
@@ -784,15 +784,15 @@ func fillNextStepFromUnit(out *PipelineNextStep, stage *gprogpb.StageDetail, uni
 	if out == nil || unit == nil {
 		return
 	}
-	out.CourseUnitUlid = unit.GetUnitId()
-	out.CourseId = unit.GetGlmsCourseId()
-	out.AllowRetake = unit.GetExamId() != ""
+	out.CourseUnitUlid = unit.GetUnitUlid()
+	out.CourseUlid = unit.GetGlmsCourseUlid()
+	out.AllowRetake = unit.GetExamUlid() != ""
 	out.AllowExemption = unit.GetAllowExemption()
 	out.Program = unit.GetProgram()
-	out.ExamId = unit.GetExamId()
+	out.ExamUlid = unit.GetExamUlid()
 	out.FormCode = unit.GetFormCode()
 	if stage != nil && stage.GetStage() != nil {
-		out.StageId = stage.GetStage().GetStageUlid()
+		out.StageUlid = stage.GetStage().GetStageUlid()
 		out.StageName = stageName
 	}
 }
@@ -809,7 +809,7 @@ func stageConfigNameByID(config *gccpb.PipelineConfig, stageID string) string {
 		if stage == nil {
 			continue
 		}
-		if strings.TrimSpace(stage.GetStageId()) == stageID {
+		if strings.TrimSpace(stage.GetStageUlid()) == stageID {
 			return strings.TrimSpace(stage.GetName())
 		}
 	}
@@ -825,7 +825,7 @@ func firstConfigUnit(config *gccpb.PipelineConfig) *gccpb.UnitConfig {
 			continue
 		}
 		for _, unit := range stage.GetUnits() {
-			if unit != nil && strings.TrimSpace(unit.GetUnitId()) != "" {
+			if unit != nil && strings.TrimSpace(unit.GetUnitUlid()) != "" {
 				return unit
 			}
 		}
@@ -845,7 +845,7 @@ func configUnitByID(config *gccpb.PipelineConfig, unitID string) *gccpb.UnitConf
 			if unit == nil {
 				continue
 			}
-			if unit.GetUnitId() == unitID {
+			if unit.GetUnitUlid() == unitID {
 				return unit
 			}
 		}
@@ -881,7 +881,7 @@ func (h *Handler) GetPipelineExemptionOptions(w http.ResponseWriter, r *http.Req
 	}
 
 	pipeline, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-		Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: pipelineID},
+		Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -897,7 +897,7 @@ func (h *Handler) GetPipelineExemptionOptions(w http.ResponseWriter, r *http.Req
 	for stageIndex, stage := range pipeline.GetStages() {
 		stageOut := PipelineExemptionStage{
 			Index:     int32(stageIndex),
-			StageId:   stage.GetStageId(),
+			StageUlid: stage.GetStageUlid(),
 			StageName: stage.GetName(),
 			SortOrder: stage.GetSortOrder(),
 			Units:     []PipelineExemptionUnit{},
@@ -908,7 +908,7 @@ func (h *Handler) GetPipelineExemptionOptions(w http.ResponseWriter, r *http.Req
 				continue
 			}
 			unitOut := PipelineExemptionUnit{
-				UnitId:         unit.GetUnitId(),
+				UnitUlid:       unit.GetUnitUlid(),
 				UnitName:       unit.GetName(),
 				AllowExemption: true,
 				ExemptionQuals: make([]PipelineExemptionQual, 0, len(qualIDs)),
@@ -973,7 +973,7 @@ func getCachedCredentialDefinition(r *http.Request, h *Handler, cache map[string
 		return def
 	}
 	def, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
-		CredDefId: qualID,
+		CredDefUlid: qualID,
 	})
 	if err != nil {
 		slog.Warn("Failed to load credential definition for exemption option", "error", err, "qual_id", qualID)
@@ -989,8 +989,8 @@ func getCachedCandidateQualification(r *http.Request, h *Handler, cache map[stri
 		return check
 	}
 	check, err := h.Creds.CheckCandidateQualification(r.Context(), &gcredspb.CheckCandidateQualificationRequest{
-		CandidateId: candidateID,
-		CredDefId:   qualID,
+		CandidateUlid: candidateID,
+		CredDefUlid:   qualID,
 	})
 	if err != nil {
 		slog.Warn("Failed to check candidate qualification for exemption option", "error", err, "candidate_id", candidateID, "qual_id", qualID)
@@ -1031,7 +1031,7 @@ func (h *Handler) GetActiveBundleOrder(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
 		CandidateUlid: candidateID,
-		BundleId:      bundleId,
+		BundleUlid:    bundleId,
 		Limit:         20,
 	})
 	if err != nil {
@@ -1084,7 +1084,7 @@ func (h *Handler) UnlockPipelineInBundle(w http.ResponseWriter, r *http.Request)
 	resp, err := h.Mall.CreatePipelineUnlockOrder(r.Context(), &mallpb.CreatePipelineUnlockOrderRequest{
 		CandidateUlid:  candidateID,
 		PipelineCcUlid: req.PipelineCcUlid,
-		BundleId:       bundleId,
+		BundleUlid:     bundleId,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

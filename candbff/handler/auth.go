@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	gmidpb "github.com/LMF709268224/cftpproto/gmid"
+	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
@@ -76,7 +76,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err = h.resolveCandidateId(r, claims.User.Id); err != nil {
+	if _, err = h.resolveCandidateUlid(r, claims.User.Id); err != nil {
 		slog.Error("Failed to resolve user ULID", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal error")
 		return
@@ -119,7 +119,7 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err = h.resolveCandidateId(r, claims.User.Id); err != nil {
+	if _, err = h.resolveCandidateUlid(r, claims.User.Id); err != nil {
 		slog.Error("Failed to resolve user ULID", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal error")
 		return
@@ -135,27 +135,27 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) resolveCandidateId(r *http.Request, casdoorUserId string) (string, error) {
-	if casdoorUserId == "" {
+func (h *Handler) resolveCandidateUlid(r *http.Request, casdoorUserUlid string) (string, error) {
+	if casdoorUserUlid == "" {
 		return "", fmt.Errorf("casdoor user id is required")
 	}
 
-	slog.Info("resolveCandidateId: starting ID resolution", "casdoor_user_id", casdoorUserId)
+	slog.Info("resolveCandidateUlid: starting ID resolution", "casdoor_user_id", casdoorUserUlid)
 	resp, err := h.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
-		UserUuid: casdoorUserId,
+		UserUuid: casdoorUserUlid,
 	})
 	if err != nil {
-		slog.Warn("resolveCandidateId: failed to resolve user ULID from gmid", "casdoor_user_id", casdoorUserId, "error", err)
+		slog.Warn("resolveCandidateUlid: failed to resolve user ULID from gmid", "casdoor_user_id", casdoorUserUlid, "error", err)
 		return "", err
 	}
 
 	if resp.UserUlid == "" {
-		err := fmt.Errorf("gmid returned empty user_ulid for user_uuid %q", casdoorUserId)
-		slog.Warn("resolveCandidateId: empty user ULID from gmid", "casdoor_user_id", casdoorUserId)
+		err := fmt.Errorf("gmid returned empty user_ulid for user_uuid %q", casdoorUserUlid)
+		slog.Warn("resolveCandidateUlid: empty user ULID from gmid", "casdoor_user_id", casdoorUserUlid)
 		return "", err
 	}
 
-	slog.Info("resolveCandidateId: found existing mapping in gmid", "casdoor_user_id", casdoorUserId, "candidate_id", resp.UserUlid)
+	slog.Info("resolveCandidateUlid: found existing mapping in gmid", "casdoor_user_id", casdoorUserUlid, "candidate_id", resp.UserUlid)
 	return resp.UserUlid, nil
 }
 

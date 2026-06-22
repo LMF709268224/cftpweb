@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"time"
 
-	gpaypb "github.com/LMF709268224/cftpproto/gpay"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 )
 
 type InvoiceItem struct {
 	ID        string  `json:"id"`
-	OrderId   string  `json:"order_id"`
+	OrderUlid string  `json:"order_id"`
 	Email     string  `json:"email"` // If we fetch user info, else just customer id
 	Amount    float64 `json:"amount"`
 	Currency  string  `json:"currency"`
@@ -54,8 +54,8 @@ func (h *Handler) ListInvoices(w http.ResponseWriter, r *http.Request) {
 	for _, inv := range resp.GetInvoices() {
 		item := InvoiceItem{
 			ID:        inv.GetStripeInvoiceId(),
-			OrderId:   inv.GetOrderId(),
-			Email:     inv.GetCustomerId(), // using customer_id as email placeholder for now
+			OrderUlid: inv.GetOrderUlid(),
+			Email:     inv.GetCustomerUlid(), // using customer_id as email placeholder for now
 			Amount:    float64(inv.GetAmount()) / 100.0,
 			Currency:  inv.GetCurrency(),
 			Status:    inv.GetStatus().String(),

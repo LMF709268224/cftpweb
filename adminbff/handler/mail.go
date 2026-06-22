@@ -12,7 +12,7 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	gmailpb "github.com/LMF709268224/cftpproto/gmail"
+	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 )
 
 type SendMailInput struct {
@@ -92,7 +92,7 @@ func (h *Handler) SendMail(w http.ResponseWriter, r *http.Request) {
 	var err error
 	if templatePath != "" {
 		resp, err = h.Gmail.CreateMail(r.Context(), &gmailpb.CreateMailRequest{
-			MailId:       mailID,
+			MailUlid:     mailID,
 			BusinessUnit: "adminserver",
 			ToEmail:      input.ToEmail,
 			ToName:       input.ToName,
@@ -114,7 +114,7 @@ func (h *Handler) SendMail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		resp, err = h.Gmail.CreateMailRaw(r.Context(), &gmailpb.CreateMailRawRequest{
-			MailId:       mailID,
+			MailUlid:     mailID,
 			BusinessUnit: "adminserver",
 			ToEmail:      input.ToEmail,
 			ToName:       input.ToName,
@@ -138,7 +138,7 @@ func (h *Handler) GetMail(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, mailID, "mail_id") {
 		return
 	}
-	resp, err := h.Gmail.GetMail(r.Context(), &gmailpb.GetMailRequest{MailId: mailID})
+	resp, err := h.Gmail.GetMail(r.Context(), &gmailpb.GetMailRequest{MailUlid: mailID})
 	if err != nil {
 		slog.Error("GetMail failed", "error", err)
 		HandleGrpcError(w, err)
@@ -183,7 +183,7 @@ func (h *Handler) GetMailStatus(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, mailID, "mail_id") {
 		return
 	}
-	resp, err := h.Gmail.GetMailStatus(r.Context(), &gmailpb.GetMailStatusRequest{MailId: mailID})
+	resp, err := h.Gmail.GetMailStatus(r.Context(), &gmailpb.GetMailStatusRequest{MailUlid: mailID})
 	if err != nil {
 		slog.Error("GetMailStatus failed", "error", err)
 		HandleGrpcError(w, err)
@@ -203,7 +203,7 @@ func (h *Handler) CancelMail(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, req.MailId, "mail_id") {
 		return
 	}
-	resp, err := h.Gmail.CancelMail(r.Context(), &gmailpb.CancelMailRequest{MailId: req.MailId})
+	resp, err := h.Gmail.CancelMail(r.Context(), &gmailpb.CancelMailRequest{MailUlid: req.MailId})
 	if err != nil {
 		slog.Error("CancelMail failed", "error", err)
 		HandleGrpcError(w, err)

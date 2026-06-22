@@ -1,10 +1,10 @@
 package handler
 
 import (
-	gcreds "github.com/LMF709268224/cftpproto/gcreds"
-	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
-	"github.com/LMF709268224/cftpproto/gprog"
-	gprogpb "github.com/LMF709268224/cftpproto/gprog"
+	gcreds "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	"github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 )
 
 type LoginInput struct {
@@ -98,7 +98,7 @@ type PipelineConfig struct {
 	UnlockStripePriceId    string          `json:"unlock_stripe_price_id,omitempty"`
 	PackageStripeProductId string          `json:"package_stripe_product_id,omitempty"`
 	PackageStripePriceId   string          `json:"package_stripe_price_id,omitempty"`
-	PipelineId             string          `json:"pipeline_id,omitempty"`
+	PipelineUlid           string          `json:"pipeline_id,omitempty"`
 	PipelineGuid           string          `json:"pipeline_guid,omitempty"` // ULID (业务唯一ID) [required]
 	Version                uint32          `json:"version,omitempty"`       // 版本号 [required]
 	Name                   string          `json:"name,omitempty"`          // 资格类别名称 [required]
@@ -125,7 +125,7 @@ type Qualification struct {
 
 type StageConfig struct {
 	RuntimeStatus gprogpb.StageStatus `json:"runtime_status,omitempty"`
-	StageId       string              `json:"stage_id,omitempty"`   // 管线阶段的 ULID [required]
+	StageUlid     string              `json:"stage_id,omitempty"`   // 管线阶段的 ULID [required]
 	Name          string              `json:"name,omitempty"`       // 资格类别名称 [required]
 	SortOrder     int32               `json:"sort_order,omitempty"` // 排序顺序 [required]
 	Units         []UnitConfig        `json:"units,omitempty"`      // 单元配置 [required]
@@ -138,12 +138,12 @@ type UnitConfig struct {
 	ExemptionStripePriceId   string                 `json:"exemption_stripe_price_id,omitempty"`
 	RetakeStripeProductId    string                 `json:"retake_stripe_product_id,omitempty"`
 	RetakeStripePriceId      string                 `json:"retake_stripe_price_id,omitempty"`
-	GlmsCourseId             string                 `json:"glms_course_id,omitempty"`
+	GlmsCourseUlid           string                 `json:"glms_course_id,omitempty"`
 	AllowExemption           bool                   `json:"allow_exemption,omitempty"`
 	Program                  string                 `json:"program,omitempty"`
-	ExamId                   string                 `json:"exam_id,omitempty"`
+	ExamUlid                 string                 `json:"exam_id,omitempty"`
 	FormCode                 string                 `json:"form_code,omitempty"`
-	UnitId                   string                 `json:"unit_id,omitempty"`
+	UnitUlid                 string                 `json:"unit_id,omitempty"`
 	Name                     string                 `json:"name,omitempty"`
 	HasLearning              bool                   `json:"has_learning,omitempty"`
 	HasExam                  bool                   `json:"has_exam,omitempty"`
@@ -202,13 +202,13 @@ type PipelineRuntimeRsp struct {
 type PipelineNextStep struct {
 	Action           string                 `json:"action,omitempty"`
 	Message          string                 `json:"message,omitempty"`
-	StageId          string                 `json:"stage_id,omitempty"`
+	StageUlid        string                 `json:"stage_id,omitempty"`
 	StageName        string                 `json:"stage_name,omitempty"`
 	CourseUnitUlid   string                 `json:"course_unit_ulid,omitempty"`
 	CourseUnitCcUlid string                 `json:"course_unit_cc_ulid,omitempty"`
-	CourseId         string                 `json:"course_id,omitempty"`
+	CourseUlid       string                 `json:"course_id,omitempty"`
 	Program          string                 `json:"program,omitempty"`
-	ExamId           string                 `json:"exam_id,omitempty"`
+	ExamUlid         string                 `json:"exam_id,omitempty"`
 	FormCode         string                 `json:"form_code,omitempty"`
 	Status           gprog.CourseUnitStatus `json:"status,omitempty"`
 	PipelineStatus   gprogpb.PipelineStatus `json:"pipeline_status,omitempty"`
@@ -384,8 +384,8 @@ type GetProgressRsp struct {
 }
 
 type ProgressRecord struct {
-	CandidateId     string  `json:"candidate_id,omitempty"`      // 考生逻辑 ID (ULID)
-	MaterialId      string  `json:"material_id,omitempty"`       // 资料ID [required]
+	CandidateUlid   string  `json:"candidate_id,omitempty"`      // 考生逻辑 ID (ULID)
+	MaterialUlid    string  `json:"material_id,omitempty"`       // 资料ID [required]
 	CoursePackageId string  `json:"course_package_id,omitempty"` // 资料包ID [required]
 	ProgressType    string  `json:"progress_type,omitempty"`     // 进度类型 [required]
 	ProgressValue   float64 `json:"progress_value,omitempty"`    // 进度值：视频为秒数，文档为百分比 [required]
@@ -395,14 +395,14 @@ type ProgressRecord struct {
 // ===================== 考试 (Exams) =====================
 
 type ExamResultDetailRsp struct {
-	ExamId           string  `json:"exam_id,omitempty"`
+	ExamUlid         string  `json:"exam_id,omitempty"`
 	TotalScore       float64 `json:"total_score,omitempty"`
 	IsPassed         bool    `json:"is_passed,omitempty"`
 	ScoreDetailsJson string  `json:"score_details_json,omitempty"`
 }
 
 type ExamListItem struct {
-	ExamId               string  `json:"exam_id,omitempty"`
+	ExamUlid             string  `json:"exam_id,omitempty"`
 	PipelineUlid         string  `json:"pipeline_ulid,omitempty"`
 	CourseUnitUlid       string  `json:"course_unit_ulid,omitempty"`
 	CourseUnitCcUlid     string  `json:"course_unit_cc_ulid,omitempty"`
@@ -559,14 +559,14 @@ type PipelineExemptionOptionsRsp struct {
 
 type PipelineExemptionStage struct {
 	Index     int32                   `json:"index"`
-	StageId   string                  `json:"stage_id"`
+	StageUlid string                  `json:"stage_id"`
 	StageName string                  `json:"stage_name,omitempty"`
 	SortOrder int32                   `json:"sort_order,omitempty"`
 	Units     []PipelineExemptionUnit `json:"units"`
 }
 
 type PipelineExemptionUnit struct {
-	UnitId         string                  `json:"unit_id"`
+	UnitUlid       string                  `json:"unit_id"`
 	UnitName       string                  `json:"unit_name,omitempty"`
 	AllowExemption bool                    `json:"allow_exemption"`
 	ExemptionQuals []PipelineExemptionQual `json:"exemption_quals"`
@@ -586,7 +586,7 @@ type PipelineExemptionQual struct {
 
 type CreateCredentialApplicationOrderReq struct {
 	PipelineCcUlid string   `json:"pipeline_cc_ulid"`
-	QualIds        []string `json:"qual_ids"`
+	QualUlids      []string `json:"qual_ids"`
 }
 
 type PurchasePipelineRsp struct {
@@ -634,7 +634,7 @@ type MessageListInput struct {
 type MessageItem struct {
 	Id         uint64 `json:"id"`          // 自增ID, 主键
 	MessageId  string `json:"message_id"`  // 消息ID
-	UserId     string `json:"user_id"`     // 考生ID
+	UserUlid   string `json:"user_id"`     // 考生ID
 	TemplateId string `json:"template_id"` // 模板ID
 	// payload 存储为 JSON 字符串，前端 Vue3 直接 JSON.parse 即可
 	Payload         string               `json:"payload"`
@@ -701,16 +701,16 @@ type CertificateFileInfo struct {
 }
 
 type CertificateInfo struct {
-	CredId      string                  `json:"cred_id,omitempty"`      // 唯一ID ULID [required]
-	CredGuid    string                  `json:"cred_guid,omitempty"`    // 跨版本业务唯一 ID
-	CandidateId string                  `json:"candidate_id,omitempty"` // 考生逻辑 ID (ULID)
-	Version     uint32                  `json:"version,omitempty"`      // 版本号 [required]
-	Status      gcreds.CredentialStatus `json:"status,omitempty"`       // 资格状态 [required]
-	Files       []CertificateFileInfo   `json:"files,omitempty"`        // 文件列表 [required]
-	AuditorId   string                  `json:"auditor_id,omitempty"`   // 审核人ID ULID [optional]
-	AuditRemark string                  `json:"audit_remark,omitempty"` // 审核备注 [optional]
-	ValidUntil  string                  `json:"valid_until,omitempty"`  // 有效期 RFC3339 格式字符串 [optional]
-	CreatedAt   string                  `json:"created_at,omitempty"`   // 创建时间 RFC3339 格式字符串 [optional]
+	CredUlid      string                  `json:"cred_id,omitempty"`      // 唯一ID ULID [required]
+	CredGuid      string                  `json:"cred_guid,omitempty"`    // 跨版本业务唯一 ID
+	CandidateUlid string                  `json:"candidate_id,omitempty"` // 考生逻辑 ID (ULID)
+	Version       uint32                  `json:"version,omitempty"`      // 版本号 [required]
+	Status        gcreds.CredentialStatus `json:"status,omitempty"`       // 资格状态 [required]
+	Files         []CertificateFileInfo   `json:"files,omitempty"`        // 文件列表 [required]
+	AuditorUlid   string                  `json:"auditor_id,omitempty"`   // 审核人ID ULID [optional]
+	AuditRemark   string                  `json:"audit_remark,omitempty"` // 审核备注 [optional]
+	ValidUntil    string                  `json:"valid_until,omitempty"`  // 有效期 RFC3339 格式字符串 [optional]
+	CreatedAt     string                  `json:"created_at,omitempty"`   // 创建时间 RFC3339 格式字符串 [optional]
 }
 
 type CertificateItem struct {

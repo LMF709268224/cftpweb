@@ -1,10 +1,10 @@
 package handler
 
 import (
-	gcreds "github.com/LMF709268224/cftpproto/gcreds"
-	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
-	"github.com/LMF709268224/cftpproto/gprog"
-	gprogpb "github.com/LMF709268224/cftpproto/gprog"
+	gcreds "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
+	"github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 )
 
 // ===================== 娉ㄥ唽鐧诲綍 (Auth) =====================
@@ -80,7 +80,7 @@ type PipelineConfig struct {
 	UnlockStripePriceId    string          `json:"unlock_stripe_price_id,omitempty"`
 	PackageStripeProductId string          `json:"package_stripe_product_id,omitempty"`
 	PackageStripePriceId   string          `json:"package_stripe_price_id,omitempty"`
-	PipelineId             string          `json:"pipeline_id,omitempty"`      // ULID (鐗堟湰鍞竴ID) [required]
+	PipelineUlid           string          `json:"pipeline_id,omitempty"`      // ULID (鐗堟湰鍞竴ID) [required]
 	PipelineGuid           string          `json:"pipeline_guid,omitempty"`    // ULID (涓氬姟鍞竴ID) [required]
 	Version                uint32          `json:"version,omitempty"`          // 鐗堟湰鍙?[required]
 	Name                   string          `json:"name,omitempty"`             // 绠＄嚎鍚嶇О [required]
@@ -102,7 +102,7 @@ type Qualification struct {
 }
 
 type StageConfig struct {
-	StageId   string       `json:"stage_id,omitempty"`   // 绠＄嚎闃舵鐨?ULID [required]
+	StageUlid string       `json:"stage_id,omitempty"`   // 绠＄嚎闃舵鐨?ULID [required]
 	Name      string       `json:"name,omitempty"`       // 闃舵鍚嶇О [required]
 	SortOrder int32        `json:"sort_order,omitempty"` // 鎺掑簭椤哄簭 [required]
 	Units     []UnitConfig `json:"units,omitempty"`      // 鍗曞厓閰嶇疆 [required]
@@ -115,8 +115,8 @@ type UnitConfig struct {
 	ExemptionStripePriceId   string `json:"exemption_stripe_price_id,omitempty"`
 	RetakeStripeProductId    string `json:"retake_stripe_product_id,omitempty"`
 	RetakeStripePriceId      string `json:"retake_stripe_price_id,omitempty"`
-	GlmsCourseId             string `json:"glms_course_id,omitempty"`
-	UnitId                   string `json:"unit_id,omitempty"`          // 闃舵鍗曞厓(璇剧▼) ULID & GLMS ID [required]
+	GlmsCourseUlid           string `json:"glms_course_id,omitempty"`
+	UnitUlid                 string `json:"unit_id,omitempty"`          // 闃舵鍗曞厓(璇剧▼) ULID & GLMS ID [required]
 	Name                     string `json:"name,omitempty"`             // 闃舵鍗曞厓鍚嶇О [required]
 	HasLearning              bool   `json:"has_learning,omitempty"`     // 鏄惁鏈夊涔?[required]
 	HasExam                  bool   `json:"has_exam,omitempty"`         // 鏄惁鏈夎€冭瘯 [required]
@@ -292,8 +292,8 @@ type GetProgressRsp struct {
 }
 
 type ProgressRecord struct {
-	CandidateId     string  `json:"candidate_id,omitempty"`      // 鑰冪敓ID [required]
-	MaterialId      string  `json:"material_id,omitempty"`       // 璧勬枡ID [required]
+	CandidateUlid   string  `json:"candidate_id,omitempty"`      // 鑰冪敓ID [required]
+	MaterialUlid    string  `json:"material_id,omitempty"`       // 璧勬枡ID [required]
 	CoursePackageId string  `json:"course_package_id,omitempty"` // 璧勬枡鍖匢D [required]
 	ProgressType    string  `json:"progress_type,omitempty"`     // 杩涘害绫诲瀷 [required]
 	ProgressValue   float64 `json:"progress_value,omitempty"`    // 杩涘害鍊硷細瑙嗛涓虹鏁帮紝鏂囨。涓虹櫨鍒嗘瘮 [required]
@@ -303,7 +303,7 @@ type ProgressRecord struct {
 // ===================== 鑰冭瘯 (Exams) =====================
 
 type ExamResultDetailRsp struct {
-	ExamId           string  `json:"exam_id,omitempty"`
+	ExamUlid         string  `json:"exam_id,omitempty"`
 	TotalScore       float64 `json:"total_score,omitempty"`
 	IsPassed         bool    `json:"is_passed,omitempty"`
 	ScoreDetailsJson string  `json:"score_details_json,omitempty"`
@@ -423,7 +423,7 @@ type MessageListInput struct {
 type MessageItem struct {
 	Id         uint64 `json:"id"`          // 鑷ID, 涓婚敭
 	MessageId  string `json:"message_id"`  // 娑堟伅ID
-	UserId     string `json:"user_id"`     // 鑰冪敓ID
+	UserUlid   string `json:"user_id"`     // 鑰冪敓ID
 	TemplateId string `json:"template_id"` // 妯℃澘ID
 	// payload 瀛樺偍涓?JSON 瀛楃涓诧紝鍓嶇 Vue3 鐩存帴 JSON.parse 鍗冲彲
 	Payload   string               `json:"payload"`
@@ -482,16 +482,16 @@ type CertificateFileInfo struct {
 }
 
 type CertificateInfo struct {
-	CredId      string                  `json:"cred_id,omitempty"`      // 鍞竴ID ULID [required]
-	CredGuid    string                  `json:"cred_guid,omitempty"`    // 璺ㄧ増鏈笟鍔″敮涓€ ID
-	CandidateId string                  `json:"candidate_id,omitempty"` // 鑰冪敓閫昏緫 ID (ULID)
-	Version     uint32                  `json:"version,omitempty"`      // 鐗堟湰鍙?[required]
-	Status      gcreds.CredentialStatus `json:"status,omitempty"`       // 璧勬牸鐘舵€?[required]
-	Files       []CertificateFileInfo   `json:"files,omitempty"`        // 鏂囦欢鍒楄〃 [required]
-	AuditorId   string                  `json:"auditor_id,omitempty"`   // 瀹℃牳浜篒D ULID [optional]
-	AuditRemark string                  `json:"audit_remark,omitempty"` // 瀹℃牳澶囨敞 [optional]
-	ValidUntil  string                  `json:"valid_until,omitempty"`  // 鏈夋晥鏈?RFC3339 鏍煎紡瀛楃涓?[optional]
-	CreatedAt   string                  `json:"created_at,omitempty"`   // 鍒涘缓鏃堕棿 RFC3339 鏍煎紡瀛楃涓?[optional]
+	CredUlid      string                  `json:"cred_id,omitempty"`      // 鍞竴ID ULID [required]
+	CredGuid      string                  `json:"cred_guid,omitempty"`    // 璺ㄧ増鏈笟鍔″敮涓€ ID
+	CandidateUlid string                  `json:"candidate_id,omitempty"` // 鑰冪敓閫昏緫 ID (ULID)
+	Version       uint32                  `json:"version,omitempty"`      // 鐗堟湰鍙?[required]
+	Status        gcreds.CredentialStatus `json:"status,omitempty"`       // 璧勬牸鐘舵€?[required]
+	Files         []CertificateFileInfo   `json:"files,omitempty"`        // 鏂囦欢鍒楄〃 [required]
+	AuditorUlid   string                  `json:"auditor_id,omitempty"`   // 瀹℃牳浜篒D ULID [optional]
+	AuditRemark   string                  `json:"audit_remark,omitempty"` // 瀹℃牳澶囨敞 [optional]
+	ValidUntil    string                  `json:"valid_until,omitempty"`  // 鏈夋晥鏈?RFC3339 鏍煎紡瀛楃涓?[optional]
+	CreatedAt     string                  `json:"created_at,omitempty"`   // 鍒涘缓鏃堕棿 RFC3339 鏍煎紡瀛楃涓?[optional]
 }
 
 type CertificateItem struct {

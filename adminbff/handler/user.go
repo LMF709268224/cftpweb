@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	gmidpb "github.com/LMF709268224/cftpproto/gmid"
+	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
 

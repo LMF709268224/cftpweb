@@ -8,11 +8,11 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
-	gmsgpb "github.com/LMF709268224/cftpproto/gmsg"
+	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 )
 
 type SendMessageInput struct {
-	UserIds      []string `json:"user_ids"`
+	UserUlids    []string `json:"user_ids"`
 	TemplateId   string   `json:"template_id"`
 	TemplatePath string   `json:"template_path"`
 	Payload      string   `json:"payload"`
@@ -27,7 +27,7 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	templatePath := firstNonEmpty(input.TemplatePath, input.TemplateId)
-	if len(input.UserIds) == 0 {
+	if len(input.UserUlids) == 0 {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "user_ids is required")
 		return
 	}
@@ -41,13 +41,13 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gmsg.SendMessage(r.Context(), &gmsgpb.SendMessageRequest{
-		UserIds:      input.UserIds,
-		MessageId:    ulid.Make().String(),
+		UserIds:      input.UserUlids,
+		MessageUlid:  ulid.Make().String(),
 		TemplatePath: templatePath,
 		Payload:      input.Payload,
 		MsgType:      msgType,
 		MsgSource:    gmsgpb.MsgSource_MANUAL_ADMIN,
-		SenderId:     AdminID(r),
+		SenderUlid:   AdminID(r),
 	})
 	if err != nil {
 		slog.Error("SendMessage failed", "error", err)

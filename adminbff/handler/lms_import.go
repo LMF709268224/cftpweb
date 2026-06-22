@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	lmspb "github.com/LMF709268224/cftpproto/glms"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 )
 
 type importLmsContentRequest struct {
@@ -108,7 +108,7 @@ func (h *Handler) importLmsQuiz(w http.ResponseWriter, r *http.Request, req impo
 
 	resp, err := h.Lms.ImportQuizAdmin(r.Context(), &lmspb.ImportQuizRequest{
 		QuizzableType: lmspb.QuizzableType(req.QuizzableType),
-		QuizzableId:   strings.TrimSpace(req.QuizzableID),
+		QuizzableUlid: strings.TrimSpace(req.QuizzableID),
 		QuizJson:      quizJSON,
 	})
 	if err != nil {

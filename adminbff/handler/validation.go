@@ -47,7 +47,7 @@ func requirePositiveVersion(w http.ResponseWriter, version uint32) bool {
 }
 
 type reorderItem interface {
-	GetEntityId() string
+	GetEntityUlid() string
 	GetVersion() uint32
 }
 
@@ -57,8 +57,8 @@ func requireReorderItems[T reorderItem](w http.ResponseWriter, items []T) bool {
 		return false
 	}
 	for i, item := range items {
-		if strings.TrimSpace(item.GetEntityId()) == "" {
-			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, fmt.Sprintf("items[%d].entity_id is required", i))
+		if strings.TrimSpace(item.GetEntityUlid()) == "" {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, fmt.Sprintf("items[%d].entity_ulid is required", i))
 			return false
 		}
 		if item.GetVersion() == 0 {

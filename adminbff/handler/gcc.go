@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	gccpb "github.com/LMF709268224/cftpproto/gcc"
+	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 )
 
 // ListPipelines GET /api/pipelines
@@ -32,18 +32,18 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		CategoryTips       string `json:"category_tips"`
 		Name               string `json:"name"`
-		PipelineId         string `json:"pipeline_id"`
+		PipelineUlid       string `json:"pipeline_id"`
 		Respath            string `json:"respath"`
 		ThumbnailObjectKey string `json:"thumbnail_object_key"`
 		ThumbnailFileHash  string `json:"thumbnail_file_hash"`
-		FromPipelineId     string `json:"from_pipeline_id"`
+		FromPipelineUlid   string `json:"from_pipeline_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
 
-	fromPipelineID := strings.TrimSpace(input.FromPipelineId)
+	fromPipelineID := strings.TrimSpace(input.FromPipelineUlid)
 	if fromPipelineID == "" {
 		fromPipelineID = strings.TrimSpace(r.URL.Query().Get("from_pipeline_id"))
 	}
@@ -54,11 +54,11 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 			name = "Pipeline Copy"
 		}
 		req := &gccpb.DuplicatePipelineDraftRequest{
-			FromPipelineId: fromPipelineID,
-			PipelineId:     newLmsID(),
-			Name:           name,
+			FromPipelineUlid: fromPipelineID,
+			PipelineUlid:     newLmsID(),
+			Name:             name,
 		}
-		if !requireRequestFields(w, req.FromPipelineId, "from_pipeline_id", req.PipelineId, "pipeline_id", req.Name, "name") {
+		if !requireRequestFields(w, req.FromPipelineUlid, "from_pipeline_id", req.PipelineUlid, "pipeline_id", req.Name, "name") {
 			return
 		}
 		resp, err := h.Gcc.DuplicatePipelineDraft(r.Context(), req)
@@ -73,13 +73,13 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 	req := gccpb.CreatePipelineDraftRequest{
 		CategoryTips:       strings.TrimSpace(input.CategoryTips),
 		Name:               strings.TrimSpace(input.Name),
-		PipelineId:         strings.TrimSpace(input.PipelineId),
+		PipelineUlid:       strings.TrimSpace(input.PipelineUlid),
 		Respath:            strings.TrimSpace(input.Respath),
 		ThumbnailObjectKey: strings.TrimSpace(input.ThumbnailObjectKey),
 		ThumbnailFileHash:  strings.TrimSpace(input.ThumbnailFileHash),
 	}
-	if req.PipelineId == "" {
-		req.PipelineId = newLmsID()
+	if req.PipelineUlid == "" {
+		req.PipelineUlid = newLmsID()
 	}
 	if !requireRequestFields(w, req.CategoryTips, "category_tips", req.Name, "name", req.Respath, "respath") {
 		return
@@ -105,14 +105,14 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.PipelineId = id
+	req.PipelineUlid = id
 	if len(req.Stages) == 0 {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "stages is required")
 		return
 	}
 	for i, stage := range req.Stages {
-		if stage.StageId == "" {
-			stage.StageId = newLmsID()
+		if stage.StageUlid == "" {
+			stage.StageUlid = newLmsID()
 		}
 		if !requireRequestField(w, stage.Name, "stages["+strconv.Itoa(i)+"].name") {
 			return
@@ -122,10 +122,10 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 			return
 		}
 		for j, unit := range stage.Units {
-			if unit.UnitId == "" {
-				unit.UnitId = newLmsID()
+			if unit.UnitUlid == "" {
+				unit.UnitUlid = newLmsID()
 			}
-			if !requireRequestField(w, unit.GlmsCourseId, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"].glms_course_id") {
+			if !requireRequestField(w, unit.GlmsCourseUlid, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"].glms_course_id") {
 				return
 			}
 		}
@@ -151,7 +151,7 @@ func (h *Handler) PublishPipeline(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.PipelineId = id
+	req.PipelineUlid = id
 
 	resp, err := h.Gcc.PublishPipeline(r.Context(), &req)
 	if err != nil {
@@ -170,7 +170,7 @@ func (h *Handler) DeprecatePipeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gcc.DeprecatePipeline(r.Context(), &gccpb.DeprecatePipelineRequest{
-		PipelineId: id,
+		PipelineUlid: id,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -188,7 +188,7 @@ func (h *Handler) DeletePipeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gcc.DeletePipeline(r.Context(), &gccpb.DeletePipelineRequest{
-		PipelineId: id,
+		PipelineUlid: id,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -209,7 +209,7 @@ func (h *Handler) UpdatePipelineMetadata(w http.ResponseWriter, r *http.Request)
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	req.TargetId = id
+	req.TargetUlid = id
 	if req.NewName != nil && !requireRequestField(w, *req.NewName, "new_name") {
 		return
 	}
@@ -230,7 +230,7 @@ func (h *Handler) GetPipeline(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req := &gccpb.GetPipelineRequest{
-		Query: &gccpb.GetPipelineRequest_PipelineId{PipelineId: id},
+		Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: id},
 	}
 
 	resp, err := h.Gcc.GetPipeline(r.Context(), req)

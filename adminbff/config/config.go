@@ -6,14 +6,14 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	cfgservepb "github.com/LMF709268224/cftpproto/cfgserver"
+	cfgservepb "github.com/afnandelfin620-star/cftptest/cftp/cfgserver"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/LMF709268224/cftpproto/util"
+	"github.com/afnandelfin620-star/cftptest/cftp/util"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	gcredspb "github.com/LMF709268224/cftpproto/gcreds"
+	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 )
 
 // ListPdfTemplates GET /api/pdf-templates
@@ -65,7 +65,7 @@ func (h *Handler) UpdatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &gcredspb.UpdatePdfTemplateRequest{
-		TemplateId:   body.TemplateId,
+		TemplateUlid: body.TemplateId,
 		Name:         body.Name,
 		Description:  body.Description,
 		HtmlTemplate: body.HtmlTemplate,

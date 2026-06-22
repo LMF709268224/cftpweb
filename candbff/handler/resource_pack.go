@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	lmspb "github.com/LMF709268224/cftpproto/glms"
+	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 )
 
 // ListResourcePacks GET /api/resource-packs
@@ -20,9 +20,9 @@ func (h *Handler) ListResourcePacks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.ListResourcePacks(r.Context(), &lmspb.ListResourcePacksCandidateRequest{
-		CandidateId: candidateID,
-		PageSize:    parseUint32Query(r, "page_size"),
-		PageToken:   r.URL.Query().Get("page_token"),
+		CandidateUlid: candidateID,
+		PageSize:      parseUint32Query(r, "page_size"),
+		PageToken:     r.URL.Query().Get("page_token"),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -43,10 +43,10 @@ func (h *Handler) ListResourcePackFiles(w http.ResponseWriter, r *http.Request) 
 	}
 
 	resp, err := h.Lms.ListResourcePackFiles(r.Context(), &lmspb.ListResourcePackFilesCandidateRequest{
-		CandidateId: candidateID,
-		PackId:      packID,
-		PageSize:    parseUint32Query(r, "page_size"),
-		PageToken:   r.URL.Query().Get("page_token"),
+		CandidateUlid: candidateID,
+		PackId:        packID,
+		PageSize:      parseUint32Query(r, "page_size"),
+		PageToken:     r.URL.Query().Get("page_token"),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -78,8 +78,8 @@ func (h *Handler) GetResourcePackFileThumbnailURL(w http.ResponseWriter, r *http
 	}
 
 	resp, err := h.Lms.CreateViewURL(r.Context(), &lmspb.CreateViewURLCandidateRequest{
-		CandidateId: candidateID,
-		ObjectKey:   objectKey,
+		CandidateUlid: candidateID,
+		ObjectKey:     objectKey,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -104,8 +104,8 @@ func (h *Handler) GetResourcePackFilePreviewURL(w http.ResponseWriter, r *http.R
 	}
 
 	viewResp, err := h.Lms.GetResourcePackFileViewURL(r.Context(), &lmspb.GetResourcePackFileViewURLRequest{
-		CandidateId: candidateID,
-		FileId:      fileID,
+		CandidateUlid: candidateID,
+		FileId:        fileID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -148,8 +148,8 @@ func (h *Handler) GetResourcePackFileViewURL(w http.ResponseWriter, r *http.Requ
 	}
 
 	resp, err := h.Lms.GetResourcePackFileViewURL(r.Context(), &lmspb.GetResourcePackFileViewURLRequest{
-		CandidateId: candidateID,
-		FileId:      fileID,
+		CandidateUlid: candidateID,
+		FileId:        fileID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -160,8 +160,8 @@ func (h *Handler) GetResourcePackFileViewURL(w http.ResponseWriter, r *http.Requ
 
 func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID string, fileID string) (*lmspb.ResourcePackFile, error) {
 	filesResp, err := h.Lms.ListResourcePacks(r.Context(), &lmspb.ListResourcePacksCandidateRequest{
-		CandidateId: candidateID,
-		PageSize:    500,
+		CandidateUlid: candidateID,
+		PageSize:      500,
 	})
 	if err != nil {
 		return nil, err
@@ -171,10 +171,10 @@ func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID 
 		pageToken := ""
 		for {
 			listResp, err := h.Lms.ListResourcePackFiles(r.Context(), &lmspb.ListResourcePackFilesCandidateRequest{
-				CandidateId: candidateID,
-				PackId:      pack.GetPackId(),
-				PageSize:    500,
-				PageToken:   pageToken,
+				CandidateUlid: candidateID,
+				PackId:        pack.GetPackId(),
+				PageSize:      500,
+				PageToken:     pageToken,
 			})
 			if err != nil {
 				return nil, err
