@@ -44,12 +44,22 @@ func main() {
 				// Cache control headers
 				if strings.HasPrefix(r.URL.Path, "/assets/") {
 					w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+					if strings.HasSuffix(path, ".js") {
+						w.Header().Set("Content-Type", "text/javascript; charset=utf-8")
+					} else if strings.HasSuffix(path, ".css") {
+						w.Header().Set("Content-Type", "text/css; charset=utf-8")
+					}
 				} else {
 					w.Header().Set("Cache-Control", "public, max-age=86400")
 				}
 				fileServer.ServeHTTP(w, r)
 				return
 			}
+		}
+
+		if strings.HasPrefix(r.URL.Path, "/assets/") {
+			http.NotFound(w, r)
+			return
 		}
 
 		// Fallback to index.html for SPA

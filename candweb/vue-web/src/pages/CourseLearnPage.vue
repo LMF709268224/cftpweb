@@ -921,13 +921,11 @@ async function openInlinePdf(url: string) {
 }
 
 function openPreviewTab(url: string) {
-  const link = document.createElement("a")
-  link.href = url
-  link.target = "_blank"
-  link.rel = "noopener noreferrer"
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
+  const resolved = router.resolve(url)
+  const target = window.open(resolved.href, "_blank", "noopener,noreferrer")
+  if (!target) {
+    router.push(url)
+  }
 }
 
 function openExternalPdfPreview(src: string, title: string) {
