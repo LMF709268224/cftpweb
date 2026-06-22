@@ -61,14 +61,6 @@ type ProgPipelineSummary = {
   created_at?: string
 }
 
-type BundleOrderSummary = {
-  bundle_order_ulid?: string
-  candidate_ulid?: string
-  bundle_ulid?: string
-  order_status?: string
-  created_at?: string
-}
-
 type ProgPipelineDetail = {
   pipeline?: {
     pipeline_ulid?: string
@@ -219,18 +211,6 @@ function CourseUnitDiagnostics({ courseId, candidateUlid, status }: { courseId?:
       )}
     </div>
   )
-}
-
-function jsonContainsValue(value: unknown, target: string): boolean {
-  if (!target) return false
-  if (typeof value === "string") return value === target || value.includes(target)
-  if (Array.isArray(value)) return value.some((item) => jsonContainsValue(item, target))
-  if (value && typeof value === "object") return Object.values(value as Record<string, unknown>).some((item) => jsonContainsValue(item, target))
-  return false
-}
-
-function bundleOrderMatchesPipeline(order: BundleOrderSummary, pipelineCcUlid: string) {
-  return Boolean(pipelineCcUlid && order.bundle_ulid === pipelineCcUlid)
 }
 
 export default function ProgPage() {
@@ -491,50 +471,8 @@ export default function ProgPage() {
     if (!window.confirm(progPageText.purgeCandidateBundleConfirm || "This will purge the candidate bundle order and related pipeline test data. Continue?")) return
     setPurgeLoading(true)
     try {
-      const params = new URLSearchParams()
-      params.set("candidate_ulid", selectedCandidateUlid)
-      params.set("limit", "100")
-      const ordersRes = await apiClient(`/api/mall/bundle-orders?${params.toString()}`)
-      const orders: BundleOrderSummary[] = ordersRes?.items || []
-      let matchedOrder = orders.find((order) => bundleOrderMatchesPipeline(order, selectedPipelineCcUlid))
-
-      if (!matchedOrder) {
-        for (const order of orders) {
-          const orderId = order.bundle_order_ulid || ""
-          if (!orderId) continue
-          try {
-            const detail = await apiClient(`/api/mall/bundle-orders/${encodeURIComponent(orderId)}`)
-            const itemsSnapshot = detail?.detail?.items_snapshot_json || detail?.items_snapshot_json || ""
-            if (!itemsSnapshot) continue
-            let parsed: unknown = itemsSnapshot
-            try {
-              parsed = JSON.parse(itemsSnapshot)
-            } catch {
-              parsed = itemsSnapshot
-            }
-            if (jsonContainsValue(parsed, selectedPipelineCcUlid)) {
-              matchedOrder = order
-              break
-            }
-          } catch {
-            // Keep trying the rest of the candidate's bundle orders.
-          }
-        }
-      }
-
-      const bundleOrderUlid = matchedOrder?.bundle_order_ulid || ""
-      if (!bundleOrderUlid) {
-        toast.error(progPageText.purgeCandidateBundleNoOrder || "No matching bundle order was found for this pipeline.")
-        return
-      }
-
-      const res = await apiClient("/api/mall/bundle-orders/purge", {
+      const res = await apiClient(`/api/prog/pipelines/${encodeURIComponent(selectedPipelineUlid)}/purge-test-data`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          candidate_ulid: selectedCandidateUlid,
-          bundle_order_ulid: bundleOrderUlid,
-        }),
       })
       toast.success(res?.message || progPageText.purgeCandidateBundleSuccess || "Candidate bundle data purged")
       setSelectedPipelineId("")
@@ -545,7 +483,7 @@ export default function ProgPage() {
     } finally {
       setPurgeLoading(false)
     }
-  }, [canPurgeCandidateBundle, loadPipelines, progPageText.purgeCandidateBundleConfirm, progPageText.purgeCandidateBundleNoOrder, progPageText.purgeCandidateBundleSuccess, selectedCandidateUlid, selectedPipelineCcUlid, t.common.error])
+  }, [canPurgeCandidateBundle, loadPipelines, progPageText.purgeCandidateBundleConfirm, progPageText.purgeCandidateBundleSuccess, selectedPipelineUlid, t.common.error])
 
   const selectedStageHint = useMemo(() => {
     if (selectedStageStatusKey === "1") return t.learning.stageWaitCandidateHint

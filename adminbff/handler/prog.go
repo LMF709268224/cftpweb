@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	"github.com/go-chi/chi/v5"
 )
@@ -208,6 +209,112 @@ func (h *Handler) GetProgPipelineCertificateViewURL(w http.ResponseWriter, r *ht
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]string{"view_url": resp.GetViewUrl()})
+}
+
+func (h *Handler) AdminPurgeProgPipelineTestData(w http.ResponseWriter, r *http.Request) {
+	pipelineULID := strings.TrimSpace(chi.URLParam(r, "pipeline_ulid"))
+	if !requireRequestField(w, pipelineULID, "pipeline_ulid") {
+		return
+	}
+
+	detail, err := h.Gprog.GetPipelineDetail(r.Context(), &gprogpb.GetPipelineDetailReq{
+		PipelineUlid: pipelineULID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	pipeline := detail.GetPipeline()
+	if pipeline == nil {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "pipeline not found")
+		return
+	}
+
+	candidateULID := strings.TrimSpace(pipeline.GetCandidateUlid())
+	pipelineCcULID := strings.TrimSpace(pipeline.GetPipelineCcUlid())
+	if !requireRequestFields(w, candidateULID, "candidate_ulid", pipelineCcULID, "pipeline_cc_ulid") {
+		return
+	}
+
+	bundleOrderULID, err := h.findBundleOrderForProgPipeline(r, candidateULID, pipelineCcULID)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	if bundleOrderULID == "" {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "no matching bundle order was found for pipeline")
+		return
+	}
+
+	adminID := AdminID(r)
+	if adminID == "" {
+		adminID = "adminserver"
+	}
+	resp, err := h.Mall.AdminPurgeCandidateBundle(r.Context(), &mallpb.AdminPurgeCandidateBundleRequest{
+		CandidateUlid:   candidateULID,
+		BundleOrderUlid: bundleOrderULID,
+		AdminUlid:       adminID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"success":           resp.GetSuccess(),
+		"message":           resp.GetMessage(),
+		"candidate_ulid":    candidateULID,
+		"pipeline_ulid":     pipelineULID,
+		"pipeline_cc_ulid":  pipelineCcULID,
+		"bundle_order_ulid": bundleOrderULID,
+	})
+}
+
+func (h *Handler) findBundleOrderForProgPipeline(r *http.Request, candidateULID string, pipelineCcULID string) (string, error) {
+	if candidateULID == "" || pipelineCcULID == "" {
+		return "", nil
+	}
+
+	direct, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
+		CandidateUlid: candidateULID,
+		BundleUlid:    pipelineCcULID,
+		Limit:         20,
+	})
+	if err != nil {
+		return "", err
+	}
+	for _, order := range direct.GetItems() {
+		if order.GetCandidateUlid() == candidateULID && order.GetBundleOrderUlid() != "" {
+			return order.GetBundleOrderUlid(), nil
+		}
+	}
+
+	orders, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
+		CandidateUlid: candidateULID,
+		Limit:         100,
+	})
+	if err != nil {
+		return "", err
+	}
+	for _, order := range orders.GetItems() {
+		if order.GetCandidateUlid() != candidateULID || order.GetBundleOrderUlid() == "" {
+			continue
+		}
+		if order.GetBundleUlid() == pipelineCcULID {
+			return order.GetBundleOrderUlid(), nil
+		}
+		detail, err := h.Mall.GetBundleOrderDetail(r.Context(), &mallpb.GetBundleOrderDetailRequest{
+			BundleOrderUlid: order.GetBundleOrderUlid(),
+		})
+		if err != nil {
+			continue
+		}
+		if strings.Contains(detail.GetDetail().GetItemsSnapshotJson(), pipelineCcULID) {
+			return order.GetBundleOrderUlid(), nil
+		}
+	}
+
+	return "", nil
 }
 
 func (h *Handler) AdminForceCourseCompleted(w http.ResponseWriter, r *http.Request) {

@@ -66,6 +66,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/logs/{transition_ulid}", h.GetProgStatusTransitionLogDetail)
 			r.Post("/{pipeline_ulid}/trigger-next-stage", h.AdminTriggerProgNextStage)
 			r.Post("/{pipeline_ulid}/terminate", h.AdminTerminatePipeline)
+			r.Post("/{pipeline_ulid}/purge-test-data", h.AdminPurgeProgPipelineTestData)
 			r.Get("/{pipeline_ulid}/certificate-url", h.GetProgPipelineCertificateViewURL)
 		})
 
@@ -272,6 +273,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Post("/upload-url", h.CreateBundleUploadURL)
 			})
 			r.Route("/bundle-orders", func(r chi.Router) {
+				r.Get("", h.ListBundleOrders)
 				r.Get("/", h.ListBundleOrders)
 				r.Get("/{bundle_order_ulid}/summary", h.GetBundleOrderSummary)
 				r.Get("/{bundle_order_ulid}", h.GetBundleOrderDetail)
