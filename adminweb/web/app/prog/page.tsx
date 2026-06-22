@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { ChevronDown, ChevronRight, RefreshCw, Search } from "lucide-react"
+import { ChevronDown, ChevronRight, RefreshCw, Search, Trash2 } from "lucide-react"
 
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"
@@ -58,6 +58,14 @@ type ProgPipelineSummary = {
   current_stage_ulid?: string
   started_at?: string
   completed_at?: string
+  created_at?: string
+}
+
+type BundleOrderSummary = {
+  bundle_order_ulid?: string
+  candidate_ulid?: string
+  bundle_ulid?: string
+  order_status?: string
   created_at?: string
 }
 
@@ -133,7 +141,7 @@ function StageDiagnostics({ stageUlid, candidateUlid, status }: { stageUlid: str
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (String(status) !== "1") return // Only fetch if WAIT_CANDIDATE
+    if (String(status) !== "1" || !stageUlid || !candidateUlid) return // Only fetch if WAIT_CANDIDATE
     let active = true
     setLoading(true)
     apiClient(`/api/mall/stage-orders?stage_ulid=${stageUlid}&candidate_ulid=${candidateUlid}`)
@@ -176,7 +184,7 @@ function CourseUnitDiagnostics({ courseId, candidateUlid, status }: { courseId?:
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (String(status) !== "1" || !courseId) return // Only fetch if WAITING_STUDY and has courseId
+    if (String(status) !== "1" || !courseId || !candidateUlid) return // Only fetch if WAITING_STUDY and has IDs
     let active = true
     setLoading(true)
     apiClient(`/api/lms/courses/${encodeURIComponent(courseId)}/candidates/${encodeURIComponent(candidateUlid)}/progress`)
@@ -213,8 +221,21 @@ function CourseUnitDiagnostics({ courseId, candidateUlid, status }: { courseId?:
   )
 }
 
+function jsonContainsValue(value: unknown, target: string): boolean {
+  if (!target) return false
+  if (typeof value === "string") return value === target || value.includes(target)
+  if (Array.isArray(value)) return value.some((item) => jsonContainsValue(item, target))
+  if (value && typeof value === "object") return Object.values(value as Record<string, unknown>).some((item) => jsonContainsValue(item, target))
+  return false
+}
+
+function bundleOrderMatchesPipeline(order: BundleOrderSummary, pipelineCcUlid: string) {
+  return Boolean(pipelineCcUlid && order.bundle_ulid === pipelineCcUlid)
+}
+
 export default function ProgPage() {
   const { t } = useTranslation()
+  const progPageText = t.progPage as typeof t.progPage & Record<string, string>
   const [pipelines, setPipelines] = useState<ProgPipelineSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -229,6 +250,7 @@ export default function ProgPage() {
   const [actionReason, setActionReason] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
   const [certificateLoading, setCertificateLoading] = useState(false)
+  const [purgeLoading, setPurgeLoading] = useState(false)
   const [logLoading, setLogLoading] = useState(false)
   const [logDetailLoading, setLogDetailLoading] = useState(false)
   const [transitionLogs, setTransitionLogs] = useState<ProgStatusTransitionLogSummary[]>([])
@@ -365,11 +387,13 @@ export default function ProgPage() {
   const selectedStage = selectedPipelineDetail?.stages?.find((stage) => stage.stage?.stage_ulid === selectedPipelineDetail?.pipeline?.current_stage_ulid) || selectedPipelineDetail?.stages?.[0] || null
   const selectedPipelineUlid = selectedPipelineDetail?.pipeline?.pipeline_ulid || selectedSummary?.pipeline_ulid || ""
   const selectedCandidateUlid = selectedPipelineDetail?.pipeline?.candidate_ulid || selectedSummary?.candidate_ulid || ""
+  const selectedPipelineCcUlid = selectedPipelineDetail?.pipeline?.pipeline_cc_ulid || selectedSummary?.pipeline_cc_ulid || ""
   const selectedStageStatus = selectedStage?.stage?.status
   const selectedStageStatusKey = String(selectedStageStatus ?? "")
   const selectedPipelineStatusKey = String(selectedStatus ?? "")
   const canTriggerNextStage = selectedPipelineStatusKey === "1" && selectedStageStatusKey === "3"
   const canOpenCertificate = Boolean(selectedPipelineUlid && selectedCandidateUlid)
+  const canPurgeCandidateBundle = Boolean(selectedCandidateUlid && selectedPipelineCcUlid)
 
   const reloadSelectedPipeline = useCallback(async () => {
     await loadPipelines()
@@ -458,6 +482,70 @@ export default function ProgPage() {
       setCertificateLoading(false)
     }
   }, [canOpenCertificate, selectedCandidateUlid, selectedPipelineUlid, t.common.error])
+
+  const purgeCandidateBundle = useCallback(async () => {
+    if (!canPurgeCandidateBundle) {
+      toast.error(t.common.error)
+      return
+    }
+    if (!window.confirm(progPageText.purgeCandidateBundleConfirm || "This will purge the candidate bundle order and related pipeline test data. Continue?")) return
+    setPurgeLoading(true)
+    try {
+      const params = new URLSearchParams()
+      params.set("candidate_ulid", selectedCandidateUlid)
+      params.set("limit", "100")
+      const ordersRes = await apiClient(`/api/mall/bundle-orders?${params.toString()}`)
+      const orders: BundleOrderSummary[] = ordersRes?.items || []
+      let matchedOrder = orders.find((order) => bundleOrderMatchesPipeline(order, selectedPipelineCcUlid))
+
+      if (!matchedOrder) {
+        for (const order of orders) {
+          const orderId = order.bundle_order_ulid || ""
+          if (!orderId) continue
+          try {
+            const detail = await apiClient(`/api/mall/bundle-orders/${encodeURIComponent(orderId)}`)
+            const itemsSnapshot = detail?.detail?.items_snapshot_json || detail?.items_snapshot_json || ""
+            if (!itemsSnapshot) continue
+            let parsed: unknown = itemsSnapshot
+            try {
+              parsed = JSON.parse(itemsSnapshot)
+            } catch {
+              parsed = itemsSnapshot
+            }
+            if (jsonContainsValue(parsed, selectedPipelineCcUlid)) {
+              matchedOrder = order
+              break
+            }
+          } catch {
+            // Keep trying the rest of the candidate's bundle orders.
+          }
+        }
+      }
+
+      const bundleOrderUlid = matchedOrder?.bundle_order_ulid || ""
+      if (!bundleOrderUlid) {
+        toast.error(progPageText.purgeCandidateBundleNoOrder || "No matching bundle order was found for this pipeline.")
+        return
+      }
+
+      const res = await apiClient("/api/mall/bundle-orders/purge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidate_ulid: selectedCandidateUlid,
+          bundle_order_ulid: bundleOrderUlid,
+        }),
+      })
+      toast.success(res?.message || progPageText.purgeCandidateBundleSuccess || "Candidate bundle data purged")
+      setSelectedPipelineId("")
+      setSelectedPipelineDetail(null)
+      await loadPipelines()
+    } catch {
+      toast.error(t.common.error)
+    } finally {
+      setPurgeLoading(false)
+    }
+  }, [canPurgeCandidateBundle, loadPipelines, progPageText.purgeCandidateBundleConfirm, progPageText.purgeCandidateBundleNoOrder, progPageText.purgeCandidateBundleSuccess, selectedCandidateUlid, selectedPipelineCcUlid, t.common.error])
 
   const selectedStageHint = useMemo(() => {
     if (selectedStageStatusKey === "1") return t.learning.stageWaitCandidateHint
@@ -649,6 +737,14 @@ export default function ProgPage() {
                     disabled={!selectedPipelineUlid}
                   >
                     {t.progPage.terminatePipeline}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={purgeCandidateBundle}
+                    disabled={!canPurgeCandidateBundle || purgeLoading}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {purgeLoading ? t.common.loading : progPageText.purgeCandidateBundle || "Purge test data"}
                   </Button>
                 </div>
               </div>

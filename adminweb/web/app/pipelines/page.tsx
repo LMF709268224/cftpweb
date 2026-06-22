@@ -17,6 +17,7 @@ import { ADMIN_PIPELINE_STATUS_LABELS, LMS_COURSE_STATUS_LABELS, statusLabel } f
 
 type Pipeline = {
   pipeline_id: string
+  pipeline_ulid?: string
   pipeline_guid: string
   version: number
   name: string
@@ -222,6 +223,10 @@ function isDeprecated(pipeline: Pipeline | null) {
   return Boolean(pipeline?.status?.toLowerCase() === "deprecated")
 }
 
+function pipelineIdOf(pipeline: Partial<Pipeline> | null | undefined) {
+  return pipeline?.pipeline_id || pipeline?.pipeline_ulid || ""
+}
+
 function qualificationLabel(qualification: Qualification, fallback: string) {
   return qualification.name_hint || qualification.name || qualification.title || qualification.qual_id || fallback
 }
@@ -300,7 +305,7 @@ export default function PipelinesPage() {
   }, [form.stages, fetchCourseDetails])
 
   const selectedPipeline = useMemo(
-    () => pipelines.find((pipeline) => pipeline.pipeline_id === selectedId) || null,
+    () => pipelines.find((pipeline) => pipelineIdOf(pipeline) === selectedId) || null,
     [pipelines, selectedId],
   )
   const published = isPublished(selectedPipeline)
@@ -328,7 +333,7 @@ export default function PipelinesPage() {
       const res = await apiClient(`/api/pipelines?${params.toString()}`)
       const nextPipelines = res?.pipelines || []
       setPipelines(nextPipelines)
-      if (selectedId && !nextPipelines.some((pipeline: Pipeline) => pipeline.pipeline_id === selectedId)) {
+      if (selectedId && !nextPipelines.some((pipeline: Pipeline) => pipelineIdOf(pipeline) === selectedId)) {
         setSelectedId("")
         setForm(emptyForm)
       }
@@ -372,9 +377,14 @@ export default function PipelinesPage() {
   }, [loadPdfTemplates, page.loadPdfTemplatesFailed])
 
   const selectPipeline = async (pipeline: Pipeline) => {
-    setSelectedId(pipeline.pipeline_id)
+    const pipelineId = pipelineIdOf(pipeline)
+    if (!pipelineId) {
+      toast.error(t.common.error)
+      return
+    }
+    setSelectedId(pipelineId)
     try {
-      const detail = await apiClient(`/api/pipelines/${pipeline.pipeline_id}`)
+      const detail = await apiClient(`/api/pipelines/${encodeURIComponent(pipelineId)}`)
       setForm(pipelineToForm(detail))
     } catch {
       setForm(pipelineToForm(pipeline))
@@ -429,9 +439,11 @@ export default function PipelinesPage() {
         }),
       })
       toast.success(page.createSuccess)
-      setSelectedId(res?.pipeline_id || "")
+      const newPipelineId = pipelineIdOf(res)
+      setSelectedId(newPipelineId)
       try {
-        const detail = await apiClient(`/api/pipelines/${res?.pipeline_id}`)
+        if (!newPipelineId) throw new Error("missing pipeline id")
+        const detail = await apiClient(`/api/pipelines/${encodeURIComponent(newPipelineId)}`)
         setForm(pipelineToForm(detail))
       } catch {
         setForm(pipelineToForm(res))
@@ -444,13 +456,18 @@ export default function PipelinesPage() {
 
   const saveMetadata = async () => {
     if (!selectedPipeline) return
+    const pipelineId = pipelineIdOf(selectedPipeline)
+    if (!pipelineId) {
+      toast.error(t.common.error)
+      return
+    }
     if (!form.name.trim()) {
       toast.error(page.fillName)
       return
     }
     setSaving(true)
     try {
-      await apiClient(`/api/pipelines/${selectedPipeline.pipeline_id}/metadata`, {
+      await apiClient(`/api/pipelines/${encodeURIComponent(pipelineId)}/metadata`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ new_name: form.name.trim() }),
@@ -502,6 +519,11 @@ export default function PipelinesPage() {
 
   const saveStructure = async () => {
     if (!selectedPipeline) return
+    const pipelineId = pipelineIdOf(selectedPipeline)
+    if (!pipelineId) {
+      toast.error(t.common.error)
+      return
+    }
     if (published) {
       toast.error(page.publishedLocked)
       return
@@ -510,7 +532,7 @@ export default function PipelinesPage() {
     if (!validateFinalCertificateTemplates()) return
     setSaving(true)
     try {
-      const res = await apiClient(`/api/pipelines/${selectedPipeline.pipeline_id}/structure`, {
+      const res = await apiClient(`/api/pipelines/${encodeURIComponent(pipelineId)}/structure`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cleanFormForStructure(form)),
@@ -525,11 +547,16 @@ export default function PipelinesPage() {
 
   const publishPipeline = async () => {
     if (!selectedPipeline) return
+    const pipelineId = pipelineIdOf(selectedPipeline)
+    if (!pipelineId) {
+      toast.error(t.common.error)
+      return
+    }
     if (!validateStructure()) return
     if (!validateFinalCertificateTemplates()) return
     setSaving(true)
     try {
-      await apiClient(`/api/pipelines/${selectedPipeline.pipeline_id}/publish`, {
+      await apiClient(`/api/pipelines/${encodeURIComponent(pipelineId)}/publish`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -544,10 +571,15 @@ export default function PipelinesPage() {
 
   const deprecatePipeline = async () => {
     if (!selectedPipeline) return
+    const pipelineId = pipelineIdOf(selectedPipeline)
+    if (!pipelineId) {
+      toast.error(t.common.error)
+      return
+    }
     if (!window.confirm("Confirm deprecate?")) return
     setSaving(true)
     try {
-      await apiClient(`/api/pipelines/${selectedPipeline.pipeline_id}/deprecate`, {
+      await apiClient(`/api/pipelines/${encodeURIComponent(pipelineId)}/deprecate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -561,6 +593,11 @@ export default function PipelinesPage() {
 
   const clonePipeline = async () => {
     if (!selectedPipeline) return
+    const pipelineId = pipelineIdOf(selectedPipeline)
+    if (!pipelineId) {
+      toast.error(t.common.error)
+      return
+    }
     if (!form.respath.trim()) {
       toast.error("Please fill in respath")
       return
@@ -575,14 +612,15 @@ export default function PipelinesPage() {
           category_tips: form.category_tips.trim(),
           respath: form.respath.trim(),
           from_pipeline_guid: selectedPipeline.pipeline_guid,
-          from_pipeline_id: selectedPipeline.pipeline_id,
+          from_pipeline_id: pipelineId,
         }),
       })
-      const newPipelineId = res?.pipeline_id || ""
+      const newPipelineId = pipelineIdOf(res)
       toast.success(page.createSuccess)
       setSelectedId(newPipelineId)
       try {
-        const detail = await apiClient(`/api/pipelines/${newPipelineId}`)
+        if (!newPipelineId) throw new Error("missing pipeline id")
+        const detail = await apiClient(`/api/pipelines/${encodeURIComponent(newPipelineId)}`)
         setForm(pipelineToForm(detail))
       } catch {
         setForm(pipelineToForm(res))
@@ -596,6 +634,11 @@ export default function PipelinesPage() {
   const deletePipeline = async () => {
 
     if (!selectedPipeline) return
+    const pipelineId = pipelineIdOf(selectedPipeline)
+    if (!pipelineId) {
+      toast.error(t.common.error)
+      return
+    }
     if (published) {
       toast.error(page.deletePublishedBlocked)
       return
@@ -603,7 +646,7 @@ export default function PipelinesPage() {
     if (!window.confirm(page.confirmDelete)) return
     setSaving(true)
     try {
-      await apiClient(`/api/pipelines/${selectedPipeline.pipeline_id}`, { method: "DELETE" })
+      await apiClient(`/api/pipelines/${encodeURIComponent(pipelineId)}`, { method: "DELETE" })
       toast.success(page.deleteSuccess)
       setSelectedId("")
       setForm(emptyForm)
@@ -818,24 +861,27 @@ export default function PipelinesPage() {
                 ) : pipelines.length === 0 ? (
                   <div className="p-8 text-center text-sm text-muted-foreground">{page.noPipelines}</div>
                 ) : (
-                  pipelines.map((pipeline) => (
-                    <button
-                      key={pipeline.pipeline_id}
-                      type="button"
-                      onClick={() => selectPipeline(pipeline)}
-                      className={`block w-full px-4 py-3 text-left transition ${selectedId === pipeline.pipeline_id ? "bg-muted" : "hover:bg-muted/60"}`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="truncate font-medium">{pipeline.name || t.common.unknownCourse}</span>
-                        <Badge variant={isDeprecated(pipeline) ? "secondary" : isPublished(pipeline) ? "default" : "outline"}>{isDeprecated(pipeline) ? page.statusDeprecated : isPublished(pipeline) ? page.active : page.draft}</Badge>
-                      </div>
-                      <div className="mt-1 truncate text-xs text-muted-foreground">{pipeline.pipeline_id}</div>
-                      <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-                        <span>{pipeline.pipeline_guid || t.common.na}</span>
-                        <span>{page.version} {pipeline.version || 0}</span>
-                      </div>
-                    </button>
-                  ))
+                  pipelines.map((pipeline, index) => {
+                    const pipelineId = pipelineIdOf(pipeline)
+                    return (
+                      <button
+                        key={pipelineId || `pipeline-${index}`}
+                        type="button"
+                        onClick={() => selectPipeline(pipeline)}
+                        className={`block w-full px-4 py-3 text-left transition ${selectedId === pipelineId ? "bg-muted" : "hover:bg-muted/60"}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="truncate font-medium">{pipeline.name || t.common.unknownCourse}</span>
+                          <Badge variant={isDeprecated(pipeline) ? "secondary" : isPublished(pipeline) ? "default" : "outline"}>{isDeprecated(pipeline) ? page.statusDeprecated : isPublished(pipeline) ? page.active : page.draft}</Badge>
+                        </div>
+                        <div className="mt-1 truncate text-xs text-muted-foreground">{pipelineId || t.common.na}</div>
+                        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
+                          <span>{pipeline.pipeline_guid || t.common.na}</span>
+                          <span>{page.version} {pipeline.version || 0}</span>
+                        </div>
+                      </button>
+                    )
+                  })
                 )}
               </div>
               <div className="flex items-center justify-between border-t p-3">
@@ -896,7 +942,7 @@ export default function PipelinesPage() {
                   </div>
                   {selectedPipeline && (
                     <div className="md:col-span-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                      <span>ID: {selectedPipeline.pipeline_id}</span>
+                      <span>ID: {pipelineIdOf(selectedPipeline) || t.common.na}</span>
                       <span>GUID: {selectedPipeline.pipeline_guid || t.common.na}</span>
                       <span>{page.version}: {selectedPipeline.version || 0}</span>
                       <span>{statusLabel(t, LMS_COURSE_STATUS_LABELS, selectedPipeline.status)}</span>
