@@ -134,7 +134,6 @@ onMounted(() => {
           <h2 class="line-clamp-2 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ pack.title || pack.pack_id }}</h2>
           <p class="mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-muted-foreground">{{ pack.description || copy.emptyDesc }}</p>
           <div class="mt-4 space-y-2 text-xs text-muted-foreground">
-            <p v-if="pack.respath">{{ copy.path }}: <span class="font-medium text-card-foreground">{{ pack.respath }}</span></p>
             <p v-if="pack.updated_at" class="flex items-center gap-1.5">
               <CalendarClock class="h-3.5 w-3.5" />
               <span>{{ copy.updated }}: {{ formatBackendDateOnly(pack.updated_at) }}</span>
