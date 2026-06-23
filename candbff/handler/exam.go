@@ -454,6 +454,10 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 						item.RetakeMessage = eligibility.GetMessage()
 						item.NextRetriedCount = eligibility.GetNextRetriedCount()
 					}
+					if h.applyPaidRetakeIfReady(r, candidateID, &item) {
+						item.RetakeEligible = false
+						item.RetakeMessage = ""
+					}
 				}
 			}
 		}
@@ -462,6 +466,45 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, out)
+}
+
+func (h *Handler) applyPaidRetakeIfReady(r *http.Request, candidateID string, item *ExamListItem) bool {
+	if item == nil {
+		return false
+	}
+	if strings.TrimSpace(candidateID) == "" ||
+		strings.TrimSpace(item.CourseUnitUlid) == "" ||
+		strings.TrimSpace(item.CourseUnitCcUlid) == "" ||
+		strings.TrimSpace(item.BundleOrderUlid) == "" {
+		return false
+	}
+	retriedCount := item.NextRetriedCount
+	if retriedCount == 0 {
+		retriedCount = item.RetriedCount
+	}
+	statusResp, err := h.Mall.GetCourseUnitRetakePaymentStatus(r.Context(), &mallpb.GetCourseUnitRetakePaymentStatusRequest{
+		BundleOrderUlid:  item.BundleOrderUlid,
+		CourseUnitCcUlid: item.CourseUnitCcUlid,
+		RetriedCount:     retriedCount,
+	})
+	if err != nil {
+		slog.Warn("ListExams check paid retake failed", "exam_id", item.ExamUlid, "course_unit_ulid", item.CourseUnitUlid, "error", err)
+		return false
+	}
+	if !statusResp.GetPaid() {
+		return false
+	}
+	retakeResp, err := h.Gprog.CandidateApplyRetake(r.Context(), &gprog.CandidateApplyRetakeReq{
+		CourseUnitUlid: item.CourseUnitUlid,
+		CandidateUlid:  candidateID,
+	})
+	if err != nil {
+		slog.Warn("ListExams apply paid retake failed", "exam_id", item.ExamUlid, "course_unit_ulid", item.CourseUnitUlid, "error", err)
+		return false
+	}
+	item.CourseUnitStatus = retakeResp.GetCourseUnitStatus().String()
+	item.RetakeMessage = retakeResp.GetMessage()
+	return true
 }
 
 func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID string) map[string]string {
