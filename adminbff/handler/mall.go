@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -71,4 +72,127 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, resp)
+}
+
+type adminPurgeOrderBundleDataRequest struct {
+	CandidateUlid string `json:"candidate_ulid"`
+	BizType       string `json:"biz_type"`
+	BizRefUlid    string `json:"biz_ref_ulid"`
+}
+
+func (h *Handler) AdminPurgeOrderBundleData(w http.ResponseWriter, r *http.Request) {
+	var req adminPurgeOrderBundleDataRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
+		return
+	}
+
+	candidateULID := strings.TrimSpace(req.CandidateUlid)
+	bizType := strings.ToUpper(strings.TrimSpace(req.BizType))
+	bizRefULID := strings.TrimSpace(req.BizRefUlid)
+	if !requireRequestFields(w, candidateULID, "candidate_ulid", bizType, "biz_type", bizRefULID, "biz_ref_ulid") {
+		return
+	}
+
+	bundleOrderULID := bizRefULID
+	if bizType == "PIPELINE_UNLOCK" {
+		resolved, ok := h.resolveBundleOrderForPipelineUnlock(w, r, candidateULID, bizRefULID)
+		if !ok {
+			return
+		}
+		bundleOrderULID = resolved
+	} else if bizType != "BUNDLE_PURCHASE" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "biz_type does not support bundle data purge")
+		return
+	}
+
+	adminULID := AdminID(r)
+	if !requireRequestField(w, adminULID, "admin_ulid") {
+		return
+	}
+
+	resp, err := h.Mall.AdminPurgeCandidateBundle(r.Context(), &mallpb.AdminPurgeCandidateBundleRequest{
+		CandidateUlid:   candidateULID,
+		BundleOrderUlid: bundleOrderULID,
+		AdminUlid:       adminULID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"bundle_order_ulid": bundleOrderULID,
+		"result":            resp,
+	})
+}
+
+func (h *Handler) resolveBundleOrderForPipelineUnlock(w http.ResponseWriter, r *http.Request, candidateULID, unlockOrderULID string) (string, bool) {
+	resp, err := h.Mall.GetPipelineUnlockOrderDetail(r.Context(), &mallpb.GetPipelineUnlockOrderDetailRequest{
+		PipelineUnlockOrderUlid: unlockOrderULID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return "", false
+	}
+	if !resp.GetFound() || resp.GetDetail() == nil || resp.GetDetail().GetSummary() == nil {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "pipeline unlock order not found")
+		return "", false
+	}
+
+	summary := resp.GetDetail().GetSummary()
+	if summary.GetCandidateUlid() != "" && summary.GetCandidateUlid() != candidateULID {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "pipeline unlock order does not belong to candidate")
+		return "", false
+	}
+
+	pipelineCcULID := strings.TrimSpace(summary.GetPipelineCcUlid())
+	if !requireRequestField(w, pipelineCcULID, "pipeline_cc_ulid") {
+		return "", false
+	}
+
+	bundleOrderULID, err := h.findBundleOrderForCandidatePipeline(r.Context(), candidateULID, pipelineCcULID)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return "", false
+	}
+	if bundleOrderULID == "" {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "related bundle order not found for pipeline unlock order")
+		return "", false
+	}
+	return bundleOrderULID, true
+}
+
+func (h *Handler) findBundleOrderForCandidatePipeline(ctx context.Context, candidateULID, pipelineCcULID string) (string, error) {
+	const pageSize int32 = 100
+	for offset := int32(0); ; offset += pageSize {
+		resp, err := h.Mall.ListBundleOrders(ctx, &mallpb.ListBundleOrdersRequest{
+			CandidateUlid: candidateULID,
+			Limit:         pageSize,
+			Offset:        offset,
+		})
+		if err != nil {
+			return "", err
+		}
+
+		for _, item := range resp.GetItems() {
+			bundleOrderULID := strings.TrimSpace(item.GetBundleOrderUlid())
+			if bundleOrderULID == "" {
+				continue
+			}
+			detail, err := h.Mall.GetBundleOrderDetail(ctx, &mallpb.GetBundleOrderDetailRequest{
+				BundleOrderUlid: bundleOrderULID,
+			})
+			if err != nil {
+				return "", err
+			}
+			if detail.GetFound() && detail.GetDetail() != nil && strings.Contains(detail.GetDetail().GetItemsSnapshotJson(), pipelineCcULID) {
+				return bundleOrderULID, nil
+			}
+		}
+
+		if len(resp.GetItems()) < int(pageSize) || resp.GetTotal() <= offset+pageSize {
+			return "", nil
+		}
+	}
 }

@@ -75,7 +75,10 @@ const getBizRefUlid = (order: AdminOrder) => String(pickFirst(order, ["biz_ref_u
 const getCandidateUlid = (order: AdminOrder) => String(pickFirst(order, ["candidate_ulid", "candidateUlid"]) || "")
 const getOrderStatus = (order: AdminOrder) => pickFirst(order, ["order_status", "orderStatus", "status"])
 const getPaymentStatus = (order: AdminOrder) => pickFirst(order, ["payment_status", "paymentStatus"])
-const isBundlePurchaseOrder = (order: AdminOrder) => normalizeCode(getBizType(order)) === "BUNDLE_PURCHASE"
+const canPurgeBundleDataOrder = (order: AdminOrder) => {
+  const bizType = normalizeCode(getBizType(order))
+  return bizType === "BUNDLE_PURCHASE" || bizType === "PIPELINE_UNLOCK"
+}
 
 const getCurrency = (order: AdminOrder) => String(pickFirst(order, [
   "currency_code",
@@ -169,9 +172,10 @@ export default function AdminOrdersPage() {
 
   const handlePurgeBundleOrder = async (order: AdminOrder) => {
     const candidate = getCandidateUlid(order)
-    const bundleOrderUlid = getBizRefUlid(order) || getOrderUlid(order)
-    if (!candidate || !bundleOrderUlid || bundleOrderUlid === "-") {
-      toast.error(lang === "zh" ? "缺少 candidate_ulid 或 bundle_order_ulid" : "Missing candidate_ulid or bundle_order_ulid")
+    const bizTypeValue = normalizeCode(getBizType(order))
+    const bizRefUlid = getBizRefUlid(order) || getOrderUlid(order)
+    if (!candidate || !bizTypeValue || !bizRefUlid || bizRefUlid === "-") {
+      toast.error(lang === "zh" ? "缺少 candidate_ulid 或业务订单 ULID" : "Missing candidate_ulid or business order ULID")
       return
     }
     const confirmed = window.confirm(
@@ -181,14 +185,15 @@ export default function AdminOrdersPage() {
     )
     if (!confirmed) return
 
-    setPurgingOrderUlid(bundleOrderUlid)
+    setPurgingOrderUlid(bizRefUlid)
     try {
-      const res = await apiClient("/api/mall/bundle-orders/purge", {
+      const res = await apiClient("/api/mall/orders/purge-bundle-data", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidate_ulid: candidate,
-          bundle_order_ulid: bundleOrderUlid,
+          biz_type: bizTypeValue,
+          biz_ref_ulid: bizRefUlid,
         }),
       })
       toast.success(res?.message || (lang === "zh" ? "认证数据已清理" : "Bundle data purged"))
@@ -302,7 +307,7 @@ export default function AdminOrdersPage() {
                       const orderUlid = getOrderUlid(order)
                       const bizTypeValue = getBizType(order)
                       const bizRefUlid = getBizRefUlid(order)
-                      const bundleOrderUlid = bizRefUlid || orderUlid
+                      const purgeOrderUlid = bizRefUlid || orderUlid
                       const orderStatusValue = getOrderStatus(order)
                       const paymentStatusValue = getPaymentStatus(order)
 
@@ -325,16 +330,16 @@ export default function AdminOrdersPage() {
                           </td>
                           <td className="px-4 py-3 text-xs">{formatOrderCreatedAt(order.created_at ?? order.createdAt)}</td>
                           <td className="px-4 py-3">
-                            {isBundlePurchaseOrder(order) ? (
+                            {canPurgeBundleDataOrder(order) ? (
                               <Button
                                 variant="destructive"
                                 size="sm"
                                 className="gap-2"
-                                disabled={purgingOrderUlid === bundleOrderUlid}
+                                disabled={purgingOrderUlid === purgeOrderUlid}
                                 onClick={() => handlePurgeBundleOrder(order)}
                               >
                                 <Trash2 className="h-4 w-4" />
-                                {purgingOrderUlid === bundleOrderUlid
+                                {purgingOrderUlid === purgeOrderUlid
                                   ? t.common?.loading || "Loading..."
                                   : lang === "zh" ? "\u6e05\u7406\u8ba4\u8bc1\u6570\u636e" : "Purge bundle data"}
                               </Button>
