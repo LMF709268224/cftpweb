@@ -7,6 +7,7 @@ import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
+import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData } from "@/lib/locationOptions"
 
 const route = useRoute()
 const router = useRouter()
@@ -19,8 +20,7 @@ const loading = ref(false)
 const syncLoading = ref(false)
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
-const locationApi = ref<any>(null)
-const allCountries = ref<any[]>([])
+const countryOptions = ref<Array<{ code: string; name: string }>>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
 const formData = reactive({
@@ -39,13 +39,6 @@ const formData = reactive({
   work_phone: "",
 })
 const backLink = computed(() => pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : "/certifications")
-const countryOptions = computed(() => {
-  const locale = lang.value === "zh" ? "zh-CN" : "en"
-  const displayNames = new Intl.DisplayNames([locale], { type: "region" })
-  return allCountries.value
-    .map((country) => ({ code: country.isoCode, name: displayNames.of(country.isoCode) || country.name }))
-    .sort((a, b) => a.name.localeCompare(b.name, locale))
-})
 const CN_STATE_LABELS: Record<string, string> = {
   AH: "安徽", BJ: "北京", CQ: "重庆", FJ: "福建", GS: "甘肃", GD: "广东", GX: "广西", GZ: "贵州",
   HI: "海南", HE: "河北", HL: "黑龙江", HA: "河南", HK: "香港", HB: "湖北", HN: "湖南", NM: "内蒙古",
@@ -113,14 +106,12 @@ function normalizeLocationText(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : ""
 }
 
-async function loadLocationData() {
-  if (locationApi.value) return
-  locationApi.value = await import("country-state-city")
-  allCountries.value = locationApi.value.Country.getAllCountries()
+function refreshCountryOptions() {
+  countryOptions.value = getCountryOptions(lang.value === "zh" ? "zh-CN" : "en")
 }
 
 function refreshProvinceOptions() {
-  provinceOptions.value = selectedCountryCode.value ? locationApi.value?.State.getStatesOfCountry(selectedCountryCode.value) || [] : []
+  provinceOptions.value = selectedCountryCode.value ? getProvinceOptions(selectedCountryCode.value) : []
 }
 
 function refreshCityOptions() {
@@ -133,17 +124,18 @@ function refreshCityOptions() {
       cityOptions.value = CN_CITY_OPTIONS_BY_STATE[selectedProvinceCode.value].map((name) => ({ name, localizedName: name }))
       return
     }
-    cityOptions.value = locationApi.value?.City.getCitiesOfState(selectedCountryCode.value, selectedProvinceCode.value) || []
+    cityOptions.value = getStateCityOptions(selectedCountryCode.value, selectedProvinceCode.value)
     return
   }
-  cityOptions.value = provinceOptions.value.length === 0 ? locationApi.value?.City.getCitiesOfCountry(selectedCountryCode.value) || [] : []
+  cityOptions.value = provinceOptions.value.length === 0 ? getCountryCityOptions(selectedCountryCode.value) : []
 }
 
 function syncLocationSelectionFromForm() {
-  if (!locationApi.value) return
+  const allCountries = getCachedCountries()
+  if (allCountries.length === 0) return
   const countryText = normalizeLocationText(formData.country)
   const zhRegionNames = new Intl.DisplayNames(["zh-CN"], { type: "region" })
-  const matchedCountry = allCountries.value.find((country) =>
+  const matchedCountry = allCountries.find((country) =>
     [country.name, country.isoCode, country.phonecode].some((value) => normalizeLocationText(value) === countryText) ||
     normalizeLocationText(zhRegionNames.of(country.isoCode)) === countryText,
   )
@@ -275,12 +267,16 @@ async function loadProfile() {
 onMounted(() => {
   void loadProfile()
   void loadLocationData()
-    .then(() => syncLocationSelectionFromForm())
+    .then(() => {
+      refreshCountryOptions()
+      syncLocationSelectionFromForm()
+    })
     .catch((err) => console.error("Failed to load location data", err))
 })
 
 watch(lang, () => {
   const previousCity = formData.city
+  refreshCountryOptions()
   const country = countryOptions.value.find((item) => item.code === selectedCountryCode.value)
   if (country) formData.country = country.name
   const province = provinceOptions.value.find((item) => item.isoCode === selectedProvinceCode.value)
