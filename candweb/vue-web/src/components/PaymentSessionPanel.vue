@@ -37,6 +37,7 @@ const errorMessage = ref("")
 const checkoutUrl = ref("")
 const clientSecret = ref("")
 const embeddedLoading = ref(false)
+const showStripeConnectionHint = ref(false)
 const checkoutContainerId = `stripe-checkout-${Math.random().toString(36).slice(2)}`
 let stripeCheckoutInstance: any = null
 let stripeCheckoutMountToken = 0
@@ -47,8 +48,10 @@ const copy = computed(() =>
         loading: "\u6b63\u5728\u83b7\u53d6\u652f\u4ed8\u4fe1\u606f\uff0c\u8bf7\u7a0d\u5019...",
         redirecting: "\u5df2\u51c6\u5907\u597d\u652f\u4ed8\u94fe\u63a5\uff0c\u6b63\u5728\u6253\u5f00 Stripe \u652f\u4ed8\u9875\u9762...",
         loadingCheckout: "\u6b63\u5728\u52a0\u8f7d Stripe \u652f\u4ed8\u7ec4\u4ef6...",
+        stripeConnectionHint: "如果下方显示 “Something went wrong”，通常是浏览器无法连接 Stripe 或证书校验失败。请检查网络、代理/VPN、HTTPS 抓包工具、公司网关或系统时间。",
         missing: "\u7f3a\u5c11\u652f\u4ed8\u4fe1\u606f\uff0c\u65e0\u6cd5\u7ee7\u7eed\u3002",
         failed: "\u6253\u5f00\u652f\u4ed8\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5\u3002",
+        stripeConnectionFailed: "无法连接 Stripe 支付组件。请检查网络、代理/VPN、HTTPS 抓包工具、公司网关、系统时间或证书信任设置后重试。",
         retry: "\u91cd\u8bd5",
         openNow: "\u7acb\u5373\u6253\u5f00",
       }
@@ -56,8 +59,10 @@ const copy = computed(() =>
         loading: "Fetching payment session. Please wait...",
         redirecting: "Payment link is ready. Opening Stripe checkout...",
         loadingCheckout: "Loading Stripe checkout...",
+        stripeConnectionHint: "If the area below shows “Something went wrong”, the browser usually cannot reach Stripe or cannot validate Stripe's certificate. Please check your network, proxy/VPN, HTTPS inspection tools, company gateway, or system time.",
         missing: "Missing payment information. Unable to continue.",
         failed: "Failed to open payment. Please try again later.",
+        stripeConnectionFailed: "Unable to connect to Stripe checkout. Please check your network, proxy/VPN, HTTPS inspection tools, company gateway, system time, or certificate trust settings, then try again.",
         retry: "Retry",
         openNow: "Open now",
       },
@@ -75,6 +80,7 @@ function clearCheckoutContainer() {
 
 function destroyStripeCheckout(clearSecret = false) {
   stripeCheckoutMountToken += 1
+  showStripeConnectionHint.value = false
   const checkout = stripeCheckoutInstance
   stripeCheckoutInstance = null
   if (checkout) {
@@ -115,6 +121,7 @@ function fail(message?: string) {
 async function mountStripeCheckout(secret: string) {
   destroyStripeCheckout(false)
   embeddedLoading.value = true
+  showStripeConnectionHint.value = false
   const mountToken = stripeCheckoutMountToken
   let mounted = false
   try {
@@ -137,9 +144,12 @@ async function mountStripeCheckout(secret: string) {
     window.setTimeout(() => {
       if (mountToken === stripeCheckoutMountToken) embeddedLoading.value = false
     }, 500)
+    window.setTimeout(() => {
+      if (mountToken === stripeCheckoutMountToken && status.value === "embedded") showStripeConnectionHint.value = true
+    }, 2500)
   } catch (error: any) {
     console.error(error)
-    fail(error?.message)
+    fail(copy.value.stripeConnectionFailed)
   } finally {
     if (!mounted && mountToken === stripeCheckoutMountToken) embeddedLoading.value = false
   }
@@ -150,6 +160,7 @@ async function startPayment() {
   errorMessage.value = ""
   checkoutUrl.value = ""
   clientSecret.value = ""
+  showStripeConnectionHint.value = false
   setStatus("loading")
 
   const paymentKey = String(props.paymentKey || "").trim()
@@ -253,6 +264,10 @@ onBeforeUnmount(() => destroyStripeCheckout(true))
       <div v-if="embeddedLoading" class="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
         <Loader2 class="h-4 w-4 animate-spin" />
         {{ copy.loadingCheckout }}
+      </div>
+      <div v-if="showStripeConnectionHint" class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+        <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0" />
+        <span>{{ copy.stripeConnectionHint }}</span>
       </div>
       <div :id="checkoutContainerId" :class="['rounded-2xl border border-slate-200 bg-white', minHeightClass]" />
     </div>
