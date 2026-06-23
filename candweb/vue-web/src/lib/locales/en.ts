@@ -405,6 +405,8 @@ export const en: AppTranslations = {
     examFailedTitle: "Exam failed",
     examFailedDesc: "This course unit is marked as exam failed. You can apply for a retake, then sign up for the exam again.",
     applyRetake: "Apply retake and sign up again",
+    payRetakeFee: "Pay retake fee",
+    continueRetakePayment: "Continue retake payment",
     retakeApplied: "Retake flow started. Please sign up for the exam again.",
     scheduleRedirecting: "Opening the exam scheduling page...",
     scheduleURLMissing: "No scheduling link was returned. Please try again later.",

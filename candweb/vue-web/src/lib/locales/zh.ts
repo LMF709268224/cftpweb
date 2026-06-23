@@ -403,6 +403,8 @@ export const zh = {
     examFailedTitle: "考试未通过",
     examFailedDesc: "当前课程单元已标记为考试不通过，可以申请重考。申请成功后需要重新报名考试。",
     applyRetake: "申请重考并重新报名",
+    payRetakeFee: "支付重考费",
+    continueRetakePayment: "继续支付重考费",
     retakeApplied: "已进入重考流程，请重新报名考试。",
     scheduleRedirecting: "正在打开考试预约页面...",
     scheduleURLMissing: "未获取到考试预约链接，请稍后重试。",

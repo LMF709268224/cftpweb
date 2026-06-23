@@ -22,6 +22,23 @@ import (
 
 const examCallbackPath = "/api/public/webhooks/exams/callback"
 
+const (
+	retakeActionNone              = "NONE"
+	retakeActionCreateRetakeOrder = "CREATE_RETAKE_ORDER"
+	retakeActionContinuePayment   = "CONTINUE_PAYMENT"
+	retakeActionApplyRetake       = "APPLY_RETAKE"
+	retakeActionSignupExam        = "SIGNUP_EXAM"
+)
+
+type retakePaymentSnapshot struct {
+	found                 bool
+	paid                  bool
+	message               string
+	courseRetakeOrderUlid string
+	orderStatus           string
+	payOrderUlid          string
+}
+
 // SignupExam POST /api/exams/units/{courseUnitUlid}/signup
 func (h *Handler) SignupExam(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
@@ -116,25 +133,24 @@ func (h *Handler) PrepareRetakePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	statusResp, err := h.Mall.GetCourseUnitRetakePaymentStatus(r.Context(), &mallpb.GetCourseUnitRetakePaymentStatusRequest{
-		BundleOrderUlid:  input.BundleOrderUlid,
-		CourseUnitCcUlid: input.CourseUnitCcULID,
-		RetriedCount:     input.RetriedCount,
-	})
+	payment, err := h.retakePaymentSnapshot(r.Context(), candidateID, courseUnitUlid, input.CourseUnitCcULID, input.BundleOrderUlid, input.RetriedCount)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
-	if statusResp.GetPaid() {
+	if payment.paid {
 		retakeResp, err := h.applyRetake(r.Context(), candidateID, courseUnitUlid)
 		if err != nil {
 			HandleGrpcError(w, err)
 			return
 		}
 		out := PrepareRetakePaymentRsp{
-			PaymentRequired: false,
-			Paid:            true,
-			Message:         statusResp.GetMessage(),
+			CourseRetakeOrderUlid: payment.courseRetakeOrderUlid,
+			OrderStatus:           payment.orderStatus,
+			PayOrderUlid:          payment.payOrderUlid,
+			PaymentRequired:       !isFreeRetakeMessage(payment.message),
+			Paid:                  true,
+			Message:               payment.message,
 		}
 		if retakeResp != nil {
 			out.CourseUnitUlid = retakeResp.GetCourseUnitUlid()
@@ -472,10 +488,7 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 						item.RetakeMessage = eligibility.GetMessage()
 						item.NextRetriedCount = eligibility.GetNextRetriedCount()
 					}
-					if h.applyPaidRetakeIfReady(r, candidateID, &item) {
-						item.RetakeEligible = false
-						item.RetakeMessage = ""
-					}
+					item.Retake = h.buildExamRetakeState(r, candidateID, &item)
 				}
 			}
 		}
@@ -486,51 +499,105 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, out)
 }
 
-func (h *Handler) applyPaidRetakeIfReady(r *http.Request, candidateID string, item *ExamListItem) bool {
+func (h *Handler) buildExamRetakeState(r *http.Request, candidateID string, item *ExamListItem) *ExamRetakeState {
 	if item == nil {
-		return false
+		return nil
 	}
-	if strings.TrimSpace(candidateID) == "" ||
-		strings.TrimSpace(item.CourseUnitUlid) == "" ||
-		strings.TrimSpace(item.CourseUnitCcUlid) == "" ||
-		strings.TrimSpace(item.BundleOrderUlid) == "" {
-		return false
+	state := &ExamRetakeState{
+		Eligible:         item.RetakeEligible,
+		Message:          item.RetakeMessage,
+		NextRetriedCount: item.NextRetriedCount,
+		RequiresPayment:  true,
+		Action:           retakeActionNone,
 	}
-	if !h.paidRetakeExists(r, item) {
-		return false
+	if !item.RetakeEligible {
+		return state
 	}
-	retakeResp, err := h.applyRetake(r.Context(), candidateID, item.CourseUnitUlid)
+	if strings.TrimSpace(item.BundleOrderUlid) == "" {
+		if state.Message == "" {
+			state.Message = "missing bundle order"
+		}
+		return state
+	}
+	retriedCount := item.NextRetriedCount
+	if retriedCount == 0 {
+		retriedCount = item.RetriedCount
+	}
+	payment, err := h.retakePaymentSnapshot(r.Context(), candidateID, item.CourseUnitUlid, item.CourseUnitCcUlid, item.BundleOrderUlid, retriedCount)
 	if err != nil {
-		slog.Warn("ListExams apply paid retake failed", "exam_id", item.ExamUlid, "course_unit_ulid", item.CourseUnitUlid, "error", err)
-		return false
+		slog.Warn("ListExams build retake state failed", "exam_id", item.ExamUlid, "course_unit_ulid", item.CourseUnitUlid, "error", err)
+		return state
 	}
-	item.CourseUnitStatus = retakeResp.GetCourseUnitStatus().String()
-	item.RetakeMessage = retakeResp.GetMessage()
-	return true
+	state.Message = firstNonEmpty(payment.message, state.Message)
+	state.RequiresPayment = !isFreeRetakeMessage(payment.message)
+	state.PaymentFound = payment.found
+	state.PaymentPaid = payment.paid
+	state.CourseRetakeOrderUlid = payment.courseRetakeOrderUlid
+	state.OrderStatus = payment.orderStatus
+	state.PayOrderUlid = payment.payOrderUlid
+	switch {
+	case !state.RequiresPayment || payment.paid:
+		state.Action = retakeActionApplyRetake
+	case payment.found:
+		state.Action = retakeActionContinuePayment
+	default:
+		state.Action = retakeActionCreateRetakeOrder
+	}
+	return state
 }
 
-func (h *Handler) paidRetakeExists(r *http.Request, item *ExamListItem) bool {
-	counts := []uint32{item.NextRetriedCount, item.RetriedCount}
-	seen := make(map[uint32]bool, len(counts))
-	for _, retriedCount := range counts {
-		if seen[retriedCount] {
+func (h *Handler) retakePaymentSnapshot(ctx context.Context, candidateID, courseUnitUlid, courseUnitCcUlid, bundleOrderUlid string, retriedCount uint32) (retakePaymentSnapshot, error) {
+	out := retakePaymentSnapshot{}
+	statusResp, err := h.Mall.GetCourseUnitRetakePaymentStatus(ctx, &mallpb.GetCourseUnitRetakePaymentStatusRequest{
+		BundleOrderUlid:  bundleOrderUlid,
+		CourseUnitCcUlid: courseUnitCcUlid,
+		RetriedCount:     retriedCount,
+	})
+	if err != nil {
+		if status.Code(err) != codes.NotFound {
+			return out, err
+		}
+		out.message = "course retake payment not found"
+	} else if statusResp != nil {
+		out.found = statusResp.GetFound()
+		out.paid = statusResp.GetPaid()
+		out.message = statusResp.GetMessage()
+	}
+
+	orders, err := h.Mall.ListCourseRetakeOrders(ctx, &mallpb.ListCourseRetakeOrdersRequest{
+		CandidateUlid:    candidateID,
+		CourseUnitUlid:   courseUnitUlid,
+		CourseUnitCcUlid: courseUnitCcUlid,
+		BundleOrderUlid:  bundleOrderUlid,
+		Limit:            20,
+	})
+	if err != nil {
+		slog.Warn("retake payment snapshot list orders failed", "candidate_id", candidateID, "course_unit_ulid", courseUnitUlid, "course_unit_cc_ulid", courseUnitCcUlid, "error", err)
+		return out, nil
+	}
+	latestCreatedAt := ""
+	for _, order := range orders.GetItems() {
+		if order == nil || order.GetRetriedCount() != retriedCount {
 			continue
 		}
-		seen[retriedCount] = true
-		statusResp, err := h.Mall.GetCourseUnitRetakePaymentStatus(r.Context(), &mallpb.GetCourseUnitRetakePaymentStatusRequest{
-			BundleOrderUlid:  item.BundleOrderUlid,
-			CourseUnitCcUlid: item.CourseUnitCcUlid,
-			RetriedCount:     retriedCount,
-		})
-		if err != nil {
-			slog.Warn("ListExams check paid retake failed", "exam_id", item.ExamUlid, "course_unit_ulid", item.CourseUnitUlid, "retried_count", retriedCount, "error", err)
+		if out.courseRetakeOrderUlid != "" && strings.Compare(order.GetCreatedAt(), latestCreatedAt) <= 0 {
 			continue
 		}
-		if statusResp.GetPaid() {
-			return true
+		out.found = true
+		out.courseRetakeOrderUlid = order.GetCourseRetakeOrderUlid()
+		out.orderStatus = order.GetOrderStatus()
+		out.payOrderUlid = order.GetPayOrderUlid()
+		latestCreatedAt = order.GetCreatedAt()
+		if candidateOrderStatus(order.GetOrderStatus()) == "completed" {
+			out.paid = true
 		}
 	}
-	return false
+	return out, nil
+}
+
+func isFreeRetakeMessage(message string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(message))
+	return strings.Contains(normalized, "free") || strings.Contains(normalized, "免费")
 }
 
 func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID string) map[string]string {

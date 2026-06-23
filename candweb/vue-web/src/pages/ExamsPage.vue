@@ -120,8 +120,29 @@ function isWaitingExamConfirmation(exam: any) {
 function isExamFailedUnit(exam: any) {
   return normalizeEnumValueUpper(exam.course_unit_status).includes("EXAM_FAILED")
 }
+function retakeAction(exam: any) {
+  const action = String(exam?.retake?.action || "").trim().toUpperCase()
+  if (action) return action
+  return exam?.retake_eligible ? "CREATE_RETAKE_ORDER" : "NONE"
+}
 function canApplyRetake(exam: any) {
-  return Boolean(exam.course_unit_ulid && exam.course_unit_cc_ulid && isExamFailedUnit(exam) && exam.retake_eligible)
+  return Boolean(exam.course_unit_ulid && exam.course_unit_cc_ulid && isExamFailedUnit(exam) && ["CREATE_RETAKE_ORDER", "CONTINUE_PAYMENT", "APPLY_RETAKE"].includes(retakeAction(exam)))
+}
+function retakeButtonLabel(exam: any) {
+  switch (retakeAction(exam)) {
+    case "CREATE_RETAKE_ORDER":
+      return (t.value.examsPage as any).payRetakeFee || t.value.examsPage.applyRetake
+    case "CONTINUE_PAYMENT":
+      return (t.value.examsPage as any).continueRetakePayment || t.value.examsPage.applyRetake
+    default:
+      return t.value.examsPage.applyRetake
+  }
+}
+function retakeMessage(exam: any) {
+  return exam?.retake?.message || exam.retake_message || t.value.examsPage.examFailedDesc
+}
+function retakeAttemptCount(exam: any) {
+  return exam?.retake?.next_retried_count || exam.next_retried_count || exam.retried_count || 0
 }
 function noResultLabel() {
   return (t.value.examsPage as any).statusNoResult || t.value.examsPage.statusPending
@@ -207,7 +228,7 @@ async function handleApplyRetake(exam: any) {
       body: JSON.stringify({
         course_unit_cc_ulid: exam.course_unit_cc_ulid,
         bundle_order_ulid: exam.bundle_order_ulid,
-        retried_count: exam.next_retried_count || exam.retried_count || 0,
+        retried_count: retakeAttemptCount(exam),
         success_url: currentUrl,
         cancel_url: currentUrl,
       }),
@@ -361,7 +382,7 @@ onMounted(() => {
                       <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
                       <div>
                         <div class="font-medium text-red-800">{{ t.examsPage.examFailedTitle }}</div>
-                        <div class="mt-1 text-xs">{{ exam.retake_message || t.examsPage.examFailedDesc }}</div>
+                        <div class="mt-1 text-xs">{{ retakeMessage(exam) }}</div>
                       </div>
                     </div>
                   </div>
@@ -376,7 +397,7 @@ onMounted(() => {
                 <button v-if="canApplyRetake(exam)" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" :disabled="retakeLoadingUnitId === exam.course_unit_ulid" @click="handleApplyRetake(exam)">
                   <Loader2 v-if="retakeLoadingUnitId === exam.course_unit_ulid" class="h-4 w-4 animate-spin" />
                   <RefreshCw v-else class="h-4 w-4" />
-                  {{ t.examsPage.applyRetake }}
+                  {{ retakeButtonLabel(exam) }}
                 </button>
                 <button v-if="canScheduleExam(exam)" class="btn btn-primary rounded-lg shadow-sm shadow-primary/20" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleScheduleExam(exam)">
                   <Loader2 v-if="scheduleLoadingExamId === exam.exam_id" class="h-4 w-4 animate-spin" />

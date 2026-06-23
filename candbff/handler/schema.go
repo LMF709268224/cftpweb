@@ -286,6 +286,19 @@ type PrepareRetakePaymentRsp struct {
 	Message               string `json:"message,omitempty"`
 }
 
+type ExamRetakeState struct {
+	Eligible              bool   `json:"eligible"`
+	Message               string `json:"message,omitempty"`
+	NextRetriedCount      uint32 `json:"next_retried_count,omitempty"`
+	RequiresPayment       bool   `json:"requires_payment"`
+	PaymentFound          bool   `json:"payment_found"`
+	PaymentPaid           bool   `json:"payment_paid"`
+	CourseRetakeOrderUlid string `json:"course_retake_order_ulid,omitempty"`
+	OrderStatus           string `json:"order_status,omitempty"`
+	PayOrderUlid          string `json:"pay_order_ulid,omitempty"`
+	Action                string `json:"action"`
+}
+
 // ===================== 首页 (Dashboard) =====================
 
 type DashboardRsp struct {
@@ -404,31 +417,32 @@ type ExamResultDetailRsp struct {
 }
 
 type ExamListItem struct {
-	ExamUlid             string  `json:"exam_id,omitempty"`
-	PipelineUlid         string  `json:"pipeline_ulid,omitempty"`
-	BundleOrderUlid      string  `json:"bundle_order_ulid,omitempty"`
-	CourseUnitUlid       string  `json:"course_unit_ulid,omitempty"`
-	CourseUnitCcUlid     string  `json:"course_unit_cc_ulid,omitempty"`
-	CourseUnitStatus     string  `json:"course_unit_status,omitempty"`
-	RetriedCount         uint32  `json:"retried_count,omitempty"`
-	RetakeEligible       bool    `json:"retake_eligible,omitempty"`
-	RetakeMessage        string  `json:"retake_message,omitempty"`
-	NextRetriedCount     uint32  `json:"next_retried_count,omitempty"`
-	ProgramCode          string  `json:"program_code,omitempty"`
-	ExamCode             string  `json:"exam_code,omitempty"`
-	ExamStatus           string  `json:"exam_status,omitempty"`
-	ResultStatus         string  `json:"result_status,omitempty"`
-	TotalScore           float64 `json:"total_score,omitempty"`
-	IsPassed             bool    `json:"is_passed,omitempty"`
-	CandidateFirstName   string  `json:"candidate_first_name,omitempty"`
-	CandidateLastName    string  `json:"candidate_last_name,omitempty"`
-	CandidateEmail       string  `json:"candidate_email,omitempty"`
-	ConfirmationNumber   string  `json:"confirmation_number,omitempty"`
-	AppointmentStartTime string  `json:"appointment_start_time,omitempty"`
-	AppointmentEndTime   string  `json:"appointment_end_time,omitempty"`
-	SiteName             string  `json:"site_name,omitempty"`
-	LastTermurlTimestamp string  `json:"last_termurl_timestamp,omitempty"`
-	LastTermurlType      string  `json:"last_termurl_type,omitempty"`
+	ExamUlid             string           `json:"exam_id,omitempty"`
+	PipelineUlid         string           `json:"pipeline_ulid,omitempty"`
+	BundleOrderUlid      string           `json:"bundle_order_ulid,omitempty"`
+	CourseUnitUlid       string           `json:"course_unit_ulid,omitempty"`
+	CourseUnitCcUlid     string           `json:"course_unit_cc_ulid,omitempty"`
+	CourseUnitStatus     string           `json:"course_unit_status,omitempty"`
+	RetriedCount         uint32           `json:"retried_count,omitempty"`
+	RetakeEligible       bool             `json:"retake_eligible,omitempty"`
+	RetakeMessage        string           `json:"retake_message,omitempty"`
+	NextRetriedCount     uint32           `json:"next_retried_count,omitempty"`
+	Retake               *ExamRetakeState `json:"retake,omitempty"`
+	ProgramCode          string           `json:"program_code,omitempty"`
+	ExamCode             string           `json:"exam_code,omitempty"`
+	ExamStatus           string           `json:"exam_status,omitempty"`
+	ResultStatus         string           `json:"result_status,omitempty"`
+	TotalScore           float64          `json:"total_score,omitempty"`
+	IsPassed             bool             `json:"is_passed,omitempty"`
+	CandidateFirstName   string           `json:"candidate_first_name,omitempty"`
+	CandidateLastName    string           `json:"candidate_last_name,omitempty"`
+	CandidateEmail       string           `json:"candidate_email,omitempty"`
+	ConfirmationNumber   string           `json:"confirmation_number,omitempty"`
+	AppointmentStartTime string           `json:"appointment_start_time,omitempty"`
+	AppointmentEndTime   string           `json:"appointment_end_time,omitempty"`
+	SiteName             string           `json:"site_name,omitempty"`
+	LastTermurlTimestamp string           `json:"last_termurl_timestamp,omitempty"`
+	LastTermurlType      string           `json:"last_termurl_type,omitempty"`
 }
 
 type ListExamsRsp struct {
