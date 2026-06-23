@@ -519,6 +519,7 @@ func (h *Handler) buildExamRetakeState(r *http.Request, candidateID string, item
 		}
 		return state
 	}
+	state.Action = retakeActionCreateRetakeOrder
 	retriedCount := item.NextRetriedCount
 	if retriedCount == 0 {
 		retriedCount = item.RetriedCount
@@ -554,10 +555,11 @@ func (h *Handler) retakePaymentSnapshot(ctx context.Context, candidateID, course
 		RetriedCount:     retriedCount,
 	})
 	if err != nil {
-		if status.Code(err) != codes.NotFound {
-			return out, err
+		if status.Code(err) == codes.NotFound {
+			out.message = "course retake payment not found"
+		} else {
+			slog.Warn("retake payment snapshot status check failed", "candidate_id", candidateID, "course_unit_ulid", courseUnitUlid, "course_unit_cc_ulid", courseUnitCcUlid, "error", err)
 		}
-		out.message = "course retake payment not found"
 	} else if statusResp != nil {
 		out.found = statusResp.GetFound()
 		out.paid = statusResp.GetPaid()
