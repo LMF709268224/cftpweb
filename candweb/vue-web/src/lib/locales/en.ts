@@ -296,6 +296,7 @@ export const en: AppTranslations = {
     materialPreviewEmpty: "Select a material to view its details",
     openMaterial: "Open Material",
     downloadMaterial: "Download Material",
+    supplementaryContentTitle: "Supplementary Content",
     materialsEmptyHint: "Course materials are supplementary or prerequisite content. Missing materials do not block continued learning or exam signup.",
     viewTimeline: "View timeline",
     pipelineTimelineTitle: "Pipeline Timeline",
