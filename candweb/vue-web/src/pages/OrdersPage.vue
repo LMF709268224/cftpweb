@@ -77,6 +77,7 @@ const orderTypeOptions = computed(() => [
   { value: "COURSE_RETAKE_PAYMENT", label: orderTypeLabel("COURSE_RETAKE_PAYMENT") },
   { value: "PIPELINE_UNLOCK", label: orderTypeLabel("PIPELINE_UNLOCK") },
   { value: "CREDENTIAL_APPLICATION", label: orderTypeLabel("CREDENTIAL_APPLICATION") },
+  { value: "BUNDLE_PURCHASE", label: orderTypeLabel("BUNDLE_PURCHASE") },
 ])
 
 const payableOrderStatuses = new Set([
@@ -84,6 +85,7 @@ const payableOrderStatuses = new Set([
   "WAIT_STAGE_PAYMENT",
   "WAIT_RETAKE_PAYMENT",
   "WAIT_UNLOCK_PAYMENT",
+  "WAIT_BUNDLE_PAYMENT",
   "WAIT_REVIEW_FEE_PAYMENT",
   "PENDING_PAYMENT",
   "WAIT_PAY",
@@ -167,6 +169,8 @@ function orderTypeLabel(bizType?: string) {
       return zh ? "\u7ba1\u7ebf\u89e3\u9501\u8ba2\u5355" : "Pipeline Unlock Order"
     case "CREDENTIAL_APPLICATION":
       return zh ? "\u8d44\u683c\u7533\u8bf7\u8ba2\u5355" : "Credential Application Order"
+    case "BUNDLE_PURCHASE":
+      return zh ? "\u8ba4\u8bc1\u5957\u9910\u8ba2\u5355" : "Bundle Purchase Order"
     default:
       return normalized || (zh ? "\u5176\u4ed6\u8ba2\u5355" : "Other Order")
   }

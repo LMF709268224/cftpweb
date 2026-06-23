@@ -28,6 +28,7 @@ const BIZ_TYPE_OPTIONS: LabelOption[] = [
 
 const ORDER_STATUS_OPTIONS: LabelOption[] = [
   { value: "PENDING", zh: "\u5f85\u5904\u7406", en: "Pending" },
+  { value: "WAIT_BUNDLE_PAYMENT", zh: "\u5f85\u652f\u4ed8", en: "Waiting Payment" },
   { value: "COMPLETED", zh: "\u5df2\u5b8c\u6210", en: "Completed" },
   { value: "CANCELLED", zh: "\u5df2\u53d6\u6d88", en: "Cancelled" },
   { value: "FAILED", zh: "\u5931\u8d25", en: "Failed" },
