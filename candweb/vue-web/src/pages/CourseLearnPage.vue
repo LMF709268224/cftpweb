@@ -720,7 +720,7 @@ function shouldShowStoredExamDetails(exam: any) {
 function hasExamResult(exam: any) {
   if (isCurrentExamRestarted(exam)) return false
   const normalized = normalizedExamStatus(exam?.result_status)
-  return typeof exam?.total_score === "number" || typeof exam?.is_passed === "boolean" || ["DONE", "PASSED", "FAILED", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
+  return typeof exam?.total_score === "number" || typeof exam?.is_passed === "boolean" || ["DONE", "PASSED", "FAILED", "NO_SHOW", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
 }
 
 function hasExplicitPassStatus(exam: any) {

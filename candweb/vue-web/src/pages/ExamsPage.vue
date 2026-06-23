@@ -86,7 +86,7 @@ function shouldShowStoredExamDetails(exam: any) {
 function hasExamResult(exam: any) {
   if (shouldUseCurrentCourseUnitState(exam)) return false
   const normalized = normalizedExamStatus(exam.result_status)
-  return typeof exam.total_score === "number" || exam.is_passed === true || ["DONE", "PASSED", "FAILED", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
+  return typeof exam.total_score === "number" || exam.is_passed === true || ["DONE", "PASSED", "FAILED", "NO_SHOW", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
 }
 function hasExplicitPassStatus(exam: any) {
   if (shouldUseCurrentCourseUnitState(exam)) return false
