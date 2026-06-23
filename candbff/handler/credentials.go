@@ -12,7 +12,7 @@ import (
 // ListCredentialDefinitions GET /api/credentials/definitions
 func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
-	qualIDs := compactStrings(strings.Split(r.URL.Query().Get("qual_ids"), ","))
+	qualIDs := compactStrings(strings.Split(firstNonEmpty(r.URL.Query().Get("qual_ulids"), r.URL.Query().Get("qual_ids")), ","))
 	if len(qualIDs) > 0 {
 		details := make([]map[string]interface{}, 0, len(qualIDs))
 		for _, qualID := range qualIDs {
@@ -24,6 +24,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 				return
 			}
 			details = append(details, map[string]interface{}{
+				"cred_def_ulid":    def.GetCredDefUlid(),
 				"cred_def_id":      def.GetCredDefUlid(),
 				"name":             def.GetName(),
 				"description":      def.GetDescription(),
@@ -56,6 +57,7 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 		detailRes, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), detailReq)
 		if err == nil && detailRes != nil {
 			details = append(details, map[string]interface{}{
+				"cred_def_ulid":    detailRes.GetCredDefUlid(),
 				"cred_def_id":      detailRes.GetCredDefUlid(),
 				"name":             detailRes.GetName(),
 				"description":      detailRes.GetDescription(),
@@ -66,10 +68,11 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 			continue
 		}
 		details = append(details, map[string]interface{}{
-			"cred_def_id": def.GetCredDefUlid(),
-			"name":        def.GetName(),
-			"description": def.GetDescription(),
-			"category":    def.GetCategory(),
+			"cred_def_ulid": def.GetCredDefUlid(),
+			"cred_def_id":   def.GetCredDefUlid(),
+			"name":          def.GetName(),
+			"description":   def.GetDescription(),
+			"category":      def.GetCategory(),
 		})
 	}
 
@@ -90,11 +93,14 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 	body.PipelineCcUlid = strings.TrimSpace(body.PipelineCcUlid)
 	body.BundleOrderUlid = strings.TrimSpace(body.BundleOrderUlid)
 	body.QualUlids = compactStrings(body.QualUlids)
+	if len(body.QualUlids) == 0 {
+		body.QualUlids = compactStrings(body.LegacyQualIDs)
+	}
 	if !requireRequestFields(w, body.PipelineCcUlid, "pipeline_cc_ulid", body.BundleOrderUlid, "bundle_order_ulid") {
 		return
 	}
 	if len(body.QualUlids) == 0 {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field \"qual_ids\" is required but was empty")
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field \"qual_ulids\" is required but was empty")
 		return
 	}
 
@@ -115,7 +121,7 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 // ListCandidateApplications GET /api/credentials/applications
 func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
-	credDefID := strings.TrimSpace(r.URL.Query().Get("cred_def_id"))
+	credDefID := strings.TrimSpace(firstNonEmpty(r.URL.Query().Get("cred_def_ulid"), r.URL.Query().Get("cred_def_id")))
 
 	req := &gcredspb.ListApplicationsRequest{
 		CandidateUlid: candidateID,
@@ -136,8 +142,8 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 // CheckUploadPermission GET /api/credentials/upload-permission
 func (h *Handler) CheckUploadPermission(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
-	credDefID := strings.TrimSpace(r.URL.Query().Get("cred_def_id"))
-	if !requireRequestFields(w, candidateID, "candidate_id", credDefID, "cred_def_id") {
+	credDefID := strings.TrimSpace(firstNonEmpty(r.URL.Query().Get("cred_def_ulid"), r.URL.Query().Get("cred_def_id")))
+	if !requireRequestFields(w, candidateID, "candidate_ulid", credDefID, "cred_def_ulid") {
 		return
 	}
 
@@ -154,11 +160,12 @@ func (h *Handler) CheckUploadPermission(w http.ResponseWriter, r *http.Request) 
 }
 
 type RequestUploadUrlReq struct {
-	CredDefUlid string `json:"cred_def_id"`
-	FileHash    string `json:"file_hash"`
-	FileExt     string `json:"file_ext"`
-	ContentType string `json:"content_type"`
-	FileUsage   string `json:"file_usage"`
+	CredDefUlid     string `json:"cred_def_ulid"`
+	LegacyCredDefID string `json:"cred_def_id,omitempty"`
+	FileHash        string `json:"file_hash"`
+	FileExt         string `json:"file_ext"`
+	ContentType     string `json:"content_type"`
+	FileUsage       string `json:"file_usage"`
 }
 
 // RequestUploadUrl POST /api/credentials/upload-url
@@ -170,9 +177,10 @@ func (h *Handler) RequestUploadUrl(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
+	body.CredDefUlid = strings.TrimSpace(firstNonEmpty(body.CredDefUlid, body.LegacyCredDefID))
 	if !requireRequestFields(
 		w,
-		body.CredDefUlid, "cred_def_id",
+		body.CredDefUlid, "cred_def_ulid",
 		body.FileHash, "file_hash",
 		body.FileExt, "file_ext",
 		body.ContentType, "content_type",
@@ -200,8 +208,9 @@ func (h *Handler) RequestUploadUrl(w http.ResponseWriter, r *http.Request) {
 }
 
 type SubmitApplicationReq struct {
-	CredDefUlid string `json:"cred_def_id"`
-	Files       []struct {
+	CredDefUlid     string `json:"cred_def_ulid"`
+	LegacyCredDefID string `json:"cred_def_id,omitempty"`
+	Files           []struct {
 		FileHash  string `json:"file_hash"`
 		FileName  string `json:"file_name"`
 		FileType  int32  `json:"file_type"`
@@ -220,7 +229,8 @@ func (h *Handler) SubmitApplication(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
-	if !requireRequestField(w, body.CredDefUlid, "cred_def_id") {
+	body.CredDefUlid = strings.TrimSpace(firstNonEmpty(body.CredDefUlid, body.LegacyCredDefID))
+	if !requireRequestField(w, body.CredDefUlid, "cred_def_ulid") {
 		return
 	}
 

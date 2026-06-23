@@ -564,6 +564,7 @@ type PurchasePipelineReq struct {
 type CreateBundleOrderReq struct {
 	PaymentMode            string `json:"payment_mode"`
 	SelectedExemptionsJson string `json:"selected_exemptions_json"`
+	BundleOrderUlid        string `json:"bundle_order_ulid,omitempty"`
 }
 
 type UnlockPipelineInBundleReq struct {
@@ -604,7 +605,8 @@ type PipelineExemptionQual struct {
 type CreateCredentialApplicationOrderReq struct {
 	PipelineCcUlid  string   `json:"pipeline_cc_ulid"`
 	BundleOrderUlid string   `json:"bundle_order_ulid"`
-	QualUlids       []string `json:"qual_ids"`
+	QualUlids       []string `json:"qual_ulids"`
+	LegacyQualIDs   []string `json:"qual_ids,omitempty"`
 }
 
 type PurchasePipelineRsp struct {

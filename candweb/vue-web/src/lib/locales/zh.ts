@@ -685,6 +685,9 @@ export const zh = {
     exemptionMissing: "缺少资格",
     exemptionMissingHint: "你暂未持有该免考所需的有效资格。",
     goApplyQualification: "去资格申请",
+    refreshPurchasePreview: "更新价格预览",
+    purchasePreviewStaleTitle: "价格预览需要更新",
+    purchasePreviewStaleDesc: "免考选择已变化，请先更新价格预览，再继续支付。",
     unknownQualification: "未知资格"
   }
 }

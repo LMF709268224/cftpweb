@@ -687,6 +687,9 @@ export const en: AppTranslations = {
     exemptionMissing: "Missing qualification",
     exemptionMissingHint: "You do not currently hold an active qualification required for this exemption.",
     goApplyQualification: "Apply for qualification",
+    refreshPurchasePreview: "Update price preview",
+    purchasePreviewStaleTitle: "Price preview needs an update",
+    purchasePreviewStaleDesc: "Your exemption selection changed. Update the price preview before continuing payment.",
     unknownQualification: "Unknown qualification"
   }
 }
