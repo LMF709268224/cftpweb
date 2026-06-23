@@ -136,7 +136,7 @@ function mapCandidatePipeline(pipeline: any) {
 async function loadBundleThumbnailUrl(bundleId: string) {
   if (!bundleId) return ""
   try {
-    const data = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/thumbnail-url`)
+    const data = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/thumbnail-url`, { suppressErrorToast: true })
     return typeof data?.url === "string" ? data.url : ""
   } catch {
     return ""

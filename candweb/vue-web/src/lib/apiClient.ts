@@ -4,17 +4,21 @@ import { getErrorMessage, localizeApiErrorMessage } from "./errorCodes"
 
 type ApiClientOptions = RequestInit & {
   timeoutMs?: number
+  suppressErrorToast?: boolean
 }
 
 const DEFAULT_API_TIMEOUT_MS = 60000
 
 export async function apiClient(endpoint: string, options: ApiClientOptions = {}) {
-  const { timeoutMs = DEFAULT_API_TIMEOUT_MS, signal, ...fetchOptions } = options
+  const { timeoutMs = DEFAULT_API_TIMEOUT_MS, suppressErrorToast = false, signal, ...fetchOptions } = options
   const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
   const headers = new Headers(options.headers)
   const token = getAccessToken()
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
+  const showErrorToast = (message: string) => {
+    if (!suppressErrorToast) toast.error(message)
+  }
 
   if (signal) {
     if (signal.aborted) {
@@ -46,7 +50,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
       : currentLang === "zh"
         ? "网络请求失败，请检查网络后重试"
         : "Network request failed. Please check your connection and try again."
-    toast.error(errorMsg)
+    showErrorToast(errorMsg)
     throw new Error(errorMsg)
   } finally {
     window.clearTimeout(timeoutId)
@@ -56,7 +60,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     clearAccessToken()
     localStorage.removeItem("is_authenticated")
     localStorage.removeItem("user_name")
-    toast.error(getErrorMessage("UNAUTHORIZED", currentLang))
+    showErrorToast(getErrorMessage("UNAUTHORIZED", currentLang))
     setTimeout(() => {
       window.location.href = "/login"
     }, 1500)
@@ -69,7 +73,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
   } catch {
     if (!res.ok) {
       const errorMsg = getErrorMessage("UNKNOWN_ERROR", currentLang)
-      toast.error(errorMsg)
+      showErrorToast(errorMsg)
       throw new Error(errorMsg)
     }
     return res
@@ -79,7 +83,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     const errorMsg = data.message
       ? localizeApiErrorMessage(data.error_code, data.message, currentLang)
       : getErrorMessage(data.error_code, currentLang)
-    toast.error(errorMsg)
+    showErrorToast(errorMsg)
     throw new Error(errorMsg)
   }
 
