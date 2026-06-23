@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -77,10 +78,7 @@ func (h *Handler) ApplyRetake(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.Gprog.CandidateApplyRetake(r.Context(), &gprog.CandidateApplyRetakeReq{
-		CourseUnitUlid: courseUnitUlid,
-		CandidateUlid:  candidateID,
-	})
+	resp, err := h.applyRetake(r.Context(), candidateID, courseUnitUlid)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -90,6 +88,13 @@ func (h *Handler) ApplyRetake(w http.ResponseWriter, r *http.Request) {
 		CourseUnitUlid:   resp.GetCourseUnitUlid(),
 		CourseUnitStatus: resp.GetCourseUnitStatus(),
 		Message:          resp.GetMessage(),
+	})
+}
+
+func (h *Handler) applyRetake(ctx context.Context, candidateID string, courseUnitUlid string) (*gprog.CandidateApplyRetakeRsp, error) {
+	return h.Gprog.CandidateApplyRetake(ctx, &gprog.CandidateApplyRetakeReq{
+		CourseUnitUlid: courseUnitUlid,
+		CandidateUlid:  candidateID,
 	})
 }
 
@@ -121,11 +126,24 @@ func (h *Handler) PrepareRetakePayment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if statusResp.GetPaid() {
-		WriteJSON(w, http.StatusOK, PrepareRetakePaymentRsp{
+		retakeResp, err := h.applyRetake(r.Context(), candidateID, courseUnitUlid)
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		out := PrepareRetakePaymentRsp{
 			PaymentRequired: false,
 			Paid:            true,
 			Message:         statusResp.GetMessage(),
-		})
+		}
+		if retakeResp != nil {
+			out.CourseUnitUlid = retakeResp.GetCourseUnitUlid()
+			out.CourseUnitStatus = retakeResp.GetCourseUnitStatus().String()
+			if retakeResp.GetMessage() != "" {
+				out.Message = retakeResp.GetMessage()
+			}
+		}
+		WriteJSON(w, http.StatusOK, out)
 		return
 	}
 
@@ -478,26 +496,10 @@ func (h *Handler) applyPaidRetakeIfReady(r *http.Request, candidateID string, it
 		strings.TrimSpace(item.BundleOrderUlid) == "" {
 		return false
 	}
-	retriedCount := item.NextRetriedCount
-	if retriedCount == 0 {
-		retriedCount = item.RetriedCount
-	}
-	statusResp, err := h.Mall.GetCourseUnitRetakePaymentStatus(r.Context(), &mallpb.GetCourseUnitRetakePaymentStatusRequest{
-		BundleOrderUlid:  item.BundleOrderUlid,
-		CourseUnitCcUlid: item.CourseUnitCcUlid,
-		RetriedCount:     retriedCount,
-	})
-	if err != nil {
-		slog.Warn("ListExams check paid retake failed", "exam_id", item.ExamUlid, "course_unit_ulid", item.CourseUnitUlid, "error", err)
+	if !h.paidRetakeExists(r, item) {
 		return false
 	}
-	if !statusResp.GetPaid() {
-		return false
-	}
-	retakeResp, err := h.Gprog.CandidateApplyRetake(r.Context(), &gprog.CandidateApplyRetakeReq{
-		CourseUnitUlid: item.CourseUnitUlid,
-		CandidateUlid:  candidateID,
-	})
+	retakeResp, err := h.applyRetake(r.Context(), candidateID, item.CourseUnitUlid)
 	if err != nil {
 		slog.Warn("ListExams apply paid retake failed", "exam_id", item.ExamUlid, "course_unit_ulid", item.CourseUnitUlid, "error", err)
 		return false
@@ -505,6 +507,30 @@ func (h *Handler) applyPaidRetakeIfReady(r *http.Request, candidateID string, it
 	item.CourseUnitStatus = retakeResp.GetCourseUnitStatus().String()
 	item.RetakeMessage = retakeResp.GetMessage()
 	return true
+}
+
+func (h *Handler) paidRetakeExists(r *http.Request, item *ExamListItem) bool {
+	counts := []uint32{item.NextRetriedCount, item.RetriedCount}
+	seen := make(map[uint32]bool, len(counts))
+	for _, retriedCount := range counts {
+		if seen[retriedCount] {
+			continue
+		}
+		seen[retriedCount] = true
+		statusResp, err := h.Mall.GetCourseUnitRetakePaymentStatus(r.Context(), &mallpb.GetCourseUnitRetakePaymentStatusRequest{
+			BundleOrderUlid:  item.BundleOrderUlid,
+			CourseUnitCcUlid: item.CourseUnitCcUlid,
+			RetriedCount:     retriedCount,
+		})
+		if err != nil {
+			slog.Warn("ListExams check paid retake failed", "exam_id", item.ExamUlid, "course_unit_ulid", item.CourseUnitUlid, "retried_count", retriedCount, "error", err)
+			continue
+		}
+		if statusResp.GetPaid() {
+			return true
+		}
+	}
+	return false
 }
 
 func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID string) map[string]string {

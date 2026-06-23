@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"sort"
 	"strings"
@@ -153,6 +154,7 @@ func (h *Handler) listAdminOrders(ctx context.Context, query adminOrderListQuery
 		total += gotTotal
 	}
 
+	h.enrichAdminOrdersWithPaymentSummaries(ctx, items)
 	items = filterAdminOrders(items, query)
 	sortAdminOrders(items)
 	filteredTotal := int32(len(items))
@@ -165,7 +167,12 @@ func (h *Handler) listAdminOrders(ctx context.Context, query adminOrderListQuery
 
 func (h *Handler) listAdminOrdersFromOneSource(ctx context.Context, query adminOrderListQuery, lister adminOrderLister) ([]adminOrderSummary, int32, error) {
 	if query.BizRefULID == "" && query.PaymentStatus == "" {
-		return lister(ctx, query)
+		items, total, err := lister(ctx, query)
+		if err != nil {
+			return nil, 0, err
+		}
+		h.enrichAdminOrdersWithPaymentSummaries(ctx, items)
+		return items, total, nil
 	}
 
 	fetchQuery := query
@@ -175,6 +182,7 @@ func (h *Handler) listAdminOrdersFromOneSource(ctx context.Context, query adminO
 	if err != nil {
 		return nil, 0, err
 	}
+	h.enrichAdminOrdersWithPaymentSummaries(ctx, items)
 	items = filterAdminOrders(items, query)
 	sortAdminOrders(items)
 	total := int32(len(items))
@@ -305,6 +313,49 @@ func newAdminOrderSummary(bizType, bizRefULID, payOrderULID, candidateULID, orde
 		PaymentStatus: deriveAdminPaymentStatus(orderStatus, payOrderULID),
 		CreatedAt:     createdAt,
 		PayOrderULID:  payOrderULID,
+	}
+}
+
+func (h *Handler) enrichAdminOrdersWithPaymentSummaries(ctx context.Context, items []adminOrderSummary) {
+	cache := make(map[string]*mallpb.OrderSummary)
+	for idx := range items {
+		payOrderULID := strings.TrimSpace(items[idx].PayOrderULID)
+		if payOrderULID == "" {
+			continue
+		}
+		summary, ok := cache[payOrderULID]
+		if !ok {
+			resp, err := h.Mall.GetOrderSummary(ctx, &mallpb.GetOrderSummaryRequest{OrderUlid: payOrderULID})
+			if err != nil {
+				slog.Warn("admin list orders get payment summary failed", "pay_order_ulid", payOrderULID, "error", err)
+				cache[payOrderULID] = nil
+				continue
+			}
+			if resp.GetFound() {
+				summary = resp.GetSummary()
+			}
+			cache[payOrderULID] = summary
+		}
+		if summary == nil {
+			continue
+		}
+		if strings.TrimSpace(summary.GetOrderUlid()) != "" {
+			items[idx].OrderULID = summary.GetOrderUlid()
+			items[idx].PayOrderULID = summary.GetOrderUlid()
+		}
+		if strings.TrimSpace(summary.GetCandidateUlid()) != "" {
+			items[idx].CandidateULID = summary.GetCandidateUlid()
+		}
+		if strings.TrimSpace(summary.GetBizRefUlid()) != "" {
+			items[idx].BizRefULID = summary.GetBizRefUlid()
+		}
+		if strings.TrimSpace(summary.GetCurrencyCode()) != "" {
+			items[idx].CurrencyCode = strings.ToUpper(strings.TrimSpace(summary.GetCurrencyCode()))
+		}
+		items[idx].AmountMinor = summary.GetAmountMinor()
+		if strings.TrimSpace(summary.GetPaymentStatus()) != "" {
+			items[idx].PaymentStatus = strings.ToUpper(strings.TrimSpace(summary.GetPaymentStatus()))
+		}
 	}
 }
 

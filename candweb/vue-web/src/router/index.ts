@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router"
+import { getAccessToken } from "@/lib/authStorage"
+import { useUser } from "@/lib/user"
 
 const HomePage = () => import("@/pages/HomePage.vue")
 const LoginPage = () => import("@/pages/LoginPage.vue")
@@ -110,4 +112,10 @@ export const router = createRouter({
     { path: "/invoice-redirect", component: InvoiceRedirectPage },
     { path: "/payment-bridge", component: PaymentBridgePage },
   ],
+})
+
+router.beforeEach((to) => {
+  if (to.path === "/exams/signup" && getAccessToken()) {
+    void useUser().fetchUser()
+  }
 })
