@@ -1478,26 +1478,20 @@ watch(selectedMaterial, () => {
           <div class="mt-6 border-t border-slate-100 pt-5">
             <h3 class="mb-3 text-xs font-semibold text-muted-foreground">{{ t.learning.supplementaryContentTitle }}</h3>
             <div class="space-y-2">
-            <button
-              v-for="tab in resourceContentTabs"
-              :key="tab.id"
-              type="button"
-              :class="[
-                'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm transition-all',
-                activeContentTab === tab.id ? 'bg-blue-50 text-primary' : 'text-slate-700 hover:bg-slate-50',
-              ]"
-              @click="activeContentTab = tab.id"
-            >
-              <component :is="tab.icon" class="h-4 w-4 shrink-0" />
-              <span class="min-w-0 flex-1 font-medium">{{ tab.label }}</span>
-              <span
+              <button
+                v-for="tab in resourceContentTabs"
+                :key="tab.id"
+                type="button"
                 :class="[
-                  'h-4 w-4 shrink-0 rounded-full border',
-                  activeContentTab === tab.id ? 'border-primary bg-primary shadow-[inset_0_0_0_3px_white]' : 'border-slate-400 bg-white',
+                  'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm transition-all',
+                  activeContentTab === tab.id ? 'bg-blue-50 text-primary' : 'text-slate-700 hover:bg-slate-50',
                 ]"
-                aria-hidden="true"
-              />
-            </button>
+                @click="activeContentTab = tab.id"
+              >
+                <component :is="tab.icon" class="h-4 w-4 shrink-0" />
+                <span class="min-w-0 flex-1 font-medium">{{ tab.label }}</span>
+                <span class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ tab.count }}</span>
+              </button>
             </div>
           </div>
         </aside>
