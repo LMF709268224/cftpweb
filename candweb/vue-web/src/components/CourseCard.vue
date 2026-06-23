@@ -121,7 +121,7 @@ const accessState = computed(() => {
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="!effectivePurchased && (showPurchaseDialog = true)"
   >
-    <div class="relative h-36 overflow-hidden bg-white sm:h-40 xl:h-44">
+    <div class="relative h-32 overflow-hidden bg-white sm:h-36 xl:h-40">
       <template v-if="image">
         <img :src="image" :alt="title" class="h-full w-full scale-[1.65] object-contain px-2 py-3 transition-transform duration-500 group-hover:scale-[1.72]" />
       </template>
@@ -138,13 +138,13 @@ const accessState = computed(() => {
 
     </div>
 
-    <div class="flex flex-1 flex-col p-5">
-      <div class="mb-4 min-h-[84px]">
+    <div class="flex flex-1 flex-col p-4 sm:p-5">
+      <div class="mb-3 min-h-[78px]">
         <h3 class="mb-2 line-clamp-1 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ title }}</h3>
         <p class="line-clamp-2 min-h-10 text-sm leading-5 text-muted-foreground">{{ description }}</p>
       </div>
 
-      <div class="mb-4 flex min-h-[146px] flex-col justify-start space-y-3">
+      <div class="mb-3 flex min-h-[132px] flex-col justify-start space-y-2.5">
         <div v-if="resolvedStatusLabel" class="flex flex-wrap gap-2">
           <span class="badge border-primary/20 bg-primary/10 text-primary">{{ resolvedStatusLabel }}</span>
         </div>
@@ -159,7 +159,7 @@ const accessState = computed(() => {
           </div>
         </div>
 
-        <div class="min-h-[56px]">
+        <div class="min-h-[52px]">
           <div v-if="priceLabel" class="space-y-0.5">
             <div class="text-sm font-medium leading-5 text-[#4a4f59]">
               {{ cardCopy.estimatedPrice }}
@@ -181,7 +181,7 @@ const accessState = computed(() => {
         </div>
       </div>
 
-      <div v-if="stats?.length" class="mb-4 grid grid-cols-3 gap-2 rounded-lg bg-[#f6fafb] p-2 text-center">
+      <div v-if="stats?.length" class="mb-3 grid grid-cols-3 gap-2 rounded-lg bg-[#f6fafb] p-2 text-center">
         <div v-for="stat in stats" :key="stat.label" class="rounded-lg bg-white px-2 py-2">
           <div class="text-sm font-semibold text-foreground">{{ stat.value }}</div>
           <div class="truncate text-[11px] text-muted-foreground">{{ stat.label }}</div>
@@ -201,7 +201,7 @@ const accessState = computed(() => {
         </div>
       </div>
 
-      <div class="mt-auto border-t border-border pt-4">
+      <div class="mt-auto border-t border-border pt-3">
         <div
           :class="[
             'flex h-10 w-full items-center justify-center rounded-lg px-4 text-sm font-semibold transition-all duration-300',
