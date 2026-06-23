@@ -507,6 +507,9 @@ func suppressSupersededRetakeActions(exams []ExamListItem) {
 		if courseUnitUlid == "" {
 			continue
 		}
+		if !isRetakeRelevantExam(exams[i]) {
+			continue
+		}
 		current, ok := latestByCourseUnit[courseUnitUlid]
 		if !ok || compareExamRecency(exams[i], exams[current]) > 0 {
 			latestByCourseUnit[courseUnitUlid] = i
@@ -514,7 +517,8 @@ func suppressSupersededRetakeActions(exams []ExamListItem) {
 	}
 	for i := range exams {
 		courseUnitUlid := strings.TrimSpace(exams[i].CourseUnitUlid)
-		if courseUnitUlid == "" || latestByCourseUnit[courseUnitUlid] == i {
+		latest, ok := latestByCourseUnit[courseUnitUlid]
+		if courseUnitUlid == "" || !ok || latest == i {
 			continue
 		}
 		exams[i].RetakeEligible = false
@@ -539,6 +543,22 @@ func compareExamRecency(left ExamListItem, right ExamListItem) int {
 		return strings.Compare(leftValue, rightValue)
 	}
 	return strings.Compare(strings.TrimSpace(left.ExamUlid), strings.TrimSpace(right.ExamUlid))
+}
+
+func isRetakeRelevantExam(item ExamListItem) bool {
+	return isPendingExamAttempt(item) || isFinalFailedExamResult(item)
+}
+
+func isPendingExamAttempt(item ExamListItem) bool {
+	examStatus := strings.ToUpper(strings.TrimSpace(item.ExamStatus))
+	resultStatus := strings.ToUpper(strings.TrimSpace(item.ResultStatus))
+	if resultStatus == "NO_SHOW" {
+		return false
+	}
+	if examStatus != "DONE" {
+		return true
+	}
+	return resultStatus == "" || resultStatus == "NONE"
 }
 
 func isFinalFailedExamResult(item ExamListItem) bool {
