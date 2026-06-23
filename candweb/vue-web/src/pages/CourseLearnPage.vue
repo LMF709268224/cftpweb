@@ -300,7 +300,7 @@ const courseRuntimeUnitUlid = computed(() => {
   if (nextCourseId && nextCourseId !== courseId.value) return ""
   return nextStep.value?.course_unit_ulid || ""
 })
-const hasCertificateTab = computed(() => pipelineHasCertificate.value && (nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value)))
+const hasCertificateTab = computed(() => pipelineHasCertificate.value)
 const courseCertificateSummary = computed(() => {
   const instance = runtime.value?.instance || {}
   const config = runtime.value?.config || {}
@@ -313,6 +313,7 @@ const courseCertificateSummary = computed(() => {
     credentialId: instance.pipeline_ulid || pipelineId.value || t.value.common.na,
   }
 })
+const certificateCongratulationsDesc = computed(() => t.value.learning.certificateCongratulationsDesc.replace(/\{\{name\}\}/g, courseCertificateSummary.value.name))
 
 const courseHasExam = computed(() => {
   const stages = runtime.value?.config?.stages || []
@@ -474,7 +475,7 @@ const examStepDone = computed(() => {
   if (nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value)) return true
   return courseExams.value.some((exam) => hasExamResult(exam) && exam?.is_passed === true)
 })
-const certificateStepDone = computed(() => Boolean(courseCertificateUrl.value) || pipelineIsTerminal(pipelineStatus.value))
+const certificateStepDone = computed(() => Boolean(courseCertificateUrl.value) || nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value))
 const currentCertificationStepId = computed<CertificationStepKey>(() => {
   if (!lessonStepDone.value) return "lesson"
   if (quizTasks.value.length > 0 && !quizStepDone.value) return "quiz"
@@ -533,7 +534,7 @@ const certificationFlowSteps = computed(() => {
       status: certificateStepDone.value ? "done" : currentId === "certificate" ? "current" : hasCertificateTab.value ? "available" : "locked",
       icon: Award,
       count: courseCertificateUrl.value ? 1 : 0,
-      actionable: hasCertificateTab.value,
+      actionable: pipelineHasCertificate.value,
     },
   ]
   return steps
@@ -589,8 +590,12 @@ function flowStepBadgeClass(step: { status: FlowStepStatus }) {
   return "border-slate-200 bg-white text-slate-600"
 }
 
+function canSelectFlowStep(step: { id: CertificationStepKey; actionable: boolean; status: FlowStepStatus }) {
+  return step.id === "certificate" || (step.actionable && step.status !== "locked")
+}
+
 function selectFlowStep(step: { id: CertificationStepKey; actionable: boolean; status: FlowStepStatus }) {
-  if (!step.actionable || step.status === "locked") return
+  if (!canSelectFlowStep(step)) return
   activeContentTab.value = step.id
 }
 
@@ -1394,7 +1399,7 @@ watch(selectedMaterial, () => {
           <template v-for="(step, index) in certificationFlowSteps" :key="step.id">
             <button
               type="button"
-              :disabled="!step.actionable || step.status === 'locked'"
+              :disabled="!canSelectFlowStep(step)"
               class="group flex min-w-0 flex-col items-center gap-2 disabled:cursor-not-allowed"
               @click="selectFlowStep(step)"
             >
@@ -1449,7 +1454,7 @@ watch(selectedMaterial, () => {
               v-for="step in certificationFlowSteps"
               :key="step.id"
               type="button"
-              :disabled="!step.actionable || step.status === 'locked'"
+              :disabled="!canSelectFlowStep(step)"
               :class="[
                 'flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-sm transition-all disabled:cursor-not-allowed',
                 visibleCertificationStepId === step.id
@@ -1613,71 +1618,58 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div v-if="activeContentTab === 'certificate'" class="rounded-md bg-white p-6">
-          <div class="mb-4 flex items-center justify-between gap-4">
-            <div>
-              <div class="mb-2 flex items-center gap-2">
-                <Award class="h-5 w-5 text-primary" />
-                <h2 class="text-xl font-semibold text-foreground">{{ t.learning.actionViewCertificate }}</h2>
-              </div>
-              <p class="text-sm text-muted-foreground">{{ t.learning.nextStepViewCertificateDesc }}</p>
+        <div v-if="activeContentTab === 'certificate'" class="rounded-md border border-slate-200 bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+          <div class="mb-6">
+            <div class="mb-1 flex items-center gap-2">
+              <Award class="h-5 w-5 text-orange-500" />
+              <h2 class="text-xl font-semibold text-foreground">{{ t.learning.certificatePanelTitle }}</h2>
             </div>
-            <button class="btn btn-outline rounded-lg py-1.5 text-xs" :disabled="courseCertificateLoading" @click="loadCourseCertificate">
-              <Loader2 v-if="courseCertificateLoading" class="h-4 w-4 animate-spin" />
-              <RefreshCw v-else class="h-4 w-4" />
-              {{ t.examsPage.refresh }}
-            </button>
+            <p class="text-sm text-muted-foreground">{{ t.learning.certificatePanelDesc }}</p>
           </div>
-          <div v-if="courseCertificateLoading" class="flex items-center justify-center gap-2 rounded-md bg-slate-50 py-12 text-muted-foreground">
+
+          <div v-if="courseCertificateLoading" class="flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 py-12 text-muted-foreground">
             <Loader2 class="h-5 w-5 animate-spin" />
             <span>{{ t.common.loading }}</span>
           </div>
-          <div v-else-if="courseCertificateUrl" class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.06)]">
-            <div class="relative bg-primary p-4 text-white">
-              <div class="relative flex items-start justify-between">
+
+          <template v-else-if="certificateStepDone">
+            <div class="mb-5 flex items-center justify-between gap-4 rounded-md bg-[#08a057] px-5 py-5 text-white">
+              <div>
+                <h3 class="flex items-center gap-2 text-xl font-bold">
+                  <Sparkles class="h-5 w-5" />
+                  {{ t.learning.certificateCongratulationsTitle }}
+                </h3>
+                <p class="mt-2 text-sm text-white">{{ certificateCongratulationsDesc }}</p>
+              </div>
+              <Award class="h-14 w-14 shrink-0 text-white" />
+            </div>
+
+            <div class="mb-5 rounded-md border border-slate-200 bg-white p-5">
+              <h3 class="mb-5 text-lg font-semibold text-foreground">{{ t.learning.certificateDetailsTitle }}</h3>
+              <div class="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <span class="badge mb-3 border-0 bg-white/20 text-white">
-                    <CheckCircle2 class="mr-1 h-3 w-3" />
-                    {{ t.certificatesPage.active }}
-                  </span>
-                  <h3 class="mb-1 text-xl font-bold">{{ courseCertificateSummary.name }}</h3>
-                  <p class="text-sm text-white/80">{{ courseCertificateSummary.description }}</p>
+                  <p class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.certificatesPage.certificateId }}</p>
+                  <p class="break-all font-mono text-sm text-foreground">{{ courseCertificateSummary.credentialId }}</p>
                 </div>
-                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                  <Award class="h-6 w-6" />
+                <div>
+                  <p class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
+                  <p class="text-sm text-foreground">{{ courseCertificateSummary.issueDate }}</p>
                 </div>
               </div>
             </div>
-            <div class="p-4">
-              <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div class="rounded-lg bg-[#f7fbfc] p-3">
-                  <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
-                  <p class="flex items-center gap-1.5 font-medium text-card-foreground"><CalendarClock class="h-4 w-4 text-muted-foreground" /> {{ courseCertificateSummary.issueDate }}</p>
-                </div>
-                <div class="rounded-lg bg-[#f7fbfc] p-3">
-                  <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.expiryDate }}</p>
-                  <p class="flex items-center gap-1.5 font-medium text-card-foreground"><CalendarClock class="h-4 w-4 text-muted-foreground" /> {{ courseCertificateSummary.expiryDate }}</p>
-                </div>
-              </div>
-              <div class="mb-4 rounded-lg bg-[#f7fbfc] p-3">
-                <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.certificateId }}</p>
-                <p class="break-all font-mono text-sm text-card-foreground">{{ courseCertificateSummary.credentialId }}</p>
-              </div>
-              <div class="flex flex-wrap gap-3">
-                <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20" @click="openCourseCertificate">
-                  <Download class="h-4 w-4" />
-                  {{ t.certificatesPage.downloadCertificate }}
-                </button>
-                <button class="btn btn-outline rounded-lg px-3" @click="openCourseCertificate">
-                  <ExternalLink class="h-4 w-4" />
-                </button>
-              </div>
+
+            <RouterLink to="/certificates" class="btn inline-flex rounded-md bg-[#165DFF] px-4 text-white hover:bg-[#0f4fd8]">
+              <ExternalLink class="h-4 w-4" />
+              {{ t.learning.certificateViewCenterButton }}
+            </RouterLink>
+          </template>
+
+          <div v-else class="rounded-md border border-slate-200 bg-slate-50 px-6 py-10 text-center">
+            <div class="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-slate-400">
+              <Award class="h-6 w-6" />
             </div>
-          </div>
-          <div v-else class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
-            <Award class="mx-auto mb-3 h-8 w-8 text-primary" />
-            <h3 class="font-semibold text-foreground">{{ t.certificatesPage.certificateGenerating }}</h3>
-            <p class="mt-2 text-sm text-muted-foreground">{{ courseCertificateError || t.learning.nextStepViewCertificateDesc }}</p>
+            <h3 class="text-lg font-semibold text-foreground">{{ t.learning.certificateUnavailableTitle }}</h3>
+            <p class="mt-3 text-sm text-muted-foreground">{{ t.learning.certificateUnavailableDesc }}</p>
           </div>
         </div>
 
