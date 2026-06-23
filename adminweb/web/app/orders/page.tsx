@@ -6,11 +6,12 @@ import { apiClient } from "@/lib/apiClient"
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, RefreshCw, Search } from "lucide-react"
+import { ShoppingCart, RefreshCw, Search, Trash2 } from "lucide-react"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/useLanguage"
 import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
 import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
 
 type AdminOrder = Record<string, any>
 type LabelOption = { value: string; zh: string; en: string }
@@ -22,6 +23,7 @@ const BIZ_TYPE_OPTIONS: LabelOption[] = [
   { value: "COURSE_RETAKE_PAYMENT", zh: "\u91cd\u8003\u8ba2\u5355", en: "Retake Order" },
   { value: "PIPELINE_UNLOCK", zh: "\u7ba1\u7ebf\u89e3\u9501\u8ba2\u5355", en: "Pipeline Unlock Order" },
   { value: "CREDENTIAL_APPLICATION", zh: "\u8d44\u683c\u7533\u8bf7\u8ba2\u5355", en: "Credential Application Order" },
+  { value: "BUNDLE_PURCHASE", zh: "\u8ba4\u8bc1\u5957\u9910\u8ba2\u5355", en: "Bundle Purchase Order" },
 ]
 
 const ORDER_STATUS_OPTIONS: LabelOption[] = [
@@ -69,8 +71,11 @@ const getOrderUlid = (order: AdminOrder) => String(pickFirst(order, [
 ]) || "-")
 
 const getBizType = (order: AdminOrder) => pickFirst(order, ["biz_type", "bizType"])
+const getBizRefUlid = (order: AdminOrder) => String(pickFirst(order, ["biz_ref_ulid", "bizRefUlid"]) || "")
+const getCandidateUlid = (order: AdminOrder) => String(pickFirst(order, ["candidate_ulid", "candidateUlid"]) || "")
 const getOrderStatus = (order: AdminOrder) => pickFirst(order, ["order_status", "orderStatus", "status"])
 const getPaymentStatus = (order: AdminOrder) => pickFirst(order, ["payment_status", "paymentStatus"])
+const isBundlePurchaseOrder = (order: AdminOrder) => normalizeCode(getBizType(order)) === "BUNDLE_PURCHASE"
 
 const getCurrency = (order: AdminOrder) => String(pickFirst(order, [
   "currency_code",
@@ -120,6 +125,7 @@ export default function AdminOrdersPage() {
   const [page, setPage] = useState(1)
   const [pageSize] = useState(20)
   const [totalCount, setTotalCount] = useState(0)
+  const [purgingOrderUlid, setPurgingOrderUlid] = useState("")
 
   const fetchOrders = async (targetPage = page) => {
     setLoading(true)
@@ -158,6 +164,37 @@ export default function AdminOrdersPage() {
       fetchOrders(1)
     } else {
       setPage(1)
+    }
+  }
+
+  const handlePurgeBundleOrder = async (order: AdminOrder) => {
+    const candidate = getCandidateUlid(order)
+    const bundleOrderUlid = getBizRefUlid(order) || getOrderUlid(order)
+    if (!candidate || !bundleOrderUlid || bundleOrderUlid === "-") {
+      toast.error(lang === "zh" ? "缺少 candidate_ulid 或 bundle_order_ulid" : "Missing candidate_ulid or bundle_order_ulid")
+      return
+    }
+    const confirmed = window.confirm(
+      lang === "zh"
+        ? "这会清理该认证套餐订单及其关联的测试数据，确认继续？"
+        : "This will purge the bundle order and related test data. Continue?",
+    )
+    if (!confirmed) return
+
+    setPurgingOrderUlid(bundleOrderUlid)
+    try {
+      const res = await apiClient("/api/mall/bundle-orders/purge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidate_ulid: candidate,
+          bundle_order_ulid: bundleOrderUlid,
+        }),
+      })
+      toast.success(res?.message || (lang === "zh" ? "认证数据已清理" : "Bundle data purged"))
+      await fetchOrders(page)
+    } finally {
+      setPurgingOrderUlid("")
     }
   }
 
@@ -249,11 +286,14 @@ export default function AdminOrdersPage() {
                 <thead>
                   <tr className="border-b bg-muted/50 text-muted-foreground">
                     <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u8ba2\u5355 ULID" : "Order ULID"}</th>
+                    <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u5019\u9009\u4eba ULID" : "Candidate ULID"}</th>
                     <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.bizType}</th>
+                    <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u4e1a\u52a1\u5f15\u7528 ULID" : "Biz Ref ULID"}</th>
                     <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u91d1\u989d / \u8d27\u5e01" : "Amount / Currency"}</th>
                     <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.status}</th>
                     <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.paymentStatus}</th>
                     <th className="px-4 py-3 font-medium">Created At</th>
+                    <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.action || (lang === "zh" ? "\u64cd\u4f5c" : "Action")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -261,13 +301,17 @@ export default function AdminOrdersPage() {
                     orders.map((order, index) => {
                       const orderUlid = getOrderUlid(order)
                       const bizTypeValue = getBizType(order)
+                      const bizRefUlid = getBizRefUlid(order)
+                      const bundleOrderUlid = bizRefUlid || orderUlid
                       const orderStatusValue = getOrderStatus(order)
                       const paymentStatusValue = getPaymentStatus(order)
 
                       return (
                         <tr key={`${orderUlid}-${index}`} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
                           <td className="px-4 py-3 font-medium text-xs font-mono">{orderUlid}</td>
+                          <td className="px-4 py-3 text-xs font-mono">{getCandidateUlid(order) || "-"}</td>
                           <td className="px-4 py-3">{findLabel(BIZ_TYPE_OPTIONS, bizTypeValue, lang)}</td>
+                          <td className="px-4 py-3 text-xs font-mono">{bizRefUlid || "-"}</td>
                           <td className="px-4 py-3 font-medium">{getOrderAmount(order).toFixed(2)} {getCurrency(order)}</td>
                           <td className="px-4 py-3">
                             <Badge variant="outline" className={statusBadgeClassForStatusValue(orderStatusValue)}>
@@ -280,12 +324,30 @@ export default function AdminOrdersPage() {
                             </Badge>
                           </td>
                           <td className="px-4 py-3 text-xs">{formatOrderCreatedAt(order.created_at ?? order.createdAt)}</td>
+                          <td className="px-4 py-3">
+                            {isBundlePurchaseOrder(order) ? (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                className="gap-2"
+                                disabled={purgingOrderUlid === bundleOrderUlid}
+                                onClick={() => handlePurgeBundleOrder(order)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                {purgingOrderUlid === bundleOrderUlid
+                                  ? t.common?.loading || "Loading..."
+                                  : lang === "zh" ? "\u6e05\u7406\u8ba4\u8bc1\u6570\u636e" : "Purge bundle data"}
+                              </Button>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </td>
                         </tr>
                       )
                     })
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                         {t.adminOrdersPage?.noOrders}
                       </td>
                     </tr>

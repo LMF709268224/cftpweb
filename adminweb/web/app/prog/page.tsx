@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { ChevronDown, ChevronRight, RefreshCw, Search, Trash2 } from "lucide-react"
+import { ChevronDown, ChevronRight, RefreshCw, Search } from "lucide-react"
 
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"
@@ -215,7 +215,6 @@ function CourseUnitDiagnostics({ courseId, candidateUlid, status }: { courseId?:
 
 export default function ProgPage() {
   const { t } = useTranslation()
-  const progPageText = t.progPage as typeof t.progPage & Record<string, string>
   const [pipelines, setPipelines] = useState<ProgPipelineSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -230,7 +229,6 @@ export default function ProgPage() {
   const [actionReason, setActionReason] = useState("")
   const [actionLoading, setActionLoading] = useState(false)
   const [certificateLoading, setCertificateLoading] = useState(false)
-  const [purgeLoading, setPurgeLoading] = useState(false)
   const [logLoading, setLogLoading] = useState(false)
   const [logDetailLoading, setLogDetailLoading] = useState(false)
   const [transitionLogs, setTransitionLogs] = useState<ProgStatusTransitionLogSummary[]>([])
@@ -367,13 +365,11 @@ export default function ProgPage() {
   const selectedStage = selectedPipelineDetail?.stages?.find((stage) => stage.stage?.stage_ulid === selectedPipelineDetail?.pipeline?.current_stage_ulid) || selectedPipelineDetail?.stages?.[0] || null
   const selectedPipelineUlid = selectedPipelineDetail?.pipeline?.pipeline_ulid || selectedSummary?.pipeline_ulid || ""
   const selectedCandidateUlid = selectedPipelineDetail?.pipeline?.candidate_ulid || selectedSummary?.candidate_ulid || ""
-  const selectedPipelineCcUlid = selectedPipelineDetail?.pipeline?.pipeline_cc_ulid || selectedSummary?.pipeline_cc_ulid || ""
   const selectedStageStatus = selectedStage?.stage?.status
   const selectedStageStatusKey = String(selectedStageStatus ?? "")
   const selectedPipelineStatusKey = String(selectedStatus ?? "")
   const canTriggerNextStage = selectedPipelineStatusKey === "1" && selectedStageStatusKey === "3"
   const canOpenCertificate = Boolean(selectedPipelineUlid && selectedCandidateUlid)
-  const canPurgeCandidateBundle = Boolean(selectedCandidateUlid && selectedPipelineCcUlid)
 
   const reloadSelectedPipeline = useCallback(async () => {
     await loadPipelines()
@@ -462,28 +458,6 @@ export default function ProgPage() {
       setCertificateLoading(false)
     }
   }, [canOpenCertificate, selectedCandidateUlid, selectedPipelineUlid, t.common.error])
-
-  const purgeCandidateBundle = useCallback(async () => {
-    if (!canPurgeCandidateBundle) {
-      toast.error(t.common.error)
-      return
-    }
-    if (!window.confirm(progPageText.purgeCandidateBundleConfirm || "This will purge the candidate bundle order and related pipeline test data. Continue?")) return
-    setPurgeLoading(true)
-    try {
-      const res = await apiClient(`/api/prog/pipelines/${encodeURIComponent(selectedPipelineUlid)}/purge-test-data`, {
-        method: "POST",
-      })
-      toast.success(res?.message || progPageText.purgeCandidateBundleSuccess || "Candidate bundle data purged")
-      setSelectedPipelineId("")
-      setSelectedPipelineDetail(null)
-      await loadPipelines()
-    } catch {
-      toast.error(t.common.error)
-    } finally {
-      setPurgeLoading(false)
-    }
-  }, [canPurgeCandidateBundle, loadPipelines, progPageText.purgeCandidateBundleConfirm, progPageText.purgeCandidateBundleSuccess, selectedPipelineUlid, t.common.error])
 
   const selectedStageHint = useMemo(() => {
     if (selectedStageStatusKey === "1") return t.learning.stageWaitCandidateHint
@@ -675,14 +649,6 @@ export default function ProgPage() {
                     disabled={!selectedPipelineUlid}
                   >
                     {t.progPage.terminatePipeline}
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    onClick={purgeCandidateBundle}
-                    disabled={!canPurgeCandidateBundle || purgeLoading}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {purgeLoading ? t.common.loading : progPageText.purgeCandidateBundle || "Purge test data"}
                   </Button>
                 </div>
               </div>
