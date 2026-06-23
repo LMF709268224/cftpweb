@@ -66,7 +66,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/logs/{transition_ulid}", h.GetProgStatusTransitionLogDetail)
 			r.Post("/{pipeline_ulid}/trigger-next-stage", h.AdminTriggerProgNextStage)
 			r.Post("/{pipeline_ulid}/terminate", h.AdminTerminatePipeline)
-			r.Post("/{pipeline_ulid}/purge-test-data", h.AdminPurgeProgPipelineTestData)
 			r.Get("/{pipeline_ulid}/certificate-url", h.GetProgPipelineCertificateViewURL)
 		})
 
