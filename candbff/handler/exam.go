@@ -495,8 +495,62 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 
 		out.Exams = append(out.Exams, item)
 	}
+	suppressSupersededRetakeActions(out.Exams)
 
 	WriteJSON(w, http.StatusOK, out)
+}
+
+func suppressSupersededRetakeActions(exams []ExamListItem) {
+	latestByCourseUnit := make(map[string]int)
+	for i := range exams {
+		courseUnitUlid := strings.TrimSpace(exams[i].CourseUnitUlid)
+		if courseUnitUlid == "" {
+			continue
+		}
+		current, ok := latestByCourseUnit[courseUnitUlid]
+		if !ok || compareExamRecency(exams[i], exams[current]) > 0 {
+			latestByCourseUnit[courseUnitUlid] = i
+		}
+	}
+	for i := range exams {
+		courseUnitUlid := strings.TrimSpace(exams[i].CourseUnitUlid)
+		if courseUnitUlid == "" || latestByCourseUnit[courseUnitUlid] == i {
+			continue
+		}
+		exams[i].RetakeEligible = false
+		if exams[i].Retake != nil {
+			exams[i].Retake.Eligible = false
+			exams[i].Retake.Action = retakeActionNone
+		}
+	}
+}
+
+func compareExamRecency(left ExamListItem, right ExamListItem) int {
+	for _, pair := range [][2]string{
+		{left.AppointmentStartTime, right.AppointmentStartTime},
+		{left.AppointmentEndTime, right.AppointmentEndTime},
+		{left.LastTermurlTimestamp, right.LastTermurlTimestamp},
+	} {
+		leftValue := strings.TrimSpace(pair[0])
+		rightValue := strings.TrimSpace(pair[1])
+		if leftValue == "" || rightValue == "" || leftValue == rightValue {
+			continue
+		}
+		return strings.Compare(leftValue, rightValue)
+	}
+	return strings.Compare(strings.TrimSpace(left.ExamUlid), strings.TrimSpace(right.ExamUlid))
+}
+
+func isFinalFailedExamResult(item ExamListItem) bool {
+	examStatus := strings.ToUpper(strings.TrimSpace(item.ExamStatus))
+	resultStatus := strings.ToUpper(strings.TrimSpace(item.ResultStatus))
+	if examStatus != "DONE" {
+		return false
+	}
+	if resultStatus == "" || resultStatus == "NONE" || resultStatus == "NO_SHOW" {
+		return false
+	}
+	return !item.IsPassed
 }
 
 func (h *Handler) buildExamRetakeState(r *http.Request, candidateID string, item *ExamListItem) *ExamRetakeState {
@@ -511,6 +565,10 @@ func (h *Handler) buildExamRetakeState(r *http.Request, candidateID string, item
 		Action:           retakeActionNone,
 	}
 	if !item.RetakeEligible {
+		return state
+	}
+	if !isFinalFailedExamResult(*item) {
+		state.Eligible = false
 		return state
 	}
 	if strings.TrimSpace(item.BundleOrderUlid) == "" {
