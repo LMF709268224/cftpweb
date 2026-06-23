@@ -224,6 +224,11 @@ async function handleApplyRetake(exam: any) {
       retakePaymentDialogOpen.value = true
       return
     }
+    if (payment?.paid && payment?.course_unit_status) {
+      toast.success(t.value.examsPage.retakeApplied)
+      await router.push(`/exams/signup?unitId=${encodeURIComponent(payment.course_unit_ulid || exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || "")}`)
+      return
+    }
     await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake`, { method: "POST" })
     toast.success(t.value.examsPage.retakeApplied)
     await router.push(`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || "")}`)

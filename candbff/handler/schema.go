@@ -275,6 +275,8 @@ type PrepareRetakePaymentInput struct {
 
 type PrepareRetakePaymentRsp struct {
 	CourseRetakeOrderUlid string `json:"course_retake_order_ulid,omitempty"`
+	CourseUnitUlid        string `json:"course_unit_ulid,omitempty"`
+	CourseUnitStatus      string `json:"course_unit_status,omitempty"`
 	OrderStatus           string `json:"order_status,omitempty"`
 	PayOrderUlid          string `json:"pay_order_ulid,omitempty"`
 	PaymentKey            string `json:"payment_key,omitempty"`
