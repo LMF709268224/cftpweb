@@ -599,6 +599,14 @@ function selectFlowStep(step: { id: CertificationStepKey; actionable: boolean; s
   activeContentTab.value = step.id
 }
 
+function selectHeaderFlowStep(step: { id: CertificationStepKey; actionable: boolean; status: FlowStepStatus }) {
+  if (step.id === "certificate" && certificateStepDone.value) {
+    router.push("/certificates")
+    return
+  }
+  selectFlowStep(step)
+}
+
 const filteredMaterials = computed(() => {
   if (activeMaterialGroup.value === "all") return materials.value
   return materials.value.filter((material) => materialGroupKey(material.material_type) === activeMaterialGroup.value)
@@ -1401,7 +1409,7 @@ watch(selectedMaterial, () => {
               type="button"
               :disabled="!canSelectFlowStep(step)"
               class="group flex min-w-0 flex-col items-center gap-2 disabled:cursor-not-allowed"
-              @click="selectFlowStep(step)"
+              @click="selectHeaderFlowStep(step)"
             >
               <span :class="['flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all sm:h-11 sm:w-11', flowStepRingClass(step)]">
                 <CheckCircle2 v-if="step.status === 'done'" class="h-4 w-4 sm:h-5 sm:w-5" />
@@ -1816,14 +1824,14 @@ watch(selectedMaterial, () => {
             </div>
           </div>
 
-          <div id="lesson-detail" class="rounded-md bg-white p-6">
-            <div v-if="lesson" class="grid gap-4 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
+          <div id="lesson-detail" class="rounded-md bg-white p-5 lg:p-6">
+            <div v-if="lesson" class="grid gap-3 2xl:grid-cols-[1fr_auto_1fr] 2xl:items-start">
               <div class="flex flex-wrap items-center gap-2">
                 <span class="badge border-primary/15 bg-primary/10 text-primary">{{ lessonTypeLabel(lesson?.lesson_type) }}</span>
                 <span v-if="activeLesson?.chapterTitle" class="badge border-slate-200 bg-slate-50 text-slate-700">{{ activeLesson.chapterTitle }}</span>
               </div>
-              <h2 class="text-center text-[20px] font-bold text-foreground">{{ lesson?.title || t.common.unknownCourse }}</h2>
-              <div class="flex justify-start gap-2 lg:justify-end">
+              <h2 class="text-left text-[20px] font-bold leading-snug text-foreground 2xl:text-center">{{ lesson?.title || t.common.unknownCourse }}</h2>
+              <div class="flex justify-start gap-2 2xl:justify-end">
                 <button
                   :class="[
                     'btn',
@@ -1857,7 +1865,7 @@ watch(selectedMaterial, () => {
                     <div v-if="lesson?.body" class="prose max-w-none text-sm text-foreground" v-html="lesson.body" />
                     <p v-else>{{ t.learning.lessonPdfHint }}</p>
                   </div>
-                  <button class="btn btn-primary rounded-lg" @click="openLessonPdf">
+                  <button class="btn btn-primary max-w-full flex-wrap rounded-lg text-left leading-snug" @click="openLessonPdf">
                     <FileText class="mr-2 h-4 w-4" />
                     {{ t.learning.openLessonPdf }} <span v-if="lesson?.title" class="ml-1 font-normal opacity-90">- {{ lesson.title }}</span>
                   </button>
@@ -1867,7 +1875,7 @@ watch(selectedMaterial, () => {
                     <div v-if="lesson?.body" class="prose max-w-none text-sm text-foreground" v-html="lesson.body" />
                     <p v-else>{{ t.learning.noLessonBody }}</p>
                   </div>
-                  <button class="btn btn-primary rounded-lg" @click="openExternalLesson">
+                  <button class="btn btn-primary max-w-full flex-wrap rounded-lg text-left leading-snug" @click="openExternalLesson">
                     <ExternalLink class="mr-2 h-4 w-4" />
                     {{ t.learning.openExternalLesson }} <span v-if="lesson?.title" class="ml-1 font-normal opacity-90">- {{ lesson.title }}</span>
                   </button>
