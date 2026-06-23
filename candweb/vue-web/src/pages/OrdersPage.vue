@@ -47,6 +47,7 @@ const pageSize = 10
 const totalOrders = ref(0)
 const totalPages = ref(0)
 const selectedBizType = ref("")
+const selectedOrderStatus = ref("")
 const invoiceLoading = ref<string | null>(null)
 const paymentLoading = ref<string | null>(null)
 const orderPaymentDialogOpen = ref(false)
@@ -78,6 +79,18 @@ const orderTypeOptions = computed(() => [
   { value: "PIPELINE_UNLOCK", label: orderTypeLabel("PIPELINE_UNLOCK") },
   { value: "CREDENTIAL_APPLICATION", label: orderTypeLabel("CREDENTIAL_APPLICATION") },
   { value: "BUNDLE_PURCHASE", label: orderTypeLabel("BUNDLE_PURCHASE") },
+])
+const orderStatusOptions = computed(() => [
+  { value: "", label: lang.value === "zh" ? "\u5168\u90e8\u72b6\u6001" : "All Statuses" },
+  { value: "WAIT_PIPELINE_PAYMENT", label: orderStatusFilterLabel("WAIT_PIPELINE_PAYMENT") },
+  { value: "WAIT_STAGE_PAYMENT", label: orderStatusFilterLabel("WAIT_STAGE_PAYMENT") },
+  { value: "WAIT_RETAKE_PAYMENT", label: orderStatusFilterLabel("WAIT_RETAKE_PAYMENT") },
+  { value: "WAIT_UNLOCK_PAYMENT", label: orderStatusFilterLabel("WAIT_UNLOCK_PAYMENT") },
+  { value: "WAIT_BUNDLE_PAYMENT", label: orderStatusFilterLabel("WAIT_BUNDLE_PAYMENT") },
+  { value: "WAIT_REVIEW_FEE_PAYMENT", label: orderStatusFilterLabel("WAIT_REVIEW_FEE_PAYMENT") },
+  { value: "COMPLETED", label: orderStatusFilterLabel("COMPLETED") },
+  { value: "CANCELLED", label: orderStatusFilterLabel("CANCELLED") },
+  { value: "FAILED", label: orderStatusFilterLabel("FAILED") },
 ])
 
 const payableOrderStatuses = new Set([
@@ -176,6 +189,33 @@ function orderTypeLabel(bizType?: string) {
   }
 }
 
+function orderStatusFilterLabel(status?: string) {
+  const normalized = String(status || "").toUpperCase()
+  const zh = lang.value === "zh"
+  switch (normalized) {
+    case "WAIT_PIPELINE_PAYMENT":
+      return zh ? "\u7ba1\u7ebf\u5f85\u652f\u4ed8" : "Pipeline Payment Pending"
+    case "WAIT_STAGE_PAYMENT":
+      return zh ? "\u9636\u6bb5\u5f85\u652f\u4ed8" : "Stage Payment Pending"
+    case "WAIT_RETAKE_PAYMENT":
+      return zh ? "\u91cd\u8003\u5f85\u652f\u4ed8" : "Retake Payment Pending"
+    case "WAIT_UNLOCK_PAYMENT":
+      return zh ? "\u89e3\u9501\u5f85\u652f\u4ed8" : "Unlock Payment Pending"
+    case "WAIT_BUNDLE_PAYMENT":
+      return zh ? "\u5957\u9910\u5f85\u652f\u4ed8" : "Bundle Payment Pending"
+    case "WAIT_REVIEW_FEE_PAYMENT":
+      return zh ? "\u5ba1\u6838\u8d39\u5f85\u652f\u4ed8" : "Review Fee Payment Pending"
+    case "COMPLETED":
+      return zh ? "\u5df2\u5b8c\u6210" : "Completed"
+    case "CANCELLED":
+      return zh ? "\u5df2\u53d6\u6d88" : "Cancelled"
+    case "FAILED":
+      return zh ? "\u5931\u8d25" : "Failed"
+    default:
+      return normalized || (zh ? "\u5168\u90e8\u72b6\u6001" : "All Statuses")
+  }
+}
+
 async function fetchOrders() {
   loading.value = true
   try {
@@ -184,6 +224,7 @@ async function fetchOrders() {
       page_size: String(pageSize),
     })
     if (selectedBizType.value) params.set("biz_type", selectedBizType.value)
+    if (selectedOrderStatus.value) params.set("status", selectedOrderStatus.value)
     const res = await apiClient(`/api/orders?${params.toString()}`)
     totalSpent.value = Number(res.total_amount || 0)
     completedCount.value = Number(res.completed || 0)
@@ -220,6 +261,12 @@ async function fetchOrders() {
 
 function changeOrderType(value: string) {
   selectedBizType.value = value
+  page.value = 1
+  void fetchOrders()
+}
+
+function changeOrderStatus(value: string) {
+  selectedOrderStatus.value = value
   page.value = 1
   void fetchOrders()
 }
@@ -284,13 +331,23 @@ onMounted(() => {
         <div class="flex items-center">
           <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
         </div>
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div class="flex flex-wrap gap-2">
+        <div class="flex flex-col gap-3 sm:items-end">
+          <div class="flex flex-wrap justify-end gap-2">
             <button
               v-for="option in orderTypeOptions"
-              :key="option.value || 'ALL'"
+              :key="option.value || 'ALL_TYPES'"
               :class="['rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors', selectedBizType === option.value ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/40 hover:text-primary']"
               @click="changeOrderType(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          </div>
+          <div class="flex flex-wrap justify-end gap-2">
+            <button
+              v-for="option in orderStatusOptions"
+              :key="option.value || 'ALL_STATUSES'"
+              :class="['rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors', selectedOrderStatus === option.value ? 'border-amber-500 bg-amber-500 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-amber-400 hover:text-amber-700']"
+              @click="changeOrderStatus(option.value)"
             >
               {{ option.label }}
             </button>

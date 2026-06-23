@@ -331,9 +331,21 @@ func (h *Handler) GetMallPipelineThumbnailURL(w http.ResponseWriter, r *http.Req
 
 // ListBundles GET /api/mall/bundles
 func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
+	page := parsePositiveIntQuery(r, "page", 1)
+	pageSize := parsePositiveIntQuery(r, "page_size", parsePositiveIntQuery(r, "limit", 20))
+	if pageSize > 100 {
+		pageSize = 100
+	}
+	offset := (page - 1) * pageSize
+	if r.URL.Query().Get("offset") != "" {
+		offset = parseNonNegativeIntQuery(r, "offset", offset)
+	}
+	status := strings.TrimSpace(r.URL.Query().Get("status"))
+
 	resp, err := h.Mall.ListBundles(r.Context(), &mallpb.ListBundlesRequest{
-		Limit:  100,
-		Offset: 0,
+		Limit:  int32(pageSize),
+		Offset: int32(offset),
+		Status: status,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -346,8 +358,12 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"bundles": enrichedList,
-		"total":   resp.GetTotal(),
+		"bundles":     enrichedList,
+		"total":       resp.GetTotal(),
+		"page":        page,
+		"page_size":   pageSize,
+		"offset":      offset,
+		"total_pages": totalPages(int(resp.GetTotal()), pageSize),
 	})
 }
 

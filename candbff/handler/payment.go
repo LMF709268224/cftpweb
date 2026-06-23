@@ -49,12 +49,13 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "unsupported biz_type")
 		return
 	}
+	orderStatus := normalizeOrderStatusFilter(r)
 
 	pipelineNames := make(map[string]string)
 	paymentSummaryCache := make(map[string]paymentSummary)
 	previewCache := make(map[string]paymentPreview)
 
-	orders, totalOrders, err := h.listCandidateOrders(r, candidateID, bizType, page, pageSize, pipelineNames, paymentSummaryCache, previewCache)
+	orders, totalOrders, err := h.listCandidateOrders(r, candidateID, bizType, orderStatus, page, pageSize, pipelineNames, paymentSummaryCache, previewCache)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -89,6 +90,7 @@ func (h *Handler) listCandidateOrders(
 	r *http.Request,
 	candidateID string,
 	bizType string,
+	orderStatus string,
 	page int,
 	pageSize int,
 	pipelineNames map[string]string,
@@ -96,13 +98,13 @@ func (h *Handler) listCandidateOrders(
 	previewCache map[string]paymentPreview,
 ) ([]OrderItem, int, error) {
 	if bizType != "" {
-		return h.listCandidateOrdersByType(r, candidateID, bizType, page, pageSize, pipelineNames, paymentSummaryCache, previewCache)
+		return h.listCandidateOrdersByType(r, candidateID, bizType, orderStatus, page, pageSize, pipelineNames, paymentSummaryCache, previewCache)
 	}
 
 	allOrders := make([]OrderItem, 0)
 	totalOrders := 0
 	for _, currentBizType := range candidateOrderBizTypes {
-		orders, total, err := h.listCandidateOrdersAllPages(r, candidateID, currentBizType, pipelineNames, paymentSummaryCache, previewCache)
+		orders, total, err := h.listCandidateOrdersAllPages(r, candidateID, currentBizType, orderStatus, pipelineNames, paymentSummaryCache, previewCache)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -134,6 +136,7 @@ func (h *Handler) listCandidateOrdersAllPages(
 	r *http.Request,
 	candidateID string,
 	bizType string,
+	orderStatus string,
 	pipelineNames map[string]string,
 	paymentSummaryCache map[string]paymentSummary,
 	previewCache map[string]paymentPreview,
@@ -143,7 +146,7 @@ func (h *Handler) listCandidateOrdersAllPages(
 	total := 0
 	offset := 0
 	for {
-		pageItems, pageTotal, err := h.listCandidateOrdersByType(r, candidateID, bizType, offset/chunkSize+1, chunkSize, pipelineNames, paymentSummaryCache, previewCache)
+		pageItems, pageTotal, err := h.listCandidateOrdersByType(r, candidateID, bizType, orderStatus, offset/chunkSize+1, chunkSize, pipelineNames, paymentSummaryCache, previewCache)
 		if err != nil {
 			return nil, 0, err
 		}
@@ -166,6 +169,7 @@ func (h *Handler) listCandidateOrdersByType(
 	r *http.Request,
 	candidateID string,
 	bizType string,
+	orderStatus string,
 	page int,
 	pageSize int,
 	pipelineNames map[string]string,
@@ -177,6 +181,7 @@ func (h *Handler) listCandidateOrdersByType(
 	case orderBizPipelinePayment:
 		resp, err := h.Mall.ListPipelineOrders(r.Context(), &mallpb.ListPipelineOrdersRequest{
 			CandidateUlid: candidateID,
+			OrderStatus:   orderStatus,
 			Limit:         int32(pageSize),
 			Offset:        int32(offset),
 		})
@@ -187,6 +192,7 @@ func (h *Handler) listCandidateOrdersByType(
 	case orderBizStagePayment:
 		resp, err := h.Mall.ListStageOrders(r.Context(), &mallpb.ListStageOrdersRequest{
 			CandidateUlid: candidateID,
+			OrderStatus:   orderStatus,
 			Limit:         int32(pageSize),
 			Offset:        int32(offset),
 		})
@@ -197,6 +203,7 @@ func (h *Handler) listCandidateOrdersByType(
 	case orderBizCourseRetakePayment:
 		resp, err := h.Mall.ListCourseRetakeOrders(r.Context(), &mallpb.ListCourseRetakeOrdersRequest{
 			CandidateUlid: candidateID,
+			OrderStatus:   orderStatus,
 			Limit:         int32(pageSize),
 			Offset:        int32(offset),
 		})
@@ -207,6 +214,7 @@ func (h *Handler) listCandidateOrdersByType(
 	case orderBizPipelineUnlock:
 		resp, err := h.Mall.ListPipelineUnlockOrders(r.Context(), &mallpb.ListPipelineUnlockOrdersRequest{
 			CandidateUlid: candidateID,
+			OrderStatus:   orderStatus,
 			Limit:         int32(pageSize),
 			Offset:        int32(offset),
 		})
@@ -217,6 +225,7 @@ func (h *Handler) listCandidateOrdersByType(
 	case orderBizCredentialApply:
 		resp, err := h.Mall.ListCredentialApplicationOrders(r.Context(), &mallpb.ListCredentialApplicationOrdersRequest{
 			CandidateUlid: candidateID,
+			OrderStatus:   orderStatus,
 			Limit:         int32(pageSize),
 			Offset:        int32(offset),
 		})
@@ -227,6 +236,7 @@ func (h *Handler) listCandidateOrdersByType(
 	case orderBizBundlePurchase:
 		resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
 			CandidateUlid: candidateID,
+			OrderStatus:   orderStatus,
 			Limit:         int32(pageSize),
 			Offset:        int32(offset),
 		})
@@ -564,6 +574,14 @@ func normalizeOrderBizType(raw string) string {
 	return strings.ToUpper(strings.TrimSpace(raw))
 }
 
+func normalizeOrderStatusFilter(r *http.Request) string {
+	status := strings.TrimSpace(r.URL.Query().Get("order_status"))
+	if status == "" {
+		status = strings.TrimSpace(r.URL.Query().Get("status"))
+	}
+	return strings.ToUpper(status)
+}
+
 func isCandidateOrderBizType(bizType string) bool {
 	for _, allowed := range candidateOrderBizTypes {
 		if bizType == allowed {
@@ -642,4 +660,23 @@ func parsePositiveIntQuery(r *http.Request, key string, fallback int) int {
 		return fallback
 	}
 	return value
+}
+
+func parseNonNegativeIntQuery(r *http.Request, key string, fallback int) int {
+	raw := strings.TrimSpace(r.URL.Query().Get(key))
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 0 {
+		return fallback
+	}
+	return value
+}
+
+func totalPages(total int, pageSize int) int {
+	if total <= 0 || pageSize <= 0 {
+		return 0
+	}
+	return (total + pageSize - 1) / pageSize
 }
