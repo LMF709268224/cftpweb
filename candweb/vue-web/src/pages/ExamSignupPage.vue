@@ -6,10 +6,12 @@ import { ArrowLeft, ClipboardList, Loader2, Send } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
+import { useUser } from "@/lib/user"
 
 const route = useRoute()
 const router = useRouter()
 const { t, lang } = useTranslation()
+const { currentUser, fetchUser } = useUser()
 const unitId = String(route.query.unitId || "")
 const pipelineId = String(route.query.pipelineId || "")
 const courseId = String(route.query.courseId || "")
@@ -261,7 +263,7 @@ function buildProfilePayload(current: any) {
 
 async function loadProfile() {
   try {
-    const res = await apiClient("/api/user/me")
+    const res = currentUser.value || await fetchUser()
     if (res) {
       applyProfileToForm(res)
     }
@@ -295,7 +297,7 @@ watch(lang, () => {
 async function handleSyncToProfile() {
   syncLoading.value = true
   try {
-    const current = await apiClient("/api/user/me")
+    const current = await fetchUser(true)
     await apiClient("/api/user/profile", {
       method: "PUT",
       body: JSON.stringify(buildProfilePayload(current || {})),
