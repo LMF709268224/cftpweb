@@ -552,9 +552,6 @@ func isRetakeRelevantExam(item ExamListItem) bool {
 func isPendingExamAttempt(item ExamListItem) bool {
 	examStatus := strings.ToUpper(strings.TrimSpace(item.ExamStatus))
 	resultStatus := strings.ToUpper(strings.TrimSpace(item.ResultStatus))
-	if resultStatus == "NO_SHOW" {
-		return false
-	}
 	if examStatus != "DONE" {
 		return true
 	}
@@ -567,7 +564,7 @@ func isFinalFailedExamResult(item ExamListItem) bool {
 	if examStatus != "DONE" {
 		return false
 	}
-	if resultStatus == "" || resultStatus == "NONE" || resultStatus == "NO_SHOW" {
+	if resultStatus == "" || resultStatus == "NONE" {
 		return false
 	}
 	return !item.IsPassed
