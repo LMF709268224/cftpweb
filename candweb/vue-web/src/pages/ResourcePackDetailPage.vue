@@ -182,7 +182,9 @@ async function loadThumbnail(file: ResourcePackFile) {
 
   thumbnailLoading.value[file.file_id] = true
   try {
-    const resp = await apiClient(`/api/resource-pack-files/${encodeURIComponent(file.file_id)}/thumbnail-url`)
+    const resp = await apiClient(`/api/resource-pack-files/${encodeURIComponent(file.file_id)}/thumbnail-url`, {
+      suppressErrorToast: true,
+    })
     if (resp?.url) thumbnailUrls.value[file.file_id] = resp.url
   } catch (err) {
     console.warn("Failed to load resource thumbnail", err)

@@ -310,7 +310,9 @@ async function loadFirstCourseThumbnail() {
     return
   }
   try {
-    const data = await apiClient(`/api/mall/courses/${encodeURIComponent(firstCourseId.value)}/thumbnail-url`)
+    const data = await apiClient(`/api/mall/courses/${encodeURIComponent(firstCourseId.value)}/thumbnail-url`, {
+      suppressErrorToast: true,
+    })
     firstCourseThumbnail.value = typeof data?.url === "string" ? data.url : ""
   } catch {
     firstCourseThumbnail.value = ""

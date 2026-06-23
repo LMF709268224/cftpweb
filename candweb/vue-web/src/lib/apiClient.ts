@@ -8,9 +8,15 @@ type ApiClientOptions = RequestInit & {
 }
 
 const DEFAULT_API_TIMEOUT_MS = 60000
+const isSilentResourceEndpoint = (endpoint: string) => /\/thumbnail-url(?:[/?#]|$)/.test(endpoint)
 
 export async function apiClient(endpoint: string, options: ApiClientOptions = {}) {
-  const { timeoutMs = DEFAULT_API_TIMEOUT_MS, suppressErrorToast = false, signal, ...fetchOptions } = options
+  const {
+    timeoutMs = DEFAULT_API_TIMEOUT_MS,
+    suppressErrorToast = isSilentResourceEndpoint(endpoint),
+    signal,
+    ...fetchOptions
+  } = options
   const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
   const headers = new Headers(options.headers)
   const token = getAccessToken()
