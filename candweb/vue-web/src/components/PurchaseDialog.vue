@@ -284,18 +284,11 @@ function buildSelectedExemptionsJson() {
 }
 
 function orderIdFromDetail(order: any) {
-  return order?.bundle_order_ulid || order?.pipeline_order_ulid || order?.summary?.pipeline_order_ulid || ""
+  return order?.bundle_order_ulid || order?.pipeline_order_ulid || order?.summary?.bundle_order_ulid || order?.summary?.pipeline_order_ulid || ""
 }
 
 function orderStatusFromDetail(order: any) {
   return order?.order_status || order?.summary?.order_status || ""
-}
-
-function qualificationUploadUrl(qualId: string, orderId = "", appId = "") {
-  const params = new URLSearchParams({ qual_ids: qualId })
-  if (orderId) params.set("application_order_ulid", orderId)
-  if (appId) params.set("application_id", appId)
-  return `/credentials?${params.toString()}`
 }
 
 async function latestCredentialApplication(qualId: string) {
@@ -305,16 +298,6 @@ async function latestCredentialApplication(qualId: string) {
   } catch (error) {
     console.error(error)
     return null
-  }
-}
-
-async function hasCredentialUploadPermission(qualId: string) {
-  try {
-    const res = await apiClient(`/api/credentials/upload-permission?cred_def_id=${encodeURIComponent(qualId)}`)
-    return Boolean(res?.granted)
-  } catch (error) {
-    console.error(error)
-    return false
   }
 }
 
@@ -385,7 +368,7 @@ async function loadActiveOrder() {
       action: "purchase",
       orderId,
       status: orderStatusFromDetail(order),
-      payOrderId: order.bundle_pay_order_ulid || order.pipeline_pay_order_ulid,
+      payOrderId: order.bundle_pay_order_ulid || order.pipeline_pay_order_ulid || order.summary?.bundle_pay_order_ulid || order.summary?.pipeline_pay_order_ulid,
       message: copy.value.inProgressPurchaseDesc,
     }
     await previewPayment("purchase", orderId)
@@ -530,7 +513,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
         return
       }
       if (isApplicationResubmitStatus(existingApplication.status)) {
-        window.location.assign(qualificationUploadUrl(qualId, "", existingApplication.app_id || ""))
+        toast.info(copy.value.qualificationApplicationCreated || "资格申请已创建，请到资格申请页面提交资料。")
         return
       }
     }
@@ -558,11 +541,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     }
 
     if (isUploadReadyStatus(orderStatus)) {
-      if (await hasCredentialUploadPermission(qualId)) {
-        window.location.assign(qualificationUploadUrl(qualId, orderId))
-        return
-      }
-      toast.info(copy.value.qualificationUploadNotReady || "资格申请订单已存在，但当前资格还没有开放资料上传，请先完成审核费支付或稍后重试。")
+      toast.info(copy.value.qualificationApplicationCreated || "资格申请已创建，请到资格申请页面提交资料。")
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
@@ -580,8 +559,8 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
         bizRefUlid: orderId,
         orderId,
         source: "credential_application",
-        returnPath: "/credentials",
-        extraReturnParams: { qual_ids: qualId, application_order_ulid: orderId },
+        returnPath: "/certifications",
+        extraReturnParams: { pipeline_id: props.pipelineId, bundle_id: resolvedBundleId.value },
       }
       return
     }
