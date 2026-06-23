@@ -193,15 +193,15 @@ onMounted(async () => {
           <p class="mx-auto mt-4 max-w-5xl text-lg leading-8 text-[#4a4f59]">{{ guideCopy.subtitle }}</p>
         </section>
 
-        <section class="mx-auto mt-12 w-full max-w-[1380px]">
+        <section class="portal-card-section mx-auto mt-12 w-full max-w-[1380px]">
           <div class="flex flex-col gap-8">
-            <div class="flex flex-col items-center justify-center gap-6 lg:flex-row">
+            <div class="portal-card-row portal-card-featured-row flex flex-col items-center justify-center gap-6 lg:flex-row">
               <RouterLink
                 v-for="card in featuredCards"
                 :key="card.key"
                 :to="card.href"
                 :class="[
-                  'portal-stat-card group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:scale-[1.035] hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)] lg:basis-[34%] lg:grow-0 lg:shrink-0',
+                  'portal-stat-card portal-card-featured group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:scale-[1.035] hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)] lg:basis-[34%] lg:grow-0 lg:shrink-0',
                   cardStyles[card.color].panel,
                   cardStyles[card.color].border,
                   cardStyles[card.color].hoverBorder,
@@ -214,13 +214,13 @@ onMounted(async () => {
               </RouterLink>
             </div>
 
-            <div class="flex flex-col items-center justify-center gap-6 lg:flex-row">
+            <div class="portal-card-row portal-card-secondary-row flex flex-col items-center justify-center gap-6 lg:flex-row">
               <RouterLink
                 v-for="card in secondaryCards"
                 :key="card.key"
                 :to="card.href"
                 :class="[
-                  'portal-stat-card group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:scale-[1.035] hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)] lg:basis-[29%] lg:grow-0 lg:shrink-0',
+                  'portal-stat-card portal-card-secondary group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:scale-[1.035] hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)] lg:basis-[29%] lg:grow-0 lg:shrink-0',
                   cardStyles[card.color].panel,
                   cardStyles[card.color].border,
                   cardStyles[card.color].hoverBorder,
@@ -261,5 +261,24 @@ onMounted(async () => {
   margin-top: 12px;
   font-size: 12px;
   line-height: 16px;
+}
+
+@media (min-width: 1024px) and (max-width: 1399px) {
+  .portal-card-section {
+    width: 875px;
+    max-width: none;
+  }
+
+  .portal-card-row {
+    gap: 24px;
+  }
+
+  .portal-card-featured {
+    flex-basis: calc((875px - 24px) / 2) !important;
+  }
+
+  .portal-card-secondary {
+    flex-basis: calc((875px - 48px) / 3) !important;
+  }
 }
 </style>

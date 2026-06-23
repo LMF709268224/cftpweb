@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onErrorCaptured, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { PDFViewer } from "@embedpdf/vue-pdf-viewer"
-import { AlertTriangle, ArrowLeft, FileText, Loader2, RotateCw } from "lucide-vue-next"
+import { AlertTriangle, ArrowLeft, Calendar, FileText, Loader2, RotateCw } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 
 const SLOW_PREVIEW_NOTICE_MS =  60 * 1000
@@ -15,6 +15,8 @@ const viewerReady = ref(false)
 const viewerFailed = ref(false)
 const slowPreview = ref(false)
 const errorMessage = ref("")
+const previewTitle = ref("")
+const previewExpiresAt = ref("")
 let slowPreviewTimer: number | undefined
 
 const routeFileId = computed(() => String(route.params.fileId || ""))
@@ -30,6 +32,9 @@ const storedExternalTitle = computed(() =>
   routeResourceKey.value ? sessionStorage.getItem(`external-pdf-preview-title:${routeResourceKey.value}`) || "" : "",
 )
 const title = computed(() => String(route.query.title || storedResourceTitle.value || storedLessonTitle.value || storedExternalTitle.value || "PDF Preview"))
+const isResourcePackPreview = computed(() => Boolean(routeFileId.value))
+const resourceDetailTitle = computed(() => previewTitle.value || title.value)
+const resourceDetailDate = computed(() => formatPreviewDate(previewExpiresAt.value))
 const source = computed(() => {
   const fileId = routeFileId.value
   if (fileId) return `/api/resource-pack-files/${encodeURIComponent(fileId)}/preview-url`
@@ -77,6 +82,29 @@ function startSlowPreviewTimer() {
   }, SLOW_PREVIEW_NOTICE_MS)
 }
 
+function padDatePart(value: number) {
+  return String(value).padStart(2, "0")
+}
+
+function formatPreviewDate(value: string) {
+  if (!value) return ""
+
+  const numericValue = Number(value)
+  const date = Number.isFinite(numericValue) && value.trim() !== ""
+    ? new Date(numericValue < 10000000000 ? numericValue * 1000 : numericValue)
+    : new Date(value)
+
+  if (Number.isNaN(date.getTime())) return value
+
+  const year = date.getFullYear()
+  const month = padDatePart(date.getMonth() + 1)
+  const day = padDatePart(date.getDate())
+  const hours = padDatePart(date.getHours())
+  const minutes = padDatePart(date.getMinutes())
+  const seconds = padDatePart(date.getSeconds())
+  return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`
+}
+
 async function loadPdf() {
   clearSlowPreviewTimer()
   viewerSrc.value = ""
@@ -84,6 +112,8 @@ async function loadPdf() {
   viewerFailed.value = false
   slowPreview.value = false
   errorMessage.value = ""
+  previewTitle.value = ""
+  previewExpiresAt.value = ""
 
   if (!source.value) {
     errorMessage.value = "No PDF resource found for preview."
@@ -97,6 +127,8 @@ async function loadPdf() {
       errorMessage.value = "No PDF resource found for preview."
       return
     }
+    previewTitle.value = String(res.title || "")
+    previewExpiresAt.value = String(res.expires_at || "")
     viewerSrc.value = res.url
     startSlowPreviewTimer()
   } catch (err) {
@@ -115,6 +147,11 @@ function goBack() {
   else router.push("/certifications")
 }
 
+function goBackFromResourcePack() {
+  if (window.history.length > 1) router.back()
+  else router.push("/resource-packs")
+}
+
 watch(source, loadPdf, { immediate: true })
 onBeforeUnmount(clearSlowPreviewTimer)
 
@@ -128,7 +165,78 @@ onErrorCaptured((err) => {
 </script>
 
 <template>
-  <div class="flex h-screen flex-col bg-[#eef8f7]">
+  <div v-if="isResourcePackPreview" class="flex h-screen flex-col overflow-hidden bg-slate-50">
+    <header class="shrink-0 px-4 pb-8 pt-4 sm:px-8 sm:pb-16 sm:pt-8">
+      <button class="inline-flex h-10 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition-colors hover:bg-slate-100" @click="goBackFromResourcePack">
+        <ArrowLeft class="h-4 w-4" />
+        Back to Insights
+      </button>
+    </header>
+
+    <main class="grid min-h-0 flex-1 gap-5 px-4 pb-4 sm:px-8 lg:grid-cols-[minmax(0,1fr)_468px] lg:gap-8">
+      <section class="min-h-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div v-if="viewerSrc" :key="viewerSrc" class="relative h-full overflow-hidden">
+          <PDFViewer
+            v-if="!viewerFailed"
+            class="h-full w-full"
+            :config="viewerConfig"
+            @ready="handleViewerReady"
+          />
+          <iframe
+            v-else
+            :src="viewerSrc"
+            class="h-full w-full border-0"
+            title="PDF preview fallback"
+          />
+          <div v-if="!viewerReady && !viewerFailed" class="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-sm text-slate-600 backdrop-blur-[1px]">
+            <div class="flex max-w-sm flex-col items-center gap-4 rounded-2xl border border-slate-200 bg-white px-6 py-5 text-center shadow-[0_16px_40px_rgba(15,74,82,0.12)]">
+              <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
+              <div class="space-y-1">
+                <div class="font-semibold text-slate-900">Loading PDF viewer...</div>
+                <p v-if="slowPreview" class="text-xs leading-5 text-slate-500">
+                  This PDF is still loading. Large files may take longer on slow networks.
+                </p>
+              </div>
+              <div class="flex flex-wrap justify-center gap-2">
+                <button class="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50" @click="loadPdf">
+                  <RotateCw class="h-3.5 w-3.5" />
+                  Reload
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="flex h-full items-center justify-center text-sm text-slate-500">
+          <div v-if="loading" class="flex items-center gap-2">
+            <Loader2 class="h-5 w-5 animate-spin text-blue-500" />
+            Loading PDF preview...
+          </div>
+          <div v-else class="flex max-w-md flex-col items-center gap-3 px-6 text-center">
+            <div class="rounded-full bg-rose-50 p-4 text-rose-500">
+              <AlertTriangle class="h-8 w-8" />
+            </div>
+            <div class="text-base font-semibold text-slate-900">PDF preview failed</div>
+            <p>{{ errorMessage || "No PDF resource found for preview." }}</p>
+            <button class="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-600" @click="loadPdf">
+              Reload
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <aside class="h-fit self-start rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+        <h1 class="text-xl font-bold leading-tight text-slate-950">
+          {{ resourceDetailTitle }}
+        </h1>
+        <div v-if="resourceDetailDate" class="mt-6 flex items-center gap-3 text-sm text-slate-500">
+          <Calendar class="h-4 w-4 text-slate-600" />
+          <span>{{ resourceDetailDate }}</span>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div v-else class="flex h-screen flex-col bg-[#eef8f7]">
     <header class="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 shadow-sm">
       <button class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100" @click="goBack">
         <ArrowLeft class="h-4 w-4" />

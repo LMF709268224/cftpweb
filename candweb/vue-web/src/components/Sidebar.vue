@@ -349,7 +349,7 @@ async function handleLogout() {
       </button>
     </div>
 
-    <button class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-primary text-lg font-black text-white shadow-lg shadow-primary/25 transition-transform hover:scale-105 lg:hidden" @click="menuOpen = !menuOpen">
+    <button class="hidden h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-primary text-lg font-black text-white shadow-lg shadow-primary/25 transition-transform hover:scale-105" @click="menuOpen = !menuOpen">
       {{ userName.charAt(0).toUpperCase() }}
     </button>
   </div>
