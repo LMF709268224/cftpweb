@@ -394,6 +394,26 @@ async function loadActiveOrder() {
   }
 }
 
+async function createBundlePurchaseOrder() {
+  const order = await apiClient(`/api/mall/bundles/${resolvedBundleId.value}/purchase`, {
+    method: "POST",
+    body: JSON.stringify({
+      payment_mode: "FULL_PIPELINE",
+      selected_exemptions_json: buildSelectedExemptionsJson(),
+    }),
+  })
+  const orderId = String(order?.bundle_order_ulid || "").trim()
+  const orderStatus = String(order?.order_status || "")
+  activeOrder.value = {
+    action: "purchase",
+    orderId,
+    status: orderStatus,
+    payOrderId: order?.bundle_pay_order_ulid,
+    message: order?.message,
+  }
+  return { orderId, orderStatus }
+}
+
 async function createPurchaseOrder() {
   actionLoading.value = true
   try {
@@ -401,22 +421,7 @@ async function createPurchaseOrder() {
     eligibility.value = latest
     if (!latest.can_purchase) return
 
-    const order = await apiClient(`/api/mall/bundles/${resolvedBundleId.value}/purchase`, {
-      method: "POST",
-      body: JSON.stringify({
-        payment_mode: "FULL_PIPELINE",
-        selected_exemptions_json: buildSelectedExemptionsJson(),
-      }),
-    })
-    const orderId = order.bundle_order_ulid
-    const orderStatus = order.order_status
-    activeOrder.value = {
-      action: "purchase",
-      orderId,
-      status: orderStatus,
-      payOrderId: order.bundle_pay_order_ulid,
-      message: order.message,
-    }
+    const { orderId, orderStatus } = await createBundlePurchaseOrder()
     if (isCompletedStatus(orderStatus)) {
       toast.success(copy.value.purchaseCompleted)
       close()
@@ -433,6 +438,33 @@ async function createPurchaseOrder() {
   } finally {
     actionLoading.value = false
   }
+}
+
+async function ensureBundleOrderForCredentialApplication() {
+  if (activeOrder.value?.action === "purchase" && activeOrder.value.orderId) {
+    return activeOrder.value.orderId
+  }
+
+  const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
+  eligibility.value = latest
+  if (!latest.can_purchase) return ""
+
+  const { orderId, orderStatus } = await createBundlePurchaseOrder()
+  if (!orderId) {
+    toast.error(copy.value.purchaseFailed || t.value.common.error)
+    return ""
+  }
+  if (isCompletedStatus(orderStatus)) {
+    toast.success(copy.value.purchaseCompleted)
+    close()
+    window.setTimeout(() => window.location.reload(), 800)
+    return ""
+  }
+  if (isFailedStatus(orderStatus)) {
+    toast.error(copy.value.purchaseFailed)
+    return ""
+  }
+  return orderId
 }
 
 async function createUnlockOrder() {
@@ -503,10 +535,14 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
       }
     }
 
+    const bundleOrderUlid = await ensureBundleOrderForCredentialApplication()
+    if (!bundleOrderUlid) return
+
     const order = await apiClient("/api/credentials/application-orders", {
       method: "POST",
       body: JSON.stringify({
         pipeline_cc_ulid: props.pipelineId,
+        bundle_order_ulid: bundleOrderUlid,
         qual_ids: [qualId],
       }),
     })
