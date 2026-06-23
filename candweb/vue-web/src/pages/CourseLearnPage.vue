@@ -458,6 +458,8 @@ const learnContentTabs = computed(() => [
         count: courseCertificateUrl.value ? 1 : 0,
       }]
     : []),
+])
+const resourceContentTabs = computed(() => [
   {
     id: "materials" as const,
     label: t.value.learning.materialsTitle,
@@ -540,7 +542,6 @@ const currentCertificationStep = computed(() => certificationFlowSteps.value.fin
 const visibleCertificationStepId = computed<CertificationStepKey>(() => (activeContentTab.value === "materials" ? currentCertificationStepId.value : activeContentTab.value))
 const visibleCertificationStep = computed(() => certificationFlowSteps.value.find((step) => step.id === visibleCertificationStepId.value) || currentCertificationStep.value)
 const completedCertificationStepCount = computed(() => certificationFlowSteps.value.filter((step) => step.status === "done").length)
-const resourceContentTabs = computed(() => learnContentTabs.value.filter((tab) => tab.id === "materials"))
 const primaryQuizTask = computed(() => quizTasks.value.find((task) => !task.completed && task.quizId) || quizTasks.value.find((task) => task.quizId) || quizTasks.value[0])
 const nextLearningLessonId = computed(() => {
   for (const item of lessons.value) {
@@ -1473,7 +1474,10 @@ watch(selectedMaterial, () => {
                 aria-hidden="true"
               />
             </button>
-
+          </div>
+          <div class="mt-6 border-t border-slate-100 pt-5">
+            <h3 class="mb-3 text-xs font-semibold text-muted-foreground">{{ t.learning.supplementaryContentTitle }}</h3>
+            <div class="space-y-2">
             <button
               v-for="tab in resourceContentTabs"
               :key="tab.id"
@@ -1494,6 +1498,7 @@ watch(selectedMaterial, () => {
                 aria-hidden="true"
               />
             </button>
+            </div>
           </div>
         </aside>
 
@@ -1683,14 +1688,15 @@ watch(selectedMaterial, () => {
         </div>
 
         <div v-if="activeContentTab === 'quiz'" class="rounded-md border border-slate-200 bg-white p-5 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-          <div class="mb-5">
+          <div class="mb-5 flex items-start justify-between gap-4">
             <div>
               <h2 class="text-lg font-semibold text-foreground">{{ t.learning.certificationQuizLabel }}</h2>
               <p class="text-sm text-muted-foreground">{{ t.learning.quizPracticeDesc }}</p>
             </div>
+            <span class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ completedQuizTaskCount }}/{{ quizTasks.length }}</span>
           </div>
 
-          <div v-if="!quizChoicesExpanded" class="rounded-md border border-slate-200 bg-white px-8 py-10 text-center">
+          <div v-if="!quizChoicesExpanded && !quizStepDone" class="rounded-md border border-slate-200 bg-white px-8 py-10 text-center">
             <p class="text-base text-slate-700">{{ t.learning.quizPracticeIntro }}</p>
             <h3 class="mt-4 text-2xl font-bold text-foreground">{{ t.learning.quizReadyTitle }}</h3>
             <p class="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">{{ t.learning.quizStartHint }}</p>
@@ -1714,7 +1720,7 @@ watch(selectedMaterial, () => {
                 <h3 class="font-semibold text-foreground">{{ t.learning.quizSelectTitle }}</h3>
                 <p class="mt-1 text-xs text-muted-foreground">{{ t.learning.quizSelectDesc }}</p>
               </div>
-              <button class="btn btn-outline rounded-lg py-1.5 text-xs" @click="quizChoicesExpanded = false">
+              <button v-if="!quizStepDone" class="btn btn-outline rounded-lg py-1.5 text-xs" @click="quizChoicesExpanded = false">
                 {{ t.learning.collapse }}
               </button>
             </div>

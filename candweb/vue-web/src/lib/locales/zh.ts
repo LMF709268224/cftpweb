@@ -294,6 +294,7 @@ export const zh = {
     materialPreviewEmpty: "请选择一条资料查看详情",
     openMaterial: "打开资料",
     downloadMaterial: "下载资料",
+    supplementaryContentTitle: "辅助内容",
     materialsEmptyHint: "课程资料是前置或辅助内容，没有配置也不影响继续学习或报名考试。",
     viewTimeline: "查看管线进度",
     pipelineTimelineTitle: "管线状态流转",
