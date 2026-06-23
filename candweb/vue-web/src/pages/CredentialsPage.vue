@@ -55,7 +55,7 @@ async function fetchData() {
 
 function handleApplyClick(def: any, appId = "") {
   if (!def) return
-  const existing = latestApplicationForDef(def.cred_def_id)
+  const existing = latestApplicationForDef(credentialDefinitionId(def))
   if (!appId && existing && !canStartNewApplication(existing.status)) return
   resubmitAppId.value = appId
   selectedDef.value = def
@@ -82,7 +82,7 @@ async function handleFileUpload(constraintName: string, file: File) {
     const contentType = file.type || "application/octet-stream"
     const res = await apiClient("/api/credentials/upload-url", {
       method: "POST",
-      body: JSON.stringify({ cred_def_id: selectedDef.value.cred_def_id, file_name: file.name, file_ext: fileExt, file_hash: fileHash, content_type: contentType, file_usage: constraintName }),
+      body: JSON.stringify({ cred_def_id: credentialDefinitionId(selectedDef.value), file_name: file.name, file_ext: fileExt, file_hash: fileHash, content_type: contentType, file_usage: constraintName }),
     })
     const uploadRes = await uploadWithTimeout(res.upload_url, { method: "PUT", headers: new Headers(res.signed_headers || {}), body: file })
     if (!uploadRes.ok) throw new Error("S3 upload failed")
@@ -109,7 +109,7 @@ async function handleSubmitApplication() {
     if (resubmitAppId.value) {
       await apiClient("/api/credentials/update", { method: "PUT", body: JSON.stringify({ app_id: resubmitAppId.value, files: evidenceFiles }) })
     } else {
-      await apiClient("/api/credentials/submit", { method: "POST", body: JSON.stringify({ cred_def_id: selectedDef.value.cred_def_id, files: evidenceFiles }) })
+      await apiClient("/api/credentials/submit", { method: "POST", body: JSON.stringify({ cred_def_id: credentialDefinitionId(selectedDef.value), files: evidenceFiles }) })
     }
     isApplyOpen.value = false
     await fetchData()
@@ -163,13 +163,42 @@ function canStartNewApplication(status: string) {
   return !["PENDING", "APPLICATION_STATUS_PENDING", "APPROVED", "APPLICATION_STATUS_APPROVED"].includes(s)
 }
 
+function credentialDefinitionId(def: any) {
+  return String(def?.cred_def_id || def?.cred_def_ulid || "").trim()
+}
+
+function applicationId(app: any) {
+  return String(app?.app_id || app?.app_ulid || "").trim()
+}
+
+function applicationCredentialDefinitionId(app: any) {
+  return String(app?.cred_def_id || app?.cred_def_ulid || "").trim()
+}
+
+function definitionForApplication(app: any) {
+  const credDefId = applicationCredentialDefinitionId(app)
+  return definitions.value.find((def) => credentialDefinitionId(def) === credDefId) || null
+}
+
+function applicationTitle(app: any) {
+  return definitionForApplication(app)?.name || applicationCredentialDefinitionId(app) || t.value.common.unknown
+}
+
+function applicationMeta(app: any) {
+  const id = applicationId(app)
+  const credDefId = applicationCredentialDefinitionId(app)
+  if (id && credDefId) return `${id} · ${credDefId}`
+  return id || credDefId || t.value.common.na
+}
+
 function latestApplicationForDef(credDefId: string) {
-  const matches = applications.value.filter((app) => app.cred_def_id === credDefId)
+  const normalizedCredDefId = String(credDefId || "").trim()
+  const matches = applications.value.filter((app) => applicationCredentialDefinitionId(app) === normalizedCredDefId)
   return matches[0] || null
 }
 
 function applicationActionLabel(def: any) {
-  const existing = latestApplicationForDef(def.cred_def_id)
+  const existing = latestApplicationForDef(credentialDefinitionId(def))
   if (!existing) return t.value.credentialsPage.applyNow
   if (isPendingReviewStatus(existing.status)) return t.value.credentialsPage.applicationPendingHint
   if (isApprovedStatus(existing.status)) return t.value.credentialsPage.applicationApprovedHint
@@ -178,14 +207,14 @@ function applicationActionLabel(def: any) {
 }
 
 function isApplicationActionDisabled(def: any) {
-  const existing = latestApplicationForDef(def.cred_def_id)
+  const existing = latestApplicationForDef(credentialDefinitionId(def))
   return Boolean(existing && !canStartNewApplication(existing.status) && !canResubmit(existing.status))
 }
 
 function handleDefinitionAction(def: any) {
-  const existing = latestApplicationForDef(def.cred_def_id)
+  const existing = latestApplicationForDef(credentialDefinitionId(def))
   if (existing && canResubmit(existing.status)) {
-    handleApplyClick(def, existing.app_id)
+    handleApplyClick(def, applicationId(existing))
     return
   }
   handleApplyClick(def)
@@ -221,7 +250,7 @@ onMounted(fetchData)
           <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.availableQualifications }}</h2>
         </div>
         <div class="grid gap-4 md:grid-cols-3">
-          <div v-for="def in definitions" :key="def.cred_def_id" class="group relative flex flex-col overflow-hidden rounded-[16px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
+          <div v-for="def in definitions" :key="credentialDefinitionId(def)" class="group relative flex flex-col overflow-hidden rounded-[16px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
             <div class="absolute left-0 top-0 h-full w-1 bg-primary/45" />
             <div class="flex flex-col space-y-3 p-4">
               <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
@@ -232,10 +261,10 @@ onMounted(fetchData)
             </div>
             <div class="flex flex-1 flex-col p-4 pt-0">
               <p class="flex-1 text-sm leading-6 text-muted-foreground">{{ def.description }}</p>
-              <div v-if="latestApplicationForDef(def.cred_def_id)" class="mt-3">
-                <span :class="['badge w-fit gap-1', statusBadgeClassForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, latestApplicationForDef(def.cred_def_id)?.status)]">
-                  <component :is="statusIcon(latestApplicationForDef(def.cred_def_id)?.status)" class="h-4 w-4 text-black" />
-                  {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, latestApplicationForDef(def.cred_def_id)?.status, 'credentialsPage.appStatusUnknown') }}
+              <div v-if="latestApplicationForDef(credentialDefinitionId(def))" class="mt-3">
+                <span :class="['badge w-fit gap-1', statusBadgeClassForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, latestApplicationForDef(credentialDefinitionId(def))?.status)]">
+                  <component :is="statusIcon(latestApplicationForDef(credentialDefinitionId(def))?.status)" class="h-4 w-4 text-black" />
+                  {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, latestApplicationForDef(credentialDefinitionId(def))?.status, 'credentialsPage.appStatusUnknown') }}
                 </span>
               </div>
               <button class="btn btn-primary mt-4 w-full cursor-pointer rounded-lg shadow-sm shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60" :disabled="isApplicationActionDisabled(def)" @click="handleDefinitionAction(def)">
@@ -261,17 +290,17 @@ onMounted(fetchData)
         </div>
         <div v-else class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="space-y-2">
-            <div v-for="app in applications" :key="app.app_id" class="grid grid-cols-[minmax(180px,1.5fr)_minmax(220px,2fr)_minmax(120px,1fr)_auto] items-center gap-4 px-4 py-4 text-sm transition-colors hover:bg-primary/10">
+            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(180px,1.5fr)_minmax(220px,2fr)_minmax(120px,1fr)_auto] items-center gap-4 px-4 py-4 text-sm transition-colors hover:bg-primary/10">
               <div class="min-w-0">
-                <div class="truncate font-medium text-foreground">{{ definitions.find((d) => d.cred_def_id === app.cred_def_id)?.name || t.common.unknown }}</div>
-                <div class="truncate text-xs text-muted-foreground">{{ app.app_id }}</div>
+                <div class="truncate font-medium text-foreground">{{ applicationTitle(app) }}</div>
+                <div class="truncate text-xs text-muted-foreground">{{ applicationMeta(app) }}</div>
               </div>
               <div class="min-w-0 truncate text-muted-foreground">{{ app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na }}</div>
               <span :class="['badge w-fit gap-1', statusBadgeClassForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, app.status)]">
                 <component :is="statusIcon(app.status)" class="h-5 w-5 text-black" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <button v-if="canResubmit(app.status)" class="btn btn-primary cursor-pointer rounded-lg py-1 text-xs shadow-sm shadow-primary/20" @click="handleApplyClick(definitions.find((d) => d.cred_def_id === app.cred_def_id), app.app_id)">{{ t.credentialsPage.appStatusResubmit }}</button>
+              <button v-if="canResubmit(app.status)" class="btn btn-primary cursor-pointer rounded-lg py-1 text-xs shadow-sm shadow-primary/20" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
               <span v-else class="text-xs text-muted-foreground">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>
