@@ -260,7 +260,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/stages/{stage_ulid}/order-status", h.GetStageOrderStatus)
 			r.Get("/stage-orders", h.ListStageOrders)
 			r.Get("/orders", h.ListOrders)
-			r.Post("/orders/purge-bundle-data", h.AdminPurgeOrderBundleData)
 			r.Get("/invoices", h.ListInvoices)
 			r.Get("/bundle-orders", h.ListBundleOrders)
 			r.Route("/bundles", func(r chi.Router) {

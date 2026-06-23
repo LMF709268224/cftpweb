@@ -77,7 +77,7 @@ const getOrderStatus = (order: AdminOrder) => pickFirst(order, ["order_status", 
 const getPaymentStatus = (order: AdminOrder) => pickFirst(order, ["payment_status", "paymentStatus"])
 const canPurgeBundleDataOrder = (order: AdminOrder) => {
   const bizType = normalizeCode(getBizType(order))
-  return bizType === "BUNDLE_PURCHASE" || bizType === "PIPELINE_UNLOCK"
+  return bizType === "BUNDLE_PURCHASE"
 }
 
 const getCurrency = (order: AdminOrder) => String(pickFirst(order, [
@@ -187,13 +187,12 @@ export default function AdminOrdersPage() {
 
     setPurgingOrderUlid(bizRefUlid)
     try {
-      const res = await apiClient("/api/mall/orders/purge-bundle-data", {
+      const res = await apiClient("/api/mall/bundle-orders/purge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           candidate_ulid: candidate,
-          biz_type: bizTypeValue,
-          biz_ref_ulid: bizRefUlid,
+          bundle_order_ulid: bizRefUlid,
         }),
       })
       toast.success(res?.message || (lang === "zh" ? "认证数据已清理" : "Bundle data purged"))
