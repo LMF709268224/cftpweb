@@ -741,6 +741,10 @@ function hasExplicitPassStatus(exam: any) {
   return typeof exam?.is_passed === "boolean"
 }
 
+function shouldShowPrimaryExamStatusBadge(exam: any) {
+  return shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam?.exam_status) && !hasExplicitPassStatus(exam)
+}
+
 function hasText(value?: string | null) {
   return Boolean(value?.trim())
 }
@@ -1553,7 +1557,7 @@ watch(selectedMaterial, () => {
                   <div class="flex flex-wrap items-center gap-2">
                     <span v-if="isExamFailedUnit(exam)" :class="['badge', statusBadgeClassForStatusValue('FAILED')]">{{ t.examsPage.examFailedTitle }}</span>
                     <template v-else>
-                      <span v-if="shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam.exam_status)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
+                      <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
                       <span v-if="isWaitingScheduleSync(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ scheduleSyncPendingLabel() }}</span>
                       <span v-else-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
                       <span v-else :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
