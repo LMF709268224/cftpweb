@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { BookOpen, CheckCircle2, Copy, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react"
+import { BookOpen, CheckCircle2, Copy, Package, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react"
 
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"
@@ -25,12 +25,7 @@ type Pipeline = {
   status: string
   is_current: boolean
   created_at: string
-  unlock_stripe_product_id?: string
-  unlock_stripe_price_id?: string
   unlock_quals?: Qualification[]
-  package_stripe_product_id?: string
-  package_stripe_price_id?: string
-  package_coupon?: string
   respath?: string
   certs?: Qualification[]
   certs_quals?: Qualification[]
@@ -45,8 +40,6 @@ type Qualification = {
   name?: string
   title?: string
   pdf_template_id?: string
-  review_stripe_product_id?: string
-  review_stripe_price_id?: string
 }
 
 type CredentialDefinition = {
@@ -75,12 +68,6 @@ type UnitConfig = {
   program?: string
   exam_id?: string
   form_code?: string
-  stripe_product_id?: string
-  stripe_price_id?: string
-  exemption_stripe_product_id?: string
-  exemption_stripe_price_id?: string
-  retake_stripe_product_id?: string
-  retake_stripe_price_id?: string
   allow_retake?: boolean
   exemption_quals?: string[]
 }
@@ -98,12 +85,7 @@ type LmsCourse = {
 type PipelineForm = {
   name: string
   category_tips: string
-  unlock_stripe_product_id: string
-  unlock_stripe_price_id: string
   unlock_quals: Qualification[]
-  package_stripe_product_id: string
-  package_stripe_price_id: string
-  package_coupon: string
   respath: string
   certs: Qualification[]
   certs_quals: Qualification[]
@@ -115,12 +97,7 @@ type PipelineForm = {
 const emptyForm: PipelineForm = {
   name: "",
   category_tips: "",
-  unlock_stripe_product_id: "",
-  unlock_stripe_price_id: "",
   unlock_quals: [],
-  package_stripe_product_id: "",
-  package_stripe_price_id: "",
-  package_coupon: "",
   respath: "",
   certs: [],
   certs_quals: [],
@@ -138,12 +115,7 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
   return {
     name: pipeline.name || "",
     category_tips: pipeline.category_tips || "",
-    unlock_stripe_product_id: pipeline.unlock_stripe_product_id || "",
-    unlock_stripe_price_id: pipeline.unlock_stripe_price_id || "",
     unlock_quals: normalizeQualifications(pipeline.unlock_quals),
-    package_stripe_product_id: pipeline.package_stripe_product_id || "",
-    package_stripe_price_id: pipeline.package_stripe_price_id || "",
-    package_coupon: pipeline.package_coupon || "",
     respath: pipeline.respath || "",
     certs: normalizeQualifications(pipeline.certs),
     certs_quals: normalizeQualifications(pipeline.certs_quals),
@@ -160,12 +132,6 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
         program: unit.program || "",
         exam_id: unit.exam_id || "",
         form_code: unit.form_code || "",
-        stripe_product_id: unit.stripe_product_id || "",
-        stripe_price_id: unit.stripe_price_id || "",
-        exemption_stripe_product_id: unit.exemption_stripe_product_id || "",
-        exemption_stripe_price_id: unit.exemption_stripe_price_id || "",
-        retake_stripe_product_id: unit.retake_stripe_product_id || "",
-        retake_stripe_price_id: unit.retake_stripe_price_id || "",
         allow_retake: Boolean(unit.allow_retake),
         exemption_quals: unit.exemption_quals || [],
       })),
@@ -178,17 +144,10 @@ function cleanFormForStructure(form: PipelineForm) {
     qual_id: (item.qual_id || "").trim(),
     name_hint: (item.name_hint || item.name || item.title || "").trim(),
     pdf_template_id: (item.pdf_template_id || "").trim(),
-    review_stripe_product_id: (item.review_stripe_product_id || "").trim(),
-    review_stripe_price_id: (item.review_stripe_price_id || "").trim(),
   }))
 
   return {
-    unlock_stripe_product_id: form.unlock_stripe_product_id.trim(),
-    unlock_stripe_price_id: form.unlock_stripe_price_id.trim(),
     unlock_quals: cleanQualifications(form.unlock_quals),
-    package_stripe_product_id: form.package_stripe_product_id.trim(),
-    package_stripe_price_id: form.package_stripe_price_id.trim(),
-    package_coupon: form.package_coupon.trim(),
     certs: cleanQualifications(form.certs),
     certs_quals: cleanQualifications(form.certs_quals),
     stages: form.stages.map((stage) => ({
@@ -202,12 +161,6 @@ function cleanFormForStructure(form: PipelineForm) {
         program: (unit.program || "").trim(),
         exam_id: (unit.exam_id || "").trim(),
         form_code: (unit.form_code || "").trim(),
-        stripe_product_id: (unit.stripe_product_id || "").trim(),
-        stripe_price_id: (unit.stripe_price_id || "").trim(),
-        exemption_stripe_product_id: (unit.exemption_stripe_product_id || "").trim(),
-        exemption_stripe_price_id: (unit.exemption_stripe_price_id || "").trim(),
-        retake_stripe_product_id: (unit.retake_stripe_product_id || "").trim(),
-        retake_stripe_price_id: (unit.retake_stripe_price_id || "").trim(),
         allow_retake: Boolean(unit.allow_retake),
         exemption_quals: unit.exemption_quals || [],
       })),
@@ -713,16 +666,6 @@ export default function PipelinesPage() {
     }))
   }
 
-  const copyTestStripeIds = () => {
-    setForm((prev) => ({
-      ...prev,
-      unlock_stripe_product_id: "prod_UZFTQwZK5w3Yzh",
-      unlock_stripe_price_id: "price_1Ta6y7CJWnR4MMONhDu5BsaZ",
-      package_stripe_product_id: prev.package_stripe_product_id || "prod_UZILCqUwUoOPMO",
-      package_stripe_price_id: prev.package_stripe_price_id || "price_1Ta9kYCJWnR4MMON0jjPUI8P",
-    }))
-  }
-
   const updateQualificationField = (
     field: "unlock_quals" | "certs_quals" | "certs",
     definition: CredentialDefinition,
@@ -977,35 +920,18 @@ export default function PipelinesPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg border bg-card">
-                <div className="flex items-center justify-between border-b px-4 py-3">
-                  <h2 className="font-semibold">{page.pipelineStripe}</h2>
-                  <Button variant="outline" size="sm" onClick={copyTestStripeIds}>
-                    <Copy className="h-4 w-4" />
-                    {page.useTestStripe}
+              <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-4 text-sm text-blue-900">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-semibold">{page.bundlePricingMovedTitle}</h2>
+                    <p className="mt-1 text-blue-800/80">{page.bundlePricingMovedHint}</p>
+                  </div>
+                  <Button asChild variant="outline" size="sm" className="border-blue-200 bg-white/80 text-blue-900 hover:bg-blue-100">
+                    <a href="/bundles">
+                      <Package className="h-4 w-4" />
+                      {page.openBundleConfig}
+                    </a>
                   </Button>
-                </div>
-                <div className="grid gap-4 p-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="unlockProduct">{page.unlockProductId}</Label>
-                    <Input id="unlockProduct" value={form.unlock_stripe_product_id} onChange={(event) => setForm({ ...form, unlock_stripe_product_id: event.target.value })} disabled={published} />
-                  </div>
-                  <div>
-                    <Label htmlFor="unlockPrice">{page.unlockPriceId}</Label>
-                    <Input id="unlockPrice" value={form.unlock_stripe_price_id} onChange={(event) => setForm({ ...form, unlock_stripe_price_id: event.target.value })} disabled={published} />
-                  </div>
-                  <div>
-                    <Label htmlFor="packageProduct">{page.packageProductId}</Label>
-                    <Input id="packageProduct" value={form.package_stripe_product_id} onChange={(event) => setForm({ ...form, package_stripe_product_id: event.target.value })} disabled={published} />
-                  </div>
-                  <div>
-                    <Label htmlFor="packagePrice">{page.packagePriceId}</Label>
-                    <Input id="packagePrice" value={form.package_stripe_price_id} onChange={(event) => setForm({ ...form, package_stripe_price_id: event.target.value })} disabled={published} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="packageCoupon">{page.packageCoupon}</Label>
-                    <Input id="packageCoupon" value={form.package_coupon} onChange={(event) => setForm({ ...form, package_coupon: event.target.value })} disabled={published} />
-                  </div>
                 </div>
               </div>
 
@@ -1077,7 +1003,7 @@ export default function PipelinesPage() {
                                     <Input value={unit.name || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { name: event.target.value })} disabled={published} />
                                   </div>
                                 </div>
-                                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1.2fr)_1fr_1fr_auto]">
+                                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_auto]">
                                   <div>
                                     <Label>{page.glmsCourse}</Label>
                                     <Select value={unit.glms_course_id || "none"} onValueChange={(value) => {
@@ -1102,33 +1028,17 @@ export default function PipelinesPage() {
                                     </Select>
                                     <div className="mt-1 truncate text-xs text-muted-foreground">{lmsCourseName(unit.glms_course_id)}</div>
                                   </div>
-                                  <div>
-                                    <Label>{page.unitProductId}</Label>
-                                    <Input value={unit.stripe_product_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { stripe_product_id: event.target.value })} disabled={published} />
-                                  </div>
-                                  <div>
-                                    <Label>{page.unitPriceId}</Label>
-                                    <Input value={unit.stripe_price_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { stripe_price_id: event.target.value })} disabled={published} />
-                                  </div>
                                   <div className="mt-6">
                                     <Button variant="outline" size="icon-sm" onClick={() => removeUnit(stageIndex, unitIndex)} disabled={published} aria-label={page.removeUnit}>
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </div>
                                 </div>
-                                <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                                  <div className="grid gap-3 md:grid-cols-2">
-                                    <Input placeholder={page.exemptionProductId} value={unit.exemption_stripe_product_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { exemption_stripe_product_id: event.target.value })} disabled={published} />
-                                    <Input placeholder={page.exemptionPriceId} value={unit.exemption_stripe_price_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { exemption_stripe_price_id: event.target.value })} disabled={published} />
-                                  </div>
-                                  <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-                                    <Input placeholder={page.retakeProductId} value={unit.retake_stripe_product_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { retake_stripe_product_id: event.target.value })} disabled={published} />
-                                    <Input placeholder={page.retakePriceId} value={unit.retake_stripe_price_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { retake_stripe_price_id: event.target.value })} disabled={published} />
-                                    <label className="flex items-center gap-2 rounded-md border px-3 text-sm">
-                                      <Checkbox checked={Boolean(unit.allow_retake)} onCheckedChange={(checked) => updateUnit(stageIndex, unitIndex, { allow_retake: Boolean(checked) })} disabled={published} />
-                                      {page.allowRetake}
-                                    </label>
-                                  </div>
+                                <div className="mt-3">
+                                  <label className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                                    <Checkbox checked={Boolean(unit.allow_retake)} onCheckedChange={(checked) => updateUnit(stageIndex, unitIndex, { allow_retake: Boolean(checked) })} disabled={published} />
+                                    {page.allowRetake}
+                                  </label>
                                 </div>
                                 <div className="mt-3 rounded-md border bg-muted/20 p-3">
                                   <div className="mb-3">
@@ -1207,7 +1117,6 @@ export default function PipelinesPage() {
                                 <div className="flex items-center gap-2 mb-3">
                                   <CheckCircle2 className="h-4 w-4 text-primary" />
                                   <span className="font-semibold text-foreground">{lmsCourseName(unit.glms_course_id)}</span>
-                                  {unit.stripe_price_id && <Badge variant="outline">{unit.stripe_price_id}</Badge>}
                                   {hasExam && <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">Exam</Badge>}
                                 </div>
                                 <div className="mb-3 grid gap-2 rounded-md bg-muted/40 p-3 text-xs md:grid-cols-3">

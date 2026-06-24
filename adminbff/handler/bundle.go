@@ -160,6 +160,48 @@ func (h *Handler) DeprecateBundle(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+func (h *Handler) DeleteBundle(w http.ResponseWriter, r *http.Request) {
+	bundleULID := strings.TrimSpace(chi.URLParam(r, "bundle_ulid"))
+	if !requireRequestField(w, bundleULID, "bundle_ulid") {
+		return
+	}
+	resp, err := h.Mall.DeleteBundle(r.Context(), &mallpb.DeleteBundleRequest{BundleUlid: bundleULID})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GetBundleJsonSchemas(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Mall.GetBundleJsonSchemas(r.Context(), &mallpb.GetBundleJsonSchemasRequest{})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) AdminSyncBundleDisplayPricing(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		BundleUlid string `json:"bundle_ulid"`
+	}
+	if r.Body != nil {
+		_ = ReadJSON(r, &body)
+	}
+	bundleULID := strings.TrimSpace(firstNonEmpty(body.BundleUlid, r.URL.Query().Get("bundle_ulid")))
+	req := &mallpb.AdminSyncBundleDisplayPricingRequest{}
+	if bundleULID != "" {
+		req.BundleUlid = &bundleULID
+	}
+	resp, err := h.Mall.AdminSyncBundleDisplayPricing(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 func (h *Handler) ListBundleOrders(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
 		CandidateUlid: strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
