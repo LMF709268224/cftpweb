@@ -656,6 +656,10 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 		out.PipelineStatus = instance.GetStatus()
 	}
 	issuesCertificate := pipelineIssuesCertificate(config)
+	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG {
+		fillFinalEligibilityNextStep(&out, issuesCertificate)
+		return out
+	}
 	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED ||
 		out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_ISSUING_CERT {
 		fillCompletedPipelineNextStep(&out, issuesCertificate)
@@ -718,6 +722,11 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 	currentStageUlid := ""
 	if runtime.GetPipeline() != nil {
 		currentStageUlid = strings.TrimSpace(runtime.GetPipeline().GetCurrentStageUlid())
+		out.PipelineStatus = runtime.GetPipeline().GetStatus()
+		if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG {
+			fillFinalEligibilityNextStep(&out, issuesCertificate)
+			return out
+		}
 	}
 
 	pickStageUlidx := -1
@@ -749,6 +758,8 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 	if pickUnit == nil {
 		if runtime.GetPipeline().GetStatus() == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED {
 			fillCompletedPipelineNextStep(&out, issuesCertificate)
+		} else if runtime.GetPipeline().GetStatus() == gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG {
+			fillFinalEligibilityNextStep(&out, issuesCertificate)
 		} else {
 			firstUnit := firstConfigUnit(config)
 			if firstUnit != nil {
@@ -788,6 +799,8 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 	case gprog.CourseUnitStatus_COURSE_UNIT_STATUS_COMPLETED:
 		if runtime.GetPipeline().GetStatus() == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED {
 			fillCompletedPipelineNextStep(&out, issuesCertificate)
+		} else if runtime.GetPipeline().GetStatus() == gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG {
+			fillFinalEligibilityNextStep(&out, issuesCertificate)
 		} else {
 			out.Action = "signup_exam"
 			out.Message = "go to exams and sign up"
@@ -819,6 +832,17 @@ func fillCompletedPipelineNextStep(out *PipelineNextStep, issuesCertificate bool
 	if issuesCertificate {
 		out.Action = "view_certificate"
 		out.Message = "view the certificate"
+		return
+	}
+	out.Action = "completed"
+	out.Message = "pipeline completed"
+}
+
+func fillFinalEligibilityNextStep(out *PipelineNextStep, issuesCertificate bool) {
+	out.PipelineStatus = gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG
+	if issuesCertificate {
+		out.Action = "final_qualification"
+		out.Message = "submit final qualification materials"
 		return
 	}
 	out.Action = "completed"

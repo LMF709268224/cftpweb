@@ -351,7 +351,11 @@ const courseHasExam = computed(() => {
   }
   return false
 })
-const hasExamTab = computed(() => courseHasExam.value || ["signup_exam", "schedule_exam", "view_exam_schedule", "apply_retake", "view_exam_result"].includes(nextStepState.value.action))
+const nextStepBelongsToCurrentCourse = computed(() => {
+  const nextCourseId = firstString(nextStep.value?.course_id, nextStep.value?.course_ulid, nextStep.value?.courseUlid)
+  return Boolean(nextCourseId && nextCourseId === courseId.value)
+})
+const hasExamTab = computed(() => courseHasExam.value || (nextStepBelongsToCurrentCourse.value && ["signup_exam", "schedule_exam", "view_exam_schedule", "apply_retake", "view_exam_result"].includes(nextStepState.value.action)))
 const courseExamTabCount = computed(() => {
   if (courseExams.value.length > 0) return courseExams.value.length
   if (!courseExamsLoaded.value && hasExamTab.value) return 1
@@ -499,6 +503,7 @@ const lessonStepDone = computed(() => lessons.value.length > 0 && completedLesso
 const quizStepDone = computed(() => quizTasks.value.length > 0 && completedQuizTaskCount.value >= quizTasks.value.length)
 const examStepDone = computed(() => {
   if (nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value)) return true
+  if (normalizeEnumValueUpper(courseRuntimeUnitStatus.value).includes("COMPLETED")) return true
   return courseExams.value.some((exam) => hasExamResult(exam) && exam?.is_passed === true)
 })
 const certificateStepDone = computed(() => Boolean(courseCertificateUrl.value) || nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value))
@@ -682,6 +687,8 @@ function nextStepDisplayFromAction(action?: string) {
       return { action, label: t.value.learning.actionViewExamResult, desc: t.value.learning.nextStepGoToExamsDesc }
     case "view_certificate":
       return { action, label: t.value.learning.actionViewCertificate, desc: t.value.learning.nextStepViewCertificateDesc }
+    case "final_qualification":
+      return { action, label: t.value.learning.finalQualificationSubmitButton, desc: t.value.learning.finalQualificationDesc }
     case "completed":
       return { action, label: t.value.learning.completedTag, desc: t.value.learning.nextStepDesc }
     default:
@@ -1437,7 +1444,7 @@ function nextStepLink() {
       : `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(courseId.value)}`
   }
   if (nextStepState.value.action === "view_certificate") return "/certificates"
-  if (nextStepState.value.action === "signup_exam") {
+  if (nextStepState.value.action === "signup_exam" && nextStepBelongsToCurrentCourse.value) {
     return `/exams/signup?unitId=${encodeURIComponent(nextStep.value?.course_unit_ulid || "")}&pipelineId=${encodeURIComponent(pipelineId.value)}&courseId=${encodeURIComponent(courseId.value)}`
   }
   return "/exams"
@@ -1690,7 +1697,7 @@ watch(selectedMaterial, () => {
             <h3 class="font-semibold text-foreground">{{ t.examsPage.noExams }}</h3>
             <p class="mt-2 text-sm text-muted-foreground">{{ t.examsPage.noExamsDesc }}</p>
             <RouterLink
-              v-if="nextStepState.action === 'signup_exam'"
+              v-if="nextStepState.action === 'signup_exam' && nextStepBelongsToCurrentCourse"
               :to="nextStepLink()"
               class="btn btn-primary mx-auto mt-4 w-fit rounded-lg"
             >
