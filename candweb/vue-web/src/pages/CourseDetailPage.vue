@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
-import { RouterLink, useRoute } from "vue-router"
+import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import {
   ArrowLeft,
@@ -21,6 +21,7 @@ import {
   timelineStatusLabelWithDiagnostics,
 } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -66,7 +67,11 @@ type UnitConfig = {
 
 type Qualification = {
   qual_id?: string
+  qualId?: string
+  id?: string
   name_hint?: string
+  nameHint?: string
+  name?: string
 }
 
 type PipelineNextStep = {
@@ -88,6 +93,7 @@ type CourseSummary = {
 }
 
 const route = useRoute()
+const router = useRouter()
 const { t } = useTranslation()
 const detail = ref<PipelineDetail | null>(null)
 const courseSummaries = ref<Record<string, CourseSummary>>({})
@@ -97,6 +103,18 @@ const courseSummariesLoading = ref(false)
 const purchaseOpen = ref(false)
 const certificateLoading = ref(false)
 const scheduleLoading = ref(false)
+const finalQualificationLoading = ref(false)
+const resolvedBundleId = ref("")
+const finalQualificationPaymentOpen = ref(false)
+const finalQualificationPaymentSession = ref<{
+  paymentKey?: string
+  orderId?: string
+  bizType: string
+  bizRefUlid: string
+  source: string
+  returnPath: string
+  extraReturnParams?: Record<string, string>
+} | null>(null)
 
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.id || ""))
 const pipeline = computed(() => detail.value?.config)
@@ -117,6 +135,27 @@ const nextStepAction = computed(() =>
   nextStep.value?.action || courseUnitNextStepActionFromStatus(nextUnitStatus.value, Boolean(nextStep.value?.allow_retake)),
 )
 const isPipelineTerminal = computed(() => pipelineIsTerminal(pipelineStatus.value))
+const finalQualifications = computed(() => {
+  const quals = pipeline.value?.final_quals || []
+  return Array.isArray(quals)
+    ? quals
+        .map((qual) => ({
+          qualId: firstString(qual?.qual_id, qual?.qualId, qual?.id),
+          name: firstString(qual?.name_hint, qual?.nameHint, qual?.name),
+        }))
+        .filter((qual) => qual.qualId)
+    : []
+})
+const finalQualificationIds = computed(() => finalQualifications.value.map((qual) => qual.qualId))
+const pipelineWaitsFinalEligibility = computed(() => {
+  const raw = String(pipelineStatus.value ?? "").trim()
+  return raw === "2" || raw.toUpperCase().includes("WAIT_FINAL_ELIG")
+})
+const finalQualificationRequired = computed(() =>
+  purchased.value &&
+  finalQualificationIds.value.length > 0 &&
+  (pipelineWaitsFinalEligibility.value || nextStepAction.value === "final_qualification"),
+)
 const firstCourseId = computed(() =>
   stages.value.flatMap((stage) => visibleStageUnits(stage)).find((unit) => unit.glms_course_id)?.glms_course_id || "",
 )
@@ -141,6 +180,14 @@ const activeStageIndex = computed(() => {
 function pipelineIsTerminal(status?: string | number | null) {
   const normalized = String(status ?? "").trim()
   return normalized === "3" || normalized === "4"
+}
+
+function firstString(...values: unknown[]) {
+  for (const value of values) {
+    const normalized = String(value || "").trim()
+    if (normalized) return normalized
+  }
+  return ""
 }
 
 function hasRuntimeStatus(status?: string | number | null) {
@@ -344,6 +391,121 @@ async function handleScheduleExam() {
   }
 }
 
+function normalizedStatus(status: unknown) {
+  return String(status || "").trim().toUpperCase()
+}
+
+function isUploadReadyStatus(status: unknown) {
+  return normalizedStatus(status).includes("UPLOAD_READY")
+}
+
+function isCredentialApplicationPaymentStatus(status: unknown) {
+  return normalizedStatus(status).includes("WAIT_REVIEW_FEE_PAYMENT")
+}
+
+function isCredentialApplicationUnderReviewStatus(status: unknown) {
+  return normalizedStatus(status).includes("UNDER_REVIEW")
+}
+
+function isCredentialApplicationResolvedStatus(status: unknown) {
+  const value = normalizedStatus(status)
+  return value.includes("RESOLVED") || value.includes("APPROVED") || value.includes("COMPLETED")
+}
+
+function finalQualificationUploadPath(qualIds = finalQualificationIds.value) {
+  const params = new URLSearchParams()
+  if (qualIds.length > 0) params.set("qual_ulids", qualIds.join(","))
+  return `/credentials${params.toString() ? `?${params.toString()}` : ""}`
+}
+
+async function resolveBundleIdForPipeline() {
+  if (resolvedBundleId.value) return resolvedBundleId.value
+  if (!pipelineId.value) return ""
+  const res = await apiClient("/api/mall/bundles?page_size=100")
+  const found = (res?.bundles || []).find((bundle: any) => firstString(bundle?.pipeline_id, bundle?.pipeline_cc_ulid) === pipelineId.value)
+  const bundleId = firstString(found?.bundle_id, found?.bundle_ulid)
+  resolvedBundleId.value = bundleId
+  return bundleId
+}
+
+async function missingFinalQualificationIds() {
+  const ids = finalQualificationIds.value
+  if (ids.length === 0) return []
+  const res = await apiClient(`/api/credentials/qualifications?qual_ulids=${encodeURIComponent(ids.join(","))}`)
+  const qualifications = Array.isArray(res?.qualifications) ? res.qualifications : []
+  if (qualifications.length === 0) return ids
+  const eligible = new Set(
+    qualifications
+      .filter((item: any) => Boolean(item?.eligible))
+      .map((item: any) => firstString(item?.qual_id, item?.cred_def_ulid)),
+  )
+  return ids.filter((id) => !eligible.has(id))
+}
+
+async function handleFinalQualificationApplication() {
+  if (finalQualificationLoading.value) return
+  if (!pipelineId.value || finalQualificationIds.value.length === 0) {
+    toast.error(t.value.common.error)
+    return
+  }
+  finalQualificationLoading.value = true
+  try {
+    const missingQualIds = await missingFinalQualificationIds()
+    if (missingQualIds.length === 0) {
+      toast.success(t.value.learning.finalQualificationApproved)
+      await loadDetail()
+      return
+    }
+    const bundleId = await resolveBundleIdForPipeline()
+    if (!bundleId) {
+      toast.error(t.value.learning.finalQualificationBundleMissing)
+      return
+    }
+    const order = await apiClient("/api/credentials/application-orders", {
+      method: "POST",
+      body: JSON.stringify({
+        pipeline_cc_ulid: pipelineId.value,
+        bundle_ulid: bundleId,
+        qual_ulids: missingQualIds,
+      }),
+    })
+    const orderId = firstString(order?.application_order_ulid, order?.application_order_id)
+    const orderStatus = firstString(order?.order_status, order?.status)
+    if (isUploadReadyStatus(orderStatus)) {
+      toast.info(t.value.learning.finalQualificationUploadReady)
+      window.setTimeout(() => router.push(finalQualificationUploadPath(missingQualIds)), 300)
+      return
+    }
+    if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
+      finalQualificationPaymentSession.value = {
+        paymentKey: order?.payment_key,
+        orderId,
+        bizType: "CREDENTIAL_APPLICATION",
+        bizRefUlid: orderId,
+        source: "credential_application",
+        returnPath: "/credentials",
+        extraReturnParams: { qual_ulids: missingQualIds.join(",") },
+      }
+      finalQualificationPaymentOpen.value = true
+      return
+    }
+    if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
+      toast.info(t.value.learning.finalQualificationUnderReview)
+      return
+    }
+    if (isCredentialApplicationResolvedStatus(orderStatus)) {
+      toast.success(t.value.learning.finalQualificationApproved)
+      await loadDetail()
+      return
+    }
+    toast.info(order?.message || t.value.learning.finalQualificationOrderCreated)
+  } catch (error) {
+    console.error(error)
+  } finally {
+    finalQualificationLoading.value = false
+  }
+}
+
 onMounted(loadDetail)
 watch(pipelineId, loadDetail)
 watch([stages, purchased], () => void loadCourseSummaries(), { deep: true })
@@ -421,6 +583,32 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
           </div>
         </div>
       </div>
+
+      <section
+        v-if="finalQualificationRequired"
+        class="mb-4 rounded-md border border-blue-200 bg-blue-50 p-5 shadow-[0_10px_24px_rgba(15,74,82,0.04)]"
+      >
+        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 text-blue-950">
+              <Award class="h-5 w-5 text-blue-700" />
+              <h2 class="text-lg font-semibold">{{ t.learning.finalQualificationTitle }}</h2>
+            </div>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-blue-800">{{ t.learning.finalQualificationDesc }}</p>
+            <div class="mt-4 grid gap-2 md:grid-cols-2">
+              <div v-for="qual in finalQualifications" :key="qual.qualId" class="rounded-lg border border-blue-100 bg-white px-4 py-3">
+                <div class="font-semibold text-blue-950">{{ qual.name || qual.qualId }}</div>
+                <div class="mt-1 font-mono text-xs text-blue-700">{{ qual.qualId }}</div>
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary shrink-0 rounded-lg" :disabled="finalQualificationLoading" @click="handleFinalQualificationApplication">
+            <Loader2 v-if="finalQualificationLoading" class="h-4 w-4 animate-spin" />
+            <Award v-else class="h-4 w-4" />
+            {{ t.learning.finalQualificationSubmitButton }}
+          </button>
+        </div>
+      </section>
 
       <section class="rounded-md bg-white p-6">
         <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
@@ -533,6 +721,19 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
         :course-name="pipeline.name || t.common.unknownCourse"
         :description="pipeline.description || ''"
         :pipeline-id="pipeline.pipeline_id || pipelineId"
+      />
+      <PaymentSessionDialog
+        v-if="finalQualificationPaymentSession"
+        v-model:open="finalQualificationPaymentOpen"
+        :title="t.learning.finalQualificationPaymentTitle"
+        :subtitle="finalQualificationPaymentSession.orderId"
+        :payment-key="finalQualificationPaymentSession.paymentKey"
+        :biz-type="finalQualificationPaymentSession.bizType"
+        :biz-ref-ulid="finalQualificationPaymentSession.bizRefUlid"
+        :order-id="finalQualificationPaymentSession.orderId"
+        :source="finalQualificationPaymentSession.source"
+        :return-path="finalQualificationPaymentSession.returnPath"
+        :extra-return-params="finalQualificationPaymentSession.extraReturnParams"
       />
     </template>
       </main>
