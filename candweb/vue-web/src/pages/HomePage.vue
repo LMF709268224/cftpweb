@@ -9,6 +9,7 @@ import { useTranslation } from "@/lib/language"
 
 const { t, lang } = useTranslation()
 const userName = ref("...")
+const dashboardLoading = ref(false)
 const counts = ref({
   certifications: 0,
   courses: 0,
@@ -155,6 +156,7 @@ onMounted(async () => {
     return
   }
 
+  dashboardLoading.value = true
   try {
     const payload = await apiClient("/api/user/me")
     const nameToSet = payload?.display_name || payload?.name
@@ -167,15 +169,19 @@ onMounted(async () => {
     if (localName) userName.value = localName
   }
 
-  const [certifications, courses, exams, resourcePacks, orders] = await Promise.all([
-    countFromRequest("/api/pipeline", "list"),
-    countFromRequest("/api/pipeline/materials", "materials"),
-    countFromRequest("/api/exams?page=1&page_size=50", "exams"),
-    countFromRequest("/api/resource-packs?page_size=50", "packs"),
-    countFromRequest("/api/orders?page=1&page_size=50", "orders"),
-  ])
+  try {
+    const [certifications, courses, exams, resourcePacks, orders] = await Promise.all([
+      countFromRequest("/api/pipeline", "list"),
+      countFromRequest("/api/pipeline/materials", "materials"),
+      countFromRequest("/api/exams?page=1&page_size=50", "exams"),
+      countFromRequest("/api/resource-packs?page_size=50", "packs"),
+      countFromRequest("/api/orders?page=1&page_size=50", "orders"),
+    ])
 
-  counts.value = { certifications, courses, exams, resourcePacks, orders }
+    counts.value = { certifications, courses, exams, resourcePacks, orders }
+  } finally {
+    dashboardLoading.value = false
+  }
 })
 </script>
 
@@ -209,7 +215,10 @@ onMounted(async () => {
               >
                 <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
                 <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
-                <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">{{ card.value }}</p>
+                <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
+                  <span v-if="dashboardLoading" class="portal-count-loader" :aria-label="t.common.loading"></span>
+                  <span v-else>{{ card.value }}</span>
+                </p>
                 <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
               </RouterLink>
             </div>
@@ -228,7 +237,10 @@ onMounted(async () => {
               >
                 <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
                 <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
-                <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">{{ card.value }}</p>
+                <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
+                  <span v-if="dashboardLoading" class="portal-count-loader" :aria-label="t.common.loading"></span>
+                  <span v-else>{{ card.value }}</span>
+                </p>
                 <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
               </RouterLink>
             </div>
@@ -255,6 +267,27 @@ onMounted(async () => {
   margin-top: 36px;
   font-size: 30px;
   line-height: 1;
+}
+
+.portal-count-loader {
+  display: inline-block;
+  width: 48px;
+  height: 30px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.34), rgba(148, 163, 184, 0.18));
+  background-size: 200% 100%;
+  animation: portal-count-loading 1.1s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes portal-count-loading {
+  0% {
+    background-position: 100% 0;
+  }
+
+  100% {
+    background-position: -100% 0;
+  }
 }
 
 .portal-stat-card p:last-of-type {
