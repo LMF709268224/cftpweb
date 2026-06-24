@@ -428,6 +428,7 @@ const nonCourseQuizTasks = computed(() => quizTasks.value.filter((task) => task.
 const activeLessonQuizTasks = computed(() => (activeLessonId.value ? lessonQuizTasksByLessonId.value.get(activeLessonId.value) || [] : []))
 const currentLessonCompleted = computed(() => currentLessonRawCompleted.value && activeLessonQuizTasks.value.every((task) => task.completed))
 const completedQuizTaskCount = computed(() => quizTasks.value.filter((task) => task.completed).length)
+const shouldShowQuizPreparationCard = computed(() => !quizChoicesExpanded.value && !quizStepDone.value && completedQuizTaskCount.value === 0)
 const learnContentTabs = computed(() => [
   {
     id: "lesson" as const,
@@ -1013,7 +1014,9 @@ async function loadCourseCertificate() {
   courseCertificateLoading.value = true
   courseCertificateError.value = ""
   try {
-    const res = await apiClient(`/api/pipeline/${encodeURIComponent(runtime.value.instance.pipeline_ulid)}/certificate-url`)
+    const res = await apiClient(`/api/pipeline/${encodeURIComponent(runtime.value.instance.pipeline_ulid)}/certificate-url`, {
+      suppressErrorToast: true,
+    })
     courseCertificateUrl.value = res?.view_url || ""
     if (!courseCertificateUrl.value) courseCertificateError.value = t.value.certificatesPage.certificateGenerating
   } catch {
@@ -1694,7 +1697,7 @@ watch(selectedMaterial, () => {
             <span class="badge shrink-0 border-slate-200 bg-white text-slate-700">{{ completedQuizTaskCount }}/{{ quizTasks.length }}</span>
           </div>
 
-          <div v-if="!quizChoicesExpanded && !quizStepDone" class="rounded-md border border-slate-200 bg-white px-8 py-10 text-center">
+          <div v-if="shouldShowQuizPreparationCard" class="rounded-md border border-slate-200 bg-white px-8 py-10 text-center">
             <p class="text-base text-slate-700">{{ t.learning.quizPracticeIntro }}</p>
             <h3 class="mt-4 text-2xl font-bold text-foreground">{{ t.learning.quizReadyTitle }}</h3>
             <p class="mx-auto mt-4 max-w-xl text-sm text-muted-foreground">{{ t.learning.quizStartHint }}</p>
@@ -1718,7 +1721,7 @@ watch(selectedMaterial, () => {
                 <h3 class="font-semibold text-foreground">{{ t.learning.quizSelectTitle }}</h3>
                 <p class="mt-1 text-xs text-muted-foreground">{{ t.learning.quizSelectDesc }}</p>
               </div>
-              <button v-if="!quizStepDone" class="btn btn-outline rounded-lg py-1.5 text-xs" @click="quizChoicesExpanded = false">
+              <button v-if="quizChoicesExpanded && !quizStepDone" class="btn btn-outline rounded-lg py-1.5 text-xs" @click="quizChoicesExpanded = false">
                 {{ t.learning.collapse }}
               </button>
             </div>
