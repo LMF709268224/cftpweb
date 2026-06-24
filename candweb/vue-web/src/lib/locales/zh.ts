@@ -1,4 +1,4 @@
-export const zh = {
+﻿export const zh = {
   common: {
     save: "保存更改",
     update: "更新",
@@ -666,6 +666,7 @@ export const zh = {
     unsupportedPaymentKey: "暂不支持的支付凭证类型，请稍后重试。",
     purchaseCompleted: "购买成功，认证已开通。",
     qualificationApplicationCreated: "资格申请订单已创建，请按提示继续处理。",
+    qualificationUploadReady: "资料上传入口已开放，正在前往资格申请页面。",
     qualificationPaymentTitle: "请先支付资格审核费",
     qualificationPaymentDesc: "支付完成后，系统会开放该资格的资料上传入口；上传并审核通过后即可回来选择免考。",
     qualificationUnderReview: "资格申请已提交，请等待审核结果。",
@@ -685,7 +686,7 @@ export const zh = {
     exemptionEligible: "可免考",
     exemptionMissing: "缺少资格",
     exemptionMissingHint: "你暂未持有该免考所需的有效资格。",
-    goApplyQualification: "去资格申请",
+    goApplyQualification: "申请/上传资格材料",
     refreshPurchasePreview: "更新价格预览",
     purchasePreviewStaleTitle: "价格预览需要更新",
     purchasePreviewStaleDesc: "免考选择已变化，请先更新价格预览，再继续支付。",

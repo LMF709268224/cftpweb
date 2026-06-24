@@ -237,6 +237,31 @@ function applicationLoadingKey(unit: ExemptionUnit, qual: ExemptionQual) {
   return `${unit.unit_id || "unit"}:${qual.qual_id || "qual"}`
 }
 
+function collectMissingQualificationIds(clickedQualId: string) {
+  const ids = new Set<string>()
+  if (clickedQualId) ids.add(clickedQualId)
+  for (const stage of exemptionStages.value) {
+    for (const unit of stage.units || []) {
+      if (unit.qualified) continue
+      for (const qual of unit.exemption_quals || []) {
+        if (!qual.eligible && qual.qual_id) ids.add(qual.qual_id)
+      }
+    }
+  }
+  return Array.from(ids)
+}
+
+function credentialUploadPath(qualIds: string[]) {
+  const ids = qualIds.map((id) => String(id || "").trim()).filter(Boolean)
+  const params = new URLSearchParams()
+  if (ids.length > 0) params.set("qual_ulids", ids.join(","))
+  return `/credentials${params.toString() ? `?${params.toString()}` : ""}`
+}
+
+function goToCredentialUpload(qualIds: string[]) {
+  window.location.assign(credentialUploadPath(qualIds))
+}
+
 function resetExemptionSelection() {
   exemptionOptions.value = null
   exemptionError.value = ""
@@ -527,17 +552,18 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
         return
       }
       if (isApplicationResubmitStatus(existingApplication.status)) {
-        toast.info(copy.value.qualificationApplicationCreated || "资格申请已创建，请到资格申请页面提交资料。")
+        goToCredentialUpload([qualId])
         return
       }
     }
 
+    const qualIds = collectMissingQualificationIds(qualId)
     const order = await apiClient("/api/credentials/application-orders", {
       method: "POST",
       body: JSON.stringify({
         pipeline_cc_ulid: props.pipelineId,
         bundle_ulid: resolvedBundleId.value,
-        qual_ulids: [qualId],
+        qual_ulids: qualIds,
       }),
     })
     const orderId = String(order?.application_order_ulid || "").trim()
@@ -548,11 +574,12 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
       payOrderUlid: order?.pay_order_ulid,
       paymentKey: order?.payment_key,
       message: order?.message,
-      qualIds: [qualId],
+      qualIds,
     }
 
     if (isUploadReadyStatus(orderStatus)) {
-      toast.info(copy.value.qualificationApplicationCreated || "资格申请已创建，请到资格申请页面提交资料。")
+      toast.info(copy.value.qualificationUploadReady || "资料上传入口已开放，正在前往资格申请页面。")
+      window.setTimeout(() => goToCredentialUpload(qualIds), 300)
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
@@ -570,8 +597,8 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
         bizRefUlid: orderId,
         orderId,
         source: "credential_application",
-        returnPath: "/certifications",
-        extraReturnParams: { pipeline_id: props.pipelineId, bundle_id: resolvedBundleId.value },
+        returnPath: "/credentials",
+        extraReturnParams: { qual_ulids: qualIds.join(",") },
       }
       return
     }
