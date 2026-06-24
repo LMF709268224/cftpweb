@@ -432,7 +432,7 @@ file_constraints
 {
   "candidate_ulid": "<candidate_ulid>",
   "pipeline_cc_ulid": "<pipeline_cc_ulid>",
-  "bundle_order_ulid": "<bundle_order_ulid>",
+  "bundle_ulid": "<bundle_ulid>",
   "qual_ulids": ["<qual_id>"]
 }
 ```
@@ -443,10 +443,12 @@ file_constraints
 {
   "candidate_ulid": "<candidate_ulid>",
   "pipeline_cc_ulid": "<pipeline_cc_ulid>",
-  "bundle_order_ulid": "<bundle_order_ulid>",
+  "bundle_ulid": "<bundle_ulid>",
   "qual_ulids": ["<qual_id_1>", "<qual_id_2>"]
 }
 ```
+
+这里的 `bundle_ulid` 是商品 Bundle 配置 ULID。资格申请订单不要求先创建 Bundle 购买订单，因此不要为了申请免考资格提前创建未支付的 `bundle_order_ulid`。
 
 返回状态：
 
@@ -732,7 +734,7 @@ retake payment for course unit ... has not been completed
 ### 12.3 资格申请页
 
 1. `gcreds.GetCredentialDefinitionDetail`
-2. `gmall.CreateCredentialApplicationOrder`，`qual_ulids` 使用 `gcc.GetPipelineDetail` 中对应 Unit 的 `exemption_quals`，并传入当前 `bundle_order_ulid`
+2. `gmall.CreateCredentialApplicationOrder`，`qual_ulids` 使用 `gcc.GetPipelineDetail` 中对应 Unit 的 `exemption_quals`，并传入当前商品 Bundle 的 `bundle_ulid`
 3. 如果 `WAIT_REVIEW_FEE_PAYMENT`，先支付审核费。
 4. 到 `UPLOAD_READY` 后：
    - `gcreds.RequestUploadUrl`

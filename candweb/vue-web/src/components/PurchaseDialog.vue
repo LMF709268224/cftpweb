@@ -464,33 +464,6 @@ async function refreshPurchaseOrderPreview() {
   }
 }
 
-async function ensureBundleOrderForCredentialApplication() {
-  if (activeOrder.value?.action === "purchase" && activeOrder.value.orderId) {
-    return activeOrder.value.orderId
-  }
-
-  const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
-  eligibility.value = latest
-  if (!latest.can_purchase) return ""
-
-  const { orderId, orderStatus } = await createBundlePurchaseOrder()
-  if (!orderId) {
-    toast.error(copy.value.purchaseFailed || t.value.common.error)
-    return ""
-  }
-  if (isCompletedStatus(orderStatus)) {
-    toast.success(copy.value.purchaseCompleted)
-    close()
-    window.setTimeout(() => window.location.reload(), 800)
-    return ""
-  }
-  if (isFailedStatus(orderStatus)) {
-    toast.error(copy.value.purchaseFailed)
-    return ""
-  }
-  return orderId
-}
-
 async function createUnlockOrder() {
   actionLoading.value = true
   try {
@@ -537,7 +510,7 @@ async function createUnlockOrder() {
 
 async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: ExemptionQual) {
   const qualId = String(qual.qual_id || "").trim()
-  if (!props.pipelineId || !qualId) return
+  if (!props.pipelineId || !resolvedBundleId.value || !qualId) return
   const loadingKey = applicationLoadingKey(unit, qual)
   credentialApplicationLoadingKey.value = loadingKey
   activePaymentSession.value = null
@@ -559,14 +532,11 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
       }
     }
 
-    const bundleOrderUlid = await ensureBundleOrderForCredentialApplication()
-    if (!bundleOrderUlid) return
-
     const order = await apiClient("/api/credentials/application-orders", {
       method: "POST",
       body: JSON.stringify({
         pipeline_cc_ulid: props.pipelineId,
-        bundle_order_ulid: bundleOrderUlid,
+        bundle_ulid: resolvedBundleId.value,
         qual_ulids: [qualId],
       }),
     })

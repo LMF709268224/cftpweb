@@ -91,12 +91,12 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 		return
 	}
 	body.PipelineCcUlid = strings.TrimSpace(body.PipelineCcUlid)
-	body.BundleOrderUlid = strings.TrimSpace(body.BundleOrderUlid)
+	body.BundleUlid = strings.TrimSpace(body.BundleUlid)
 	body.QualUlids = compactStrings(body.QualUlids)
 	if len(body.QualUlids) == 0 {
 		body.QualUlids = compactStrings(body.LegacyQualIDs)
 	}
-	if !requireRequestFields(w, body.PipelineCcUlid, "pipeline_cc_ulid", body.BundleOrderUlid, "bundle_order_ulid") {
+	if !requireRequestFields(w, body.PipelineCcUlid, "pipeline_cc_ulid", body.BundleUlid, "bundle_ulid") {
 		return
 	}
 	if len(body.QualUlids) == 0 {
@@ -105,10 +105,10 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 	}
 
 	res, err := h.Mall.CreateCredentialApplicationOrder(r.Context(), &mallpb.CreateCredentialApplicationOrderRequest{
-		CandidateUlid:   candidateID,
-		PipelineCcUlid:  body.PipelineCcUlid,
-		BundleOrderUlid: body.BundleOrderUlid,
-		QualUlids:       body.QualUlids,
+		CandidateUlid:  candidateID,
+		PipelineCcUlid: body.PipelineCcUlid,
+		BundleUlid:     body.BundleUlid,
+		QualUlids:      body.QualUlids,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
