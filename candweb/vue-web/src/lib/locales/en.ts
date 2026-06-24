@@ -400,7 +400,7 @@ export const en: AppTranslations = {
     statusPending: "Pending",
     statusNoResult: "No result yet",
     statusResultPublished: "Result published",
-    statusExamCompleted: "Exam completed",
+    statusExamCompleted: "Exam completed, awaiting result",
     statusQualified: "Qualified",
     statusUnqualified: "Not qualified",
     statusWaitingExamConfirmation: "Waiting for exam provider confirmation",

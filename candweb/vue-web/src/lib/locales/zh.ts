@@ -398,7 +398,7 @@
     statusPending: "待定",
     statusNoResult: "未出结果",
     statusResultPublished: "已出成绩",
-    statusExamCompleted: "考试已完成",
+    statusExamCompleted: "考试已完成，等待结果",
     statusQualified: "合格",
     statusUnqualified: "不合格",
     statusWaitingExamConfirmation: "等待考试系统确认",
