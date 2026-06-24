@@ -163,6 +163,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Route("/credentials", func(r chi.Router) {
 			r.Get("/definitions", h.ListCredentialDefinitions)
 			r.Get("/applications", h.ListCandidateApplications)
+			r.Get("/qualifications", h.CheckCandidateQualifications)
 			r.Get("/upload-permission", h.CheckUploadPermission)
 			r.Post("/application-orders", h.CreateCredentialApplicationOrder)
 			r.Post("/upload-url", h.RequestUploadUrl)

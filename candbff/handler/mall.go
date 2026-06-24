@@ -546,6 +546,10 @@ func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification)
 	if p == nil {
 		return PipelineConfig{}
 	}
+	finalQuals := certQuals
+	if finalQuals == nil {
+		finalQuals = p.GetCertsQuals()
+	}
 
 	return PipelineConfig{
 		PipelineUlid:          p.GetPipelineUlid(),
@@ -564,7 +568,7 @@ func toPipelineConfig(p *gccpb.PipelineConfig, certQuals []*gccpb.Qualification)
 		Status:                p.GetStatus(),
 		IsCurrent:             p.GetIsCurrent(),
 		CreatedAt:             p.GetCreatedAt(),
-		FinalQuals:            toUnlockQuals(certQuals),
+		FinalQuals:            toUnlockQuals(finalQuals),
 	}
 }
 

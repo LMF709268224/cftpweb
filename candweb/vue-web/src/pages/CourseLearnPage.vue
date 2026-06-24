@@ -188,6 +188,8 @@ const courseExams = ref<any[]>([])
 const courseCertificateLoading = ref(false)
 const courseCertificateUrl = ref("")
 const courseCertificateError = ref("")
+const finalQualificationLoading = ref(false)
+const resolvedBundleId = ref("")
 const retakePaymentSession = ref<{
   paymentKey?: string
   orderId?: string
@@ -198,6 +200,11 @@ const retakePaymentSession = ref<{
   extraReturnParams?: Record<string, string>
 } | null>(null)
 const retakePaymentDialogOpen = ref(false)
+const paymentDialogTitle = computed(() =>
+  retakePaymentSession.value?.source === "credential_application"
+    ? t.value.learning.finalQualificationPaymentTitle
+    : t.value.examsPage.applyRetake
+)
 
 const courseId = computed(() => String(route.params.courseId || route.query.courseId || ""))
 const pipelineId = computed(() => String(route.params.pipelineId || route.query.pipelineId || ""))
@@ -285,6 +292,24 @@ const pipelineHasCertificate = computed(() => {
   const certQuals = runtime.value?.config?.cert_quals || runtime.value?.config?.final_quals || []
   return Array.isArray(certQuals) && certQuals.some((qual) => firstString(qual?.qual_id, qual?.qualId))
 })
+const finalQualifications = computed(() => {
+  const quals = runtime.value?.config?.final_quals || runtime.value?.config?.cert_quals || []
+  return Array.isArray(quals)
+    ? quals
+        .map((qual) => ({
+          qualId: firstString(qual?.qual_id, qual?.qualId, qual?.id),
+          name: firstString(qual?.name_hint, qual?.nameHint, qual?.name),
+        }))
+        .filter((qual) => qual.qualId)
+    : []
+})
+const finalQualificationIds = computed(() => finalQualifications.value.map((qual) => qual.qualId))
+const pipelineWaitsFinalEligibility = computed(() => {
+  const raw = String(pipelineStatus.value ?? "").trim()
+  const normalized = normalizeEnumValueUpper(pipelineStatus.value)
+  return raw === "2" || normalized.includes("WAIT_FINAL_ELIG")
+})
+const finalQualificationRequired = computed(() => pipelineWaitsFinalEligibility.value && finalQualificationIds.value.length > 0)
 const courseRuntimeUnit = computed(() => {
   const stages = runtime.value?.config?.stages || []
   for (const stage of stages) {
@@ -531,10 +556,10 @@ const certificationFlowSteps = computed(() => {
       id: "certificate",
       label: t.value.learning.certificationCertificateLabel,
       description: t.value.learning.certificationCertificateDesc,
-      statusText: certificateStepDone.value ? t.value.learning.certificationCertificateAvailableTag : currentId === "certificate" ? t.value.learning.certificationCurrentStepTag : t.value.learning.certificationCertificateAfterExamTag,
-      status: certificateStepDone.value ? "done" : currentId === "certificate" ? "current" : hasCertificateTab.value ? "available" : "locked",
+      statusText: certificateStepDone.value ? t.value.learning.certificationCertificateAvailableTag : finalQualificationRequired.value ? t.value.learning.certificationFinalQualRequiredTag : currentId === "certificate" ? t.value.learning.certificationCurrentStepTag : t.value.learning.certificationCertificateAfterExamTag,
+      status: certificateStepDone.value ? "done" : finalQualificationRequired.value || currentId === "certificate" ? "current" : hasCertificateTab.value ? "available" : "locked",
       icon: Award,
-      count: courseCertificateUrl.value ? 1 : 0,
+      count: courseCertificateUrl.value ? 1 : finalQualifications.value.length,
       actionable: pipelineHasCertificate.value,
     },
   ]
@@ -673,6 +698,125 @@ function nextStepDisplay(status?: string | number | null, hasNextLesson = false,
   }
   if (action) return nextStepDisplayFromAction(action)
   return { action: "", label: t.value.common.unknown, desc: t.value.learning.nextStepDesc }
+}
+
+function normalizedStatus(status: unknown) {
+  return String(status || "").trim().toUpperCase()
+}
+
+function isUploadReadyStatus(status: unknown) {
+  return normalizedStatus(status).includes("UPLOAD_READY")
+}
+
+function isCredentialApplicationPaymentStatus(status: unknown) {
+  return normalizedStatus(status).includes("WAIT_REVIEW_FEE_PAYMENT")
+}
+
+function isCredentialApplicationUnderReviewStatus(status: unknown) {
+  return normalizedStatus(status).includes("UNDER_REVIEW")
+}
+
+function isCredentialApplicationResolvedStatus(status: unknown) {
+  const value = normalizedStatus(status)
+  return value.includes("RESOLVED") || value.includes("APPROVED") || value.includes("COMPLETED")
+}
+
+function finalQualificationUploadPath(qualIds = finalQualificationIds.value) {
+  const params = new URLSearchParams()
+  if (qualIds.length > 0) params.set("qual_ulids", qualIds.join(","))
+  return `/credentials${params.toString() ? `?${params.toString()}` : ""}`
+}
+
+async function resolveBundleIdForPipeline() {
+  const existing = firstString(resolvedBundleId.value, runtime.value?.config?.bundle_id, runtime.value?.config?.bundle_ulid)
+  if (existing) {
+    resolvedBundleId.value = existing
+    return existing
+  }
+  if (!pipelineId.value) return ""
+  const res = await apiClient("/api/mall/bundles?page_size=100")
+  const found = (res?.bundles || []).find((bundle: any) => firstString(bundle?.pipeline_id, bundle?.pipeline_cc_ulid) === pipelineId.value)
+  const bundleId = firstString(found?.bundle_id, found?.bundle_ulid)
+  resolvedBundleId.value = bundleId
+  return bundleId
+}
+
+async function missingFinalQualificationIds() {
+  const ids = finalQualificationIds.value
+  if (ids.length === 0) return []
+  const res = await apiClient(`/api/credentials/qualifications?qual_ulids=${encodeURIComponent(ids.join(","))}`)
+  const qualifications = Array.isArray(res?.qualifications) ? res.qualifications : []
+  if (qualifications.length === 0) return ids
+  const eligible = new Set(
+    qualifications
+      .filter((item: any) => Boolean(item?.eligible))
+      .map((item: any) => firstString(item?.qual_id, item?.cred_def_ulid)),
+  )
+  return ids.filter((id) => !eligible.has(id))
+}
+
+async function handleFinalQualificationApplication() {
+  if (finalQualificationLoading.value) return
+  if (!pipelineId.value || finalQualificationIds.value.length === 0) {
+    toast.error(t.value.common.error)
+    return
+  }
+  finalQualificationLoading.value = true
+  try {
+    const missingQualIds = await missingFinalQualificationIds()
+    if (missingQualIds.length === 0) {
+      toast.success(t.value.learning.finalQualificationApproved)
+      await loadRuntime()
+      return
+    }
+    const bundleId = await resolveBundleIdForPipeline()
+    if (!bundleId) {
+      toast.error(t.value.learning.finalQualificationBundleMissing)
+      return
+    }
+    const order = await apiClient("/api/credentials/application-orders", {
+      method: "POST",
+      body: JSON.stringify({
+        pipeline_cc_ulid: pipelineId.value,
+        bundle_ulid: bundleId,
+        qual_ulids: missingQualIds,
+      }),
+    })
+    const orderId = firstString(order?.application_order_ulid, order?.application_order_id)
+    const orderStatus = firstString(order?.order_status, order?.status)
+    if (isUploadReadyStatus(orderStatus)) {
+      toast.info(t.value.learning.finalQualificationUploadReady)
+      window.setTimeout(() => router.push(finalQualificationUploadPath(missingQualIds)), 300)
+      return
+    }
+    if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
+      retakePaymentSession.value = {
+        paymentKey: order?.payment_key,
+        orderId,
+        bizType: "CREDENTIAL_APPLICATION",
+        bizRefUlid: orderId,
+        source: "credential_application",
+        returnPath: "/credentials",
+        extraReturnParams: { qual_ulids: missingQualIds.join(",") },
+      }
+      retakePaymentDialogOpen.value = true
+      return
+    }
+    if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
+      toast.info(t.value.learning.finalQualificationUnderReview)
+      return
+    }
+    if (isCredentialApplicationResolvedStatus(orderStatus)) {
+      toast.success(t.value.learning.finalQualificationApproved)
+      await loadRuntime()
+      return
+    }
+    toast.info(order?.message || t.value.learning.finalQualificationOrderCreated)
+  } catch (error) {
+    console.error(error)
+  } finally {
+    finalQualificationLoading.value = false
+  }
 }
 
 function formatFileSize(size?: number) {
@@ -1006,9 +1150,10 @@ async function loadCourseExams() {
 }
 
 async function loadCourseCertificate() {
-  if (!hasCertificateTab.value || !runtime.value?.instance?.pipeline_ulid) {
+  if (!hasCertificateTab.value || finalQualificationRequired.value || !runtime.value?.instance?.pipeline_ulid) {
     courseCertificateUrl.value = ""
     courseCertificateError.value = ""
+    courseCertificateLoading.value = false
     return
   }
   courseCertificateLoading.value = true
@@ -1679,6 +1824,29 @@ watch(selectedMaterial, () => {
             </RouterLink>
           </template>
 
+          <div v-else-if="finalQualificationRequired" class="rounded-md border border-blue-200 bg-blue-50 p-5">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <div class="mb-2 flex items-center gap-2 text-blue-900">
+                  <Award class="h-5 w-5" />
+                  <h3 class="text-lg font-semibold">{{ t.learning.finalQualificationTitle }}</h3>
+                </div>
+                <p class="text-sm leading-relaxed text-blue-800">{{ t.learning.finalQualificationDesc }}</p>
+              </div>
+              <button class="btn btn-primary shrink-0 rounded-lg" :disabled="finalQualificationLoading" @click="handleFinalQualificationApplication">
+                <Loader2 v-if="finalQualificationLoading" class="h-4 w-4 animate-spin" />
+                <FileText v-else class="h-4 w-4" />
+                {{ t.learning.finalQualificationSubmitButton }}
+              </button>
+            </div>
+            <div class="mt-4 grid gap-2 sm:grid-cols-2">
+              <div v-for="qual in finalQualifications" :key="qual.qualId" class="rounded-lg border border-blue-100 bg-white px-4 py-3">
+                <div class="text-sm font-semibold text-foreground">{{ qual.name || qual.qualId }}</div>
+                <div class="mt-1 break-all font-mono text-xs text-muted-foreground">{{ qual.qualId }}</div>
+              </div>
+            </div>
+          </div>
+
           <div v-else class="rounded-md border border-slate-200 bg-slate-50 px-6 py-10 text-center">
             <div class="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-slate-400">
               <Award class="h-6 w-6" />
@@ -2065,7 +2233,7 @@ watch(selectedMaterial, () => {
     <PaymentSessionDialog
       v-if="retakePaymentSession"
       v-model:open="retakePaymentDialogOpen"
-      :title="t.examsPage.applyRetake"
+      :title="paymentDialogTitle"
       :subtitle="retakePaymentSession.orderId"
       :payment-key="retakePaymentSession.paymentKey"
       :biz-type="retakePaymentSession.bizType"

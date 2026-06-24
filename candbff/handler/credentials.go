@@ -81,6 +81,39 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 	})
 }
 
+// CheckCandidateQualifications GET /api/credentials/qualifications
+func (h *Handler) CheckCandidateQualifications(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	qualIDs := compactStrings(strings.Split(firstNonEmpty(r.URL.Query().Get("qual_ulids"), r.URL.Query().Get("qual_ids")), ","))
+	if len(qualIDs) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field \"qual_ulids\" is required but was empty")
+		return
+	}
+
+	items := make([]map[string]interface{}, 0, len(qualIDs))
+	for _, qualID := range qualIDs {
+		check, err := h.Creds.CheckCandidateQualification(r.Context(), &gcredspb.CheckCandidateQualificationRequest{
+			CandidateUlid: candidateID,
+			CredDefUlid:   qualID,
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		items = append(items, map[string]interface{}{
+			"qual_id":           qualID,
+			"cred_def_ulid":     qualID,
+			"eligible":          check.GetEligible(),
+			"credential_status": check.GetCredentialStatus().String(),
+			"message":           check.GetMessage(),
+		})
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"qualifications": items,
+	})
+}
+
 // CreateCredentialApplicationOrder POST /api/credentials/application-orders
 func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
