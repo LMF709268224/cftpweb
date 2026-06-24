@@ -518,13 +518,17 @@ func (h *Handler) CreateBundleOrder(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
+	bundleOrderID := strings.TrimSpace(req.BundleOrderUlid)
+	if bundleOrderID == "" {
+		bundleOrderID = ulid.Make().String()
+	}
 
 	resp, err := h.Mall.CreateBundleOrder(r.Context(), &mallpb.CreateBundleOrderRequest{
 		CandidateUlid:          candidateID,
 		BundleCcUlid:           bundleId,
 		PaymentMode:            req.PaymentMode,
 		SelectedExemptionsJson: req.SelectedExemptionsJson,
-		BundleOrderUlid:        ulid.Make().String(),
+		BundleOrderUlid:        bundleOrderID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

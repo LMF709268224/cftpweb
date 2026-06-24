@@ -40,8 +40,8 @@ async function uploadWithTimeout(url: string, init: RequestInit) {
 async function fetchData() {
   loading.value = true
   try {
-    const qualIds = String(route.query.qual_ids || "").trim()
-    const definitionsEndpoint = qualIds ? `/api/credentials/definitions?qual_ids=${encodeURIComponent(qualIds)}` : "/api/credentials/definitions"
+    const qualIds = String(route.query.qual_ulids || route.query.qual_ids || "").trim()
+    const definitionsEndpoint = qualIds ? `/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualIds)}` : "/api/credentials/definitions"
     const [defsRes, appsRes] = await Promise.all([apiClient(definitionsEndpoint), apiClient("/api/credentials/applications")])
     definitions.value = defsRes?.definitions || []
     applications.value = appsRes?.applications || []
@@ -82,7 +82,7 @@ async function handleFileUpload(constraintName: string, file: File) {
     const contentType = file.type || "application/octet-stream"
     const res = await apiClient("/api/credentials/upload-url", {
       method: "POST",
-      body: JSON.stringify({ cred_def_id: credentialDefinitionId(selectedDef.value), file_name: file.name, file_ext: fileExt, file_hash: fileHash, content_type: contentType, file_usage: constraintName }),
+      body: JSON.stringify({ cred_def_ulid: credentialDefinitionId(selectedDef.value), file_name: file.name, file_ext: fileExt, file_hash: fileHash, content_type: contentType, file_usage: constraintName }),
     })
     const uploadRes = await uploadWithTimeout(res.upload_url, { method: "PUT", headers: new Headers(res.signed_headers || {}), body: file })
     if (!uploadRes.ok) throw new Error("S3 upload failed")
@@ -109,7 +109,7 @@ async function handleSubmitApplication() {
     if (resubmitAppId.value) {
       await apiClient("/api/credentials/update", { method: "PUT", body: JSON.stringify({ app_id: resubmitAppId.value, files: evidenceFiles }) })
     } else {
-      await apiClient("/api/credentials/submit", { method: "POST", body: JSON.stringify({ cred_def_id: credentialDefinitionId(selectedDef.value), files: evidenceFiles }) })
+      await apiClient("/api/credentials/submit", { method: "POST", body: JSON.stringify({ cred_def_ulid: credentialDefinitionId(selectedDef.value), files: evidenceFiles }) })
     }
     isApplyOpen.value = false
     await fetchData()
