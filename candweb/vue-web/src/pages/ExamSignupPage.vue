@@ -17,7 +17,6 @@ const unitId = String(route.query.unitId || "")
 const pipelineId = String(route.query.pipelineId || "")
 const courseId = String(route.query.courseId || "")
 const loading = ref(false)
-const syncLoading = ref(false)
 const selectedCountryCode = ref("")
 const selectedProvinceCode = ref("")
 const countryOptions = ref<Array<{ code: string; name: string }>>([])
@@ -290,17 +289,18 @@ watch(lang, () => {
   }
 })
 
-async function handleSyncToProfile() {
-  syncLoading.value = true
+async function syncSignupToProfile() {
   try {
     const current = await fetchUser(true)
+    if (!current) return
     await apiClient("/api/user/profile", {
       method: "PUT",
       body: JSON.stringify(buildProfilePayload(current || {})),
+      suppressErrorToast: true,
     })
-    toast.success(t.value.examSignup.syncProfileSuccess)
-  } finally {
-    syncLoading.value = false
+    await fetchUser(true)
+  } catch (err) {
+    console.warn("Failed to sync signup form to profile", err)
   }
 }
 
@@ -331,6 +331,7 @@ async function handleSubmit() {
   }
   loading.value = true
   try {
+    await syncSignupToProfile()
     await apiClient(`/api/exams/units/${encodeURIComponent(unitId)}/signup`, { method: "POST", body: JSON.stringify(formData) })
     toast.success(t.value.examSignup.success)
     router.push("/exams")
@@ -419,13 +420,6 @@ async function handleSubmit() {
               @input="handlePhoneInput('home_phone', $event)"
             />
           </label>
-        </div>
-        <div class="rounded-xl border border-emerald-100 bg-emerald-50/60 p-4 text-sm text-muted-foreground">
-          <p>{{ t.examSignup.syncToProfileHint }}</p>
-          <button type="button" class="btn btn-outline mt-3" :disabled="syncLoading || loading" @click="handleSyncToProfile">
-            <template v-if="syncLoading"><Loader2 class="h-4 w-4 animate-spin" /> {{ t.examSignup.syncingToProfile }}</template>
-            <template v-else>{{ t.examSignup.syncToProfile }}</template>
-          </button>
         </div>
         <div class="flex justify-end pt-2">
           <button class="btn btn-primary w-full sm:w-auto" :disabled="loading">
