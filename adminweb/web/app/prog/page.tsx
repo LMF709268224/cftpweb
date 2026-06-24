@@ -138,7 +138,7 @@ function StageDiagnostics({ stageUlid, candidateUlid, status }: { stageUlid: str
     setLoading(true)
     apiClient(`/api/mall/stage-orders?stage_ulid=${stageUlid}&candidate_ulid=${candidateUlid}`)
       .then(res => {
-        if (active) setOrders(res?.orders || [])
+        if (active) setOrders(res?.items || res?.orders || [])
       })
       .catch(console.error)
       .finally(() => {

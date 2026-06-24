@@ -10,7 +10,7 @@ require (
 )
 
 require (
-	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260622045728-4c6755a0bc04
+	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260624045648-ca06313bb9d8
 	github.com/casdoor/casdoor-go-sdk v1.46.0
 	github.com/oklog/ulid/v2 v2.1.1
 )

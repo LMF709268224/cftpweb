@@ -9,7 +9,7 @@ import (
 )
 
 func (h *Handler) CreateBundle(w http.ResponseWriter, r *http.Request) {
-	var req mallpb.CreateBundleRequest
+	var req mallpb.CreateBundleDraftRequest
 	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
@@ -17,7 +17,7 @@ func (h *Handler) CreateBundle(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestFields(w, req.BundleUlid, "bundle_ulid", req.BundleGpath, "bundle_gpath", req.Name, "name") {
 		return
 	}
-	resp, err := h.Mall.CreateBundle(r.Context(), &req)
+	resp, err := h.Mall.CreateBundleDraft(r.Context(), &req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -26,18 +26,35 @@ func (h *Handler) CreateBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateBundleMeta(w http.ResponseWriter, r *http.Request) {
-	var req mallpb.UpdateBundleMetaRequest
-	if err := ReadJSON(r, &req); err != nil {
+	var body struct {
+		BundleUlid         string  `json:"bundle_ulid"`
+		TargetUlid         string  `json:"target_ulid"`
+		Name               *string `json:"name"`
+		NewName            *string `json:"new_name"`
+		Description        *string `json:"description"`
+		ThumbnailObjectKey *string `json:"thumbnail_object_key"`
+		ThumbnailFileHash  *string `json:"thumbnail_file_hash"`
+	}
+	if err := ReadJSON(r, &body); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	if req.BundleUlid == "" {
-		req.BundleUlid = strings.TrimSpace(chi.URLParam(r, "bundle_ulid"))
-	}
-	if !requireRequestField(w, req.BundleUlid, "bundle_ulid") {
+	targetULID := strings.TrimSpace(firstNonEmpty(body.TargetUlid, body.BundleUlid, chi.URLParam(r, "bundle_ulid")))
+	if !requireRequestField(w, targetULID, "bundle_ulid") {
 		return
 	}
-	resp, err := h.Mall.UpdateBundleMeta(r.Context(), &req)
+	newName := body.NewName
+	if newName == nil {
+		newName = body.Name
+	}
+	req := &mallpb.UpdateBundleMetadataRequest{
+		TargetUlid:         targetULID,
+		NewName:            newName,
+		Description:        body.Description,
+		ThumbnailObjectKey: body.ThumbnailObjectKey,
+		ThumbnailFileHash:  body.ThumbnailFileHash,
+	}
+	resp, err := h.Mall.UpdateBundleMetadata(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -46,15 +63,35 @@ func (h *Handler) UpdateBundleMeta(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateBundlePricing(w http.ResponseWriter, r *http.Request) {
-	var req mallpb.UpdateBundlePricingRequest
-	if err := ReadJSON(r, &req); err != nil {
+	var body struct {
+		BundleUlid  string `json:"bundle_ulid"`
+		BundleGpath string `json:"bundle_gpath"`
+		PricingJson string `json:"pricing_json"`
+		ItemsJson   string `json:"items_json"`
+	}
+	if err := ReadJSON(r, &body); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	if !requireRequestFields(w, req.BundleGpath, "bundle_gpath", req.PricingJson, "pricing_json", req.ItemsJson, "items_json") {
+	bundleULID := strings.TrimSpace(firstNonEmpty(body.BundleUlid, chi.URLParam(r, "bundle_ulid")))
+	if bundleULID == "" && strings.TrimSpace(body.BundleGpath) != "" {
+		getResp, err := h.Mall.GetBundle(r.Context(), &mallpb.GetBundleRequest{
+			Query: &mallpb.GetBundleRequest_BundleGpath{BundleGpath: strings.TrimSpace(body.BundleGpath)},
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		bundleULID = getResp.GetBundle().GetBundleUlid()
+	}
+	if !requireRequestFields(w, bundleULID, "bundle_ulid", body.PricingJson, "pricing_json", body.ItemsJson, "items_json") {
 		return
 	}
-	resp, err := h.Mall.UpdateBundlePricing(r.Context(), &req)
+	resp, err := h.Mall.UpdateBundleStructure(r.Context(), &mallpb.UpdateBundleStructureRequest{
+		BundleUlid:  bundleULID,
+		PricingJson: body.PricingJson,
+		ItemsJson:   body.ItemsJson,
+	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -85,7 +122,7 @@ func (h *Handler) GetBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
-	resp, err := h.Mall.ListBundles(r.Context(), &mallpb.ListBundlesRequest{
+	resp, err := h.Mall.ListBundlesAdmin(r.Context(), &mallpb.ListBundlesAdminRequest{
 		Limit:  int32Query(r, "limit", 20),
 		Offset: int32Query(r, "offset", 0),
 		Status: strings.TrimSpace(r.URL.Query().Get("status")),

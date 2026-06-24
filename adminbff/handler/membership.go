@@ -171,7 +171,7 @@ func (h *Handler) AdminUpdateMembershipConfig(w http.ResponseWriter, r *http.Req
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	if !requireRequestFields(w, req.NewMembershipUlid, "new_membership_ulid", req.MembershipGpath, "membership_gpath", req.Name, "name") {
+	if !requireRequestField(w, req.MembershipGpath, "membership_gpath") {
 		return
 	}
 	resp, err := h.Gmbr.AdminUpdateMembershipConfig(r.Context(), &req)
@@ -183,27 +183,25 @@ func (h *Handler) AdminUpdateMembershipConfig(w http.ResponseWriter, r *http.Req
 }
 
 func (h *Handler) AdminPublishMembershipConfig(w http.ResponseWriter, r *http.Request) {
-	membershipULID := strings.TrimSpace(chi.URLParam(r, "membership_ulid"))
-	if !requireRequestField(w, membershipULID, "membership_ulid") {
-		return
-	}
-	resp, err := h.Gmbr.AdminPublishMembershipConfig(r.Context(), &gmbrpb.AdminPublishMembershipConfigRequest{
-		MembershipUlid: membershipULID,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteError(w, http.StatusNotImplemented, ErrInvalidRequest, "AdminPublishMembershipConfig is not supported by the current gmbr API")
 }
 
 func (h *Handler) AdminDeprecateMembershipConfig(w http.ResponseWriter, r *http.Request) {
 	membershipULID := strings.TrimSpace(chi.URLParam(r, "membership_ulid"))
-	if !requireRequestField(w, membershipULID, "membership_ulid") {
+	membershipGpath := strings.TrimSpace(r.URL.Query().Get("membership_gpath"))
+	if membershipGpath == "" && membershipULID != "" {
+		resp, err := h.Gmbr.GetMembership(r.Context(), &gmbrpb.GetMembershipRequest{MembershipUlid: membershipULID})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		membershipGpath = resp.GetMembershipGpath()
+	}
+	if !requireRequestField(w, membershipGpath, "membership_gpath") {
 		return
 	}
 	resp, err := h.Gmbr.AdminDeprecateMembershipConfig(r.Context(), &gmbrpb.AdminDeprecateMembershipConfigRequest{
-		MembershipUlid: membershipULID,
+		MembershipGpath: membershipGpath,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

@@ -2,14 +2,17 @@ package handler
 
 import (
 	"net/http"
+	"strings"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 )
 
 type PermissionReq struct {
-	CandidateUlid string `json:"candidate_id"`
-	CredDefUlid   string `json:"cred_def_id"`
-	Reason        string `json:"reason"`
+	CandidateUlid     string `json:"candidate_ulid"`
+	LegacyCandidateID string `json:"candidate_id,omitempty"`
+	CredDefUlid       string `json:"cred_def_ulid"`
+	LegacyCredDefID   string `json:"cred_def_id,omitempty"`
+	Reason            string `json:"reason"`
 }
 
 // GrantUploadPermission POST /api/permissions/grant
@@ -17,6 +20,11 @@ func (h *Handler) GrantUploadPermission(w http.ResponseWriter, r *http.Request) 
 	var body PermissionReq
 	if err := ReadJSON(r, &body); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
+		return
+	}
+	body.CandidateUlid = strings.TrimSpace(firstNonEmpty(body.CandidateUlid, body.LegacyCandidateID))
+	body.CredDefUlid = strings.TrimSpace(firstNonEmpty(body.CredDefUlid, body.LegacyCredDefID))
+	if !requireRequestFields(w, body.CandidateUlid, "candidate_ulid", body.CredDefUlid, "cred_def_ulid") {
 		return
 	}
 
@@ -47,6 +55,11 @@ func (h *Handler) RevokeUploadPermission(w http.ResponseWriter, r *http.Request)
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
+	body.CandidateUlid = strings.TrimSpace(firstNonEmpty(body.CandidateUlid, body.LegacyCandidateID))
+	body.CredDefUlid = strings.TrimSpace(firstNonEmpty(body.CredDefUlid, body.LegacyCredDefID))
+	if !requireRequestFields(w, body.CandidateUlid, "candidate_ulid", body.CredDefUlid, "cred_def_ulid") {
+		return
+	}
 
 	operatorID := AdminID(r)
 
@@ -69,8 +82,8 @@ func (h *Handler) RevokeUploadPermission(w http.ResponseWriter, r *http.Request)
 
 // CheckCandidateQualification GET /api/permissions/check
 func (h *Handler) CheckCandidateQualification(w http.ResponseWriter, r *http.Request) {
-	candidateId := r.URL.Query().Get("candidate_id")
-	credDefId := r.URL.Query().Get("cred_def_id")
+	candidateId := strings.TrimSpace(firstNonEmpty(r.URL.Query().Get("candidate_ulid"), r.URL.Query().Get("candidate_id")))
+	credDefId := strings.TrimSpace(firstNonEmpty(r.URL.Query().Get("cred_def_ulid"), r.URL.Query().Get("cred_def_id")))
 
 	if candidateId == "" || credDefId == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Missing required query params")
@@ -92,9 +105,11 @@ func (h *Handler) CheckCandidateQualification(w http.ResponseWriter, r *http.Req
 }
 
 type MarkExpiredReq struct {
-	CandidateUlid string `json:"candidate_id"`
-	CredDefUlid   string `json:"cred_def_id"`
-	Reason        string `json:"reason"`
+	CandidateUlid     string `json:"candidate_ulid"`
+	LegacyCandidateID string `json:"candidate_id,omitempty"`
+	CredDefUlid       string `json:"cred_def_ulid"`
+	LegacyCredDefID   string `json:"cred_def_id,omitempty"`
+	Reason            string `json:"reason"`
 }
 
 // MarkExpired POST /api/permissions/mark-expired
@@ -102,6 +117,11 @@ func (h *Handler) MarkExpired(w http.ResponseWriter, r *http.Request) {
 	var body MarkExpiredReq
 	if err := ReadJSON(r, &body); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
+		return
+	}
+	body.CandidateUlid = strings.TrimSpace(firstNonEmpty(body.CandidateUlid, body.LegacyCandidateID))
+	body.CredDefUlid = strings.TrimSpace(firstNonEmpty(body.CredDefUlid, body.LegacyCredDefID))
+	if !requireRequestFields(w, body.CandidateUlid, "candidate_ulid", body.CredDefUlid, "cred_def_ulid") {
 		return
 	}
 
@@ -128,6 +148,11 @@ func (h *Handler) RevokeCredential(w http.ResponseWriter, r *http.Request) {
 	var body MarkExpiredReq
 	if err := ReadJSON(r, &body); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
+		return
+	}
+	body.CandidateUlid = strings.TrimSpace(firstNonEmpty(body.CandidateUlid, body.LegacyCandidateID))
+	body.CredDefUlid = strings.TrimSpace(firstNonEmpty(body.CredDefUlid, body.LegacyCredDefID))
+	if !requireRequestFields(w, body.CandidateUlid, "candidate_ulid", body.CredDefUlid, "cred_def_ulid") {
 		return
 	}
 

@@ -202,7 +202,7 @@ func (h *Handler) listAdminPipelineOrders(ctx context.Context, query adminOrderL
 	items := make([]adminOrderSummary, 0, len(resp.GetItems()))
 	for _, item := range resp.GetItems() {
 		bizRef := item.GetPipelineOrderUlid()
-		payOrder := item.GetPipelinePayOrderUlid()
+		payOrder := ""
 		items = append(items, newAdminOrderSummary(adminBizTypePipelinePayment, bizRef, payOrder, item.GetCandidateUlid(), item.GetOrderStatus(), item.GetCreatedAt()))
 	}
 	return items, resp.GetTotal(), nil
