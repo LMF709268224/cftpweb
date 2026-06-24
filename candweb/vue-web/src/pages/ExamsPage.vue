@@ -108,8 +108,14 @@ function hasAppointmentDetails(exam: any) {
   if (!shouldShowStoredExamDetails(exam)) return false
   return hasText(exam.confirmation_number) || hasText(exam.site_name) || hasText(exam.appointment_start_time) || hasText(exam.appointment_end_time)
 }
+function hasAppointmentEnded(exam: any) {
+  if (!hasText(exam.appointment_end_time)) return false
+  const safeStr = exam.appointment_end_time.endsWith("Z") ? exam.appointment_end_time.slice(0, -1) : exam.appointment_end_time
+  const endTime = new Date(safeStr).getTime()
+  return Number.isFinite(endTime) && endTime <= Date.now()
+}
 function shouldShowNoResultBadge(exam: any) {
-  return !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam)
+  return !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam) && hasAppointmentEnded(exam)
 }
 function isExamCompletedWithoutResult(exam: any) {
   if (hasExamResult(exam)) return false
