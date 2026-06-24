@@ -284,18 +284,11 @@ function buildSelectedExemptionsJson() {
 }
 
 function orderIdFromDetail(order: any) {
-  return order?.bundle_order_ulid || order?.pipeline_order_ulid || order?.summary?.pipeline_order_ulid || ""
+  return order?.bundle_order_ulid || order?.pipeline_order_ulid || order?.summary?.bundle_order_ulid || order?.summary?.pipeline_order_ulid || ""
 }
 
 function orderStatusFromDetail(order: any) {
   return order?.order_status || order?.summary?.order_status || ""
-}
-
-function qualificationUploadUrl(qualId: string, orderId = "", appId = "") {
-  const params = new URLSearchParams({ qual_ids: qualId })
-  if (orderId) params.set("application_order_ulid", orderId)
-  if (appId) params.set("application_id", appId)
-  return `/credentials?${params.toString()}`
 }
 
 async function latestCredentialApplication(qualId: string) {
@@ -305,16 +298,6 @@ async function latestCredentialApplication(qualId: string) {
   } catch (error) {
     console.error(error)
     return null
-  }
-}
-
-async function hasCredentialUploadPermission(qualId: string) {
-  try {
-    const res = await apiClient(`/api/credentials/upload-permission?cred_def_id=${encodeURIComponent(qualId)}`)
-    return Boolean(res?.granted)
-  } catch (error) {
-    console.error(error)
-    return false
   }
 }
 
@@ -385,13 +368,33 @@ async function loadActiveOrder() {
       action: "purchase",
       orderId,
       status: orderStatusFromDetail(order),
-      payOrderId: order.bundle_pay_order_ulid || order.pipeline_pay_order_ulid,
+      payOrderId: order.bundle_pay_order_ulid || order.pipeline_pay_order_ulid || order.summary?.bundle_pay_order_ulid || order.summary?.pipeline_pay_order_ulid,
       message: copy.value.inProgressPurchaseDesc,
     }
     await previewPayment("purchase", orderId)
   } catch (error) {
     console.error(error)
   }
+}
+
+async function createBundlePurchaseOrder() {
+  const order = await apiClient(`/api/mall/bundles/${resolvedBundleId.value}/purchase`, {
+    method: "POST",
+    body: JSON.stringify({
+      payment_mode: "FULL_PIPELINE",
+      selected_exemptions_json: buildSelectedExemptionsJson(),
+    }),
+  })
+  const orderId = String(order?.bundle_order_ulid || "").trim()
+  const orderStatus = String(order?.order_status || "")
+  activeOrder.value = {
+    action: "purchase",
+    orderId,
+    status: orderStatus,
+    payOrderId: order?.bundle_pay_order_ulid,
+    message: order?.message,
+  }
+  return { orderId, orderStatus }
 }
 
 async function createPurchaseOrder() {
@@ -401,22 +404,7 @@ async function createPurchaseOrder() {
     eligibility.value = latest
     if (!latest.can_purchase) return
 
-    const order = await apiClient(`/api/mall/bundles/${resolvedBundleId.value}/purchase`, {
-      method: "POST",
-      body: JSON.stringify({
-        payment_mode: "FULL_PIPELINE",
-        selected_exemptions_json: buildSelectedExemptionsJson(),
-      }),
-    })
-    const orderId = order.bundle_order_ulid
-    const orderStatus = order.order_status
-    activeOrder.value = {
-      action: "purchase",
-      orderId,
-      status: orderStatus,
-      payOrderId: order.bundle_pay_order_ulid,
-      message: order.message,
-    }
+    const { orderId, orderStatus } = await createBundlePurchaseOrder()
     if (isCompletedStatus(orderStatus)) {
       toast.success(copy.value.purchaseCompleted)
       close()
@@ -433,6 +421,33 @@ async function createPurchaseOrder() {
   } finally {
     actionLoading.value = false
   }
+}
+
+async function ensureBundleOrderForCredentialApplication() {
+  if (activeOrder.value?.action === "purchase" && activeOrder.value.orderId) {
+    return activeOrder.value.orderId
+  }
+
+  const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
+  eligibility.value = latest
+  if (!latest.can_purchase) return ""
+
+  const { orderId, orderStatus } = await createBundlePurchaseOrder()
+  if (!orderId) {
+    toast.error(copy.value.purchaseFailed || t.value.common.error)
+    return ""
+  }
+  if (isCompletedStatus(orderStatus)) {
+    toast.success(copy.value.purchaseCompleted)
+    close()
+    window.setTimeout(() => window.location.reload(), 800)
+    return ""
+  }
+  if (isFailedStatus(orderStatus)) {
+    toast.error(copy.value.purchaseFailed)
+    return ""
+  }
+  return orderId
 }
 
 async function createUnlockOrder() {
@@ -498,15 +513,19 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
         return
       }
       if (isApplicationResubmitStatus(existingApplication.status)) {
-        window.location.assign(qualificationUploadUrl(qualId, "", existingApplication.app_id || ""))
+        toast.info(copy.value.qualificationApplicationCreated || "资格申请已创建，请到资格申请页面提交资料。")
         return
       }
     }
+
+    const bundleOrderUlid = await ensureBundleOrderForCredentialApplication()
+    if (!bundleOrderUlid) return
 
     const order = await apiClient("/api/credentials/application-orders", {
       method: "POST",
       body: JSON.stringify({
         pipeline_cc_ulid: props.pipelineId,
+        bundle_order_ulid: bundleOrderUlid,
         qual_ids: [qualId],
       }),
     })
@@ -522,11 +541,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     }
 
     if (isUploadReadyStatus(orderStatus)) {
-      if (await hasCredentialUploadPermission(qualId)) {
-        window.location.assign(qualificationUploadUrl(qualId, orderId))
-        return
-      }
-      toast.info(copy.value.qualificationUploadNotReady || "资格申请订单已存在，但当前资格还没有开放资料上传，请先完成审核费支付或稍后重试。")
+      toast.info(copy.value.qualificationApplicationCreated || "资格申请已创建，请到资格申请页面提交资料。")
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
@@ -544,8 +559,8 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
         bizRefUlid: orderId,
         orderId,
         source: "credential_application",
-        returnPath: "/credentials",
-        extraReturnParams: { qual_ids: qualId, application_order_ulid: orderId },
+        returnPath: "/certifications",
+        extraReturnParams: { pipeline_id: props.pipelineId, bundle_id: resolvedBundleId.value },
       }
       return
     }

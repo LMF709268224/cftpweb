@@ -263,7 +263,6 @@ func (h *Handler) buildPipelineOrderItems(
 		}
 		pipelineULID := strings.TrimSpace(item.GetPipelineCcUlid())
 		bizRefULID := strings.TrimSpace(item.GetPipelineOrderUlid())
-		payOrderUlid := strings.TrimSpace(item.GetPipelinePayOrderUlid())
 		name := h.pipelineName(r, pipelineULID, pipelineNames)
 		if name == "" {
 			name = orderProductName(orderBizPipelinePayment, bizRefULID)
@@ -273,7 +272,6 @@ func (h *Handler) buildPipelineOrderItems(
 			ProductName:    name,
 			BizType:        orderBizPipelinePayment,
 			BizRefUlid:     bizRefULID,
-			PayOrderUlid:   payOrderUlid,
 			RawStatus:      item.GetOrderStatus(),
 			PipelineID:     pipelineULID,
 			CreatedAt:      item.GetCreatedAt(),

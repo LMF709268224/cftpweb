@@ -602,8 +602,9 @@ type PipelineExemptionQual struct {
 }
 
 type CreateCredentialApplicationOrderReq struct {
-	PipelineCcUlid string   `json:"pipeline_cc_ulid"`
-	QualUlids      []string `json:"qual_ids"`
+	PipelineCcUlid  string   `json:"pipeline_cc_ulid"`
+	BundleOrderUlid string   `json:"bundle_order_ulid"`
+	QualUlids       []string `json:"qual_ids"`
 }
 
 type PurchasePipelineRsp struct {

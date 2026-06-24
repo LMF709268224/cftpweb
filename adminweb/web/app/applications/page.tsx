@@ -22,8 +22,11 @@ interface FileInfo {
 
 interface Application {
   app_id: string
+  app_ulid?: string
   candidate_id: string
+  candidate_ulid?: string
   cred_def_id: string
+  cred_def_ulid?: string
   status: string
   files: FileInfo[]
   audit_remark: string
@@ -71,6 +74,10 @@ export default function ApplicationsPage() {
     setIsDialogOpen(true)
   }
 
+  const applicationId = (app: Application | null) => app?.app_id || app?.app_ulid || ""
+  const candidateId = (app: Application | null) => app?.candidate_id || app?.candidate_ulid || ""
+  const credentialDefinitionId = (app: Application | null) => app?.cred_def_id || app?.cred_def_ulid || ""
+
   const handleAudit = async (action: "approve" | "reject" | "resubmit") => {
     if (!selectedApp) return
 
@@ -88,7 +95,7 @@ export default function ApplicationsPage() {
       await apiClient("/api/applications/audit", {
         method: "POST",
         body: JSON.stringify({
-          application_id: selectedApp.app_id,
+          application_id: applicationId(selectedApp),
           approved,
           reject_reason: auditRemark,
           require_resubmit: requireResubmit,
@@ -174,10 +181,10 @@ export default function ApplicationsPage() {
               </TableRow>
             ) : (
               applications.map((app) => (
-                <TableRow key={app.app_id}>
-                  <TableCell className="font-medium text-xs">{app.app_id}</TableCell>
-                  <TableCell className="text-xs">{app.candidate_id}</TableCell>
-                  <TableCell className="text-xs">{app.cred_def_id}</TableCell>
+                <TableRow key={applicationId(app)}>
+                  <TableCell className="font-medium text-xs">{applicationId(app) || "-"}</TableCell>
+                  <TableCell className="text-xs">{candidateId(app) || "-"}</TableCell>
+                  <TableCell className="text-xs">{credentialDefinitionId(app) || "-"}</TableCell>
                   <TableCell>{getStatusDisplay(app.status)}</TableCell>
                   <TableCell className="text-xs">{app.created_at || '-'}</TableCell>
                   <TableCell className="text-right">
@@ -222,10 +229,10 @@ export default function ApplicationsPage() {
           {selectedApp && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><span className="text-muted-foreground">{t.applicationsPage.appId}:</span> {selectedApp.app_id}</div>
+                <div><span className="text-muted-foreground">{t.applicationsPage.appId}:</span> {applicationId(selectedApp) || "-"}</div>
                 <div><span className="text-muted-foreground">{t.applicationsPage.status}:</span> {getStatusDisplay(selectedApp.status)}</div>
-                <div><span className="text-muted-foreground">{t.applicationsPage.candidate}:</span> {selectedApp.candidate_id}</div>
-                <div><span className="text-muted-foreground">{t.applicationsPage.credential}:</span> {selectedApp.cred_def_id}</div>
+                <div><span className="text-muted-foreground">{t.applicationsPage.candidate}:</span> {candidateId(selectedApp) || "-"}</div>
+                <div><span className="text-muted-foreground">{t.applicationsPage.credential}:</span> {credentialDefinitionId(selectedApp) || "-"}</div>
               </div>
 
               <div className="mt-4">

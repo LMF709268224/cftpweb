@@ -152,6 +152,8 @@ func normalizeApplicationStatus(status string) string {
 
 type AuditApplicationReq struct {
 	ApplicationId   string `json:"application_id"`
+	AppId           string `json:"app_id"`
+	AppUlid         string `json:"app_ulid"`
 	Approved        bool   `json:"approved"`
 	RejectReason    string `json:"reject_reason"`
 	RequireResubmit bool   `json:"require_resubmit"`
@@ -166,9 +168,19 @@ func (h *Handler) AuditApplication(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
+	applicationID := strings.TrimSpace(body.ApplicationId)
+	if applicationID == "" {
+		applicationID = strings.TrimSpace(body.AppId)
+	}
+	if applicationID == "" {
+		applicationID = strings.TrimSpace(body.AppUlid)
+	}
+	if !requireRequestField(w, applicationID, "app_id") {
+		return
+	}
 
 	req := &gcredspb.AuditApplicationRequest{
-		AppUlid:       body.ApplicationId,
+		AppUlid:       applicationID,
 		Approved:      body.Approved,
 		AuditRemark:   body.RejectReason,
 		AllowReupload: body.RequireResubmit,

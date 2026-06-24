@@ -345,25 +345,39 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Mall.ListBundles(r.Context(), &mallpb.ListBundlesRequest{
 		Limit:  int32(pageSize),
 		Offset: int32(offset),
-		Status: status,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
-	enrichedList := make([]map[string]interface{}, 0, len(resp.GetBundles()))
-	for _, b := range resp.GetBundles() {
+	bundles := resp.GetBundles()
+	if status != "" {
+		filtered := make([]*mallpb.BundleInfo, 0, len(bundles))
+		for _, b := range bundles {
+			if strings.EqualFold(strings.TrimSpace(b.GetStatus()), status) {
+				filtered = append(filtered, b)
+			}
+		}
+		bundles = filtered
+	}
+
+	enrichedList := make([]map[string]interface{}, 0, len(bundles))
+	for _, b := range bundles {
 		enrichedList = append(enrichedList, h.enrichBundle(r.Context(), b))
+	}
+	total := int(resp.GetTotal())
+	if status != "" {
+		total = len(bundles)
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"bundles":     enrichedList,
-		"total":       resp.GetTotal(),
+		"total":       total,
 		"page":        page,
 		"page_size":   pageSize,
 		"offset":      offset,
-		"total_pages": totalPages(int(resp.GetTotal()), pageSize),
+		"total_pages": totalPages(total, pageSize),
 	})
 }
 
