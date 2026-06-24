@@ -179,11 +179,15 @@ function CourseUnitDiagnostics({ courseId, candidateUlid, status }: { courseId?:
     if (String(status) !== "1" || !courseId || !candidateUlid) return // Only fetch if WAITING_STUDY and has IDs
     let active = true
     setLoading(true)
-    apiClient(`/api/lms/courses/${encodeURIComponent(courseId)}/candidates/${encodeURIComponent(candidateUlid)}/progress`)
+    apiClient(`/api/lms/courses/${encodeURIComponent(courseId)}/candidates/${encodeURIComponent(candidateUlid)}/progress`, {
+      suppressErrorToast: true,
+    })
       .then(res => {
         if (active) setProgress(res)
       })
-      .catch(console.error)
+      .catch(() => {
+        if (active) setProgress(null)
+      })
       .finally(() => {
         if (active) setLoading(false)
       })

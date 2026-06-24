@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { apiClient } from "@/lib/apiClient"
 import {
-  Home,
   BookOpen,
   Crown,
   FileText,
@@ -44,7 +43,6 @@ export function Sidebar() {
   const pathname = usePathname()
 
   const navItems = [
-    { href: "/", icon: Home, label: t.sidebar.home },
     { href: "/lms", icon: LibraryBig, label: t.sidebar.lmsCourses },
     { href: "/pipelines", icon: BookOpen, label: t.sidebar.pipelines },
     { href: "/bundles", icon: Package, label: t.sidebar.bundles },
