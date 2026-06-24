@@ -299,12 +299,12 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="mb-4 rounded-md bg-white px-4 pt-4 md:px-8 md:pt-6">
-      <div class="grid grid-cols-3 border-b border-[#edf0f2] md:flex md:flex-wrap md:gap-10">
+    <div class="mb-4 rounded-[14px] bg-white px-5 pt-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6">
+      <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2]">
       <button
         v-for="tab in tabs"
         :key="tab.id"
-        :class="['relative cursor-pointer px-1 pb-4 text-center text-sm font-medium transition-colors duration-200 md:pb-7 md:text-left md:text-base', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+        :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
         @click="activeTab = tab.id"
       >
         {{ tab.label }}
