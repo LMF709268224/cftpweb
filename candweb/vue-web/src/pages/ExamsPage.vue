@@ -92,6 +92,9 @@ function hasExplicitPassStatus(exam: any) {
   if (shouldUseCurrentCourseUnitState(exam)) return false
   return typeof exam.is_passed === "boolean"
 }
+function shouldShowPrimaryExamStatusBadge(exam: any) {
+  return shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam.exam_status) && !hasExplicitPassStatus(exam)
+}
 function hasText(value?: string | null) {
   return Boolean(value?.trim())
 }
@@ -104,6 +107,20 @@ function isWaitingScheduleSync(exam: any) {
 function hasAppointmentDetails(exam: any) {
   if (!shouldShowStoredExamDetails(exam)) return false
   return hasText(exam.confirmation_number) || hasText(exam.site_name) || hasText(exam.appointment_start_time) || hasText(exam.appointment_end_time)
+}
+function shouldShowNoResultBadge(exam: any) {
+  return !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam)
+}
+function isExamCompletedWithoutResult(exam: any) {
+  if (hasExamResult(exam)) return false
+  const status = normalizedExamStatus(exam.exam_status)
+  return status.includes("PASSED") || status.includes("DONE") || status.includes("COMPLETED")
+}
+function examStatusLabel(exam: any) {
+  if (isExamCompletedWithoutResult(exam)) {
+    return (t.value.examsPage as any).statusExamCompleted || t.value.examsPage.statusScheduled
+  }
+  return statusLabel(t.value, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status))
 }
 function canScheduleExam(exam: any) {
   if (hasExamResult(exam) || isWaitingScheduleSync(exam)) return false
@@ -338,10 +355,10 @@ onMounted(() => {
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div class="space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
-                  <span v-if="shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam.exam_status)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
+                  <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ examStatusLabel(exam) }}</span>
                   <span v-if="isWaitingScheduleSync(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ scheduleSyncPendingLabel() }}</span>
                   <span v-else-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
-                  <span v-else :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
+                  <span v-else-if="shouldShowNoResultBadge(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
                   <span v-if="hasExplicitPassStatus(exam)" :class="['badge gap-1', exam.is_passed ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
                     <CheckCircle2 v-if="exam.is_passed" class="h-3 w-3" />
                     {{ passStatusLabel(exam) }}
