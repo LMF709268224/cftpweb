@@ -224,6 +224,7 @@ export const timelineStatusBadgeClassForStatus = (entityType?: StatusValue, stat
 }
 
 export const MALL_ORDER_STATUS_LABELS: StatusLabelMap = {
+  "PENDING": "orders.statusPending",
   "WAIT_PIPELINE_PAYMENT": "orders.statusWaitPayment",
   "WAIT_PIPELINE_INSTANTIATE": "orders.statusWaitInstantiate",
   "WAIT_EXEMPTION_SELECTION": "orders.statusWaitExemptionSelection",
@@ -233,6 +234,7 @@ export const MALL_ORDER_STATUS_LABELS: StatusLabelMap = {
   "WAIT_RETAKE_PAYMENT": "orders.statusWaitPayment",
   "WAIT_UNLOCK_PAYMENT": "orders.statusWaitPayment",
   "WAIT_BUNDLE_PAYMENT": "orders.statusWaitPayment",
+  "WAIT_PAYMENT": "orders.statusWaitPayment",
   "UPLOAD_READY": "orders.statusUploadReady",
   "UNDER_REVIEW": "orders.statusWaitReview",
   "RESOLVED": "orders.statusCompleted",
@@ -240,11 +242,13 @@ export const MALL_ORDER_STATUS_LABELS: StatusLabelMap = {
   "COMPLETED": "orders.statusCompleted",
   "FAILED": "orders.statusFailed",
   "CANCELLED": "orders.statusCancelled",
+  "EXPIRED": "orders.statusExpired",
   "PENDING_CREATE": "orders.statusPendingCreate",
   "PENDING_PAYMENT": "orders.statusPendingPayment",
 }
 
 export const MALL_ORDER_STATUS_ENUM_NAMES: StatusEnumNameMap = {
+  "PENDING": "PENDING",
   "WAIT_PIPELINE_PAYMENT": "WAIT",
   "WAIT_PIPELINE_INSTANTIATE": "PROCESSING",
   "WAIT_EXEMPTION_SELECTION": "WAIT",
@@ -254,6 +258,7 @@ export const MALL_ORDER_STATUS_ENUM_NAMES: StatusEnumNameMap = {
   "WAIT_RETAKE_PAYMENT": "WAIT",
   "WAIT_UNLOCK_PAYMENT": "WAIT",
   "WAIT_BUNDLE_PAYMENT": "WAIT",
+  "WAIT_PAYMENT": "WAIT",
   "UPLOAD_READY": "PROCESSING",
   "UNDER_REVIEW": "REVIEW",
   "RESOLVED": "COMPLETED",
@@ -261,8 +266,21 @@ export const MALL_ORDER_STATUS_ENUM_NAMES: StatusEnumNameMap = {
   "COMPLETED": "COMPLETED",
   "FAILED": "FAILED",
   "CANCELLED": "CANCELLED",
+  "EXPIRED": "FAILED",
   "PENDING_CREATE": "PENDING",
   "PENDING_PAYMENT": "PENDING",
+}
+
+export const PAYMENT_STATUS_LABELS: StatusLabelMap = {
+  "-": "common.na",
+  "WAIT_PAY": "orders.statusWaitPayment",
+  "WAIT_PAYMENT": "orders.statusWaitPayment",
+  "UNPAID": "orders.statusWaitPayment",
+  "PAID": "orders.statusPaid",
+  "FAILED": "orders.statusFailed",
+  "REFUNDED": "orders.statusRefunded",
+  "CANCELLED": "orders.statusCancelled",
+  "COMPLETED": "orders.statusPaid",
 }
 
 export const CANDIDATE_PIPELINE_STATUS_LABELS: StatusLabelMap = {
