@@ -32,6 +32,32 @@ type LessonForm = {
   asset_file_hash: string
 }
 
+type QuizScope = "course" | "chapter"
+
+type QuizForm = {
+  scope: QuizScope
+  title: string
+  description: string
+  passing_score: string
+  time_limit: string
+  randomize_questions: boolean
+}
+
+type QuestionForm = {
+  question_text: string
+  question_type: string
+  points: string
+  sort_order: string
+  is_required: boolean
+  media_items_json: string
+}
+
+type OptionForm = {
+  option_text: string
+  is_correct: boolean
+  sort_order: string
+}
+
 const pageSize = 20
 
 const courses = ref<JsonRecord[]>([])
@@ -40,14 +66,25 @@ const courseDetail = ref<JsonRecord | null>(null)
 const chapters = ref<JsonRecord[]>([])
 const selectedChapter = ref<JsonRecord | null>(null)
 const lessons = ref<JsonRecord[]>([])
+const quizzes = ref<JsonRecord[]>([])
+const selectedQuiz = ref<JsonRecord | null>(null)
+const questions = ref<JsonRecord[]>([])
+const selectedQuestion = ref<JsonRecord | null>(null)
+const options = ref<JsonRecord[]>([])
 
 const loading = ref(false)
 const detailLoading = ref(false)
 const chaptersLoading = ref(false)
 const lessonsLoading = ref(false)
+const quizzesLoading = ref(false)
+const questionsLoading = ref(false)
+const optionsLoading = ref(false)
 const savingCourse = ref(false)
 const savingChapter = ref(false)
 const savingLesson = ref(false)
+const savingQuiz = ref(false)
+const savingQuestion = ref(false)
+const savingOption = ref(false)
 const publishing = ref(false)
 const importing = ref(false)
 
@@ -57,8 +94,14 @@ const nextPageToken = ref("")
 const courseForm = ref<CourseForm>(emptyCourseForm())
 const chapterForm = ref<ChapterForm>(emptyChapterForm())
 const lessonForm = ref<LessonForm>(emptyLessonForm())
+const quizForm = ref<QuizForm>(emptyQuizForm())
+const questionForm = ref<QuestionForm>(emptyQuestionForm())
+const optionForm = ref<OptionForm>(emptyOptionForm())
 const editingChapterId = ref("")
 const editingLessonId = ref("")
+const editingQuizId = ref("")
+const editingQuestionId = ref("")
+const editingOptionId = ref("")
 const importOpen = ref(false)
 const importScope = ref<"course" | "quiz">("course")
 const importCategoryTips = ref("")
@@ -66,6 +109,8 @@ const importJson = ref("")
 
 const selectedCourseId = computed(() => courseId(selectedCourse.value))
 const selectedChapterId = computed(() => chapterId(selectedChapter.value))
+const selectedQuizId = computed(() => quizId(selectedQuiz.value))
+const selectedQuestionId = computed(() => questionId(selectedQuestion.value))
 const selectedCoursePublished = computed(() => Boolean(selectedCourse.value?.is_published))
 const selectedCourseStatus = computed(() => selectedCourse.value?.status || (selectedCoursePublished.value ? "Published" : "Draft"))
 
@@ -98,6 +143,36 @@ function emptyLessonForm(): LessonForm {
   }
 }
 
+function emptyQuizForm(): QuizForm {
+  return {
+    scope: "chapter",
+    title: "",
+    description: "",
+    passing_score: "70",
+    time_limit: "0",
+    randomize_questions: false,
+  }
+}
+
+function emptyQuestionForm(): QuestionForm {
+  return {
+    question_text: "",
+    question_type: "1",
+    points: "10",
+    sort_order: "1",
+    is_required: true,
+    media_items_json: "[]",
+  }
+}
+
+function emptyOptionForm(): OptionForm {
+  return {
+    option_text: "",
+    is_correct: false,
+    sort_order: "1",
+  }
+}
+
 function courseId(course: JsonRecord | null | undefined) {
   return String(pickFirst(course || {}, ["course_id", "course_ulid"]) || "")
 }
@@ -108,6 +183,18 @@ function chapterId(chapter: JsonRecord | null | undefined) {
 
 function lessonId(lesson: JsonRecord | null | undefined) {
   return String(pickFirst(lesson || {}, ["lesson_id", "lesson_ulid"]) || "")
+}
+
+function quizId(quiz: JsonRecord | null | undefined) {
+  return String(pickFirst(quiz || {}, ["quiz_id", "quiz_ulid"]) || "")
+}
+
+function questionId(question: JsonRecord | null | undefined) {
+  return String(pickFirst(question || {}, ["question_id", "question_ulid"]) || "")
+}
+
+function optionId(option: JsonRecord | null | undefined) {
+  return String(pickFirst(option || {}, ["option_id", "option_ulid"]) || "")
 }
 
 function versionOf(record: JsonRecord | null | undefined) {
@@ -124,6 +211,26 @@ function chapterTitle(chapter: JsonRecord | null | undefined) {
 
 function lessonTitle(lesson: JsonRecord | null | undefined) {
   return String(pickFirst(lesson || {}, ["title", "name"]) || lessonId(lesson) || "课时")
+}
+
+function quizTitle(quiz: JsonRecord | null | undefined) {
+  return String(pickFirst(quiz || {}, ["title", "name"]) || quizId(quiz) || "测验")
+}
+
+function questionTitle(question: JsonRecord | null | undefined) {
+  return String(pickFirst(question || {}, ["question_text", "title"]) || questionId(question) || "题目")
+}
+
+function optionTitle(option: JsonRecord | null | undefined) {
+  return String(pickFirst(option || {}, ["option_text", "title"]) || optionId(option) || "选项")
+}
+
+function questionTypeLabel(value: unknown) {
+  const type = Number(value || 0)
+  if (type === 1) return "单选"
+  if (type === 2) return "多选"
+  if (type === 3) return "判断"
+  return "未知"
 }
 
 function courseFormFrom(course: JsonRecord): CourseForm {
@@ -161,10 +268,21 @@ function resetContent() {
   chapters.value = []
   selectedChapter.value = null
   lessons.value = []
+  quizzes.value = []
+  selectedQuiz.value = null
+  questions.value = []
+  selectedQuestion.value = null
+  options.value = []
   editingChapterId.value = ""
   editingLessonId.value = ""
+  editingQuizId.value = ""
+  editingQuestionId.value = ""
+  editingOptionId.value = ""
   chapterForm.value = emptyChapterForm()
   lessonForm.value = emptyLessonForm()
+  quizForm.value = emptyQuizForm()
+  questionForm.value = emptyQuestionForm()
+  optionForm.value = emptyOptionForm()
 }
 
 async function loadCourses(pageToken = "") {
@@ -304,6 +422,8 @@ function editChapter(chapter: JsonRecord) {
     sort_order: String(chapter.sort_order || 1),
   }
   void loadLessons()
+  newQuiz("chapter")
+  void loadQuizzes("chapter")
 }
 
 function newChapter() {
@@ -313,6 +433,8 @@ function newChapter() {
   lessons.value = []
   editingLessonId.value = ""
   lessonForm.value = emptyLessonForm()
+  newQuiz("chapter")
+  quizzes.value = []
 }
 
 async function saveChapter() {
@@ -440,6 +562,303 @@ async function deleteLesson(lesson: JsonRecord) {
   } catch (err) {
     console.error(err)
     toast.error("课时删除失败")
+  }
+}
+
+function quizTarget(scope: QuizScope = quizForm.value.scope) {
+  return scope === "course"
+    ? { type: 3, id: selectedCourseId.value, label: "课程" }
+    : { type: 2, id: selectedChapterId.value, label: "章节" }
+}
+
+function clearQuestionState() {
+  selectedQuestion.value = null
+  questions.value = []
+  options.value = []
+  editingQuestionId.value = ""
+  editingOptionId.value = ""
+  questionForm.value = emptyQuestionForm()
+  optionForm.value = emptyOptionForm()
+}
+
+async function loadQuizzes(scope: QuizScope = quizForm.value.scope) {
+  const target = quizTarget(scope)
+  if (!target.id) {
+    toast.error(`请先选择${target.label}`)
+    return
+  }
+
+  quizzesLoading.value = true
+  try {
+    const params = new URLSearchParams({
+      quizzable_type: String(target.type),
+      quizzable_id: target.id,
+    })
+    const data = await apiClient<JsonRecord>(`/api/lms/quizzes?${params}`)
+    const list = Array.isArray(data.quizzes) ? data.quizzes : []
+    quizzes.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    selectedQuiz.value = null
+    editingQuizId.value = ""
+    clearQuestionState()
+  } catch (err) {
+    console.error(err)
+    toast.error("测验加载失败")
+  } finally {
+    quizzesLoading.value = false
+  }
+}
+
+function editQuiz(quiz: JsonRecord) {
+  selectedQuiz.value = quiz
+  editingQuizId.value = quizId(quiz)
+  quizForm.value = {
+    scope: quizForm.value.scope,
+    title: String(quiz.title || ""),
+    description: String(quiz.description || ""),
+    passing_score: String(quiz.passing_score || 70),
+    time_limit: String(quiz.time_limit || 0),
+    randomize_questions: Boolean(quiz.randomize_questions),
+  }
+  void loadQuestions()
+}
+
+function newQuiz(scope: QuizScope = quizForm.value.scope) {
+  selectedQuiz.value = null
+  editingQuizId.value = ""
+  quizForm.value = { ...emptyQuizForm(), scope }
+  clearQuestionState()
+}
+
+async function saveQuiz() {
+  if (!quizForm.value.title.trim()) {
+    toast.error("请填写测验标题")
+    return
+  }
+  const target = quizTarget()
+  if (!target.id) {
+    toast.error(`请先选择${target.label}`)
+    return
+  }
+
+  savingQuiz.value = true
+  try {
+    const body: JsonRecord = {
+      quizzable_type: target.type,
+      quizzable_ulid: target.id,
+      title: quizForm.value.title.trim(),
+      description: quizForm.value.description.trim(),
+      passing_score: Number(quizForm.value.passing_score || 0),
+      time_limit: Number(quizForm.value.time_limit || 0),
+      randomize_questions: quizForm.value.randomize_questions,
+    }
+    if (editingQuizId.value) {
+      body.version = quizzes.value.find((item) => quizId(item) === editingQuizId.value)?.version || 0
+      await apiClient(`/api/lms/quizzes/${encodeURIComponent(editingQuizId.value)}`, { method: "PUT", body: JSON.stringify(body) })
+      toast.success("测验已更新")
+    } else {
+      await apiClient("/api/lms/quizzes", { method: "POST", body: JSON.stringify(body) })
+      toast.success("测验已创建")
+    }
+    const scope = quizForm.value.scope
+    newQuiz(scope)
+    await loadQuizzes(scope)
+    if (selectedCourseId.value) await loadCourseDetail()
+  } catch (err) {
+    console.error(err)
+    toast.error("测验保存失败")
+  } finally {
+    savingQuiz.value = false
+  }
+}
+
+async function deleteQuiz(quiz: JsonRecord) {
+  const id = quizId(quiz)
+  if (!id || !window.confirm(`确认删除测验 ${quizTitle(quiz)}？`)) return
+  try {
+    await apiClient(`/api/lms/quizzes/${encodeURIComponent(id)}?version=${versionOf(quiz)}`, { method: "DELETE" })
+    toast.success("测验已删除")
+    const scope = quizForm.value.scope
+    newQuiz(scope)
+    await loadQuizzes(scope)
+    if (selectedCourseId.value) await loadCourseDetail()
+  } catch (err) {
+    console.error(err)
+    toast.error("测验删除失败")
+  }
+}
+
+async function loadQuestions(id = selectedQuizId.value) {
+  if (!id) return
+  questionsLoading.value = true
+  try {
+    const data = await apiClient<JsonRecord>(`/api/lms/quizzes/${encodeURIComponent(id)}/questions`)
+    const list = Array.isArray(data.questions) ? data.questions : []
+    questions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    selectedQuestion.value = null
+    options.value = []
+    editingQuestionId.value = ""
+    editingOptionId.value = ""
+    questionForm.value = emptyQuestionForm()
+    optionForm.value = emptyOptionForm()
+  } catch (err) {
+    console.error(err)
+    toast.error("题目加载失败")
+  } finally {
+    questionsLoading.value = false
+  }
+}
+
+function editQuestion(question: JsonRecord) {
+  selectedQuestion.value = question
+  editingQuestionId.value = questionId(question)
+  questionForm.value = {
+    question_text: String(question.question_text || ""),
+    question_type: String(question.question_type || 1),
+    points: String(question.points || 10),
+    sort_order: String(question.sort_order || 1),
+    is_required: question.is_required !== false,
+    media_items_json: String(question.media_items_json || "[]"),
+  }
+  void loadOptions()
+}
+
+function newQuestion() {
+  selectedQuestion.value = null
+  editingQuestionId.value = ""
+  questionForm.value = emptyQuestionForm()
+  options.value = []
+  editingOptionId.value = ""
+  optionForm.value = emptyOptionForm()
+}
+
+async function saveQuestion() {
+  if (!selectedQuizId.value || !questionForm.value.question_text.trim()) {
+    toast.error("请先选择测验并填写题干")
+    return
+  }
+  const mediaJson = questionForm.value.media_items_json.trim() || "[]"
+  try {
+    JSON.parse(mediaJson)
+  } catch {
+    toast.error("媒体 JSON 格式不正确")
+    return
+  }
+
+  savingQuestion.value = true
+  try {
+    const body: JsonRecord = {
+      question_text: questionForm.value.question_text.trim(),
+      question_type: Number(questionForm.value.question_type || 1),
+      points: Number(questionForm.value.points || 0),
+      sort_order: Number(questionForm.value.sort_order || 1),
+      is_required: questionForm.value.is_required,
+      media_items_json: mediaJson,
+    }
+    if (editingQuestionId.value) {
+      body.version = questions.value.find((item) => questionId(item) === editingQuestionId.value)?.version || 0
+      await apiClient(`/api/lms/questions/${encodeURIComponent(editingQuestionId.value)}`, { method: "PUT", body: JSON.stringify(body) })
+      toast.success("题目已更新")
+    } else {
+      await apiClient(`/api/lms/quizzes/${encodeURIComponent(selectedQuizId.value)}/questions`, { method: "POST", body: JSON.stringify(body) })
+      toast.success("题目已创建")
+    }
+    newQuestion()
+    await loadQuestions()
+  } catch (err) {
+    console.error(err)
+    toast.error("题目保存失败")
+  } finally {
+    savingQuestion.value = false
+  }
+}
+
+async function deleteQuestion(question: JsonRecord) {
+  const id = questionId(question)
+  if (!id || !window.confirm(`确认删除题目 ${questionTitle(question)}？`)) return
+  try {
+    await apiClient(`/api/lms/questions/${encodeURIComponent(id)}?version=${versionOf(question)}`, { method: "DELETE" })
+    toast.success("题目已删除")
+    newQuestion()
+    await loadQuestions()
+  } catch (err) {
+    console.error(err)
+    toast.error("题目删除失败")
+  }
+}
+
+async function loadOptions(id = selectedQuestionId.value) {
+  if (!id) return
+  optionsLoading.value = true
+  try {
+    const data = await apiClient<JsonRecord>(`/api/lms/questions/${encodeURIComponent(id)}/options`)
+    const list = Array.isArray(data.options) ? data.options : []
+    options.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    editingOptionId.value = ""
+    optionForm.value = emptyOptionForm()
+  } catch (err) {
+    console.error(err)
+    toast.error("选项加载失败")
+  } finally {
+    optionsLoading.value = false
+  }
+}
+
+function editOption(option: JsonRecord) {
+  editingOptionId.value = optionId(option)
+  optionForm.value = {
+    option_text: String(option.option_text || ""),
+    is_correct: Boolean(option.is_correct),
+    sort_order: String(option.sort_order || 1),
+  }
+}
+
+function newOption() {
+  editingOptionId.value = ""
+  optionForm.value = emptyOptionForm()
+}
+
+async function saveOption() {
+  if (!selectedQuestionId.value || !optionForm.value.option_text.trim()) {
+    toast.error("请先选择题目并填写选项")
+    return
+  }
+
+  savingOption.value = true
+  try {
+    const body: JsonRecord = {
+      option_text: optionForm.value.option_text.trim(),
+      is_correct: optionForm.value.is_correct,
+      sort_order: Number(optionForm.value.sort_order || 1),
+    }
+    if (editingOptionId.value) {
+      body.version = options.value.find((item) => optionId(item) === editingOptionId.value)?.version || 0
+      await apiClient(`/api/lms/options/${encodeURIComponent(editingOptionId.value)}`, { method: "PUT", body: JSON.stringify(body) })
+      toast.success("选项已更新")
+    } else {
+      await apiClient(`/api/lms/questions/${encodeURIComponent(selectedQuestionId.value)}/options`, { method: "POST", body: JSON.stringify(body) })
+      toast.success("选项已创建")
+    }
+    newOption()
+    await loadOptions()
+  } catch (err) {
+    console.error(err)
+    toast.error("选项保存失败")
+  } finally {
+    savingOption.value = false
+  }
+}
+
+async function deleteOption(option: JsonRecord) {
+  const id = optionId(option)
+  if (!id || !window.confirm(`确认删除选项 ${optionTitle(option)}？`)) return
+  try {
+    await apiClient(`/api/lms/options/${encodeURIComponent(id)}?version=${versionOf(option)}`, { method: "DELETE" })
+    toast.success("选项已删除")
+    newOption()
+    await loadOptions()
+  } catch (err) {
+    console.error(err)
+    toast.error("选项删除失败")
   }
 }
 
@@ -723,13 +1142,13 @@ onMounted(() => {
               <div class="mt-3 grid gap-3 sm:grid-cols-2">
                 <input v-model="lessonForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" />
                 <select v-model="lessonForm.lesson_type" class="rounded-xl border border-slate-200 px-4 py-3">
-                  <option value="1">文本</option>
-                  <option value="2">PDF</option>
-                  <option value="3">视频</option>
+                  <option value="1">视频</option>
+                  <option value="2">文本</option>
+                  <option value="3">PDF</option>
                   <option value="4">图片</option>
                   <option value="5">音频</option>
-                  <option value="6">链接</option>
-                  <option value="7">文件</option>
+                  <option value="6">文件</option>
+                  <option value="7">链接</option>
                 </select>
               </div>
               <textarea v-model="lessonForm.body" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="正文 / 链接说明" />
@@ -739,6 +1158,158 @@ onMounted(() => {
                 {{ savingLesson ? "保存中..." : "保存课时" }}
               </button>
             </form>
+          </div>
+        </section>
+
+        <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-xl font-black">测验题库</h2>
+              <p class="mt-1 text-sm text-slate-500">维护课程测验或章节测验，发布课程前请确认题目和正确选项完整。</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <select v-model="quizForm.scope" class="rounded-xl border border-slate-200 px-4 py-2 font-bold" @change="newQuiz(quizForm.scope)">
+                <option value="course">课程测验</option>
+                <option value="chapter">章节测验</option>
+              </select>
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" :disabled="!selectedCourseId || (quizForm.scope === 'chapter' && !selectedChapterId)" type="button" @click="loadQuizzes()">
+                加载测验
+              </button>
+              <button class="rounded-xl bg-[#0b4ea2] px-4 py-2 font-bold text-white disabled:opacity-40" :disabled="!selectedCourseId || (quizForm.scope === 'chapter' && !selectedChapterId)" type="button" @click="newQuiz(quizForm.scope)">
+                新测验
+              </button>
+            </div>
+          </div>
+
+          <div class="border-b border-slate-100 p-5 text-sm text-slate-600">
+            当前目标：
+            <span class="font-black text-slate-900">
+              {{ quizForm.scope === "course" ? courseTitle(selectedCourse) : (selectedChapterId ? chapterTitle(selectedChapter) : "未选择章节") }}
+            </span>
+          </div>
+
+          <div class="grid gap-6 p-5 xl:grid-cols-3">
+            <div class="rounded-2xl border border-slate-200">
+              <div class="border-b border-slate-200 p-4">
+                <h3 class="font-black">测验</h3>
+                <p class="mt-1 text-xs text-slate-500">课程测验使用 course，章节测验使用选中的 chapter。</p>
+              </div>
+              <div v-if="quizzesLoading" class="p-6 text-center text-slate-500">
+                <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
+                正在加载...
+              </div>
+              <div v-else-if="!quizzes.length" class="p-6 text-center text-slate-500">暂无测验</div>
+              <div v-else class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
+                <div v-for="quiz in quizzes" :key="quizId(quiz)" class="flex items-center justify-between gap-3 p-4" :class="quizId(quiz) === selectedQuizId ? 'bg-sky-50' : ''">
+                  <button class="flex-1 text-left" type="button" @click="editQuiz(quiz)">
+                    <div class="font-black">{{ quizTitle(quiz) }}</div>
+                    <div class="mt-1 text-xs text-slate-500">通过分 {{ quiz.passing_score || 0 }} · 题目 {{ quiz.question_count || 0 }}</div>
+                  </button>
+                  <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuiz(quiz)">删除</button>
+                </div>
+              </div>
+              <form class="border-t border-slate-200 p-4" @submit.prevent="saveQuiz">
+                <h4 class="font-black">{{ editingQuizId ? "编辑测验" : "创建测验" }}</h4>
+                <input v-model="quizForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="测验标题" />
+                <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4" placeholder="描述" />
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                  <input v-model="quizForm.passing_score" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="通过分" type="number" />
+                  <input v-model="quizForm.time_limit" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="限时分钟，0 不限制" type="number" />
+                </div>
+                <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
+                  <input v-model="quizForm.randomize_questions" type="checkbox" />
+                  随机题目
+                </label>
+                <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="savingQuiz" type="submit">
+                  {{ savingQuiz ? "保存中..." : "保存测验" }}
+                </button>
+              </form>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200">
+              <div class="border-b border-slate-200 p-4">
+                <h3 class="font-black">题目</h3>
+                <p class="mt-1 text-xs text-slate-500">{{ selectedQuizId ? quizTitle(selectedQuiz) : "请先选择测验。" }}</p>
+              </div>
+              <div v-if="questionsLoading" class="p-6 text-center text-slate-500">
+                <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
+                正在加载...
+              </div>
+              <div v-else-if="!questions.length" class="p-6 text-center text-slate-500">暂无题目</div>
+              <div v-else class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
+                <div v-for="question in questions" :key="questionId(question)" class="flex items-center justify-between gap-3 p-4" :class="questionId(question) === selectedQuestionId ? 'bg-sky-50' : ''">
+                  <button class="flex-1 text-left" type="button" @click="editQuestion(question)">
+                    <div class="line-clamp-2 font-black">{{ questionTitle(question) }}</div>
+                    <div class="mt-1 text-xs text-slate-500">{{ questionTypeLabel(question.question_type) }} · {{ question.points || 0 }} 分</div>
+                  </button>
+                  <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuestion(question)">删除</button>
+                </div>
+              </div>
+              <form class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
+                <div class="flex items-center justify-between gap-3">
+                  <h4 class="font-black">{{ editingQuestionId ? "编辑题目" : "创建题目" }}</h4>
+                  <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuizId" type="button" @click="newQuestion">新题目</button>
+                </div>
+                <textarea v-model="questionForm.question_text" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="题干" />
+                <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                  <select v-model="questionForm.question_type" class="rounded-xl border border-slate-200 px-4 py-3">
+                    <option value="1">单选</option>
+                    <option value="2">多选</option>
+                    <option value="3">判断</option>
+                  </select>
+                  <input v-model="questionForm.points" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="分值" type="number" />
+                  <input v-model="questionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" />
+                </div>
+                <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
+                  <input v-model="questionForm.is_required" type="checkbox" />
+                  必答
+                </label>
+                <textarea v-model="questionForm.media_items_json" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs" placeholder="媒体 JSON，默认 []" />
+                <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
+                  {{ savingQuestion ? "保存中..." : "保存题目" }}
+                </button>
+              </form>
+            </div>
+
+            <div class="rounded-2xl border border-slate-200">
+              <div class="border-b border-slate-200 p-4">
+                <h3 class="font-black">选项</h3>
+                <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? "为当前题目配置答案。" : "请先选择题目。" }}</p>
+              </div>
+              <div v-if="optionsLoading" class="p-6 text-center text-slate-500">
+                <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
+                正在加载...
+              </div>
+              <div v-else-if="!options.length" class="p-6 text-center text-slate-500">暂无选项</div>
+              <div v-else class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
+                <div v-for="option in options" :key="optionId(option)" class="flex items-center justify-between gap-3 p-4" :class="optionId(option) === editingOptionId ? 'bg-sky-50' : ''">
+                  <button class="flex-1 text-left" type="button" @click="editOption(option)">
+                    <div class="font-black">{{ optionTitle(option) }}</div>
+                    <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
+                      {{ option.is_correct ? "正确答案" : "普通选项" }} · 排序 {{ option.sort_order || 0 }}
+                    </div>
+                  </button>
+                  <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteOption(option)">删除</button>
+                </div>
+              </div>
+              <form class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
+                <div class="flex items-center justify-between gap-3">
+                  <h4 class="font-black">{{ editingOptionId ? "编辑选项" : "创建选项" }}</h4>
+                  <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuestionId" type="button" @click="newOption">新选项</button>
+                </div>
+                <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="选项内容" />
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                  <input v-model="optionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" />
+                  <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
+                    <input v-model="optionForm.is_correct" type="checkbox" />
+                    正确答案
+                  </label>
+                </div>
+                <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuestionId || savingOption" type="submit">
+                  {{ savingOption ? "保存中..." : "保存选项" }}
+                </button>
+              </form>
+            </div>
           </div>
         </section>
       </main>
