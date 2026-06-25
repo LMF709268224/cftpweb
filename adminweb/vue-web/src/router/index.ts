@@ -1,9 +1,17 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router"
 import AdminLayout from "@/components/AdminLayout.vue"
 import { getAccessToken } from "@/lib/authStorage"
+import ApplicationsPage from "@/pages/ApplicationsPage.vue"
 import CallbackPage from "@/pages/CallbackPage.vue"
+import CredentialsPage from "@/pages/CredentialsPage.vue"
+import InvoicesPage from "@/pages/InvoicesPage.vue"
 import LoginPage from "@/pages/LoginPage.vue"
+import OrdersPage from "@/pages/OrdersPage.vue"
+import PdfRequestsPage from "@/pages/PdfRequestsPage.vue"
+import PdfTemplatesPage from "@/pages/PdfTemplatesPage.vue"
+import PermissionsPage from "@/pages/PermissionsPage.vue"
 import ResourcePage from "@/pages/ResourcePage.vue"
+import WebhookAuditPage from "@/pages/WebhookAuditPage.vue"
 
 export type ResourceRouteMeta = {
   title: string
@@ -84,7 +92,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/orders",
     name: "orders",
-    component: ResourcePage,
+    component: OrdersPage,
     meta: {
       title: "订单管理",
       subtitle: "查看认证、管线、阶段、重考和资格申请订单",
@@ -96,7 +104,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/invoices",
     name: "invoices",
-    component: ResourcePage,
+    component: InvoicesPage,
     meta: {
       title: "发票管理",
       subtitle: "查看发票和支付凭证",
@@ -107,7 +115,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/credentials",
     name: "credentials",
-    component: ResourcePage,
+    component: CredentialsPage,
     meta: {
       title: "资格定义",
       subtitle: "维护认证资格、免考资格和最终证书定义",
@@ -119,7 +127,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/applications",
     name: "applications",
-    component: ResourcePage,
+    component: ApplicationsPage,
     meta: {
       title: "审核中心",
       subtitle: "审核考生提交的资格申请",
@@ -131,7 +139,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/pdf-templates",
     name: "pdf-templates",
-    component: ResourcePage,
+    component: PdfTemplatesPage,
     meta: {
       title: "PDF 模板配置",
       subtitle: "维护证书和证明文件模板",
@@ -142,7 +150,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/pdf-requests",
     name: "pdf-requests",
-    component: ResourcePage,
+    component: PdfRequestsPage,
     meta: {
       title: "证书生成流水",
       subtitle: "查看证书 PDF 生成任务",
@@ -153,7 +161,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/audit/webhooks",
     name: "audit-webhooks",
-    component: ResourcePage,
+    component: WebhookAuditPage,
     meta: {
       title: "Webhook 审计",
       subtitle: "查看支付和外部系统回调审计",
@@ -164,7 +172,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/permissions",
     name: "permissions",
-    component: ResourcePage,
+    component: PermissionsPage,
     meta: {
       title: "考生权限管理",
       subtitle: "查看和调整考生访问权限",
