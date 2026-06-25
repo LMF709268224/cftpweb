@@ -120,17 +120,22 @@ onMounted(() => {
       <RouterLink
         v-for="pack in filteredPacks"
         :key="pack.pack_id"
-        class="group relative overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary/10"
+        class="resource-pack-card group relative overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 ease-out hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         :to="`/resource-packs/${encodeURIComponent(pack.pack_id || '')}`"
         @click="rememberPack(pack)"
       >
+        <span class="resource-pack-sheen pointer-events-none absolute left-0 top-0 z-20 h-1 w-full" />
+        <span class="resource-pack-orb pointer-events-none absolute -right-12 -top-12 z-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div class="relative flex h-24 items-end overflow-hidden px-4 pb-3 text-white bg-[linear-gradient(135deg,rgb(11,31,69)_0%,rgb(27,69,141)_55%,rgb(58,111,192)_100%)]">
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.24),transparent_30%)] opacity-70" />
           <span class="relative z-10 inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
             {{ lang === 'zh' ? '资料包' : 'Resource Pack' }}
           </span>
-          <PackageOpen class="absolute right-5 top-1/2 h-9 w-9 -translate-y-1/2 text-white/35 transition-transform group-hover:scale-105" />
+          <div class="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-105">
+            <PackageOpen class="h-7 w-7 text-white/70" />
+          </div>
         </div>
-        <div class="p-4">
+        <div class="relative p-4">
           <h2 class="line-clamp-2 text-lg font-semibold text-card-foreground transition-colors group-hover:text-primary">{{ pack.title || pack.pack_id }}</h2>
           <p class="mt-2 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-muted-foreground">{{ pack.description || copy.emptyDesc }}</p>
           <div class="mt-4 space-y-2 text-xs text-muted-foreground">
@@ -139,9 +144,9 @@ onMounted(() => {
               <span>{{ copy.updated }}: {{ formatBackendDateOnly(pack.updated_at) }}</span>
             </p>
           </div>
-          <div class="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors group-hover:bg-primary/90">
+          <div class="mt-4 flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-all duration-300 group-hover:bg-primary/90 group-hover:shadow-primary/30">
             {{ copy.open }}
-            <ArrowRight class="h-4 w-4" />
+            <ArrowRight class="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
           </div>
         </div>
       </RouterLink>
@@ -172,3 +177,29 @@ onMounted(() => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+.resource-pack-card {
+  --resource-pack-accent: #38bdf8;
+  --resource-pack-glow: rgba(37, 99, 235, 0.2);
+}
+
+.resource-pack-card:hover {
+  box-shadow: 0 18px 34px -18px var(--resource-pack-glow), 0 12px 28px rgba(15, 23, 42, 0.1);
+}
+
+.resource-pack-sheen {
+  background: linear-gradient(90deg, transparent, var(--resource-pack-accent), transparent);
+  opacity: 0.78;
+  transform: translateX(-105%);
+  transition: transform 0.65s ease;
+}
+
+.resource-pack-card:hover .resource-pack-sheen {
+  transform: translateX(105%);
+}
+
+.resource-pack-orb {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+}
+</style>

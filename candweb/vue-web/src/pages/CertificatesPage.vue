@@ -298,10 +298,13 @@ onMounted(async () => {
       <div
         v-for="cert in certificates"
         :key="cert.id"
-        class="group relative overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10"
+        class="certificate-card group relative overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 ease-out hover:-translate-y-1 focus-within:ring-2 focus-within:ring-primary/20"
       >
+        <span class="certificate-card-sheen pointer-events-none absolute left-0 top-0 z-20 h-1 w-full" />
+        <span class="certificate-card-orb pointer-events-none absolute -right-12 -top-12 z-10 h-36 w-36 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
         <div class="absolute inset-x-0 top-0 z-10 h-1" :class="certificateSourceAccentClass(cert.source)" />
         <div class="relative bg-[linear-gradient(135deg,rgb(11,31,69)_0%,rgb(27,69,141)_55%,rgb(58,111,192)_100%)] p-4 text-white">
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_18%_12%,rgba(255,255,255,0.22),transparent_32%)] opacity-70" />
           <div class="relative flex items-start justify-between">
             <div class="min-w-0">
               <div class="mb-3 flex flex-wrap items-center gap-2">
@@ -321,10 +324,10 @@ onMounted(async () => {
               <h3 class="mb-1 text-xl font-bold">{{ cert.name }}</h3>
               <p class="text-sm text-white/80">{{ cert.description }}</p>
             </div>
-            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm"><Award class="h-6 w-6" /></div>
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/20 ring-1 ring-white/15 backdrop-blur-sm transition-transform duration-300 group-hover:scale-105"><Award class="h-6 w-6" /></div>
           </div>
         </div>
-        <div class="p-4">
+        <div class="relative p-4">
           <div class="mb-4 grid grid-cols-2 gap-3">
             <div class="rounded-[14px] bg-[#eef3f8] p-3">
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
@@ -341,7 +344,7 @@ onMounted(async () => {
             <span class="font-mono text-xs font-semibold text-card-foreground">{{ cert.credentialId }}</span>
           </div>
           <div class="flex gap-3">
-            <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20" :disabled="!cert.pdfUrl" @click="openCertificate(cert.pdfUrl)">
+            <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20 transition-all duration-300 group-hover:shadow-primary/30" :disabled="!cert.pdfUrl" @click="openCertificate(cert.pdfUrl)">
               <Download class="h-4 w-4" /> {{ cert.pdfUrl ? t.certificatesPage.downloadCertificate : t.certificatesPage.certificateGenerating }}
             </button>
             <button class="btn btn-outline rounded-lg px-3" disabled><Share2 class="h-4 w-4" /></button>
@@ -368,6 +371,30 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+.certificate-card {
+  --certificate-card-accent: #38bdf8;
+  --certificate-card-glow: rgba(37, 99, 235, 0.2);
+}
+
+.certificate-card:hover {
+  box-shadow: 0 18px 34px -18px var(--certificate-card-glow), 0 12px 28px rgba(15, 23, 42, 0.1);
+}
+
+.certificate-card-sheen {
+  background: linear-gradient(90deg, transparent, var(--certificate-card-accent), transparent);
+  opacity: 0.78;
+  transform: translateX(-105%);
+  transition: transform 0.65s ease;
+}
+
+.certificate-card:hover .certificate-card-sheen {
+  transform: translateX(105%);
+}
+
+.certificate-card-orb {
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.2), transparent 68%);
+}
+
 .certificate-modal-primary {
   position: relative;
   overflow: hidden;
