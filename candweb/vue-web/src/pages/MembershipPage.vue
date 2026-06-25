@@ -27,7 +27,7 @@ const tabs = computed(() => [
 const currentRecord = computed(() => {
   const data = activeMembership.value || {}
   const list = listFrom(data, ["user_memberships", "memberships", "records", "items"])
-  return data.user_membership || data.record || data.active_membership || list[0] || history.value[0] || data
+  return data.membership || data.user_membership || data.record || data.active_membership || list[0] || history.value[0] || data
 })
 
 const currentPlan = computed(() => {
@@ -35,7 +35,8 @@ const currentPlan = computed(() => {
   const direct = data.plan || data.membership_config || data.membership_detail || null
   if (direct) return direct
   const membershipUlid = currentRecord.value?.membership_ulid
-  return plans.value.find((plan) => plan.membership_ulid === membershipUlid) || null
+  const membershipGpath = currentRecord.value?.membership_gpath
+  return plans.value.find((plan) => plan.membership_ulid === membershipUlid || plan.membership_gpath === membershipGpath) || null
 })
 
 const hasActiveMembership = computed(() => {
@@ -54,6 +55,16 @@ function listFrom(data: any, keys: string[]) {
     if (Array.isArray(data?.[key])) return data[key]
   }
   return []
+}
+
+function isActiveStatus(status: unknown) {
+  const value = String(status || "").toUpperCase()
+  return value === "ACTIVE" || value === "CURRENT" || value === "GRACE"
+}
+
+function activeRecordFromPayload(data: any) {
+  const list = listFrom(data, ["user_memberships", "memberships", "records", "items"])
+  return data?.membership || data?.user_membership || data?.record || data?.active_membership || list[0] || null
 }
 
 function formatDate(value: unknown) {
@@ -119,12 +130,34 @@ async function loadMembership() {
     plans.value = listFrom(planData, ["memberships", "plans", "items"])
     history.value = listFrom(historyData, ["memberships", "records", "items", "history"])
     billings.value = listFrom(billingData, ["billings", "records", "items"])
-    activeMembership.value = { user_memberships: history.value }
+    activeMembership.value = await loadActiveMembershipFromHistory(history.value) || { user_memberships: history.value }
   } catch (err) {
     console.error(err)
     toast.error(lang.value === "zh" ? "会员信息加载失败" : "Failed to load membership")
   } finally {
     loading.value = false
+  }
+}
+
+async function loadActiveMembershipFromHistory(membershipHistory: RecordData[]) {
+  const activeRecord = membershipHistory.find((item) => isActiveStatus(item.status))
+  const membershipGpath = String(activeRecord?.membership_gpath || "").trim()
+  if (!membershipGpath) return null
+
+  try {
+    const activeData = await apiClient(`/api/membership/active?membership_gpath=${encodeURIComponent(membershipGpath)}`, {
+      suppressErrorToast: true,
+    })
+    const confirmedRecord = activeRecordFromPayload(activeData)
+    const matchedPlan = plans.value.find((plan) => {
+      return plan.membership_ulid === confirmedRecord?.membership_ulid || plan.membership_gpath === membershipGpath
+    })
+    return {
+      ...(activeData || {}),
+      membership_config: matchedPlan || null,
+    }
+  } catch {
+    return { user_memberships: [activeRecord] }
   }
 }
 

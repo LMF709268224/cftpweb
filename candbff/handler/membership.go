@@ -64,8 +64,18 @@ func (h *Handler) GetActiveMembership(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	membershipGpath := strings.TrimSpace(r.URL.Query().Get("membership_gpath"))
+	if membershipGpath == "" {
+		membershipGpath = strings.TrimSpace(r.URL.Query().Get("membership_path"))
+	}
+	if membershipGpath == "" {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "field 'membership_gpath' is required")
+		return
+	}
+
 	resp, err := h.Gmbr.GetActiveMembership(r.Context(), &gmbrpb.GetActiveMembershipRequest{
 		CandidateUlid: candidateID,
+		MembershipGpath: membershipGpath,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
