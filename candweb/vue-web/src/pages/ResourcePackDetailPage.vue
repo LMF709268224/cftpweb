@@ -276,7 +276,7 @@ onMounted(() => {
               <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ copy.title }}</h1>
               <p class="mt-2 max-w-2xl text-muted-foreground">{{ copy.subtitle }}</p>
             </div>
-            <button class="btn btn-outline rounded-lg bg-white shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="!packId || loading" @click="loadFiles()">
+            <button class="resource-detail-refresh-btn inline-flex h-9 items-center gap-2 rounded-xl border px-4 text-sm font-semibold" :disabled="!packId || loading" @click="loadFiles()">
               <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
               {{ copy.refresh }}
             </button>
@@ -423,3 +423,35 @@ onMounted(() => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+.resource-detail-refresh-btn {
+  border-color: #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.resource-detail-refresh-btn:hover:not(:disabled) {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  box-shadow: 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+  transform: scale(1.02);
+}
+
+.resource-detail-refresh-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.resource-detail-refresh-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+}
+
+.resource-detail-refresh-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+</style>

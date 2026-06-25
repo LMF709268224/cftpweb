@@ -1620,7 +1620,7 @@ watch(selectedMaterial, () => {
           <div class="flex flex-wrap items-center gap-3 text-sm">
               <span class="rounded-md border border-slate-200 bg-white px-4 py-2 font-medium text-slate-700 shadow-sm">{{ t.learning.certificationCurrentStep }}: <span class="text-primary">{{ visibleCertificationStep.label }}</span></span>
               <span class="font-medium text-slate-700">{{ t.learning.certificationProgress }} <span class="ml-1 text-lg font-bold text-foreground">{{ completedCertificationStepCount }}</span> / {{ certificationFlowSteps.length }}</span>
-            <button v-if="course" class="btn btn-outline justify-center rounded-lg px-4 py-2 text-sm" :disabled="syncing" @click="refreshProgress(true)">
+            <button v-if="course" class="learn-sync-btn inline-flex h-9 items-center justify-center gap-2 rounded-xl border px-4 text-sm font-semibold" :disabled="syncing" @click="refreshProgress(true)">
               <Loader2 v-if="syncing" class="h-4 w-4 animate-spin" />
               <RefreshCw v-else class="h-4 w-4" />
               {{ t.learning.syncProgress }}
@@ -2314,3 +2314,34 @@ watch(selectedMaterial, () => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+.learn-sync-btn {
+  border-color: #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 6px 14px -14px rgba(15, 23, 42, 0.28);
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.learn-sync-btn:hover:not(:disabled) {
+  border-color: rgba(37, 99, 235, 0.24);
+  background: rgba(37, 99, 235, 0.06);
+  color: #1d4ed8;
+  box-shadow: 0 10px 20px -18px rgba(37, 99, 235, 0.35);
+}
+
+.learn-sync-btn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.learn-sync-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14), 0 10px 20px -18px rgba(37, 99, 235, 0.35);
+}
+
+.learn-sync-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+</style>
