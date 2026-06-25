@@ -34,6 +34,7 @@ import {
   timelineStatusLabelWithDiagnostics,
 } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import LoadingState from "@/components/LoadingState.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -1570,10 +1571,7 @@ watch(selectedMaterial, () => {
           </RouterLink>
         </div>
 
-    <div v-if="pageLoading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <Loader2 class="h-5 w-5 animate-spin" />
-      <span>{{ t.common.loading }}</span>
-    </div>
+    <LoadingState v-if="pageLoading" :label="t.common.loading" variant="page" :rows="4" />
     <div v-else-if="!course" class="rounded-md bg-white p-8 text-center text-muted-foreground">
       <div class="mx-auto max-w-md space-y-4">
         <div>
@@ -1736,10 +1734,7 @@ watch(selectedMaterial, () => {
             </span>
           </div>
 
-          <div v-if="courseExamsLoading" class="flex items-center justify-center gap-2 rounded-md bg-slate-50 py-12 text-muted-foreground">
-            <Loader2 class="h-5 w-5 animate-spin" />
-            <span>{{ t.common.loading }}</span>
-          </div>
+          <LoadingState v-if="courseExamsLoading" :label="t.common.loading" variant="section" :rows="2" />
           <div v-else-if="!courseRuntimeUnitUlid" class="rounded-md border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
             <AlertCircle class="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
             <h3 class="font-semibold text-foreground">{{ nextStepState.label }}</h3>
@@ -1847,10 +1842,7 @@ watch(selectedMaterial, () => {
             <p class="text-sm text-muted-foreground">{{ t.learning.certificatePanelDesc }}</p>
           </div>
 
-          <div v-if="courseCertificateLoading" class="flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 py-12 text-muted-foreground">
-            <Loader2 class="h-5 w-5 animate-spin" />
-            <span>{{ t.common.loading }}</span>
-          </div>
+          <LoadingState v-if="courseCertificateLoading" :label="t.common.loading" variant="section" :rows="2" />
 
           <template v-else-if="certificateStepDone">
             <div class="mb-5 flex items-center justify-between gap-4 rounded-md bg-[#08a057] px-5 py-5 text-white">

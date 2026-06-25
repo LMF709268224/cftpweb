@@ -10,6 +10,7 @@ import { useTranslation } from "@/lib/language"
 const { t, lang } = useTranslation()
 const userName = ref("...")
 const dashboardLoading = ref(false)
+const dashboardLoaded = ref(false)
 const counts = ref({
   certifications: 0,
   certificates: 0,
@@ -132,6 +133,7 @@ const portalCards = computed<PortalCard[]>(() => {
 })
 const featuredCards = computed(() => portalCards.value.filter((card) => card.featured))
 const secondaryCards = computed(() => portalCards.value.filter((card) => !card.featured))
+const showDashboardSkeleton = computed(() => dashboardLoading.value && !dashboardLoaded.value)
 
 const cardStyles = {
   orange: {
@@ -213,6 +215,7 @@ onMounted(async () => {
 
     counts.value = { certifications, certificates, courses: 0, exams, resourcePacks, orders }
   } finally {
+    dashboardLoaded.value = true
     dashboardLoading.value = false
   }
 })
@@ -233,7 +236,35 @@ onMounted(async () => {
         </section>
 
         <section class="portal-card-section mx-auto mt-12 w-full max-w-[1380px]">
-          <div class="flex flex-col gap-8">
+          <div v-if="showDashboardSkeleton" class="flex flex-col gap-8" role="status" :aria-label="t.common.loading" aria-live="polite">
+            <div class="portal-card-row portal-card-featured-row flex flex-col items-center justify-center gap-6 lg:flex-row">
+              <div
+                v-for="item in 2"
+                :key="`featured-skeleton-${item}`"
+                class="portal-stat-card portal-card-featured portal-card-skeleton h-[214px] w-full rounded-[16px] border border-slate-100 bg-white p-8 shadow-[0_2px_8px_rgba(15,23,42,0.08)] lg:basis-[34%] lg:grow-0 lg:shrink-0"
+              >
+                <div class="mx-auto h-9 w-9 rounded-full bg-slate-100" />
+                <div class="mx-auto mt-6 h-5 w-32 rounded-full bg-slate-100" />
+                <div class="mx-auto mt-12 h-9 w-16 rounded-full bg-slate-100" />
+                <div class="mx-auto mt-4 h-4 w-28 rounded-full bg-slate-100" />
+              </div>
+            </div>
+
+            <div class="portal-card-row portal-card-secondary-row flex flex-col items-center justify-center gap-6 lg:flex-row">
+              <div
+                v-for="item in 3"
+                :key="`secondary-skeleton-${item}`"
+                class="portal-stat-card portal-card-secondary portal-card-skeleton h-[214px] w-full rounded-[16px] border border-slate-100 bg-white p-8 shadow-[0_2px_8px_rgba(15,23,42,0.08)] lg:basis-[29%] lg:grow-0 lg:shrink-0"
+              >
+                <div class="mx-auto h-9 w-9 rounded-full bg-slate-100" />
+                <div class="mx-auto mt-6 h-5 w-28 rounded-full bg-slate-100" />
+                <div class="mx-auto mt-12 h-9 w-14 rounded-full bg-slate-100" />
+                <div class="mx-auto mt-4 h-4 w-24 rounded-full bg-slate-100" />
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="flex flex-col gap-8">
             <div class="portal-card-row portal-card-featured-row flex flex-col items-center justify-center gap-6 lg:flex-row">
               <RouterLink
                 v-for="card in featuredCards"
@@ -249,8 +280,7 @@ onMounted(async () => {
                 <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
                 <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
                 <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
-                  <span v-if="dashboardLoading" class="portal-count-loader" :aria-label="t.common.loading"></span>
-                  <span v-else>{{ card.value }}</span>
+                  <span>{{ card.value }}</span>
                 </p>
                 <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
               </RouterLink>
@@ -271,8 +301,7 @@ onMounted(async () => {
                 <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
                 <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
                 <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
-                  <span v-if="dashboardLoading" class="portal-count-loader" :aria-label="t.common.loading"></span>
-                  <span v-else>{{ card.value }}</span>
+                  <span>{{ card.value }}</span>
                 </p>
                 <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
               </RouterLink>
@@ -302,31 +331,30 @@ onMounted(async () => {
   line-height: 1;
 }
 
-.portal-count-loader {
-  display: inline-block;
-  width: 48px;
-  height: 30px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, rgba(148, 163, 184, 0.18), rgba(148, 163, 184, 0.34), rgba(148, 163, 184, 0.18));
-  background-size: 200% 100%;
-  animation: portal-count-loading 1.1s ease-in-out infinite;
-  vertical-align: middle;
-}
-
-@keyframes portal-count-loading {
-  0% {
-    background-position: 100% 0;
-  }
-
-  100% {
-    background-position: -100% 0;
-  }
-}
-
 .portal-stat-card p:last-of-type {
   margin-top: 12px;
   font-size: 12px;
   line-height: 16px;
+}
+
+.portal-card-skeleton {
+  overflow: hidden;
+  position: relative;
+}
+
+.portal-card-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.72), transparent);
+  animation: portal-card-skeleton-shimmer 1.25s ease-in-out infinite;
+}
+
+@keyframes portal-card-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 @media (min-width: 1024px) and (max-width: 1399px) {
