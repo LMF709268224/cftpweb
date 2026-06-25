@@ -89,7 +89,7 @@ async function logout() {
           :key="item.path"
           :to="item.path"
           class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
-          :class="route.path === item.path || route.path.startsWith(`${item.path}/`) ? 'bg-[#0b7bdc] text-white shadow-lg shadow-sky-200 hover:bg-[#0b7bdc]' : ''"
+          :class="route.path === item.path || route.path.startsWith(`${item.path}/`) ? '!bg-[#0b4ea2] !text-white shadow-lg shadow-sky-200 hover:!bg-[#0b4ea2]' : ''"
         >
           <component :is="item.icon" class="h-5 w-5 shrink-0" />
           <span v-if="!collapsed">{{ item.label }}</span>

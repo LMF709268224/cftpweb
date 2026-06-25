@@ -87,6 +87,7 @@ const savingQuestion = ref(false)
 const savingOption = ref(false)
 const publishing = ref(false)
 const importing = ref(false)
+const courseView = ref<"list" | "detail">("list")
 
 const categoryFilter = ref("")
 const publishedOnly = ref(false)
@@ -309,6 +310,7 @@ async function selectCourse(course: JsonRecord) {
   selectedCourse.value = course
   courseForm.value = courseFormFrom(course)
   resetContent()
+  courseView.value = "detail"
   await Promise.all([loadCourseDetail(), loadChapters()])
 }
 
@@ -316,6 +318,11 @@ function newCourse() {
   selectedCourse.value = null
   courseForm.value = emptyCourseForm()
   resetContent()
+  courseView.value = "detail"
+}
+
+function backToCourseList() {
+  courseView.value = "list"
 }
 
 async function loadCourseDetail() {
@@ -392,6 +399,7 @@ async function deleteCourse() {
     await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}?version=${versionOf(selectedCourse.value)}`, { method: "DELETE" })
     toast.success("课程已删除")
     newCourse()
+    courseView.value = "list"
     await loadCourses()
   } catch (err) {
     console.error(err)
@@ -940,6 +948,9 @@ onMounted(() => {
           <FileJson class="h-4 w-4" />
           导入 JSON
         </button>
+        <button v-if="courseView === 'detail'" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="backToCourseList">
+          返回列表
+        </button>
         <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 font-bold text-white shadow-lg shadow-sky-200" type="button" @click="newCourse">
           <Plus class="h-4 w-4" />
           新建课程
@@ -947,8 +958,7 @@ onMounted(() => {
       </div>
     </header>
 
-    <section class="grid gap-6 xl:grid-cols-[420px_1fr]">
-      <aside class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <section v-if="courseView === 'list'" class="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-200 p-5">
           <div class="grid gap-3">
             <input v-model="categoryFilter" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="分类筛选，例如 CFtP/CFtP" />
@@ -990,9 +1000,9 @@ onMounted(() => {
             {{ nextPageToken ? "加载更多" : "没有更多了" }}
           </button>
         </div>
-      </aside>
+    </section>
 
-      <main class="space-y-6">
+      <main v-else class="space-y-6">
         <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
             <div>
@@ -1313,7 +1323,6 @@ onMounted(() => {
           </div>
         </section>
       </main>
-    </section>
 
     <div v-if="importOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-6" @click.self="importOpen = false">
       <div class="w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl">
