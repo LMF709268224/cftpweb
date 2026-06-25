@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router"
 import AdminLayout from "@/components/AdminLayout.vue"
 import { getAccessToken } from "@/lib/authStorage"
 import ApplicationsPage from "@/pages/ApplicationsPage.vue"
+import BundlesPage from "@/pages/BundlesPage.vue"
 import CallbackPage from "@/pages/CallbackPage.vue"
 import CredentialsPage from "@/pages/CredentialsPage.vue"
 import InvoicesPage from "@/pages/InvoicesPage.vue"
@@ -10,6 +11,7 @@ import OrdersPage from "@/pages/OrdersPage.vue"
 import PdfRequestsPage from "@/pages/PdfRequestsPage.vue"
 import PdfTemplatesPage from "@/pages/PdfTemplatesPage.vue"
 import PermissionsPage from "@/pages/PermissionsPage.vue"
+import PipelinesPage from "@/pages/PipelinesPage.vue"
 import ResourcePage from "@/pages/ResourcePage.vue"
 import WebhookAuditPage from "@/pages/WebhookAuditPage.vue"
 
@@ -37,7 +39,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/pipelines",
     name: "pipelines",
-    component: ResourcePage,
+    component: PipelinesPage,
     meta: {
       title: "管线配置",
       subtitle: "维护认证管线、阶段、课程单元、证书和资格要求",
@@ -48,7 +50,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/bundles",
     name: "bundles",
-    component: ResourcePage,
+    component: BundlesPage,
     meta: {
       title: "商品配置",
       subtitle: "维护 Bundle 商品、定价快照和支付入口配置",
