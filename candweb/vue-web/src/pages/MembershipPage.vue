@@ -128,7 +128,7 @@ async function loadMembership() {
       apiClient("/api/membership/billings?page=1&page_size=10"),
     ])
     plans.value = listFrom(planData, ["memberships", "plans", "items"])
-    history.value = listFrom(historyData, ["memberships", "records", "items", "history"])
+    history.value = listFrom(historyData, ["user_memberships", "memberships", "records", "items", "history"])
     billings.value = listFrom(billingData, ["billings", "records", "items"])
     activeMembership.value = await loadActiveMembershipFromHistory(history.value) || { user_memberships: history.value }
   } catch (err) {
