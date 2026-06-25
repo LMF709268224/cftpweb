@@ -81,6 +81,14 @@ function formatMoney(amount: unknown, currency = "USD") {
   return `${currency} ${(value / 100).toFixed(2)}`
 }
 
+function formatSource(source: unknown, langCode: string) {
+  const s = String(source || "").toLowerCase()
+  if (s === "bundle_purchase") return langCode === "zh" ? "套餐购买" : "Bundle Purchase"
+  if (s === "admin_grant") return langCode === "zh" ? "管理员发卡" : "Admin Grant"
+  if (s === "renewal") return langCode === "zh" ? "会员续费" : "Renewal"
+  return String(source || "-")
+}
+
 function statusLabel(status: unknown) {
   const value = String(status || "").toUpperCase()
   if (!value) return "-"
@@ -300,7 +308,7 @@ onMounted(() => {
               <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ lang === "zh" ? "会员操作" : "Membership actions" }}</h2>
               <div class="space-y-3 text-sm text-slate-600">
                 <div class="flex justify-between"><span>{{ lang === "zh" ? "会员记录" : "Record" }}</span><span class="font-mono text-xs">{{ currentRecord.membership_record_ulid || "-" }}</span></div>
-                <div class="flex justify-between"><span>{{ lang === "zh" ? "来源" : "Source" }}</span><span>{{ currentRecord.source || "-" }}</span></div>
+                <div class="flex justify-between"><span>{{ lang === "zh" ? "来源" : "Source" }}</span><span>{{ formatSource(currentRecord.source, lang) }}</span></div>
                 <div class="flex justify-between"><span>{{ lang === "zh" ? "续费次数" : "Renewals" }}</span><span>{{ currentRecord.renewal_count ?? "-" }}</span></div>
                 <div class="flex justify-between"><span>{{ lang === "zh" ? "最近支付" : "Last payment" }}</span><span>{{ formatMoney(currentRecord.last_payment_amount_minor, "USD") }}</span></div>
               </div>
