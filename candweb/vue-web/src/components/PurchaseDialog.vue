@@ -861,7 +861,7 @@ async function initiatePayment() {
             <p class="mt-2">{{ credentialApplicationOrder ? copy.qualificationPaymentDesc : copy.embeddedCheckoutDesc }}</p>
           </div>
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-            <strong>⚠️ 测试环境提示�?/strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验�?
+            <strong>测试提示：</strong> 当前为测试环境，请使用测试卡号 <code>4242 4242 4242 4242</code>，有效期和CVV随意。
           </div>
           <PaymentSessionPanel
             :biz-type="activePaymentSession.bizType"
@@ -908,7 +908,7 @@ async function initiatePayment() {
             </button>
           </div>
           <div v-if="paymentMethod === 'stripe'" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-            <strong>⚠️ 测试环境提示�?/strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验�?
+            <strong>测试提示：</strong> 当前为测试环境，请使用测试卡号 <code>4242 4242 4242 4242</code>，有效期和CVV随意。
           </div>
         </div>
       </div>
@@ -945,5 +945,6 @@ async function initiatePayment() {
     </div>
   </div>
 </template>
+
 
 
