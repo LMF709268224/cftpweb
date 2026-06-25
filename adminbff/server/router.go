@@ -265,11 +265,14 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Route("/bundles", func(r chi.Router) {
 				r.Get("/", h.ListBundles)
 				r.Post("/", h.CreateBundle)
+				r.Get("/schemas", h.GetBundleJsonSchemas)
+				r.Post("/sync-display-pricing", h.AdminSyncBundleDisplayPricing)
 				r.Get("/{bundle_ulid}", h.GetBundle)
 				r.Put("/{bundle_ulid}/meta", h.UpdateBundleMeta)
 				r.Put("/pricing", h.UpdateBundlePricing)
 				r.Post("/{bundle_ulid}/publish", h.PublishBundle)
 				r.Post("/{bundle_ulid}/deprecate", h.DeprecateBundle)
+				r.Delete("/{bundle_ulid}", h.DeleteBundle)
 				r.Post("/upload-url", h.CreateBundleUploadURL)
 			})
 			r.Route("/bundle-orders", func(r chi.Router) {

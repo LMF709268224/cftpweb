@@ -138,7 +138,7 @@ function StageDiagnostics({ stageUlid, candidateUlid, status }: { stageUlid: str
     setLoading(true)
     apiClient(`/api/mall/stage-orders?stage_ulid=${stageUlid}&candidate_ulid=${candidateUlid}`)
       .then(res => {
-        if (active) setOrders(res?.orders || [])
+        if (active) setOrders(res?.items || res?.orders || [])
       })
       .catch(console.error)
       .finally(() => {
@@ -179,11 +179,15 @@ function CourseUnitDiagnostics({ courseId, candidateUlid, status }: { courseId?:
     if (String(status) !== "1" || !courseId || !candidateUlid) return // Only fetch if WAITING_STUDY and has IDs
     let active = true
     setLoading(true)
-    apiClient(`/api/lms/courses/${encodeURIComponent(courseId)}/candidates/${encodeURIComponent(candidateUlid)}/progress`)
+    apiClient(`/api/lms/courses/${encodeURIComponent(courseId)}/candidates/${encodeURIComponent(candidateUlid)}/progress`, {
+      suppressErrorToast: true,
+    })
       .then(res => {
         if (active) setProgress(res)
       })
-      .catch(console.error)
+      .catch(() => {
+        if (active) setProgress(null)
+      })
       .finally(() => {
         if (active) setLoading(false)
       })

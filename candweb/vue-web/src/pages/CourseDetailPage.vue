@@ -74,6 +74,22 @@ type Qualification = {
   name?: string
 }
 
+type CredentialFileConstraint = {
+  name?: string
+  type?: string | number
+  is_required?: boolean
+  isRequired?: boolean
+}
+
+type CredentialDefinition = {
+  cred_def_ulid?: string
+  cred_def_id?: string
+  name?: string
+  description?: string
+  file_constraints?: CredentialFileConstraint[]
+  fileConstraints?: CredentialFileConstraint[]
+}
+
 type PipelineNextStep = {
   action?: string
   stage_name?: string
@@ -97,9 +113,11 @@ const router = useRouter()
 const { t } = useTranslation()
 const detail = ref<PipelineDetail | null>(null)
 const courseSummaries = ref<Record<string, CourseSummary>>({})
+const credentialDefinitions = ref<Record<string, CredentialDefinition>>({})
 const firstCourseThumbnail = ref("")
 const loading = ref(false)
 const courseSummariesLoading = ref(false)
+const credentialDefinitionsLoading = ref(false)
 const purchaseOpen = ref(false)
 const certificateLoading = ref(false)
 const scheduleLoading = ref(false)
@@ -143,6 +161,15 @@ const finalQualifications = computed(() => {
           qualId: firstString(qual?.qual_id, qual?.qualId, qual?.id),
           name: firstString(qual?.name_hint, qual?.nameHint, qual?.name),
         }))
+        .map((qual) => {
+          const definition = credentialDefinitions.value[qual.qualId]
+          return {
+            ...qual,
+            name: firstString(definition?.name, qual.name),
+            description: firstString(definition?.description),
+            constraints: fileConstraintsOfDefinition(definition),
+          }
+        })
         .filter((qual) => qual.qualId)
     : []
 })
@@ -188,6 +215,23 @@ function firstString(...values: unknown[]) {
     if (normalized) return normalized
   }
   return ""
+}
+
+function fileConstraintsOfDefinition(definition?: CredentialDefinition) {
+  const constraints = definition?.file_constraints || definition?.fileConstraints || []
+  return Array.isArray(constraints) ? constraints : []
+}
+
+function constraintName(constraint: CredentialFileConstraint) {
+  return firstString(constraint?.name)
+}
+
+function constraintRequired(constraint: CredentialFileConstraint) {
+  return Boolean(constraint?.is_required ?? constraint?.isRequired)
+}
+
+function credentialDefinitionId(definition?: CredentialDefinition) {
+  return firstString(definition?.cred_def_ulid, definition?.cred_def_id)
 }
 
 function hasRuntimeStatus(status?: string | number | null) {
@@ -351,6 +395,31 @@ async function loadCourseSummaries() {
   }
 }
 
+async function loadCredentialDefinitions() {
+  const ids = finalQualificationIds.value
+  if (ids.length === 0) {
+    credentialDefinitions.value = {}
+    credentialDefinitionsLoading.value = false
+    return
+  }
+  credentialDefinitionsLoading.value = true
+  try {
+    const res = await apiClient(`/api/credentials/definitions?qual_ulids=${encodeURIComponent(ids.join(","))}`, {
+      suppressErrorToast: true,
+    })
+    const definitions = Array.isArray(res?.definitions) ? res.definitions : []
+    const entries: Array<[string, CredentialDefinition]> = definitions
+      .map((definition: CredentialDefinition) => [credentialDefinitionId(definition), definition])
+      .filter(([id]: [string, CredentialDefinition]) => Boolean(id))
+    credentialDefinitions.value = Object.fromEntries(entries)
+  } catch (err) {
+    console.warn("Failed to load final qualification definitions", err)
+    credentialDefinitions.value = {}
+  } finally {
+    credentialDefinitionsLoading.value = false
+  }
+}
+
 async function loadFirstCourseThumbnail() {
   if (!firstCourseId.value) {
     firstCourseThumbnail.value = ""
@@ -509,6 +578,7 @@ async function handleFinalQualificationApplication() {
 onMounted(loadDetail)
 watch(pipelineId, loadDetail)
 watch([stages, purchased], () => void loadCourseSummaries(), { deep: true })
+watch(finalQualificationIds, () => void loadCredentialDefinitions(), { deep: true, immediate: true })
 watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
 </script>
 
@@ -599,6 +669,20 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               <div v-for="qual in finalQualifications" :key="qual.qualId" class="rounded-lg border border-blue-100 bg-white px-4 py-3">
                 <div class="font-semibold text-blue-950">{{ qual.name || qual.qualId }}</div>
                 <div class="mt-1 font-mono text-xs text-blue-700">{{ qual.qualId }}</div>
+                <p v-if="qual.description" class="mt-2 text-xs leading-5 text-slate-600">{{ qual.description }}</p>
+                <div v-if="qual.constraints.length > 0" class="mt-3 space-y-2">
+                  <div class="text-xs font-semibold uppercase tracking-wide text-blue-900">{{ t.credentialsPage.uploadMaterials }}</div>
+                  <div v-for="constraint in qual.constraints" :key="constraintName(constraint) || String(constraint.type)" class="flex items-center justify-between gap-2 rounded-md bg-blue-50 px-3 py-2">
+                    <span class="text-sm text-blue-950">{{ constraintName(constraint) || t.common.na }}</span>
+                    <span :class="['badge border-transparent text-xs', constraintRequired(constraint) ? 'bg-destructive text-destructive-foreground' : 'bg-secondary text-secondary-foreground']">
+                      {{ constraintRequired(constraint) ? t.credentialsPage.required : t.credentialsPage.optional }}
+                    </span>
+                  </div>
+                </div>
+                <div v-else-if="credentialDefinitionsLoading" class="mt-3 flex items-center gap-2 text-xs text-blue-700">
+                  <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                  {{ t.common.loading }}
+                </div>
               </div>
             </div>
           </div>

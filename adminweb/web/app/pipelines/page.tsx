@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { BookOpen, CheckCircle2, Copy, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react"
+import { Copy, Package, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react"
 
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"
@@ -25,12 +25,7 @@ type Pipeline = {
   status: string
   is_current: boolean
   created_at: string
-  unlock_stripe_product_id?: string
-  unlock_stripe_price_id?: string
   unlock_quals?: Qualification[]
-  package_stripe_product_id?: string
-  package_stripe_price_id?: string
-  package_coupon?: string
   respath?: string
   certs?: Qualification[]
   certs_quals?: Qualification[]
@@ -40,28 +35,32 @@ type Pipeline = {
 }
 
 type Qualification = {
+  qual_ulid?: string
   qual_id?: string
   name_hint?: string
   name?: string
   title?: string
+  pdf_template_ulid?: string
   pdf_template_id?: string
-  review_stripe_product_id?: string
-  review_stripe_price_id?: string
 }
 
 type CredentialDefinition = {
   cred_def_id: string
+  cred_def_ulid?: string
   name?: string
   category?: string
 }
 
 type PdfTemplate = {
   template_id: string
+  template_ulid?: string
+  pdf_template_ulid?: string
   name?: string
   description?: string
 }
 
 type StageConfig = {
+  stage_ulid?: string
   stage_id?: string
   name: string
   sort_order: number
@@ -69,19 +68,17 @@ type StageConfig = {
 }
 
 type UnitConfig = {
+  unit_ulid?: string
   unit_id?: string
   name?: string
+  glms_course_ulid?: string
   glms_course_id: string
   program?: string
+  exam_ulid?: string
   exam_id?: string
   form_code?: string
-  stripe_product_id?: string
-  stripe_price_id?: string
-  exemption_stripe_product_id?: string
-  exemption_stripe_price_id?: string
-  retake_stripe_product_id?: string
-  retake_stripe_price_id?: string
   allow_retake?: boolean
+  allow_exemption?: boolean
   exemption_quals?: string[]
 }
 
@@ -98,12 +95,7 @@ type LmsCourse = {
 type PipelineForm = {
   name: string
   category_tips: string
-  unlock_stripe_product_id: string
-  unlock_stripe_price_id: string
   unlock_quals: Qualification[]
-  package_stripe_product_id: string
-  package_stripe_price_id: string
-  package_coupon: string
   respath: string
   certs: Qualification[]
   certs_quals: Qualification[]
@@ -115,12 +107,7 @@ type PipelineForm = {
 const emptyForm: PipelineForm = {
   name: "",
   category_tips: "",
-  unlock_stripe_product_id: "",
-  unlock_stripe_price_id: "",
   unlock_quals: [],
-  package_stripe_product_id: "",
-  package_stripe_price_id: "",
-  package_coupon: "",
   respath: "",
   certs: [],
   certs_quals: [],
@@ -133,40 +120,73 @@ function normalizeQualifications(value: unknown): Qualification[] {
   return Array.isArray(value) ? value.filter(Boolean) as Qualification[] : []
 }
 
+function firstString(...values: unknown[]) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim()
+  }
+  return ""
+}
+
+function qualificationUlidOf(qualification: Partial<Qualification> | null | undefined) {
+  return firstString(qualification?.qual_ulid, qualification?.qual_id)
+}
+
+function credentialDefinitionUlidOf(definition: Partial<CredentialDefinition> | null | undefined) {
+  return firstString(definition?.cred_def_ulid, definition?.cred_def_id)
+}
+
+function pdfTemplateUlidOf(template: Partial<PdfTemplate> | null | undefined) {
+  return firstString(template?.pdf_template_ulid, template?.template_ulid, template?.template_id)
+}
+
+function qualificationPdfTemplateUlidOf(qualification: Partial<Qualification> | null | undefined) {
+  return firstString(qualification?.pdf_template_ulid, qualification?.pdf_template_id)
+}
+
+function stageUlidOf(stage: Partial<StageConfig> | null | undefined) {
+  return firstString(stage?.stage_ulid, stage?.stage_id)
+}
+
+function unitUlidOf(unit: Partial<UnitConfig> | null | undefined) {
+  return firstString(unit?.unit_ulid, unit?.unit_id)
+}
+
+function unitCourseUlidOf(unit: Partial<UnitConfig> | null | undefined) {
+  return firstString(unit?.glms_course_ulid, unit?.glms_course_id)
+}
+
+function unitExamUlidOf(unit: Partial<UnitConfig> | null | undefined) {
+  return firstString(unit?.exam_ulid, unit?.exam_id)
+}
+
 function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
   if (!pipeline) return emptyForm
   return {
     name: pipeline.name || "",
     category_tips: pipeline.category_tips || "",
-    unlock_stripe_product_id: pipeline.unlock_stripe_product_id || "",
-    unlock_stripe_price_id: pipeline.unlock_stripe_price_id || "",
     unlock_quals: normalizeQualifications(pipeline.unlock_quals),
-    package_stripe_product_id: pipeline.package_stripe_product_id || "",
-    package_stripe_price_id: pipeline.package_stripe_price_id || "",
-    package_coupon: pipeline.package_coupon || "",
     respath: pipeline.respath || "",
     certs: normalizeQualifications(pipeline.certs),
     certs_quals: normalizeQualifications(pipeline.certs_quals),
     cert_quals: normalizeQualifications(pipeline.cert_quals),
     final_quals: normalizeQualifications(pipeline.final_quals),
     stages: (pipeline.stages || []).map((stage) => ({
-      stage_id: stage.stage_id,
+      stage_ulid: stageUlidOf(stage),
+      stage_id: stageUlidOf(stage),
       name: stage.name || "",
       sort_order: Number(stage.sort_order || 0),
       units: (stage.units || []).map((unit) => ({
-        unit_id: unit.unit_id,
+        unit_ulid: unitUlidOf(unit),
+        unit_id: unitUlidOf(unit),
         name: unit.name || "",
-        glms_course_id: unit.glms_course_id || "",
+        glms_course_ulid: unitCourseUlidOf(unit),
+        glms_course_id: unitCourseUlidOf(unit),
         program: unit.program || "",
-        exam_id: unit.exam_id || "",
+        exam_ulid: unitExamUlidOf(unit),
+        exam_id: unitExamUlidOf(unit),
         form_code: unit.form_code || "",
-        stripe_product_id: unit.stripe_product_id || "",
-        stripe_price_id: unit.stripe_price_id || "",
-        exemption_stripe_product_id: unit.exemption_stripe_product_id || "",
-        exemption_stripe_price_id: unit.exemption_stripe_price_id || "",
-        retake_stripe_product_id: unit.retake_stripe_product_id || "",
-        retake_stripe_price_id: unit.retake_stripe_price_id || "",
         allow_retake: Boolean(unit.allow_retake),
+        allow_exemption: Boolean(unit.allow_exemption),
         exemption_quals: unit.exemption_quals || [],
       })),
     })),
@@ -175,40 +195,28 @@ function pipelineToForm(pipeline: Pipeline | null): PipelineForm {
 
 function cleanFormForStructure(form: PipelineForm) {
   const cleanQualifications = (items: Qualification[]) => normalizeQualifications(items).map((item) => ({
-    qual_id: (item.qual_id || "").trim(),
+    qual_ulid: qualificationUlidOf(item),
     name_hint: (item.name_hint || item.name || item.title || "").trim(),
-    pdf_template_id: (item.pdf_template_id || "").trim(),
-    review_stripe_product_id: (item.review_stripe_product_id || "").trim(),
-    review_stripe_price_id: (item.review_stripe_price_id || "").trim(),
+    pdf_template_ulid: qualificationPdfTemplateUlidOf(item),
   }))
 
   return {
-    unlock_stripe_product_id: form.unlock_stripe_product_id.trim(),
-    unlock_stripe_price_id: form.unlock_stripe_price_id.trim(),
     unlock_quals: cleanQualifications(form.unlock_quals),
-    package_stripe_product_id: form.package_stripe_product_id.trim(),
-    package_stripe_price_id: form.package_stripe_price_id.trim(),
-    package_coupon: form.package_coupon.trim(),
     certs: cleanQualifications(form.certs),
     certs_quals: cleanQualifications(form.certs_quals),
     stages: form.stages.map((stage) => ({
-      stage_id: stage.stage_id || "",
+      stage_ulid: stageUlidOf(stage),
       name: stage.name.trim(),
       sort_order: Number(stage.sort_order || 0),
       units: stage.units.map((unit) => ({
-        unit_id: unit.unit_id || "",
+        unit_ulid: unitUlidOf(unit),
         name: (unit.name || "").trim(),
-        glms_course_id: unit.glms_course_id.trim(),
+        glms_course_ulid: unitCourseUlidOf(unit),
         program: (unit.program || "").trim(),
-        exam_id: (unit.exam_id || "").trim(),
+        exam_ulid: unitExamUlidOf(unit),
         form_code: (unit.form_code || "").trim(),
-        stripe_product_id: (unit.stripe_product_id || "").trim(),
-        stripe_price_id: (unit.stripe_price_id || "").trim(),
-        exemption_stripe_product_id: (unit.exemption_stripe_product_id || "").trim(),
-        exemption_stripe_price_id: (unit.exemption_stripe_price_id || "").trim(),
-        retake_stripe_product_id: (unit.retake_stripe_product_id || "").trim(),
-        retake_stripe_price_id: (unit.retake_stripe_price_id || "").trim(),
         allow_retake: Boolean(unit.allow_retake),
+        allow_exemption: Boolean(unit.allow_exemption),
         exemption_quals: unit.exemption_quals || [],
       })),
     })),
@@ -228,11 +236,11 @@ function pipelineIdOf(pipeline: Partial<Pipeline> | null | undefined) {
 }
 
 function qualificationLabel(qualification: Qualification, fallback: string) {
-  return qualification.name_hint || qualification.name || qualification.title || qualification.qual_id || fallback
+  return qualification.name_hint || qualification.name || qualification.title || qualificationUlidOf(qualification) || fallback
 }
 
 function qualificationKey(qualification: Qualification) {
-  return qualification.qual_id || qualification.name_hint || qualification.name || qualification.title || ""
+  return qualificationUlidOf(qualification) || qualification.name_hint || qualification.name || qualification.title || ""
 }
 
 function pipelineCertificateItems(form: PipelineForm) {
@@ -243,23 +251,27 @@ function pipelineCertificateItems(form: PipelineForm) {
 }
 
 function credentialToQualification(definition: CredentialDefinition): Qualification {
+  const credDefUlid = credentialDefinitionUlidOf(definition)
   return {
-    qual_id: definition.cred_def_id,
-    name_hint: definition.name || definition.cred_def_id,
+    qual_ulid: credDefUlid,
+    qual_id: credDefUlid,
+    name_hint: definition.name || credDefUlid,
   }
 }
 
 function hasQualification(list: Qualification[], qualId: string) {
-  return normalizeQualifications(list).some((item) => item.qual_id === qualId)
+  return normalizeQualifications(list).some((item) => qualificationUlidOf(item) === qualId)
 }
 
 function toggleQualification(list: Qualification[], definition: CredentialDefinition, checked: boolean) {
   const current = normalizeQualifications(list)
+  const definitionId = credentialDefinitionUlidOf(definition)
+  if (!definitionId) return current
   if (checked) {
-    if (hasQualification(current, definition.cred_def_id)) return current
+    if (hasQualification(current, definitionId)) return current
     return [...current, credentialToQualification(definition)]
   }
-  return current.filter((item) => item.qual_id !== definition.cred_def_id)
+  return current.filter((item) => qualificationUlidOf(item) !== definitionId)
 }
 
 export default function PipelinesPage() {
@@ -279,31 +291,6 @@ export default function PipelinesPage() {
   const [offset, setOffset] = useState(0)
   const limit = 20
 
-  const [lmsCourseDetails, setLmsCourseDetails] = useState<Record<string, any>>({})
-
-  const fetchCourseDetails = useCallback(async (courseIds: string[]) => {
-    const missingIds = courseIds.filter((id) => id && !lmsCourseDetails[id])
-    if (missingIds.length === 0) return
-
-    for (const id of missingIds) {
-      try {
-        const res = await apiClient(`/api/lms/courses/${id}/complete`)
-        setLmsCourseDetails((prev) => ({
-          ...prev,
-          [id]: res?.complete_course || res,
-        }))
-      } catch (e) {
-        console.error("Failed to load details for", id, e)
-      }
-    }
-  }, [lmsCourseDetails])
-
-  useEffect(() => {
-    const allCourseIds = form.stages.flatMap((s) => s.units.map((u) => u.glms_course_id)).filter(Boolean)
-    const uniqueIds = Array.from(new Set(allCourseIds))
-    fetchCourseDetails(uniqueIds)
-  }, [form.stages, fetchCourseDetails])
-
   const selectedPipeline = useMemo(
     () => pipelines.find((pipeline) => pipelineIdOf(pipeline) === selectedId) || null,
     [pipelines, selectedId],
@@ -315,7 +302,22 @@ export default function PipelinesPage() {
     () => certificateItems.map((item, index) => qualificationLabel(item, `${page.certificate} ${index + 1}`)),
     [certificateItems, page.certificate],
   )
-  const pdfTemplateById = useMemo(() => new Map(pdfTemplates.map((template) => [template.template_id, template])), [pdfTemplates])
+  const pdfTemplateById = useMemo(() => {
+    const map = new Map<string, PdfTemplate>()
+    pdfTemplates.forEach((template) => {
+      const id = pdfTemplateUlidOf(template)
+      if (id) map.set(id, template)
+    })
+    return map
+  }, [pdfTemplates])
+  const credentialDefinitionById = useMemo(() => {
+    const map = new Map<string, CredentialDefinition>()
+    credentialDefinitions.forEach((definition) => {
+      const id = credentialDefinitionUlidOf(definition)
+      if (id) map.set(id, definition)
+    })
+    return map
+  }, [credentialDefinitions])
 
   const lmsCourseName = (courseId: string) => {
     const course = lmsCourses.find((item) => item.course_id === courseId)
@@ -501,7 +503,7 @@ export default function PipelinesPage() {
           toast.error(page.unitNameRequired.replace("{{stage}}", stage.name || String(stageIndex + 1)).replace("{{index}}", String(unitIndex + 1)))
           return false
         }
-        if (!unit.glms_course_id.trim()) {
+        if (!unitCourseUlidOf(unit)) {
           toast.error(page.unitCourseRequired.replace("{{stage}}", stage.name || String(stageIndex + 1)).replace("{{index}}", String(unitIndex + 1)))
           return false
         }
@@ -511,7 +513,7 @@ export default function PipelinesPage() {
   }
 
   const validateFinalCertificateTemplates = () => {
-    const missing = normalizeQualifications(form.certs).find((item) => !item.pdf_template_id?.trim())
+    const missing = normalizeQualifications(form.certs).find((item) => !qualificationPdfTemplateUlidOf(item))
     if (!missing) return true
     toast.error(page.certTemplateRequired.replace("{{name}}", qualificationLabel(missing, page.certificate)))
     return false
@@ -681,11 +683,14 @@ export default function PipelinesPage() {
                 ...stage.units,
                 {
                   name: "",
+                  glms_course_ulid: "",
                   glms_course_id: "",
                   program: "",
+                  exam_ulid: "",
                   exam_id: "",
                   form_code: "",
                   allow_retake: false,
+                  allow_exemption: false,
                   exemption_quals: [],
                 },
               ],
@@ -713,16 +718,6 @@ export default function PipelinesPage() {
     }))
   }
 
-  const copyTestStripeIds = () => {
-    setForm((prev) => ({
-      ...prev,
-      unlock_stripe_product_id: "prod_UZFTQwZK5w3Yzh",
-      unlock_stripe_price_id: "price_1Ta6y7CJWnR4MMONhDu5BsaZ",
-      package_stripe_product_id: prev.package_stripe_product_id || "prod_UZILCqUwUoOPMO",
-      package_stripe_price_id: prev.package_stripe_price_id || "price_1Ta9kYCJWnR4MMON0jjPUI8P",
-    }))
-  }
-
   const updateQualificationField = (
     field: "unlock_quals" | "certs_quals" | "certs",
     definition: CredentialDefinition,
@@ -739,15 +734,46 @@ export default function PipelinesPage() {
     setForm((prev) => ({
       ...prev,
       [field]: normalizeQualifications(prev[field]).map((item) =>
-        item.qual_id === qualId
+        qualificationUlidOf(item) === qualId
           ? {
               ...item,
+              pdf_template_ulid: templateId,
               pdf_template_id: templateId,
               name_hint: item.name_hint || item.name || template?.name || qualId,
             }
           : item,
       ),
     }))
+  }
+
+  const toggleUnitExemptionQualification = (stageIndex: number, unitIndex: number, definitionId: string, checked: boolean) => {
+    setForm((prev) => ({
+      ...prev,
+      stages: prev.stages.map((stage, currentStageIndex) =>
+        currentStageIndex === stageIndex
+          ? {
+              ...stage,
+              units: stage.units.map((unit, currentUnitIndex) => {
+                if (currentUnitIndex !== unitIndex) return unit
+                const current = unit.exemption_quals || []
+                const next = checked
+                  ? Array.from(new Set([...current, definitionId]))
+                  : current.filter((item) => item !== definitionId)
+                return {
+                  ...unit,
+                  allow_exemption: next.length > 0 ? true : unit.allow_exemption,
+                  exemption_quals: next,
+                }
+              }),
+            }
+          : stage,
+      ),
+    }))
+  }
+
+  const exemptionQualificationLabel = (qualId: string) => {
+    const definition = credentialDefinitionById.get(qualId)
+    return definition?.name || qualId
   }
 
   const renderQualificationSelector = (
@@ -770,37 +796,43 @@ export default function PipelinesPage() {
         ) : (
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
             {credentialDefinitions.map((definition) => {
-              const checked = hasQualification(selected, definition.cred_def_id)
-              const selectedQualification = selected.find((item) => item.qual_id === definition.cred_def_id)
+              const definitionId = credentialDefinitionUlidOf(definition)
+              if (!definitionId) return null
+              const checked = hasQualification(selected, definitionId)
+              const selectedQualification = selected.find((item) => qualificationUlidOf(item) === definitionId)
               return (
-                <div key={`${field}-${definition.cred_def_id}`} className="flex min-h-12 items-start gap-2 rounded-md border bg-background p-3 text-sm">
+                <div key={`${field}-${definitionId}`} className="flex min-h-12 items-start gap-2 rounded-md border bg-background p-3 text-sm">
                   <Checkbox
                     checked={checked}
                     onCheckedChange={(value) => updateQualificationField(field, definition, Boolean(value))}
                     disabled={published}
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{definition.name || definition.cred_def_id}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{definition.category || definition.cred_def_id}</span>
+                    <span className="block truncate font-medium">{definition.name || definitionId}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{definition.category || definitionId}</span>
                     {field === "certs" && checked && (
                       <span className="mt-2 block">
                         {pdfTemplates.length === 0 ? (
                           <span className="block rounded-md border border-dashed px-3 py-2 text-xs text-muted-foreground">{page.noPdfTemplates}</span>
                         ) : (
                           <Select
-                            value={selectedQualification?.pdf_template_id || undefined}
-                            onValueChange={(value) => updateQualificationTemplate("certs", definition.cred_def_id, value)}
+                            value={qualificationPdfTemplateUlidOf(selectedQualification) || undefined}
+                            onValueChange={(value) => updateQualificationTemplate("certs", definitionId, value)}
                             disabled={published}
                           >
                             <SelectTrigger className="h-8 text-xs">
                               <SelectValue placeholder={page.selectPdfTemplate} />
                             </SelectTrigger>
                             <SelectContent>
-                              {pdfTemplates.map((template) => (
-                                <SelectItem key={template.template_id} value={template.template_id}>
-                                  {template.name || template.template_id}
-                                </SelectItem>
-                              ))}
+                              {pdfTemplates.map((template) => {
+                                const templateId = pdfTemplateUlidOf(template)
+                                if (!templateId) return null
+                                return (
+                                  <SelectItem key={templateId} value={templateId}>
+                                    {template.name || templateId}
+                                  </SelectItem>
+                                )
+                              })}
                             </SelectContent>
                           </Select>
                         )}
@@ -977,35 +1009,18 @@ export default function PipelinesPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg border bg-card">
-                <div className="flex items-center justify-between border-b px-4 py-3">
-                  <h2 className="font-semibold">{page.pipelineStripe}</h2>
-                  <Button variant="outline" size="sm" onClick={copyTestStripeIds}>
-                    <Copy className="h-4 w-4" />
-                    {page.useTestStripe}
+              <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-4 text-sm text-blue-900">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 className="font-semibold">{page.bundlePricingMovedTitle}</h2>
+                    <p className="mt-1 text-blue-800/80">{page.bundlePricingMovedHint}</p>
+                  </div>
+                  <Button asChild variant="outline" size="sm" className="border-blue-200 bg-white/80 text-blue-900 hover:bg-blue-100">
+                    <a href="/bundles">
+                      <Package className="h-4 w-4" />
+                      {page.openBundleConfig}
+                    </a>
                   </Button>
-                </div>
-                <div className="grid gap-4 p-4 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="unlockProduct">{page.unlockProductId}</Label>
-                    <Input id="unlockProduct" value={form.unlock_stripe_product_id} onChange={(event) => setForm({ ...form, unlock_stripe_product_id: event.target.value })} disabled={published} />
-                  </div>
-                  <div>
-                    <Label htmlFor="unlockPrice">{page.unlockPriceId}</Label>
-                    <Input id="unlockPrice" value={form.unlock_stripe_price_id} onChange={(event) => setForm({ ...form, unlock_stripe_price_id: event.target.value })} disabled={published} />
-                  </div>
-                  <div>
-                    <Label htmlFor="packageProduct">{page.packageProductId}</Label>
-                    <Input id="packageProduct" value={form.package_stripe_product_id} onChange={(event) => setForm({ ...form, package_stripe_product_id: event.target.value })} disabled={published} />
-                  </div>
-                  <div>
-                    <Label htmlFor="packagePrice">{page.packagePriceId}</Label>
-                    <Input id="packagePrice" value={form.package_stripe_price_id} onChange={(event) => setForm({ ...form, package_stripe_price_id: event.target.value })} disabled={published} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="packageCoupon">{page.packageCoupon}</Label>
-                    <Input id="packageCoupon" value={form.package_coupon} onChange={(event) => setForm({ ...form, package_coupon: event.target.value })} disabled={published} />
-                  </div>
                 </div>
               </div>
 
@@ -1045,7 +1060,7 @@ export default function PipelinesPage() {
                     <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">{page.noStages}</div>
                   ) : (
                     form.stages.map((stage, stageIndex) => (
-                      <div key={stage.stage_id || stageIndex} className="rounded-lg border">
+                      <div key={stageUlidOf(stage) || stageIndex} className="rounded-lg border">
                         <div className="grid gap-3 border-b p-3 md:grid-cols-[1fr_120px_auto]">
                           <div>
                             <Label htmlFor={`stage-name-${stageIndex}`}>{page.stageName}</Label>
@@ -1069,22 +1084,27 @@ export default function PipelinesPage() {
                           {stage.units.length === 0 ? (
                             <div className="rounded-md bg-muted p-4 text-sm text-muted-foreground">{page.noUnits}</div>
                           ) : (
-                            stage.units.map((unit, unitIndex) => (
-                              <div key={unit.unit_id || unitIndex} className="rounded-md border p-3">
+                            stage.units.map((unit, unitIndex) => {
+                              const courseId = unitCourseUlidOf(unit)
+                              const examId = unitExamUlidOf(unit)
+                              const exemptionQuals = unit.exemption_quals || []
+                              return (
+                              <div key={unitUlidOf(unit) || unitIndex} className="rounded-md border p-3">
                                 <div className="grid gap-3 lg:grid-cols-2 mb-3">
                                   <div>
                                     <Label>{page.unitName}</Label>
                                     <Input value={unit.name || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { name: event.target.value })} disabled={published} />
                                   </div>
                                 </div>
-                                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1.2fr)_1fr_1fr_auto]">
+                                <div className="grid gap-3 lg:grid-cols-[minmax(220px,1fr)_auto]">
                                   <div>
                                     <Label>{page.glmsCourse}</Label>
-                                    <Select value={unit.glms_course_id || "none"} onValueChange={(value) => {
-                                      const courseId = value === "none" ? "" : value
-                                      const courseName = courseId ? (lmsCourses.find(c => c.course_id === courseId)?.title || courseId) : ""
+                                    <Select value={courseId || "none"} onValueChange={(value) => {
+                                      const nextCourseId = value === "none" ? "" : value
+                                      const courseName = nextCourseId ? (lmsCourses.find(c => c.course_id === nextCourseId)?.title || nextCourseId) : ""
                                       updateUnit(stageIndex, unitIndex, { 
-                                        glms_course_id: courseId,
+                                        glms_course_ulid: nextCourseId,
+                                        glms_course_id: nextCourseId,
                                         name: unit.name ? unit.name : courseName
                                       })
                                     }} disabled={published}>
@@ -1100,15 +1120,7 @@ export default function PipelinesPage() {
                                         ))}
                                       </SelectContent>
                                     </Select>
-                                    <div className="mt-1 truncate text-xs text-muted-foreground">{lmsCourseName(unit.glms_course_id)}</div>
-                                  </div>
-                                  <div>
-                                    <Label>{page.unitProductId}</Label>
-                                    <Input value={unit.stripe_product_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { stripe_product_id: event.target.value })} disabled={published} />
-                                  </div>
-                                  <div>
-                                    <Label>{page.unitPriceId}</Label>
-                                    <Input value={unit.stripe_price_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { stripe_price_id: event.target.value })} disabled={published} />
+                                    <div className="mt-1 truncate text-xs text-muted-foreground">{lmsCourseName(courseId)}</div>
                                   </div>
                                   <div className="mt-6">
                                     <Button variant="outline" size="icon-sm" onClick={() => removeUnit(stageIndex, unitIndex)} disabled={published} aria-label={page.removeUnit}>
@@ -1116,19 +1128,11 @@ export default function PipelinesPage() {
                                     </Button>
                                   </div>
                                 </div>
-                                <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                                  <div className="grid gap-3 md:grid-cols-2">
-                                    <Input placeholder={page.exemptionProductId} value={unit.exemption_stripe_product_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { exemption_stripe_product_id: event.target.value })} disabled={published} />
-                                    <Input placeholder={page.exemptionPriceId} value={unit.exemption_stripe_price_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { exemption_stripe_price_id: event.target.value })} disabled={published} />
-                                  </div>
-                                  <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto]">
-                                    <Input placeholder={page.retakeProductId} value={unit.retake_stripe_product_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { retake_stripe_product_id: event.target.value })} disabled={published} />
-                                    <Input placeholder={page.retakePriceId} value={unit.retake_stripe_price_id || ""} onChange={(event) => updateUnit(stageIndex, unitIndex, { retake_stripe_price_id: event.target.value })} disabled={published} />
-                                    <label className="flex items-center gap-2 rounded-md border px-3 text-sm">
-                                      <Checkbox checked={Boolean(unit.allow_retake)} onCheckedChange={(checked) => updateUnit(stageIndex, unitIndex, { allow_retake: Boolean(checked) })} disabled={published} />
-                                      {page.allowRetake}
-                                    </label>
-                                  </div>
+                                <div className="mt-3">
+                                  <label className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                                    <Checkbox checked={Boolean(unit.allow_retake)} onCheckedChange={(checked) => updateUnit(stageIndex, unitIndex, { allow_retake: Boolean(checked) })} disabled={published} />
+                                    {page.allowRetake}
+                                  </label>
                                 </div>
                                 <div className="mt-3 rounded-md border bg-muted/20 p-3">
                                   <div className="mb-3">
@@ -1144,8 +1148,8 @@ export default function PipelinesPage() {
                                     />
                                     <Input
                                       placeholder="Exam ID"
-                                      value={unit.exam_id || ""}
-                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exam_id: event.target.value })}
+                                      value={examId}
+                                      onChange={(event) => updateUnit(stageIndex, unitIndex, { exam_ulid: event.target.value, exam_id: event.target.value })}
                                       disabled={published}
                                     />
                                     <Input
@@ -1156,8 +1160,64 @@ export default function PipelinesPage() {
                                     />
                                   </div>
                                 </div>
+                                <div className="mt-3 rounded-md border bg-muted/20 p-3">
+                                  <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                      <div className="text-sm font-semibold">{page.exemptionConfig}</div>
+                                      <p className="mt-1 text-xs text-muted-foreground">{page.exemptionConfigHint}</p>
+                                    </div>
+                                    <label className="inline-flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm">
+                                      <Checkbox
+                                        checked={Boolean(unit.allow_exemption)}
+                                        onCheckedChange={(checked) =>
+                                          updateUnit(stageIndex, unitIndex, {
+                                            allow_exemption: Boolean(checked),
+                                            exemption_quals: checked ? exemptionQuals : [],
+                                          })
+                                        }
+                                        disabled={published}
+                                      />
+                                      {page.allowExemption}
+                                    </label>
+                                  </div>
+                                  {unit.allow_exemption ? (
+                                    credentialDefinitions.length === 0 ? (
+                                      <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">{page.noCredentialDefinitions}</div>
+                                    ) : (
+                                      <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                                        {credentialDefinitions.map((definition) => {
+                                          const definitionId = credentialDefinitionUlidOf(definition)
+                                          if (!definitionId) return null
+                                          return (
+                                            <label key={`${unitUlidOf(unit) || unitIndex}-exemption-${definitionId}`} className="flex items-start gap-2 rounded-md border bg-background p-3 text-sm">
+                                              <Checkbox
+                                                checked={exemptionQuals.includes(definitionId)}
+                                                onCheckedChange={(checked) => toggleUnitExemptionQualification(stageIndex, unitIndex, definitionId, Boolean(checked))}
+                                                disabled={published}
+                                              />
+                                              <span className="min-w-0">
+                                                <span className="block truncate font-medium">{definition.name || definitionId}</span>
+                                                <span className="block truncate text-xs text-muted-foreground">{definition.category || definitionId}</span>
+                                              </span>
+                                            </label>
+                                          )
+                                        })}
+                                      </div>
+                                    )
+                                  ) : (
+                                    <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">{page.noExemption}</div>
+                                  )}
+                                  {exemptionQuals.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                      {exemptionQuals.map((qualId) => (
+                                        <Badge key={qualId} variant="secondary">{exemptionQualificationLabel(qualId)}</Badge>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            ))
+                              )
+                            })
                           )}
                         </div>
                       </div>
@@ -1173,110 +1233,6 @@ export default function PipelinesPage() {
                 </div>
               </div>
 
-              <div className="rounded-lg border bg-card">
-                <div className="flex items-center gap-2 border-b px-4 py-3">
-                  <BookOpen className="h-4 w-4" />
-                  <h2 className="font-semibold">{page.preview}</h2>
-                </div>
-                <div className="space-y-2 p-4">
-                  <div className="rounded-md border bg-background p-3">
-                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                      <span className="font-semibold">{page.certificateAfterCompletion}</span>
-                      <Badge variant={hasCertificate ? "default" : "outline"} className={hasCertificate ? "bg-emerald-600" : ""}>
-                        {hasCertificate ? page.certificateYes : page.certificateNo}
-                      </Badge>
-                      {hasCertificate && <span className="text-xs text-muted-foreground">{certificateNames.join(", ")}</span>}
-                    </div>
-                    {!hasCertificate && <p className="mt-1 text-xs text-muted-foreground">{page.noCertificateConfigured}</p>}
-                  </div>
-                  {form.stages.length === 0 ? (
-                    <div className="text-sm text-muted-foreground">{page.noPreview}</div>
-                  ) : (
-                    form.stages.map((stage, index) => (
-                      <div key={stage.stage_id || index} className="rounded-md bg-muted p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{stage.name || page.unnamedStage}</span>
-                          <span className="text-xs text-muted-foreground">{stage.units.length} {page.unitsCount}</span>
-                        </div>
-                        <div className="mt-2 space-y-3 text-sm text-muted-foreground">
-                          {stage.units.map((unit, unitIndex) => {
-                            const detail = lmsCourseDetails[unit.glms_course_id]
-                            const hasExam = Boolean((unit.program || unit.exam_id || "").trim())
-                            return (
-                              <div key={unit.unit_id || unitIndex} className="rounded-md border bg-background p-3 shadow-sm">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                                  <span className="font-semibold text-foreground">{lmsCourseName(unit.glms_course_id)}</span>
-                                  {unit.stripe_price_id && <Badge variant="outline">{unit.stripe_price_id}</Badge>}
-                                  {hasExam && <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">Exam</Badge>}
-                                </div>
-                                <div className="mb-3 grid gap-2 rounded-md bg-muted/40 p-3 text-xs md:grid-cols-3">
-                                  <div>Exam: {hasExam ? "Yes" : "No"}</div>
-                                  {hasExam && (
-                                    <>
-                                      <div>Program: {unit.program || t.common.na}</div>
-                                      <div>Exam ID: {unit.exam_id || t.common.na}</div>
-                                      <div>Form Code: {unit.form_code || t.common.na}</div>
-                                    </>
-                                  )}
-                                </div>
-                                {detail && (
-                                  <div className="ml-6 space-y-4 border-l-2 pl-4">
-                                    {detail.materials?.length > 0 && (
-                                      <div>
-                                        <div className="text-xs font-semibold mb-1 text-foreground">{page.materials}</div>
-                                        <ul className="list-disc pl-4 text-xs space-y-0.5">
-                                          {detail.materials.map((m: any, i: number) => (
-                                            <li key={i}>{m.title || t.common.unknown}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
-                                    {detail.chapters?.map((chapterDet: any, i: number) => (
-                                      <div key={i} className="text-xs">
-                                        <div className="font-semibold mb-1 text-foreground">
-                                          {page.chapter}: {chapterDet.chapter?.title || t.common.unknown}
-                                        </div>
-                                        <div className="space-y-2 ml-1">
-                                          {chapterDet.lessons?.map((lessonDet: any, li: number) => (
-                                            <div key={li} className="pl-3 border-l">
-                                              <div className="text-muted-foreground">{page.lesson}: {lessonDet.lesson?.title || t.common.unknown}</div>
-                                              {lessonDet.quizzes?.length > 0 && (
-                                                <div className="text-[10px] text-orange-600/80 mt-0.5 ml-2">
-                                                  {page.quiz}: {lessonDet.quizzes.map((q: any) => q.quiz?.title || t.common.unknown).join(", ")}
-                                                </div>
-                                              )}
-                                            </div>
-                                          ))}
-                                          {chapterDet.quizzes?.length > 0 && (
-                                            <div className="pl-3 border-l text-orange-600 font-medium">
-                                              {page.chapterQuiz}: {chapterDet.quizzes.map((q: any) => q.quiz?.title || t.common.unknown).join(", ")}
-                                            </div>
-                                          )}
-                                        </div>
-                                      </div>
-                                    ))}
-                                    {detail.quizzes?.length > 0 && (
-                                      <div>
-                                        <div className="text-xs font-semibold mb-1 text-red-600">{page.finalExam}</div>
-                                        <ul className="list-disc pl-4 text-xs text-red-600/80 space-y-0.5">
-                                          {detail.quizzes.map((q: any, i: number) => (
-                                            <li key={i}>{q.quiz?.title || t.common.unknown}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
             </section>
           </div>
         </div>

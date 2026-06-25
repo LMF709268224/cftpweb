@@ -304,8 +304,9 @@ func (h *Handler) SubmitApplication(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpdateApplicationReq struct {
-	AppUlid string `json:"app_id"`
-	Files   []struct {
+	AppUlid     string `json:"app_ulid"`
+	LegacyAppID string `json:"app_id,omitempty"`
+	Files       []struct {
 		FileHash  string `json:"file_hash"`
 		FileName  string `json:"file_name"`
 		FileType  int32  `json:"file_type"`
@@ -324,7 +325,8 @@ func (h *Handler) UpdateApplication(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
-	if !requireRequestField(w, body.AppUlid, "app_id") {
+	body.AppUlid = strings.TrimSpace(firstNonEmpty(body.AppUlid, body.LegacyAppID))
+	if !requireRequestField(w, body.AppUlid, "app_ulid") {
 		return
 	}
 
