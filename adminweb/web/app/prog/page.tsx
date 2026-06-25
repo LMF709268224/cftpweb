@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { ChevronDown, ChevronRight, RefreshCw, Search } from "lucide-react"
+import { ArrowLeft, ChevronDown, ChevronRight, RefreshCw, Search } from "lucide-react"
 
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"
@@ -59,6 +59,13 @@ type ProgPipelineSummary = {
   started_at?: string
   completed_at?: string
   created_at?: string
+}
+
+type PipelineCatalogItem = {
+  pipeline_id?: string
+  pipeline_ulid?: string
+  name?: string
+  category_tips?: string
 }
 
 type ProgPipelineDetail = {
@@ -220,6 +227,7 @@ function CourseUnitDiagnostics({ courseId, candidateUlid, status }: { courseId?:
 export default function ProgPage() {
   const { t } = useTranslation()
   const [pipelines, setPipelines] = useState<ProgPipelineSummary[]>([])
+  const [pipelineNameByCc, setPipelineNameByCc] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
   const [selectedPipelineId, setSelectedPipelineId] = useState("")
@@ -241,6 +249,21 @@ export default function ProgPage() {
   const [logOffset, setLogOffset] = useState(0)
   const logPageSize = 20
 
+  const loadPipelineCatalog = useCallback(async () => {
+    try {
+      const res = await apiClient("/api/pipelines?limit=200&offset=0")
+      const items: PipelineCatalogItem[] = Array.isArray(res?.pipelines) ? res.pipelines : []
+      const next: Record<string, string> = {}
+      for (const item of items) {
+        const id = item.pipeline_ulid || item.pipeline_id || ""
+        if (id) next[id] = item.name || item.category_tips || id
+      }
+      setPipelineNameByCc(next)
+    } catch {
+      setPipelineNameByCc({})
+    }
+  }, [])
+
   const loadPipelines = useCallback(async () => {
     setLoading(true)
     try {
@@ -252,12 +275,11 @@ export default function ProgPage() {
       const res = await apiClient(`/api/prog/pipelines?${params.toString()}`)
       const nextList = res?.pipelines || []
       setPipelines(nextList)
-      if (nextList.length > 0) {
-        const keepSelected = selectedPipelineId && nextList.some((item: ProgPipelineSummary) => item.pipeline_ulid === selectedPipelineId)
-        if (!keepSelected) {
-          setSelectedPipelineId(nextList[0].pipeline_ulid)
-        }
-      } else {
+      if (selectedPipelineId && !nextList.some((item: ProgPipelineSummary) => item.pipeline_ulid === selectedPipelineId)) {
+        setSelectedPipelineId("")
+        setSelectedPipelineDetail(null)
+      }
+      if (nextList.length === 0) {
         setSelectedPipelineId("")
         setSelectedPipelineDetail(null)
       }
@@ -332,6 +354,10 @@ export default function ProgPage() {
   useEffect(() => {
     loadPipelines().catch(() => toast.error(t.common.error))
   }, [loadPipelines, t.common.error])
+
+  useEffect(() => {
+    loadPipelineCatalog()
+  }, [loadPipelineCatalog])
 
   useEffect(() => {
     if (selectedPipelineId) {
@@ -469,6 +495,28 @@ export default function ProgPage() {
     if (selectedStageStatusKey === "3") return t.learning.stageCompletedHint
     return t.learning.nextStepDesc
   }, [selectedStageStatusKey, t.learning.nextStepDesc, t.learning.stageCompletedHint, t.learning.stageRunningHint, t.learning.stageWaitCandidateHint])
+
+  const pipelineDisplayName = useCallback((pipeline: ProgPipelineSummary | null | undefined) => {
+    const ccUlid = pipeline?.pipeline_cc_ulid || ""
+    return pipelineNameByCc[ccUlid] || t.progPage.pipelineDetail || "Pipeline"
+  }, [pipelineNameByCc, t.progPage.pipelineDetail])
+
+  const openPipelineDetail = useCallback((pipelineUlid: string) => {
+    setSelectedPipelineId(pipelineUlid)
+    setSelectedPipelineDetail(null)
+    setSelectedLogId("")
+    setSelectedLogDetail(null)
+    setTransitionLogs([])
+  }, [])
+
+  const backToPipelineList = useCallback(() => {
+    setSelectedPipelineId("")
+    setSelectedPipelineDetail(null)
+    setSelectedLogId("")
+    setSelectedLogDetail(null)
+    setTransitionLogs([])
+  }, [])
+
   const canLoadMoreLogs = transitionLogs.length === logPageSize
   return (
     <div className="min-h-screen bg-background">
@@ -480,12 +528,21 @@ export default function ProgPage() {
               <h1 className="text-3xl font-bold text-foreground">{t.progPage.title}</h1>
               <p className="mt-1 text-muted-foreground">{t.progPage.subtitle}</p>
             </div>
-            <Button variant="outline" onClick={loadPipelines} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              {t.progPage.refresh}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {selectedPipelineId && (
+                <Button variant="outline" onClick={backToPipelineList}>
+                  <ArrowLeft className="h-4 w-4" />
+                  {t.common.cancel === "取消" ? "返回列表" : "Back to list"}
+                </Button>
+              )}
+              <Button variant="outline" onClick={loadPipelines} disabled={loading}>
+                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                {t.progPage.refresh}
+              </Button>
+            </div>
           </div>
 
+          {!selectedPipelineId && (
           <div className="mb-4 grid gap-3 md:grid-cols-[minmax(220px,320px)_180px_1fr]">
             <div>
               <Label htmlFor="candidateFilter">{t.progPage.candidateFilter}</Label>
@@ -525,8 +582,10 @@ export default function ProgPage() {
               </Select>
             </div>
           </div>
+          )}
 
-          <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
+          <div className="space-y-4">
+            {!selectedPipelineId && (
             <section className="rounded-lg border bg-card">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
@@ -544,26 +603,28 @@ export default function ProgPage() {
                   ) : (
                     pipelines.map((pipeline) => {
                       const active = selectedPipelineId === pipeline.pipeline_ulid
+                      const displayName = pipelineDisplayName(pipeline)
                       return (
                         <button
                           key={pipeline.pipeline_ulid}
                           type="button"
-                          onClick={() => setSelectedPipelineId(pipeline.pipeline_ulid)}
+                          onClick={() => openPipelineDetail(pipeline.pipeline_ulid)}
                           className={`block w-full px-4 py-3 text-left transition ${active ? "bg-muted" : "hover:bg-muted/60"}`}
                         >
                           <div className="flex items-center justify-between gap-3">
                             <div className="min-w-0">
-                              <div className="truncate font-medium">{pipeline.pipeline_ulid}</div>
-                              <div className="mt-1 truncate text-xs text-muted-foreground">{pipeline.candidate_ulid || t.common.na}</div>
+                              <div className="truncate font-medium">{displayName}</div>
+                              <div className="mt-1 truncate text-xs text-muted-foreground">
+                                {formatBackendDate(pipeline.started_at || pipeline.created_at)}
+                              </div>
                             </div>
                             <Badge variant="outline" className={statusBadgeClassForStatus(ADMIN_PIPELINE_STATUS_ENUM_NAMES, pipeline.status)}>
                               {statusLabelWithDiagnostics(t, ADMIN_PIPELINE_STATUS_LABELS, ADMIN_PIPELINE_STATUS_ENUM_NAMES, pipeline.status)}
                             </Badge>
                           </div>
                           <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
-                            <span>{t.progPage.pipelineCc}: {pipeline.pipeline_cc_ulid || t.common.na}</span>
-                            <span>{t.progPage.currentStage}: {pipeline.current_stage_ulid || t.common.na}</span>
                             <span>{t.progPage.startedAt}: {formatBackendDate(pipeline.started_at)}</span>
+                            <span>{t.progPage.completedAt}: {formatBackendDate(pipeline.completed_at)}</span>
                           </div>
                         </button>
                       )
@@ -577,7 +638,9 @@ export default function ProgPage() {
                 <Button variant="outline" size="sm" disabled={pipelines.length < pageSize || loading} onClick={() => setOffset(offset + pageSize)}>{t.progPage.nextPage}</Button>
               </div>
             </section>
+            )}
 
+            {selectedPipelineId && (
             <section className="space-y-4">
               <div className="rounded-lg border bg-card">
                 <div className="flex items-center justify-between border-b px-4 py-3">
@@ -920,6 +983,7 @@ export default function ProgPage() {
                 </div>
               </div>
             </section>
+            )}
           </div>
         </div>
       </main>

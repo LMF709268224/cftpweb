@@ -1,8 +1,8 @@
-"use client"
+﻿"use client"
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { FileJson, Package, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react"
+import { ArrowLeft, FileJson, Package, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react"
 
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
@@ -99,6 +99,7 @@ export default function BundlesPage() {
   const isZh = lang === "zh"
   const [bundles, setBundles] = useState<BundleInfo[]>([])
   const [selectedId, setSelectedId] = useState("")
+  const [creatingDraft, setCreatingDraft] = useState(false)
   const [form, setForm] = useState<BundleForm>(emptyForm)
   const [statusFilter, setStatusFilter] = useState("")
   const [loading, setLoading] = useState(true)
@@ -112,6 +113,7 @@ export default function BundlesPage() {
     [bundles, selectedId],
   )
   const selectedIsActive = String(selectedBundle?.status || "").toLowerCase() === "active"
+  const showingEditor = Boolean(selectedId || creatingDraft)
 
   const loadBundles = useCallback(async () => {
     setLoading(true)
@@ -126,6 +128,7 @@ export default function BundlesPage() {
       if (selectedId && !nextBundles.some((bundle: BundleInfo) => bundleIdOf(bundle) === selectedId)) {
         setSelectedId("")
         setForm(emptyForm)
+        setCreatingDraft(false)
       }
     } finally {
       setLoading(false)
@@ -145,6 +148,7 @@ export default function BundlesPage() {
     const bundleId = bundleIdOf(bundle)
     if (!bundleId) return
     setSelectedId(bundleId)
+    setCreatingDraft(false)
     try {
       const res = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}`)
       setForm(formFromBundle(res?.bundle || res))
@@ -179,6 +183,7 @@ export default function BundlesPage() {
       })
       toast.success(isZh ? "商品草稿已创建" : "Bundle draft created")
       setSelectedId(res?.bundle_ulid || form.bundle_ulid.trim())
+      setCreatingDraft(false)
       await loadBundles()
     } finally {
       setSaving(false)
@@ -251,6 +256,7 @@ export default function BundlesPage() {
     toast.success(isZh ? "商品已删除" : "Bundle deleted")
     setSelectedId("")
     setForm(emptyForm)
+    setCreatingDraft(false)
     await loadBundles()
   }
 
@@ -267,6 +273,13 @@ export default function BundlesPage() {
   const resetForCreate = () => {
     setSelectedId("")
     setForm(emptyForm)
+    setCreatingDraft(true)
+  }
+
+  const backToList = () => {
+    setSelectedId("")
+    setForm(emptyForm)
+    setCreatingDraft(false)
   }
 
   return (
@@ -285,6 +298,18 @@ export default function BundlesPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              {showingEditor && (
+                <Button variant="outline" onClick={backToList}>
+                  <ArrowLeft className="h-4 w-4" />
+                  {isZh ? "返回列表" : "Back to list"}
+                </Button>
+              )}
+              {!showingEditor && (
+                <Button onClick={resetForCreate}>
+                  <Plus className="h-4 w-4" />
+                  {isZh ? "新建" : "New"}
+                </Button>
+              )}
               <Button variant="outline" onClick={syncDisplayPricing}>
                 <RefreshCw className="h-4 w-4" />
                 {isZh ? "同步展示价格" : "Sync Display Price"}
@@ -296,17 +321,14 @@ export default function BundlesPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
+          <div className="space-y-4">
+            {!showingEditor && (
             <section className="rounded-lg border bg-card">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
                   <h2 className="font-semibold">{isZh ? "商品列表" : "Bundle List"}</h2>
                   <p className="text-xs text-muted-foreground">{isZh ? "来自 gmall 的 Bundle 配置。" : "Bundle configs from gmall."}</p>
                 </div>
-                <Button size="sm" onClick={resetForCreate}>
-                  <Plus className="h-4 w-4" />
-                  {isZh ? "新建" : "New"}
-                </Button>
               </div>
               <div className="border-b p-3">
                 <Select value={statusFilter || "all"} onValueChange={(value) => {
@@ -341,8 +363,8 @@ export default function BundlesPage() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <div className="truncate font-semibold">{bundle.name || bundle.bundle_ulid}</div>
-                            <div className="mt-1 truncate text-xs text-muted-foreground">{bundle.bundle_gpath || bundle.bundle_ulid}</div>
+                            <div className="truncate font-semibold">{bundle.name || bundle.bundle_gpath || (isZh ? "未命名商品" : "Untitled bundle")}</div>
+                            <div className="mt-1 truncate text-xs text-muted-foreground">{bundle.description || bundle.bundle_gpath || "-"}</div>
                           </div>
                           <Badge variant="outline" className={statusBadgeClassForStatusValue(bundle.status)}>
                             {bundle.status || "-"}
@@ -367,7 +389,9 @@ export default function BundlesPage() {
                 </Button>
               </div>
             </section>
+            )}
 
+            {showingEditor && (
             <section className="space-y-4">
               <div className="rounded-lg border bg-card">
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
@@ -485,6 +509,7 @@ export default function BundlesPage() {
                 </div>
               )}
             </section>
+            )}
           </div>
         </div>
       </main>
