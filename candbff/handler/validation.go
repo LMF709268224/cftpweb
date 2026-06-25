@@ -3,6 +3,7 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -25,4 +26,43 @@ func requireRequestFields(w http.ResponseWriter, fields ...string) bool {
 		}
 	}
 	return true
+}
+
+// parsePagination extracts page and page_size query params with a default page size.
+func parsePagination(r *http.Request, defaultSize int) (page, pageSize int) {
+	return parsePositiveIntQuery(r, "page", 1), parsePositiveIntQuery(r, "page_size", defaultSize)
+}
+
+// parsePositiveIntQuery parses a positive integer query param, returning fallback if absent or invalid.
+func parsePositiveIntQuery(r *http.Request, key string, fallback int) int {
+	raw := strings.TrimSpace(r.URL.Query().Get(key))
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value <= 0 {
+		return fallback
+	}
+	return value
+}
+
+// parseNonNegativeIntQuery parses a non-negative integer query param, returning fallback if absent or invalid.
+func parseNonNegativeIntQuery(r *http.Request, key string, fallback int) int {
+	raw := strings.TrimSpace(r.URL.Query().Get(key))
+	if raw == "" {
+		return fallback
+	}
+	value, err := strconv.Atoi(raw)
+	if err != nil || value < 0 {
+		return fallback
+	}
+	return value
+}
+
+// totalPages calculates the total number of pages given a total count and page size.
+func totalPages(total int, pageSize int) int {
+	if total <= 0 || pageSize <= 0 {
+		return 0
+	}
+	return (total + pageSize - 1) / pageSize
 }

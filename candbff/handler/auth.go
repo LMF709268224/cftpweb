@@ -10,6 +10,7 @@ import (
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
+	"golang.org/x/oauth2"
 )
 
 func setTokenCookies(w http.ResponseWriter, accessToken, refreshToken string, expiresAt time.Time) {
@@ -70,26 +71,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	claims, err := casdoorsdk.ParseJwtToken(token.AccessToken)
-	if err != nil {
-		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "failed to parse token: "+err.Error())
-		return
-	}
-
-	if _, err = h.resolveCandidateUlid(r, claims.User.Id); err != nil {
-		slog.Error("Failed to resolve user ULID", "error", err)
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal error")
-		return
-	}
-
-	setTokenCookies(w, token.AccessToken, token.RefreshToken, token.Expiry)
-
-	WriteJSON(w, http.StatusOK, LoginRsp{
-		Token: token.AccessToken,
-		User: UserInfo{
-			Name: claims.User.Name,
-		},
-	})
+	h.handleTokenExchange(w, r, token)
 }
 
 // RefreshToken handles POST /auth/refresh.
@@ -113,6 +95,12 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.handleTokenExchange(w, r, token)
+}
+
+// handleTokenExchange is shared by Login and RefreshToken: parses claims, resolves the candidate
+// ULID, sets auth cookies, and writes the success response.
+func (h *Handler) handleTokenExchange(w http.ResponseWriter, r *http.Request, token *oauth2.Token) {
 	claims, err := casdoorsdk.ParseJwtToken(token.AccessToken)
 	if err != nil {
 		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "failed to parse token: "+err.Error())
@@ -126,12 +114,9 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	setTokenCookies(w, token.AccessToken, token.RefreshToken, token.Expiry)
-
 	WriteJSON(w, http.StatusOK, LoginRsp{
 		Token: token.AccessToken,
-		User: UserInfo{
-			Name: claims.User.Name,
-		},
+		User:  UserInfo{Name: claims.User.Name},
 	})
 }
 

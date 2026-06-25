@@ -18,10 +18,16 @@ import (
 
 const invoicePDFFetchTimeout = 30 * time.Second
 
+// invoiceHTTPClient is a dedicated client for fetching Stripe invoice pages/PDFs.
+// Using a named client (not http.DefaultClient) ensures connection and TLS timeouts are applied.
+var invoiceHTTPClient = &http.Client{Timeout: invoicePDFFetchTimeout}
+
 var stripeInvoicePDFPattern = regexp.MustCompile(`https://invoice\.stripe\.com/i/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
 var stripeRelativeInvoicePDFPattern = regexp.MustCompile(`/i/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
 
 // QueryInvoice  GET /api/invoices/{orderId}
+// TODO(security): GetInvoiceRequest has no CandidateUlid field — gpay cannot enforce ownership
+// at the proto level. Add candidate_ulid to GetInvoiceRequest and verify here once backend is updated.
 func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "orderId")
 
@@ -47,6 +53,7 @@ func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 }
 
 // DownloadPdf  GET /api/invoices/{orderId}/pdf
+// TODO(security): same ownership concern as QueryInvoice — add candidate_ulid check once backend supports it.
 func (h *Handler) DownloadPdf(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "orderId")
 	if strings.TrimSpace(orderID) == "" {
@@ -81,7 +88,7 @@ func (h *Handler) DownloadPdf(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pdfResp, err := http.DefaultClient.Do(req)
+	pdfResp, err := invoiceHTTPClient.Do(req)
 	if err != nil {
 		slog.Error("Failed to fetch invoice PDF", "error", err, "order_id", orderID)
 		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "failed to fetch invoice PDF")
@@ -128,7 +135,7 @@ func resolveStripeInvoicePDFURL(ctx context.Context, hostedInvoiceURL string) (s
 		return "", err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := invoiceHTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}

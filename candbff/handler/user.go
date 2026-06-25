@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -34,7 +33,7 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 		FirstName:   fullUser.FirstName,
 		LastName:    fullUser.LastName,
 		Phone:       fullUser.Phone,
-		HomePhone:   fullUser.Phone,
+		HomePhone:   getUserProperty(fullUser, "home_phone"),
 		WorkPhone:   getUserProperty(fullUser, userPropWorkPhone),
 		Country:     fullUser.Region,
 		Province:    getUserProperty(fullUser, userPropProvince),
@@ -59,7 +58,7 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	name := CandidateName(r)
 
 	var input UserProfileInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -98,7 +97,7 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "修改成功"})
+	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
 }
 
 // UpdateUserPassword PUT /api/user/password
@@ -106,7 +105,7 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 	name := CandidateName(r)
 
 	var input UserPasswordInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+	if err := ReadJSON(r, &input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -127,7 +126,7 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "密码修改成功"})
+	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "success"})
 }
 
 func getUserProperty(user *casdoorsdk.User, key string) string {

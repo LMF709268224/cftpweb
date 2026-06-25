@@ -142,7 +142,6 @@ function parseFeatures(plan: RecordData) {
   } catch {
     return raw.split(/\r?\n|[,;；，]/).map((item) => item.trim()).filter(Boolean)
   }
-  return []
 }
 
 async function loadMembership() {

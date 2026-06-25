@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -16,19 +15,8 @@ import (
 func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 
-	limit := 10
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if parsed, err := strconv.Atoi(limitStr); err == nil && parsed > 0 {
-			limit = parsed
-		}
-	}
-
-	var lastID uint64
-	if lastIDStr := r.URL.Query().Get("lastId"); lastIDStr != "" {
-		if parsed, err := strconv.ParseUint(lastIDStr, 10, 64); err == nil {
-			lastID = parsed
-		}
-	}
+	limit := parsePositiveIntQuery(r, "limit", 10)
+	lastID := uint64(parseNonNegativeIntQuery(r, "lastId", 0))
 
 	rsp, err := h.Gmsg.ListMessages(r.Context(), &gmsgpb.ListMessagesRequest{
 		UserUlid: candidateID,

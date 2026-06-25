@@ -115,8 +115,16 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 	WriteError(w, httpStatus, errorCode, st.Message())
 }
 
+// nopResponseWriter is a dummy ResponseWriter used solely to satisfy http.MaxBytesReader
+// without actually writing anything to a real connection.
+type nopResponseWriter struct{}
+
+func (nopResponseWriter) Header() http.Header         { return http.Header{} }
+func (nopResponseWriter) Write(b []byte) (int, error) { return len(b), nil }
+func (nopResponseWriter) WriteHeader(int)             {}
+
 func ReadJSON(r *http.Request, dest interface{}) error {
-	r.Body = http.MaxBytesReader(nil, r.Body, 1<<20)
+	r.Body = http.MaxBytesReader(nopResponseWriter{}, r.Body, 1<<20)
 	return json.NewDecoder(r.Body).Decode(dest)
 }
 
