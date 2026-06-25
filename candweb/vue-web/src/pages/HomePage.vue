@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import type { Component } from "vue"
-import { Award, BookOpen, ClipboardList, PackageOpen, PanelLeft, Receipt } from "lucide-vue-next"
+import { Award, BookOpen, CheckCircle2, ClipboardList, PackageOpen, PanelLeft, Receipt } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { getAccessToken } from "@/lib/authStorage"
@@ -12,6 +12,7 @@ const userName = ref("...")
 const dashboardLoading = ref(false)
 const counts = ref({
   certifications: 0,
+  certificates: 0,
   courses: 0,
   exams: 0,
   resourcePacks: 0,
@@ -44,7 +45,7 @@ type PortalCard = {
 
 const portalCards = computed<PortalCard[]>(() => {
   const zh = lang.value === "zh"
-  return [
+  const cards: PortalCard[] = [
     {
       key: "certifications",
       title: zh ? "已完成认证" : "Completed Certifications",
@@ -95,6 +96,38 @@ const portalCards = computed<PortalCard[]>(() => {
       color: "green",
       featured: false,
     },
+  ]
+
+  const visibleCards = cards
+    .filter((card) => card.key !== "courses")
+    .map((card) => {
+      switch (card.key) {
+        case "certifications":
+          return { ...card, title: t.value.home.purchasedCertifications, action: t.value.home.viewCertifications }
+        case "exams":
+          return { ...card, title: t.value.home.examCount, action: t.value.home.viewExams }
+        case "resourcePacks":
+          return { ...card, title: t.value.home.resourcePackCount, action: t.value.home.viewResourcePacks }
+        case "orders":
+          return { ...card, title: t.value.home.orderCount, action: t.value.home.viewOrders }
+        default:
+          return card
+      }
+    })
+
+  return [
+    visibleCards[0],
+    {
+      key: "certificates",
+      title: t.value.home.earnedCertificates,
+      value: counts.value.certificates,
+      action: t.value.home.viewCertificates,
+      href: "/certificates",
+      icon: CheckCircle2,
+      color: "purple",
+      featured: true,
+    },
+    ...visibleCards.slice(1),
   ]
 })
 const featuredCards = computed(() => portalCards.value.filter((card) => card.featured))
@@ -170,15 +203,15 @@ onMounted(async () => {
   }
 
   try {
-    const [certifications, courses, exams, resourcePacks, orders] = await Promise.all([
+    const [certifications, certificates, exams, resourcePacks, orders] = await Promise.all([
       countFromRequest("/api/pipeline", "list"),
-      countFromRequest("/api/pipeline/materials", "materials"),
+      countFromRequest("/api/certificates", "certificates"),
       countFromRequest("/api/exams?page=1&page_size=50", "exams"),
       countFromRequest("/api/resource-packs?page_size=50", "packs"),
       countFromRequest("/api/orders?page=1&page_size=50", "orders"),
     ])
 
-    counts.value = { certifications, courses, exams, resourcePacks, orders }
+    counts.value = { certifications, certificates, courses: 0, exams, resourcePacks, orders }
   } finally {
     dashboardLoading.value = false
   }
