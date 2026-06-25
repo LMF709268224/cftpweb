@@ -6,7 +6,7 @@ import { apiClient } from "@/lib/apiClient"
 import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ShoppingCart, RefreshCw, Search, Trash2 } from "lucide-react"
+import { ArrowLeft, ShoppingCart, RefreshCw, Search, Trash2 } from "lucide-react"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/useLanguage"
 import {
@@ -98,6 +98,12 @@ const getBizRefUlid = (order: AdminOrder) => String(pickFirst(order, ["biz_ref_u
 const getCandidateUlid = (order: AdminOrder) => String(pickFirst(order, ["candidate_ulid", "candidateUlid"]) || "")
 const getOrderStatus = (order: AdminOrder) => pickFirst(order, ["order_status", "orderStatus", "status"])
 const getPaymentStatus = (order: AdminOrder) => pickFirst(order, ["payment_status", "paymentStatus"])
+const getProductName = (order: AdminOrder) => String(pickFirst(order, [
+  "product_name",
+  "productName",
+  "name",
+  "title",
+]) || "")
 const canPurgeBundleDataOrder = (order: AdminOrder) => {
   const bizType = normalizeCode(getBizType(order))
   return bizType === "BUNDLE_PURCHASE"
@@ -152,6 +158,7 @@ export default function AdminOrdersPage() {
   const [pageSize] = useState(20)
   const [totalCount, setTotalCount] = useState(0)
   const [purgingOrderUlid, setPurgingOrderUlid] = useState("")
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null)
   const orderStatusLabel = (value: unknown) => {
     const normalized = normalizeCode(value)
     if (!normalized) return "-"
@@ -203,6 +210,8 @@ export default function AdminOrdersPage() {
     }
   }
 
+  const backToList = () => setSelectedOrder(null)
+
   const handlePurgeBundleOrder = async (order: AdminOrder) => {
     const candidate = getCandidateUlid(order)
     const bizTypeValue = normalizeCode(getBizType(order))
@@ -253,6 +262,62 @@ export default function AdminOrdersPage() {
           </Button>
         </div>
 
+        {selectedOrder ? (
+          <section className="rounded-xl border bg-card">
+            <div className="flex items-center justify-between border-b p-4">
+              <div>
+                <h2 className="text-lg font-semibold">{getProductName(selectedOrder) || findLabel(BIZ_TYPE_OPTIONS, getBizType(selectedOrder), lang)}</h2>
+                <p className="text-sm text-muted-foreground">{lang === "zh" ? "订单详情" : "Order details"}</p>
+              </div>
+              <Button variant="outline" onClick={backToList}>
+                <ArrowLeft className="h-4 w-4" />
+                {lang === "zh" ? "返回列表" : "Back to list"}
+              </Button>
+            </div>
+            <div className="grid gap-4 p-4 md:grid-cols-2">
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="text-xs text-muted-foreground">{lang === "zh" ? "业务类型" : "Business type"}</div>
+                <div className="mt-1 font-medium">{findLabel(BIZ_TYPE_OPTIONS, getBizType(selectedOrder), lang)}</div>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="text-xs text-muted-foreground">{lang === "zh" ? "金额 / 货币" : "Amount / Currency"}</div>
+                <div className="mt-1 font-medium">{getOrderAmount(selectedOrder).toFixed(2)} {getCurrency(selectedOrder) || "-"}</div>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="text-xs text-muted-foreground">{lang === "zh" ? "订单状态" : "Order status"}</div>
+                <Badge variant="outline" className={statusBadgeClassForStatusValue(getOrderStatus(selectedOrder))}>
+                  {orderStatusLabel(getOrderStatus(selectedOrder))}
+                </Badge>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="text-xs text-muted-foreground">{lang === "zh" ? "支付状态" : "Payment status"}</div>
+                <Badge variant="outline" className={statusBadgeClassForStatusValue(getPaymentStatus(selectedOrder))}>
+                  {paymentStatusLabel(getPaymentStatus(selectedOrder))}
+                </Badge>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="text-xs text-muted-foreground">Order ULID</div>
+                <div className="mt-1 break-all font-mono text-xs">{getOrderUlid(selectedOrder)}</div>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="text-xs text-muted-foreground">Biz Ref ULID</div>
+                <div className="mt-1 break-all font-mono text-xs">{getBizRefUlid(selectedOrder) || "-"}</div>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="text-xs text-muted-foreground">Candidate ULID</div>
+                <div className="mt-1 break-all font-mono text-xs">{getCandidateUlid(selectedOrder) || "-"}</div>
+              </div>
+              <div className="rounded-md border bg-muted/20 p-3">
+                <div className="text-xs text-muted-foreground">Created At</div>
+                <div className="mt-1">{formatOrderCreatedAt(selectedOrder.created_at ?? selectedOrder.createdAt)}</div>
+              </div>
+              <pre className="md:col-span-2 max-h-[480px] overflow-auto rounded-md bg-muted p-4 text-xs">
+                {JSON.stringify(selectedOrder, null, 2)}
+              </pre>
+            </div>
+          </section>
+        ) : (
+        <>
         <form onSubmit={handleSearch} className="bg-card p-4 rounded-xl border mb-6 flex flex-wrap gap-4 items-end">
           <div className="space-y-1">
             <label className="text-xs font-medium text-muted-foreground">{t.adminOrdersPage?.userUlid}</label>
@@ -322,10 +387,9 @@ export default function AdminOrdersPage() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50 text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u8ba2\u5355 ULID" : "Order ULID"}</th>
-                    <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u5019\u9009\u4eba ULID" : "Candidate ULID"}</th>
+                    <th className="px-4 py-3 font-medium">{lang === "zh" ? "商品 / 订单" : "Product / Order"}</th>
+                    <th className="px-4 py-3 font-medium">{lang === "zh" ? "对象" : "Subject"}</th>
                     <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.bizType}</th>
-                    <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u4e1a\u52a1\u5f15\u7528 ULID" : "Biz Ref ULID"}</th>
                     <th className="px-4 py-3 font-medium">{lang === "zh" ? "\u91d1\u989d / \u8d27\u5e01" : "Amount / Currency"}</th>
                     <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.status}</th>
                     <th className="px-4 py-3 font-medium">{t.adminOrdersPage?.paymentStatus}</th>
@@ -342,13 +406,13 @@ export default function AdminOrdersPage() {
                       const purgeOrderUlid = bizRefUlid || orderUlid
                       const orderStatusValue = getOrderStatus(order)
                       const paymentStatusValue = getPaymentStatus(order)
+                      const productName = getProductName(order) || findLabel(BIZ_TYPE_OPTIONS, bizTypeValue, lang)
 
                       return (
-                        <tr key={`${orderUlid}-${index}`} className="border-b last:border-0 hover:bg-muted/50 transition-colors">
-                          <td className="px-4 py-3 font-medium text-xs font-mono">{orderUlid}</td>
-                          <td className="px-4 py-3 text-xs font-mono">{getCandidateUlid(order) || "-"}</td>
+                        <tr key={`${orderUlid}-${index}`} className="cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/50" onClick={() => setSelectedOrder(order)}>
+                          <td className="px-4 py-3 font-medium">{productName}</td>
+                          <td className="px-4 py-3 text-muted-foreground">{lang === "zh" ? "候选人订单" : "Candidate order"}</td>
                           <td className="px-4 py-3">{findLabel(BIZ_TYPE_OPTIONS, bizTypeValue, lang)}</td>
-                          <td className="px-4 py-3 text-xs font-mono">{bizRefUlid || "-"}</td>
                           <td className="px-4 py-3 font-medium">{getOrderAmount(order).toFixed(2)} {getCurrency(order)}</td>
                           <td className="px-4 py-3">
                             <Badge variant="outline" className={statusBadgeClassForStatusValue(orderStatusValue)}>
@@ -368,7 +432,10 @@ export default function AdminOrdersPage() {
                                 size="sm"
                                 className="gap-2"
                                 disabled={purgingOrderUlid === purgeOrderUlid}
-                                onClick={() => handlePurgeBundleOrder(order)}
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  handlePurgeBundleOrder(order)
+                                }}
                               >
                                 <Trash2 className="h-4 w-4" />
                                 {purgingOrderUlid === purgeOrderUlid
@@ -384,7 +451,7 @@ export default function AdminOrdersPage() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
+                      <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                         {t.adminOrdersPage?.noOrders}
                       </td>
                     </tr>
@@ -420,6 +487,8 @@ export default function AdminOrdersPage() {
               </div>
             </div>
           </div>
+        )}
+        </>
         )}
       </main>
     </div>

@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import { Copy, Package, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react"
+import { ArrowLeft, Copy, Package, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-react"
 
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/useLanguage"
@@ -21,6 +21,7 @@ type Pipeline = {
   pipeline_guid: string
   version: number
   name: string
+  description?: string
   category_tips?: string
   status: string
   is_current: boolean
@@ -275,7 +276,7 @@ function toggleQualification(list: Qualification[], definition: CredentialDefini
 }
 
 export default function PipelinesPage() {
-  const { t } = useTranslation()
+  const { t, lang } = useTranslation()
   const page = t.pipelinesPage
   const [pipelines, setPipelines] = useState<Pipeline[]>([])
   const [lmsCourses, setLmsCourses] = useState<LmsCourse[]>([])
@@ -367,16 +368,11 @@ export default function PipelinesPage() {
   }, [loadPipelines])
 
   useEffect(() => {
+    if (!selectedId) return
     loadLmsCourses().catch(() => toast.error(page.loadLmsFailed))
-  }, [loadLmsCourses, page.loadLmsFailed])
-
-  useEffect(() => {
     loadCredentialDefinitions().catch(() => toast.error(page.loadCredentialsFailed))
-  }, [loadCredentialDefinitions, page.loadCredentialsFailed])
-
-  useEffect(() => {
     loadPdfTemplates().catch(() => toast.error(page.loadPdfTemplatesFailed))
-  }, [loadPdfTemplates, page.loadPdfTemplatesFailed])
+  }, [loadCredentialDefinitions, loadLmsCourses, loadPdfTemplates, page.loadCredentialsFailed, page.loadLmsFailed, page.loadPdfTemplatesFailed, selectedId])
 
   const selectPipeline = async (pipeline: Pipeline) => {
     const pipelineId = pipelineIdOf(pipeline)
@@ -746,6 +742,11 @@ export default function PipelinesPage() {
     }))
   }
 
+  const backToList = () => {
+    setSelectedId("")
+    setForm(emptyForm)
+  }
+
   const toggleUnitExemptionQualification = (stageIndex: number, unitIndex: number, definitionId: string, checked: boolean) => {
     setForm((prev) => ({
       ...prev,
@@ -863,6 +864,12 @@ export default function PipelinesPage() {
                 <RefreshCw className="h-4 w-4" />
                 {page.refresh}
               </Button>
+              {selectedId && (
+                <Button variant="outline" onClick={backToList}>
+                  <ArrowLeft className="h-4 w-4" />
+                  {lang === "zh" ? "返回列表" : "Back to list"}
+                </Button>
+              )}
               <Button onClick={() => { setSelectedId(""); setForm(emptyForm) }}>
                 <Plus className="h-4 w-4" />
                 {page.newPipeline}
@@ -870,6 +877,7 @@ export default function PipelinesPage() {
             </div>
           </div>
 
+          {!selectedId && (
           <div className="mb-4 grid gap-3 md:grid-cols-[minmax(220px,320px)_160px_1fr]">
             <div>
               <Label htmlFor="categoryFilter">{page.categoryTips}</Label>
@@ -880,8 +888,10 @@ export default function PipelinesPage() {
               {page.onlyCurrent}
             </label>
           </div>
+          )}
 
-          <div className="grid gap-4 xl:grid-cols-[420px_1fr]">
+          <div className="space-y-4">
+            {!selectedId && (
             <section className="rounded-lg border bg-card">
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <h2 className="font-semibold">{page.pipelineList}</h2>
@@ -906,9 +916,9 @@ export default function PipelinesPage() {
                           <span className="truncate font-medium">{pipeline.name || t.common.unknownCourse}</span>
                           <Badge variant={isDeprecated(pipeline) ? "secondary" : isPublished(pipeline) ? "default" : "outline"}>{isDeprecated(pipeline) ? page.statusDeprecated : isPublished(pipeline) ? page.active : page.draft}</Badge>
                         </div>
-                        <div className="mt-1 truncate text-xs text-muted-foreground">{pipelineId || t.common.na}</div>
+                        <div className="mt-1 truncate text-xs text-muted-foreground">{pipeline.description || pipeline.category_tips || t.common.na}</div>
                         <div className="mt-1 flex justify-between text-xs text-muted-foreground">
-                          <span>{pipeline.pipeline_guid || t.common.na}</span>
+                          <span>{pipeline.category_tips || t.common.na}</span>
                           <span>{page.version} {pipeline.version || 0}</span>
                         </div>
                       </button>
@@ -922,7 +932,9 @@ export default function PipelinesPage() {
                 <Button variant="outline" size="sm" disabled={pipelines.length < limit || loading} onClick={() => setOffset(offset + limit)}>{page.nextPage}</Button>
               </div>
             </section>
+            )}
 
+            {selectedId && (
             <section className="space-y-4">
               <div className="rounded-lg border bg-card">
                 <div className="flex items-center justify-between border-b px-4 py-3">
@@ -1234,6 +1246,7 @@ export default function PipelinesPage() {
               </div>
 
             </section>
+            )}
           </div>
         </div>
       </main>
