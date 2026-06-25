@@ -1,126 +1,331 @@
 <script setup lang="ts">
-import { computed, ref } from "vue"
-import { Check, Crown, Download, HelpCircle, Percent, Shield, Star, Video, Zap } from "lucide-vue-next"
+import { computed, onMounted, ref } from "vue"
+import { AlertCircle, Check, Crown, Loader2, Percent, RefreshCw, Shield, Star, XCircle } from "lucide-vue-next"
+import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
+import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
-const { t } = useTranslation()
-const activeTab = ref("benefits")
+type RecordData = Record<string, any>
+
+const { t, lang } = useTranslation()
+const activeTab = ref("overview")
+const loading = ref(false)
+const cancelling = ref(false)
+const activeMembership = ref<RecordData | null>(null)
+const plans = ref<RecordData[]>([])
+const history = ref<RecordData[]>([])
+const billings = ref<RecordData[]>([])
 
 const tabs = computed(() => [
-  { id: "intro", label: t.value.membership.tabs.intro },
-  { id: "benefits", label: t.value.membership.tabs.benefits },
+  { id: "overview", label: lang.value === "zh" ? "当前会员" : "Current" },
   { id: "levels", label: t.value.membership.tabs.levels },
-  { id: "settings", label: t.value.membership.tabs.settings },
-  { id: "orders", label: t.value.membership.tabs.orders },
+  { id: "history", label: lang.value === "zh" ? "会员历史" : "History" },
+  { id: "billings", label: lang.value === "zh" ? "账单记录" : "Billings" },
 ])
 
-const benefits = computed(() => [
-  { icon: Zap, title: t.value.membership.benefitsList.b1Title, description: t.value.membership.benefitsList.b1Desc },
-  { icon: Video, title: t.value.membership.benefitsList.b2Title, description: t.value.membership.benefitsList.b2Desc },
-  { icon: Download, title: t.value.membership.benefitsList.b3Title, description: t.value.membership.benefitsList.b3Desc },
-  { icon: Shield, title: t.value.membership.benefitsList.b4Title, description: t.value.membership.benefitsList.b4Desc },
-  { icon: Percent, title: t.value.membership.benefitsList.b5Title, description: t.value.membership.benefitsList.b5Desc },
-  { icon: HelpCircle, title: t.value.membership.benefitsList.b6Title, description: t.value.membership.benefitsList.b6Desc },
-])
+const currentRecord = computed(() => {
+  const data = activeMembership.value || {}
+  return data.membership || data.user_membership || data.record || data.active_membership || data
+})
 
-const membershipLevels = computed(() => [
-  { id: "basic", name: t.value.membership.levelsTitle.basic, englishName: t.value.membership.levelsEnglishName.basic, price: t.value.membership.priceFree, features: t.value.membership.basicBenefits },
-  { id: "certified", name: t.value.membership.levelsTitle.certified, englishName: t.value.membership.levelsEnglishName.certified, price: t.value.membership.priceYearly1999, features: t.value.membership.certifiedBenefits, highlight: true },
-  { id: "premium", name: t.value.membership.levelsTitle.premium, englishName: t.value.membership.levelsEnglishName.premium, price: t.value.membership.priceYearly4999, features: t.value.membership.premiumBenefits },
-])
+const currentPlan = computed(() => {
+  const data = activeMembership.value || {}
+  return data.plan || data.membership_config || data.membership_detail || null
+})
+
+const hasActiveMembership = computed(() => {
+  const record = currentRecord.value
+  if (!record || Object.keys(record).length === 0) return false
+  const status = String(record.status || "").toUpperCase()
+  return status === "ACTIVE" || status === "CURRENT" || status === "GRACE" || Boolean(record.membership_record_ulid)
+})
+
+const currentMembershipName = computed(() => {
+  return currentPlan.value?.name || currentRecord.value?.name || currentRecord.value?.membership_name || currentRecord.value?.membership_ulid || "-"
+})
+
+function listFrom(data: any, keys: string[]) {
+  for (const key of keys) {
+    if (Array.isArray(data?.[key])) return data[key]
+  }
+  return []
+}
+
+function formatDate(value: unknown) {
+  const raw = String(value || "")
+  if (!raw) return "-"
+  const date = new Date(raw)
+  if (Number.isNaN(date.getTime())) return raw
+  return date.toLocaleString(lang.value === "zh" ? "zh-CN" : "en-US", { hour12: false })
+}
+
+function formatMoney(amount: unknown, currency = "USD") {
+  const value = Number(amount || 0)
+  if (!value) return "-"
+  return `${currency} ${(value / 100).toFixed(2)}`
+}
+
+function statusLabel(status: unknown) {
+  const value = String(status || "").toUpperCase()
+  if (!value) return "-"
+  const zh: Record<string, string> = {
+    ACTIVE: "有效",
+    CURRENT: "有效",
+    GRACE: "宽限期",
+    CANCELLED: "已取消",
+    EXPIRED: "已过期",
+    PENDING: "待处理",
+    PAID: "已支付",
+    FAILED: "失败",
+  }
+  return lang.value === "zh" ? zh[value] || value : value
+}
+
+function badgeClass(status: unknown) {
+  const value = String(status || "").toUpperCase()
+  if (["ACTIVE", "CURRENT", "PAID", "SUCCESS"].includes(value)) return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (["GRACE", "PENDING", "PROCESSING"].includes(value)) return "border-amber-200 bg-amber-50 text-amber-700"
+  if (["CANCELLED", "EXPIRED", "FAILED"].includes(value)) return "border-red-200 bg-red-50 text-red-700"
+  return "border-slate-200 bg-slate-50 text-slate-600"
+}
+
+function parseFeatures(plan: RecordData) {
+  const raw = String(plan.features_json || "").trim()
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed.map((item) => String(item))
+    if (Array.isArray(parsed.features)) return parsed.features.map((item: unknown) => String(item))
+    if (typeof parsed === "object") return Object.entries(parsed).map(([key, value]) => `${key}: ${String(value)}`)
+  } catch {
+    return raw.split(/\r?\n|[,;；，]/).map((item) => item.trim()).filter(Boolean)
+  }
+  return []
+}
+
+async function loadMembership() {
+  loading.value = true
+  try {
+    const [active, planData, historyData, billingData] = await Promise.all([
+      apiClient("/api/membership/active", { suppressErrorToast: true }).catch(() => null),
+      apiClient("/api/membership/plans?page=1&page_size=50"),
+      apiClient("/api/membership/history?page=1&page_size=10"),
+      apiClient("/api/membership/billings?page=1&page_size=10"),
+    ])
+    activeMembership.value = active
+    plans.value = listFrom(planData, ["memberships", "plans", "items"])
+    history.value = listFrom(historyData, ["memberships", "records", "items", "history"])
+    billings.value = listFrom(billingData, ["billings", "records", "items"])
+  } catch (err) {
+    console.error(err)
+    toast.error(lang.value === "zh" ? "会员信息加载失败" : "Failed to load membership")
+  } finally {
+    loading.value = false
+  }
+}
+
+async function cancelMembership() {
+  const recordUlid = currentRecord.value?.membership_record_ulid
+  if (!recordUlid) return
+  const ok = window.confirm(lang.value === "zh" ? "确认取消当前会员吗？" : "Cancel current membership?")
+  if (!ok) return
+  cancelling.value = true
+  try {
+    await apiClient("/api/membership/cancel", {
+      method: "POST",
+      body: JSON.stringify({ membership_record_ulid: recordUlid, reason: "user_requested" }),
+    })
+    toast.success(lang.value === "zh" ? "已提交取消会员请求" : "Membership cancellation submitted")
+    await loadMembership()
+  } finally {
+    cancelling.value = false
+  }
+}
+
+onMounted(() => {
+  void loadMembership()
+})
 </script>
 
 <template>
   <AppShell content-class="p-0">
     <div class="page-panel">
-      <header class="flex h-16 items-center border-b border-border bg-white px-5">
-        <Crown class="mr-4 h-4 w-4 text-slate-700" />
-        <span class="text-sm font-medium text-foreground">{{ t.membership.title }}</span>
+      <header class="flex h-16 items-center justify-between border-b border-border bg-white px-5">
+        <div class="flex items-center gap-3">
+          <Crown class="h-4 w-4 text-slate-700" />
+          <span class="text-sm font-medium text-foreground">{{ t.membership.title }}</span>
+        </div>
+        <button class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50" type="button" @click="loadMembership">
+          <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
+          {{ lang === "zh" ? "刷新" : "Refresh" }}
+        </button>
       </header>
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
-        <div class="mb-6">
-          <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.membership.title }}</h1>
-          <p class="mt-2 text-muted-foreground">{{ t.membership.subtitle }}</p>
-        </div>
-
-    <div class="mb-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="flex items-center gap-3">
-        <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Crown class="h-5 w-5" />
-        </div>
-        <div>
-          <h2 class="font-semibold text-card-foreground">{{ t.membership.currentMember }}</h2>
-          <p class="text-sm text-muted-foreground">{{ t.membership.devNotice }}</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="mb-4 rounded-md bg-white px-8 pt-6">
-      <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          :class="['relative cursor-pointer whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-          @click="activeTab = tab.id"
-        >
-          {{ tab.label }}
-          <span v-if="activeTab === tab.id" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
-        </button>
-      </div>
-    </div>
-
-    <div v-if="activeTab === 'benefits'" class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.currentBenefits }}</h2>
-      <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div v-for="benefit in benefits" :key="benefit.title" class="group flex gap-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:shadow-md hover:shadow-primary/10">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-105">
-            <component :is="benefit.icon" class="h-5 w-5" />
-          </div>
+        <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h3 class="mb-1 font-medium text-card-foreground">{{ benefit.title }}</h3>
-            <p class="text-sm text-muted-foreground">{{ benefit.description }}</p>
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.membership.title }}</h1>
+            <p class="mt-2 text-muted-foreground">{{ t.membership.subtitle }}</p>
           </div>
+          <span v-if="hasActiveMembership" class="rounded-full border px-4 py-2 text-sm font-black" :class="badgeClass(currentRecord.status)">
+            {{ statusLabel(currentRecord.status) }}
+          </span>
         </div>
-      </div>
-    </div>
 
-    <div v-if="activeTab === 'levels'" class="grid gap-4 md:grid-cols-3">
-      <div v-for="level in membershipLevels" :key="level.id" :class="['relative overflow-hidden rounded-[16px] p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md', level.highlight ? 'bg-primary/5 shadow-primary/10' : 'bg-white']">
-        <div :class="['absolute left-0 top-0 h-full w-1', level.highlight ? 'bg-primary' : level.id === 'premium' ? 'bg-amber-500' : 'bg-slate-300']" />
-        <div class="mb-4 text-center">
-          <div :class="['mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-xl', level.id === 'basic' ? 'bg-slate-100 text-slate-600' : level.id === 'certified' ? 'bg-primary/10 text-primary' : 'bg-amber-100 text-amber-600']">
-            <Star v-if="level.id === 'basic'" class="h-7 w-7" />
-            <Crown v-else class="h-7 w-7" />
+        <div v-if="loading" class="rounded-[16px] bg-white p-12 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <Loader2 class="mx-auto mb-3 h-7 w-7 animate-spin text-primary" />
+          {{ lang === "zh" ? "正在加载会员信息..." : "Loading membership..." }}
+        </div>
+
+        <template v-else>
+          <section class="mb-5 overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,74,82,0.06)]">
+            <div class="relative bg-gradient-to-br from-[#0b4ea2] via-[#1976c9] to-[#12b886] p-6 text-white">
+              <div class="absolute right-6 top-6 opacity-20">
+                <Crown class="h-24 w-24" />
+              </div>
+              <div class="relative">
+                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">{{ lang === "zh" ? "当前会员" : "Current membership" }}</p>
+                <h2 class="mt-3 text-3xl font-black">{{ hasActiveMembership ? currentMembershipName : (lang === "zh" ? "暂无有效会员" : "No active membership") }}</h2>
+                <p class="mt-2 max-w-2xl text-sm text-white/80">
+                  {{ hasActiveMembership ? (currentPlan?.description || currentRecord?.description || (lang === "zh" ? "你的会员权益当前可用。" : "Your membership benefits are available.")) : (lang === "zh" ? "你还没有有效会员，可以查看下方会员等级。" : "You do not have an active membership yet. Review available plans below.") }}
+                </p>
+              </div>
+            </div>
+            <div class="grid gap-3 p-5 md:grid-cols-4">
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="text-xs font-bold text-slate-500">{{ lang === "zh" ? "开始时间" : "Started" }}</div>
+                <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.started_at) }}</div>
+              </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="text-xs font-bold text-slate-500">{{ lang === "zh" ? "过期时间" : "Expires" }}</div>
+                <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.expires_at) }}</div>
+              </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="text-xs font-bold text-slate-500">{{ lang === "zh" ? "下次扣费" : "Next billing" }}</div>
+                <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.next_billing_at) }}</div>
+              </div>
+              <div class="rounded-2xl bg-slate-50 p-4">
+                <div class="text-xs font-bold text-slate-500">{{ lang === "zh" ? "自动续费" : "Auto renew" }}</div>
+                <div class="mt-2 text-sm font-black text-slate-900">{{ currentRecord.auto_renew ? (lang === "zh" ? "已开启" : "Enabled") : "-" }}</div>
+              </div>
+            </div>
+          </section>
+
+          <div class="mb-5 rounded-md bg-white px-8 pt-6 shadow-[0_10px_24px_rgba(15,74,82,0.04)]">
+            <div class="flex flex-wrap gap-10 border-b border-[#edf0f2]">
+              <button
+                v-for="tab in tabs"
+                :key="tab.id"
+                :class="['relative cursor-pointer whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', activeTab === tab.id ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+                @click="activeTab = tab.id"
+              >
+                {{ tab.label }}
+                <span v-if="activeTab === tab.id" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+              </button>
+            </div>
           </div>
-          <h3 class="text-lg font-semibold text-card-foreground">{{ level.name }}</h3>
-          <p class="text-sm text-muted-foreground">{{ level.englishName }}</p>
-        </div>
-        <div class="mb-4 text-center"><span class="text-2xl font-bold text-card-foreground">{{ level.price }}</span></div>
-        <ul class="space-y-3">
-          <li v-for="feature in level.features" :key="feature" class="flex items-center gap-2 text-sm">
-            <Check :class="['h-4 w-4 shrink-0', level.highlight ? 'text-primary' : 'text-emerald-500']" />
-            <span class="text-card-foreground">{{ feature }}</span>
-          </li>
-        </ul>
-      </div>
-    </div>
 
-    <div v-if="activeTab === 'intro'" class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.introTitle }}</h2>
-      <p class="leading-relaxed text-muted-foreground">{{ t.membership.introDesc }}</p>
-    </div>
+          <section v-if="activeTab === 'overview'" class="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div class="rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+              <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ lang === "zh" ? "会员权益" : "Benefits" }}</h2>
+              <div v-if="currentPlan && parseFeatures(currentPlan).length" class="grid gap-3 sm:grid-cols-2">
+                <div v-for="feature in parseFeatures(currentPlan)" :key="feature" class="flex gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
+                  <Check class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                  <span class="text-sm font-medium text-slate-700">{{ feature }}</span>
+                </div>
+              </div>
+              <div v-else class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
+                {{ lang === "zh" ? "当前会员暂无可展示的权益配置。" : "No benefit details are configured for the current membership." }}
+              </div>
+            </div>
 
-    <div v-if="activeTab === 'settings' || activeTab === 'orders'" class="rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="flex flex-col items-center justify-center py-12 text-center">
-        <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
-          <Crown class="h-8 w-8 text-primary" />
-        </div>
-        <h3 class="mb-2 text-lg font-semibold text-foreground">{{ activeTab === 'settings' ? t.membership.tabs.settings : t.membership.tabs.orders }}</h3>
-        <p class="text-muted-foreground">{{ t.membership.devNotice }}</p>
-      </div>
-    </div>
+            <div class="rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+              <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ lang === "zh" ? "会员操作" : "Membership actions" }}</h2>
+              <div class="space-y-3 text-sm text-slate-600">
+                <div class="flex justify-between"><span>{{ lang === "zh" ? "会员记录" : "Record" }}</span><span class="font-mono text-xs">{{ currentRecord.membership_record_ulid || "-" }}</span></div>
+                <div class="flex justify-between"><span>{{ lang === "zh" ? "来源" : "Source" }}</span><span>{{ currentRecord.source || "-" }}</span></div>
+                <div class="flex justify-between"><span>{{ lang === "zh" ? "续费次数" : "Renewals" }}</span><span>{{ currentRecord.renewal_count ?? "-" }}</span></div>
+                <div class="flex justify-between"><span>{{ lang === "zh" ? "最近支付" : "Last payment" }}</span><span>{{ formatMoney(currentRecord.last_payment_amount_minor, "USD") }}</span></div>
+              </div>
+              <button
+                v-if="hasActiveMembership && currentRecord.membership_record_ulid"
+                class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                :disabled="cancelling"
+                type="button"
+                @click="cancelMembership"
+              >
+                <Loader2 v-if="cancelling" class="h-4 w-4 animate-spin" />
+                <XCircle v-else class="h-4 w-4" />
+                {{ lang === "zh" ? "取消会员" : "Cancel membership" }}
+              </button>
+            </div>
+          </section>
+
+          <section v-if="activeTab === 'levels'" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div v-for="plan in plans" :key="plan.membership_ulid || plan.membership_gpath" class="relative overflow-hidden rounded-[18px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:shadow-md">
+              <div class="absolute left-0 top-0 h-full w-1" :class="Number(plan.tier_level || 0) >= 3 ? 'bg-amber-500' : Number(plan.tier_level || 0) >= 2 ? 'bg-primary' : 'bg-slate-300'" />
+              <div class="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-semibold text-card-foreground">{{ plan.name || "-" }}</h3>
+                  <p class="mt-1 text-sm text-muted-foreground">{{ plan.description || plan.ideal_for || "-" }}</p>
+                </div>
+                <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <Star v-if="Number(plan.tier_level || 0) <= 1" class="h-6 w-6" />
+                  <Crown v-else class="h-6 w-6" />
+                </div>
+              </div>
+              <div class="mb-4 grid grid-cols-2 gap-3 text-sm">
+                <div class="rounded-xl bg-slate-50 p-3">
+                  <div class="text-xs text-slate-500">{{ lang === "zh" ? "等级" : "Tier" }}</div>
+                  <div class="font-black">{{ plan.tier_level || "-" }}</div>
+                </div>
+                <div class="rounded-xl bg-slate-50 p-3">
+                  <div class="text-xs text-slate-500">{{ lang === "zh" ? "时长" : "Duration" }}</div>
+                  <div class="font-black">{{ plan.duration_in_months || "-" }} {{ lang === "zh" ? "个月" : "months" }}</div>
+                </div>
+              </div>
+              <div v-if="plan.course_discount_coupon" class="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-700">
+                <Percent class="h-4 w-4" />
+                {{ plan.course_discount_coupon }}
+              </div>
+              <ul class="space-y-2">
+                <li v-for="feature in parseFeatures(plan)" :key="feature" class="flex items-center gap-2 text-sm">
+                  <Check class="h-4 w-4 shrink-0 text-emerald-500" />
+                  <span class="text-card-foreground">{{ feature }}</span>
+                </li>
+              </ul>
+            </div>
+            <div v-if="!plans.length" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:col-span-2 xl:col-span-3">
+              {{ lang === "zh" ? "暂无可展示的会员等级。" : "No membership plans are available." }}
+            </div>
+          </section>
+
+          <section v-if="activeTab === 'history'" class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+            <div v-for="item in history" :key="item.membership_record_ulid || item.membership_order_ulid" class="grid gap-3 border-b border-slate-100 p-5 last:border-b-0 md:grid-cols-[1fr_auto]">
+              <div>
+                <div class="font-black text-slate-900">{{ item.membership_name || item.membership_ulid || "-" }}</div>
+                <div class="mt-1 text-sm text-slate-500">{{ formatDate(item.started_at) }} - {{ formatDate(item.expires_at) }}</div>
+                <div class="mt-1 font-mono text-xs text-slate-400">{{ item.membership_record_ulid }}</div>
+              </div>
+              <span class="h-fit rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
+            </div>
+            <div v-if="!history.length" class="p-8 text-center text-muted-foreground">{{ lang === "zh" ? "暂无会员历史。" : "No membership history." }}</div>
+          </section>
+
+          <section v-if="activeTab === 'billings'" class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+            <div v-for="item in billings" :key="item.billing_record_ulid || item.gpay_order_ulid" class="grid gap-3 border-b border-slate-100 p-5 last:border-b-0 md:grid-cols-[1fr_auto]">
+              <div>
+                <div class="font-black text-slate-900">{{ item.billing_type || item.stripe_invoice_id || "-" }}</div>
+                <div class="mt-1 text-sm text-slate-500">{{ formatMoney(item.amount_minor, item.currency || "USD") }} · {{ formatDate(item.period_start) }} - {{ formatDate(item.period_end) }}</div>
+                <div class="mt-1 font-mono text-xs text-slate-400">{{ item.gpay_order_ulid || item.stripe_invoice_id || "-" }}</div>
+              </div>
+              <span class="h-fit rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
+            </div>
+            <div v-if="!billings.length" class="p-8 text-center text-muted-foreground">{{ lang === "zh" ? "暂无账单记录。" : "No billing records." }}</div>
+          </section>
+        </template>
       </main>
     </div>
   </AppShell>

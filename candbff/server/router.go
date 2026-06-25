@@ -68,6 +68,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		})
 
 		r.Route("/membership", func(r chi.Router) {
+			r.Get("/plans", h.ListMembershipPlans)
 			r.Get("/active", h.GetActiveMembership)
 			r.Get("/history", h.ListUserMemberships)
 			r.Get("/billings", h.ListMembershipBillings)

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { Award, ChevronUp, ClipboardList, FileCheck2, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, X } from "lucide-vue-next"
+import { Award, ChevronUp, ClipboardList, Crown, FileCheck2, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
 import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
@@ -39,6 +39,7 @@ const navRouteGroups: Record<string, string[]> = {
   ],
   "/credentials": ["/credentials"],
   "/certificates": ["/certificates"],
+  "/membership": ["/membership"],
   "/orders": ["/orders", "/invoice-redirect"],
   "/messages": ["/messages"],
 }
@@ -60,6 +61,7 @@ const navItems = computed(() => [
   { href: "/resource-packs", label: lang.value === "zh" ? "资源包" : "Resources", group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
   { href: "/credentials", label: t.value.sidebar.credentials, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
   { href: "/certificates", label: t.value.sidebar.certificates, group: lang.value === "zh" ? "我的" : "Mine" },
+  { href: "/membership", label: t.value.sidebar.membership, group: lang.value === "zh" ? "我的" : "Mine" },
   { href: "/orders", label: t.value.sidebar.orders, group: lang.value === "zh" ? "我的" : "Mine" },
   { href: "/messages", label: t.value.sidebar.messages, group: lang.value === "zh" ? "我的" : "Mine", badge: unreadCount.value > 0 ? unreadCount.value : undefined },
 ])
@@ -71,6 +73,7 @@ const navIconByHref = {
   "/resource-packs": Package,
   "/credentials": FileCheck2,
   "/certificates": Award,
+  "/membership": Crown,
   "/orders": ShoppingBag,
   "/messages": MessageSquare,
 }

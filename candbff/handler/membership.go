@@ -8,6 +8,54 @@ import (
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 )
 
+// ListMembershipPlans GET /api/membership/plans
+func (h *Handler) ListMembershipPlans(w http.ResponseWriter, r *http.Request) {
+	page := 1
+	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	pageSize := 20
+	if pageSizeStr := r.URL.Query().Get("page_size"); pageSizeStr != "" {
+		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
+			pageSize = ps
+		}
+	}
+
+	resp, err := h.Gmbr.ListMemberships(r.Context(), &gmbrpb.ListMembershipsRequest{
+		Page:     int32(page),
+		PageSize: int32(pageSize),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	plans := make([]*gmbrpb.Membership, 0, len(resp.GetMemberships()))
+	for _, plan := range resp.GetMemberships() {
+		if plan == nil {
+			continue
+		}
+		status := strings.ToUpper(strings.TrimSpace(plan.GetStatus()))
+		if !plan.GetIsCurrent() {
+			continue
+		}
+		if status != "" && status != "ACTIVE" && status != "PUBLISHED" {
+			continue
+		}
+		plans = append(plans, plan)
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]any{
+		"memberships": plans,
+		"total":       len(plans),
+		"page":        page,
+		"page_size":   pageSize,
+	})
+}
+
 // GetActiveMembership GET /api/membership/active
 func (h *Handler) GetActiveMembership(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
