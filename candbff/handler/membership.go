@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 	"strings"
 
 	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
@@ -10,19 +9,7 @@ import (
 
 // ListMembershipPlans GET /api/membership/plans
 func (h *Handler) ListMembershipPlans(w http.ResponseWriter, r *http.Request) {
-	page := 1
-	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-	}
-
-	pageSize := 20
-	if pageSizeStr := r.URL.Query().Get("page_size"); pageSizeStr != "" {
-		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
-			pageSize = ps
-		}
-	}
+	page, pageSize := parsePagination(r, 20)
 
 	resp, err := h.Gmbr.ListMemberships(r.Context(), &gmbrpb.ListMembershipsRequest{
 		Page:     int32(page),
@@ -93,19 +80,7 @@ func (h *Handler) ListUserMemberships(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page := 1
-	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-	}
-
-	pageSize := 10
-	if pageSizeStr := r.URL.Query().Get("page_size"); pageSizeStr != "" {
-		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
-			pageSize = ps
-		}
-	}
+	page, pageSize := parsePagination(r, 10)
 
 	resp, err := h.Gmbr.ListUserMemberships(r.Context(), &gmbrpb.ListUserMembershipsRequest{
 		CandidateUlid: candidateID,
@@ -133,19 +108,7 @@ func (h *Handler) ListMembershipBillings(w http.ResponseWriter, r *http.Request)
 		membershipRecordULID = strings.TrimSpace(r.URL.Query().Get("membership_record_id"))
 	}
 
-	page := 1
-	if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-			page = p
-		}
-	}
-
-	pageSize := 10
-	if pageSizeStr := r.URL.Query().Get("page_size"); pageSizeStr != "" {
-		if ps, err := strconv.Atoi(pageSizeStr); err == nil && ps > 0 {
-			pageSize = ps
-		}
-	}
+	page, pageSize := parsePagination(r, 10)
 
 	resp, err := h.Gmbr.ListMembershipBillings(r.Context(), &gmbrpb.ListMembershipBillingsRequest{
 		CandidateUlid:        candidateID,

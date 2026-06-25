@@ -648,33 +648,3 @@ func orderBizTypeLabel(bizType string) string {
 	}
 }
 
-func parsePositiveIntQuery(r *http.Request, key string, fallback int) int {
-	raw := strings.TrimSpace(r.URL.Query().Get(key))
-	if raw == "" {
-		return fallback
-	}
-	value, err := strconv.Atoi(raw)
-	if err != nil || value <= 0 {
-		return fallback
-	}
-	return value
-}
-
-func parseNonNegativeIntQuery(r *http.Request, key string, fallback int) int {
-	raw := strings.TrimSpace(r.URL.Query().Get(key))
-	if raw == "" {
-		return fallback
-	}
-	value, err := strconv.Atoi(raw)
-	if err != nil || value < 0 {
-		return fallback
-	}
-	return value
-}
-
-func totalPages(total int, pageSize int) int {
-	if total <= 0 || pageSize <= 0 {
-		return 0
-	}
-	return (total + pageSize - 1) / pageSize
-}

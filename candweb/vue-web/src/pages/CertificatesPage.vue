@@ -75,32 +75,41 @@ function downloadFeaturedCertificate() {
   openCertificate(featuredCertificate.value?.pdfUrl)
 }
 
+const SOURCE_CONFIG: Record<string, { labelKey: "sourceApplication" | "sourceSystem"; fallback: string; icon: typeof ClipboardCheck | typeof ShieldCheck; cls: string; iconCls: string; accent: string }> = {
+  application: {
+    labelKey: "sourceApplication",
+    fallback: "Application",
+    icon: ClipboardCheck,
+    cls: "border-amber-200 text-amber-800",
+    iconCls: "bg-amber-100 text-amber-700",
+    accent: "bg-amber-300",
+  },
+  pdf_cert: {
+    labelKey: "sourceSystem",
+    fallback: "System Issued",
+    icon: ShieldCheck,
+    cls: "border-cyan-200 text-cyan-800",
+    iconCls: "bg-cyan-100 text-cyan-700",
+    accent: "bg-cyan-300",
+  },
+}
+
 function certificateSourceLabel(source?: string) {
-  if (source === "application") return t.value.certificatesPage.sourceApplication || "Application"
-  if (source === "pdf_cert") return t.value.certificatesPage.sourceSystem || "System Issued"
-  return ""
+  const cfg = SOURCE_CONFIG[source ?? ""]
+  if (!cfg) return ""
+  return (t.value.certificatesPage as any)[cfg.labelKey] || cfg.fallback
 }
-
 function certificateSourceIcon(source?: string) {
-  return source === "application" ? ClipboardCheck : ShieldCheck
+  return SOURCE_CONFIG[source ?? ""]?.icon ?? ShieldCheck
 }
-
 function certificateSourceClass(source?: string) {
-  if (source === "application") return "border-amber-200 text-amber-800"
-  if (source === "pdf_cert") return "border-cyan-200 text-cyan-800"
-  return "border-slate-200 text-slate-700"
+  return SOURCE_CONFIG[source ?? ""]?.cls ?? "border-slate-200 text-slate-700"
 }
-
 function certificateSourceIconClass(source?: string) {
-  if (source === "application") return "bg-amber-100 text-amber-700"
-  if (source === "pdf_cert") return "bg-cyan-100 text-cyan-700"
-  return "bg-slate-100 text-slate-600"
+  return SOURCE_CONFIG[source ?? ""]?.iconCls ?? "bg-slate-100 text-slate-600"
 }
-
 function certificateSourceAccentClass(source?: string) {
-  if (source === "application") return "bg-amber-300"
-  if (source === "pdf_cert") return "bg-cyan-300"
-  return "bg-white/20"
+  return SOURCE_CONFIG[source ?? ""]?.accent ?? "bg-white/20"
 }
 
 function closeCelebrationModal() {

@@ -376,22 +376,11 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 	resultStatus := strings.TrimSpace(r.URL.Query().Get("result_status"))
 	confirmationNumber := strings.TrimSpace(r.URL.Query().Get("confirmation_number"))
 	courseUnitUlid := strings.TrimSpace(r.URL.Query().Get("course_unit_ulid"))
-	page := uint32(1)
-	pageSize := uint32(20)
-	if raw := strings.TrimSpace(r.URL.Query().Get("page")); raw != "" {
-		if parsed, err := strconv.ParseUint(raw, 10, 32); err == nil && parsed > 0 {
-			page = uint32(parsed)
-		}
-	}
-	if raw := strings.TrimSpace(r.URL.Query().Get("page_size")); raw != "" {
-		if parsed, err := strconv.ParseUint(raw, 10, 32); err == nil && parsed > 0 {
-			pageSize = uint32(parsed)
-		}
-	}
+	page, pageSize := parsePagination(r, 20)
 
 	req := &gexampb.ListExamsRequest{
-		Page:     page,
-		PageSize: pageSize,
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
 	}
 	if status != "" {
 		req.Status = &status
