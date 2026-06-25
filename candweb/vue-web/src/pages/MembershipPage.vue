@@ -128,7 +128,7 @@ async function loadMembership() {
       apiClient("/api/membership/billings?page=1&page_size=10"),
     ])
     plans.value = listFrom(planData, ["memberships", "plans", "items"])
-    history.value = listFrom(historyData, ["memberships", "records", "items", "history"])
+    history.value = listFrom(historyData, ["user_memberships", "memberships", "records", "items", "history"])
     billings.value = listFrom(billingData, ["billings", "records", "items"])
     activeMembership.value = await loadActiveMembershipFromHistory(history.value) || { user_memberships: history.value }
   } catch (err) {
@@ -141,7 +141,8 @@ async function loadMembership() {
 
 async function loadActiveMembershipFromHistory(membershipHistory: RecordData[]) {
   const activeRecord = membershipHistory.find((item) => isActiveStatus(item.status))
-  const membershipGpath = String(activeRecord?.membership_gpath || "").trim()
+  const fallbackPlan = plans.value.find((plan) => plan.membership_ulid === activeRecord?.membership_ulid)
+  const membershipGpath = String(activeRecord?.membership_gpath || fallbackPlan?.membership_gpath || "").trim()
   if (!membershipGpath) return null
 
   try {
