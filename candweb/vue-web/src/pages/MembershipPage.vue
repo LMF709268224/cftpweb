@@ -26,12 +26,16 @@ const tabs = computed(() => [
 
 const currentRecord = computed(() => {
   const data = activeMembership.value || {}
-  return data.membership || data.user_membership || data.record || data.active_membership || data
+  const list = listFrom(data, ["user_memberships", "memberships", "records", "items"])
+  return data.user_membership || data.record || data.active_membership || list[0] || history.value[0] || data
 })
 
 const currentPlan = computed(() => {
   const data = activeMembership.value || {}
-  return data.plan || data.membership_config || data.membership_detail || null
+  const direct = data.plan || data.membership_config || data.membership_detail || null
+  if (direct) return direct
+  const membershipUlid = currentRecord.value?.membership_ulid
+  return plans.value.find((plan) => plan.membership_ulid === membershipUlid) || null
 })
 
 const hasActiveMembership = computed(() => {
@@ -107,16 +111,15 @@ function parseFeatures(plan: RecordData) {
 async function loadMembership() {
   loading.value = true
   try {
-    const [active, planData, historyData, billingData] = await Promise.all([
-      apiClient("/api/membership/active", { suppressErrorToast: true }).catch(() => null),
+    const [planData, historyData, billingData] = await Promise.all([
       apiClient("/api/membership/plans?page=1&page_size=50"),
       apiClient("/api/membership/history?page=1&page_size=10"),
       apiClient("/api/membership/billings?page=1&page_size=10"),
     ])
-    activeMembership.value = active
     plans.value = listFrom(planData, ["memberships", "plans", "items"])
     history.value = listFrom(historyData, ["memberships", "records", "items", "history"])
     billings.value = listFrom(billingData, ["billings", "records", "items"])
+    activeMembership.value = { user_memberships: history.value }
   } catch (err) {
     console.error(err)
     toast.error(lang.value === "zh" ? "会员信息加载失败" : "Failed to load membership")
