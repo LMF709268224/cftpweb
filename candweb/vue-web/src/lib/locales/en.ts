@@ -601,6 +601,8 @@ export const en: AppTranslations = {
     keepLearningTitle: "Keep learning to earn more certificates",
     keepLearningDesc: "Complete more course modules to earn additional professional certifications.",
     browseCourses: "Browse Courses",
+    sourceApplication: "Manual Application",
+    sourceSystem: "System Issued",
   }
   ,
 

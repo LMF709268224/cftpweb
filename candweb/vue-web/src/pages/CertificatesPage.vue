@@ -131,6 +131,7 @@ onMounted(async () => {
           issueDate: cert.created_at ? formatBackendDateOnly(cert.created_at) : t.value.common.na,
           expiryDate: cert.valid_until ? formatBackendDateOnly(cert.valid_until) : t.value.common.permanent,
           credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
+          source: cert.source || "",
           pdfUrl:
             cert.files?.find(
               (f: any) => f.file_type === 2 || f.file_ext === ".pdf" || f.file_ext === "pdf" || f.file_name?.endsWith(".pdf"),
@@ -254,6 +255,8 @@ onMounted(async () => {
           <div class="relative flex items-start justify-between">
             <div>
               <span class="badge mb-3 border-0 bg-white/20 text-white"><CheckCircle2 class="mr-1 h-3 w-3" /> {{ t.certificatesPage.active }}</span>
+              <span v-if="cert.source === 'application'" class="badge mb-3 ml-2 border-0 bg-white/20 text-white">{{ t.certificatesPage.sourceApplication || 'Application' }}</span>
+              <span v-else-if="cert.source === 'pdf_cert'" class="badge mb-3 ml-2 border-0 bg-white/20 text-white">{{ t.certificatesPage.sourceSystem || 'System Issued' }}</span>
               <h3 class="mb-1 text-xl font-bold">{{ cert.name }}</h3>
               <p class="text-sm text-white/80">{{ cert.description }}</p>
             </div>

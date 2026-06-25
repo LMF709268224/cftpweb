@@ -599,6 +599,8 @@
     keepLearningTitle: "继续学习，获得更多认证",
     keepLearningDesc: "完成更多课程模块以获得额外的专业认证",
     browseCourses: "浏览课程",
+    sourceApplication: "手动申请",
+    sourceSystem: "系统颁发",
   }
   ,
 
