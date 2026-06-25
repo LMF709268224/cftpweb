@@ -142,6 +142,8 @@ const cardStyles = {
     hoverBorder: "hover:border-[#f6c85a]",
     text: "text-[#c55a00]",
     number: "text-[#934000]",
+    accent: "#f59e0b",
+    glow: "rgba(245, 158, 11, 0.22)",
   },
   purple: {
     panel: "from-[#fbf5ff] to-[#f0e0ff]",
@@ -149,6 +151,8 @@ const cardStyles = {
     hoverBorder: "hover:border-[#c084fc]",
     text: "text-[#8b22ff]",
     number: "text-[#6514c7]",
+    accent: "#a855f7",
+    glow: "rgba(168, 85, 247, 0.22)",
   },
   blue: {
     panel: "from-[#f4f9ff] to-[#dbeafe]",
@@ -156,6 +160,8 @@ const cardStyles = {
     hoverBorder: "hover:border-[#93c5fd]",
     text: "text-[#2563ff]",
     number: "text-[#1e40af]",
+    accent: "#38bdf8",
+    glow: "rgba(56, 189, 248, 0.22)",
   },
   teal: {
     panel: "from-[#effdfa] to-[#ccfbef]",
@@ -163,6 +169,8 @@ const cardStyles = {
     hoverBorder: "hover:border-[#5eead4]",
     text: "text-[#0f8d7e]",
     number: "text-[#0f766e]",
+    accent: "#14b8a6",
+    glow: "rgba(20, 184, 166, 0.2)",
   },
   green: {
     panel: "from-[#f0fdf4] to-[#dcfce7]",
@@ -170,6 +178,8 @@ const cardStyles = {
     hoverBorder: "hover:border-[#86efac]",
     text: "text-[#16a34a]",
     number: "text-[#166534]",
+    accent: "#22c55e",
+    glow: "rgba(34, 197, 94, 0.2)",
   },
 } as const
 
@@ -271,18 +281,23 @@ onMounted(async () => {
                 :key="card.key"
                 :to="card.href"
                 :class="[
-                  'portal-stat-card portal-card-featured group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:scale-[1.035] hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)] lg:basis-[34%] lg:grow-0 lg:shrink-0',
+                  'portal-stat-card portal-card-featured group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[34%] lg:grow-0 lg:shrink-0',
                   cardStyles[card.color].panel,
                   cardStyles[card.color].border,
                   cardStyles[card.color].hoverBorder,
                 ]"
+                :style="{ '--portal-card-accent': cardStyles[card.color].accent, '--portal-card-glow': cardStyles[card.color].glow }"
               >
-                <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
-                <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
-                <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
+                <span class="portal-card-sheen pointer-events-none absolute left-0 top-0 h-1 w-full" />
+                <span class="portal-card-orb pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div class="portal-card-icon relative flex h-12 w-12 items-center justify-center rounded-xl bg-white/60 shadow-sm ring-1 ring-white/70 transition-transform duration-300 group-hover:scale-105">
+                  <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
+                </div>
+                <h2 :class="['relative mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
+                <p :class="['relative mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
                   <span>{{ card.value }}</span>
                 </p>
-                <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
+                <p :class="['relative mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
               </RouterLink>
             </div>
 
@@ -292,18 +307,23 @@ onMounted(async () => {
                 :key="card.key"
                 :to="card.href"
                 :class="[
-                  'portal-stat-card portal-card-secondary group flex h-[214px] w-full flex-col items-center justify-center rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:scale-[1.035] hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)] lg:basis-[29%] lg:grow-0 lg:shrink-0',
+                  'portal-stat-card portal-card-secondary group relative flex h-[214px] w-full flex-col items-center justify-center overflow-hidden rounded-[16px] border bg-gradient-to-b p-8 text-center shadow-[0_2px_8px_rgba(15,23,42,0.12)] transition-all duration-300 ease-out hover:-translate-y-1 hover:scale-[1.015] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:basis-[29%] lg:grow-0 lg:shrink-0',
                   cardStyles[card.color].panel,
                   cardStyles[card.color].border,
                   cardStyles[card.color].hoverBorder,
                 ]"
+                :style="{ '--portal-card-accent': cardStyles[card.color].accent, '--portal-card-glow': cardStyles[card.color].glow }"
               >
-                <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
-                <h2 :class="['mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
-                <p :class="['mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
+                <span class="portal-card-sheen pointer-events-none absolute left-0 top-0 h-1 w-full" />
+                <span class="portal-card-orb pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div class="portal-card-icon relative flex h-12 w-12 items-center justify-center rounded-xl bg-white/60 shadow-sm ring-1 ring-white/70 transition-transform duration-300 group-hover:scale-105">
+                  <component :is="card.icon" :class="['h-9 w-9', cardStyles[card.color].text]" :stroke-width="2.1" />
+                </div>
+                <h2 :class="['relative mt-6 text-lg font-semibold', cardStyles[card.color].text]">{{ card.title }}</h2>
+                <p :class="['relative mt-12 text-5xl font-bold tracking-tight', cardStyles[card.color].number]">
                   <span>{{ card.value }}</span>
                 </p>
-                <p :class="['mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
+                <p :class="['relative mt-3 text-base', cardStyles[card.color].text]">{{ card.action }}</p>
               </RouterLink>
             </div>
           </div>
@@ -335,6 +355,34 @@ onMounted(async () => {
   margin-top: 12px;
   font-size: 12px;
   line-height: 16px;
+}
+
+.portal-stat-card {
+  --portal-card-accent: #38bdf8;
+  --portal-card-glow: rgba(56, 189, 248, 0.18);
+}
+
+.portal-stat-card:hover {
+  box-shadow: 0 18px 34px -18px var(--portal-card-glow), 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+.portal-card-sheen {
+  background: linear-gradient(90deg, transparent, var(--portal-card-accent), transparent);
+  opacity: 0.78;
+  transform: translateX(-105%);
+  transition: transform 0.65s ease;
+}
+
+.portal-stat-card:hover .portal-card-sheen {
+  transform: translateX(105%);
+}
+
+.portal-card-orb {
+  background: radial-gradient(circle, var(--portal-card-glow), transparent 68%);
+}
+
+.portal-card-icon {
+  box-shadow: 0 8px 18px -12px var(--portal-card-glow);
 }
 
 .portal-card-skeleton {
