@@ -320,6 +320,11 @@ const courseRuntimeUnit = computed(() => {
   return null
 })
 const courseRuntimeUnitStatus = computed(() => courseRuntimeUnit.value?.runtime_status || nextUnitStatus.value)
+const showCourseRuntimeUnitStatusBadge = computed(() => {
+  if (!courseRuntimeUnitStatus.value) return false
+  if (activeContentTab.value !== "exam") return true
+  return courseExamsLoaded.value && courseExams.value.length === 0
+})
 const courseRuntimeUnitUlid = computed(() => {
   const nextCourseId = firstString(nextStep.value?.course_id, nextStep.value?.course_ulid, nextStep.value?.courseUlid)
   if (nextCourseId && nextCourseId !== courseId.value) return ""
@@ -912,6 +917,18 @@ function isWaitingScheduleSync(exam: any) {
 function hasAppointmentDetails(exam: any) {
   if (!shouldShowStoredExamDetails(exam)) return false
   return hasText(exam?.confirmation_number) || hasText(exam?.site_name) || hasText(exam?.appointment_start_time) || hasText(exam?.appointment_end_time)
+}
+
+function hasAppointmentEnded(exam: any) {
+  if (!hasText(exam?.appointment_end_time)) return false
+  const safeStr = exam.appointment_end_time.endsWith("Z") ? exam.appointment_end_time.slice(0, -1) : exam.appointment_end_time
+  const endTime = new Date(safeStr).getTime()
+  return Number.isFinite(endTime) && endTime <= Date.now()
+}
+
+function shouldShowNoResultBadge(exam: any) {
+  if (hasExamResult(exam)) return false
+  return !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam) && hasAppointmentEnded(exam)
 }
 
 function canScheduleExam(exam: any) {
@@ -1678,7 +1695,7 @@ watch(selectedMaterial, () => {
               </div>
               <p class="text-sm text-muted-foreground">{{ t.learning.nextStepGoToExamsDesc }}</p>
             </div>
-            <span v-if="courseRuntimeUnitStatus" :class="['badge shrink-0', timelineStatusBadgeClassForStatus('COURSE_UNIT', courseRuntimeUnitStatus)]">
+            <span v-if="showCourseRuntimeUnitStatusBadge" :class="['badge shrink-0', timelineStatusBadgeClassForStatus('COURSE_UNIT', courseRuntimeUnitStatus)]">
               {{ courseUnitStatusLabel(courseRuntimeUnitStatus) }}
             </span>
           </div>
@@ -1715,7 +1732,7 @@ watch(selectedMaterial, () => {
                       <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
                       <span v-if="isWaitingScheduleSync(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ scheduleSyncPendingLabel() }}</span>
                       <span v-else-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
-                      <span v-else :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
+                      <span v-else-if="shouldShowNoResultBadge(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
                     </template>
                     <span v-if="!isExamFailedUnit(exam) && hasExplicitPassStatus(exam)" :class="['badge gap-1', exam.is_passed ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
                       <CheckCircle2 v-if="exam.is_passed" class="h-3 w-3" />
