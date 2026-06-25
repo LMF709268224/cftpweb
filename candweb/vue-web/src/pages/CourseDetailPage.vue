@@ -21,6 +21,7 @@ import {
   timelineStatusLabelWithDiagnostics,
 } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import LoadingState from "@/components/LoadingState.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -596,10 +597,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
           {{ t.courses.backToPipelines }}
         </RouterLink>
 
-    <div v-if="loading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-16 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <Loader2 class="h-5 w-5 animate-spin" />
-      <span>{{ t.common.loading }}</span>
-    </div>
+    <LoadingState v-if="loading" :label="t.common.loading" variant="page" :rows="4" />
     <div v-else-if="!pipeline" class="rounded-md bg-white p-8 text-center text-muted-foreground">
       <div class="mx-auto max-w-md space-y-4">
         <div>
@@ -703,10 +701,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
           <span class="badge border-slate-200 bg-slate-50 text-slate-700">{{ stages.length }} {{ t.courses.stages }} / {{ totalUnits }} {{ t.courses.units }}</span>
         </div>
 
-        <div v-if="stageListLoading" class="flex items-center justify-center gap-2 rounded-md bg-slate-50 p-8 text-sm text-muted-foreground">
-          <Loader2 class="h-5 w-5 animate-spin text-primary" />
-          <span>{{ t.common.loading }}</span>
-        </div>
+        <LoadingState v-if="stageListLoading" :label="t.common.loading" variant="section" :rows="3" />
         <div v-else-if="stages.length === 0" class="rounded-md bg-slate-50 p-8 text-center text-muted-foreground">
           <div class="mx-auto max-w-md space-y-4">
             <div>
