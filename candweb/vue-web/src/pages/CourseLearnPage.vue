@@ -320,6 +320,11 @@ const courseRuntimeUnit = computed(() => {
   return null
 })
 const courseRuntimeUnitStatus = computed(() => courseRuntimeUnit.value?.runtime_status || nextUnitStatus.value)
+const showCourseRuntimeUnitStatusBadge = computed(() => {
+  if (!courseRuntimeUnitStatus.value) return false
+  if (activeContentTab.value !== "exam") return true
+  return courseExamsLoaded.value && courseExams.value.length === 0
+})
 const courseRuntimeUnitUlid = computed(() => {
   const nextCourseId = firstString(nextStep.value?.course_id, nextStep.value?.course_ulid, nextStep.value?.courseUlid)
   if (nextCourseId && nextCourseId !== courseId.value) return ""
@@ -914,6 +919,31 @@ function hasAppointmentDetails(exam: any) {
   return hasText(exam?.confirmation_number) || hasText(exam?.site_name) || hasText(exam?.appointment_start_time) || hasText(exam?.appointment_end_time)
 }
 
+function hasAppointmentEnded(exam: any) {
+  if (!hasText(exam?.appointment_end_time)) return false
+  const safeStr = exam.appointment_end_time.endsWith("Z") ? exam.appointment_end_time.slice(0, -1) : exam.appointment_end_time
+  const endTime = new Date(safeStr).getTime()
+  return Number.isFinite(endTime) && endTime <= Date.now()
+}
+
+function shouldShowNoResultBadge(exam: any) {
+  if (hasExamResult(exam)) return false
+  return !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam) && hasAppointmentEnded(exam)
+}
+
+function isExamCompletedWithoutResult(exam: any) {
+  if (hasExamResult(exam)) return false
+  const status = normalizedExamStatus(exam?.exam_status)
+  return status.includes("PASSED") || status.includes("DONE") || status.includes("COMPLETED")
+}
+
+function examStatusLabel(exam: any) {
+  if (isExamCompletedWithoutResult(exam)) {
+    return (t.value.examsPage as any).statusExamCompleted || t.value.examsPage.statusScheduled
+  }
+  return statusLabel(t.value, EXAM_STATUS_LABELS, normalizedExamStatus(exam?.exam_status))
+}
+
 function canScheduleExam(exam: any) {
   if (hasExamResult(exam) || isWaitingScheduleSync(exam)) return false
   const status = normalizedExamStatus(exam?.exam_status)
@@ -1079,13 +1109,13 @@ function openSupplementaryPreview(item: SupplementaryMaterialItem) {
   openExternalPdfPreview(item.url, item.title || "Supplementary Material")
 }
 
-async function loadCourse() {
+async function loadCourse(showLoading = true) {
   if (!courseId.value) {
     payload.value = null
-    loading.value = false
+    if (showLoading) loading.value = false
     return
   }
-  loading.value = true
+  if (showLoading) loading.value = true
   try {
     const res = await apiClient(`/api/pipeline/courses/${courseId.value}/complete`)
     payload.value = res
@@ -1099,7 +1129,7 @@ async function loadCourse() {
     const firstMaterialId = materialIdOf(firstMaterial)
     if (!selectedMaterialId.value && firstMaterialId) selectedMaterialId.value = firstMaterialId
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
@@ -1128,18 +1158,20 @@ async function loadRuntime() {
   }
 }
 
-async function loadCourseExams() {
+async function loadCourseExams(showLoading = true) {
   if (!hasExamTab.value) {
     courseExams.value = []
     courseExamsLoaded.value = false
+    courseExamsLoading.value = false
     return
   }
   if (!courseRuntimeUnitUlid.value) {
     courseExams.value = []
     courseExamsLoaded.value = true
+    courseExamsLoading.value = false
     return
   }
-  courseExamsLoading.value = true
+  if (showLoading) courseExamsLoading.value = true
   try {
     const params = new URLSearchParams({
       page: "1",
@@ -1152,18 +1184,18 @@ async function loadCourseExams() {
     courseExams.value = []
   } finally {
     courseExamsLoaded.value = true
-    courseExamsLoading.value = false
+    if (showLoading) courseExamsLoading.value = false
   }
 }
 
-async function loadCourseCertificate() {
+async function loadCourseCertificate(showLoading = true) {
   if (!hasCertificateTab.value || finalQualificationRequired.value || !runtime.value?.instance?.pipeline_ulid) {
     courseCertificateUrl.value = ""
     courseCertificateError.value = ""
     courseCertificateLoading.value = false
     return
   }
-  courseCertificateLoading.value = true
+  if (showLoading) courseCertificateLoading.value = true
   courseCertificateError.value = ""
   try {
     const res = await apiClient(`/api/pipeline/${encodeURIComponent(runtime.value.instance.pipeline_ulid)}/certificate-url`, {
@@ -1175,7 +1207,7 @@ async function loadCourseCertificate() {
     courseCertificateUrl.value = ""
     courseCertificateError.value = t.value.certificatesPage.certificateGenerating
   } finally {
-    courseCertificateLoading.value = false
+    if (showLoading) courseCertificateLoading.value = false
   }
 }
 
@@ -1184,26 +1216,35 @@ function openCourseCertificate() {
   window.open(courseCertificateUrl.value, "_blank", "noopener,noreferrer")
 }
 
-async function syncProgress(targetCourseId = courseId.value, showToast = false) {
-  if (!targetCourseId) return
-  syncing.value = true
+async function syncProgress(targetCourseId = courseId.value, showToast = false, manageSyncing = true) {
+  if (!targetCourseId) return false
+  if (manageSyncing) syncing.value = true
   try {
     syncState.value = await apiClient(`/api/progress/courses/${targetCourseId}/sync`, { method: "POST" })
     if (showToast) toast.success(t.value.common.success)
+    return true
   } catch {
     // apiClient handles localized errors.
+    return false
   } finally {
-    syncing.value = false
+    if (manageSyncing) syncing.value = false
   }
 }
 
 async function refreshProgress(showToast = false) {
-  await syncProgress(courseId.value, showToast)
-  await loadProgress()
-  await loadCourse()
-  await loadRuntime()
-  if (activeContentTab.value === "exam") await loadCourseExams()
-  if (activeContentTab.value === "certificate") await loadCourseCertificate()
+  if (!courseId.value) return
+  syncing.value = true
+  try {
+    const synced = await syncProgress(courseId.value, false, false)
+    await loadProgress()
+    await loadCourse(false)
+    await loadRuntime()
+    if (activeContentTab.value === "exam") await loadCourseExams(false)
+    if (activeContentTab.value === "certificate") await loadCourseCertificate(false)
+    if (showToast && synced) toast.success(t.value.common.success)
+  } finally {
+    syncing.value = false
+  }
 }
 
 async function startQuiz(quizId: string) {
@@ -1486,8 +1527,9 @@ watch(activeContentTab, async (tab) => {
   if (tab === "certificate") await loadCourseCertificate()
 })
 watch([runtime, courseId], async () => {
-  if (activeContentTab.value === "exam") await loadCourseExams()
-  if (activeContentTab.value === "certificate") await loadCourseCertificate()
+  const showLoading = !syncing.value
+  if (activeContentTab.value === "exam") await loadCourseExams(showLoading)
+  if (activeContentTab.value === "certificate") await loadCourseCertificate(showLoading)
 })
 watch(lessons, () => {
   if (!activeLessonId.value && lessons.value.length > 0) activeLessonId.value = lessonIdOf(lessons.value[0].lesson)
@@ -1678,7 +1720,7 @@ watch(selectedMaterial, () => {
               </div>
               <p class="text-sm text-muted-foreground">{{ t.learning.nextStepGoToExamsDesc }}</p>
             </div>
-            <span v-if="courseRuntimeUnitStatus" :class="['badge shrink-0', timelineStatusBadgeClassForStatus('COURSE_UNIT', courseRuntimeUnitStatus)]">
+            <span v-if="showCourseRuntimeUnitStatusBadge" :class="['badge shrink-0', timelineStatusBadgeClassForStatus('COURSE_UNIT', courseRuntimeUnitStatus)]">
               {{ courseUnitStatusLabel(courseRuntimeUnitStatus) }}
             </span>
           </div>
@@ -1712,10 +1754,10 @@ watch(selectedMaterial, () => {
                   <div class="flex flex-wrap items-center gap-2">
                     <span v-if="isExamFailedUnit(exam)" :class="['badge', statusBadgeClassForStatusValue('FAILED')]">{{ t.examsPage.examFailedTitle }}</span>
                     <template v-else>
-                      <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
+                      <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ examStatusLabel(exam) }}</span>
                       <span v-if="isWaitingScheduleSync(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ scheduleSyncPendingLabel() }}</span>
                       <span v-else-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
-                      <span v-else :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
+                      <span v-else-if="shouldShowNoResultBadge(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
                     </template>
                     <span v-if="!isExamFailedUnit(exam) && hasExplicitPassStatus(exam)" :class="['badge gap-1', exam.is_passed ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
                       <CheckCircle2 v-if="exam.is_passed" class="h-3 w-3" />
