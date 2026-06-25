@@ -116,9 +116,21 @@ function parseFeatures(plan: RecordData) {
       if (typeof item === "object") return String(item.title || item.name || item.text || item.label || item.desc || item.description || JSON.stringify(item))
       return String(item)
     }
-    if (Array.isArray(parsed)) return parsed.map(extractText)
-    if (Array.isArray(parsed.features)) return parsed.features.map(extractText)
-    if (typeof parsed === "object") return Object.entries(parsed).map(([key, value]) => `${key}: ${extractText(value)}`)
+    
+    let arr: any[] = []
+    if (Array.isArray(parsed)) arr = parsed
+    else if (parsed && Array.isArray(parsed.features)) arr = parsed.features
+    else if (typeof parsed === "object") return Object.entries(parsed).map(([key, value]) => `${key}: ${extractText(value)}`)
+
+    let flatItems: any[] = []
+    arr.forEach((p) => {
+      if (p && typeof p === "object" && Array.isArray(p.items)) {
+        flatItems.push(...p.items)
+      } else {
+        flatItems.push(p)
+      }
+    })
+    return flatItems.map(extractText).filter(Boolean)
   } catch {
     return raw.split(/\r?\n|[,;；，]/).map((item) => item.trim()).filter(Boolean)
   }
@@ -331,7 +343,7 @@ onMounted(() => {
               </div>
               <div v-if="plan.course_discount_coupon" class="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-700">
                 <Percent class="h-4 w-4" />
-                {{ plan.course_discount_coupon }}
+                <span>{{ lang === "zh" ? "专属课程折扣码：" : "Course Discount Code: " }}{{ plan.course_discount_coupon }}</span>
               </div>
               <ul class="space-y-2">
                 <li v-for="feature in parseFeatures(plan)" :key="feature" class="flex items-center gap-2 text-sm">
