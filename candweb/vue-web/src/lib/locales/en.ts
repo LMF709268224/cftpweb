@@ -637,6 +637,14 @@ export const en: AppTranslations = {
     globalNetwork: "Global Network",
     globalNetworkDesc: "Intelligent routing to allocate the nearest authentication node."
   },
+  callbackPage: {
+    loadingTitle: "Loading",
+    loadingDesc: "Establishing a secure session. Please do not close this page...",
+    successTitle: "Authentication successful",
+    successDesc: "Redirecting you to the dashboard...",
+    errorTitle: "Authentication issue",
+    redirectLoginHint: "Returning to the login page in 3 seconds"
+  },
   paymentReturnHandler: {
     title: "Payment Result",
     purchaseSuccess: "Purchase successful. The certification list has been refreshed.",
