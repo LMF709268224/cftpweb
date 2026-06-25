@@ -330,7 +330,7 @@ onMounted(() => {
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="search" class="input pl-10" :placeholder="t.examsPage.searchPlaceholder" />
       </div>
-      <button class="btn btn-outline h-9 rounded-lg bg-white/80 px-4 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="() => void loadExams()">
+      <button class="exam-refresh-btn inline-flex h-9 items-center gap-2 rounded-xl border px-4 text-sm font-semibold" @click="() => void loadExams()">
         <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
         {{ t.examsPage.refresh }}
       </button>
@@ -465,3 +465,30 @@ onMounted(() => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+.exam-refresh-btn {
+  border-color: #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.exam-refresh-btn:hover {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  box-shadow: 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+  transform: scale(1.02);
+}
+
+.exam-refresh-btn:active {
+  transform: scale(0.98);
+}
+
+.exam-refresh-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+}
+</style>

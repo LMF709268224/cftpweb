@@ -218,7 +218,7 @@ onMounted(() => {
           <Crown class="h-4 w-4 text-slate-700" />
           <span class="text-sm font-medium text-foreground">{{ t.membership.title }}</span>
         </div>
-        <button class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50" type="button" @click="loadMembership">
+        <button class="membership-refresh-btn inline-flex h-9 items-center gap-2 rounded-xl border px-4 text-sm font-semibold" type="button" @click="loadMembership">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ lang === "zh" ? "刷新" : "Refresh" }}
         </button>
@@ -392,3 +392,30 @@ onMounted(() => {
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+.membership-refresh-btn {
+  border-color: #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.membership-refresh-btn:hover {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  box-shadow: 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+  transform: scale(1.02);
+}
+
+.membership-refresh-btn:active {
+  transform: scale(0.98);
+}
+
+.membership-refresh-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+}
+</style>

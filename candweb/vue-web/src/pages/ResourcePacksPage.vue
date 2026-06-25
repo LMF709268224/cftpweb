@@ -110,7 +110,7 @@ onMounted(() => {
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="search" class="input pl-10" :placeholder="copy.search" />
       </div>
-      <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" @click="loadPacks()">
+      <button class="resource-refresh-btn inline-flex h-9 items-center gap-2 rounded-xl border px-4 text-sm font-semibold" @click="loadPacks()">
         <RefreshCw :class="['h-4 w-4', loading ? 'animate-spin' : '']" />
         {{ copy.refresh }}
       </button>
@@ -179,6 +179,31 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.resource-refresh-btn {
+  border-color: #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  box-shadow: 0 8px 18px -16px rgba(15, 23, 42, 0.35);
+  transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.resource-refresh-btn:hover {
+  border-color: rgba(37, 99, 235, 0.28);
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  box-shadow: 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+  transform: scale(1.02);
+}
+
+.resource-refresh-btn:active {
+  transform: scale(0.98);
+}
+
+.resource-refresh-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 28px -18px rgba(37, 99, 235, 0.42);
+}
+
 .resource-pack-card {
   --resource-pack-accent: #38bdf8;
   --resource-pack-glow: rgba(37, 99, 235, 0.2);
