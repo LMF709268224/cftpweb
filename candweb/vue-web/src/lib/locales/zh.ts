@@ -637,6 +637,14 @@
     globalNetwork: "全球网络",
     globalNetworkDesc: "智能感知网络链路，为您分配最近的认证节点。"
   },
+  callbackPage: {
+    loadingTitle: "加载中",
+    loadingDesc: "正在建立安全会话，请不要关闭此页面...",
+    successTitle: "认证成功",
+    successDesc: "正在为您跳转到仪表盘...",
+    errorTitle: "认证遇到问题",
+    redirectLoginHint: "3 秒后将返回登录页"
+  },
   paymentReturnHandler: {
     title: "支付结果",
     purchaseSuccess: "购买成功，认证列表已刷新。",

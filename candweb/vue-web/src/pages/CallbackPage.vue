@@ -5,16 +5,18 @@ import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
 import { getErrorMessage } from "@/lib/errorCodes"
 import { apiClient } from "@/lib/apiClient"
 import { setAccessToken } from "@/lib/authStorage"
+import { useTranslation } from "@/lib/language"
 
 const route = useRoute()
 const router = useRouter()
+const { t, lang } = useTranslation()
 const status = ref<"loading" | "success" | "error">("loading")
 const errorMsg = ref("")
 
 onMounted(async () => {
   const code = String(route.query.code || "")
   const state = String(route.query.state || "")
-  const currentLang = (localStorage.getItem("app_lang") || "zh") as "zh" | "en"
+  const currentLang = lang.value
 
   if (!code || !state) {
     status.value = "error"
@@ -47,19 +49,19 @@ onMounted(async () => {
     <div class="relative z-10 mx-4 flex w-full max-w-sm flex-col items-center rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl backdrop-blur-xl">
       <template v-if="status === 'loading'">
         <Loader2 class="h-16 w-16 animate-spin text-indigo-400" />
-        <h2 class="mt-8 text-xl font-semibold tracking-tight text-white">加载中</h2>
-        <p class="mt-2 text-center text-sm text-slate-400">正在建立安全会话，请不要关闭此页面...</p>
+        <h2 class="mt-8 text-xl font-semibold tracking-tight text-white">{{ t.callbackPage.loadingTitle }}</h2>
+        <p class="mt-2 text-center text-sm text-slate-400">{{ t.callbackPage.loadingDesc }}</p>
       </template>
       <template v-else-if="status === 'success'">
         <CheckCircle2 class="h-16 w-16 text-emerald-400" />
-        <h2 class="mt-8 text-xl font-semibold tracking-tight text-white">认证成功</h2>
-        <p class="mt-2 text-sm text-slate-400">正在为您跳转到控制台...</p>
+        <h2 class="mt-8 text-xl font-semibold tracking-tight text-white">{{ t.callbackPage.successTitle }}</h2>
+        <p class="mt-2 text-sm text-slate-400">{{ t.callbackPage.successDesc }}</p>
       </template>
       <template v-else>
         <ShieldAlert class="h-16 w-16 text-red-400" />
-        <h2 class="mt-8 text-xl font-semibold tracking-tight text-white">认证遇到问题</h2>
+        <h2 class="mt-8 text-xl font-semibold tracking-tight text-white">{{ t.callbackPage.errorTitle }}</h2>
         <p class="mt-2 w-full rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-center text-sm text-red-300">{{ errorMsg }}</p>
-        <p class="mt-4 text-xs text-slate-500">3 秒后将返回登录页</p>
+        <p class="mt-4 text-xs text-slate-500">{{ t.callbackPage.redirectLoginHint }}</p>
       </template>
     </div>
   </div>
