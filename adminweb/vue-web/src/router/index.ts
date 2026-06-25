@@ -6,6 +6,7 @@ import BundlesPage from "@/pages/BundlesPage.vue"
 import CallbackPage from "@/pages/CallbackPage.vue"
 import CredentialsPage from "@/pages/CredentialsPage.vue"
 import InvoicesPage from "@/pages/InvoicesPage.vue"
+import LmsPage from "@/pages/LmsPage.vue"
 import LoginPage from "@/pages/LoginPage.vue"
 import MailsPage from "@/pages/MailsPage.vue"
 import MessagesPage from "@/pages/MessagesPage.vue"
@@ -15,7 +16,6 @@ import PdfTemplatesPage from "@/pages/PdfTemplatesPage.vue"
 import PermissionsPage from "@/pages/PermissionsPage.vue"
 import PipelinesPage from "@/pages/PipelinesPage.vue"
 import ProgPage from "@/pages/ProgPage.vue"
-import ResourcePage from "@/pages/ResourcePage.vue"
 import WebhookAuditPage from "@/pages/WebhookAuditPage.vue"
 
 export type ResourceRouteMeta = {
@@ -30,7 +30,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/lms",
     name: "lms",
-    component: ResourcePage,
+    component: LmsPage,
     meta: {
       title: "课程配置",
       subtitle: "维护 GLMS 课程内容、发布状态和基础资料",
