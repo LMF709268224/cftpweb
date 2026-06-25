@@ -141,7 +141,8 @@ async function loadMembership() {
 
 async function loadActiveMembershipFromHistory(membershipHistory: RecordData[]) {
   const activeRecord = membershipHistory.find((item) => isActiveStatus(item.status))
-  const membershipGpath = String(activeRecord?.membership_gpath || "").trim()
+  const fallbackPlan = plans.value.find((plan) => plan.membership_ulid === activeRecord?.membership_ulid)
+  const membershipGpath = String(activeRecord?.membership_gpath || fallbackPlan?.membership_gpath || "").trim()
   if (!membershipGpath) return null
 
   try {
