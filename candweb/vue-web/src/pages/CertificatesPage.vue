@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { Award, Calendar, CheckCircle2, Download, ExternalLink, Eye, Loader2, Share2, Sparkles, X } from "lucide-vue-next"
+import { Award, Calendar, CheckCircle2, ClipboardCheck, Download, ExternalLink, Eye, Loader2, Share2, ShieldCheck, Sparkles, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import rewGif from "@/assets/rew.gif"
 import { apiClient } from "@/lib/apiClient"
@@ -72,6 +72,34 @@ async function previewCertificate(url?: string) {
 
 function downloadFeaturedCertificate() {
   openCertificate(featuredCertificate.value?.pdfUrl)
+}
+
+function certificateSourceLabel(source?: string) {
+  if (source === "application") return t.value.certificatesPage.sourceApplication || "Application"
+  if (source === "pdf_cert") return t.value.certificatesPage.sourceSystem || "System Issued"
+  return ""
+}
+
+function certificateSourceIcon(source?: string) {
+  return source === "application" ? ClipboardCheck : ShieldCheck
+}
+
+function certificateSourceClass(source?: string) {
+  if (source === "application") return "border-amber-200 text-amber-800"
+  if (source === "pdf_cert") return "border-cyan-200 text-cyan-800"
+  return "border-slate-200 text-slate-700"
+}
+
+function certificateSourceIconClass(source?: string) {
+  if (source === "application") return "bg-amber-100 text-amber-700"
+  if (source === "pdf_cert") return "bg-cyan-100 text-cyan-700"
+  return "bg-slate-100 text-slate-600"
+}
+
+function certificateSourceAccentClass(source?: string) {
+  if (source === "application") return "bg-amber-300"
+  if (source === "pdf_cert") return "bg-cyan-300"
+  return "bg-white/20"
 }
 
 function closeCelebrationModal() {
@@ -251,12 +279,24 @@ onMounted(async () => {
         :key="cert.id"
         class="group relative overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md hover:shadow-primary/10"
       >
+        <div class="absolute inset-x-0 top-0 z-10 h-1" :class="certificateSourceAccentClass(cert.source)" />
         <div class="relative bg-[linear-gradient(135deg,rgb(11,31,69)_0%,rgb(27,69,141)_55%,rgb(58,111,192)_100%)] p-4 text-white">
           <div class="relative flex items-start justify-between">
-            <div>
-              <span class="badge mb-3 border-0 bg-white/20 text-white"><CheckCircle2 class="mr-1 h-3 w-3" /> {{ t.certificatesPage.active }}</span>
-              <span v-if="cert.source === 'application'" class="badge mb-3 ml-2 border-0 bg-white/20 text-white">{{ t.certificatesPage.sourceApplication || 'Application' }}</span>
-              <span v-else-if="cert.source === 'pdf_cert'" class="badge mb-3 ml-2 border-0 bg-white/20 text-white">{{ t.certificatesPage.sourceSystem || 'System Issued' }}</span>
+            <div class="min-w-0">
+              <div class="mb-3 flex flex-wrap items-center gap-2">
+                <span class="badge border-0 bg-white/20 text-white"><CheckCircle2 class="mr-1 h-3 w-3" /> {{ t.certificatesPage.active }}</span>
+                <span
+                  v-if="certificateSourceLabel(cert.source)"
+                  :class="['inline-flex h-7 max-w-full items-center overflow-hidden rounded-full border bg-white text-xs font-semibold shadow-sm', certificateSourceClass(cert.source)]"
+                >
+                  <span :class="['flex h-full items-center px-2', certificateSourceIconClass(cert.source)]">
+                    <component :is="certificateSourceIcon(cert.source)" class="h-3.5 w-3.5" />
+                  </span>
+                  <span class="flex min-w-0 items-center px-2.5">
+                    <span class="truncate">{{ certificateSourceLabel(cert.source) }}</span>
+                  </span>
+                </span>
+              </div>
               <h3 class="mb-1 text-xl font-bold">{{ cert.name }}</h3>
               <p class="text-sm text-white/80">{{ cert.description }}</p>
             </div>
