@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { AlertCircle, Building2, CheckCircle2, CreditCard, Lock, Loader2, ShoppingCart } from "lucide-vue-next"
@@ -138,9 +138,9 @@ const purchasePreviewStale = computed(() => Boolean(
 ))
 
 watch(() => props.open, async (open) => {
-  if (open && props.pipelineId) {
+  if (open) {
     resolvedBundleId.value = props.bundleId || ""
-    if (!resolvedBundleId.value) {
+    if (!resolvedBundleId.value && props.pipelineId) {
       try {
         const res = await apiClient("/api/mall/bundles")
         const found = res?.bundles?.find((b: any) => b.pipeline_id === props.pipelineId)
@@ -151,7 +151,12 @@ watch(() => props.open, async (open) => {
         console.error("Failed to resolve bundle ID for pipeline:", props.pipelineId, e)
       }
     }
-    void loadEligibility()
+    if (props.pipelineId) {
+      void loadEligibility()
+    } else {
+      eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
+      await loadActiveOrder()
+    }
   } else {
     activePaymentSession.value = null
   }
@@ -338,6 +343,11 @@ async function latestCredentialApplication(qualId: string) {
 }
 
 async function loadEligibility() {
+  if (!props.pipelineId) {
+    eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
+    await loadActiveOrder()
+    return
+  }
   eligibilityLoading.value = true
   activeOrder.value = null
   paymentPreview.value = null
@@ -442,9 +452,13 @@ async function createBundlePurchaseOrder(bundleOrderUlid = "") {
 async function createPurchaseOrder() {
   actionLoading.value = true
   try {
-    const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
-    eligibility.value = latest
-    if (!latest.can_purchase) return
+    if (props.pipelineId) {
+      const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
+      eligibility.value = latest
+      if (!latest.can_purchase) return
+    } else {
+      if (!eligibility.value?.can_purchase) return
+    }
 
     const { orderId, orderStatus } = await createBundlePurchaseOrder()
     if (isCompletedStatus(orderStatus)) {
@@ -492,9 +506,13 @@ async function refreshPurchaseOrderPreview() {
 async function createUnlockOrder() {
   actionLoading.value = true
   try {
-    const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
-    eligibility.value = latest
-    if (!latest.can_unlock) return
+    if (props.pipelineId) {
+      const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
+      eligibility.value = latest
+      if (!latest.can_unlock) return
+    } else {
+      if (!eligibility.value?.can_unlock) return
+    }
 
     const order = await apiClient(`/api/mall/bundles/${resolvedBundleId.value}/unlock`, {
       method: "POST",
@@ -543,11 +561,11 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     const existingApplication = await latestCredentialApplication(qualId)
     if (existingApplication?.status) {
       if (isApplicationPendingStatus(existingApplication.status)) {
-        toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果。")
+        toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果�。")
         return
       }
       if (isApplicationApprovedStatus(existingApplication.status)) {
-        toast.success(copy.value.qualificationAlreadyApproved || "资格已审核通过，正在重新检查免考资格。")
+        toast.success(copy.value.qualificationAlreadyApproved || "资格已审核通过，正在重新检查免考资格�。")
         await loadExemptionOptions()
         return
       }
@@ -578,12 +596,12 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     }
 
     if (isUploadReadyStatus(orderStatus)) {
-      toast.info(copy.value.qualificationUploadReady || "资料上传入口已开放，正在前往资格申请页面。")
+      toast.info(copy.value.qualificationUploadReady || "资料上传入口已开放，正在前往资格申请页面�。")
       window.setTimeout(() => goToCredentialUpload(qualIds), 300)
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
-      toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果。")
+      toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果�。")
       return
     }
     if (isCredentialApplicationResolvedStatus(orderStatus)) {
@@ -843,7 +861,7 @@ async function initiatePayment() {
             <p class="mt-2">{{ credentialApplicationOrder ? copy.qualificationPaymentDesc : copy.embeddedCheckoutDesc }}</p>
           </div>
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-            <strong>⚠️ 测试环境提示：</strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验。
+            <strong>⚠️ 测试环境提示�?/strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验�?
           </div>
           <PaymentSessionPanel
             :biz-type="activePaymentSession.bizType"
@@ -890,7 +908,7 @@ async function initiatePayment() {
             </button>
           </div>
           <div v-if="paymentMethod === 'stripe'" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-            <strong>⚠️ 测试环境提示：</strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验。
+            <strong>⚠️ 测试环境提示�?/strong> 当前为测试环境，请使用通用测试信用卡号 <code>4242 4242 4242 4242</code>，任意有效日期和CVV进行体验�?
           </div>
         </div>
       </div>
@@ -927,3 +945,5 @@ async function initiatePayment() {
     </div>
   </div>
 </template>
+
+

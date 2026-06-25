@@ -74,8 +74,15 @@ const actionClass = computed(() => {
 })
 
 onMounted(async () => {
-  const targetPipelineId = props.pipelineId || props.id
-  if (props.isPurchased || !targetPipelineId) return
+  if (props.isPurchased) return
+  if (!props.pipelineId && props.id) {
+    eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
+    return
+  }
+  
+  const targetPipelineId = props.pipelineId
+  if (!targetPipelineId) return
+  
   eligibilityLoading.value = true
   try {
     eligibility.value = await apiClient(`/api/mall/pipelines/${targetPipelineId}/eligibility`)
@@ -214,5 +221,5 @@ const accessState = computed(() => {
     </div>
   </component>
 
-  <PurchaseDialog v-model:open="showPurchaseDialog" :course-name="title" :description="description" :pipeline-id="pipelineId || id" :bundle-id="id" />
+  <PurchaseDialog v-model:open="showPurchaseDialog" :course-name="title" :description="description" :pipeline-id="pipelineId || ''" :bundle-id="id" />
 </template>
