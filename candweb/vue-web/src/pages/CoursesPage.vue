@@ -108,6 +108,44 @@ function bundlePriceLabel(bundle: any) {
   return formatDisplayAmount(min || max, currency)
 }
 
+function normalizeBundleItemType(value: unknown) {
+  return String(value || "").trim().toLowerCase().replace(/-/g, "_")
+}
+
+function bundleItemTypes(bundle: any) {
+  const fromBackend = Array.isArray(bundle?.bundle_item_types)
+    ? bundle.bundle_item_types.map(normalizeBundleItemType).filter(Boolean)
+    : []
+  const fromItemsJson: string[] = []
+  try {
+    const parsed = JSON.parse(String(bundle?.items_json || ""))
+    const items = Array.isArray(parsed) ? parsed : [parsed]
+    for (const item of items) {
+      if (item && typeof item === "object") {
+        const type = normalizeBundleItemType(item.item_type || item.type || item.itemType || item.kind)
+        if (type) fromItemsJson.push(type)
+      }
+    }
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      if (Array.isArray(parsed.pipelines)) fromItemsJson.push("pipeline")
+      if (Array.isArray(parsed.memberships)) fromItemsJson.push("membership")
+    }
+  } catch {
+    // items_json is optional and legacy bundles may not have a typed payload.
+  }
+  return Array.from(new Set([...fromBackend, ...fromItemsJson]))
+}
+
+function isPipelineBundle(bundle: any, itemTypes: string[]) {
+  if (bundle?.is_pipeline_bundle === true) return true
+  return itemTypes.some((type) => type.includes("pipeline"))
+}
+
+function isMembershipBundle(bundle: any, itemTypes: string[]) {
+  if (bundle?.is_membership_bundle === true) return true
+  return itemTypes.some((type) => type.includes("membership"))
+}
+
 function setResourceFilter(filter: (typeof resourceFilters)[number]) {
   resourceFilter.value = filter
 }
@@ -156,13 +194,21 @@ async function fetchData() {
       if (res?.bundles) {
         allCourses.value = await Promise.all(res.bundles.map(async (b: any) => {
           const stages = b.stages || []
+          const itemTypes = bundleItemTypes(b)
+          const pipelineBundle = isPipelineBundle(b, itemTypes)
+          const membershipBundle = isMembershipBundle(b, itemTypes)
           const unitCount = stages.reduce((total: number, stage: any) => total + (stage.units?.length || 0), 0)
           const finalQualCount = b.final_quals?.length || 0
           const image = await loadBundleThumbnailUrl(b.bundle_id)
           const firstStageNames = stages.slice(0, 2).map((stage: any) => stage.name).filter(Boolean).join(" / ")
           return {
             id: b.bundle_id,
-            pipelineId: b.pipeline_id,
+            pipelineId: pipelineBundle ? b.pipeline_id : "",
+            membershipId: membershipBundle ? b.membership_id : "",
+            membershipGpath: membershipBundle ? b.membership_gpath : "",
+            itemTypes,
+            isPipelineBundle: pipelineBundle,
+            isMembershipBundle: membershipBundle,
             title: certificationDisplayName(b.name) || t.value.common.unknownCourse,
             description: String(b.description || "").trim() || firstStageNames || `${stages.length} ${t.value.courses.stages} · ${unitCount} ${t.value.courses.units}`,
             provider: b.category_tips || t.value.courses.certificationPath,
@@ -235,7 +281,7 @@ function handlePaymentReturn() {
   const copy = t.value.paymentReturnHandler || {}
   if (paymentStatus === "success") {
     toast.success(isUnlock ? copy.unlockSuccess : copy.purchaseSuccess)
-    if (!isUnlock && targetId) {
+    if (!isUnlock && purchasedPipelineId && targetId) {
       void apiClient(`/api/mall/pipelines/${encodeURIComponent(purchasedPipelineId || "")}/eligibility`)
         .then(() => {
           allCourses.value = allCourses.value.map((course) =>

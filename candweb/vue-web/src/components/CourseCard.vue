@@ -14,6 +14,11 @@ type EligibilityPreview = { can_purchase?: boolean; can_unlock?: boolean; blocke
 const props = defineProps<{
   id: string
   pipelineId?: string
+  membershipId?: string
+  membershipGpath?: string
+  itemTypes?: string[]
+  isPipelineBundle?: boolean
+  isMembershipBundle?: boolean
   title: string
   description: string
   image?: string
@@ -34,18 +39,23 @@ const { t, lang } = useTranslation()
 const showPurchaseDialog = ref(false)
 const eligibility = ref<EligibilityPreview | null>(null)
 const eligibilityLoading = ref(false)
+const activeMembership = ref<any | null>(null)
 
 const blockers = computed(() => eligibility.value?.blockers || [])
+const isPipelineProduct = computed(() => Boolean(props.isPipelineBundle && props.pipelineId))
+const isMembershipProduct = computed(() => Boolean(props.isMembershipBundle || props.itemTypes?.some((type) => String(type).includes("membership"))))
 const effectivePurchased = computed(() =>
-  Boolean(props.isPurchased || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")),
+  Boolean(props.isPurchased || activeMembership.value || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")),
 )
 const hasInProgressOrder = computed(() => blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
 const resolvedStatusLabel = computed(() =>
   props.statusValue !== undefined ? statusLabel(t.value, CANDIDATE_PIPELINE_STATUS_LABELS, props.statusValue) : props.statusLabel,
 )
+const purchasedTarget = computed(() => isMembershipProduct.value ? "/membership" : `/certifications/${encodeURIComponent(props.pipelineId || props.id)}`)
 
 const cardCopy = computed(() => ({
   ready: lang.value === "zh" ? "\u53ef\u8d2d\u4e70\u8ba4\u8bc1" : "Ready to buy",
+  readyMembership: lang.value === "zh" ? "\u53ef\u8d2d\u4e70\u4f1a\u5458" : "Ready to subscribe",
   unlock: lang.value === "zh" ? "\u9700\u8981\u5148\u89e3\u9501" : "Unlock required",
   blocked: lang.value === "zh" ? "\u6682\u4e0d\u53ef\u8d2d\u4e70" : "Unavailable",
   checking: lang.value === "zh" ? "\u68c0\u67e5\u4e2d" : "Checking",
@@ -57,7 +67,7 @@ const cardCopy = computed(() => ({
 }))
 
 const actionCopy = computed(() => {
-  if (effectivePurchased.value) return lang.value === "zh" ? "\u8fdb\u5165\u8ba4\u8bc1" : "Enter Certification"
+  if (effectivePurchased.value) return isMembershipProduct.value ? (lang.value === "zh" ? "\u8fdb\u5165\u4f1a\u5458\u4e2d\u5fc3" : "Membership Center") : (lang.value === "zh" ? "\u8fdb\u5165\u8ba4\u8bc1" : "Enter Certification")
   if (hasInProgressOrder.value) return lang.value === "zh" ? "\u7ee7\u7eed\u652f\u4ed8" : "Continue Payment"
   if (eligibility.value?.can_unlock) return lang.value === "zh" ? "\u53bb\u89e3\u9501" : "Unlock"
   if (eligibility.value?.can_purchase) return lang.value === "zh" ? "\u53bb\u8d2d\u4e70" : "Buy Now"
@@ -75,7 +85,21 @@ const actionClass = computed(() => {
 
 onMounted(async () => {
   if (props.isPurchased) return
-  if (!props.pipelineId && props.id) {
+  if (isMembershipProduct.value) {
+    eligibilityLoading.value = true
+    try {
+      activeMembership.value = await loadActiveMembership()
+      eligibility.value = activeMembership.value
+        ? { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: "ALREADY_PURCHASED" }] }
+        : { can_purchase: true, can_unlock: false, blockers: [] }
+    } catch {
+      eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
+    } finally {
+      eligibilityLoading.value = false
+    }
+    return
+  }
+  if (!isPipelineProduct.value) {
     eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
     return
   }
@@ -93,6 +117,33 @@ onMounted(async () => {
   }
 })
 
+function isActiveMembershipStatus(status: unknown) {
+  return ["active", "membership_status_active"].includes(String(status || "").trim().toLowerCase())
+}
+
+function membershipRecords(payload: any) {
+  for (const key of ["user_memberships", "memberships", "records", "items", "history"]) {
+    if (Array.isArray(payload?.[key])) return payload[key]
+  }
+  return []
+}
+
+async function loadActiveMembership() {
+  const membershipGpath = String(props.membershipGpath || "").trim()
+  const membershipId = String(props.membershipId || "").trim()
+  if (!membershipGpath && !membershipId) return null
+  const history = await apiClient("/api/membership/history?page=1&page_size=50", { suppressErrorToast: true })
+  const matchingActive = membershipRecords(history).find((record: any) =>
+    isActiveMembershipStatus(record?.status) &&
+    ((membershipGpath && String(record?.membership_gpath || "").trim() === membershipGpath) ||
+      (membershipId && String(record?.membership_ulid || "").trim() === membershipId)),
+  )
+  if (!matchingActive) return null
+  if (!membershipGpath) return matchingActive
+  const active = await apiClient(`/api/membership/active?membership_gpath=${encodeURIComponent(membershipGpath)}`, { suppressErrorToast: true })
+  return active?.membership || matchingActive
+}
+
 function blockerText(blocker?: EligibilityBlocker) {
   if (!blocker) return ""
   if (blocker.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return cardCopy.value.missingQualification
@@ -108,7 +159,7 @@ const accessState = computed(() => {
     return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
   }
   if (eligibility.value?.can_purchase) {
-    return { label: cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
+    return { label: isMembershipProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
   }
   if (eligibility.value?.can_unlock) {
     return { label: cardCopy.value.unlock, icon: Lock, className: "border-blue-200 bg-blue-50 text-blue-700", hint: "" }
@@ -123,7 +174,7 @@ const accessState = computed(() => {
 <template>
   <component
     :is="effectivePurchased ? RouterLink : 'div'"
-    :to="effectivePurchased ? `/certifications/${encodeURIComponent(pipelineId || id)}` : undefined"
+    :to="effectivePurchased ? purchasedTarget : undefined"
     class="group flex h-full flex-col overflow-hidden rounded-[16px] border-2 border-[#dfe4ea] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
     :class="!effectivePurchased && 'cursor-pointer'"
     @click="!effectivePurchased && (showPurchaseDialog = true)"
@@ -221,5 +272,15 @@ const accessState = computed(() => {
     </div>
   </component>
 
-  <PurchaseDialog v-model:open="showPurchaseDialog" :course-name="title" :description="description" :pipeline-id="pipelineId || ''" :bundle-id="id" />
+  <PurchaseDialog
+    v-model:open="showPurchaseDialog"
+    :course-name="title"
+    :description="description"
+    :pipeline-id="pipelineId || ''"
+    :bundle-id="id"
+    :is-pipeline-bundle="isPipelineProduct"
+    :is-membership-bundle="isMembershipProduct"
+    :membership-id="membershipId || ''"
+    :membership-gpath="membershipGpath || ''"
+  />
 </template>

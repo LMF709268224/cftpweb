@@ -5,13 +5,13 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
-	"regexp"
 	"strings"
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gmbrpb "github.com/afnandelfin620-star/cftptest/cftp/gmbr"
 	gprog "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 
@@ -407,8 +407,17 @@ func (h *Handler) extractPipelineID(bundle *mallpb.BundleInfo) string {
 		var list []map[string]interface{}
 		if err := json.Unmarshal([]byte(itemsJSON), &list); err == nil {
 			for _, item := range list {
-				for _, key := range []string{"item_id", "id", "pipeline_id", "pipeline_cc_ulid"} {
-					if idVal, ok := item[key].(string); ok && len(idVal) == 26 {
+				hasPipelineType := isPipelineBundleItem(item)
+				for _, key := range []string{"pipeline_id", "pipeline_cc_ulid"} {
+					if idVal := mapString(item, key); looksLikeULID(idVal) {
+						return idVal
+					}
+				}
+				if !hasPipelineType {
+					continue
+				}
+				for _, key := range []string{"ref_ulid", "item_id", "id"} {
+					if idVal := mapString(item, key); looksLikeULID(idVal) {
 						return idVal
 					}
 				}
@@ -419,13 +428,20 @@ func (h *Handler) extractPipelineID(bundle *mallpb.BundleInfo) string {
 		if err := json.Unmarshal([]byte(itemsJSON), &obj); err == nil {
 			if pps, ok := obj["pipelines"].([]interface{}); ok {
 				for _, p := range pps {
-					if idVal, ok := p.(string); ok && len(idVal) == 26 {
+					if idVal, ok := p.(string); ok && looksLikeULID(idVal) {
 						return idVal
+					}
+					if item, ok := p.(map[string]interface{}); ok {
+						for _, key := range []string{"ref_ulid", "item_id", "id", "pipeline_id", "pipeline_cc_ulid"} {
+							if idVal := mapString(item, key); looksLikeULID(idVal) {
+								return idVal
+							}
+						}
 					}
 				}
 			}
 			for _, key := range []string{"pipeline_id", "pipeline_cc_ulid", "pipeline"} {
-				if idVal, ok := obj[key].(string); ok && len(idVal) == 26 {
+				if idVal := mapString(obj, key); looksLikeULID(idVal) {
 					return idVal
 				}
 			}
@@ -435,21 +451,166 @@ func (h *Handler) extractPipelineID(bundle *mallpb.BundleInfo) string {
 	gpath := bundle.GetBundleGpath()
 	if strings.HasPrefix(gpath, "/pipeline/") {
 		parts := strings.Split(gpath, "/")
-		if len(parts) > 2 && len(parts[2]) == 26 {
+		if len(parts) > 2 && looksLikeULID(parts[2]) {
 			return parts[2]
 		}
-	}
-	re := regexp.MustCompile(`[0-9A-HJKMNP-TV-Z]{26}`)
-	if match := re.FindString(itemsJSON); match != "" {
-		return match
-	}
-	if match := re.FindString(gpath); match != "" {
-		return match
 	}
 	return ""
 }
 
+func looksLikeULID(value string) bool {
+	return len(strings.TrimSpace(value)) == 26
+}
+
+func mapString(m map[string]interface{}, key string) string {
+	if m == nil {
+		return ""
+	}
+	value, ok := m[key]
+	if !ok {
+		return ""
+	}
+	switch v := value.(type) {
+	case string:
+		return strings.TrimSpace(v)
+	case json.Number:
+		return strings.TrimSpace(v.String())
+	default:
+		return ""
+	}
+}
+
+func normalizeBundleItemType(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	value = strings.ReplaceAll(value, "-", "_")
+	return value
+}
+
+func isPipelineBundleItem(item map[string]interface{}) bool {
+	for _, key := range []string{"item_type", "type", "itemType", "kind"} {
+		itemType := normalizeBundleItemType(mapString(item, key))
+		if itemType == "pipeline" || itemType == "pipeline_cc" || strings.Contains(itemType, "pipeline") {
+			return true
+		}
+	}
+	return false
+}
+
+func isMembershipBundleItem(item map[string]interface{}) bool {
+	for _, key := range []string{"item_type", "type", "itemType", "kind"} {
+		itemType := normalizeBundleItemType(mapString(item, key))
+		if itemType == "membership" || strings.Contains(itemType, "membership") {
+			return true
+		}
+	}
+	return false
+}
+
+func extractMembershipID(bundle *mallpb.BundleInfo) string {
+	if bundle == nil {
+		return ""
+	}
+	itemsJSON := bundle.GetItemsJson()
+	if itemsJSON != "" {
+		var list []map[string]interface{}
+		if err := json.Unmarshal([]byte(itemsJSON), &list); err == nil {
+			for _, item := range list {
+				for _, key := range []string{"membership_id", "membership_ulid"} {
+					if idVal := mapString(item, key); looksLikeULID(idVal) {
+						return idVal
+					}
+				}
+				if !isMembershipBundleItem(item) {
+					continue
+				}
+				for _, key := range []string{"ref_ulid", "item_id", "id"} {
+					if idVal := mapString(item, key); looksLikeULID(idVal) {
+						return idVal
+					}
+				}
+			}
+		}
+		var obj map[string]interface{}
+		if err := json.Unmarshal([]byte(itemsJSON), &obj); err == nil {
+			if memberships, ok := obj["memberships"].([]interface{}); ok {
+				for _, membership := range memberships {
+					if idVal, ok := membership.(string); ok && looksLikeULID(idVal) {
+						return idVal
+					}
+					if item, ok := membership.(map[string]interface{}); ok {
+						for _, key := range []string{"ref_ulid", "item_id", "id", "membership_id", "membership_ulid"} {
+							if idVal := mapString(item, key); looksLikeULID(idVal) {
+								return idVal
+							}
+						}
+					}
+				}
+			}
+			for _, key := range []string{"membership_id", "membership_ulid", "membership"} {
+				if idVal := mapString(obj, key); looksLikeULID(idVal) {
+					return idVal
+				}
+			}
+		}
+	}
+	return ""
+}
+
+func appendUniqueString(list []string, value string) []string {
+	value = normalizeBundleItemType(value)
+	if value == "" {
+		return list
+	}
+	for _, existing := range list {
+		if existing == value {
+			return list
+		}
+	}
+	return append(list, value)
+}
+
+func bundleItemTypes(bundle *mallpb.BundleInfo) []string {
+	if bundle == nil {
+		return []string{}
+	}
+	out := []string{}
+	itemsJSON := bundle.GetItemsJson()
+	if itemsJSON != "" {
+		var list []map[string]interface{}
+		if err := json.Unmarshal([]byte(itemsJSON), &list); err == nil {
+			for _, item := range list {
+				for _, key := range []string{"item_type", "type", "itemType", "kind"} {
+					out = appendUniqueString(out, mapString(item, key))
+				}
+			}
+		}
+		var obj map[string]interface{}
+		if err := json.Unmarshal([]byte(itemsJSON), &obj); err == nil {
+			for _, key := range []string{"item_type", "type", "itemType", "kind"} {
+				out = appendUniqueString(out, mapString(obj, key))
+			}
+			if _, ok := obj["pipelines"]; ok {
+				out = appendUniqueString(out, "pipeline")
+			}
+			if _, ok := obj["memberships"]; ok {
+				out = appendUniqueString(out, "membership")
+			}
+		}
+	}
+	gpath := strings.ToLower(strings.TrimSpace(bundle.GetBundleGpath()))
+	if strings.Contains(gpath, "/pipeline/") {
+		out = appendUniqueString(out, "pipeline")
+	}
+	if strings.Contains(gpath, "/mbr") || strings.Contains(gpath, "membership") {
+		out = appendUniqueString(out, "membership")
+	}
+	return out
+}
+
 func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo) map[string]interface{} {
+	pipelineID := h.extractPipelineID(b)
+	membershipID := extractMembershipID(b)
+	itemTypes := bundleItemTypes(b)
 	m := map[string]interface{}{
 		"bundle_id":            b.GetBundleUlid(),
 		"bundle_gpath":         b.GetBundleGpath(),
@@ -470,12 +631,15 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo) map[st
 		"stages":               []interface{}{},
 		"final_quals":          []interface{}{},
 		"category_tips":        "",
-		"pipeline_id":          "",
+		"pipeline_id":          pipelineID,
+		"membership_id":        membershipID,
+		"membership_gpath":     "",
+		"bundle_item_types":    itemTypes,
+		"is_pipeline_bundle":   pipelineID != "",
+		"is_membership_bundle": membershipID != "",
 	}
 
-	pipelineID := h.extractPipelineID(b)
 	if pipelineID != "" {
-		m["pipeline_id"] = pipelineID
 		pipeline, err := h.Gcc.GetPipeline(ctx, &gccpb.GetPipelineRequest{
 			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 		})
@@ -483,6 +647,22 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo) map[st
 			m["stages"] = toStages(pipeline.GetStages())
 			m["final_quals"] = toUnlockQuals(pipeline.GetCertsQuals())
 			m["category_tips"] = pipeline.GetCategoryTips()
+		}
+	}
+	if membershipID != "" && h.Gmbr != nil {
+		membership, err := h.Gmbr.GetMembership(ctx, &gmbrpb.GetMembershipRequest{
+			MembershipUlid: membershipID,
+		})
+		if err == nil && membership != nil {
+			m["membership_gpath"] = membership.GetMembershipGpath()
+			m["membership_name"] = membership.GetName()
+			m["membership_status"] = membership.GetStatus()
+			m["membership_tier_level"] = membership.GetTierLevel()
+			if m["category_tips"] == "" {
+				m["category_tips"] = membership.GetName()
+			}
+		} else if err != nil {
+			slog.Warn("Failed to enrich membership bundle", "error", err, "membership_id", membershipID, "bundle_id", b.GetBundleUlid())
 		}
 	}
 	return m

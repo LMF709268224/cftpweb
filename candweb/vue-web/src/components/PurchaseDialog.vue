@@ -80,6 +80,10 @@ const props = defineProps<{
   description?: string
   pipelineId: string
   bundleId?: string
+  isPipelineBundle?: boolean
+  isMembershipBundle?: boolean
+  membershipId?: string
+  membershipGpath?: string
 }>()
 
 const emit = defineEmits<{ "update:open": [value: boolean] }>()
@@ -119,8 +123,10 @@ const credentialApplicationOrder = ref<{
 
 const copy = computed(() => t.value.purchaseDialog || {})
 const blockers = computed(() => eligibility.value?.blockers || [])
+const shouldUsePipelineEligibility = computed(() => Boolean(props.isPipelineBundle && props.pipelineId))
+const shouldUseMembershipEligibility = computed(() => Boolean(props.isMembershipBundle || props.membershipGpath))
 const canPurchase = computed(() => Boolean(eligibility.value?.can_purchase))
-const canUnlock = computed(() => Boolean(eligibility.value?.can_unlock))
+const canUnlock = computed(() => Boolean(shouldUsePipelineEligibility.value && eligibility.value?.can_unlock))
 const cannotContinue = computed(() => Boolean(eligibility.value && !canPurchase.value && !canUnlock.value))
 const hasInProgressOrder = computed(() => blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
 const exemptionStages = computed(() => exemptionOptions.value?.stages?.filter((stage) => (stage.units?.length || 0) > 0) || [])
@@ -140,7 +146,7 @@ const purchasePreviewStale = computed(() => Boolean(
 watch(() => props.open, async (open) => {
   if (open) {
     resolvedBundleId.value = props.bundleId || ""
-    if (!resolvedBundleId.value && props.pipelineId) {
+    if (!resolvedBundleId.value && shouldUsePipelineEligibility.value) {
       try {
         const res = await apiClient("/api/mall/bundles")
         const found = res?.bundles?.find((b: any) => b.pipeline_id === props.pipelineId)
@@ -151,8 +157,10 @@ watch(() => props.open, async (open) => {
         console.error("Failed to resolve bundle ID for pipeline:", props.pipelineId, e)
       }
     }
-    if (props.pipelineId) {
+    if (shouldUsePipelineEligibility.value) {
       void loadEligibility()
+    } else if (shouldUseMembershipEligibility.value) {
+      await loadMembershipEligibility()
     } else {
       eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
       await loadActiveOrder()
@@ -314,7 +322,7 @@ function buildSelectedExemptionsJson() {
     })
     .filter((stage) => stage.exempted_unit_cc_ulids.length > 0)
 
-  if (!props.pipelineId) {
+  if (!shouldUsePipelineEligibility.value) {
     return JSON.stringify({})
   }
   return JSON.stringify({
@@ -322,6 +330,58 @@ function buildSelectedExemptionsJson() {
       stages
     }
   })
+}
+
+function isActiveMembershipStatus(status: unknown) {
+  return ["active", "membership_status_active"].includes(String(status || "").trim().toLowerCase())
+}
+
+function membershipRecords(payload: any) {
+  for (const key of ["user_memberships", "memberships", "records", "items", "history"]) {
+    if (Array.isArray(payload?.[key])) return payload[key]
+  }
+  return []
+}
+
+async function findActiveMembership() {
+  const membershipGpath = String(props.membershipGpath || "").trim()
+  const membershipId = String(props.membershipId || "").trim()
+  if (!membershipGpath && !membershipId) return null
+  const history = await apiClient("/api/membership/history?page=1&page_size=50", { suppressErrorToast: true })
+  const matchingActive = membershipRecords(history).find((record: any) =>
+    isActiveMembershipStatus(record?.status) &&
+    ((membershipGpath && String(record?.membership_gpath || "").trim() === membershipGpath) ||
+      (membershipId && String(record?.membership_ulid || "").trim() === membershipId)),
+  )
+  if (!matchingActive) return null
+  if (!membershipGpath) return matchingActive
+  const active = await apiClient(`/api/membership/active?membership_gpath=${encodeURIComponent(membershipGpath)}`, { suppressErrorToast: true })
+  return active?.membership || matchingActive
+}
+
+async function loadMembershipEligibility() {
+  eligibilityLoading.value = true
+  activeOrder.value = null
+  paymentPreview.value = null
+  previewError.value = ""
+  previewedExemptionSignature.value = ""
+  activePaymentSession.value = null
+  resetExemptionSelection()
+  try {
+    const activeMembership = await findActiveMembership()
+    eligibility.value = activeMembership
+      ? { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: "ALREADY_PURCHASED", description: copy.value.alreadyPurchased }] }
+      : { can_purchase: true, can_unlock: false, blockers: [] }
+    if (!activeMembership) {
+      await loadActiveOrder()
+    }
+  } catch (error) {
+    console.error(error)
+    eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
+    await loadActiveOrder()
+  } finally {
+    eligibilityLoading.value = false
+  }
 }
 
 function orderIdFromDetail(order: any) {
@@ -343,7 +403,11 @@ async function latestCredentialApplication(qualId: string) {
 }
 
 async function loadEligibility() {
-  if (!props.pipelineId) {
+  if (!shouldUsePipelineEligibility.value) {
+    if (shouldUseMembershipEligibility.value) {
+      await loadMembershipEligibility()
+      return
+    }
     eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
     await loadActiveOrder()
     return
@@ -371,7 +435,19 @@ async function loadEligibility() {
   }
 }
 
+async function refreshEligibility() {
+  if (shouldUseMembershipEligibility.value) {
+    await loadMembershipEligibility()
+    return
+  }
+  await loadEligibility()
+}
+
 async function loadExemptionOptions() {
+  if (!shouldUsePipelineEligibility.value) {
+    resetExemptionSelection()
+    return
+  }
   exemptionLoading.value = true
   exemptionError.value = ""
   try {
@@ -452,10 +528,17 @@ async function createBundlePurchaseOrder(bundleOrderUlid = "") {
 async function createPurchaseOrder() {
   actionLoading.value = true
   try {
-    if (props.pipelineId) {
+    if (shouldUsePipelineEligibility.value) {
       const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
       eligibility.value = latest
       if (!latest.can_purchase) return
+    } else if (shouldUseMembershipEligibility.value) {
+      const activeMembership = await findActiveMembership()
+      if (activeMembership) {
+        eligibility.value = { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: "ALREADY_PURCHASED", description: copy.value.alreadyPurchased }] }
+        return
+      }
+      eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
     } else {
       if (!eligibility.value?.can_purchase) return
     }
@@ -506,7 +589,7 @@ async function refreshPurchaseOrderPreview() {
 async function createUnlockOrder() {
   actionLoading.value = true
   try {
-    if (props.pipelineId) {
+    if (shouldUsePipelineEligibility.value) {
       const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
       eligibility.value = latest
       if (!latest.can_unlock) return
@@ -553,7 +636,7 @@ async function createUnlockOrder() {
 
 async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: ExemptionQual) {
   const qualId = String(qual.qual_id || "").trim()
-  if (!props.pipelineId || !resolvedBundleId.value || !qualId) return
+  if (!shouldUsePipelineEligibility.value || !props.pipelineId || !resolvedBundleId.value || !qualId) return
   const loadingKey = applicationLoadingKey(unit, qual)
   credentialApplicationLoadingKey.value = loadingKey
   activePaymentSession.value = null
@@ -915,7 +998,7 @@ async function initiatePayment() {
 
       <div class="shrink-0 flex items-center justify-end gap-3 border-t border-border bg-muted/30 px-6 py-4">
         <button class="btn btn-outline" @click="close">{{ t.common.cancel }}</button>
-        <button v-if="cannotContinue" class="btn btn-outline" :disabled="eligibilityLoading" @click="loadEligibility">
+        <button v-if="cannotContinue" class="btn btn-outline" :disabled="eligibilityLoading" @click="refreshEligibility">
           <Loader2 v-if="eligibilityLoading" class="h-4 w-4 animate-spin" />
           {{ copy.refreshEligibility }}
         </button>
