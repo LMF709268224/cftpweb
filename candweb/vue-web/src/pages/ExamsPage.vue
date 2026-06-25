@@ -9,6 +9,7 @@ import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
+import { usePolling } from "@/lib/polling"
 
 type TabId = "current" | "history" | "exemption" | "records"
 
@@ -193,27 +194,27 @@ function examStatusBadgeClass(status?: string | number | null) {
   return statusBadgeClassForStatusValue(status)
 }
 
-async function loadExams(tab: TabId = activeTab.value, keyword = search.value) {
+async function loadExams(tab: TabId = activeTab.value, keyword = search.value, showLoading = true, suppressErrorToast = false) {
   if (tab === "exemption" || tab === "records") {
     exams.value = []
     total.value = 0
     return
   }
-  loading.value = true
+  if (showLoading) loading.value = true
   try {
     const params = new URLSearchParams()
     params.set("page", "1")
     params.set("page_size", "50")
     if (tab === "history") params.set("result_status", "DONE")
     if (keyword.trim()) params.set("confirmation_number", keyword.trim())
-    const res = await apiClient(`/api/exams?${params.toString()}`)
+    const res = await apiClient(`/api/exams?${params.toString()}`, { suppressErrorToast })
     exams.value = res?.exams || []
     total.value = res?.total || 0
   } catch {
     exams.value = []
     total.value = 0
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
@@ -286,9 +287,16 @@ async function handleApplyRetake(exam: any) {
 watch(activeTab, (tab) => {
   void loadExams(tab, search.value)
 })
+
+const examsPolling = usePolling(
+  () => loadExams(activeTab.value, search.value, false, true),
+  { shouldPoll: () => activeTab.value === "current" || activeTab.value === "history" },
+)
+
 onMounted(() => {
   if (route.query.schedule_return === "1") toast.success(t.value.examsPage.scheduleReturnToast)
   void loadExams()
+  examsPolling.start()
 })
 </script>
 

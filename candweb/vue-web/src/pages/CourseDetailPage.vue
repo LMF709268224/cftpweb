@@ -26,6 +26,7 @@ import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
+import { usePolling } from "@/lib/polling"
 
 type PipelineDetail = {
   config?: PipelineConfig
@@ -344,17 +345,17 @@ function nextStepDescription() {
   }
 }
 
-async function loadDetail() {
+async function loadDetail(showLoading = true, suppressErrorToast = false) {
   if (!pipelineId.value) {
     detail.value = null
-    loading.value = false
+    if (showLoading) loading.value = false
     return
   }
-  loading.value = true
+  if (showLoading) loading.value = true
   try {
-    detail.value = await apiClient(`/api/mall/pipelines/${pipelineId.value}/runtime`)
+    detail.value = await apiClient(`/api/mall/pipelines/${pipelineId.value}/runtime`, { suppressErrorToast })
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
@@ -576,8 +577,16 @@ async function handleFinalQualificationApplication() {
   }
 }
 
-onMounted(loadDetail)
-watch(pipelineId, loadDetail)
+const detailPolling = usePolling(
+  () => loadDetail(false, true),
+  { shouldPoll: () => Boolean(pipelineId.value && purchased.value && !isPipelineTerminal.value) },
+)
+
+onMounted(() => {
+  void loadDetail()
+  detailPolling.start()
+})
+watch(pipelineId, () => void loadDetail())
 watch([stages, purchased], () => void loadCourseSummaries(), { deep: true })
 watch(finalQualificationIds, () => void loadCredentialDefinitions(), { deep: true, immediate: true })
 watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })

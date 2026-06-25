@@ -9,6 +9,7 @@ import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateMinute } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
+import { usePolling } from "@/lib/polling"
 
 type OrderStatus = keyof typeof statusConfig
 
@@ -216,8 +217,8 @@ function orderStatusFilterLabel(status?: string) {
   }
 }
 
-async function fetchOrders() {
-  loading.value = true
+async function fetchOrders(showLoading = true, suppressErrorToast = false) {
+  if (showLoading) loading.value = true
   try {
     const params = new URLSearchParams({
       page: String(page.value),
@@ -225,7 +226,7 @@ async function fetchOrders() {
     })
     if (selectedBizType.value) params.set("biz_type", selectedBizType.value)
     if (selectedOrderStatus.value) params.set("status", selectedOrderStatus.value)
-    const res = await apiClient(`/api/orders?${params.toString()}`)
+    const res = await apiClient(`/api/orders?${params.toString()}`, { suppressErrorToast })
     totalSpent.value = Number(res.total_amount || 0)
     completedCount.value = Number(res.completed || 0)
     totalOrders.value = Number(res.total_orders || 0)
@@ -255,7 +256,7 @@ async function fetchOrders() {
     totalOrders.value = 0
     totalPages.value = 0
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
@@ -278,8 +279,11 @@ function goToPage(nextPage: number) {
   void fetchOrders()
 }
 
+const ordersPolling = usePolling(() => fetchOrders(false, true))
+
 onMounted(() => {
   void fetchOrders()
+  ordersPolling.start()
 })
 </script>
 

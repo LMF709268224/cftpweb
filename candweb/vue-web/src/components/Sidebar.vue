@@ -4,10 +4,11 @@ import { RouterLink, useRoute } from "vue-router"
 import { Award, ChevronUp, ClipboardList, Crown, FileCheck2, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
-import { getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
+import { fetchUnreadCount, getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 import { initializeSidebarCollapse, useSidebarCollapse } from "@/lib/sidebar"
 import { useUser } from "@/lib/user"
+import { usePolling } from "@/lib/polling"
 import brandLogo from "@/assets/favicon.png"
 
 const { t, lang, changeLanguage } = useTranslation()
@@ -97,6 +98,10 @@ function openMobileSidebar() {
   mobileMenuOpen.value = true
 }
 
+const unreadCountPolling = usePolling(async () => {
+  unreadCount.value = await fetchUnreadCount(true)
+})
+
 onMounted(async () => {
   initializeSidebarCollapse()
   updateName()
@@ -112,6 +117,7 @@ onMounted(async () => {
   } catch {
     // Sidebar should never block page rendering.
   }
+  unreadCountPolling.start()
 })
 
 onBeforeUnmount(() => {

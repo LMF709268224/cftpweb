@@ -44,6 +44,13 @@ export async function getCachedUnreadCount() {
   return unreadCountPromise
 }
 
+export async function fetchUnreadCount(suppressErrorToast = false) {
+  const payload = await apiClient("/api/messages/unread-count", { suppressErrorToast })
+  const value = Number(payload?.unread_count || 0)
+  setCachedUnreadCount(value)
+  return value
+}
+
 export function setCachedUnreadCount(value: number) {
   const normalized = Math.max(0, Number.isFinite(value) ? Math.trunc(value) : 0)
   writeCachedUnreadCount(normalized)

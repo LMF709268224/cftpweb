@@ -7,6 +7,7 @@ import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
 import { setCachedUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
+import { usePolling } from "@/lib/polling"
 
 type Message = { id: string; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean }
 
@@ -174,10 +175,10 @@ function formatPayloadSummary(payload: unknown) {
   }
 }
 
-async function fetchMessages() {
-  loading.value = true
+async function fetchMessages(showLoading = true, suppressErrorToast = false) {
+  if (showLoading) loading.value = true
   try {
-    const res = await apiClient("/api/messages?limit=50")
+    const res = await apiClient("/api/messages?limit=50", { suppressErrorToast })
     if (res?.messages) {
       messageList.value = res.messages.map((m: any) => {
         let type = "system"
@@ -217,7 +218,7 @@ async function fetchMessages() {
   } catch (e) {
     console.error(e)
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
 }
 
@@ -292,7 +293,15 @@ async function handleViewDetail(message: Message) {
   }
 }
 
-onMounted(fetchMessages)
+const messagesPolling = usePolling(
+  () => fetchMessages(false, true),
+  { shouldPoll: () => !detailModalOpen.value && !markAllLoading.value && !messageActionLoadingId.value && !detailLoadingId.value },
+)
+
+onMounted(() => {
+  void fetchMessages()
+  messagesPolling.start()
+})
 </script>
 
 <template>

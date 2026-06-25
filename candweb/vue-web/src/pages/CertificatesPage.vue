@@ -7,6 +7,7 @@ import rewGif from "@/assets/rew.gif"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
+import { usePolling } from "@/lib/polling"
 
 const { t } = useTranslation()
 const certificates = ref<any[]>([])
@@ -141,36 +142,40 @@ async function shareFeaturedCertificate() {
   window.open(linkedInUrl, "_blank", "noopener,noreferrer")
 }
 
-onMounted(async () => {
-  loading.value = true
-  try {
-    const res = await apiClient("/api/certificates")
-    if (res?.certificates) {
-      certificates.value = res.certificates
-        .map((cert: any) => ({
-          id: cert.cred_id || cert.catalog_id,
-          credGuid: cert.cred_guid || "",
-          createdAt: cert.created_at || "",
-          createdAtMs: cert.created_at ? new Date(cert.created_at).getTime() : 0,
-          validUntil: cert.valid_until || "",
-          validUntilMs: cert.valid_until ? new Date(cert.valid_until).getTime() : 0,
-          name: cert.name,
-          description: cert.description || "",
-          issueDate: cert.created_at ? formatBackendDateOnly(cert.created_at) : t.value.common.na,
-          expiryDate: cert.valid_until ? formatBackendDateOnly(cert.valid_until) : t.value.common.permanent,
-          credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
-          source: cert.source || "",
-          pdfUrl:
-            cert.files?.find(
-              (f: any) => f.file_type === 2 || f.file_ext === ".pdf" || f.file_ext === "pdf" || f.file_name?.endsWith(".pdf"),
-            )?.view_url || "",
-        }))
-        .sort((a: any, b: any) => {
-          if (b.createdAtMs !== a.createdAtMs) return b.createdAtMs - a.createdAtMs
-          return b.validUntilMs - a.validUntilMs
-        })
+function normalizeCertificates(list: any[]) {
+  return list
+    .map((cert: any) => ({
+      id: cert.cred_id || cert.catalog_id,
+      credGuid: cert.cred_guid || "",
+      createdAt: cert.created_at || "",
+      createdAtMs: cert.created_at ? new Date(cert.created_at).getTime() : 0,
+      validUntil: cert.valid_until || "",
+      validUntilMs: cert.valid_until ? new Date(cert.valid_until).getTime() : 0,
+      name: cert.name,
+      description: cert.description || "",
+      issueDate: cert.created_at ? formatBackendDateOnly(cert.created_at) : t.value.common.na,
+      expiryDate: cert.valid_until ? formatBackendDateOnly(cert.valid_until) : t.value.common.permanent,
+      credentialId: cert.cred_guid || cert.cred_id || t.value.common.na,
+      source: cert.source || "",
+      pdfUrl:
+        cert.files?.find(
+          (f: any) => f.file_type === 2 || f.file_ext === ".pdf" || f.file_ext === "pdf" || f.file_name?.endsWith(".pdf"),
+        )?.view_url || "",
+    }))
+    .sort((a: any, b: any) => {
+      if (b.createdAtMs !== a.createdAtMs) return b.createdAtMs - a.createdAtMs
+      return b.validUntilMs - a.validUntilMs
+    })
+}
 
-      if (certificates.value.length) {
+async function loadCertificates(showLoading = true, showCelebration = false, suppressErrorToast = false) {
+  if (showLoading) loading.value = true
+  try {
+    const res = await apiClient("/api/certificates", { suppressErrorToast })
+    if (res?.certificates) {
+      certificates.value = normalizeCertificates(res.certificates)
+
+      if (showCelebration && certificates.value.length) {
         try {
           const latestCertificateKey = getCelebrationCertificateKey(certificates.value[0])
           const storedIds = JSON.parse(window.localStorage.getItem(CERTIFICATE_CELEBRATED_IDS_KEY) || "[]") as string[]
@@ -184,8 +189,15 @@ onMounted(async () => {
   } catch (e) {
     console.error(e)
   } finally {
-    loading.value = false
+    if (showLoading) loading.value = false
   }
+}
+
+const certificatesPolling = usePolling(() => loadCertificates(false, false, true))
+
+onMounted(async () => {
+  await loadCertificates(true, true)
+  certificatesPolling.start()
 })
 </script>
 

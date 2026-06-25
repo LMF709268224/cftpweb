@@ -39,6 +39,7 @@ import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { formatBackendDate, formatBackendDateOnly } from "@/lib/utils"
+import { usePolling } from "@/lib/polling"
 import {
   normalizeSupplementaryMaterials,
   parseSupplementaryMaterialItems,
@@ -1158,19 +1159,19 @@ async function loadProgress() {
   }
 }
 
-async function loadRuntime() {
+async function loadRuntime(suppressErrorToast = false) {
   if (!pipelineId.value) {
     runtime.value = null
     return
   }
   try {
-    runtime.value = await apiClient(`/api/mall/pipelines/${pipelineId.value}/runtime`)
+    runtime.value = await apiClient(`/api/mall/pipelines/${pipelineId.value}/runtime`, { suppressErrorToast })
   } catch {
     runtime.value = null
   }
 }
 
-async function loadCourseExams(showLoading = true) {
+async function loadCourseExams(showLoading = true, suppressErrorToast = false) {
   if (!hasExamTab.value) {
     courseExams.value = []
     courseExamsLoaded.value = false
@@ -1190,7 +1191,7 @@ async function loadCourseExams(showLoading = true) {
       page_size: "20",
       course_unit_ulid: courseRuntimeUnitUlid.value,
     })
-    const res = await apiClient(`/api/exams?${params.toString()}`)
+    const res = await apiClient(`/api/exams?${params.toString()}`, { suppressErrorToast })
     courseExams.value = res?.exams || []
   } catch {
     courseExams.value = []
@@ -1200,7 +1201,7 @@ async function loadCourseExams(showLoading = true) {
   }
 }
 
-async function loadCourseCertificate(showLoading = true) {
+async function loadCourseCertificate(showLoading = true, suppressErrorToast = true) {
   if (!hasCertificateTab.value || finalQualificationRequired.value || !runtime.value?.instance?.pipeline_ulid) {
     courseCertificateUrl.value = ""
     courseCertificateError.value = ""
@@ -1211,7 +1212,7 @@ async function loadCourseCertificate(showLoading = true) {
   courseCertificateError.value = ""
   try {
     const res = await apiClient(`/api/pipeline/${encodeURIComponent(runtime.value.instance.pipeline_ulid)}/certificate-url`, {
-      suppressErrorToast: true,
+      suppressErrorToast,
     })
     courseCertificateUrl.value = res?.view_url || ""
     if (!courseCertificateUrl.value) courseCertificateError.value = t.value.certificatesPage.certificateGenerating
@@ -1503,6 +1504,14 @@ function nextStepLink() {
   return "/exams"
 }
 
+const courseStatusPolling = usePolling(
+  async () => {
+    await loadRuntime(true)
+    if (activeContentTab.value === "exam") await loadCourseExams(false, true)
+  },
+  { shouldPoll: () => Boolean(pipelineId.value && courseId.value && !isPipelineTerminal.value) },
+)
+
 onMounted(async () => {
   initializing.value = true
   try {
@@ -1516,6 +1525,7 @@ onMounted(async () => {
   } finally {
     initializing.value = false
   }
+  courseStatusPolling.start()
 })
 
 watch(courseId, async () => {
@@ -1533,7 +1543,7 @@ watch(courseId, async () => {
   }
 })
 
-watch(pipelineId, loadRuntime)
+watch(pipelineId, () => void loadRuntime())
 watch(activeContentTab, async (tab) => {
   if (tab === "exam") await loadCourseExams()
   if (tab === "certificate") await loadCourseCertificate()
