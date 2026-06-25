@@ -9,7 +9,12 @@ import { Button } from "@/components/ui/button"
 import { ShoppingCart, RefreshCw, Search, Trash2 } from "lucide-react"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/useLanguage"
-import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
+import {
+  MALL_ORDER_STATUS_LABELS,
+  PAYMENT_STATUS_LABELS,
+  statusBadgeClassForStatusValue,
+  statusLabel,
+} from "@/lib/status-labels"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
@@ -28,17 +33,34 @@ const BIZ_TYPE_OPTIONS: LabelOption[] = [
 
 const ORDER_STATUS_OPTIONS: LabelOption[] = [
   { value: "PENDING", zh: "\u5f85\u5904\u7406", en: "Pending" },
+  { value: "WAIT_PIPELINE_PAYMENT", zh: "\u7b49\u5f85\u7ba1\u7ebf\u652f\u4ed8", en: "Waiting Pipeline Payment" },
+  { value: "WAIT_PIPELINE_INSTANTIATE", zh: "\u7ba1\u7ebf\u521b\u5efa\u4e2d", en: "Instantiating Pipeline" },
+  { value: "WAIT_EXEMPTION_SELECTION", zh: "\u7b49\u5f85\u9009\u62e9\u514d\u8003", en: "Waiting Exemption Selection" },
+  { value: "WAIT_EXEMPTION_REVIEW", zh: "\u7b49\u5f85\u514d\u8003\u5ba1\u6838", en: "Waiting Exemption Review" },
+  { value: "WAIT_STAGE_PAYMENT", zh: "\u7b49\u5f85\u9636\u6bb5\u652f\u4ed8", en: "Waiting Stage Payment" },
+  { value: "WAIT_REVIEW_FEE_PAYMENT", zh: "\u7b49\u5f85\u5ba1\u6838\u8d39\u652f\u4ed8", en: "Waiting Review Fee Payment" },
+  { value: "WAIT_RETAKE_PAYMENT", zh: "\u7b49\u5f85\u91cd\u8003\u652f\u4ed8", en: "Waiting Retake Payment" },
+  { value: "WAIT_UNLOCK_PAYMENT", zh: "\u7b49\u5f85\u89e3\u9501\u652f\u4ed8", en: "Waiting Unlock Payment" },
   { value: "WAIT_BUNDLE_PAYMENT", zh: "\u5f85\u652f\u4ed8", en: "Waiting Payment" },
+  { value: "WAIT_PAYMENT", zh: "\u5f85\u652f\u4ed8", en: "Waiting Payment" },
+  { value: "UPLOAD_READY", zh: "\u53ef\u4e0a\u4f20\u6750\u6599", en: "Upload Ready" },
+  { value: "UNDER_REVIEW", zh: "\u5ba1\u6838\u4e2d", en: "Under Review" },
+  { value: "RESOLVED", zh: "\u5df2\u5b8c\u6210", en: "Resolved" },
+  { value: "PAID", zh: "\u5df2\u652f\u4ed8", en: "Paid" },
   { value: "COMPLETED", zh: "\u5df2\u5b8c\u6210", en: "Completed" },
   { value: "CANCELLED", zh: "\u5df2\u53d6\u6d88", en: "Cancelled" },
   { value: "FAILED", zh: "\u5931\u8d25", en: "Failed" },
   { value: "EXPIRED", zh: "\u5df2\u8fc7\u671f", en: "Expired" },
+  { value: "PENDING_CREATE", zh: "\u7b49\u5f85\u521b\u5efa", en: "Pending Create" },
+  { value: "PENDING_PAYMENT", zh: "\u7b49\u5f85\u652f\u4ed8", en: "Pending Payment" },
 ]
 
 const PAYMENT_STATUS_OPTIONS: LabelOption[] = [
   { value: "WAIT_PAY", zh: "\u5f85\u652f\u4ed8", en: "Waiting Payment" },
+  { value: "WAIT_PAYMENT", zh: "\u5f85\u652f\u4ed8", en: "Waiting Payment" },
   { value: "UNPAID", zh: "\u5f85\u652f\u4ed8", en: "Unpaid" },
   { value: "PAID", zh: "\u5df2\u652f\u4ed8", en: "Paid" },
+  { value: "COMPLETED", zh: "\u5df2\u652f\u4ed8", en: "Paid" },
   { value: "FAILED", zh: "\u652f\u4ed8\u5931\u8d25", en: "Failed" },
   { value: "REFUNDED", zh: "\u5df2\u9000\u6b3e", en: "Refunded" },
   { value: "CANCELLED", zh: "\u5df2\u53d6\u6d88", en: "Cancelled" },
@@ -130,6 +152,16 @@ export default function AdminOrdersPage() {
   const [pageSize] = useState(20)
   const [totalCount, setTotalCount] = useState(0)
   const [purgingOrderUlid, setPurgingOrderUlid] = useState("")
+  const orderStatusLabel = (value: unknown) => {
+    const normalized = normalizeCode(value)
+    if (!normalized) return "-"
+    return statusLabel(t, MALL_ORDER_STATUS_LABELS, normalized, "common.unknown")
+  }
+  const paymentStatusLabel = (value: unknown) => {
+    const normalized = normalizeCode(value)
+    if (!normalized) return "-"
+    return statusLabel(t, PAYMENT_STATUS_LABELS, normalized, "common.na")
+  }
 
   const fetchOrders = async (targetPage = page) => {
     setLoading(true)
@@ -320,12 +352,12 @@ export default function AdminOrdersPage() {
                           <td className="px-4 py-3 font-medium">{getOrderAmount(order).toFixed(2)} {getCurrency(order)}</td>
                           <td className="px-4 py-3">
                             <Badge variant="outline" className={statusBadgeClassForStatusValue(orderStatusValue)}>
-                              {findLabel(ORDER_STATUS_OPTIONS, orderStatusValue, lang)}
+                              {orderStatusLabel(orderStatusValue)}
                             </Badge>
                           </td>
                           <td className="px-4 py-3">
                             <Badge variant="outline" className={statusBadgeClassForStatusValue(paymentStatusValue)}>
-                              {findLabel(PAYMENT_STATUS_OPTIONS, paymentStatusValue, lang)}
+                              {paymentStatusLabel(paymentStatusValue)}
                             </Badge>
                           </td>
                           <td className="px-4 py-3 text-xs">{formatOrderCreatedAt(order.created_at ?? order.createdAt)}</td>

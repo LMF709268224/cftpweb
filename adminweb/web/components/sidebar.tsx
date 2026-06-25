@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils"
 import { apiClient } from "@/lib/apiClient"
 import {
   BookOpen,
-  Crown,
   FileText,
   Award,
   LibraryBig,
@@ -47,7 +46,6 @@ export function Sidebar() {
     { href: "/pipelines", icon: BookOpen, label: t.sidebar.pipelines },
     { href: "/bundles", icon: Package, label: t.sidebar.bundles },
     { href: "/prog", icon: GitBranch, label: t.sidebar.prog },
-    { href: "/catalogs", icon: Crown, label: t.sidebar.catalogs },
     { href: "/messages", icon: MessageSquare, label: t.sidebar.messages },
     { href: "/mails", icon: Mail, label: t.sidebar.mails },
     { href: "/orders", icon: ShoppingCart, label: t.sidebar.orders },

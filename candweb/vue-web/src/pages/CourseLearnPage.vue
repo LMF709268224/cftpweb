@@ -326,6 +326,17 @@ const showCourseRuntimeUnitStatusBadge = computed(() => {
   return courseExamsLoaded.value && courseExams.value.length === 0
 })
 const courseRuntimeUnitUlid = computed(() => {
+  if (runtime.value?.config?.stages) {
+    for (const stage of runtime.value.config.stages) {
+      if (stage.units) {
+        for (const unit of stage.units) {
+          if (unit.glms_course_id === courseId.value && unit.course_unit_ulid) {
+            return unit.course_unit_ulid
+          }
+        }
+      }
+    }
+  }
   const nextCourseId = firstString(nextStep.value?.course_id, nextStep.value?.course_ulid, nextStep.value?.courseUlid)
   if (nextCourseId && nextCourseId !== courseId.value) return ""
   return nextStep.value?.course_unit_ulid || ""

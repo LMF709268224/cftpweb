@@ -238,6 +238,7 @@ func mergeRuntimeStatuses(config *PipelineConfig, runtime *gprog.GetPipelineDeta
 				continue
 			}
 			config.Stages[stageIndex].Units[unitIndex].RuntimeStatus = unit.GetStatus()
+			config.Stages[stageIndex].Units[unitIndex].CourseUnitUlid = unit.GetCourseUnitUlid()
 		}
 	}
 }

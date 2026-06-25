@@ -58,14 +58,6 @@ export default function HomePage() {
               description="Manage Course Outlines"
               href="/pipelines"
             />
-            <StatsCard
-              title={t.sidebar.catalogs}
-              value="..."
-              icon={BookOpen}
-              variant="success"
-              description="Manage Categories"
-              href="/catalogs"
-            />
           </div>
         </div>
       </main>

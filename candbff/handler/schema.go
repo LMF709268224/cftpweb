@@ -144,6 +144,7 @@ type UnitConfig struct {
 	ExamUlid                 string                 `json:"exam_id,omitempty"`
 	FormCode                 string                 `json:"form_code,omitempty"`
 	UnitUlid                 string                 `json:"unit_id,omitempty"`
+	CourseUnitUlid           string                 `json:"course_unit_ulid,omitempty"` // 单元实例ID (在runtime合并时注入)
 	Name                     string                 `json:"name,omitempty"`
 	HasLearning              bool                   `json:"has_learning,omitempty"`
 	HasExam                  bool                   `json:"has_exam,omitempty"`
