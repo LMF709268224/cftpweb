@@ -7,6 +7,8 @@ import CallbackPage from "@/pages/CallbackPage.vue"
 import CredentialsPage from "@/pages/CredentialsPage.vue"
 import InvoicesPage from "@/pages/InvoicesPage.vue"
 import LoginPage from "@/pages/LoginPage.vue"
+import MailsPage from "@/pages/MailsPage.vue"
+import MessagesPage from "@/pages/MessagesPage.vue"
 import OrdersPage from "@/pages/OrdersPage.vue"
 import PdfRequestsPage from "@/pages/PdfRequestsPage.vue"
 import PdfTemplatesPage from "@/pages/PdfTemplatesPage.vue"
@@ -73,7 +75,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/messages",
     name: "messages",
-    component: ResourcePage,
+    component: MessagesPage,
     meta: {
       title: "站内信",
       subtitle: "查看和管理站内通知",
@@ -84,7 +86,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/mails",
     name: "mails",
-    component: ResourcePage,
+    component: MailsPage,
     meta: {
       title: "邮件中心",
       subtitle: "查看邮件模板和投递记录",
