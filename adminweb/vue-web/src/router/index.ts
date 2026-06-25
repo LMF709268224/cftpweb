@@ -16,6 +16,7 @@ import PdfTemplatesPage from "@/pages/PdfTemplatesPage.vue"
 import PermissionsPage from "@/pages/PermissionsPage.vue"
 import PipelinesPage from "@/pages/PipelinesPage.vue"
 import ProgPage from "@/pages/ProgPage.vue"
+import SettingsPage from "@/pages/SettingsPage.vue"
 import WebhookAuditPage from "@/pages/WebhookAuditPage.vue"
 
 export type ResourceRouteMeta = {
@@ -183,6 +184,17 @@ export const resourceRoutes: RouteRecordRaw[] = [
       subtitle: "查看和调整考生访问权限",
       endpoint: "/api/permissions",
       itemKeys: ["permissions", "items"],
+    } satisfies ResourceRouteMeta,
+  },
+  {
+    path: "/settings",
+    name: "settings",
+    component: SettingsPage,
+    meta: {
+      title: "账户设置",
+      subtitle: "维护管理员个人资料和登录密码",
+      endpoint: "/api/user/me",
+      itemKeys: [],
     } satisfies ResourceRouteMeta,
   },
 ]

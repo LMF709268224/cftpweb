@@ -12,6 +12,7 @@ import {
   Mail,
   MessageSquare,
   Receipt,
+  Settings,
   ShieldCheck,
   Webhook,
 } from "lucide-vue-next"
@@ -40,6 +41,7 @@ const navItems = [
   { path: "/pdf-requests", label: "证书生成流水", icon: FileBadge },
   { path: "/audit/webhooks", label: "Webhook 审计", icon: Webhook },
   { path: "/permissions", label: "考生权限管理", icon: GraduationCap },
+  { path: "/settings", label: "账户设置", icon: Settings },
 ]
 
 const userName = computed(() => getUserName())
