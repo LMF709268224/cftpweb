@@ -12,6 +12,7 @@ import PdfRequestsPage from "@/pages/PdfRequestsPage.vue"
 import PdfTemplatesPage from "@/pages/PdfTemplatesPage.vue"
 import PermissionsPage from "@/pages/PermissionsPage.vue"
 import PipelinesPage from "@/pages/PipelinesPage.vue"
+import ProgPage from "@/pages/ProgPage.vue"
 import ResourcePage from "@/pages/ResourcePage.vue"
 import WebhookAuditPage from "@/pages/WebhookAuditPage.vue"
 
@@ -61,7 +62,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/prog",
     name: "prog",
-    component: ResourcePage,
+    component: ProgPage,
     meta: {
       title: "管线管理",
       subtitle: "查看考生正在运行的管线实例和状态流转",
