@@ -77,7 +77,7 @@ function formatDate(value: unknown) {
 
 function formatMoney(amount: unknown, currency = "USD") {
   const value = Number(amount || 0)
-  if (!value) return "-"
+  if (Number.isNaN(value)) return "-"
   return `${currency} ${(value / 100).toFixed(2)}`
 }
 
@@ -110,9 +110,15 @@ function parseFeatures(plan: RecordData) {
   if (!raw) return []
   try {
     const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed.map((item) => String(item))
-    if (Array.isArray(parsed.features)) return parsed.features.map((item: unknown) => String(item))
-    if (typeof parsed === "object") return Object.entries(parsed).map(([key, value]) => `${key}: ${String(value)}`)
+    const extractText = (item: any): string => {
+      if (typeof item === "string") return item
+      if (!item) return ""
+      if (typeof item === "object") return String(item.title || item.name || item.text || item.label || item.desc || item.description || JSON.stringify(item))
+      return String(item)
+    }
+    if (Array.isArray(parsed)) return parsed.map(extractText)
+    if (Array.isArray(parsed.features)) return parsed.features.map(extractText)
+    if (typeof parsed === "object") return Object.entries(parsed).map(([key, value]) => `${key}: ${extractText(value)}`)
   } catch {
     return raw.split(/\r?\n|[,;；，]/).map((item) => item.trim()).filter(Boolean)
   }
