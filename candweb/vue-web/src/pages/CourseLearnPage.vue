@@ -522,7 +522,7 @@ const quizStepDone = computed(() => quizTasks.value.length > 0 && completedQuizT
 const examStepDone = computed(() => {
   if (nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value)) return true
   if (normalizeEnumValueUpper(courseRuntimeUnitStatus.value).includes("COMPLETED")) return true
-  return courseExams.value.some((exam) => hasExamResult(exam) && exam?.is_passed === true)
+  return courseExams.value.some((exam) => hasExamResult(exam) && passStatusValue(exam) === true)
 })
 const certificateStepDone = computed(() => Boolean(courseCertificateUrl.value) || nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value))
 const currentCertificationStepId = computed<CertificationStepKey>(() => {
@@ -903,16 +903,32 @@ function shouldShowStoredExamDetails(exam: any) {
 function hasExamResult(exam: any) {
   if (isCurrentExamRestarted(exam)) return false
   const normalized = normalizedExamStatus(exam?.result_status)
-  return typeof exam?.total_score === "number" || typeof exam?.is_passed === "boolean" || ["DONE", "PASSED", "FAILED", "NO_SHOW", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
+  return typeof exam?.total_score === "number" || passStatusValue(exam) !== null || ["DONE", "PASSED", "FAILED", "NO_SHOW", "RESULT_STATUS_PASSED", "RESULT_STATUS_FAILED"].includes(normalized)
+}
+
+function passStatusValue(exam: any) {
+  if (isCurrentExamRestarted(exam)) return null
+  if (typeof exam?.total_score === "number" && exam.total_score < 60) return false
+  const value = exam?.is_passed
+  if (typeof value === "boolean") return value
+  if (typeof value === "number" && (value === 0 || value === 1)) return value === 1
+  if (typeof value === "string") {
+    const normalizedValue = value.trim().toLowerCase()
+    if (["true", "1", "yes", "pass", "passed"].includes(normalizedValue)) return true
+    if (["false", "0", "no", "fail", "failed"].includes(normalizedValue)) return false
+  }
+  const normalizedResultStatus = normalizedExamStatus(exam?.result_status)
+  if (normalizedResultStatus.includes("FAILED") || normalizedResultStatus === "NO_SHOW") return false
+  if (normalizedResultStatus.includes("PASSED")) return true
+  return null
 }
 
 function hasExplicitPassStatus(exam: any) {
-  if (isCurrentExamRestarted(exam)) return false
-  return typeof exam?.is_passed === "boolean"
+  return passStatusValue(exam) !== null
 }
 
 function shouldShowPrimaryExamStatusBadge(exam: any) {
-  return shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam?.exam_status) && !hasExplicitPassStatus(exam)
+  return shouldShowStoredExamDetails(exam) && shouldShowExamStatus(exam?.exam_status) && !hasExamResult(exam) && !hasExplicitPassStatus(exam)
 }
 
 function hasText(value?: string | null) {
@@ -1026,7 +1042,7 @@ function scheduleSyncPendingDesc() {
 }
 
 function passStatusLabel(exam: any) {
-  return exam.is_passed ? (t.value.examsPage as any).statusQualified || t.value.examsPage.statusPassed : (t.value.examsPage as any).statusUnqualified || t.value.examsPage.statusFailed
+  return passStatusValue(exam) === true ? (t.value.examsPage as any).statusQualified || t.value.examsPage.statusPassed : (t.value.examsPage as any).statusUnqualified || t.value.examsPage.statusFailed
 }
 
 function examStatusBadgeClass(status?: string | number | null) {
@@ -1775,8 +1791,8 @@ watch(selectedMaterial, () => {
                       <span v-else-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
                       <span v-else-if="shouldShowNoResultBadge(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
                     </template>
-                    <span v-if="!isExamFailedUnit(exam) && hasExplicitPassStatus(exam)" :class="['badge gap-1', exam.is_passed ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
-                      <CheckCircle2 v-if="exam.is_passed" class="h-3 w-3" />
+                    <span v-if="!isExamFailedUnit(exam) && hasExplicitPassStatus(exam)" :class="['badge gap-1', passStatusValue(exam) === true ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
+                      <CheckCircle2 v-if="passStatusValue(exam) === true" class="h-3 w-3" />
                       {{ passStatusLabel(exam) }}
                     </span>
                   </div>
