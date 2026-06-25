@@ -732,6 +732,7 @@ type CertificateInfo struct {
 	AuditRemark   string                  `json:"audit_remark,omitempty"` // 审核备注 [optional]
 	ValidUntil    string                  `json:"valid_until,omitempty"`  // 有效期 RFC3339 格式字符串 [optional]
 	CreatedAt     string                  `json:"created_at,omitempty"`   // 创建时间 RFC3339 格式字符串 [optional]
+	Source        string                  `json:"source,omitempty"`       // 证书来源
 }
 
 type CertificateItem struct {

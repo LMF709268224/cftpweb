@@ -45,6 +45,7 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 		item.AuditRemark = cred.GetAuditRemark()
 		item.ValidUntil = cred.GetValidUntil()
 		item.CreatedAt = cred.GetCreatedAt()
+		item.Source = cred.GetSource()
 		if detailResp, err := h.Creds.GetCredentialDetail(r.Context(), &gcredspb.GetCredentialDetailRequest{
 			CredUlid: item.CredUlid,
 		}); err == nil {

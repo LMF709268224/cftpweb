@@ -492,6 +492,7 @@ type CertificateInfo struct {
 	AuditRemark   string                  `json:"audit_remark,omitempty"` // 瀹℃牳澶囨敞 [optional]
 	ValidUntil    string                  `json:"valid_until,omitempty"`  // 鏈夋晥鏈?RFC3339 鏍煎紡瀛楃涓?[optional]
 	CreatedAt     string                  `json:"created_at,omitempty"`   // 鍒涘缓鏃堕棿 RFC3339 鏍煎紡瀛楃涓?[optional]
+	Source        string                  `json:"source,omitempty"`       // 璇佷功鏉ユ簮
 }
 
 type CertificateItem struct {
