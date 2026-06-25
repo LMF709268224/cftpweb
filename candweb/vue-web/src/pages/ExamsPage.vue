@@ -22,7 +22,6 @@ const retakeLoadingUnitId = ref<string | null>(null)
 const search = ref("")
 const exams = ref<any[]>([])
 const total = ref(0)
-const examSkeletonRows = [1]
 const retakePaymentSession = ref<{
   paymentKey?: string
   orderId?: string
@@ -340,33 +339,9 @@ onMounted(() => {
     </div>
 
     <div class="rounded-[16px] bg-white p-3 shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:p-4">
-      <div v-if="loading" class="space-y-4" role="status" :aria-label="t.common.loading" aria-live="polite">
-        <div class="flex items-center justify-between text-sm text-muted-foreground">
-          <div class="h-4 w-24 animate-pulse rounded-full bg-slate-100" />
-          <div class="h-4 w-28 animate-pulse rounded-full bg-slate-100" />
-        </div>
-        <div class="grid gap-3">
-          <div
-            v-for="row in examSkeletonRows"
-            :key="row"
-            class="relative overflow-hidden rounded-[14px] bg-white p-4 shadow-[0_8px_22px_rgba(15,74,82,0.05)] md:p-5"
-          >
-            <div class="absolute left-0 top-0 h-full w-1 bg-primary/30" />
-            <div class="grid animate-pulse gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <div class="min-w-0 space-y-3 pl-1">
-                <div class="flex flex-wrap gap-2">
-                  <div class="h-6 w-20 rounded-full bg-slate-100" />
-                </div>
-                <div class="h-6 w-40 max-w-full rounded-full bg-slate-100" />
-                <div class="grid gap-x-8 gap-y-2 sm:grid-cols-2 xl:grid-cols-[minmax(260px,auto)_minmax(220px,auto)]">
-                  <div class="h-4 w-56 max-w-full rounded-full bg-slate-100" />
-                  <div class="h-4 w-44 max-w-full rounded-full bg-slate-100" />
-                  <div class="h-4 w-52 max-w-full rounded-full bg-slate-100" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div v-if="loading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+        <Loader2 class="h-5 w-5 animate-spin" />
+        <span>{{ t.common.loading }}</span>
       </div>
       <div v-else-if="filtered.length === 0" class="flex flex-col items-center justify-center py-12 text-center">
         <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
