@@ -72,7 +72,6 @@ const myCertificationCopy = computed(() => lang.value === "zh"
 const tabs = computed(() => [
   { id: "all", label: t.value.courses.tabs.all },
   { id: "my", label: t.value.courses.tabs.my },
-  { id: "resources", label: t.value.courses.tabs.materials },
 ])
 
 const filteredCourses = computed(() => allCourses.value.filter((course) =>

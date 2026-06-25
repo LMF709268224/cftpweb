@@ -931,6 +931,19 @@ function shouldShowNoResultBadge(exam: any) {
   return !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam) && hasAppointmentEnded(exam)
 }
 
+function isExamCompletedWithoutResult(exam: any) {
+  if (hasExamResult(exam)) return false
+  const status = normalizedExamStatus(exam?.exam_status)
+  return status.includes("PASSED") || status.includes("DONE") || status.includes("COMPLETED")
+}
+
+function examStatusLabel(exam: any) {
+  if (isExamCompletedWithoutResult(exam)) {
+    return (t.value.examsPage as any).statusExamCompleted || t.value.examsPage.statusScheduled
+  }
+  return statusLabel(t.value, EXAM_STATUS_LABELS, normalizedExamStatus(exam?.exam_status))
+}
+
 function canScheduleExam(exam: any) {
   if (hasExamResult(exam) || isWaitingScheduleSync(exam)) return false
   const status = normalizedExamStatus(exam?.exam_status)
@@ -1741,7 +1754,7 @@ watch(selectedMaterial, () => {
                   <div class="flex flex-wrap items-center gap-2">
                     <span v-if="isExamFailedUnit(exam)" :class="['badge', statusBadgeClassForStatusValue('FAILED')]">{{ t.examsPage.examFailedTitle }}</span>
                     <template v-else>
-                      <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ statusLabel(t, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status)) }}</span>
+                      <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ examStatusLabel(exam) }}</span>
                       <span v-if="isWaitingScheduleSync(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ scheduleSyncPendingLabel() }}</span>
                       <span v-else-if="hasExamResult(exam)" :class="['badge', examStatusBadgeClass('DONE')]">{{ resultPublishedLabel() }}</span>
                       <span v-else-if="shouldShowNoResultBadge(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
