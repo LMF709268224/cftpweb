@@ -332,25 +332,29 @@ onMounted(() => {
           <h2 class="font-semibold text-card-foreground">{{ t.orders.orderHistory }}</h2>
         </div>
         <div class="flex flex-col gap-3 sm:items-end">
-          <div class="flex flex-wrap justify-end gap-2">
-            <button
-              v-for="option in orderTypeOptions"
-              :key="option.value || 'ALL_TYPES'"
-              :class="['rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors', selectedBizType === option.value ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/40 hover:text-primary']"
-              @click="changeOrderType(option.value)"
+          <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+            <label class="sr-only" for="order-type-filter">{{ lang === 'zh' ? '订单类型' : 'Order type' }}</label>
+            <select
+              id="order-type-filter"
+              :value="selectedBizType"
+              class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm outline-none transition-colors hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/15 sm:w-48"
+              @change="changeOrderType(($event.target as HTMLSelectElement).value)"
             >
-              {{ option.label }}
-            </button>
-          </div>
-          <div class="flex flex-wrap justify-end gap-2">
-            <button
-              v-for="option in orderStatusOptions"
-              :key="option.value || 'ALL_STATUSES'"
-              :class="['rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors', selectedOrderStatus === option.value ? 'border-amber-500 bg-amber-500 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-amber-400 hover:text-amber-700']"
-              @click="changeOrderStatus(option.value)"
+              <option v-for="option in orderTypeOptions" :key="option.value || 'ALL_TYPES'" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <label class="sr-only" for="order-status-filter">{{ lang === 'zh' ? '订单状态' : 'Order status' }}</label>
+            <select
+              id="order-status-filter"
+              :value="selectedOrderStatus"
+              class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm outline-none transition-colors hover:border-amber-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/15 sm:w-48"
+              @change="changeOrderStatus(($event.target as HTMLSelectElement).value)"
             >
-              {{ option.label }}
-            </button>
+              <option v-for="option in orderStatusOptions" :key="option.value || 'ALL_STATUSES'" :value="option.value">
+                {{ option.label }}
+              </option>
+            </select>
           </div>
           <div class="whitespace-nowrap text-sm text-muted-foreground">{{ orderRangeLabel }}</div>
         </div>
