@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"encoding/json"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -52,6 +54,10 @@ func (h *Handler) ListResourcePackFiles(w http.ResponseWriter, r *http.Request) 
 		HandleGrpcError(w, err)
 		return
 	}
+
+	b, _ := json.MarshalIndent(resp.GetFiles(), "", "  ")
+	slog.Info("ListResourcePackFiles returned", "pack_id", packID, "files", string(b))
+
 	WriteJSON(w, http.StatusOK, resp)
 }
 
@@ -205,3 +211,4 @@ func parseUint32Query(r *http.Request, key string) uint32 {
 	}
 	return uint32(value)
 }
+
