@@ -148,11 +148,7 @@ const selectedExemptionSignature = computed(() => Object.entries(selectedExempti
   .map(([unitId]) => unitId)
   .sort()
   .join("|"))
-const purchasePreviewStale = computed(() => Boolean(
-  activeOrder.value?.action === "purchase" &&
-  paymentPreview.value &&
-  selectedExemptionSignature.value !== previewedExemptionSignature.value
-))
+
 
 function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveOrder | null {
   const orderId = String(order?.order_id || order?.orderId || "").trim()
@@ -485,29 +481,7 @@ async function createPurchaseOrder() {
   }
 }
 
-async function refreshPurchaseOrderPreview() {
-  const currentOrder = activeOrder.value
-  if (!resolvedBundleId.value || currentOrder?.action !== "purchase") return
-  actionLoading.value = true
-  try {
-    const { orderId, orderStatus } = await createBundlePurchaseOrder(currentOrder.orderId)
-    if (isCompletedStatus(orderStatus)) {
-      toast.success(copy.value.purchaseCompleted)
-      close()
-      window.setTimeout(() => window.location.reload(), 800)
-      return
-    }
-    if (isFailedStatus(orderStatus)) {
-      toast.error(copy.value.purchaseFailed)
-      return
-    }
-    if (orderId && !paymentPreview.value) previewError.value = copy.value.pricePreviewFailed || t.value.common.error
-  } catch (error) {
-    console.error(error)
-  } finally {
-    actionLoading.value = false
-  }
-}
+
 
 async function createUnlockOrder() {
   actionLoading.value = true
@@ -820,10 +794,7 @@ async function initiatePayment() {
           <p class="mt-2">{{ previewError }}</p>
         </div>
 
-        <div v-if="purchasePreviewStale" class="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-          <div class="flex items-center gap-2 font-semibold"><AlertCircle class="h-4 w-4" />{{ copy.purchasePreviewStaleTitle }}</div>
-          <p class="mt-2">{{ copy.purchasePreviewStaleDesc }}</p>
-        </div>
+
 
         <div v-if="activePaymentSession" class="space-y-3">
           <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
@@ -902,11 +873,7 @@ async function initiatePayment() {
         <button v-if="activeOrder && previewError" class="btn btn-outline" :disabled="actionLoading" @click="refreshEligibility">
           {{ copy.retryPreview }}
         </button>
-        <button v-if="activeOrder?.action === 'purchase' && hasExemptionOptions && !activePaymentSession" class="btn btn-outline" :disabled="actionLoading" @click="refreshPurchaseOrderPreview">
-          <Loader2 v-if="actionLoading" class="h-4 w-4 animate-spin" />
-          {{ copy.refreshPurchasePreview }}
-        </button>
-        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-primary" :disabled="paymentLoading || purchasePreviewStale" @click="initiatePayment">
+        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-primary" :disabled="paymentLoading" @click="initiatePayment">
           <Loader2 v-if="paymentLoading" class="h-4 w-4 animate-spin" />
           <CreditCard v-else class="h-4 w-4" />
           {{ copy.payNow }}
