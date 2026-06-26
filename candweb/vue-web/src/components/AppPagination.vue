@@ -33,14 +33,18 @@ const menuStyle = ref<Record<string, string>>({})
 const labels = computed(() => {
   const zh = props.locale === "zh"
   return {
-    total: zh ? "Total" : "Total",
-    goTo: zh ? "Go to" : "Go to",
+    total: zh ? "共" : "Total",
+    goTo: zh ? "跳转到" : "Go to",
     pageSize: zh ? "每页条数" : "Page size",
     pageNumber: zh ? "页码" : "Page number",
     previous: zh ? "上一页" : "Previous page",
     next: zh ? "下一页" : "Next page",
   }
 })
+
+function pageSizeLabel(value: number) {
+  return props.locale === "zh" ? `${value}条/页` : `${value}/page`
+}
 
 const normalizedTotalPages = computed(() => {
   if (props.totalPages && props.totalPages > 0) return props.totalPages
@@ -68,6 +72,25 @@ const pageItems = computed<(number | "...")[]>(() => {
   items.push(total)
 
   return items
+})
+
+const mobilePageItems = computed<(number | "...")[]>(() => {
+  const total = normalizedTotalPages.value
+  const current = props.page
+
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, index) => index + 1)
+  }
+
+  if (current <= 3) {
+    return [1, 2, 3, "...", total]
+  }
+
+  if (current >= total - 2) {
+    return [1, "...", total - 2, total - 1, total]
+  }
+
+  return [1, "...", current, "...", total]
 })
 
 watch(() => props.page, (value) => {
@@ -167,7 +190,7 @@ function submitPageJump() {
           :aria-label="labels.pageSize"
           @click="togglePageMenu"
         >
-          <span>{{ pageSize }}/page</span>
+          <span>{{ pageSizeLabel(pageSize) }}</span>
           <ChevronDown class="h-4 w-4 transition-transform" :class="{ 'rotate-180': pageMenuOpen }" />
         </button>
         <div v-if="pageMenuOpen" class="page-size-menu" :class="`is-${menuPlacement}`" :style="menuStyle">
@@ -179,7 +202,7 @@ function submitPageJump() {
             :class="{ 'is-selected': option === pageSize }"
             @click="changePageSize(option)"
           >
-            {{ option }}/page
+            {{ pageSizeLabel(option) }}
           </button>
         </div>
       </div>
@@ -195,12 +218,25 @@ function submitPageJump() {
       >
         <ChevronLeft class="h-4 w-4" />
       </button>
-      <template v-for="(item, index) in pageItems" :key="`${item}-${index}`">
-        <span v-if="item === '...'" class="page-ellipsis">...</span>
+      <template v-for="(item, index) in pageItems" :key="`desktop-${item}-${index}`">
+        <span v-if="item === '...'" class="page-ellipsis desktop-page-item">...</span>
         <button
           v-else
           type="button"
-          class="page-number"
+          class="page-number desktop-page-item"
+          :class="{ 'is-active': item === page }"
+          :disabled="disabled || item === page"
+          @click="requestPage(item)"
+        >
+          {{ item }}
+        </button>
+      </template>
+      <template v-for="(item, index) in mobilePageItems" :key="`mobile-${item}-${index}`">
+        <span v-if="item === '...'" class="page-ellipsis mobile-page-item">...</span>
+        <button
+          v-else
+          type="button"
+          class="page-number mobile-page-item"
           :class="{ 'is-active': item === page }"
           :disabled="disabled || item === page"
           @click="requestPage(item)"
@@ -405,6 +441,10 @@ function submitPageJump() {
   font-weight: 600;
 }
 
+.mobile-page-item {
+  display: none;
+}
+
 .pagination-jump {
   justify-content: flex-end;
   gap: 0.75rem;
@@ -433,6 +473,7 @@ function submitPageJump() {
 @media (max-width: 1024px) {
   .app-pagination {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
     justify-items: center;
     padding: 1rem;
   }
@@ -444,12 +485,40 @@ function submitPageJump() {
 }
 
 @media (max-width: 640px) {
+  .app-pagination {
+    min-height: auto;
+    padding: 0.875rem 0.75rem;
+  }
+
   .pagination-pages {
-    gap: 0.45rem;
+    gap: 0.35rem;
+    flex-wrap: nowrap;
+  }
+
+  .desktop-page-item {
+    display: none;
+  }
+
+  .mobile-page-item {
+    display: inline-flex;
   }
 
   .pagination-total {
     gap: 0.75rem;
+  }
+
+  .pagination-jump {
+    gap: 0.5rem;
+  }
+
+  .page-size-trigger {
+    min-width: 7rem;
+  }
+
+  .page-arrow,
+  .page-number {
+    height: 1.9rem;
+    min-width: 1.9rem;
   }
 }
 </style>

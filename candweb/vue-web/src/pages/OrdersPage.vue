@@ -334,19 +334,19 @@ onMounted(() => {
         <p class="max-w-md text-sm text-muted-foreground">{{ t.orders.noOrdersDesc }}</p>
       </div>
       <div v-else>
-        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="order-row group flex cursor-pointer items-center justify-between border-b border-slate-100 px-4 py-4 transition-all duration-200 hover:bg-primary/10">
-          <div class="flex items-center gap-4">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
-            <div>
+        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="order-row group flex cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 transition-all duration-200 hover:bg-primary/10 md:flex-row md:items-center md:justify-between">
+          <div class="flex min-w-0 items-center gap-4">
+            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
+            <div class="min-w-0">
               <div class="mb-1 flex flex-wrap items-center gap-2">
-                <h3 class="font-medium text-card-foreground">{{ order.items.join(", ") }}</h3>
+                <h3 class="break-words font-medium text-card-foreground md:break-normal">{{ order.items.join(", ") }}</h3>
                 <span class="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary">{{ orderTypeLabel(order.bizType) }}</span>
               </div>
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
           </div>
-          <div class="grid shrink-0 grid-cols-[96px_96px_36px_36px_20px] items-center gap-x-5 gap-y-3">
-            <div class="flex justify-center">
+          <div class="grid w-full grid-cols-[1fr_auto_auto_auto_auto] items-center gap-x-3 gap-y-3 pl-16 md:w-auto md:shrink-0 md:grid-cols-[96px_96px_36px_36px_20px] md:gap-x-5 md:pl-0">
+            <div class="flex justify-start md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.rawStatus) }}
               </span>
