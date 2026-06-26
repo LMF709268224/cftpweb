@@ -488,7 +488,7 @@ async function loadActiveOrder() {
   previewError.value = ""
   paymentPreview.value = null
   try {
-    const order = await apiClient(`/api/mall/bundles/${resolvedBundleId.value}/active-order`)
+    const order = await apiClient(`/api/mall/bundles/${resolvedBundleId.value}/active-order`, { suppressErrorToast: true })
     const orderId = orderIdFromDetail(order)
     if (!orderId) return
     activeOrder.value = {
@@ -1028,6 +1028,7 @@ async function initiatePayment() {
     </div>
   </div>
 </template>
+
 
 
 

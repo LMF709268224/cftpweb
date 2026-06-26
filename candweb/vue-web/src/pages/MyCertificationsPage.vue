@@ -8,8 +8,20 @@ import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
+type CandidatePipelineCard = {
+  configId: string
+  instanceId: string
+  title: string
+  currentStage: string
+  progress?: number
+  progressAvailable: boolean
+  statusValue: string | number
+  startedAt: string
+  completedAt: string
+}
+
 const { t, lang } = useTranslation()
-const myCourses = ref<any[]>([])
+const myCourses = ref<CandidatePipelineCard[]>([])
 const loading = ref(false)
 
 const copy = computed(() => lang.value === "zh"
@@ -18,10 +30,12 @@ const copy = computed(() => lang.value === "zh"
       subtitle: "查看你已购买或正在进行的认证进度。",
       status: "状态",
       details: "查看详情",
-      viewDetailsHint: "点击查看认证信息",
+      viewDetailsHint: "点击查看认证详情",
       emptyTitle: "还没有购买认证",
       emptyDesc: "前往商城浏览并选择适合你的认证或会员商品。",
       browseMarketplace: "浏览商城",
+      configId: "认证配置 ID",
+      instanceId: "认证实例 ID",
     }
   : {
       title: "My Certifications",
@@ -32,23 +46,31 @@ const copy = computed(() => lang.value === "zh"
       emptyTitle: "No certifications purchased yet",
       emptyDesc: "Browse the marketplace and choose the certification or membership product that fits your goals.",
       browseMarketplace: "Browse Marketplace",
+      configId: "Certification Config ID",
+      instanceId: "Certification Instance ID",
     })
 
 function certificationDisplayName(value?: string) {
   return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "认证")
 }
 
-function mapCandidatePipeline(pipeline: any) {
+function mapCandidatePipeline(pipeline: any): CandidatePipelineCard {
   return {
-    id: pipeline.pipeline_cc_ulid || pipeline.pipeline_ulid,
-    title: certificationDisplayName(pipeline.pipeline_name) || pipeline.pipeline_cc_ulid || pipeline.pipeline_ulid || t.value.common.unknownCourse,
-    currentStage: pipeline.current_stage_name || pipeline.current_stage_ulid,
-    progress: pipeline.progress_available ? Math.round(Number(pipeline.progress)) : undefined,
-    progressAvailable: Boolean(pipeline.progress_available),
-    statusValue: pipeline.status,
-    startedAt: formatBackendDate(pipeline.started_at),
-    completedAt: formatBackendDate(pipeline.completed_at),
+    configId: String(pipeline?.pipeline_cc_ulid || "").trim(),
+    instanceId: String(pipeline?.pipeline_ulid || "").trim(),
+    title: certificationDisplayName(pipeline?.pipeline_name) || pipeline?.pipeline_cc_ulid || pipeline?.pipeline_ulid || t.value.common.unknownCourse,
+    currentStage: String(pipeline?.current_stage_name || pipeline?.current_stage_ulid || "").trim(),
+    progress: pipeline?.progress_available ? Math.round(Number(pipeline.progress)) : undefined,
+    progressAvailable: Boolean(pipeline?.progress_available),
+    statusValue: pipeline?.status,
+    startedAt: formatBackendDate(pipeline?.started_at),
+    completedAt: formatBackendDate(pipeline?.completed_at),
   }
+}
+
+function certificationDetailHref(course: CandidatePipelineCard) {
+  const target = course.configId || course.instanceId
+  return target ? `/certifications/${encodeURIComponent(target)}` : "/certifications"
 }
 
 async function refreshMyCourses() {
@@ -88,15 +110,24 @@ onMounted(() => {
         <div v-else-if="myCourses.length > 0" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           <div
             v-for="course in myCourses"
-            :key="course.id"
-            class="group flex min-h-[300px] flex-col rounded-[18px] border-2 border-[#dfe4ea] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
+            :key="`${course.configId}-${course.instanceId}`"
+            class="group flex min-h-[320px] flex-col rounded-[18px] border-2 border-[#dfe4ea] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
           >
             <div class="flex-1">
               <h3 class="line-clamp-2 text-xl font-bold leading-tight tracking-tight text-[#111827] transition-colors group-hover:text-primary">
                 {{ course.title || t.common.unknownCourse }}
               </h3>
 
-              <div class="mt-8 space-y-5 text-base text-[#4b5563]">
+              <div class="mt-4 space-y-2 text-xs text-slate-500">
+                <p v-if="course.configId" class="font-mono">
+                  {{ copy.configId }}: {{ course.configId }}
+                </p>
+                <p v-if="course.instanceId" class="font-mono">
+                  {{ copy.instanceId }}: {{ course.instanceId }}
+                </p>
+              </div>
+
+              <div class="mt-6 space-y-5 text-base text-[#4b5563]">
                 <div class="flex items-center justify-between gap-4">
                   <span>{{ copy.status }}:</span>
                   <span :class="['rounded-lg px-3 py-1.5 text-sm font-semibold', timelineStatusBadgeClassForStatus('PIPELINE', course.statusValue)]">
@@ -124,7 +155,7 @@ onMounted(() => {
 
             <div class="mt-6">
               <RouterLink
-                :to="`/certifications/${encodeURIComponent(course.id)}`"
+                :to="certificationDetailHref(course)"
                 class="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-bold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90"
                 :title="copy.viewDetailsHint"
               >
