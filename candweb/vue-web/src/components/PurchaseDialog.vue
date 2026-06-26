@@ -43,6 +43,16 @@ type ActiveOrder = {
   message?: string
 }
 
+type ActiveOrderPayload = {
+  action?: MallAction
+  order_id?: string
+  orderId?: string
+  status?: string
+  pay_order_id?: string
+  payOrderId?: string
+  message?: string
+}
+
 type ExemptionQual = {
   qual_id: string
   name?: string
@@ -84,6 +94,10 @@ const props = defineProps<{
   isMembershipBundle?: boolean
   membershipId?: string
   membershipGpath?: string
+  initialEligibility?: EligibilityPreview | null
+  initialActiveOrder?: ActiveOrderPayload | null
+  initialPaymentPreview?: PaymentPreview | null
+  initialExemptionOptions?: ExemptionOptions | null
 }>()
 
 const emit = defineEmits<{ "update:open": [value: boolean] }>()
@@ -92,8 +106,6 @@ const paymentMethod = ref<PaymentMethod>("stripe")
 const eligibilityLoading = ref(false)
 const actionLoading = ref(false)
 const paymentLoading = ref(false)
-const previewLoading = ref(false)
-const exemptionLoading = ref(false)
 const credentialApplicationLoadingKey = ref("")
 const eligibility = ref<EligibilityPreview | null>(null)
 const exemptionOptions = ref<ExemptionOptions | null>(null)
@@ -124,7 +136,6 @@ const credentialApplicationOrder = ref<{
 const copy = computed(() => t.value.purchaseDialog || {})
 const blockers = computed(() => eligibility.value?.blockers || [])
 const shouldUsePipelineEligibility = computed(() => Boolean(props.isPipelineBundle && props.pipelineId))
-const shouldUseMembershipEligibility = computed(() => Boolean(props.isMembershipBundle || props.membershipGpath))
 const canPurchase = computed(() => Boolean(eligibility.value?.can_purchase))
 const canUnlock = computed(() => Boolean(shouldUsePipelineEligibility.value && eligibility.value?.can_unlock))
 const cannotContinue = computed(() => Boolean(eligibility.value && !canPurchase.value && !canUnlock.value))
@@ -143,27 +154,98 @@ const purchasePreviewStale = computed(() => Boolean(
   selectedExemptionSignature.value !== previewedExemptionSignature.value
 ))
 
+function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveOrder | null {
+  const orderId = String(order?.order_id || order?.orderId || "").trim()
+  if (!orderId) return null
+  return {
+    action: order?.action || "purchase",
+    orderId,
+    status: order?.status,
+    payOrderId: order?.pay_order_id || order?.payOrderId,
+    message: order?.message || copy.value.inProgressPurchaseDesc,
+  }
+}
+
+function hydrateFromInitialState() {
+  eligibility.value = props.initialEligibility || { can_purchase: true, can_unlock: false, blockers: [] }
+  activeOrder.value = normalizeInitialActiveOrder(props.initialActiveOrder)
+  paymentPreview.value = props.initialPaymentPreview || null
+  exemptionOptions.value = props.initialExemptionOptions || null
+  previewError.value = ""
+  exemptionError.value = ""
+  previewedExemptionSignature.value = ""
+  selectedExemptionUnitIds.value = {}
+  pruneSelectedExemptions(exemptionOptions.value)
+}
+
+function applyBundlePurchaseState(bundle: any) {
+  eligibility.value = bundle?.purchase_state?.eligibility || bundle?.eligibility || { can_purchase: true, can_unlock: false, blockers: [] }
+  activeOrder.value = normalizeInitialActiveOrder(bundle?.purchase_state?.active_order || bundle?.active_order)
+  paymentPreview.value = bundle?.purchase_state?.payment_preview || bundle?.payment_preview || null
+  exemptionOptions.value = bundle?.purchase_state?.exemption_options || bundle?.exemption_options || null
+  previewError.value = ""
+  exemptionError.value = ""
+  previewedExemptionSignature.value = ""
+  activePaymentSession.value = null
+  pruneSelectedExemptions(exemptionOptions.value)
+}
+
+async function loadBundlePurchaseState() {
+  if (!resolvedBundleId.value) return false
+  try {
+    const bundle = await apiClient(`/api/mall/bundles/${encodeURIComponent(resolvedBundleId.value)}`)
+    applyBundlePurchaseState(bundle)
+    return true
+  } catch (error) {
+    console.error(error)
+    return false
+  }
+}
+
+async function resolveBundleFromCatalog() {
+  if (resolvedBundleId.value) return true
+  try {
+    const res = await apiClient("/api/mall/bundles")
+    const bundles = Array.isArray(res?.bundles) ? res.bundles : []
+    const found = bundles.find((b: any) =>
+      (props.pipelineId && b?.pipeline_id === props.pipelineId) ||
+      (props.membershipId && b?.membership_id === props.membershipId) ||
+      (props.membershipGpath && b?.membership_gpath === props.membershipGpath),
+    )
+    if (!found?.bundle_id) return false
+    resolvedBundleId.value = found.bundle_id
+    applyBundlePurchaseState(found)
+    return true
+  } catch (error) {
+    console.error("Failed to resolve bundle for purchase dialog", error)
+    return false
+  }
+}
+
+async function loadLegacyDialogState() {
+  if (await resolveBundleFromCatalog()) return
+  if (await loadBundlePurchaseState()) return
+  eligibility.value = {
+    can_purchase: false,
+    can_unlock: false,
+    blockers: [{ blocker_type: "BUNDLE_NOT_FOUND", description: "product bundle is unavailable" }],
+  }
+  activeOrder.value = null
+  paymentPreview.value = null
+  resetExemptionSelection()
+}
+
 watch(() => props.open, async (open) => {
   if (open) {
     resolvedBundleId.value = props.bundleId || ""
-    if (!resolvedBundleId.value && shouldUsePipelineEligibility.value) {
-      try {
-        const res = await apiClient("/api/mall/bundles")
-        const found = res?.bundles?.find((b: any) => b.pipeline_id === props.pipelineId)
-        if (found?.bundle_id) {
-          resolvedBundleId.value = found.bundle_id
-        }
-      } catch (e) {
-        console.error("Failed to resolve bundle ID for pipeline:", props.pipelineId, e)
-      }
+    const hasInitialState = Boolean(props.initialEligibility || props.initialActiveOrder || props.initialPaymentPreview || props.initialExemptionOptions)
+    if (hasInitialState) {
+      hydrateFromInitialState()
+    } else if (!resolvedBundleId.value) {
+      await resolveBundleFromCatalog()
     }
-    if (shouldUsePipelineEligibility.value) {
-      void loadEligibility()
-    } else if (shouldUseMembershipEligibility.value) {
-      await loadMembershipEligibility()
-    } else {
-      eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
-      await loadActiveOrder()
+    if (!hasInitialState && !eligibility.value) {
+      await loadLegacyDialogState()
     }
   } else {
     activePaymentSession.value = null
@@ -332,66 +414,6 @@ function buildSelectedExemptionsJson() {
   })
 }
 
-function isActiveMembershipStatus(status: unknown) {
-  return ["active", "membership_status_active"].includes(String(status || "").trim().toLowerCase())
-}
-
-function membershipRecords(payload: any) {
-  for (const key of ["user_memberships", "memberships", "records", "items", "history"]) {
-    if (Array.isArray(payload?.[key])) return payload[key]
-  }
-  return []
-}
-
-async function findActiveMembership() {
-  const membershipGpath = String(props.membershipGpath || "").trim()
-  const membershipId = String(props.membershipId || "").trim()
-  if (!membershipGpath && !membershipId) return null
-  const history = await apiClient("/api/membership/history?page=1&page_size=50", { suppressErrorToast: true })
-  const matchingActive = membershipRecords(history).find((record: any) =>
-    isActiveMembershipStatus(record?.status) &&
-    ((membershipGpath && String(record?.membership_gpath || "").trim() === membershipGpath) ||
-      (membershipId && String(record?.membership_ulid || "").trim() === membershipId)),
-  )
-  if (!matchingActive) return null
-  if (!membershipGpath) return matchingActive
-  const active = await apiClient(`/api/membership/active?membership_gpath=${encodeURIComponent(membershipGpath)}`, { suppressErrorToast: true })
-  return active?.membership || matchingActive
-}
-
-async function loadMembershipEligibility() {
-  eligibilityLoading.value = true
-  activeOrder.value = null
-  paymentPreview.value = null
-  previewError.value = ""
-  previewedExemptionSignature.value = ""
-  activePaymentSession.value = null
-  resetExemptionSelection()
-  try {
-    const activeMembership = await findActiveMembership()
-    eligibility.value = activeMembership
-      ? { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: "ALREADY_PURCHASED", description: copy.value.alreadyPurchased }] }
-      : { can_purchase: true, can_unlock: false, blockers: [] }
-    if (!activeMembership) {
-      await loadActiveOrder()
-    }
-  } catch (error) {
-    console.error(error)
-    eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
-    await loadActiveOrder()
-  } finally {
-    eligibilityLoading.value = false
-  }
-}
-
-function orderIdFromDetail(order: any) {
-  return order?.bundle_order_ulid || order?.pipeline_order_ulid || order?.summary?.bundle_order_ulid || order?.summary?.pipeline_order_ulid || ""
-}
-
-function orderStatusFromDetail(order: any) {
-  return order?.order_status || order?.summary?.order_status || ""
-}
-
 async function latestCredentialApplication(qualId: string) {
   try {
     const res = await apiClient(`/api/credentials/applications?cred_def_ulid=${encodeURIComponent(qualId)}`)
@@ -402,105 +424,12 @@ async function latestCredentialApplication(qualId: string) {
   }
 }
 
-async function loadEligibility() {
-  if (!shouldUsePipelineEligibility.value) {
-    if (shouldUseMembershipEligibility.value) {
-      await loadMembershipEligibility()
-      return
-    }
-    eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
-    await loadActiveOrder()
-    return
-  }
+async function refreshEligibility() {
   eligibilityLoading.value = true
-  activeOrder.value = null
-  paymentPreview.value = null
-  previewError.value = ""
-  previewedExemptionSignature.value = ""
-  activePaymentSession.value = null
   try {
-    const res: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
-    eligibility.value = res
-    const hasInProgressPurchase = res.blockers?.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE")
-    if (res.can_purchase || hasInProgressPurchase) {
-      await loadExemptionOptions()
-    } else {
-      resetExemptionSelection()
-    }
-    if (hasInProgressPurchase) {
-      await loadActiveOrder()
-    }
+    if (!await loadBundlePurchaseState()) await loadLegacyDialogState()
   } finally {
     eligibilityLoading.value = false
-  }
-}
-
-async function refreshEligibility() {
-  if (shouldUseMembershipEligibility.value) {
-    await loadMembershipEligibility()
-    return
-  }
-  await loadEligibility()
-}
-
-async function loadExemptionOptions() {
-  if (!shouldUsePipelineEligibility.value) {
-    resetExemptionSelection()
-    return
-  }
-  exemptionLoading.value = true
-  exemptionError.value = ""
-  try {
-    const res: ExemptionOptions = await apiClient(`/api/mall/pipelines/${props.pipelineId}/exemptions`)
-    exemptionOptions.value = res
-    pruneSelectedExemptions(res)
-  } catch (error) {
-    console.error(error)
-    exemptionOptions.value = null
-    exemptionError.value = copy.value.exemptionsLoadFailed || t.value.common.error
-    selectedExemptionUnitIds.value = {}
-  } finally {
-    exemptionLoading.value = false
-  }
-}
-
-async function previewPayment(action: MallAction, orderId: string) {
-  previewError.value = ""
-  previewLoading.value = true
-  const bizType = action === "unlock" ? "PIPELINE_UNLOCK" : "BUNDLE_PURCHASE"
-  try {
-    paymentPreview.value = await apiClient("/api/mall/payments/preview", {
-      method: "POST",
-      body: JSON.stringify({ biz_type: bizType, biz_ref_ulid: orderId, coupon_codes: [] }),
-    })
-    if (action === "purchase") {
-      previewedExemptionSignature.value = selectedExemptionSignature.value
-    }
-  } catch {
-    paymentPreview.value = null
-    previewError.value = copy.value.pricePreviewFailed || t.value.common.error
-  } finally {
-    previewLoading.value = false
-  }
-}
-
-async function loadActiveOrder() {
-  previewError.value = ""
-  paymentPreview.value = null
-  try {
-    const order = await apiClient(`/api/mall/bundles/${resolvedBundleId.value}/active-order`, { suppressErrorToast: true })
-    const orderId = orderIdFromDetail(order)
-    if (!orderId) return
-    activeOrder.value = {
-      action: "purchase",
-      orderId,
-      status: orderStatusFromDetail(order),
-      payOrderId: order.bundle_pay_order_ulid || order.pipeline_pay_order_ulid || order.summary?.bundle_pay_order_ulid || order.summary?.pipeline_pay_order_ulid,
-      message: copy.value.inProgressPurchaseDesc,
-    }
-    await previewPayment("purchase", orderId)
-  } catch (error) {
-    console.error(error)
   }
 }
 
@@ -522,25 +451,19 @@ async function createBundlePurchaseOrder(bundleOrderUlid = "") {
     payOrderId: order?.bundle_pay_order_ulid,
     message: order?.message,
   }
+  paymentPreview.value = null
+  await loadBundlePurchaseState()
   return { orderId, orderStatus }
 }
 
 async function createPurchaseOrder() {
   actionLoading.value = true
   try {
-    if (shouldUsePipelineEligibility.value) {
-      const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
-      eligibility.value = latest
-      if (!latest.can_purchase) return
-    } else if (shouldUseMembershipEligibility.value) {
-      const activeMembership = await findActiveMembership()
-      if (activeMembership) {
-        eligibility.value = { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: "ALREADY_PURCHASED", description: copy.value.alreadyPurchased }] }
-        return
-      }
-      eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
-    } else {
+    if (await loadBundlePurchaseState()) {
+      if (activeOrder.value?.action === "purchase") return
       if (!eligibility.value?.can_purchase) return
+    } else if (!eligibility.value?.can_purchase) {
+      return
     }
 
     const { orderId, orderStatus } = await createBundlePurchaseOrder()
@@ -554,7 +477,7 @@ async function createPurchaseOrder() {
       toast.error(copy.value.purchaseFailed)
       return
     }
-    if (orderId) await previewPayment("purchase", orderId)
+    if (orderId && !paymentPreview.value) previewError.value = copy.value.pricePreviewFailed || t.value.common.error
   } catch (error) {
     console.error(error)
   } finally {
@@ -578,7 +501,7 @@ async function refreshPurchaseOrderPreview() {
       toast.error(copy.value.purchaseFailed)
       return
     }
-    if (orderId) await previewPayment("purchase", orderId)
+    if (orderId && !paymentPreview.value) previewError.value = copy.value.pricePreviewFailed || t.value.common.error
   } catch (error) {
     console.error(error)
   } finally {
@@ -589,12 +512,10 @@ async function refreshPurchaseOrderPreview() {
 async function createUnlockOrder() {
   actionLoading.value = true
   try {
-    if (shouldUsePipelineEligibility.value) {
-      const latest: EligibilityPreview = await apiClient(`/api/mall/pipelines/${props.pipelineId}/eligibility`)
-      eligibility.value = latest
-      if (!latest.can_unlock) return
-    } else {
+    if (await loadBundlePurchaseState()) {
       if (!eligibility.value?.can_unlock) return
+    } else if (!eligibility.value?.can_unlock) {
+      return
     }
 
     const order = await apiClient(`/api/mall/bundles/${resolvedBundleId.value}/unlock`, {
@@ -615,7 +536,7 @@ async function createUnlockOrder() {
     }
     if (isCompletedStatus(orderStatus)) {
       toast.success(copy.value.unlockCompleted)
-      await loadEligibility()
+      await refreshEligibility()
       return
     }
     if (isFailedStatus(orderStatus)) {
@@ -623,7 +544,9 @@ async function createUnlockOrder() {
       return
     }
     if (orderId && (paymentKey || order.pay_order_ulid || normalizedStatus(orderStatus).includes("PAYMENT"))) {
-      await previewPayment("unlock", orderId)
+      paymentPreview.value = null
+      await refreshEligibility()
+      if (!paymentPreview.value) previewError.value = copy.value.pricePreviewFailed || t.value.common.error
     } else {
       toast.info(copy.value.refreshEligibility)
     }
@@ -644,12 +567,12 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     const existingApplication = await latestCredentialApplication(qualId)
     if (existingApplication?.status) {
       if (isApplicationPendingStatus(existingApplication.status)) {
-        toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果�。")
+        toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果。")
         return
       }
       if (isApplicationApprovedStatus(existingApplication.status)) {
-        toast.success(copy.value.qualificationAlreadyApproved || "资格已审核通过，正在重新检查免考资格�。")
-        await loadExemptionOptions()
+        toast.success(copy.value.qualificationAlreadyApproved || "资格已审核通过，正在重新检查免考资格。")
+        await refreshEligibility()
         return
       }
       if (isApplicationResubmitStatus(existingApplication.status)) {
@@ -679,17 +602,17 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     }
 
     if (isUploadReadyStatus(orderStatus)) {
-      toast.info(copy.value.qualificationUploadReady || "资料上传入口已开放，正在前往资格申请页面�。")
+      toast.info(copy.value.qualificationUploadReady || "资料上传入口已开放，正在前往资格申请页面。")
       window.setTimeout(() => goToCredentialUpload(qualIds), 300)
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
-      toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果�。")
+      toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果。")
       return
     }
     if (isCredentialApplicationResolvedStatus(orderStatus)) {
       toast.info(order?.message || copy.value.refreshEligibility)
-      await loadExemptionOptions()
+      await refreshEligibility()
       return
     }
     if (isCredentialApplicationPaymentStatus(orderStatus) || order?.payment_key) {
@@ -805,7 +728,7 @@ async function initiatePayment() {
           </ul>
         </div>
 
-        <div v-if="(canPurchase || activeOrder?.action === 'purchase') && (exemptionLoading || exemptionError || hasExemptionOptions)" class="rounded-lg border border-border bg-muted/20 p-4">
+        <div v-if="(canPurchase || activeOrder?.action === 'purchase') && (exemptionError || hasExemptionOptions)" class="rounded-lg border border-border bg-muted/20 p-4">
           <div class="mb-3 flex items-start justify-between gap-3">
             <div>
               <div class="text-sm font-semibold text-foreground">{{ copy.exemptionsTitle }}</div>
@@ -816,11 +739,7 @@ async function initiatePayment() {
             </span>
           </div>
 
-          <div v-if="exemptionLoading" class="flex items-center gap-2 rounded-lg bg-background/70 p-3 text-sm text-muted-foreground">
-            <Loader2 class="h-4 w-4 animate-spin text-primary" />
-            {{ copy.exemptionsChecking }}
-          </div>
-          <div v-else-if="exemptionError" class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          <div v-if="exemptionError" class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             <div class="flex items-center gap-2 font-semibold"><AlertCircle class="h-4 w-4" />{{ copy.exemptionsLoadFailed }}</div>
             <p class="mt-2">{{ copy.exemptionsFallback }}</p>
           </div>
@@ -897,13 +816,6 @@ async function initiatePayment() {
           </div>
           <div class="break-all text-xs text-muted-foreground">{{ activeOrder.orderId }}</div>
           <p v-if="activeOrder.message" class="mt-2 text-sm text-muted-foreground">{{ activeOrder.message }}</p>
-        </div>
-
-        <div v-if="previewLoading && activeOrder && !paymentPreview" class="rounded-lg border border-border bg-muted/30 p-4">
-          <div class="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 class="h-4 w-4 animate-spin text-primary" />
-            <span>{{ copy.pricePreviewTitle || t.common.loading }}</span>
-          </div>
         </div>
 
         <div v-if="paymentPreview" class="rounded-lg border border-border bg-muted/30 p-4">
@@ -1012,7 +924,7 @@ async function initiatePayment() {
           <ShoppingCart v-else class="h-4 w-4" />
           {{ copy.createPurchaseOrder }}
         </button>
-        <button v-if="activeOrder && previewError" class="btn btn-outline" :disabled="actionLoading" @click="previewPayment(activeOrder.action, activeOrder.orderId)">
+        <button v-if="activeOrder && previewError" class="btn btn-outline" :disabled="actionLoading" @click="refreshEligibility">
           {{ copy.retryPreview }}
         </button>
         <button v-if="activeOrder?.action === 'purchase' && hasExemptionOptions && !activePaymentSession" class="btn btn-outline" :disabled="actionLoading" @click="refreshPurchaseOrderPreview">

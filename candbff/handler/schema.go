@@ -621,12 +621,6 @@ type PurchasePipelineRsp struct {
 	Message              string `json:"message,omitempty"`
 }
 
-type PreviewPaymentReq struct {
-	BizType     string   `json:"biz_type"`
-	BizRefUlid  string   `json:"biz_ref_ulid"`
-	CouponCodes []string `json:"coupon_codes"`
-}
-
 type InitiatePaymentReq struct {
 	BizType     string   `json:"biz_type"`
 	BizRefUlid  string   `json:"biz_ref_ulid"`

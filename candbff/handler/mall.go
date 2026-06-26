@@ -39,6 +39,29 @@ type bundleEnrichmentState struct {
 	loadedMembershipsByGpath map[string]bool
 }
 
+type bundleActiveOrderSummary struct {
+	Action     string `json:"action"`
+	OrderID    string `json:"order_id"`
+	Status     string `json:"status,omitempty"`
+	PayOrderID string `json:"pay_order_id,omitempty"`
+	Message    string `json:"message,omitempty"`
+}
+
+type bundlePaymentPreviewSummary struct {
+	Subtotal      int64  `json:"subtotal"`
+	DiscountTotal int64  `json:"discount_total"`
+	TaxTotal      int64  `json:"tax_total"`
+	Total         int64  `json:"total"`
+	Currency      string `json:"currency,omitempty"`
+}
+
+type bundlePurchaseState struct {
+	Eligibility      bundleEligibilitySummary     `json:"eligibility"`
+	ActiveOrder      *bundleActiveOrderSummary    `json:"active_order,omitempty"`
+	PaymentPreview   *bundlePaymentPreviewSummary `json:"payment_preview,omitempty"`
+	ExemptionOptions *PipelineExemptionOptionsRsp `json:"exemption_options,omitempty"`
+}
+
 // ListPipelines  GET /api/mall/pipelines
 func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.ListPipelines(r.Context(), &gccpb.ListPipelinesRequest{
@@ -767,6 +790,273 @@ func (h *Handler) bundleThumbnailURL(ctx context.Context, bundleID string) strin
 	return strings.TrimSpace(resp.GetPublicUrl())
 }
 
+func isOpenMallOrderStatus(status string) bool {
+	status = strings.ToUpper(strings.TrimSpace(status))
+	if status == "" {
+		return true
+	}
+	return !strings.Contains(status, "COMPLETED") &&
+		!strings.Contains(status, "CANCEL") &&
+		!strings.Contains(status, "FAILED")
+}
+
+func bundleOrderID(order interface{}) string {
+	switch v := order.(type) {
+	case *mallpb.BundleOrderSummary:
+		if v == nil {
+			return ""
+		}
+		return strings.TrimSpace(v.GetBundleOrderUlid())
+	case *mallpb.BundleOrderDetail:
+		if v == nil {
+			return ""
+		}
+		return bundleOrderID(v.GetSummary())
+	default:
+		return ""
+	}
+}
+
+func bundleOrderStatus(order interface{}) string {
+	switch v := order.(type) {
+	case *mallpb.BundleOrderSummary:
+		if v == nil {
+			return ""
+		}
+		return strings.TrimSpace(v.GetOrderStatus())
+	case *mallpb.BundleOrderDetail:
+		if v == nil {
+			return ""
+		}
+		return bundleOrderStatus(v.GetSummary())
+	default:
+		return ""
+	}
+}
+
+func bundleOrderPayID(order interface{}) string {
+	switch v := order.(type) {
+	case *mallpb.BundleOrderSummary:
+		if v == nil {
+			return ""
+		}
+		return strings.TrimSpace(v.GetBundlePayOrderUlid())
+	case *mallpb.BundleOrderDetail:
+		if v == nil {
+			return ""
+		}
+		return bundleOrderPayID(v.GetSummary())
+	default:
+		return ""
+	}
+}
+
+func toBundlePaymentPreviewSummary(resp *mallpb.PreviewPaymentResponse) *bundlePaymentPreviewSummary {
+	if resp == nil {
+		return nil
+	}
+	return &bundlePaymentPreviewSummary{
+		Subtotal:      resp.GetSubtotal(),
+		DiscountTotal: resp.GetDiscountTotal(),
+		TaxTotal:      resp.GetTaxTotal(),
+		Total:         resp.GetTotal(),
+		Currency:      resp.GetCurrency(),
+	}
+}
+
+func (h *Handler) previewPaymentSummary(ctx context.Context, bizType string, bizRefULID string) *bundlePaymentPreviewSummary {
+	bizType = strings.TrimSpace(bizType)
+	bizRefULID = strings.TrimSpace(bizRefULID)
+	if bizType == "" || bizRefULID == "" {
+		return nil
+	}
+	resp, err := h.Mall.PreviewPayment(ctx, &mallpb.PreviewPaymentRequest{
+		BizType:    bizType,
+		BizRefUlid: bizRefULID,
+	})
+	if err != nil {
+		slog.Warn("Failed to preview bundle payment during enrichment", "error", err, "biz_type", bizType, "biz_ref_ulid", bizRefULID)
+		return nil
+	}
+	return toBundlePaymentPreviewSummary(resp)
+}
+
+func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bundleID string) (*bundleActiveOrderSummary, *bundlePaymentPreviewSummary) {
+	candidateID = strings.TrimSpace(candidateID)
+	bundleID = strings.TrimSpace(bundleID)
+	if candidateID == "" || bundleID == "" {
+		return nil, nil
+	}
+	resp, err := h.Mall.ListBundleOrders(ctx, &mallpb.ListBundleOrdersRequest{
+		CandidateUlid: candidateID,
+		BundleUlid:    bundleID,
+		Limit:         20,
+	})
+	if err != nil {
+		slog.Warn("Failed to load active bundle order during enrichment", "error", err, "candidate_id", candidateID, "bundle_id", bundleID)
+		return nil, nil
+	}
+	for _, item := range resp.GetItems() {
+		if item == nil || !isOpenMallOrderStatus(item.GetOrderStatus()) {
+			continue
+		}
+		var order interface{} = item
+		detailResp, err := h.Mall.GetBundleOrderDetail(ctx, &mallpb.GetBundleOrderDetailRequest{
+			BundleOrderUlid: item.GetBundleOrderUlid(),
+		})
+		if err != nil {
+			slog.Warn("Failed to load active bundle order detail during enrichment", "error", err, "bundle_order_ulid", item.GetBundleOrderUlid())
+		} else if detailResp.GetFound() && detailResp.GetDetail() != nil {
+			order = detailResp.GetDetail()
+		}
+
+		orderID := bundleOrderID(order)
+		if orderID == "" {
+			continue
+		}
+		active := &bundleActiveOrderSummary{
+			Action:     "purchase",
+			OrderID:    orderID,
+			Status:     bundleOrderStatus(order),
+			PayOrderID: bundleOrderPayID(order),
+			Message:    "in-progress purchase order exists",
+		}
+		return active, h.previewPaymentSummary(ctx, orderBizBundlePurchase, orderID)
+	}
+	return nil, nil
+}
+
+func (h *Handler) pipelineExemptionOptions(ctx context.Context, candidateID string, pipelineID string) *PipelineExemptionOptionsRsp {
+	candidateID = strings.TrimSpace(candidateID)
+	pipelineID = strings.TrimSpace(pipelineID)
+	if candidateID == "" || pipelineID == "" {
+		return nil
+	}
+
+	pipeline, err := h.Gcc.GetPipeline(ctx, &gccpb.GetPipelineRequest{
+		Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
+	})
+	if err != nil {
+		slog.Warn("Failed to load pipeline for exemption options during enrichment", "error", err, "pipeline_id", pipelineID)
+		return nil
+	}
+
+	out := PipelineExemptionOptionsRsp{
+		Stages: make([]PipelineExemptionStage, 0, len(pipeline.GetStages())),
+	}
+	defCache := map[string]*gcredspb.CredentialDefinition{}
+	checkCache := map[string]*gcredspb.CheckCandidateQualificationResponse{}
+
+	for stageIndex, stage := range pipeline.GetStages() {
+		stageOut := PipelineExemptionStage{
+			Index:     int32(stageIndex),
+			StageUlid: stage.GetStageUlid(),
+			StageName: stage.GetName(),
+			SortOrder: stage.GetSortOrder(),
+			Units:     []PipelineExemptionUnit{},
+		}
+		for _, unit := range stage.GetUnits() {
+			qualIDs := compactStrings(unit.GetExemptionQuals())
+			if !unit.GetAllowExemption() || len(qualIDs) == 0 {
+				continue
+			}
+			unitOut := PipelineExemptionUnit{
+				UnitUlid:       unit.GetUnitUlid(),
+				UnitName:       unit.GetName(),
+				AllowExemption: true,
+				ExemptionQuals: make([]PipelineExemptionQual, 0, len(qualIDs)),
+			}
+			for _, qualID := range qualIDs {
+				def := h.cachedCredentialDefinition(ctx, defCache, qualID)
+				check := h.cachedCandidateQualification(ctx, checkCache, candidateID, qualID)
+				qualOut := PipelineExemptionQual{
+					QualId: qualID,
+				}
+				if def != nil {
+					qualOut.Name = def.GetName()
+					qualOut.Description = def.GetDescription()
+					qualOut.Category = def.GetCategory()
+				}
+				if qualOut.Name == "" {
+					qualOut.Name = qualID
+				}
+				if check != nil {
+					qualOut.Eligible = check.GetEligible()
+					qualOut.CredentialStatus = check.GetCredentialStatus().String()
+					qualOut.Message = check.GetMessage()
+				} else {
+					qualOut.Message = "qualification status unavailable"
+				}
+				if qualOut.Eligible {
+					unitOut.Qualified = true
+				}
+				unitOut.ExemptionQuals = append(unitOut.ExemptionQuals, qualOut)
+			}
+			if unitOut.Qualified {
+				unitOut.Message = "eligible for exemption"
+			} else {
+				unitOut.Message = "missing active qualification for exemption"
+			}
+			stageOut.Units = append(stageOut.Units, unitOut)
+		}
+		if len(stageOut.Units) > 0 {
+			out.Stages = append(out.Stages, stageOut)
+		}
+	}
+
+	return &out
+}
+
+func (h *Handler) cachedCredentialDefinition(ctx context.Context, cache map[string]*gcredspb.CredentialDefinition, qualID string) *gcredspb.CredentialDefinition {
+	if def, ok := cache[qualID]; ok {
+		return def
+	}
+	def, err := h.Creds.GetCredentialDefinitionDetail(ctx, &gcredspb.GetCredentialDefinitionDetailRequest{
+		CredDefUlid: qualID,
+	})
+	if err != nil {
+		slog.Warn("Failed to load credential definition for exemption option", "error", err, "qual_id", qualID)
+		cache[qualID] = nil
+		return nil
+	}
+	cache[qualID] = def
+	return def
+}
+
+func (h *Handler) cachedCandidateQualification(ctx context.Context, cache map[string]*gcredspb.CheckCandidateQualificationResponse, candidateID string, qualID string) *gcredspb.CheckCandidateQualificationResponse {
+	if check, ok := cache[qualID]; ok {
+		return check
+	}
+	check, err := h.Creds.CheckCandidateQualification(ctx, &gcredspb.CheckCandidateQualificationRequest{
+		CandidateUlid: candidateID,
+		CredDefUlid:   qualID,
+	})
+	if err != nil {
+		slog.Warn("Failed to check candidate qualification for exemption option", "error", err, "candidate_id", candidateID, "qual_id", qualID)
+		cache[qualID] = nil
+		return nil
+	}
+	cache[qualID] = check
+	return check
+}
+
+func (h *Handler) bundlePurchaseState(ctx context.Context, state *bundleEnrichmentState, bundleID string, pipelineID string, eligibility bundleEligibilitySummary) bundlePurchaseState {
+	out := bundlePurchaseState{
+		Eligibility: eligibility,
+	}
+	if state == nil || strings.TrimSpace(state.candidateID) == "" {
+		return out
+	}
+	if activeOrder, preview := h.activeBundleOrder(ctx, state.candidateID, bundleID); activeOrder != nil {
+		out.ActiveOrder = activeOrder
+		out.PaymentPreview = preview
+	}
+	if pipelineID != "" && (eligibility.CanPurchase || out.ActiveOrder != nil) {
+		out.ExemptionOptions = h.pipelineExemptionOptions(ctx, state.candidateID, pipelineID)
+	}
+	return out
+}
+
 func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state *bundleEnrichmentState) map[string]interface{} {
 	pipelineID := h.extractPipelineID(b)
 	membershipID := extractMembershipID(b)
@@ -855,7 +1145,18 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 			}
 		}
 	}
-	m["eligibility"] = eligibility
+	purchaseState := h.bundlePurchaseState(ctx, state, b.GetBundleUlid(), pipelineID, eligibility)
+	m["eligibility"] = purchaseState.Eligibility
+	m["purchase_state"] = purchaseState
+	if purchaseState.ActiveOrder != nil {
+		m["active_order"] = purchaseState.ActiveOrder
+	}
+	if purchaseState.PaymentPreview != nil {
+		m["payment_preview"] = purchaseState.PaymentPreview
+	}
+	if purchaseState.ExemptionOptions != nil {
+		m["exemption_options"] = purchaseState.ExemptionOptions
+	}
 	return m
 }
 
@@ -1313,107 +1614,6 @@ func configUnitByID(config *gccpb.PipelineConfig, unitID string) *gccpb.UnitConf
 	return nil
 }
 
-// CheckPipelineEligibility GET /api/mall/pipelines/{pipelineId}/eligibility
-func (h *Handler) CheckPipelineEligibility(w http.ResponseWriter, r *http.Request) {
-	candidateID := CandidateID(r)
-	pipelineID := strings.TrimSpace(chi.URLParam(r, "pipelineId"))
-	if !requireRequestField(w, pipelineID, "pipeline_id") {
-		return
-	}
-
-	resp, err := h.Mall.CheckPipelineEligibility(r.Context(), &mallpb.CheckPipelineEligibilityRequest{
-		CandidateUlid:  candidateID,
-		PipelineCcUlid: pipelineID,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, resp)
-}
-
-// GetPipelineExemptionOptions GET /api/mall/pipelines/{pipelineId}/exemptions
-func (h *Handler) GetPipelineExemptionOptions(w http.ResponseWriter, r *http.Request) {
-	candidateID := CandidateID(r)
-	pipelineID := strings.TrimSpace(chi.URLParam(r, "pipelineId"))
-	if !requireRequestField(w, pipelineID, "pipeline_id") {
-		return
-	}
-
-	pipeline, err := h.Gcc.GetPipeline(r.Context(), &gccpb.GetPipelineRequest{
-		Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	out := PipelineExemptionOptionsRsp{
-		Stages: make([]PipelineExemptionStage, 0, len(pipeline.GetStages())),
-	}
-	defCache := map[string]*gcredspb.CredentialDefinition{}
-	checkCache := map[string]*gcredspb.CheckCandidateQualificationResponse{}
-
-	for stageIndex, stage := range pipeline.GetStages() {
-		stageOut := PipelineExemptionStage{
-			Index:     int32(stageIndex),
-			StageUlid: stage.GetStageUlid(),
-			StageName: stage.GetName(),
-			SortOrder: stage.GetSortOrder(),
-			Units:     []PipelineExemptionUnit{},
-		}
-		for _, unit := range stage.GetUnits() {
-			qualIDs := compactStrings(unit.GetExemptionQuals())
-			if !unit.GetAllowExemption() || len(qualIDs) == 0 {
-				continue
-			}
-			unitOut := PipelineExemptionUnit{
-				UnitUlid:       unit.GetUnitUlid(),
-				UnitName:       unit.GetName(),
-				AllowExemption: true,
-				ExemptionQuals: make([]PipelineExemptionQual, 0, len(qualIDs)),
-			}
-			for _, qualID := range qualIDs {
-				def := getCachedCredentialDefinition(r, h, defCache, qualID)
-				check := getCachedCandidateQualification(r, h, checkCache, candidateID, qualID)
-				qualOut := PipelineExemptionQual{
-					QualId: qualID,
-				}
-				if def != nil {
-					qualOut.Name = def.GetName()
-					qualOut.Description = def.GetDescription()
-					qualOut.Category = def.GetCategory()
-				}
-				if qualOut.Name == "" {
-					qualOut.Name = qualID
-				}
-				if check != nil {
-					qualOut.Eligible = check.GetEligible()
-					qualOut.CredentialStatus = check.GetCredentialStatus().String()
-					qualOut.Message = check.GetMessage()
-				} else {
-					qualOut.Message = "qualification status unavailable"
-				}
-				if qualOut.Eligible {
-					unitOut.Qualified = true
-				}
-				unitOut.ExemptionQuals = append(unitOut.ExemptionQuals, qualOut)
-			}
-			if unitOut.Qualified {
-				unitOut.Message = "eligible for exemption"
-			} else {
-				unitOut.Message = "missing active qualification for exemption"
-			}
-			stageOut.Units = append(stageOut.Units, unitOut)
-		}
-		if len(stageOut.Units) > 0 {
-			out.Stages = append(out.Stages, stageOut)
-		}
-	}
-
-	WriteJSON(w, http.StatusOK, out)
-}
-
 func compactStrings(values []string) []string {
 	out := make([]string, 0, len(values))
 	seen := map[string]bool{}
@@ -1426,39 +1626,6 @@ func compactStrings(values []string) []string {
 		out = append(out, value)
 	}
 	return out
-}
-
-func getCachedCredentialDefinition(r *http.Request, h *Handler, cache map[string]*gcredspb.CredentialDefinition, qualID string) *gcredspb.CredentialDefinition {
-	if def, ok := cache[qualID]; ok {
-		return def
-	}
-	def, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
-		CredDefUlid: qualID,
-	})
-	if err != nil {
-		slog.Warn("Failed to load credential definition for exemption option", "error", err, "qual_id", qualID)
-		cache[qualID] = nil
-		return nil
-	}
-	cache[qualID] = def
-	return def
-}
-
-func getCachedCandidateQualification(r *http.Request, h *Handler, cache map[string]*gcredspb.CheckCandidateQualificationResponse, candidateID string, qualID string) *gcredspb.CheckCandidateQualificationResponse {
-	if check, ok := cache[qualID]; ok {
-		return check
-	}
-	check, err := h.Creds.CheckCandidateQualification(r.Context(), &gcredspb.CheckCandidateQualificationRequest{
-		CandidateUlid: candidateID,
-		CredDefUlid:   qualID,
-	})
-	if err != nil {
-		slog.Warn("Failed to check candidate qualification for exemption option", "error", err, "candidate_id", candidateID, "qual_id", qualID)
-		cache[qualID] = nil
-		return nil
-	}
-	cache[qualID] = check
-	return check
 }
 
 // UnlockPipeline POST /api/mall/pipelines/{pipelineId}/unlock
@@ -1479,47 +1646,6 @@ func (h *Handler) UnlockPipeline(w http.ResponseWriter, r *http.Request) {
 	}
 	resp.PaymentKey = formatPaymentKey(resp.GetPaymentKey())
 	WriteJSON(w, http.StatusCreated, resp)
-}
-
-// GetActiveBundleOrder GET /api/mall/bundles/{bundleId}/active-order
-func (h *Handler) GetActiveBundleOrder(w http.ResponseWriter, r *http.Request) {
-	candidateID := CandidateID(r)
-	bundleId := strings.TrimSpace(chi.URLParam(r, "bundleId"))
-	if !requireRequestField(w, bundleId, "bundle_id") {
-		return
-	}
-
-	resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
-		CandidateUlid: candidateID,
-		BundleUlid:    bundleId,
-		Limit:         20,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	for _, item := range resp.GetItems() {
-		status := strings.ToUpper(strings.TrimSpace(item.GetOrderStatus()))
-		if strings.Contains(status, "COMPLETED") || strings.Contains(status, "CANCEL") || strings.Contains(status, "FAILED") {
-			continue
-		}
-		detailResp, err := h.Mall.GetBundleOrderDetail(r.Context(), &mallpb.GetBundleOrderDetailRequest{
-			BundleOrderUlid: item.GetBundleOrderUlid(),
-		})
-		if err != nil {
-			HandleGrpcError(w, err)
-			return
-		}
-		if detailResp.GetFound() {
-			WriteJSON(w, http.StatusOK, detailResp.GetDetail())
-			return
-		}
-		WriteJSON(w, http.StatusOK, item)
-		return
-	}
-
-	WriteError(w, http.StatusNotFound, ErrNotFound, "未找到未完成订单")
 }
 
 // UnlockPipelineInBundle POST /api/mall/bundles/{bundleId}/unlock
@@ -1545,36 +1671,6 @@ func (h *Handler) UnlockPipelineInBundle(w http.ResponseWriter, r *http.Request)
 		CandidateUlid:  candidateID,
 		PipelineCcUlid: req.PipelineCcUlid,
 		BundleUlid:     bundleId,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, resp)
-}
-
-// PreviewPayment POST /api/mall/payments/preview
-func (h *Handler) PreviewPayment(w http.ResponseWriter, r *http.Request) {
-	var req PreviewPaymentReq
-	if err := ReadJSON(r, &req); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
-		return
-	}
-	req.BizType = strings.TrimSpace(req.BizType)
-	req.BizRefUlid = strings.TrimSpace(req.BizRefUlid)
-	if !requireRequestField(w, req.BizType, "biz_type") || !requireRequestField(w, req.BizRefUlid, "biz_ref_ulid") {
-		return
-	}
-
-	bizType := req.BizType
-	if bizType == "PIPELINE_PAYMENT" {
-		bizType = "BUNDLE_PURCHASE"
-	}
-
-	resp, err := h.Mall.PreviewPayment(r.Context(), &mallpb.PreviewPaymentRequest{
-		BizType:     bizType,
-		BizRefUlid:  req.BizRefUlid,
-		CouponCodes: req.CouponCodes,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
