@@ -229,14 +229,43 @@ func validateResourcePackFilePayload(w http.ResponseWriter, title string, fileTy
 
 // ListAllLmsResourcePackFiles GET /api/lms/resource-pack-files
 func (h *Handler) ListAllLmsResourcePackFiles(w http.ResponseWriter, r *http.Request) {
-	resp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
-		PackId:    r.URL.Query().Get("pack_id"),
-		PageSize:  parseUint32Query(r, "page_size"),
-		PageToken: r.URL.Query().Get("page_token"),
+	packID := r.URL.Query().Get("pack_id")
+	if packID != "" {
+		resp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
+			PackId:    packID,
+			PageSize:  parseUint32Query(r, "page_size"),
+			PageToken: r.URL.Query().Get("page_token"),
+		})
+		if err != nil {
+			writeLmsError(w, err)
+			return
+		}
+		WriteJSON(w, http.StatusOK, resp)
+		return
+	}
+
+	// If no pack_id is specified, fetch all packs and then all files for each pack
+	packsResp, err := h.Lms.ListResourcePacksAdmin(r.Context(), &lmspb.ListResourcePacksRequest{
+		PageSize: 1000,
 	})
 	if err != nil {
 		writeLmsError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+
+	var allFiles []*lmspb.ResourcePackFile
+	for _, pack := range packsResp.Packs {
+		filesResp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
+			PackId:   pack.PackId,
+			PageSize: 1000,
+		})
+		if err == nil && filesResp != nil {
+			allFiles = append(allFiles, filesResp.Files...)
+		}
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"files": allFiles,
+	})
 }
+
