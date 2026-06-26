@@ -13,8 +13,8 @@
     unknownCourse: "未知课程",
     unknown: "未知",
     na: "暂无",
-    purchaseDialogTitle: "购买认证",
-    purchaseDialogCourse: "认证名称",
+    purchaseDialogTitle: "购买",
+    purchaseDialogCourse: "商品名称",
     purchaseDialogPrice: "价格",
     purchaseDialogPaymentMethod: "支付方式",
     purchaseDialogStripeMethod: "Stripe 在线支付",
@@ -658,7 +658,7 @@
   purchaseDialog: {
     title: "认证购买状态",
     checking: "正在检查你是否可以购买或解锁...",
-    canPurchaseTitle: "可以购买认证",
+    canPurchaseTitle: "可以购买",
     canPurchaseDesc: "你已满足购买条件，可以创建购买订单并查看价格。",
     canUnlockTitle: "需要先解锁认证",
     canUnlockDesc: "这个认证需要先解锁。解锁完成后，系统会重新检查，然后才可以购买认证。",
@@ -736,3 +736,4 @@ Object.assign(zh.certificatesPage, {
   celebrationModalDismiss: "稍后再说",
   shareText: "我已获得 CFtP 专业认证，欢迎查看我的学习成果。",
 });
+

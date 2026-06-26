@@ -1,4 +1,4 @@
-package handler
+﻿package handler
 
 import (
 	"net/http"
@@ -225,4 +225,18 @@ func validateResourcePackFilePayload(w http.ResponseWriter, title string, fileTy
 		return false
 	}
 	return true
+}
+
+// ListAllLmsResourcePackFiles GET /api/lms/resource-pack-files
+func (h *Handler) ListAllLmsResourcePackFiles(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
+		PackId:    r.URL.Query().Get("pack_id"),
+		PageSize:  parseUint32Query(r, "page_size"),
+		PageToken: r.URL.Query().Get("page_token"),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
 }

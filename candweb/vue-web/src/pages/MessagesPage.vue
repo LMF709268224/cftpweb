@@ -22,6 +22,9 @@ const markAllLoading = ref(false)
 const messageActionLoadingId = ref<string | null>(null)
 const detailLoadingId = ref<string | null>(null)
 
+const page = ref(1)
+const pageSize = 10
+
 const typeConfig = computed(() => ({
   system: { icon: Bell, iconBg: "bg-primary/10", iconColor: "text-primary", label: t.value.messagesPage.systemNotice },
   announcement: { icon: Megaphone, iconBg: "bg-blue-500/10", iconColor: "text-blue-600", label: t.value.messagesPage.announcement },
@@ -32,6 +35,26 @@ const typeConfig = computed(() => ({
 
 const filteredMessages = computed(() => selectedType.value ? messageList.value.filter((m) => m.type === selectedType.value) : messageList.value)
 const unreadCount = computed(() => messageList.value.filter((m) => !m.isRead).length)
+
+const paginatedMessages = computed(() => {
+  const start = (page.value - 1) * pageSize
+  return filteredMessages.value.slice(start, start + pageSize)
+})
+
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredMessages.value.length / pageSize)))
+
+const messageRangeLabel = computed(() => {
+  if (filteredMessages.value.length === 0) return "0 / 0"
+  const start = (page.value - 1) * pageSize + 1
+  const end = Math.min(page.value * pageSize, filteredMessages.value.length)
+  return `${start}-${end} / ${filteredMessages.value.length}`
+})
+
+function goToPage(nextPage: number) {
+  if (nextPage < 1 || nextPage > totalPages.value) return
+  page.value = nextPage
+  window.scrollTo({ top: 0, behavior: "smooth" })
+}
 
 function syncUnreadCount() {
   setCachedUnreadCount(unreadCount.value)
@@ -178,7 +201,7 @@ function formatPayloadSummary(payload: unknown) {
 async function fetchMessages(showLoading = true, suppressErrorToast = false) {
   if (showLoading) loading.value = true
   try {
-    const res = await apiClient("/api/messages?limit=50", { suppressErrorToast })
+    const res = await apiClient("/api/messages?limit=500", { suppressErrorToast })
     if (res?.messages) {
       messageList.value = res.messages.map((m: any) => {
         let type = "system"
@@ -332,7 +355,7 @@ onMounted(() => {
         <div class="flex flex-wrap gap-10">
           <button
             :class="['relative cursor-pointer whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === null ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-            @click="selectedType = null"
+            @click="selectedType = null; page = 1"
           >
             {{ t.messagesPage.all }} <span class="ml-2 text-sm text-muted-foreground">{{ messageList.length }}</span>
             <span v-if="selectedType === null" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
@@ -341,7 +364,7 @@ onMounted(() => {
             v-for="(config, type) in typeConfig"
             :key="type"
             :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === type ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-            @click="selectedType = type"
+            @click="selectedType = type; page = 1"
           >
             <component :is="config.icon" class="h-4 w-4" />
             {{ config.label }}
@@ -362,7 +385,7 @@ onMounted(() => {
       </div>
       <div v-else>
         <div
-          v-for="message in filteredMessages"
+          v-for="message in paginatedMessages"
           :key="message.id"
           :class="['group relative flex cursor-pointer items-start gap-4 border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead ? 'bg-primary/5' : '', detailLoadingId === message.id ? 'pointer-events-none opacity-75' : '']"
           @click="handleViewDetail(message)"
@@ -400,6 +423,18 @@ onMounted(() => {
             </div>
             <Loader2 v-if="detailLoadingId === message.id" class="h-5 w-5 animate-spin text-primary" />
             <ChevronRight v-else class="h-5 w-5 text-muted-foreground" />
+          </div>
+        </div>
+        <div class="flex items-center justify-between px-4 py-3 text-sm text-muted-foreground">
+          <span>{{ messageRangeLabel }}</span>
+          <div class="flex items-center gap-2">
+            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page <= 1" @click="goToPage(page - 1)">
+              {{ lang === "zh" ? "上一页" : "Previous" }}
+            </button>
+            <span class="min-w-20 text-center">{{ page }} / {{ totalPages }}</span>
+            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page >= totalPages" @click="goToPage(page + 1)">
+              {{ lang === "zh" ? "下一页" : "Next" }}
+            </button>
           </div>
         </div>
       </div>

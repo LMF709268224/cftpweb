@@ -29,6 +29,30 @@ export type ResourceRouteMeta = {
 
 export const resourceRoutes: RouteRecordRaw[] = [
   {
+    path: "/resource-packs",
+    name: "resource-packs",
+    component: () => import("@/pages/ResourcePage.vue"),
+    meta: {
+      title: "资源包",
+      subtitle: "查看资源包 (Resource Packs)",
+      endpoint: "/api/lms/resource-packs",
+      itemKeys: ["packs", "items"],
+      pagination: "page",
+    } satisfies ResourceRouteMeta,
+  },
+  {
+    path: "/resource-pack-files",
+    name: "resource-pack-files",
+    component: () => import("@/pages/ResourcePage.vue"),
+    meta: {
+      title: "资源文件",
+      subtitle: "查看资源包内的所有文件配置",
+      endpoint: "/api/lms/resource-pack-files",
+      itemKeys: ["files", "items"],
+      pagination: "page",
+    } satisfies ResourceRouteMeta,
+  },
+  {
     path: "/lms",
     name: "lms",
     component: LmsPage,

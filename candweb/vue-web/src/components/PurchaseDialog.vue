@@ -754,7 +754,7 @@ async function initiatePayment() {
   <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="close">
     <div class="flex max-h-[86vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-card shadow-2xl">
       <div class="shrink-0 border-b border-border px-6 pb-4 pt-6">
-        <h2 class="text-xl font-semibold">{{ copy.title }}: {{ courseName }}</h2>
+        <h2 class="text-xl font-semibold">{{ courseName }}</h2>
         <p v-if="description" class="mt-2 text-sm leading-6 text-muted-foreground">{{ description }}</p>
       </div>
 
@@ -805,7 +805,7 @@ async function initiatePayment() {
           </ul>
         </div>
 
-        <div v-if="canPurchase || activeOrder?.action === 'purchase'" class="rounded-lg border border-border bg-muted/20 p-4">
+        <div v-if="(canPurchase || activeOrder?.action === 'purchase') && (exemptionLoading || exemptionError || hasExemptionOptions)" class="rounded-lg border border-border bg-muted/20 p-4">
           <div class="mb-3 flex items-start justify-between gap-3">
             <div>
               <div class="text-sm font-semibold text-foreground">{{ copy.exemptionsTitle }}</div>
@@ -1028,6 +1028,7 @@ async function initiatePayment() {
     </div>
   </div>
 </template>
+
 
 
 

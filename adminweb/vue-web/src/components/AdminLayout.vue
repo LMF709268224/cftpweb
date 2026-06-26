@@ -28,6 +28,8 @@ const collapsed = ref(false)
 
 const navItems = [
   { path: "/lms", label: "课程配置", icon: BookOpen },
+  { path: "/resource-packs", label: "资源包配置", icon: FileText },
+  { path: "/resource-pack-files", label: "资源文件配置", icon: FileText },
   { path: "/pipelines", label: "管线配置", icon: FileBadge },
   { path: "/bundles", label: "商品配置", icon: Boxes },
   { path: "/prog", label: "管线管理", icon: GitBranch },

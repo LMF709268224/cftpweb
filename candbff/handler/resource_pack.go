@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
@@ -55,10 +56,43 @@ func (h *Handler) ListResourcePackFiles(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	b, _ := json.MarshalIndent(resp.GetFiles(), "", "  ")
+	type extFile struct {
+		*lmspb.ResourcePackFile
+		ThumbnailUrl string `json:"thumbnail_url,omitempty"`
+	}
+
+	extFiles := make([]extFile, len(resp.GetFiles()))
+	var wg sync.WaitGroup
+	for i, file := range resp.GetFiles() {
+		extFiles[i] = extFile{ResourcePackFile: file}
+		if objectKey := strings.TrimSpace(file.GetThumbnailObjectKey()); objectKey != "" {
+			wg.Add(1)
+			go func(index int, key string) {
+				defer wg.Done()
+				viewResp, err := h.Lms.CreateViewURL(r.Context(), &lmspb.CreateViewURLCandidateRequest{
+					CandidateUlid: candidateID,
+					ObjectKey:     key,
+				})
+				if err == nil {
+					extFiles[index].ThumbnailUrl = viewResp.GetViewUrl()
+				}
+			}(i, objectKey)
+		}
+	}
+	wg.Wait()
+
+	out := struct {
+		Files         []extFile `json:"files,omitempty"`
+		NextPageToken string    `json:"next_page_token,omitempty"`
+	}{
+		Files:         extFiles,
+		NextPageToken: resp.GetNextPageToken(),
+	}
+
+	b, _ := json.MarshalIndent(extFiles, "", "  ")
 	slog.Info("ListResourcePackFiles returned", "pack_id", packID, "files", string(b))
 
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, out)
 }
 
 // GetResourcePackFileThumbnailURL GET /api/resource-pack-files/{file_id}/thumbnail-url

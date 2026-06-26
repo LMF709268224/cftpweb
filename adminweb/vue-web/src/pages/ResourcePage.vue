@@ -97,6 +97,64 @@ function nextPage() {
   page.value += 1
 }
 
+const isEditing = ref(false)
+const draftJson = ref("")
+
+watch(selected, (val) => {
+  isEditing.value = false
+  draftJson.value = val ? JSON.stringify(val, null, 2) : ""
+})
+
+function startEdit() {
+  if (!selected.value) return
+  draftJson.value = JSON.stringify(selected.value, null, 2)
+  isEditing.value = true
+}
+
+function cancelEdit() {
+  isEditing.value = false
+  if (selected.value) {
+    draftJson.value = JSON.stringify(selected.value, null, 2)
+  }
+}
+
+async function saveEdit() {
+  if (!selected.value) return
+  try {
+    const parsed = JSON.parse(draftJson.value)
+    
+    let idValue = ""
+    const possibleIdKeys = ["id", "ulid", "file_id", "pack_id", "course_id", "pipeline_cc_ulid", "bundle_id"]
+    for (const k of Object.keys(parsed)) {
+      if (possibleIdKeys.includes(k) || k.endsWith("_id") || k.endsWith("_ulid")) {
+        idValue = parsed[k]
+        break
+      }
+    }
+    
+    if (!idValue) {
+      toast.error("无法找到资源的 ID 字段，无法保存")
+      return
+    }
+
+    loading.value = true
+    const endpoint = meta.value.endpoint
+    await apiClient(`${endpoint}/${idValue}`, {
+      method: "PUT",
+      body: JSON.stringify(parsed)
+    })
+    
+    toast.success("保存成功")
+    isEditing.value = false
+    load()
+  } catch (err: any) {
+    console.error(err)
+    toast.error("保存失败：" + (err.message || String(err)))
+  } finally {
+    loading.value = false
+  }
+}
+
 watch(
   () => route.path,
   () => {
@@ -232,7 +290,20 @@ onMounted(load)
             <pre v-else class="max-h-44 overflow-auto text-xs leading-5 text-slate-700">{{ JSON.stringify(value, null, 2) }}</pre>
           </div>
         </div>
-        <pre class="max-h-[720px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-700">原始 JSON</h3>
+            <div v-if="!isEditing" class="flex gap-2">
+              <button class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800" @click="startEdit">编辑原始 JSON</button>
+            </div>
+            <div v-else class="flex gap-2">
+              <button class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50" @click="cancelEdit">取消</button>
+              <button class="rounded-lg bg-[#0b7bdc] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0966b8]" @click="saveEdit">保存并提交</button>
+            </div>
+          </div>
+          <pre v-if="!isEditing" class="max-h-[720px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+          <textarea v-else v-model="draftJson" class="min-h-[500px] w-full rounded-2xl bg-slate-950 p-5 font-mono text-xs leading-6 text-slate-100 outline-none focus:ring-2 focus:ring-[#0b7bdc]"></textarea>
+        </div>
       </div>
     </div>
   </section>

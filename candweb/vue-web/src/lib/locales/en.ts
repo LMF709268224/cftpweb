@@ -1,4 +1,4 @@
-import { AppTranslations } from "./zh"
+﻿import { AppTranslations } from "./zh"
 
 export const en: AppTranslations = {
   common: {
@@ -15,12 +15,12 @@ export const en: AppTranslations = {
     unknownCourse: "Unknown Course",
     unknown: "Unknown",
     na: "N/A",
-    purchaseDialogTitle: "Purchase Certification",
-    purchaseDialogCourse: "Certification Name",
+    purchaseDialogTitle: "Purchase",
+    purchaseDialogCourse: "Product Name",
     purchaseDialogPrice: "Price",
     purchaseDialogPaymentMethod: "Payment Method",
     purchaseDialogStripeMethod: "Stripe Online Payment",
-    purchaseDialogStripeBadge: "Recommended · Instant",
+    purchaseDialogStripeBadge: "Recommended 路 Instant",
     purchaseDialogBankMethod: "Bank Transfer / Offline Payment",
     purchaseDialogStripeSubmit: "Proceed to Pay",
     purchaseDialogBankSubmit: "Submit Order",
@@ -50,7 +50,7 @@ export const en: AppTranslations = {
     profile: "Profile",
     settings: "Settings",
     logout: "Logout",
-    switchLang: "中文",
+    switchLang: "涓枃",
   },
   home: {
     welcomeBack: "Welcome back",
@@ -119,8 +119,8 @@ export const en: AppTranslations = {
       premium: "Premium Member",
     },
     priceFree: "Free",
-    priceYearly1999: "¥1,999/year",
-    priceYearly4999: "¥4,999/year",
+    priceYearly1999: "楼1,999/year",
+    priceYearly4999: "楼4,999/year",
     currentLevelBadge: "Current Level",
     introTitle: "About CFtP Membership",
     introDesc: "The CFtP (Chartered Fintech Practitioner) membership program is a professional certification system designed for fintech practitioners. By becoming a member, you will gain access to industry-leading learning resources, professional certifications, and an extensive network of industry contacts.",
@@ -737,3 +737,4 @@ Object.assign(en.certificatesPage, {
   celebrationModalDismiss: "Maybe later",
   shareText: "I have earned my CFtP professional certification. Take a look at my achievement.",
 })
+
