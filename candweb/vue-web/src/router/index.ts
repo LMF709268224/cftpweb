@@ -6,6 +6,7 @@ const HomePage = () => import("@/pages/HomePage.vue")
 const LoginPage = () => import("@/pages/LoginPage.vue")
 const CallbackPage = () => import("@/pages/CallbackPage.vue")
 const CoursesPage = () => import("@/pages/CoursesPage.vue")
+const MyCertificationsPage = () => import("@/pages/MyCertificationsPage.vue")
 const CourseDetailPage = () => import("@/pages/CourseDetailPage.vue")
 const CourseLearnPage = () => import("@/pages/CourseLearnPage.vue")
 const CourseSupplementaryPage = () => import("@/pages/CourseSupplementaryPage.vue")
@@ -76,6 +77,7 @@ export const router = createRouter({
     { path: "/login", component: LoginPage },
     { path: "/callback", component: CallbackPage },
     { path: "/certifications", component: CoursesPage },
+    { path: "/my-certifications", component: MyCertificationsPage },
     { path: "/certifications/detail", redirect: redirectCertificationDetail },
     { path: "/certifications/learn", redirect: redirectCertificationLearn },
     { path: "/certifications/supplementary", redirect: redirectCertificationSupplementary },

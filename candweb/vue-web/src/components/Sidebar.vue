@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { Award, ChevronUp, ClipboardList, Crown, FileCheck2, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, X } from "lucide-vue-next"
+import { Award, BookOpen, ChevronUp, ClipboardList, Crown, FileCheck2, Home, Languages, LayoutDashboard, Loader2, LogOut, Menu, MessageSquare, Package, Settings, ShoppingBag, X } from "lucide-vue-next"
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
 import { fetchUnreadCount, getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
@@ -31,6 +31,7 @@ const navRouteGroups: Record<string, string[]> = {
     "/courses",
     "/pdf-preview/lessons",
   ],
+  "/my-certifications": ["/my-certifications"],
   "/exams": ["/exams"],
   "/resource-packs": [
     "/resource-packs",
@@ -58,6 +59,7 @@ function isNavItemActive(href: string) {
 const navItems = computed(() => [
   { href: "/", label: t.value.sidebar.home, group: "" },
   { href: "/certifications", label: t.value.sidebar.courses, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
+  { href: "/my-certifications", label: t.value.sidebar.myCertifications, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
   { href: "/exams", label: t.value.sidebar.exams, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
   { href: "/resource-packs", label: lang.value === "zh" ? "资源包" : "Resources", group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
   { href: "/credentials", label: t.value.sidebar.credentials, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
@@ -70,6 +72,7 @@ const navItems = computed(() => [
 const navIconByHref = {
   "/": LayoutDashboard,
   "/certifications": Award,
+  "/my-certifications": BookOpen,
   "/exams": ClipboardList,
   "/resource-packs": Package,
   "/credentials": FileCheck2,
