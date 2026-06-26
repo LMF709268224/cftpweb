@@ -61,6 +61,7 @@ const cardCopy = computed(() => ({
   inProgressPurchase: lang.value === "zh" ? "\u6709\u672a\u5b8c\u6210\u8ba2\u5355" : "Order in progress",
   pipelineNotFound: lang.value === "zh" ? "\u8ba4\u8bc1\u5df2\u4e0d\u53ef\u7528" : "No longer available",
   estimatedPrice: lang.value === "zh" ? "\u9884\u4f30\u4ef7\u683c" : "Estimated price",
+  free: lang.value === "zh" ? "\u514d\u8d39" : "Free",
 }))
 
 const actionCopy = computed(() => {
@@ -156,6 +157,14 @@ const accessState = computed(() => {
             </div>
             <div class="whitespace-nowrap text-[22px] font-bold leading-tight tracking-tight text-[#101114] xl:text-[24px] 2xl:text-[26px]">
               {{ priceLabel }}
+            </div>
+          </div>
+          <div v-else class="space-y-0.5">
+            <div class="text-sm font-medium leading-5 text-transparent select-none">
+              -
+            </div>
+            <div class="whitespace-nowrap text-[22px] font-bold leading-tight tracking-tight text-emerald-500 xl:text-[24px] 2xl:text-[26px]">
+              {{ cardCopy.free }}
             </div>
           </div>
         </div>

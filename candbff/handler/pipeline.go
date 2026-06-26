@@ -334,16 +334,7 @@ func (h *Handler) GetPipelineCourse(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if completeCourse.GetSupplementaryMaterial() == nil {
-		suppResp, err := h.Lms.GetCourseSupplementaryMaterialAdmin(r.Context(), &lmspb.GetCourseSupplementaryMaterialRequest{
-			CourseUlid: courseID,
-		})
-		if err == nil && suppResp != nil && suppResp.GetMaterial() != nil {
-			completeCourse.SupplementaryMaterial = suppResp.GetMaterial()
-		} else if err != nil {
-			slog.Warn("failed to load candidate course supplementary material", "error", err, "course_id", courseID)
-		}
-	}
+	// Supplementary material is now included in GetCompleteCourse response
 
 	quizProgress := h.quizProgressByCourse(r, candidateID, completeCourse)
 	WriteJSON(w, http.StatusOK, PipelineCourseRsp{
@@ -1109,6 +1100,10 @@ func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, cour
 	out := make(map[string]QuizProgressItem, len(quizIDs))
 	for _, quizID := range quizIDs {
 		item := QuizProgressItem{QuizID: quizID}
+		// TODO: Currently using ListQuizAttemptsAdmin as a temporary workaround. 
+		// Permission is implicitly verified because quizIDs are derived from GetCompleteCourse(Candidate).
+		// We explicitly pass UserUlid = candidateID. Once glms provides a Candidate-facing
+		// ListQuizAttempts, this should be migrated.
 		resp, err := h.Lms.ListQuizAttemptsAdmin(r.Context(), &lmspb.ListQuizAttemptsRequest{
 			QuizUlid: quizID,
 			UserUlid: candidateID,

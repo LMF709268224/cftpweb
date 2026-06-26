@@ -288,8 +288,9 @@ func (h *Handler) GetMallCourseThumbnailURL(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	summaryResp, err := h.Lms.GetCourseSummaryAdmin(r.Context(), &lmspb.GetCourseRequest{
-		CourseUlid: courseID,
+	summaryResp, err := h.Lms.GetCourseSummary(r.Context(), &lmspb.GetCourseSummaryCandidateRequest{
+		CandidateUlid: CandidateID(r),
+		CourseUlid:    courseID,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -301,8 +302,9 @@ func (h *Handler) GetMallCourseThumbnailURL(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	viewResp, err := h.Lms.CreateViewURLAdmin(r.Context(), &lmspb.CreateViewURLRequest{
-		ObjectKey: objectKey,
+	viewResp, err := h.Lms.CreateViewURL(r.Context(), &lmspb.CreateViewURLCandidateRequest{
+		CandidateUlid: CandidateID(r),
+		ObjectKey:     objectKey,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

@@ -1,70 +1,70 @@
 package config
 
-// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
-// 鐜鍙橀噺闆嗕腑瀹氫箟
-// 鎵€鏈夌幆澧冨彉閲忚鍙栫粺涓€浣跨敤姝ゆ枃浠朵腑瀹氫箟鐨勫父閲忥紝鏂逛究杩愮淮鏌ョ湅闇€瑕侀厤缃摢浜涘彉閲?
-// 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
+// ──────────────────────────────────────────────────
+// 环境变量集中定义
+// 所有环境变量读取统一使用此文件中定义的常量，方便运维查看需要配置哪些变量
+// ──────────────────────────────────────────────────
 
 const (
-	// 鈹€鈹€ 鏈嶅姟鍣ㄧ洃鍚湴鍧€ 鈹€鈹€
-	// HTTP_ADDRESS  HTTP 鏈嶅姟鍣ㄧ洃鍚湴鍧€锛岄粯璁?"0.0.0.0:8080"
+	// ── 服务器监听地址 ──
+	// HTTP_ADDRESS  HTTP 服务器监听地址，默认 "0.0.0.0:8080"
 	EnvHTTPAddress = "HTTP_ADDRESS"
 
-	// 鈹€鈹€ TLS 璇佷功鐩綍 鈹€鈹€
-	// TLS_DIR  TLS 璇佷功鏂囦欢鐩綍锛岀洰褰曞唴闇€鍖呭惈 ca.crt
-	//          鏈缃椂鎵€鏈?gRPC 瀹㈡埛绔互 insecure 妯″紡杩愯
+	// ── TLS 证书目录 ──
+	// TLS_DIR  TLS 证书文件目录，目录内需包含 ca.crt
+	//          未设置时所有 gRPC 客户端以 insecure 模式运行
 	EnvTLSDir = "TLS_DIR"
 
-	// 鈹€鈹€ 閰嶇疆涓績 鈹€鈹€
-	// CFGSERVER_ADDR  cfgserver 閰嶇疆涓績鍦板潃
-	//                 鏈缃椂鑷姩鎷兼帴 K8s DNS: cfgserver.<ns>.svc.cluster.local:50051
+	// ── 配置中心 ──
+	// CFGSERVER_ADDR  cfgserver 配置中心地址
+	//                 未设置时自动拼接 K8s DNS: cfgserver.<ns>.svc.cluster.local:50051
 	EnvCfgServerAddr = "CFGSERVER_ADDR"
 
-	// 鈹€鈹€ Casdoor IAM 鈹€鈹€
-	// CASDOOR_ENDPOINT  Casdoor 鏈嶅姟鍦板潃
-	//                   鏈缃椂鑷姩鎷兼帴 K8s DNS: casdoor.<ns>.svc.cluster.local:8000
+	// ── Casdoor IAM ──
+	// CASDOOR_ENDPOINT  Casdoor 服务地址
+	//                   未设置时自动拼接 K8s DNS: casdoor.<ns>.svc.cluster.local:8000
 	EnvCasdoorEndpoint = "CASDOOR_ENDPOINT"
 
-	// CASDOOR_PUBLIC_ENDPOINT  Casdoor 鍏綉璁块棶鍦板潃锛岀敤浜庡墠绔烦杞?
+	// CASDOOR_PUBLIC_ENDPOINT  Casdoor 公网访问地址，用于前端跳转
 	EnvCasdoorPublicEndpoint = "CASDOOR_PUBLIC_ENDPOINT"
 
-	// ROLE_ADMIN_BASIC 绠＄悊鍛樺熀纭€瑙掕壊鍚嶏紝榛樿涓?"role_admin_basic"
+	// ROLE_ADMIN_BASIC 管理员基础角色名，默认为 "role_admin_basic"
 	EnvRoleAdminBasic = "ROLE_ADMIN_BASIC"
 
-	// 鈹€鈹€ 涓嬫父寰湇鍔?gRPC 鍦板潃 鈹€鈹€
-	// 姣忎釜鍙橀噺瀵瑰簲涓€涓笅娓告湇鍔★紝
-	// 鏈缃椂鑷姩鎷兼帴 K8s DNS 鍚? <service>.<ns>.svc.cluster.local:50051
+	// ── 下游微服务 gRPC 地址 ──
+	// 每个变量对应一个下游服务，
+	// 未设置时自动拼接 K8s DNS 名: <service>.<ns>.svc.cluster.local:50051
 
-	// MALL_GRPC_ADDR  gmall 鍟嗗煄鏈嶅姟鍦板潃
+	// MALL_GRPC_ADDR  gmall 商城服务地址
 	EnvMallGrpcAddr = "MALL_GRPC_ADDR"
-	// LMS_GRPC_ADDR   glms 璇剧▼/璧勬枡鏈嶅姟鍦板潃
+	// LMS_GRPC_ADDR   glms 课程/资料服务地址
 	EnvLmsGrpcAddr = "LMS_GRPC_ADDR"
-	// GCC_GRPC_ADDR gcc 璇佷功鏈嶅姟鍦板潃
+	// GCC_GRPC_ADDR gcc 证书服务地址
 	EnvGccGrpcAddr = "GCC_GRPC_ADDR"
-	// GPROG_GRPC_ADDR gprog 杩涘害鏈嶅姟鍦板潃
+	// GPROG_GRPC_ADDR gprog 进度服务地址
 	EnvGprogGrpcAddr = "GPROG_GRPC_ADDR"
-	// GMSG_GRPC_ADDR gmsg 娑堟伅鏈嶅姟鍦板潃
+	// GMSG_GRPC_ADDR gmsg 消息服务地址
 	EnvGmsgGrpcAddr = "GMSG_GRPC_ADDR"
-	// GCREDS_GRPC_ADDR gcreds 鍑瘉鏈嶅姟鍦板潃
+	// GCREDS_GRPC_ADDR gcreds 凭证服务地址
 	EnvGcredsGrpcAddr = "GCREDS_GRPC_ADDR"
-	// GEXAM_GRPC_ADDR gexam 鑰冭瘯鏈嶅姟鍦板潃
+	// GEXAM_GRPC_ADDR gexam 考试服务地址
 	EnvGexamGrpcAddr = "GEXAM_GRPC_ADDR"
-	// GMID_GRPC_ADDR gmid ID鏄犲皠鏈嶅姟鍦板潃
+	// GMID_GRPC_ADDR gmid ID映射服务地址
 	EnvGmidGrpcAddr = "GMID_GRPC_ADDR"
-	// GMAIL_GRPC_ADDR gmail 閭欢鏈嶅姟鍦板潃
+	// GMAIL_GRPC_ADDR gmail 邮件服务地址
 	EnvGmailGrpcAddr = "GMAIL_GRPC_ADDR"
-	// GPAY_GRPC_ADDR gpay 鏀粯鏈嶅姟鍦板潃
+	// GPAY_GRPC_ADDR gpay 支付服务地址
 	EnvGpayGrpcAddr = "GPAY_GRPC_ADDR"
 	// GMBR_GRPC_ADDR gmbr membership service address
 	EnvGmbrGrpcAddr = "GMBR_GRPC_ADDR"
 
-	// 鈹€鈹€ CORS 鈹€鈹€
-	// CORS_ALLOWED_ORIGINS  鍏佽鐨勮法鍩熸潵婧愶紝閫楀彿鍒嗛殧锛岄粯璁?"*" 鍏佽鎵€鏈?
+	// ── CORS ──
+	// CORS_ALLOWED_ORIGINS  允许的跨域来源，逗号分隔，默认 "*" 允许所有
 	EnvCORSOrigins = "CORS_ALLOWED_ORIGINS"
 
-	// 鈹€鈹€ 鏃ュ織 鈹€鈹€
-	// LOG_LEVEL  鏃ュ織绾у埆: debug / info / warn / error锛岄粯璁?info
+	// ── 日志 ──
+	// LOG_LEVEL  日志级别: debug / info / warn / error，默认 info
 	EnvLogLevel = "LOG_LEVEL"
-	// LOG_SOURCE  鏄惁鍦ㄦ棩蹇椾腑杈撳嚭婧愮爜鏂囦欢鍜岃鍙凤紝璁剧疆涓?"true" 寮€鍚?
+	// LOG_SOURCE  是否在日志中输出源码文件和行号，设置为 "true" 开启
 	EnvLogSource = "LOG_SOURCE"
 )
