@@ -690,17 +690,13 @@ async function initiatePayment() {
             {{ copy.checking }}
           </div>
         </div>
-        <div v-else-if="canPurchase" class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+        <div v-else-if="canPurchase || hasInProgressOrder" class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-emerald-900"><CheckCircle2 class="h-4 w-4" />{{ copy.canPurchaseTitle }}</div>
           <p class="mt-2 text-sm text-emerald-800">{{ copy.canPurchaseDesc }}</p>
         </div>
         <div v-else-if="canUnlock" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-blue-900"><Lock class="h-4 w-4" />{{ copy.canUnlockTitle }}</div>
           <p class="mt-2 text-sm text-blue-800">{{ copy.canUnlockDesc }}</p>
-        </div>
-        <div v-else-if="cannotContinue && hasInProgressOrder" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-          <div class="flex items-center gap-2 font-semibold text-blue-900"><CreditCard class="h-4 w-4" />{{ copy.inProgressPurchase }}</div>
-          <p class="mt-2 text-sm text-blue-800">{{ copy.inProgressPurchaseDesc }}</p>
         </div>
         <div v-else-if="cannotContinue" class="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-amber-900"><AlertCircle class="h-4 w-4" />{{ copy.blockedTitle }}</div>
@@ -804,16 +800,6 @@ async function initiatePayment() {
           </div>
         </div>
 
-        <div v-if="activeOrder" class="rounded-lg border border-border bg-muted/30 p-4">
-          <div class="mb-2 flex items-center justify-between gap-3">
-            <div class="text-sm font-semibold text-foreground">{{ activeOrder.message === copy.inProgressPurchaseDesc ? copy.activeOrder : copy.orderCreated }}</div>
-            <span v-if="activeOrder.status" class="badge text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', activeOrder.status)">
-              {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', activeOrder.status) }}
-            </span>
-          </div>
-          <div class="break-all text-xs text-muted-foreground">{{ activeOrder.orderId }}</div>
-          <p v-if="activeOrder.message" class="mt-2 text-sm text-muted-foreground">{{ activeOrder.message }}</p>
-        </div>
 
         <div v-if="paymentPreview" class="rounded-lg border border-border bg-muted/30 p-4">
           <div class="mb-3 text-sm font-semibold text-foreground">{{ copy.pricePreviewTitle }}</div>
