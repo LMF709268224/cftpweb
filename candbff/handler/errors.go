@@ -21,6 +21,7 @@ const (
 
 	// 认证模块
 	ErrAuthFailed          ErrorCode = "AUTH_FAILED"
+	ErrNotStudent          ErrorCode = "NON_STUDENT_LOGIN_DENIED"
 	ErrTokenExpired        ErrorCode = "TOKEN_EXPIRED"
 	ErrInvalidToken        ErrorCode = "INVALID_TOKEN"
 	ErrPasswordIncorrect   ErrorCode = "PASSWORD_INCORRECT"

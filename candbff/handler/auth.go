@@ -110,7 +110,7 @@ func (h *Handler) handleTokenExchange(w http.ResponseWriter, r *http.Request, to
 	}
 
 	if !IsCftpStudent(&claims.User) {
-		WriteError(w, http.StatusForbidden, ErrAuthFailed, "only cftp students are allowed to login")
+		WriteError(w, http.StatusForbidden, ErrNotStudent, "only cftp students are allowed to login")
 		return
 	}
 

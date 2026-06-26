@@ -1122,7 +1122,7 @@ func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, cour
 				item.AttemptID = attempt.GetAttemptId()
 				item.Status = attempt.GetStatus()
 			}
-			if attempt.GetIsPassed() {
+			if attempt.GetPassStatus() == lmspb.QuizPassStatus_QUIZ_PASS_STATUS_PASSED {
 				item.AttemptID = attempt.GetAttemptId()
 				item.Status = attempt.GetStatus()
 				item.IsPassed = true

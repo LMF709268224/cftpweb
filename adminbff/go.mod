@@ -24,3 +24,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
+
+replace github.com/afnandelfin620-star/cftptest/cftp => ../../cftptest/cftp

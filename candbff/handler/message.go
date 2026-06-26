@@ -57,10 +57,9 @@ func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) GetUnreadMessageCount(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 
-	rsp, err := h.Gmsg.ListMessages(r.Context(), &gmsgpb.ListMessagesRequest{
+	rsp, err := h.Gmsg.GetMessageCount(r.Context(), &gmsgpb.GetMessageCountRequest{
 		UserUlid: candidateID,
 		Status:   gmsgpb.MessageStatus_UNREAD.Enum(),
-		Limit:    99,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -68,7 +67,7 @@ func (h *Handler) GetUnreadMessageCount(w http.ResponseWriter, r *http.Request) 
 	}
 
 	WriteJSON(w, http.StatusOK, MessageUnreadCountRsp{
-		UnreadCount: uint32(len(rsp.GetMessages())),
+		UnreadCount: rsp.GetCount(),
 	})
 }
 
