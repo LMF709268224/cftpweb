@@ -338,8 +338,8 @@ onMounted(() => {
           <div class="flex min-w-0 items-center gap-4">
             <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
             <div class="min-w-0">
-              <div class="mb-1 flex flex-wrap items-center gap-2">
-                <h3 class="break-words font-medium text-card-foreground md:break-normal">{{ order.items.join(", ") }}</h3>
+              <div class="mb-1 flex min-w-0 flex-wrap items-center gap-2">
+                <h3 class="order-title-mobile min-w-0 max-w-full font-medium text-card-foreground">{{ order.items.join(", ") }}</h3>
                 <span class="rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-xs font-semibold text-primary">{{ orderTypeLabel(order.bizType) }}</span>
               </div>
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
@@ -411,5 +411,17 @@ onMounted(() => {
 
 .order-row:hover {
   box-shadow: inset 3px 0 0 rgba(37, 99, 235, 0.55);
+}
+
+.order-title-mobile {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .order-title-mobile {
+    font-size: 14px;
+    line-height: 1.45;
+  }
 }
 </style>
