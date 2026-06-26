@@ -36,6 +36,10 @@ export const ErrorMessages: Record<string, { zh: string; en: string }> = {
     zh: "认证失败，请重新登录",
     en: "Authentication failed. Please log in again.",
   },
+  NON_STUDENT_LOGIN_DENIED: {
+    zh: "抱歉，由于您不是 C-side 考生用户，无法在此页面登录。若您是工作人员，请前往管理员后台进行登录。",
+    en: "You are not a C-side student user and cannot log in here. If you are an administrator or staff member, please log in to the admin portal.",
+  },
   TOKEN_EXPIRED: {
     zh: "登录已过期，请重新登录",
     en: "Session expired, please log in again.",

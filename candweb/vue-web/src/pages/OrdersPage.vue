@@ -231,7 +231,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
         currency: (o.currency || "USD").toUpperCase(),
         bizType: o.biz_type || "",
         bizRefUlid: o.biz_ref_ulid || "",
-        amount: o.amount > 0 ? formatMoney(o.amount, o.currency || "USD") : "-",
+        amount: o.amount > 0 ? formatMoney(o.amount, o.currency || "USD") : (lang.value === "zh" ? "免费" : "Free"),
         status: (o.status in statusConfig ? o.status : "pending") as OrderStatus,
         rawStatus: o.raw_status,
         pipelineId: o.pipeline_id,

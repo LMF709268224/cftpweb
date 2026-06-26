@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -76,6 +77,17 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 
 		statusStr := candidateOrderStatus(item.GetOrderStatus())
 		amount := float64(item.GetAmountMinor()) / 100.0
+		currency := item.GetCurrencyCode()
+
+		if amount == 0 && item.GetBizRefUlid() != "" && item.GetBizType() != "" {
+			prevAmt, prevCur := h.previewPayment(r.Context(), item.GetBizType(), item.GetBizRefUlid())
+			if prevAmt > 0 {
+				amount = prevAmt
+				if currency == "" {
+					currency = prevCur
+				}
+			}
+		}
 
 		name := orderProductName(item.GetBizType(), item.GetBizRefUlid())
 
@@ -88,7 +100,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			RawStatus:            strings.ToUpper(strings.TrimSpace(item.GetOrderStatus())),
 			CreatedAt:            formatOrderCreatedAt(item.GetCreatedAt()),
 			Amount:               amount,
-			Currency:             item.GetCurrencyCode(),
+			Currency:             currency,
 			PayOrderUlid:         item.GetOrderUlid(),
 			PipelinePayOrderUlid: item.GetOrderUlid(),
 			CanViewInvoice:       strings.TrimSpace(item.GetOrderUlid()) != "",
@@ -215,4 +227,16 @@ func (h *Handler) pipelineName(r *http.Request, pipelineULID string, cache map[s
 	}
 	cache[pipelineULID] = name
 	return name
+}
+
+func (h *Handler) previewPayment(ctx context.Context, bizType, bizRefULID string) (float64, string) {
+	req := &mallpb.PreviewPaymentRequest{
+		BizType:    bizType,
+		BizRefUlid: bizRefULID,
+	}
+	resp, err := h.Mall.PreviewPayment(ctx, req)
+	if err == nil && resp != nil {
+		return float64(resp.GetTotal()) / 100.0, resp.GetCurrency()
+	}
+	return 0, ""
 }
