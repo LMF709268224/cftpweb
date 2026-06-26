@@ -389,7 +389,7 @@ export const zh = {
     formGender: "性别",
     formBirthdate: "出生日期",
     formCountry: "国家/地区",
-    formProvince: "ʡ/州",
+    formProvince: "省/州",
     formCity: "城市",
     formAddress: "详细地址",
     formPostalCode: "邮政编码",

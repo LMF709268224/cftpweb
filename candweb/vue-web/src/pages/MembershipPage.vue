@@ -224,7 +224,7 @@ async function loadActiveMembershipFromHistory(membershipHistory: RecordData[]) 
 async function cancelMembership() {
   const recordUlid = currentRecord.value?.membership_record_ulid
   if (!recordUlid) return
-  const ok = window.confirm(lang.value === "zh" ? "确认取消当前会员吗？" : "Cancel current membership?")
+  const ok = window.confirm(lang.value === "zh" ? "确认取消续费吗？" : "Cancel current auto-renew?")
   if (!ok) return
   cancelling.value = true
   try {
@@ -232,7 +232,7 @@ async function cancelMembership() {
       method: "POST",
       body: JSON.stringify({ membership_record_ulid: recordUlid, reason: "user_requested" }),
     })
-    toast.success(lang.value === "zh" ? "已提交取消会员请求" : "Membership cancellation submitted")
+    toast.success(lang.value === "zh" ? "已提交取消续费请求" : "Cancel auto-renew request submitted")
     await loadMembership()
   } finally {
     cancelling.value = false
@@ -364,7 +364,7 @@ onMounted(() => {
               >
                 <Loader2 v-if="cancelling" class="h-4 w-4 animate-spin" />
                 <XCircle v-else class="h-4 w-4" />
-                {{ lang === "zh" ? "取消会员" : "Cancel membership" }}
+                {{ lang === "zh" ? "取消续费" : "Cancel auto-renew" }}
               </button>
             </div>
           </section>
