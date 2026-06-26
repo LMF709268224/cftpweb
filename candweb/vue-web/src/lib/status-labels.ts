@@ -270,6 +270,10 @@ export const CANDIDATE_PIPELINE_STATUS_LABELS: StatusLabelMap = {
   "2": "learning.statusWaitFinalElig",
   "3": "learning.statusCompleted",
   "4": "learning.statusIssuingCert",
+  PIPELINE_STATUS_RUNNING: "learning.statusRunning",
+  PIPELINE_STATUS_WAIT_FINAL_ELIG: "learning.statusWaitFinalElig",
+  PIPELINE_STATUS_COMPLETED: "learning.statusCompleted",
+  PIPELINE_STATUS_ISSUING_CERT: "learning.statusIssuingCert",
 }
 
 export const CANDIDATE_PIPELINE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
@@ -285,6 +289,10 @@ export const ADMIN_PIPELINE_STATUS_LABELS: StatusLabelMap = {
   "2": "progPage.pipelineStatusWaitFinalElig",
   "3": "progPage.pipelineStatusCompleted",
   "4": "progPage.pipelineStatusIssuingCert",
+  PIPELINE_STATUS_RUNNING: "progPage.pipelineStatusRunning",
+  PIPELINE_STATUS_WAIT_FINAL_ELIG: "progPage.pipelineStatusWaitFinalElig",
+  PIPELINE_STATUS_COMPLETED: "progPage.pipelineStatusCompleted",
+  PIPELINE_STATUS_ISSUING_CERT: "progPage.pipelineStatusIssuingCert",
 }
 
 export const ADMIN_PIPELINE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
@@ -299,6 +307,9 @@ export const STAGE_STATUS_LABELS: StatusLabelMap = {
   "1": "learning.statusWaitCandidate",
   "2": "learning.statusRunning",
   "3": "learning.statusCompleted",
+  STAGE_STATUS_WAIT_CANDIDATE: "learning.statusWaitCandidate",
+  STAGE_STATUS_RUNNING: "learning.statusRunning",
+  STAGE_STATUS_COMPLETED: "learning.statusCompleted",
 }
 
 export const STAGE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
@@ -315,6 +326,12 @@ export const COURSE_UNIT_STATUS_LABELS: StatusLabelMap = {
   "4": "learning.statusExamScheduled",
   "5": "learning.statusExamFailed",
   "6": "learning.statusCompleted",
+  COURSE_UNIT_STATUS_WAITING_STUDY: "learning.statusWaitingStudy",
+  COURSE_UNIT_STATUS_WAITING_SIGNUP_EXAM: "learning.statusWaitingSignupExam",
+  COURSE_UNIT_STATUS_EXAM_OPEN: "learning.statusExamOpen",
+  COURSE_UNIT_STATUS_EXAM_SCHEDULED: "learning.statusExamScheduled",
+  COURSE_UNIT_STATUS_EXAM_FAILED: "learning.statusExamFailed",
+  COURSE_UNIT_STATUS_COMPLETED: "learning.statusCompleted",
 }
 
 export const COURSE_UNIT_STATUS_ENUM_NAMES: StatusEnumNameMap = {
@@ -361,6 +378,10 @@ export const MESSAGE_STATUS_LABELS: StatusLabelMap = {
   "1": "messagesPage.statusRead",
   "2": "messagesPage.statusDeleted",
   "3": "messagesPage.statusRevoked",
+  MESSAGE_STATUS_UNREAD: "messagesPage.statusUnread",
+  MESSAGE_STATUS_READ: "messagesPage.statusRead",
+  MESSAGE_STATUS_DELETED: "messagesPage.statusDeleted",
+  MESSAGE_STATUS_REVOKED: "messagesPage.statusRevoked",
 }
 
 export const MESSAGE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
@@ -375,6 +396,10 @@ export const ADMIN_APPLICATION_STATUS_LABELS: StatusLabelMap = {
   "2": "applicationsPage.statusApproved",
   "3": "applicationsPage.statusRejected",
   "4": "applicationsPage.statusResubmit",
+  APPLICATION_STATUS_PENDING: "applicationsPage.statusPending",
+  APPLICATION_STATUS_APPROVED: "applicationsPage.statusApproved",
+  APPLICATION_STATUS_REJECTED: "applicationsPage.statusRejected",
+  APPLICATION_STATUS_RESUBMIT: "applicationsPage.statusResubmit",
 }
 
 export const ADMIN_APPLICATION_STATUS_ENUM_NAMES: StatusEnumNameMap = {
