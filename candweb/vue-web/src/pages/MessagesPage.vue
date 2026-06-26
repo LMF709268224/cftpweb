@@ -8,8 +8,7 @@ import { formatBackendDate } from "@/lib/utils"
 import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
-
-type Message = { id: string; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean }
+type Message = { id: string; numericId: number; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean }
 
 const { t, lang } = useTranslation()
 const selectedType = ref<string | null>(null)
@@ -359,7 +358,7 @@ onMounted(() => {
             <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
             <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
           </div>
-          <div v-if="listUnreadCount > 0" class="flex justify-end">
+          <div v-if="unreadCount > 0" class="flex justify-end">
         <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="markAllLoading" @click="markAllAsRead">
           <Loader2 v-if="markAllLoading" class="h-4 w-4 animate-spin" />
           <CheckCheck v-else class="h-4 w-4" />
