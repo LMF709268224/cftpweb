@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
-import { CheckCircle2, ChevronRight, CreditCard, FileText, Loader2, Package, Receipt, ShoppingCart } from "lucide-vue-next"
+import { ChevronRight, CreditCard, FileText, Loader2, Package, Receipt } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
@@ -40,8 +40,6 @@ const { t, lang } = useTranslation()
 const router = useRouter()
 
 const orders = ref<OrderItem[]>([])
-const totalSpent = ref(0)
-const completedCount = ref(0)
 const loading = ref(true)
 const page = ref(1)
 const pageSize = 10
@@ -63,8 +61,6 @@ const showPurchaseDialog = ref(false)
 const selectedCourseName = ref("")
 const selectedPipelineId = ref("")
 
-const displayCurrency = computed(() => orders.value.find((order) => order.currency)?.currency || "USD")
-const totalSpentLabel = computed(() => formatMoney(totalSpent.value, displayCurrency.value))
 const invoiceOpeningLabel = computed(() => (lang.value === "zh" ? "正在打开发票，请稍候..." : "Opening invoice. Please wait..."))
 const orderRangeLabel = computed(() => {
   if (totalOrders.value === 0) return "0 / 0"
@@ -227,8 +223,6 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     if (selectedBizType.value) params.set("biz_type", selectedBizType.value)
     if (selectedOrderStatus.value) params.set("status", selectedOrderStatus.value)
     const res = await apiClient(`/api/orders?${params.toString()}`, { suppressErrorToast })
-    totalSpent.value = Number(res.total_amount || 0)
-    completedCount.value = Number(res.completed || 0)
     totalOrders.value = Number(res.total_orders || 0)
     totalPages.value = Number(res.total_pages || 0)
     if (Array.isArray(res.orders)) {
@@ -305,36 +299,6 @@ onMounted(() => {
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.orders.title }}</h1>
           <p class="mt-2 text-muted-foreground">{{ t.orders.subtitle }}</p>
         </div>
-
-    <div class="mb-4 grid gap-4 sm:grid-cols-3">
-        <div class="order-stat-card order-stat-primary group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 ease-out hover:-translate-y-1">
-          <span class="order-stat-sheen pointer-events-none absolute left-0 top-0 h-1 w-full" />
-          <span class="order-stat-orb pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-          <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
-          <div class="flex items-center gap-4">
-            <div class="relative flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 shadow-sm ring-1 ring-primary/10 transition-transform group-hover:scale-105"><ShoppingCart class="h-6 w-6 text-primary" /></div>
-            <div class="relative"><p class="text-2xl font-bold text-card-foreground">{{ totalOrders }}</p><p class="text-sm text-muted-foreground">{{ t.orders.totalOrders }}</p></div>
-          </div>
-        </div>
-        <div class="order-stat-card order-stat-success group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 ease-out hover:-translate-y-1">
-          <span class="order-stat-sheen pointer-events-none absolute left-0 top-0 h-1 w-full" />
-          <span class="order-stat-orb pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-          <div class="absolute left-0 top-0 h-full w-1 bg-emerald-500/60" />
-          <div class="flex items-center gap-4">
-            <div class="relative flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 shadow-sm ring-1 ring-emerald-200 transition-transform group-hover:scale-105"><CheckCircle2 class="h-6 w-6 text-emerald-600" /></div>
-            <div class="relative"><p class="text-2xl font-bold text-card-foreground">{{ completedCount }}</p><p class="text-sm text-muted-foreground">{{ t.orders.completed }}</p></div>
-          </div>
-        </div>
-        <div class="order-stat-card order-stat-warning group relative overflow-hidden rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 ease-out hover:-translate-y-1">
-          <span class="order-stat-sheen pointer-events-none absolute left-0 top-0 h-1 w-full" />
-          <span class="order-stat-orb pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-          <div class="absolute left-0 top-0 h-full w-1 bg-amber-500/60" />
-          <div class="flex items-center gap-4">
-            <div class="relative flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 shadow-sm ring-1 ring-amber-200 transition-transform group-hover:scale-105"><Receipt class="h-6 w-6 text-amber-600" /></div>
-            <div class="relative"><p class="text-2xl font-bold text-card-foreground">{{ totalSpentLabel }}</p><p class="text-sm text-muted-foreground">{{ t.orders.totalSpent }}</p></div>
-          </div>
-        </div>
-    </div>
 
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <div class="flex flex-col gap-3 border-b border-slate-100 bg-white px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
@@ -450,45 +414,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.order-stat-card {
-  --order-stat-accent: #2563eb;
-  --order-stat-glow: rgba(37, 99, 235, 0.16);
-}
-
-.order-stat-primary {
-  --order-stat-accent: #2563eb;
-  --order-stat-glow: rgba(37, 99, 235, 0.18);
-}
-
-.order-stat-success {
-  --order-stat-accent: #10b981;
-  --order-stat-glow: rgba(16, 185, 129, 0.18);
-}
-
-.order-stat-warning {
-  --order-stat-accent: #f59e0b;
-  --order-stat-glow: rgba(245, 158, 11, 0.18);
-}
-
-.order-stat-card:hover {
-  box-shadow: 0 18px 34px -18px var(--order-stat-glow), 0 12px 28px rgba(15, 23, 42, 0.1);
-}
-
-.order-stat-sheen {
-  background: linear-gradient(90deg, transparent, var(--order-stat-accent), transparent);
-  opacity: 0.72;
-  transform: translateX(-105%);
-  transition: transform 0.65s ease;
-}
-
-.order-stat-card:hover .order-stat-sheen {
-  transform: translateX(105%);
-}
-
-.order-stat-orb {
-  background: radial-gradient(circle, var(--order-stat-glow), transparent 68%);
-}
-
 .order-row {
   box-shadow: inset 0 0 0 1px transparent;
 }
