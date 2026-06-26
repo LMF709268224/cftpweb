@@ -690,15 +690,7 @@ async function initiatePayment() {
             {{ copy.checking }}
           </div>
         </div>
-        <div v-else-if="canPurchase || hasInProgressOrder" class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-          <div class="flex items-center gap-2 font-semibold text-emerald-900"><CheckCircle2 class="h-4 w-4" />{{ copy.canPurchaseTitle }}</div>
-          <p class="mt-2 text-sm text-emerald-800">{{ copy.canPurchaseDesc }}</p>
-        </div>
-        <div v-else-if="canUnlock" class="rounded-lg border border-blue-200 bg-blue-50 p-4">
-          <div class="flex items-center gap-2 font-semibold text-blue-900"><Lock class="h-4 w-4" />{{ copy.canUnlockTitle }}</div>
-          <p class="mt-2 text-sm text-blue-800">{{ copy.canUnlockDesc }}</p>
-        </div>
-        <div v-else-if="cannotContinue" class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <div v-else-if="cannotContinue && !hasInProgressOrder" class="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-amber-900"><AlertCircle class="h-4 w-4" />{{ copy.blockedTitle }}</div>
           <p class="mt-2 text-sm text-amber-800">{{ copy.blockedDesc }}</p>
         </div>

@@ -265,10 +265,7 @@ onBeforeUnmount(() => destroyStripeCheckout(true))
         <Loader2 class="h-4 w-4 animate-spin" />
         {{ copy.loadingCheckout }}
       </div>
-      <div v-if="showStripeConnectionHint" class="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
-        <AlertTriangle class="mt-0.5 h-4 w-4 shrink-0" />
-        <span>{{ copy.stripeConnectionHint }}</span>
-      </div>
+
       <div :id="checkoutContainerId" :class="['rounded-2xl border border-slate-200 bg-white', minHeightClass]" />
     </div>
 
