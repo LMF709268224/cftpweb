@@ -19,6 +19,11 @@ const result = ref<any>(null)
 
 const questions = computed(() => paper.value?.questions || [])
 const allAnswered = computed(() => questions.value.every((q: any) => (answers.value[questionIdOf(q)]?.length || 0) > 0))
+const quizPassed = computed(() => {
+  if (Number(result.value?.pass_status) === 1) return true
+  if (Number(result.value?.pass_status) === 2) return false
+  return result.value?.is_passed === true
+})
 
 function firstString(...values: unknown[]) {
   for (const value of values) {
@@ -134,8 +139,8 @@ onMounted(loadPaper)
             <span class="text-4xl font-bold text-foreground">{{ result.score || 0 }}</span>
             <span class="text-xl text-muted-foreground">/ {{ result.max_score || 0 }}</span>
           </div>
-          <div :class="['mx-auto mt-4 w-fit rounded-full px-4 py-1 text-sm font-semibold', result.is_passed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700']">
-            {{ result.is_passed ? t.learning?.quizPassed : t.learning?.quizFailed }}
+          <div :class="['mx-auto mt-4 w-fit rounded-full px-4 py-1 text-sm font-semibold', quizPassed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700']">
+            {{ quizPassed ? t.learning?.quizPassed : t.learning?.quizFailed }}
           </div>
         </div>
         <button class="btn btn-primary cursor-pointer px-8" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
