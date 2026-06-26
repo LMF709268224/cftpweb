@@ -1421,10 +1421,7 @@ async function openInlinePdf(url: string) {
 
 function openPreviewTab(url: string) {
   const resolved = router.resolve(url)
-  const target = window.open(resolved.href, "_blank", "noopener,noreferrer")
-  if (!target) {
-    router.push(url)
-  }
+  window.open(resolved.href, "_blank", "noopener,noreferrer")
 }
 
 function openExternalPdfPreview(src: string, title: string) {

@@ -713,7 +713,7 @@ async function initiatePayment() {
           </ul>
         </div>
 
-        <div v-if="(canPurchase || activeOrder?.action === 'purchase') && (exemptionError || hasExemptionOptions)" class="rounded-lg border border-border bg-muted/20 p-4">
+        <div v-if="canPurchase && !activeOrder && (exemptionError || hasExemptionOptions)" class="rounded-lg border border-border bg-muted/20 p-4">
           <div class="mb-3 flex items-start justify-between gap-3">
             <div>
               <div class="text-sm font-semibold text-foreground">{{ copy.exemptionsTitle }}</div>
