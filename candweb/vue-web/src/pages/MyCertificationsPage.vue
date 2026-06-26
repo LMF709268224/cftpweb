@@ -28,7 +28,7 @@ const copy = computed(() => lang.value === "zh"
   ? {
       title: "我的认证",
       subtitle: "查看你已购买或正在进行的认证进度。",
-      status: "״̬",
+      status: "状态",
       details: "查看详情",
       viewDetailsHint: "点击查看认证详情",
       emptyTitle: "还没有购买认证",
@@ -36,6 +36,8 @@ const copy = computed(() => lang.value === "zh"
       browseMarketplace: "浏览商城",
       configId: "认证配置 ID",
       instanceId: "认证实例 ID",
+      startedAt: "开始时间",
+      completedAt: "完成时间",
     }
   : {
       title: "My Certifications",
@@ -48,6 +50,8 @@ const copy = computed(() => lang.value === "zh"
       browseMarketplace: "Browse Marketplace",
       configId: "Certification Config ID",
       instanceId: "Certification Instance ID",
+      startedAt: "Started At",
+      completedAt: "Completed At",
     })
 
 function certificationDisplayName(value?: string) {
@@ -148,8 +152,8 @@ onMounted(() => {
 
               <div v-if="course.currentStage || course.startedAt || course.completedAt" class="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
                 <span v-if="course.currentStage">{{ t.courses.stage }}: {{ course.currentStage }}</span>
-                <span v-if="course.startedAt">{{ course.startedAt }}</span>
-                <span v-if="course.completedAt">{{ course.completedAt }}</span>
+                <span v-if="course.startedAt">{{ copy.startedAt }}: {{ course.startedAt }}</span>
+                <span v-if="course.completedAt">{{ copy.completedAt }}: {{ course.completedAt }}</span>
               </div>
             </div>
 

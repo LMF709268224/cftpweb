@@ -191,10 +191,10 @@ onMounted(load)
       <div class="flex items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-black">列表</h2>
-          <p class="mt-1 text-sm text-slate-500">ÿҳ 20 条，列表隐藏 ULID；点进详情后可查看完整字段。</p>
+          <p class="mt-1 text-sm text-slate-500">每页 20 条，列表隐藏 ULID；点进详情后可查看完整字段。</p>
         </div>
         <div class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">
-          第 {{ page }} ҳ / {{ items.length }} 条
+          第 {{ page }} 页 / {{ items.length }} 条
         </div>
       </div>
 

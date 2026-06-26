@@ -407,7 +407,7 @@ onMounted(async () => {
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
         <div>
           <h2 class="text-xl font-black">发送记录</h2>
-          <p class="mt-1 text-sm text-slate-500">ÿҳ {{ pageSize }} 条，总计 {{ total }} 条。</p>
+          <p class="mt-1 text-sm text-slate-500">每页 {{ pageSize }} 条，总计 {{ total }} 条。</p>
         </div>
         <select v-model="statusFilter" class="rounded-xl border border-slate-200 px-4 py-2">
           <option value="">全部状态</option>

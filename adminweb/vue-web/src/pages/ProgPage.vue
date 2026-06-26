@@ -373,7 +373,7 @@ onMounted(async () => {
           <input v-model="candidateFilter" class="rounded-xl border border-slate-200 py-3 pl-9 pr-4" placeholder="Candidate ULID" />
         </label>
         <label class="grid gap-2 text-sm font-bold">
-          ״̬ɸѡ
+          ״̬筛选
           <select v-model="statusFilter" class="rounded-xl border border-slate-200 px-4 py-3">
             <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>

@@ -20,7 +20,7 @@ function statusLabel(value: unknown) {
   if (status === 2) return "生成中"
   if (status === 3) return "成功"
   if (status === 4) return "失败"
-  return String(value || "δ֪")
+  return String(value || "未知")
 }
 
 async function load() {

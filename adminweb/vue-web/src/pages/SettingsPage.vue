@@ -207,7 +207,7 @@ onMounted(() => {
           <input v-model="profile.affiliation" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
         </label>
         <label class="block">
-          <span class="text-sm font-bold">ְλ</span>
+          <span class="text-sm font-bold">职位</span>
           <input v-model="profile.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
         </label>
         <label class="block md:col-span-2">

@@ -231,7 +231,7 @@ function questionTypeLabel(value: unknown) {
   if (type === 1) return "单选"
   if (type === 2) return "多选"
   if (type === 3) return "判断"
-  return "δ֪"
+  return "未知"
 }
 
 function courseFormFrom(course: JsonRecord): CourseForm {

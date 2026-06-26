@@ -341,7 +341,7 @@ onMounted(async () => {
           <label class="block">
             <span class="font-bold">消息类型</span>
             <select v-model.number="msgType" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
-              <option :value="1">ϵͳ֪ͨ</option>
+              <option :value="1">系统通知</option>
               <option :value="2">公告</option>
               <option :value="3">营销</option>
               <option :value="4">支付</option>
@@ -367,7 +367,7 @@ onMounted(async () => {
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
         <div>
           <h2 class="text-xl font-black">发送记录</h2>
-          <p class="mt-1 text-sm text-slate-500">ÿҳ {{ pageSize }} 条，总计 {{ total }} 条。</p>
+          <p class="mt-1 text-sm text-slate-500">每页 {{ pageSize }} 条，总计 {{ total }} 条。</p>
         </div>
         <select v-model="statusFilter" class="rounded-xl border border-slate-200 px-4 py-2">
           <option value="">全部状态</option>
