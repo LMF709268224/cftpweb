@@ -4,6 +4,7 @@ import { useRouter } from "vue-router"
 import { ChevronRight, CreditCard, FileText, Loader2, Package, Receipt } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import AppPagination from "@/components/AppPagination.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -42,7 +43,8 @@ const router = useRouter()
 const orders = ref<OrderItem[]>([])
 const loading = ref(true)
 const page = ref(1)
-const pageSize = 10
+const pageSize = ref(10)
+const pageSizeOptions = [10, 30, 50, 100]
 const totalOrders = ref(0)
 const totalPages = ref(0)
 const selectedBizType = ref("")
@@ -62,12 +64,6 @@ const selectedCourseName = ref("")
 const selectedPipelineId = ref("")
 
 const invoiceOpeningLabel = computed(() => (lang.value === "zh" ? "正在打开发票，请稍候..." : "Opening invoice. Please wait..."))
-const orderRangeLabel = computed(() => {
-  if (totalOrders.value === 0) return "0 / 0"
-  const start = (page.value - 1) * pageSize + 1
-  const end = Math.min(page.value * pageSize, totalOrders.value)
-  return `${start}-${end} / ${totalOrders.value}`
-})
 const orderTypeOptions = computed(() => [
   { value: "", label: lang.value === "zh" ? "\u5168\u90e8\u8ba2\u5355" : "All Orders" },
   { value: "PIPELINE_PAYMENT", label: orderTypeLabel("PIPELINE_PAYMENT") },
@@ -218,7 +214,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
   try {
     const params = new URLSearchParams({
       page: String(page.value),
-      page_size: String(pageSize),
+      page_size: String(pageSize.value),
     })
     if (selectedBizType.value) params.set("biz_type", selectedBizType.value)
     if (selectedOrderStatus.value) params.set("status", selectedOrderStatus.value)
@@ -266,10 +262,8 @@ function changeOrderStatus(value: string) {
   void fetchOrders()
 }
 
-function goToPage(nextPage: number) {
+function handlePaginationChange() {
   if (loading.value) return
-  if (nextPage < 1 || (totalPages.value > 0 && nextPage > totalPages.value)) return
-  page.value = nextPage
   void fetchOrders()
 }
 
@@ -330,7 +324,6 @@ onMounted(() => {
               </option>
             </select>
           </div>
-          <div class="whitespace-nowrap text-sm text-muted-foreground">{{ orderRangeLabel }}</div>
         </div>
       </div>
 
@@ -375,18 +368,16 @@ onMounted(() => {
             <ChevronRight class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
           </div>
         </div>
-        <div class="flex items-center justify-between px-4 py-3 text-sm text-muted-foreground">
-          <span>{{ orderRangeLabel }}</span>
-          <div class="flex items-center gap-2">
-            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page <= 1 || loading" @click="goToPage(page - 1)">
-              {{ lang === "zh" ? "上一页" : "Previous" }}
-            </button>
-            <span class="min-w-20 text-center">{{ page }} / {{ totalPages || 1 }}</span>
-            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="totalPages === 0 || page >= totalPages || loading" @click="goToPage(page + 1)">
-              {{ lang === "zh" ? "下一页" : "Next" }}
-            </button>
-          </div>
-        </div>
+        <AppPagination
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          :total="totalOrders"
+          :total-pages="totalPages"
+          :page-size-options="pageSizeOptions"
+          :disabled="loading"
+          :locale="lang"
+          @page-change="handlePaginationChange"
+        />
       </div>
     </div>
 
