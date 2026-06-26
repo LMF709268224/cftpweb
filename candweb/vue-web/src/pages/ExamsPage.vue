@@ -330,7 +330,7 @@ onMounted(() => {
         <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examsPage.title }}</h1>
-            <p class="mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
+            <p class="hidden mt-2 text-muted-foreground">{{ t.examsPage.subtitle }}</p>
           </div>
           <div class="flex justify-end">
         <RouterLink to="/certifications" class="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-white shadow-sm shadow-primary/20 transition-colors hover:bg-primary/90">
@@ -339,7 +339,7 @@ onMounted(() => {
           </div>
         </div>
 
-    <div class="mb-4 flex flex-col gap-3 rounded-[14px] bg-white p-3 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between md:p-4">
+    <div class="mb-4 hidden flex-col gap-3 rounded-[14px] bg-white p-3 shadow-[0_10px_24px_rgba(15,74,82,0.05)] sm:flex-row sm:items-center sm:justify-between md:p-4">
       <div class="relative flex-1 sm:max-w-md">
         <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input v-model="search" class="input pl-10" :placeholder="t.examsPage.searchPlaceholder" />
@@ -350,7 +350,7 @@ onMounted(() => {
       </button>
     </div>
 
-    <div class="mb-4 rounded-[14px] bg-white px-5 pt-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6">
+    <div class="mb-4 hidden rounded-[14px] bg-white px-5 pt-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6">
       <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2]">
         <button
           v-for="tab in tabs"
@@ -377,7 +377,7 @@ onMounted(() => {
         <p class="max-w-md text-muted-foreground">{{ emptyCopy[activeTab].description }}</p>
       </div>
       <div v-else class="space-y-4">
-        <div class="flex items-center justify-between text-sm text-muted-foreground">
+        <div class="hidden items-center justify-between text-sm text-muted-foreground">
           <span>{{ t.examsPage.countPrefix }} {{ total > 0 ? total : filtered.length }} {{ t.examsPage.countSuffix }}</span>
           <span>{{ activeTab === 'history' ? t.examsPage.historyFilterHint : t.examsPage.visibleRecordsHint }}</span>
         </div>

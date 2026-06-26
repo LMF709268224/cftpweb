@@ -368,10 +368,10 @@ onMounted(() => {
         </div>
 
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="border-b border-slate-100 bg-white px-4 pt-4 md:px-8 md:pt-6">
-        <div class="flex flex-wrap gap-10">
+      <div class="bg-white px-5 pt-4 md:px-6">
+        <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2]">
           <button
-            :class="['relative cursor-pointer whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === null ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', selectedType === null ? 'text-primary' : 'text-[#111827] hover:text-primary']"
             @click="selectedType = null"
           >
             {{ t.messagesPage.all }}
@@ -380,7 +380,7 @@ onMounted(() => {
           <button
             v-for="(config, type) in typeConfig"
             :key="type"
-            :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === type ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', selectedType === type ? 'text-primary' : 'text-[#111827] hover:text-primary']"
             @click="selectedType = type"
           >
             <component :is="config.icon" class="h-4 w-4" />
