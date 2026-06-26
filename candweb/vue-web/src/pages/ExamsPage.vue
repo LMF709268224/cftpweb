@@ -5,6 +5,7 @@ import { toast } from "vue-sonner"
 import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, History, Loader2, RefreshCw, Search, ShieldCheck } from "lucide-vue-next"
 import { EXAM_STATUS_LABELS, normalizeEnumValueUpper, statusBadgeClassForStatusValue, statusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
+import AppPagination from "@/components/AppPagination.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
@@ -13,7 +14,7 @@ import { usePolling } from "@/lib/polling"
 
 type TabId = "current" | "history" | "exemption" | "records"
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const route = useRoute()
 const router = useRouter()
 const activeTab = ref<TabId>("current")
@@ -23,6 +24,10 @@ const retakeLoadingUnitId = ref<string | null>(null)
 const search = ref("")
 const exams = ref<any[]>([])
 const total = ref(0)
+const totalPages = ref(0)
+const page = ref(1)
+const pageSize = ref(10)
+const pageSizeOptions = [10, 30, 50, 100]
 const retakePaymentSession = ref<{
   paymentKey?: string
   orderId?: string
@@ -202,21 +207,24 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
   if (tab === "exemption" || tab === "records") {
     exams.value = []
     total.value = 0
+    totalPages.value = 0
     return
   }
   if (showLoading) loading.value = true
   try {
     const params = new URLSearchParams()
-    params.set("page", "1")
-    params.set("page_size", "50")
+    params.set("page", String(page.value))
+    params.set("page_size", String(pageSize.value))
     if (tab === "history") params.set("result_status", "DONE")
     if (keyword.trim()) params.set("confirmation_number", keyword.trim())
     const res = await apiClient(`/api/exams?${params.toString()}`, { suppressErrorToast })
     exams.value = res?.exams || []
-    total.value = res?.total || 0
+    total.value = Number(res?.total || 0)
+    totalPages.value = Number(res?.total_pages || Math.ceil(total.value / pageSize.value) || 0)
   } catch {
     exams.value = []
     total.value = 0
+    totalPages.value = 0
   } finally {
     if (showLoading) loading.value = false
   }
@@ -289,8 +297,14 @@ async function handleApplyRetake(exam: any) {
 }
 
 watch(activeTab, (tab) => {
+  page.value = 1
   void loadExams(tab, search.value)
 })
+
+function handlePaginationChange() {
+  if (loading.value) return
+  void loadExams(activeTab.value, search.value)
+}
 
 const examsPolling = usePolling(
   () => loadExams(activeTab.value, search.value, false, true),
@@ -447,6 +461,16 @@ onMounted(() => {
             </div>
           </div>
         </div>
+        <AppPagination
+          v-model:page="page"
+          v-model:page-size="pageSize"
+          :total="total"
+          :total-pages="totalPages"
+          :page-size-options="pageSizeOptions"
+          :disabled="loading"
+          :locale="lang"
+          @page-change="handlePaginationChange"
+        />
       </div>
     </div>
     <PaymentSessionDialog
