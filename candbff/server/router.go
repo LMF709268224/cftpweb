@@ -104,7 +104,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/resource-preview-url", h.GetResourcePreviewURL)
 			r.Get("/courses/{courseId}/complete", h.GetPipelineCourse)
 			r.Get("/lessons/{lessonId}", h.GetPipelineLessonDetail)
-			r.Get("/lessons/{lessonId}/url", h.GetLessonURL)
 			r.Get("/lessons/{lessonId}/preview-url", h.GetLessonPreviewURL)
 			r.Post("/lessons/{lessonId}/complete", h.CompletePipelineLesson)
 			r.Get("/{pipelineUlid}/certificate-url", h.GetPipelineCertificateViewURL)
@@ -174,7 +173,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		r.Route("/orders", func(r chi.Router) {
 			r.Get("/", h.ListOrders)
-			r.Get("/{orderId}", h.GetOrder)
 		})
 		r.Route("/invoices", func(r chi.Router) {
 			r.Get("/{orderId}", h.QueryInvoice)
@@ -192,11 +190,6 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Route("/dashboard", func(r chi.Router) {
 			r.Get("/", h.Dashboard)
 			r.Get("/stats", h.GetDashboardStats)
-		})
-
-		r.Route("/records", func(r chi.Router) {
-			r.Get("/", h.ListRecords)
-			r.Post("/", h.CreateRecord)
 		})
 	})
 

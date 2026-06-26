@@ -29,10 +29,7 @@ var candidateOrderBizTypes = []string{
 	orderBizBundlePurchase,
 }
 
-// GetOrder GET /api/orders/{orderId}
-func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
-	// Reserved for an order detail page. The order list is built from business-order list APIs.
-}
+
 
 // ListOrders GET /api/orders
 func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +47,10 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	}
 	orderStatus := normalizeOrderStatusFilter(r)
 
-	offset := (page - 1) * pageSize
+	var offset int64 = int64(page-1) * int64(pageSize)
+	if offset > 2147483647 { // math.MaxInt32
+		offset = 2147483647
+	}
 
 	req := &mallpb.ListOrdersRequest{
 		CandidateUlid: candidateID,
@@ -70,6 +70,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	totalAmount := 0.0
 	outOrders := make([]OrderItem, 0, len(resp.GetItems()))
 
+	nameCache := make(map[string]string)
 	for _, item := range resp.GetItems() {
 		if item == nil {
 			continue
@@ -89,7 +90,17 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		name := orderProductName(item.GetBizType(), item.GetBizRefUlid())
+		var name string
+		if item.GetBizType() == orderBizPipelinePayment || item.GetBizType() == orderBizPipelineUnlock {
+			pName := h.pipelineName(r, item.GetBizRefUlid(), nameCache)
+			if pName != "" && pName != item.GetBizRefUlid() {
+				name = orderBizTypeLabel(item.GetBizType()) + " - " + pName
+			} else {
+				name = orderProductName(item.GetBizType(), item.GetBizRefUlid())
+			}
+		} else {
+			name = orderProductName(item.GetBizType(), item.GetBizRefUlid())
+		}
 
 		orderItem := OrderItem{
 			OrderID:              item.GetOrderUlid(),
@@ -103,7 +114,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			Currency:             currency,
 			PayOrderUlid:         item.GetOrderUlid(),
 			PipelinePayOrderUlid: item.GetOrderUlid(),
-			CanViewInvoice:       strings.TrimSpace(item.GetOrderUlid()) != "",
+			CanViewInvoice:       statusStr == "completed" && strings.TrimSpace(item.GetOrderUlid()) != "",
 		}
 
 		outOrders = append(outOrders, orderItem)
@@ -154,16 +165,16 @@ func isCandidateOrderBizType(bizType string) bool {
 
 func candidateOrderStatus(raw string) string {
 	orderStatus := strings.ToUpper(strings.TrimSpace(raw))
-	if strings.Contains(orderStatus, "COMPLETED") || strings.Contains(orderStatus, "SUCCESS") || strings.Contains(orderStatus, "PAID") {
+	switch orderStatus {
+	case "COMPLETED", "SUCCESS", "PAID":
 		return "completed"
-	}
-	if strings.Contains(orderStatus, "CANCEL") || strings.Contains(orderStatus, "FAILED") {
+	case "CANCEL", "CANCELLED", "CANCELED", "FAILED":
 		return "cancelled"
-	}
-	if orderStatus == "" {
+	case "":
 		return "pending"
+	default:
+		return "processing"
 	}
-	return "processing"
 }
 
 func formatOrderCreatedAt(createdAt string) string {
@@ -172,16 +183,6 @@ func formatOrderCreatedAt(createdAt string) string {
 		return t.Format("2006-01-02 15:04")
 	}
 	return createdAt
-}
-
-func parseOrderTime(createdAt string) time.Time {
-	createdAt = strings.TrimSpace(createdAt)
-	for _, layout := range []string{time.RFC3339, "2006-01-02 15:04", "2006-01-02 15:04:05"} {
-		if t, err := time.Parse(layout, createdAt); err == nil {
-			return t
-		}
-	}
-	return time.Time{}
 }
 
 func orderProductName(bizType string, bizRefULID string) string {

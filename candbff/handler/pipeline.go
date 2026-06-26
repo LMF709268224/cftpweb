@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -411,30 +413,7 @@ func (h *Handler) GetPipelineLessonDetail(w http.ResponseWriter, r *http.Request
 	WriteJSON(w, http.StatusOK, resp)
 }
 
-func (h *Handler) GetLessonURL(w http.ResponseWriter, r *http.Request) {
-	candidateID := CandidateID(r)
-	lessonID := strings.TrimSpace(chi.URLParam(r, "lessonId"))
-	if !requireRequestFields(w, candidateID, "candidate_id", lessonID, "lesson_id") {
-		return
-	}
 
-	viewResp, lesson, err := h.lessonViewURL(r.Context(), candidateID, lessonID)
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	params := url.Values{}
-	params.Set("lessonId", lessonID)
-	if title := strings.TrimSpace(lesson.GetTitle()); title != "" {
-		params.Set("title", title)
-	}
-
-	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
-		URL:       "/pdf-preview?" + params.Encode(),
-		ExpiresAt: viewResp.GetExpiresAt(),
-	})
-}
 
 func (h *Handler) GetLessonPreviewURL(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
@@ -732,19 +711,38 @@ func (h *Handler) verifyPDFPreviewToken(token string, resourceKind string, resou
 }
 
 func (h *Handler) pdfPreviewSigningKey() []byte {
-	key := strings.TrimSpace(h.CasdoorClientSecret)
+	key := strings.TrimSpace(os.Getenv("PDF_PREVIEW_SIGNING_SECRET"))
+	if key == "" {
+		key = strings.TrimSpace(h.CasdoorClientSecret)
+	}
 	if key == "" {
 		key = strings.TrimSpace(h.CasdoorClientId)
 	}
 	if key == "" {
-		key = "candidate-pdf-preview"
+		panic("PDF_PREVIEW_SIGNING_SECRET, CasdoorClientSecret, or CasdoorClientId must be provided")
 	}
 	return []byte(key)
 }
 
 func isValidPreviewResourceURL(resourceURL string) bool {
 	parsed, err := url.Parse(resourceURL)
-	return err == nil && parsed != nil && (parsed.Scheme == "http" || parsed.Scheme == "https") && parsed.Host != ""
+	if err != nil || parsed == nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return false
+	}
+	hostname := parsed.Hostname()
+	if hostname == "localhost" || hostname == "127.0.0.1" || hostname == "::1" {
+		return false
+	}
+	ips, err := net.LookupIP(hostname)
+	if err != nil {
+		return false
+	}
+	for _, ip := range ips {
+		if ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() || ip.IsUnspecified() {
+			return false
+		}
+	}
+	return true
 }
 
 func (h *Handler) lessonViewURL(ctx context.Context, candidateID, lessonID string) (*lmspb.CreateViewURLResponse, *lmspb.Lesson, error) {
@@ -1100,14 +1098,10 @@ func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, cour
 	out := make(map[string]QuizProgressItem, len(quizIDs))
 	for _, quizID := range quizIDs {
 		item := QuizProgressItem{QuizID: quizID}
-		// TODO: Currently using ListQuizAttemptsAdmin as a temporary workaround. 
-		// Permission is implicitly verified because quizIDs are derived from GetCompleteCourse(Candidate).
-		// We explicitly pass UserUlid = candidateID. Once glms provides a Candidate-facing
-		// ListQuizAttempts, this should be migrated.
-		resp, err := h.Lms.ListQuizAttemptsAdmin(r.Context(), &lmspb.ListQuizAttemptsRequest{
-			QuizUlid: quizID,
-			UserUlid: candidateID,
-			PageSize: 20,
+		resp, err := h.Lms.ListQuizAttemptsCandidate(r.Context(), &lmspb.ListQuizAttemptsCandidateRequest{
+			QuizUlid:      quizID,
+			CandidateUlid: candidateID,
+			PageSize:      20,
 		})
 		if err != nil {
 			slog.Warn("failed to list candidate quiz attempts", "error", err, "candidate_id", candidateID, "quiz_id", quizID)
