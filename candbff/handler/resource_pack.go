@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
-	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
@@ -89,8 +87,8 @@ func (h *Handler) ListResourcePackFiles(w http.ResponseWriter, r *http.Request) 
 		NextPageToken: resp.GetNextPageToken(),
 	}
 
-	b, _ := json.MarshalIndent(extFiles, "", "  ")
-	slog.Info("ListResourcePackFiles returned", "pack_id", packID, "files", string(b))
+	// b, _ := json.MarshalIndent(extFiles, "", "  ")
+	// slog.Info("ListResourcePackFiles returned", "pack_id", packID, "files", string(b))
 
 	WriteJSON(w, http.StatusOK, out)
 }
@@ -245,4 +243,3 @@ func parseUint32Query(r *http.Request, key string) uint32 {
 	}
 	return uint32(value)
 }
-
