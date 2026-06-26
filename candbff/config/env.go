@@ -31,6 +31,9 @@ const (
 	// STRIPE_PUBLISHABLE_KEY  Stripe publishable key，可安全暴露给浏览器用于初始化 Stripe.js
 	EnvStripePublishableKey = "STRIPE_PUBLISHABLE_KEY"
 
+	// ROLE_STUDENT_BASIC 学生基础角色名，默认为 "role_student_basic"
+	EnvRoleStudentBasic = "ROLE_STUDENT_BASIC"
+
 	// ── 下游微服务 gRPC 地址 ──
 	// 每个变量对应一个下游服务，
 	// 未设置时自动拼接 K8s DNS 名: <service>.<ns>.svc.cluster.local:50051

@@ -5,8 +5,10 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
+	"candbff/config"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
@@ -107,6 +109,11 @@ func (h *Handler) handleTokenExchange(w http.ResponseWriter, r *http.Request, to
 		return
 	}
 
+	if !IsCftpStudent(&claims.User) {
+		WriteError(w, http.StatusForbidden, ErrAuthFailed, "only cftp students are allowed to login")
+		return
+	}
+
 	if _, err = h.resolveCandidateUlid(r, claims.User.Id); err != nil {
 		slog.Error("Failed to resolve user ULID", "error", err)
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "internal error")
@@ -169,4 +176,22 @@ func clearTokenCookies(w http.ResponseWriter) {
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	clearTokenCookies(w)
 	WriteJSON(w, http.StatusOK, BaseRsp{Code: 200, Msg: "logout success"})
+}
+
+func IsCftpStudent(user *casdoorsdk.User) bool {
+	if user == nil {
+		return false
+	}
+
+	studentRole := os.Getenv(config.EnvRoleStudentBasic)
+	if studentRole == "" {
+		studentRole = "role_student_basic"
+	}
+
+	for _, role := range user.Roles {
+		if role.Name == studentRole {
+			return true
+		}
+	}
+	return false
 }
