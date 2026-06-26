@@ -2,7 +2,7 @@
 import { onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, XCircle } from "lucide-vue-next"
-import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusBadgeClassForStatus, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
+import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateOnly } from "@/lib/utils"
@@ -143,6 +143,15 @@ function statusIcon(status: string) {
   }
 }
 
+function applicationStatusPillClass(status: string) {
+  const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
+  if (["APPROVED", "APPLICATION_STATUS_APPROVED"].includes(s)) return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (["REJECTED", "APPLICATION_STATUS_REJECTED"].includes(s)) return "border-red-200 bg-red-50 text-red-700"
+  if (["NEEDS_RESUBMIT", "RESUBMIT", "REUPLOAD", "APPLICATION_STATUS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD"].includes(s)) return "border-amber-200 bg-amber-50 text-amber-700"
+  if (["PENDING", "APPLICATION_STATUS_PENDING"].includes(s)) return "border-blue-200 bg-blue-50 text-blue-700"
+  return "border-slate-200 bg-slate-50 text-slate-600"
+}
+
 function canResubmit(status: string) {
   const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
   return ["REUPLOAD", "RESUBMIT", "NEEDS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD", "APPLICATION_STATUS_RESUBMIT"].includes(s)
@@ -262,8 +271,8 @@ onMounted(fetchData)
             <div class="flex flex-1 flex-col p-4 pt-0">
               <p class="flex-1 text-sm leading-6 text-muted-foreground">{{ def.description }}</p>
               <div v-if="latestApplicationForDef(credentialDefinitionId(def))" class="mt-3">
-                <span :class="['badge w-fit gap-1', statusBadgeClassForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, latestApplicationForDef(credentialDefinitionId(def))?.status)]">
-                  <component :is="statusIcon(latestApplicationForDef(credentialDefinitionId(def))?.status)" class="h-4 w-4 text-black" />
+                <span :class="['inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold', applicationStatusPillClass(latestApplicationForDef(credentialDefinitionId(def))?.status)]">
+                  <component :is="statusIcon(latestApplicationForDef(credentialDefinitionId(def))?.status)" class="h-3.5 w-3.5" />
                   {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, latestApplicationForDef(credentialDefinitionId(def))?.status, 'credentialsPage.appStatusUnknown') }}
                 </span>
               </div>
@@ -290,18 +299,18 @@ onMounted(fetchData)
         </div>
         <div v-else class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="space-y-2">
-            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(180px,1.5fr)_minmax(220px,2fr)_minmax(120px,1fr)_auto] items-center gap-4 px-4 py-4 text-sm transition-colors hover:bg-primary/10">
-              <div class="min-w-0">
-                <div class="truncate font-medium text-foreground">{{ applicationTitle(app) }}</div>
-                <div class="truncate text-xs text-muted-foreground">{{ applicationMeta(app) }}</div>
+            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 transition-colors hover:bg-primary/10 md:gap-x-6 lg:grid-cols-[minmax(320px,2.4fr)_minmax(160px,1fr)_minmax(128px,auto)_minmax(104px,auto)] lg:gap-x-8">
+              <div class="col-span-2 min-w-0 lg:col-span-1">
+                <div class="break-words text-base font-medium text-foreground md:truncate" :title="applicationTitle(app)">{{ applicationTitle(app) }}</div>
+                <div class="break-words text-sm text-muted-foreground md:truncate" :title="applicationMeta(app)">{{ applicationMeta(app) }}</div>
               </div>
-              <div class="min-w-0 truncate text-muted-foreground">{{ app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na }}</div>
-              <span :class="['badge w-fit gap-1', statusBadgeClassForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, app.status)]">
-                <component :is="statusIcon(app.status)" class="h-5 w-5 text-black" />
+              <div class="col-span-2 min-w-0 break-words text-sm text-muted-foreground md:truncate lg:col-span-1" :title="app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na">{{ app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na }}</div>
+              <span :class="['inline-flex min-w-[88px] items-center justify-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold', applicationStatusPillClass(app.status)]">
+                <component :is="statusIcon(app.status)" class="h-3.5 w-3.5" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <button v-if="canResubmit(app.status)" class="btn btn-primary cursor-pointer rounded-lg py-1 text-xs shadow-sm shadow-primary/20" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
-              <span v-else class="text-xs text-muted-foreground">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
+              <button v-if="canResubmit(app.status)" class="btn btn-primary cursor-pointer justify-self-end rounded-lg py-1 text-sm shadow-sm shadow-primary/20" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
+              <span v-else class="justify-self-end whitespace-nowrap text-sm text-muted-foreground">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>
         </div>
