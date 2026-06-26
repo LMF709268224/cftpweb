@@ -272,6 +272,7 @@ func (h *Handler) buildPipelineOrderItems(
 			ProductName:    name,
 			BizType:        orderBizPipelinePayment,
 			BizRefUlid:     bizRefULID,
+			PayOrderUlid:   bizRefULID,
 			RawStatus:      item.GetOrderStatus(),
 			PipelineID:     pipelineULID,
 			CreatedAt:      item.GetCreatedAt(),
@@ -456,13 +457,17 @@ func (h *Handler) buildOrderItem(
 	currency := "USD"
 	actualOrderID := strings.TrimSpace(input.OrderID)
 
-	if input.PayOrderUlid != "" {
-		if summary := h.orderPaymentSummary(r, input.PayOrderUlid, paymentSummaryCache); summary.found {
+	for _, orderULID := range compactStrings([]string{input.PayOrderUlid, input.OrderID, input.BizRefUlid}) {
+		if summary := h.orderPaymentSummary(r, orderULID, paymentSummaryCache); summary.found {
 			amount = summary.amount
 			currency = summary.currency
 			if summary.orderID != "" {
 				actualOrderID = summary.orderID
 			}
+			if input.PayOrderUlid == "" && summary.orderID != "" {
+				input.PayOrderUlid = summary.orderID
+			}
+			break
 		}
 	}
 	if amount <= 0 && input.PreviewBizType != "" && input.BizRefUlid != "" {
@@ -647,4 +652,3 @@ func orderBizTypeLabel(bizType string) string {
 		return strings.TrimSpace(bizType)
 	}
 }
-
