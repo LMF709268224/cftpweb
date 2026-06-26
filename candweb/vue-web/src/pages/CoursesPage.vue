@@ -94,16 +94,6 @@ function isMembershipBundle(bundle: any, itemTypes: string[]) {
   return itemTypes.some((type) => type.includes("membership"))
 }
 
-async function loadBundleThumbnailUrl(bundleId: string) {
-  if (!bundleId) return ""
-  try {
-    const data = await apiClient(`/api/mall/bundles/${encodeURIComponent(bundleId)}/thumbnail-url`, { suppressErrorToast: true })
-    return typeof data?.url === "string" ? data.url : ""
-  } catch {
-    return ""
-  }
-}
-
 async function fetchData() {
   loading.value = true
   try {
@@ -116,7 +106,6 @@ async function fetchData() {
       const membershipBundle = isMembershipBundle(b, itemTypes)
       const unitCount = stages.reduce((total: number, stage: any) => total + (Array.isArray(stage?.units) ? stage.units.length : 0), 0)
       const finalQualCount = Array.isArray(b?.final_quals) ? b.final_quals.length : 0
-      const image = await loadBundleThumbnailUrl(b.bundle_id)
       const firstStageNames = stages.slice(0, 2).map((stage: any) => stage?.name).filter(Boolean).join(" / ")
       return {
         id: b.bundle_id,
@@ -130,10 +119,12 @@ async function fetchData() {
         description: String(b.description || "").trim() || firstStageNames || `${stages.length} ${t.value.courses.stages} / ${unitCount} ${t.value.courses.units}`,
         provider: b.category_tips || t.value.courses.certificationPath,
         isPurchased: false,
-        image,
+        image: typeof b?.thumbnail_url === "string" ? b.thumbnail_url : "",
         priceLabel: bundlePriceLabel(b),
         students: typeof b.purchase_count === "number" ? b.purchase_count : undefined,
         versionLabel: `${t.value.courses.version} ${b.version || 0}`,
+        eligibility: b?.eligibility || null,
+        activeMembership: b?.active_membership || null,
         stats: [
           { label: t.value.courses.stages, value: stages.length },
           { label: t.value.courses.units, value: unitCount },

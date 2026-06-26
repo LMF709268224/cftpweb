@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue"
+import { computed, ref } from "vue"
 import { RouterLink } from "vue-router"
 import { AlertCircle, BookOpen, CheckCircle2, Clock, Lock, ShoppingCart, Users } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
-import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import PurchaseDialog from "./PurchaseDialog.vue"
 
 type CourseCardStat = { label: string; value: string | number }
 type EligibilityBlocker = { blocker_type?: string; description?: string }
-type EligibilityPreview = { can_purchase?: boolean; can_unlock?: boolean; blockers?: EligibilityBlocker[] }
+type EligibilityPreview = { eligible?: boolean; can_purchase?: boolean; can_unlock?: boolean; blockers?: EligibilityBlocker[] }
 
 const props = defineProps<{
   id: string
@@ -33,19 +32,17 @@ const props = defineProps<{
   versionLabel?: string
   priceLabel?: string
   stats?: CourseCardStat[]
+  eligibility?: EligibilityPreview | null
+  activeMembership?: Record<string, unknown> | null
 }>()
 
 const { t, lang } = useTranslation()
 const showPurchaseDialog = ref(false)
-const eligibility = ref<EligibilityPreview | null>(null)
-const eligibilityLoading = ref(false)
-const activeMembership = ref<any | null>(null)
-
-const blockers = computed(() => eligibility.value?.blockers || [])
+const blockers = computed(() => props.eligibility?.blockers || [])
 const isPipelineProduct = computed(() => Boolean(props.isPipelineBundle && props.pipelineId))
 const isMembershipProduct = computed(() => Boolean(props.isMembershipBundle || props.itemTypes?.some((type) => String(type).includes("membership"))))
 const effectivePurchased = computed(() =>
-  Boolean(props.isPurchased || activeMembership.value || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")),
+  Boolean(props.isPurchased || props.activeMembership || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")),
 )
 const hasInProgressOrder = computed(() => blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
 const resolvedStatusLabel = computed(() =>
@@ -69,80 +66,18 @@ const cardCopy = computed(() => ({
 const actionCopy = computed(() => {
   if (effectivePurchased.value) return isMembershipProduct.value ? (lang.value === "zh" ? "\u8fdb\u5165\u4f1a\u5458\u4e2d\u5fc3" : "Membership Center") : (lang.value === "zh" ? "\u8fdb\u5165\u8ba4\u8bc1" : "Enter Certification")
   if (hasInProgressOrder.value) return lang.value === "zh" ? "\u7ee7\u7eed\u652f\u4ed8" : "Continue Payment"
-  if (eligibility.value?.can_unlock) return lang.value === "zh" ? "\u53bb\u89e3\u9501" : "Unlock"
-  if (eligibility.value?.can_purchase) return lang.value === "zh" ? "\u53bb\u8d2d\u4e70" : "Buy Now"
-  if (eligibilityLoading.value && !eligibility.value) return lang.value === "zh" ? "\u68c0\u67e5\u4e2d" : "Checking"
-  if (eligibility.value) return lang.value === "zh" ? "\u6682\u4e0d\u53ef\u8d2d\u4e70" : "Unavailable"
+  if (props.eligibility?.can_unlock) return lang.value === "zh" ? "\u53bb\u89e3\u9501" : "Unlock"
+  if (props.eligibility?.can_purchase) return lang.value === "zh" ? "\u53bb\u8d2d\u4e70" : "Buy Now"
+  if (props.eligibility) return lang.value === "zh" ? "\u6682\u4e0d\u53ef\u8d2d\u4e70" : "Unavailable"
   return lang.value === "zh" ? "\u67e5\u770b\u8d2d\u4e70\u72b6\u6001" : "Check Status"
 })
 
 const actionClass = computed(() => {
-  if (eligibility.value && !effectivePurchased.value && !eligibility.value.can_purchase && !eligibility.value.can_unlock && !hasInProgressOrder.value) {
+  if (props.eligibility && !effectivePurchased.value && !props.eligibility.can_purchase && !props.eligibility.can_unlock && !hasInProgressOrder.value) {
     return "bg-slate-200 text-slate-500"
   }
   return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
 })
-
-onMounted(async () => {
-  if (props.isPurchased) return
-  if (isMembershipProduct.value) {
-    eligibilityLoading.value = true
-    try {
-      activeMembership.value = await loadActiveMembership()
-      eligibility.value = activeMembership.value
-        ? { can_purchase: false, can_unlock: false, blockers: [{ blocker_type: "ALREADY_PURCHASED" }] }
-        : { can_purchase: true, can_unlock: false, blockers: [] }
-    } catch {
-      eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
-    } finally {
-      eligibilityLoading.value = false
-    }
-    return
-  }
-  if (!isPipelineProduct.value) {
-    eligibility.value = { can_purchase: true, can_unlock: false, blockers: [] }
-    return
-  }
-  
-  const targetPipelineId = props.pipelineId
-  if (!targetPipelineId) return
-  
-  eligibilityLoading.value = true
-  try {
-    eligibility.value = await apiClient(`/api/mall/pipelines/${targetPipelineId}/eligibility`)
-  } catch {
-    eligibility.value = null
-  } finally {
-    eligibilityLoading.value = false
-  }
-})
-
-function isActiveMembershipStatus(status: unknown) {
-  return ["active", "membership_status_active"].includes(String(status || "").trim().toLowerCase())
-}
-
-function membershipRecords(payload: any) {
-  for (const key of ["user_memberships", "memberships", "records", "items", "history"]) {
-    if (Array.isArray(payload?.[key])) return payload[key]
-  }
-  return []
-}
-
-async function loadActiveMembership() {
-  const membershipGpath = String(props.membershipGpath || "").trim()
-  const membershipId = String(props.membershipId || "").trim()
-  if (!membershipGpath && !membershipId) return null
-  const history = await apiClient("/api/membership/history?page=1&page_size=50", { suppressErrorToast: true })
-  const matchingActive = membershipRecords(history).find((record: any) =>
-    isActiveMembershipStatus(record?.status) &&
-    ((membershipGpath && String(record?.membership_gpath || "").trim() === membershipGpath) ||
-      (membershipId && String(record?.membership_ulid || "").trim() === membershipId)),
-  )
-  if (!matchingActive) return null
-  if (!membershipGpath) return matchingActive
-  const active = await apiClient(`/api/membership/active?membership_gpath=${encodeURIComponent(membershipGpath)}`, { suppressErrorToast: true })
-  return active?.membership || matchingActive
-}
 
 function blockerText(blocker?: EligibilityBlocker) {
   if (!blocker) return ""
@@ -155,19 +90,16 @@ function blockerText(blocker?: EligibilityBlocker) {
 
 const accessState = computed(() => {
   if (effectivePurchased.value) return null
-  if (eligibilityLoading.value && !eligibility.value) {
-    return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
-  }
-  if (eligibility.value?.can_purchase) {
+  if (props.eligibility?.can_purchase) {
     return { label: isMembershipProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
   }
-  if (eligibility.value?.can_unlock) {
+  if (props.eligibility?.can_unlock) {
     return { label: cardCopy.value.unlock, icon: Lock, className: "border-blue-200 bg-blue-50 text-blue-700", hint: "" }
   }
-  if (eligibility.value) {
+  if (props.eligibility) {
     return { label: cardCopy.value.blocked, icon: AlertCircle, className: "border-amber-200 bg-amber-50 text-amber-800", hint: blockerText(blockers.value[0]) }
   }
-  return null
+  return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
 })
 </script>
 

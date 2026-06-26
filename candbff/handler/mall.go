@@ -19,6 +19,26 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
+type bundleEligibilityBlocker struct {
+	BlockerType string   `json:"blocker_type,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Details     []string `json:"details,omitempty"`
+}
+
+type bundleEligibilitySummary struct {
+	Eligible    bool                       `json:"eligible"`
+	CanUnlock   bool                       `json:"can_unlock"`
+	CanPurchase bool                       `json:"can_purchase"`
+	Blockers    []bundleEligibilityBlocker `json:"blockers,omitempty"`
+}
+
+type bundleEnrichmentState struct {
+	candidateID              string
+	membershipHistory        []*gmbrpb.UserMembership
+	activeMembershipByGpath  map[string]*gmbrpb.UserMembership
+	loadedMembershipsByGpath map[string]bool
+}
+
 // ListPipelines  GET /api/mall/pipelines
 func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.ListPipelines(r.Context(), &gccpb.ListPipelinesRequest{
@@ -332,6 +352,7 @@ func (h *Handler) GetMallPipelineThumbnailURL(w http.ResponseWriter, r *http.Req
 
 // ListBundles GET /api/mall/bundles
 func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
 	page := parsePositiveIntQuery(r, "page", 1)
 	pageSize := parsePositiveIntQuery(r, "page_size", parsePositiveIntQuery(r, "limit", 20))
 	if pageSize > 100 {
@@ -363,9 +384,10 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 		bundles = filtered
 	}
 
+	state := h.newBundleEnrichmentState(r.Context(), candidateID)
 	enrichedList := make([]map[string]interface{}, 0, len(bundles))
 	for _, b := range bundles {
-		enrichedList = append(enrichedList, h.enrichBundle(r.Context(), b))
+		enrichedList = append(enrichedList, h.enrichBundle(r.Context(), b, state))
 	}
 	total := int(resp.GetTotal())
 	if status != "" {
@@ -395,7 +417,7 @@ func (h *Handler) GetBundleDetail(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, h.enrichBundle(r.Context(), resp.GetBundle()))
+	WriteJSON(w, http.StatusOK, h.enrichBundle(r.Context(), resp.GetBundle(), h.newBundleEnrichmentState(r.Context(), CandidateID(r))))
 }
 
 func (h *Handler) extractPipelineID(bundle *mallpb.BundleInfo) string {
@@ -607,10 +629,148 @@ func bundleItemTypes(bundle *mallpb.BundleInfo) []string {
 	return out
 }
 
-func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo) map[string]interface{} {
+func defaultBundleEligibility() bundleEligibilitySummary {
+	return bundleEligibilitySummary{
+		Eligible:    true,
+		CanPurchase: true,
+		CanUnlock:   false,
+		Blockers:    []bundleEligibilityBlocker{},
+	}
+}
+
+func unavailableBundleEligibility(description string) bundleEligibilitySummary {
+	return bundleEligibilitySummary{
+		Eligible:    false,
+		CanPurchase: false,
+		CanUnlock:   false,
+		Blockers: []bundleEligibilityBlocker{
+			{
+				BlockerType: "ELIGIBILITY_UNAVAILABLE",
+				Description: description,
+			},
+		},
+	}
+}
+
+func eligibilityFromPipeline(resp *mallpb.CheckPipelineEligibilityResponse) bundleEligibilitySummary {
+	if resp == nil {
+		return unavailableBundleEligibility("eligibility unavailable")
+	}
+	out := bundleEligibilitySummary{
+		Eligible:    resp.GetEligible(),
+		CanUnlock:   resp.GetCanUnlock(),
+		CanPurchase: resp.GetCanPurchase(),
+		Blockers:    make([]bundleEligibilityBlocker, 0, len(resp.GetBlockers())),
+	}
+	for _, blocker := range resp.GetBlockers() {
+		if blocker == nil {
+			continue
+		}
+		out.Blockers = append(out.Blockers, bundleEligibilityBlocker{
+			BlockerType: blocker.GetBlockerType(),
+			Description: blocker.GetDescription(),
+			Details:     append([]string{}, blocker.GetDetails()...),
+		})
+	}
+	return out
+}
+
+func isActiveMembershipStatus(status string) bool {
+	status = strings.ToLower(strings.TrimSpace(status))
+	return status == "active" || status == "membership_status_active"
+}
+
+func (h *Handler) newBundleEnrichmentState(ctx context.Context, candidateID string) *bundleEnrichmentState {
+	state := &bundleEnrichmentState{
+		candidateID:              strings.TrimSpace(candidateID),
+		activeMembershipByGpath:  map[string]*gmbrpb.UserMembership{},
+		loadedMembershipsByGpath: map[string]bool{},
+	}
+	if state.candidateID == "" || h.Gmbr == nil {
+		return state
+	}
+	resp, err := h.Gmbr.ListUserMemberships(ctx, &gmbrpb.ListUserMembershipsRequest{
+		CandidateUlid: state.candidateID,
+		Page:          1,
+		PageSize:      100,
+	})
+	if err != nil {
+		slog.Warn("Failed to preload membership history for bundle list", "error", err, "candidate_id", state.candidateID)
+		return state
+	}
+	state.membershipHistory = resp.GetUserMemberships()
+	return state
+}
+
+func findMatchingMembershipRecord(records []*gmbrpb.UserMembership, membershipID string, membershipGpath string) *gmbrpb.UserMembership {
+	membershipID = strings.TrimSpace(membershipID)
+	membershipGpath = strings.TrimSpace(membershipGpath)
+	for _, record := range records {
+		if record == nil || !isActiveMembershipStatus(record.GetStatus()) {
+			continue
+		}
+		if membershipGpath != "" && strings.TrimSpace(record.GetMembershipGpath()) == membershipGpath {
+			return record
+		}
+		if membershipID != "" && strings.TrimSpace(record.GetMembershipUlid()) == membershipID {
+			return record
+		}
+	}
+	return nil
+}
+
+func (h *Handler) resolveActiveMembership(ctx context.Context, state *bundleEnrichmentState, membershipID string, membershipGpath string) *gmbrpb.UserMembership {
+	if state == nil || state.candidateID == "" || h.Gmbr == nil {
+		return nil
+	}
+	record := findMatchingMembershipRecord(state.membershipHistory, membershipID, membershipGpath)
+	if record == nil {
+		return nil
+	}
+	if membershipGpath == "" {
+		return record
+	}
+	if state.loadedMembershipsByGpath[membershipGpath] {
+		return state.activeMembershipByGpath[membershipGpath]
+	}
+	state.loadedMembershipsByGpath[membershipGpath] = true
+	resp, err := h.Gmbr.GetActiveMembership(ctx, &gmbrpb.GetActiveMembershipRequest{
+		CandidateUlid:   state.candidateID,
+		MembershipGpath: membershipGpath,
+	})
+	if err != nil {
+		slog.Warn("Failed to get active membership for bundle list", "error", err, "candidate_id", state.candidateID, "membership_gpath", membershipGpath)
+		state.activeMembershipByGpath[membershipGpath] = record
+		return record
+	}
+	state.activeMembershipByGpath[membershipGpath] = resp.GetMembership()
+	if resp.GetMembership() != nil {
+		return resp.GetMembership()
+	}
+	return record
+}
+
+func (h *Handler) bundleThumbnailURL(ctx context.Context, bundleID string) string {
+	bundleID = strings.TrimSpace(bundleID)
+	if bundleID == "" {
+		return ""
+	}
+	resp, err := h.Mall.GetBundleThumbnailURL(ctx, &mallpb.GetBundleThumbnailURLRequest{
+		BundleUlid: bundleID,
+	})
+	if err != nil {
+		slog.Warn("Failed to get bundle thumbnail url during bundle list enrichment", "error", err, "bundle_id", bundleID)
+		return ""
+	}
+	return strings.TrimSpace(resp.GetPublicUrl())
+}
+
+func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state *bundleEnrichmentState) map[string]interface{} {
 	pipelineID := h.extractPipelineID(b)
 	membershipID := extractMembershipID(b)
 	itemTypes := bundleItemTypes(b)
+	eligibility := defaultBundleEligibility()
+	membershipGpath := ""
 	m := map[string]interface{}{
 		"bundle_id":            b.GetBundleUlid(),
 		"bundle_gpath":         b.GetBundleGpath(),
@@ -637,6 +797,7 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo) map[st
 		"bundle_item_types":    itemTypes,
 		"is_pipeline_bundle":   pipelineID != "",
 		"is_membership_bundle": membershipID != "",
+		"thumbnail_url":        h.bundleThumbnailURL(ctx, b.GetBundleUlid()),
 	}
 
 	if pipelineID != "" {
@@ -648,13 +809,26 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo) map[st
 			m["final_quals"] = toUnlockQuals(pipeline.GetCertsQuals())
 			m["category_tips"] = pipeline.GetCategoryTips()
 		}
+		if state != nil && state.candidateID != "" {
+			eligibilityResp, err := h.Mall.CheckPipelineEligibility(ctx, &mallpb.CheckPipelineEligibilityRequest{
+				CandidateUlid:  state.candidateID,
+				PipelineCcUlid: pipelineID,
+			})
+			if err != nil {
+				slog.Warn("Failed to enrich pipeline bundle eligibility", "error", err, "candidate_id", state.candidateID, "pipeline_id", pipelineID, "bundle_id", b.GetBundleUlid())
+				eligibility = unavailableBundleEligibility("eligibility unavailable")
+			} else {
+				eligibility = eligibilityFromPipeline(eligibilityResp)
+			}
+		}
 	}
 	if membershipID != "" && h.Gmbr != nil {
 		membership, err := h.Gmbr.GetMembership(ctx, &gmbrpb.GetMembershipRequest{
 			MembershipUlid: membershipID,
 		})
 		if err == nil && membership != nil {
-			m["membership_gpath"] = membership.GetMembershipGpath()
+			membershipGpath = membership.GetMembershipGpath()
+			m["membership_gpath"] = membershipGpath
 			m["membership_name"] = membership.GetName()
 			m["membership_status"] = membership.GetStatus()
 			m["membership_tier_level"] = membership.GetTierLevel()
@@ -664,7 +838,22 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo) map[st
 		} else if err != nil {
 			slog.Warn("Failed to enrich membership bundle", "error", err, "membership_id", membershipID, "bundle_id", b.GetBundleUlid())
 		}
+		if activeMembership := h.resolveActiveMembership(ctx, state, membershipID, membershipGpath); activeMembership != nil {
+			m["active_membership"] = activeMembership
+			eligibility = bundleEligibilitySummary{
+				Eligible:    false,
+				CanUnlock:   false,
+				CanPurchase: false,
+				Blockers: []bundleEligibilityBlocker{
+					{
+						BlockerType: "ALREADY_PURCHASED",
+						Description: "active membership already exists",
+					},
+				},
+			}
+		}
 	}
+	m["eligibility"] = eligibility
 	return m
 }
 
