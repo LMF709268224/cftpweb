@@ -1,16 +1,11 @@
 package handler
 
 import (
-	"context"
-	"log/slog"
 	"net/http"
-	"sort"
 	"strings"
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	"github.com/go-chi/chi/v5"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 func (h *Handler) GetStageOrderStatus(w http.ResponseWriter, r *http.Request) {
@@ -66,13 +61,42 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		query.Limit = 20
 	}
 
-	items, total, err := h.listAdminOrders(r.Context(), query)
+	req := &mallpb.ListOrdersRequest{
+		CandidateUlid: query.CandidateULID,
+		BizType:       query.BizType,
+		BizRefUlid:    query.BizRefULID,
+		OrderStatus:   query.OrderStatus,
+		PaymentStatus: query.PaymentStatus,
+		Limit:         query.Limit,
+		Offset:        query.Offset,
+	}
+
+	resp, err := h.Mall.ListOrders(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, adminOrderListResponse{Items: items, Total: total})
+	items := make([]adminOrderSummary, 0, len(resp.GetItems()))
+	for _, item := range resp.GetItems() {
+		if item == nil {
+			continue
+		}
+		items = append(items, adminOrderSummary{
+			OrderULID:     item.GetOrderUlid(),
+			CandidateULID: item.GetCandidateUlid(),
+			BizType:       item.GetBizType(),
+			BizRefULID:    item.GetBizRefUlid(),
+			AmountMinor:   item.GetAmountMinor(),
+			CurrencyCode:  strings.ToUpper(item.GetCurrencyCode()),
+			OrderStatus:   strings.ToUpper(item.GetOrderStatus()),
+			PaymentStatus: deriveAdminPaymentStatus(item.GetOrderStatus(), item.GetPaymentStatus(), item.GetOrderUlid()),
+			CreatedAt:     item.GetCreatedAt(),
+			PayOrderULID:  item.GetOrderUlid(),
+		})
+	}
+
+	WriteJSON(w, http.StatusOK, adminOrderListResponse{Items: items, Total: resp.GetTotal()})
 }
 
 type adminOrderListQuery struct {
@@ -103,299 +127,13 @@ type adminOrderSummary struct {
 	PayOrderULID  string `json:"pay_order_ulid,omitempty"`
 }
 
-type adminOrderLister func(context.Context, adminOrderListQuery) ([]adminOrderSummary, int32, error)
-
-const (
-	adminBizTypePipelinePayment       = "PIPELINE_PAYMENT"
-	adminBizTypeStagePayment          = "STAGE_PAYMENT"
-	adminBizTypeCourseRetakePayment   = "COURSE_RETAKE_PAYMENT"
-	adminBizTypePipelineUnlock        = "PIPELINE_UNLOCK"
-	adminBizTypeCredentialApplication = "CREDENTIAL_APPLICATION"
-	adminBizTypeBundlePurchase        = "BUNDLE_PURCHASE"
-)
-
-func (h *Handler) listAdminOrders(ctx context.Context, query adminOrderListQuery) ([]adminOrderSummary, int32, error) {
-	listers := map[string]adminOrderLister{
-		adminBizTypePipelinePayment:       h.listAdminPipelineOrders,
-		adminBizTypeStagePayment:          h.listAdminStageOrders,
-		adminBizTypeCourseRetakePayment:   h.listAdminCourseRetakeOrders,
-		adminBizTypePipelineUnlock:        h.listAdminPipelineUnlockOrders,
-		adminBizTypeCredentialApplication: h.listAdminCredentialApplicationOrders,
-		adminBizTypeBundlePurchase:        h.listAdminBundleOrders,
+func deriveAdminPaymentStatus(orderStatus, paymentStatus, payOrderULID string) string {
+	status := strings.ToUpper(strings.TrimSpace(paymentStatus))
+	if status != "" && status != "UNSPECIFIED" {
+		return status
 	}
 
-	if query.BizType != "" {
-		lister, ok := listers[query.BizType]
-		if !ok {
-			return nil, 0, status.Error(codes.InvalidArgument, "unsupported biz_type")
-		}
-		return h.listAdminOrdersFromOneSource(ctx, query, lister)
-	}
-
-	fetchQuery := query
-	fetchQuery.Limit = query.Offset + query.Limit
-	fetchQuery.Offset = 0
-
-	var items []adminOrderSummary
-	var total int32
-	for _, bizType := range []string{
-		adminBizTypeBundlePurchase,
-		adminBizTypePipelinePayment,
-		adminBizTypeStagePayment,
-		adminBizTypeCourseRetakePayment,
-		adminBizTypePipelineUnlock,
-		adminBizTypeCredentialApplication,
-	} {
-		got, gotTotal, err := listers[bizType](ctx, fetchQuery)
-		if err != nil {
-			return nil, 0, err
-		}
-		items = append(items, got...)
-		total += gotTotal
-	}
-
-	h.enrichAdminOrdersWithPaymentSummaries(ctx, items)
-	items = filterAdminOrders(items, query)
-	sortAdminOrders(items)
-	filteredTotal := int32(len(items))
-	items = sliceAdminOrders(items, query.Offset, query.Limit)
-	if query.BizRefULID != "" || query.PaymentStatus != "" {
-		return items, filteredTotal, nil
-	}
-	return items, total, nil
-}
-
-func (h *Handler) listAdminOrdersFromOneSource(ctx context.Context, query adminOrderListQuery, lister adminOrderLister) ([]adminOrderSummary, int32, error) {
-	if query.BizRefULID == "" && query.PaymentStatus == "" {
-		items, total, err := lister(ctx, query)
-		if err != nil {
-			return nil, 0, err
-		}
-		h.enrichAdminOrdersWithPaymentSummaries(ctx, items)
-		return items, total, nil
-	}
-
-	fetchQuery := query
-	fetchQuery.Limit = query.Offset + query.Limit
-	fetchQuery.Offset = 0
-	items, _, err := lister(ctx, fetchQuery)
-	if err != nil {
-		return nil, 0, err
-	}
-	h.enrichAdminOrdersWithPaymentSummaries(ctx, items)
-	items = filterAdminOrders(items, query)
-	sortAdminOrders(items)
-	total := int32(len(items))
-	return sliceAdminOrders(items, query.Offset, query.Limit), total, nil
-}
-
-func (h *Handler) listAdminPipelineOrders(ctx context.Context, query adminOrderListQuery) ([]adminOrderSummary, int32, error) {
-	resp, err := h.Mall.ListPipelineOrders(ctx, &mallpb.ListPipelineOrdersRequest{
-		CandidateUlid: query.CandidateULID,
-		OrderStatus:   query.OrderStatus,
-		Limit:         query.Limit,
-		Offset:        query.Offset,
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-	items := make([]adminOrderSummary, 0, len(resp.GetItems()))
-	for _, item := range resp.GetItems() {
-		bizRef := item.GetPipelineOrderUlid()
-		payOrder := ""
-		items = append(items, newAdminOrderSummary(adminBizTypePipelinePayment, bizRef, payOrder, item.GetCandidateUlid(), item.GetOrderStatus(), item.GetCreatedAt()))
-	}
-	return items, resp.GetTotal(), nil
-}
-
-func (h *Handler) listAdminStageOrders(ctx context.Context, query adminOrderListQuery) ([]adminOrderSummary, int32, error) {
-	resp, err := h.Mall.ListStageOrders(ctx, &mallpb.ListStageOrdersRequest{
-		CandidateUlid: query.CandidateULID,
-		OrderStatus:   query.OrderStatus,
-		Limit:         query.Limit,
-		Offset:        query.Offset,
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-	items := make([]adminOrderSummary, 0, len(resp.GetItems()))
-	for _, item := range resp.GetItems() {
-		bizRef := item.GetStageOrderUlid()
-		payOrder := item.GetStagePayOrderUlid()
-		items = append(items, newAdminOrderSummary(adminBizTypeStagePayment, bizRef, payOrder, item.GetCandidateUlid(), item.GetOrderStatus(), item.GetCreatedAt()))
-	}
-	return items, resp.GetTotal(), nil
-}
-
-func (h *Handler) listAdminCourseRetakeOrders(ctx context.Context, query adminOrderListQuery) ([]adminOrderSummary, int32, error) {
-	resp, err := h.Mall.ListCourseRetakeOrders(ctx, &mallpb.ListCourseRetakeOrdersRequest{
-		CandidateUlid: query.CandidateULID,
-		OrderStatus:   query.OrderStatus,
-		Limit:         query.Limit,
-		Offset:        query.Offset,
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-	items := make([]adminOrderSummary, 0, len(resp.GetItems()))
-	for _, item := range resp.GetItems() {
-		bizRef := item.GetCourseRetakeOrderUlid()
-		payOrder := item.GetPayOrderUlid()
-		items = append(items, newAdminOrderSummary(adminBizTypeCourseRetakePayment, bizRef, payOrder, item.GetCandidateUlid(), item.GetOrderStatus(), item.GetCreatedAt()))
-	}
-	return items, resp.GetTotal(), nil
-}
-
-func (h *Handler) listAdminPipelineUnlockOrders(ctx context.Context, query adminOrderListQuery) ([]adminOrderSummary, int32, error) {
-	resp, err := h.Mall.ListPipelineUnlockOrders(ctx, &mallpb.ListPipelineUnlockOrdersRequest{
-		CandidateUlid: query.CandidateULID,
-		OrderStatus:   query.OrderStatus,
-		Limit:         query.Limit,
-		Offset:        query.Offset,
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-	items := make([]adminOrderSummary, 0, len(resp.GetItems()))
-	for _, item := range resp.GetItems() {
-		bizRef := item.GetPipelineUnlockOrderUlid()
-		payOrder := item.GetPayOrderUlid()
-		items = append(items, newAdminOrderSummary(adminBizTypePipelineUnlock, bizRef, payOrder, item.GetCandidateUlid(), item.GetOrderStatus(), item.GetCreatedAt()))
-	}
-	return items, resp.GetTotal(), nil
-}
-
-func (h *Handler) listAdminCredentialApplicationOrders(ctx context.Context, query adminOrderListQuery) ([]adminOrderSummary, int32, error) {
-	resp, err := h.Mall.ListCredentialApplicationOrders(ctx, &mallpb.ListCredentialApplicationOrdersRequest{
-		CandidateUlid: query.CandidateULID,
-		OrderStatus:   query.OrderStatus,
-		Limit:         query.Limit,
-		Offset:        query.Offset,
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-	items := make([]adminOrderSummary, 0, len(resp.GetItems()))
-	for _, item := range resp.GetItems() {
-		bizRef := item.GetApplicationOrderUlid()
-		payOrder := item.GetPayOrderUlid()
-		items = append(items, newAdminOrderSummary(adminBizTypeCredentialApplication, bizRef, payOrder, item.GetCandidateUlid(), item.GetOrderStatus(), item.GetCreatedAt()))
-	}
-	return items, resp.GetTotal(), nil
-}
-
-func (h *Handler) listAdminBundleOrders(ctx context.Context, query adminOrderListQuery) ([]adminOrderSummary, int32, error) {
-	resp, err := h.Mall.ListBundleOrders(ctx, &mallpb.ListBundleOrdersRequest{
-		CandidateUlid: query.CandidateULID,
-		OrderStatus:   query.OrderStatus,
-		Limit:         query.Limit,
-		Offset:        query.Offset,
-	})
-	if err != nil {
-		return nil, 0, err
-	}
-	items := make([]adminOrderSummary, 0, len(resp.GetItems()))
-	for _, item := range resp.GetItems() {
-		bizRef := item.GetBundleOrderUlid()
-		payOrder := item.GetBundlePayOrderUlid()
-		items = append(items, newAdminOrderSummary(adminBizTypeBundlePurchase, bizRef, payOrder, item.GetCandidateUlid(), item.GetOrderStatus(), item.GetCreatedAt()))
-	}
-	return items, resp.GetTotal(), nil
-}
-
-func newAdminOrderSummary(bizType, bizRefULID, payOrderULID, candidateULID, orderStatus, createdAt string) adminOrderSummary {
-	return adminOrderSummary{
-		OrderULID:     firstNonEmpty(payOrderULID, bizRefULID),
-		CandidateULID: candidateULID,
-		BizType:       bizType,
-		BizRefULID:    bizRefULID,
-		OrderStatus:   orderStatus,
-		PaymentStatus: deriveAdminPaymentStatus(orderStatus, payOrderULID),
-		CreatedAt:     createdAt,
-		PayOrderULID:  payOrderULID,
-	}
-}
-
-func (h *Handler) enrichAdminOrdersWithPaymentSummaries(ctx context.Context, items []adminOrderSummary) {
-	cache := make(map[string]*mallpb.OrderSummary)
-	for idx := range items {
-		payOrderULID := strings.TrimSpace(items[idx].PayOrderULID)
-		if payOrderULID == "" {
-			continue
-		}
-		summary, ok := cache[payOrderULID]
-		if !ok {
-			resp, err := h.Mall.GetOrderSummary(ctx, &mallpb.GetOrderSummaryRequest{OrderUlid: payOrderULID})
-			if err != nil {
-				slog.Warn("admin list orders get payment summary failed", "pay_order_ulid", payOrderULID, "error", err)
-				cache[payOrderULID] = nil
-				continue
-			}
-			if resp.GetFound() {
-				summary = resp.GetSummary()
-			}
-			cache[payOrderULID] = summary
-		}
-		if summary == nil {
-			continue
-		}
-		if strings.TrimSpace(summary.GetOrderUlid()) != "" {
-			items[idx].OrderULID = summary.GetOrderUlid()
-			items[idx].PayOrderULID = summary.GetOrderUlid()
-		}
-		if strings.TrimSpace(summary.GetCandidateUlid()) != "" {
-			items[idx].CandidateULID = summary.GetCandidateUlid()
-		}
-		if strings.TrimSpace(summary.GetBizRefUlid()) != "" {
-			items[idx].BizRefULID = summary.GetBizRefUlid()
-		}
-		if strings.TrimSpace(summary.GetCurrencyCode()) != "" {
-			items[idx].CurrencyCode = strings.ToUpper(strings.TrimSpace(summary.GetCurrencyCode()))
-		}
-		items[idx].AmountMinor = summary.GetAmountMinor()
-		if strings.TrimSpace(summary.GetPaymentStatus()) != "" {
-			items[idx].PaymentStatus = strings.ToUpper(strings.TrimSpace(summary.GetPaymentStatus()))
-		}
-	}
-}
-
-func filterAdminOrders(items []adminOrderSummary, query adminOrderListQuery) []adminOrderSummary {
-	if query.BizRefULID == "" && query.PaymentStatus == "" {
-		return items
-	}
-	filtered := make([]adminOrderSummary, 0, len(items))
-	for _, item := range items {
-		if query.BizRefULID != "" && item.BizRefULID != query.BizRefULID && item.OrderULID != query.BizRefULID {
-			continue
-		}
-		if query.PaymentStatus != "" && strings.ToUpper(item.PaymentStatus) != query.PaymentStatus {
-			continue
-		}
-		filtered = append(filtered, item)
-	}
-	return filtered
-}
-
-func sortAdminOrders(items []adminOrderSummary) {
-	sort.SliceStable(items, func(i, j int) bool {
-		return items[i].CreatedAt > items[j].CreatedAt
-	})
-}
-
-func sliceAdminOrders(items []adminOrderSummary, offset, limit int32) []adminOrderSummary {
-	if limit <= 0 || offset >= int32(len(items)) {
-		return []adminOrderSummary{}
-	}
-	start := int(offset)
-	end := start + int(limit)
-	if end > len(items) {
-		end = len(items)
-	}
-	return items[start:end]
-}
-
-func deriveAdminPaymentStatus(orderStatus, payOrderULID string) string {
-	status := strings.ToUpper(strings.TrimSpace(orderStatus))
+	status = strings.ToUpper(strings.TrimSpace(orderStatus))
 	switch {
 	case strings.Contains(status, "FAILED"):
 		return "FAILED"
