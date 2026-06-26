@@ -707,7 +707,7 @@ async function initiatePayment() {
           <p class="mt-2 text-sm text-amber-800">{{ copy.blockedDesc }}</p>
         </div>
 
-        <div v-if="blockers.length > 0" class="rounded-lg border border-amber-200 bg-amber-50/70 p-4">
+        <div v-if="blockers.length > 0 && cannotContinue && !hasInProgressOrder" class="rounded-lg border border-amber-200 bg-amber-50/70 p-4">
           <div class="mb-3 text-sm font-semibold text-amber-950">{{ copy.blockersTitle }}</div>
           <ul class="space-y-2">
             <li v-for="(blocker, index) in blockers" :key="`${blocker.blocker_type || 'blocker'}-${index}`" class="rounded-lg border border-amber-200 bg-white/80 p-3">

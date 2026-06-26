@@ -125,7 +125,7 @@ function hasAppointmentEnded(exam: any) {
   return Number.isFinite(endTime) && endTime <= Date.now()
 }
 function shouldShowNoResultBadge(exam: any) {
-  return !hasExamResult(exam) && !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam) && hasAppointmentEnded(exam)
+  return false
 }
 function isExamCompletedWithoutResult(exam: any) {
   if (hasExamResult(exam)) return false
@@ -391,7 +391,6 @@ onMounted(() => {
                   <template v-else>
                     <span v-if="shouldShowPrimaryExamStatusBadge(exam)" :class="['badge', examStatusBadgeClass(exam.exam_status)]">{{ examStatusLabel(exam) }}</span>
                     <span v-if="isWaitingScheduleSync(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ scheduleSyncPendingLabel() }}</span>
-                    <span v-else-if="shouldShowNoResultBadge(exam)" :class="['badge', statusBadgeClassForStatusValue('PENDING')]">{{ noResultLabel() }}</span>
                   </template>
                   <span v-if="!isExamFailedUnit(exam) && hasPassStatusBadge(exam)" :class="['badge gap-1', exam.is_passed === true ? examStatusBadgeClass('SUCCESS') : statusBadgeClassForStatusValue('FAILED')]">
                     <CheckCircle2 v-if="exam.is_passed === true" class="h-3 w-3" />
