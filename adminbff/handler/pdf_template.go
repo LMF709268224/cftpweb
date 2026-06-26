@@ -82,7 +82,7 @@ func (h *Handler) UpdatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 
 // ListPdfRequests GET /api/pdf-requests
 func (h *Handler) ListPdfRequests(w http.ResponseWriter, r *http.Request) {
-	// 榛樿鍙傛暟
+	// 默认参数
 	page := uint32(1)
 	pageSize := uint32(20)
 

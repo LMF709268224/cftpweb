@@ -65,7 +65,7 @@ onMounted(() => load(1))
             <th class="px-5 py-3">发票</th>
             <th class="px-5 py-3">订单</th>
             <th class="px-5 py-3">金额</th>
-            <th class="px-5 py-3">状态</th>
+            <th class="px-5 py-3">״̬</th>
             <th class="px-5 py-3">创建时间</th>
           </tr>
         </thead>

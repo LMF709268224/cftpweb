@@ -11,7 +11,7 @@ import (
 
 // ----------------- Credential Definitions -----------------
 
-// ListCredentialDefinitions 鑾峰彇璧勬牸瀹氫箟鍒楄〃
+// ListCredentialDefinitions 获取资格定义列表
 func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Request) {
 	req := &gcredspb.ListCredentialDefinitionsRequest{}
 
@@ -35,7 +35,7 @@ type CreateCredentialDefinitionReq struct {
 	} `json:"file_constraints"`
 }
 
-// CreateCredentialDefinition 鍒涘缓璧勬牸瀹氫箟
+// CreateCredentialDefinition 创建资格定义
 func (h *Handler) CreateCredentialDefinition(w http.ResponseWriter, r *http.Request) {
 	var body CreateCredentialDefinitionReq
 	if err := ReadJSON(r, &body); err != nil {
@@ -66,7 +66,7 @@ func (h *Handler) CreateCredentialDefinition(w http.ResponseWriter, r *http.Requ
 	WriteJSON(w, http.StatusOK, res)
 }
 
-// ----------------- Applications (瀹℃牳涓績) -----------------
+// ----------------- Applications (审核中心) -----------------
 
 type ListApplicationsReq struct {
 	PageNumber int32  `json:"page_number"`
@@ -74,9 +74,9 @@ type ListApplicationsReq struct {
 	Status     string `json:"status"` // PENDING, APPROVED, REJECTED, RESUBMIT
 }
 
-// ListApplications 鏌ヨ鑰冪敓璧勬牸鐢宠
+// ListApplications 查询考生资格申请
 func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
-	// 榛樿鍙傛暟
+	// 默认参数
 	page := uint32(1)
 	pageSize := uint32(20)
 
@@ -98,7 +98,7 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 
 	req := &gcredspb.ListApplicationsRequest{Page: page, PageSize: pageSize}
 	if statusFilter != "" {
-		// TODO: 寰?gcreds ListApplicationsRequest 琛ュ厖 Status 瀛楁鍚庢敼涓轰笅鎺ㄧ瓫閫夈€?
+		// TODO: 待 gcreds ListApplicationsRequest 补充 Status 字段后改为下推筛选。
 		req.Page = 1
 		req.PageSize = 500
 	}
@@ -159,7 +159,7 @@ type AuditApplicationReq struct {
 	RequireResubmit bool   `json:"require_resubmit"`
 }
 
-// AuditApplication 瀹℃牳鐢宠
+// AuditApplication 审核申请
 func (h *Handler) AuditApplication(w http.ResponseWriter, r *http.Request) {
 	candidateID := AdminID(r)
 

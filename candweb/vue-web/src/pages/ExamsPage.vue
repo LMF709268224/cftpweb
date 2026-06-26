@@ -70,11 +70,11 @@ function normalizedCourseUnitStatus(status?: string | number | null) {
 }
 function isWaitingSignupExamUnit(exam: any) {
   const status = normalizedCourseUnitStatus(exam.course_unit_status)
-  return status === "2" || status.includes("WAITING_SIGNUP_EXAM")
+  return status.includes("WAITING_SIGNUP_EXAM")
 }
 function isExamOpenUnit(exam: any) {
   const status = normalizedCourseUnitStatus(exam.course_unit_status)
-  return status === "3" || status.includes("EXAM_OPEN")
+  return status.includes("EXAM_OPEN")
 }
 function isCurrentExamRestarted(exam: any) {
   return isWaitingSignupExamUnit(exam)

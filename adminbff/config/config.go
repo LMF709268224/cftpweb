@@ -20,13 +20,13 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// CasdoorConfig Casdoor IAM 杩炴帴閰嶇疆銆?
+// CasdoorConfig Casdoor IAM 连接配置。
 type CasdoorConfig struct {
-	ClientID     string `json:"ClientID"`     // Casdoor 搴旂敤 Client ID
-	ClientSecret string `json:"ClientSecret"` // Casdoor 搴旂敤 Client Secret
-	OrgName      string `json:"OrgName"`      // Casdoor 缁勭粐鍚?
-	AppName      string `json:"AppName"`      // Casdoor 搴旂敤鍚?
-	Certificate  string `json:"Certificate"`  // Casdoor 鏈嶅姟绔?JWT 鍏挜璇佷功 (PEM)
+	ClientID     string `json:"ClientID"`     // Casdoor 应用 Client ID
+	ClientSecret string `json:"ClientSecret"` // Casdoor 应用 Client Secret
+	OrgName      string `json:"OrgName"`      // Casdoor 组织名
+	AppName      string `json:"AppName"`      // Casdoor 应用鍚?
+	Certificate  string `json:"Certificate"`  // Casdoor 服务端 JWT 公钥证书 (PEM)
 }
 
 type SecretConfig struct {

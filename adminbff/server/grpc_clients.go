@@ -22,9 +22,9 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// GrpcClientPool 绠＄悊鍒版墍鏈変笅娓稿井鏈嶅姟鐨?gRPC 杩炴帴
+// GrpcClientPool 管理到所有下游微服务的 gRPC 连接
 type GrpcClientPool struct {
-	// gRPC 杩炴帴
+	// gRPC 连接
 	mallConn  *grpc.ClientConn
 	lmsConn   *grpc.ClientConn
 	gccConn   *grpc.ClientConn
@@ -37,7 +37,7 @@ type GrpcClientPool struct {
 	gpayConn  *grpc.ClientConn
 	gmbrConn  *grpc.ClientConn
 
-	// gRPC 瀹㈡埛绔?
+	// gRPC 客户端
 	Mall  mallpb.MallServiceClient
 	Lms   lmspb.LmsServiceClient
 	Gcc   gccpb.CCServiceClient
@@ -51,7 +51,7 @@ type GrpcClientPool struct {
 	Gmbr  gmbrpb.GmbrServiceClient
 }
 
-// dialGrpc 寤虹珛 gRPC 杩炴帴
+// dialGrpc 建立 gRPC 连接
 func dialGrpc(addr string, creds credentials.TransportCredentials) (*grpc.ClientConn, error) {
 	conn, err := grpc.NewClient(addr,
 		grpc.WithTransportCredentials(creds),
@@ -62,13 +62,13 @@ func dialGrpc(addr string, creds credentials.TransportCredentials) (*grpc.Client
 	return conn, nil
 }
 
-// grpcAddr 瑙ｆ瀽 gRPC 鏈嶅姟鍦板潃
-// 浼樺厛璇荤幆澧冨彉閲忥紝鍚﹀垯鎷兼帴 K8s DNS: <service>.<namespace>.svc.cluster.local:<port>
+// grpcAddr 解析 gRPC 服务地址
+// 优先读环境变量，否则拼接 K8s DNS: <service>.<namespace>.svc.cluster.local:<port>
 func grpcAddr(envKey, service string) string {
 	return util.GetEndpointAddress(envKey, service, "50051")
 }
 
-// NewGrpcClientPool 鍒濆鍖栧埌鎵€鏈変笅娓稿井鏈嶅姟鐨?gRPC 杩炴帴
+// NewGrpcClientPool 初始化到所有下游微服务的 gRPC 连接
 func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool, error) {
 	pool := &GrpcClientPool{}
 
@@ -176,7 +176,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 	return pool, nil
 }
 
-// Close 鍏抽棴鎵€鏈?gRPC 杩炴帴
+// Close 关闭所有 gRPC 连接
 func (p *GrpcClientPool) Close() {
 	conns := []*grpc.ClientConn{
 		p.mallConn, p.lmsConn, p.gccConn, p.gprogConn, p.gmsgConn,

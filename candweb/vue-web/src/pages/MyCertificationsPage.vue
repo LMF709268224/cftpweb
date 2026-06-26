@@ -28,7 +28,7 @@ const copy = computed(() => lang.value === "zh"
   ? {
       title: "我的认证",
       subtitle: "查看你已购买或正在进行的认证进度。",
-      status: "状态",
+      status: "״̬",
       details: "查看详情",
       viewDetailsHint: "点击查看认证详情",
       emptyTitle: "还没有购买认证",

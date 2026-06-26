@@ -3,8 +3,6 @@ package handler
 import (
 	gcreds "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
-	"github.com/afnandelfin620-star/cftptest/cftp/gprog"
-	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 )
 
 type LoginInput struct {
@@ -124,14 +122,14 @@ type Qualification struct {
 }
 
 type StageConfig struct {
-	RuntimeStatus gprogpb.StageStatus `json:"runtime_status,omitempty"`
+	RuntimeStatus string `json:"runtime_status,omitempty"`
 	StageUlid     string              `json:"stage_id,omitempty"`   // 管线阶段的 ULID [required]
 	Name          string              `json:"name,omitempty"`       // 资格类别名称 [required]
 	SortOrder     int32               `json:"sort_order,omitempty"` // 排序顺序 [required]
 	Units         []UnitConfig        `json:"units,omitempty"`      // 单元配置 [required]
 }
 type UnitConfig struct {
-	RuntimeStatus            gprog.CourseUnitStatus `json:"runtime_status,omitempty"`
+	RuntimeStatus            string                 `json:"runtime_status,omitempty"`
 	StripeProductId          string                 `json:"stripe_product_id,omitempty"`
 	StripePriceId            string                 `json:"stripe_price_id,omitempty"`
 	ExemptionStripeProductId string                 `json:"exemption_stripe_product_id,omitempty"`
@@ -169,13 +167,13 @@ type PipelineSummary struct {
 	CandidateUlid     string                 `json:"candidate_ulid,omitempty"`   // 考生 ULID [required]
 	PipelineCcUlid    string                 `json:"pipeline_cc_ulid,omitempty"` // gcc 中 pipeline 配置 ULID [required]
 	PipelineName      string                 `json:"pipeline_name,omitempty"`
-	Status            gprogpb.PipelineStatus `json:"status,omitempty"`             // 资格状态 [required]
+	Status            string                 `json:"status,omitempty"`             // 资格状态 [required]
 	CurrentStageUlid  string                 `json:"current_stage_ulid,omitempty"` // 当前 stage 实例 ULID [required]
 	Description       string                 `json:"description,omitempty"`
 	CurrentStageName  string                 `json:"current_stage_name,omitempty"`
 	Progress          float64                `json:"progress"` // 当前阶段的学习进度 (0-100)
 	ProgressAvailable bool                   `json:"progress_available,omitempty"`
-	LmsProgress       uint32                 `json:"lms_progress,omitempty"` // LMS 鐠囧墽鈻兼潻娑樺閻ф儳鍨庡В?[optional]
+	LmsProgress       uint32                 `json:"lms_progress,omitempty"` // LMS 璇剧▼杩涘害鐧惧垎姣?[optional]
 	StartedAt         string                 `json:"started_at,omitempty"`   // pipeline 开始时间，RFC3339 [optional]
 	CompletedAt       string                 `json:"completed_at,omitempty"` // pipeline 完成时间，RFC3339 [optional]
 	CreatedAt         string                 `json:"created_at,omitempty"`   // 创建时间 RFC3339 格式字符串 [optional]
@@ -183,20 +181,20 @@ type PipelineSummary struct {
 
 type PipelineCreateRsp struct {
 	PipelineUlid       string                 `json:"pipeline_ulid,omitempty"`        // pipeline 实例 ULID [required]
-	PipelineStatus     gprogpb.PipelineStatus `json:"pipeline_status,omitempty"`      // pipeline 当前状态 [required]
+	PipelineStatus     string                 `json:"pipeline_status,omitempty"`      // pipeline 当前状态 [required]
 	CurrentStageUlid   string                 `json:"current_stage_ulid,omitempty"`   // 当前 stage 实例 ULID [required]
-	CurrentStageStatus gprogpb.StageStatus    `json:"current_stage_status,omitempty"` // 当前 stage 状态 [required]
+	CurrentStageStatus string                 `json:"current_stage_status,omitempty"` // 当前 stage ״̬ [required]
 	Message            string                 `json:"message,omitempty"`              // 人类可读的说明
 }
 
 type PipelineRuntimeRsp struct {
 	Config             PipelineConfig         `json:"config"`
 	Instance           PipelineSummary        `json:"instance,omitempty"`
-	PipelineStatus     gprogpb.PipelineStatus `json:"pipeline_status,omitempty"`
+	PipelineStatus     string                 `json:"pipeline_status,omitempty"`
 	CurrentStageUlid   string                 `json:"current_stage_ulid,omitempty"`
-	CurrentStageStatus gprogpb.StageStatus    `json:"current_stage_status,omitempty"`
+	CurrentStageStatus string                 `json:"current_stage_status,omitempty"`
 	CurrentStageName   string                 `json:"current_stage_name,omitempty"`
-	CurrentUnitStatus  gprog.CourseUnitStatus `json:"current_unit_status,omitempty"`
+	CurrentUnitStatus  string                 `json:"current_unit_status,omitempty"`
 	NextStep           PipelineNextStep       `json:"next_step,omitempty"`
 }
 
@@ -211,8 +209,8 @@ type PipelineNextStep struct {
 	Program          string                 `json:"program,omitempty"`
 	ExamUlid         string                 `json:"exam_id,omitempty"`
 	FormCode         string                 `json:"form_code,omitempty"`
-	Status           gprog.CourseUnitStatus `json:"status,omitempty"`
-	PipelineStatus   gprogpb.PipelineStatus `json:"pipeline_status,omitempty"`
+	Status           string                 `json:"status,omitempty"`
+	PipelineStatus   string                 `json:"pipeline_status,omitempty"`
 	AllowRetake      bool                   `json:"allow_retake,omitempty"`
 	AllowExemption   bool                   `json:"allow_exemption,omitempty"`
 }
@@ -453,14 +451,14 @@ type ListExamsRsp struct {
 
 type CandidateSignupExamRsp struct {
 	CourseUnitUlid   string                 `json:"course_unit_ulid,omitempty"`   // course unit 实例 ULID [required]
-	CourseUnitStatus gprog.CourseUnitStatus `json:"course_unit_status,omitempty"` // course unit 当前状态 [required]
+	CourseUnitStatus string `json:"course_unit_status,omitempty"` // course unit 当前状态 [required]
 	Message          string                 `json:"message,omitempty"`            // 人类可读的说明
 }
 
 // CandidateApplyRetake
 type CandidateApplyRetakeRsp struct {
 	CourseUnitUlid   string                 `json:"course_unit_ulid,omitempty"`   // course unit 实例 ULID [required]
-	CourseUnitStatus gprog.CourseUnitStatus `json:"course_unit_status,omitempty"` // course unit 当前状态 [required]
+	CourseUnitStatus string `json:"course_unit_status,omitempty"` // course unit 当前状态 [required]
 	Message          string                 `json:"message,omitempty"`            // 人类可读的说明
 }
 
@@ -712,11 +710,11 @@ type CertificateFileInfo struct {
 	FileExt   string                    `json:"file_ext,omitempty"`   // 文件扩展名 [required]
 	FileSize  uint64                    `json:"file_size,omitempty"`  // 文件大小 [required]
 	FileUsage string                    `json:"file_usage,omitempty"` // 文件用途, 如 "front_view" [optional]
-	ViewUrl   string                    `json:"view_url,omitempty"`   // 閺傚洣娆㈤崣顖濐問闂傤噣鎽奸幒?[optional]
+	ViewUrl   string                    `json:"view_url,omitempty"`   // 鏂囦欢鍙闂摼鎺?[optional]
 }
 
 type CertificateInfo struct {
-	CredUlid      string                  `json:"cred_id,omitempty"`      // 唯一ID ULID [required]
+	CredUlid      string                  `json:"cred_id,omitempty"`      // ΨһID ULID [required]
 	CredGuid      string                  `json:"cred_guid,omitempty"`    // 跨版本业务唯一 ID
 	CandidateUlid string                  `json:"candidate_id,omitempty"` // 考生逻辑 ID (ULID)
 	Version       uint32                  `json:"version,omitempty"`      // 版本号 [required]

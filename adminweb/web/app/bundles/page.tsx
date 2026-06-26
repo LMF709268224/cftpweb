@@ -502,7 +502,7 @@ export default function BundlesPage() {
                     </div>
                   </div>
                   <div className="grid gap-3 p-4 text-sm text-muted-foreground md:grid-cols-3">
-                    <div>{isZh ? "状态" : "Status"}: {selectedBundle?.status || "-"}</div>
+                    <div>{isZh ? "״̬" : "Status"}: {selectedBundle?.status || "-"}</div>
                     <div>{isZh ? "展示价" : "Display Price"}: {selectedBundle ? formatDisplayPrice(selectedBundle) : "-"}</div>
                     <div>{isZh ? "更新时间" : "Updated At"}: {formatBackendDate(selectedBundle?.updated_at)}</div>
                   </div>

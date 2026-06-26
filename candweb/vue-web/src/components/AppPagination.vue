@@ -43,7 +43,7 @@ const labels = computed(() => {
 })
 
 function pageSizeLabel(value: number) {
-  return props.locale === "zh" ? `${value}条/页` : `${value}/page`
+  return props.locale === "zh" ? `${value}条/ҳ` : `${value}/page`
 }
 
 const normalizedTotalPages = computed(() => {

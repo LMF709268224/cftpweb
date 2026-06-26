@@ -33,16 +33,16 @@ func setTokenCookies(w http.ResponseWriter, accessToken, refreshToken string, ex
 }
 
 // GetLoginURL  GET /api/auth/login-url
-// 杩斿洖 Casdoor 鐧诲綍椤?URL锛屽墠绔嬁鍒板悗 redirect 鐢ㄦ埛鍒?Casdoor 瀹屾垚鐧诲綍
+// 返回 Casdoor 登录页 URL，前端拿到后 redirect 用户到 Casdoor 完成登录
 func (h *Handler) GetLoginURL(w http.ResponseWriter, r *http.Request) {
-	// 榛樿涓嶉渶瑕佹彁渚?callback url锛孋asdoor 浼氫娇鐢ㄥ湪搴旂敤閰嶇疆涓～鍐欑殑 redirect_uri
-	// 涔熷彲浠ヤ粠鍙傛暟鑾峰彇 callback 浼犲叆
+	// 默认不需要提供 callback url，Casdoor 会使用在应用配置中填写的 redirect_uri
+	// 也可以从参数获取 callback 传入
 	redirectSigninURL := r.URL.Query().Get("callback")
-	// 杩欓噷濡傛灉涓€寮€濮媔nit鐨勬槸k8s鍐呯綉鐨勫湴鍧€,灏辫閲嶆柊鎷兼帴
+	// 这里如果一开始 init 的是 k8s 内网的地址, 就要重新拼接
 	signinUrl := casdoorsdk.GetSigninUrl(redirectSigninURL)
 
 	if h.CasdoorEndpoint != "" {
-		// 濡傛灉閰嶇疆浜嗗叕缃戝湴鍧€锛屽氨鎶?SDK 鐢熸垚鐨勫唴缃?URL 鏇挎崲涓哄叕缃戝彲璁块棶鐨?URL
+		// 如果配置了公网地址，就把 SDK 生成的内网 URL 替换为公网可访问的 URL
 		if parsedUrl, err := url.Parse(signinUrl); err == nil {
 			if parsedPublic, err := url.Parse(h.CasdoorEndpoint); err == nil {
 				parsedUrl.Scheme = parsedPublic.Scheme
@@ -56,7 +56,7 @@ func (h *Handler) GetLoginURL(w http.ResponseWriter, r *http.Request) {
 }
 
 // Login  POST /auth/login
-// Casdoor OAuth 鍥炶皟: 鍓嶇鎷垮埌 code 鍚庤皟鐢ㄦ鎺ュ彛鎹㈠彇 JWT
+// Casdoor OAuth 回调: 前端拿到 code 后调用此接口换取 JWT
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var input LoginInput
 	if err := ReadJSON(r, &input); err != nil {
@@ -97,7 +97,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // RefreshToken  POST /auth/refresh
-// 鐢?refresh_token 鎹㈠彇鏂扮殑 access_token
+// 用 refresh_token 换取新的 access_token
 func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		RefreshToken string `json:"refresh_token"`

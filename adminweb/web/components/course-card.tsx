@@ -41,7 +41,7 @@ export function CourseCard({
   image,
   category,
   provider,
-  duration = "40小时",
+  duration = "40Сʱ",
   students = 1200,
   isPurchased = false,
   progress,

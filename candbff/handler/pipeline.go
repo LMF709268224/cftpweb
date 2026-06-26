@@ -947,7 +947,7 @@ func toPipelineSummary(p *gprog.PipelineSummary) PipelineSummary {
 		PipelineUlid:     p.PipelineUlid,
 		CandidateUlid:    p.CandidateUlid,
 		PipelineCcUlid:   p.PipelineCcUlid,
-		Status:           p.Status,
+		Status:           p.Status.String(),
 		CurrentStageUlid: p.CurrentStageUlid,
 		LmsProgress:      0,
 		StartedAt:        p.StartedAt,

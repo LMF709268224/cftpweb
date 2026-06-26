@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// Server 鏄?candidateserver 鐨勬牳蹇冪粨鏋?
+// Server 是 adminserver 的核心结构
 type Server struct {
 	config     *config.Config
 	grpcPool   *GrpcClientPool

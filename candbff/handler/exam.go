@@ -82,7 +82,7 @@ func (h *Handler) SignupExam(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, http.StatusOK, CandidateSignupExamRsp{
 		CourseUnitUlid:   resp.GetCourseUnitUlid(),
-		CourseUnitStatus: resp.GetCourseUnitStatus(),
+		CourseUnitStatus: resp.GetCourseUnitStatus().String(),
 		Message:          resp.GetMessage(),
 	})
 }
@@ -103,7 +103,7 @@ func (h *Handler) ApplyRetake(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, http.StatusOK, CandidateApplyRetakeRsp{
 		CourseUnitUlid:   resp.GetCourseUnitUlid(),
-		CourseUnitStatus: resp.GetCourseUnitStatus(),
+		CourseUnitStatus: resp.GetCourseUnitStatus().String(),
 		Message:          resp.GetMessage(),
 	})
 }

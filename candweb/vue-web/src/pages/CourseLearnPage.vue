@@ -309,7 +309,7 @@ const finalQualificationIds = computed(() => finalQualifications.value.map((qual
 const pipelineWaitsFinalEligibility = computed(() => {
   const raw = String(pipelineStatus.value ?? "").trim()
   const normalized = normalizeEnumValueUpper(pipelineStatus.value)
-  return raw === "2" || normalized.includes("WAIT_FINAL_ELIG")
+  return normalized.includes("WAIT_FINAL_ELIG")
 })
 const finalQualificationRequired = computed(() => pipelineWaitsFinalEligibility.value && finalQualificationIds.value.length > 0)
 const courseRuntimeUnit = computed(() => {
@@ -684,7 +684,7 @@ const selectedMaterial = computed(() => {
 
 function pipelineIsTerminal(status?: string | number | null) {
   const normalized = String(status ?? "").trim()
-  return normalized === "3" || normalized === "4"
+  return normalized.includes("COMPLETED") || normalized.includes("ISSUING_CERT")
 }
 
 function nextStepDisplayFromAction(action?: string) {

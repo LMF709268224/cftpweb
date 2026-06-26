@@ -191,10 +191,10 @@ onMounted(load)
       <div class="flex items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-black">列表</h2>
-          <p class="mt-1 text-sm text-slate-500">每页 20 条，列表隐藏 ULID；点进详情后可查看完整字段。</p>
+          <p class="mt-1 text-sm text-slate-500">ÿҳ 20 条，列表隐藏 ULID；点进详情后可查看完整字段。</p>
         </div>
         <div class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">
-          第 {{ page }} 页 / {{ items.length }} 条
+          第 {{ page }} ҳ / {{ items.length }} 条
         </div>
       </div>
 
@@ -292,7 +292,7 @@ onMounted(load)
         </div>
         <div class="flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-slate-700">原始 JSON</h3>
+            <h3 class="text-sm font-bold text-slate-700">ԭʼ JSON</h3>
             <div v-if="!isEditing" class="flex gap-2">
               <button class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800" @click="startEdit">编辑原始 JSON</button>
             </div>

@@ -372,14 +372,14 @@
           { "name": "examId", "type": "string", "required": true, "description": "考试ID" }
         ],
         "query": [
-          { "name": "type", "type": "string", "required": true, "description": "操作类型: schd=预约, reschd=改期, cancel=取消" },
+          { "name": "type", "type": "string", "required": true, "description": "操作类型: schd=ԤԼ, reschd=改期, cancel=取消" },
           { "name": "termUrlBase", "type": "string", "required": true, "description": "GEE完成后的回调基础URL（由前端传入）" }
         ],
         "body": null
       },
       "response": {
         "data": {
-          "url": { "type": "string", "description": "预约/改期/取消的跳转URL" }
+          "url": { "type": "string", "description": "ԤԼ/改期/取消的跳转URL" }
         }
       }
     },
@@ -394,7 +394,7 @@
         ],
         "query": [],
         "body": {
-          "urlType": { "type": "string", "required": true, "description": "操作类型: schd=预约, reschd=改期, cancel=取消" },
+          "urlType": { "type": "string", "required": true, "description": "操作类型: schd=ԤԼ, reschd=改期, cancel=取消" },
           "callbackBody": { "type": "string", "required": false, "description": "GEE回传的完整JSON字符串（可能为空）" }
         }
       },
@@ -456,7 +456,7 @@
         "data": {
           "orderId": { "type": "string", "description": "业务订单号" },
           "requestStatus": { "type": "string", "description": "gpay内部状态: pending_create, pending_payment, completed, cancelled, failed" },
-          "sessionStatus": { "type": "string", "description": "Stripe Session状态: open, complete, expired" },
+          "sessionStatus": { "type": "string", "description": "Stripe Session״̬: open, complete, expired" },
           "paymentStatus": { "type": "string", "description": "Stripe支付状态: unpaid, paid" },
           "totalAmount": { "type": "int", "description": "总金额（分）" },
           "currency": { "type": "string", "description": "货币代码" },
@@ -615,7 +615,7 @@
             "platform": { "type": "string", "description": "考试平台" },
             "durationMinutes": { "type": "int", "description": "时长（分钟）" },
             "passScore": { "type": "int", "description": "合格分" },
-            "status": { "type": "string", "description": "状态: scheduled / in_progress / completed" }
+            "status": { "type": "string", "description": "״̬: scheduled / in_progress / completed" }
           }
         },
         "note": "需要 gexam 新增 ListExams gRPC 接口"
@@ -687,7 +687,7 @@
             "items": {
               "orderId": { "type": "string", "description": "订单号" },
               "productName": { "type": "string", "description": "产品名称" },
-              "status": { "type": "string", "description": "状态: completed / pending / cancelled" },
+              "status": { "type": "string", "description": "״̬: completed / pending / cancelled" },
               "createdAt": { "type": "string", "description": "创建时间" },
               "paymentMethod": { "type": "string", "description": "支付方式" },
               "amount": { "type": "float", "description": "金额" }
@@ -790,7 +790,7 @@
               "title": { "type": "string", "description": "档案标题" },
               "institution": { "type": "string", "description": "颁发机构" },
               "date": { "type": "string", "description": "日期" },
-              "status": { "type": "string", "description": "状态: certified / reviewing / rejected" }
+              "status": { "type": "string", "description": "״̬: certified / reviewing / rejected" }
             }
           }
         },

@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { AlertCircle, Building2, CheckCircle2, CreditCard, Lock, Loader2, ShoppingCart } from "lucide-vue-next"
@@ -682,10 +682,7 @@ async function initiatePayment() {
       </div>
 
       <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
-        <div class="flex items-center justify-between border-b border-border/50 py-2">
-          <span class="text-sm text-muted-foreground">{{ t.common.purchaseDialogCourse }}</span>
-          <span class="text-sm font-medium text-foreground">{{ courseName }}</span>
-        </div>
+
 
         <div v-if="eligibilityLoading && !eligibility" class="rounded-lg border border-border bg-muted/30 p-4">
           <div class="flex items-center gap-2 text-sm text-muted-foreground">

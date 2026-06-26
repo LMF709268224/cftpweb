@@ -5,11 +5,11 @@ import (
 	"net/http"
 )
 
-// ErrorCode 涓氬姟閿欒鐮侊紝鎺ㄨ崘浣跨敤瀛楃涓插舰寮忥紝鏇存槗璇?
+// ErrorCode 业务错误码，推荐使用字符串形式，更易读
 type ErrorCode string
 
 const (
-	// 閫氱敤閿欒
+	// 通用错误
 	ErrInternal           ErrorCode = "INTERNAL_ERROR"
 	ErrInvalidRequest     ErrorCode = "INVALID_REQUEST"
 	ErrUnauthorized       ErrorCode = "UNAUTHORIZED"
@@ -19,35 +19,35 @@ const (
 	ErrPrecondition       ErrorCode = "PRECONDITION_FAILED"
 	ErrServiceUnavailable ErrorCode = "SERVICE_UNAVAILABLE"
 
-	// 璁よ瘉妯″潡
+	// 认证模块
 	ErrAuthFailed          ErrorCode = "AUTH_FAILED"
 	ErrTokenExpired        ErrorCode = "TOKEN_EXPIRED"
 	ErrInvalidToken        ErrorCode = "INVALID_TOKEN"
 	ErrPasswordIncorrect   ErrorCode = "PASSWORD_INCORRECT"
 	ErrProfileUpdateFailed ErrorCode = "PROFILE_UPDATE_FAILED"
 
-	// 璇剧▼/绠＄嚎妯″潡
+	// 课程/管线模块
 	ErrPipelineNotFound ErrorCode = "PIPELINE_NOT_FOUND"
 	ErrAlreadyPurchased ErrorCode = "ALREADY_PURCHASED"
 	ErrInvalidPipeline  ErrorCode = "INVALID_PIPELINE"
 
-	// 鑰冭瘯妯″潡
+	// 考试模块
 	ErrExamNotFound ErrorCode = "EXAM_NOT_FOUND"
 	ErrNotEligible  ErrorCode = "NOT_ELIGIBLE"
 	ErrSignupFailed ErrorCode = "SIGNUP_FAILED"
 	ErrRetakeDenied ErrorCode = "RETAKE_DENIED"
 
-	// 鏀粯/璁㈠崟妯″潡
+	// 支付/订单模块
 	ErrPaymentFailed ErrorCode = "PAYMENT_FAILED"
 	ErrOrderNotFound ErrorCode = "ORDER_NOT_FOUND"
 	ErrInvalidAmount ErrorCode = "INVALID_AMOUNT"
 
-	// 妗ｆ/浼氬憳妯″潡
+	// 档案/会员模块
 	ErrMembershipExpired ErrorCode = "MEMBERSHIP_EXPIRED"
 	ErrRecordRejected    ErrorCode = "RECORD_REJECTED"
 )
 
-// AppError 鑷畾涔変笟鍔￠敊璇?
+// AppError 自定义业务错误
 type AppError struct {
 	HttpStatus int
 	Code       ErrorCode
@@ -66,7 +66,7 @@ func NewError(httpStatus int, code ErrorCode, message string) *AppError {
 	}
 }
 
-// 甯哥敤閿欒蹇嵎鍒涘缓
+// 常用错误快捷创建
 func BadRequest(code ErrorCode, message string) *AppError {
 	return NewError(http.StatusBadRequest, code, message)
 }

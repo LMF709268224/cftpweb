@@ -1,4 +1,4 @@
-﻿package server
+package server
 
 import (
 	"net/http"
@@ -10,11 +10,11 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-// buildRouter 闁哄瀚紓?HTTP 閻犱警鍨抽弫? 闁圭鍋撻柡鍫濐樀濞间即宕ラ幋锝傚亾閸愵亝鏅?Web 缂佹棏鍨冲▓?API 闂侇喛妫勫﹢顏呮交濞嗘挸娅℃繛澶堝妼閸?
+// buildRouter 构建 HTTP 路由
 func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	r := chi.NewRouter()
 
-	// ---------- 闂侇偅姘ㄩ弫銈嗙▔椤撱垺锛熷ù?----------
+	// ---------- 管理后台接口----------
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
@@ -22,12 +22,12 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 	r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(s.corsMiddleware)
 
-	// ---------- 闁稿鍎遍幃宥呂涢埀顒勫蓟?(闁哄啰濞€濞撳墎鎷嬮妶鍫㈡) ----------
+	// ---------- 健康检查 (公开) ----------
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		handler.WriteJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 
-	// ---------- 閻犱降鍊涢惁澶愬箳閵夈儱缍?(闁哄啰濞€濞撳墎鎷嬮妶鍫㈡) ----------
+	// ---------- 认证 (公开) ----------
 	r.Route("/api/auth", func(r chi.Router) {
 		r.Get("/login-url", h.GetLoginURL)
 		r.Post("/login", h.Login)
@@ -35,11 +35,11 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Post("/refresh", h.RefreshToken)
 	})
 
-	// ---------- 闂傚洠鍋撻悷鏇氭祰椤撹崵鎷犳担鐑樼暠 API ----------
+	// ---------- 需要认证的 API ----------
 	r.Route("/api", func(r chi.Router) {
 		r.Use(s.authMiddleware)
 
-		// ===== 闁活潿鍔嶉崺?(User) =====
+		// ===== 用户 (User) =====
 		r.Route("/user", func(r chi.Router) {
 			r.Get("/me", h.GetAdminMe)
 			r.Get("/list", h.ListUsers)
@@ -47,7 +47,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Put("/password", h.UpdateUserPassword)
 		})
 
-		// ===== 閻犲洤澧介埢鍏肩▔鎼达綆鍚€缂佹崘娉曢鎼佹偠?(GCC) =====
+		// ===== 课程与认证 (GCC) =====
 		r.Route("/pipelines", func(r chi.Router) {
 			r.Get("/", h.ListPipelines)
 			r.Get("/{pipeline_id}", h.GetPipeline)
@@ -74,15 +74,15 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/{course_unit_ulid}/force-signup-exam", h.AdminForceCourseSignupExam)
 		})
 
-		// ===== 闁烩晩鍠栫紞宥夊礆閸℃瑨顫︾紒鐙呯磿閹?(Catalogs) =====
-		// 閻犳劗鍠曢惌妤冩嫚閸撗€鏌ら柛鎺戞鐞氼偊濡存担鍦灱缂佹稑褰炵紞瀣寲閼姐倖鐣?CRUD闁挎稑鐬奸弫銈嗙鎼达紕娈虹紒鐙呯磿閸ゅ氦銇愰幒鏃囶潶閻忕偞娲滈妵?
+		// ===== 目录 (Catalogs) =====
+		// 提供目录的 CRUD 操作
 		r.Route("/catalogs", func(r chi.Router) {
 			r.Get("/", h.ListCatalogs)
 			r.Post("/", h.CreateCatalog)
 			r.Put("/{catalog_id}", h.UpdateCatalog)
 		})
 
-		// ===== GLMS 閻犲洤澧介埢濂稿礃閸涱収鍟囬梺鏉跨Ф閻?(LMS Courses) =====
+		// ===== GLMS 学习管理系统 (LMS Courses) =====
 		r.Route("/lms", func(r chi.Router) {
 			r.Route("/courses", func(r chi.Router) {
 				r.Get("/", h.ListLmsCourses)
@@ -211,7 +211,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/send", h.SendMessage)
 		})
 
-		// ===== 闁喕娆㈢粻锛勬倞 (Mails) =====
+		// ===== 邮件接口 (Mails) =====
 		r.Route("/mails", func(r chi.Router) {
 			r.Post("/send", h.SendMail)
 			r.Get("/sent", h.ListSentMails)
@@ -232,31 +232,31 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			})
 		})
 
-		// ===== 鐠у嫭鐗告稉搴ょ槈娑旓妇顓搁悶?(Credentials) =====
+		// ===== 资格与证书管理 (Credentials) =====
 		r.Route("/credentials", func(r chi.Router) {
 			r.Get("/definitions", h.ListCredentialDefinitions)
 			r.Post("/definitions", h.CreateCredentialDefinition)
 		})
 
-		// ===== 鐠у嫭鐗哥€光剝鐗虫稉顓炵妇 (Applications) =====
+		// ===== 应用 (Applications) =====
 		r.Route("/applications", func(r chi.Router) {
 			r.Get("/", h.ListApplications)
 			r.Post("/audit", h.AuditApplication)
 		})
 
-		// ===== PDF濡剝婢樼粻锛勬倞 (PDF Templates) =====
+		// ===== PDF模板接口 (PDF Templates) =====
 		r.Route("/pdf-templates", func(r chi.Router) {
 			r.Get("/", h.ListPdfTemplates)
 			r.Post("/", h.CreatePdfTemplate)
 			r.Put("/", h.UpdatePdfTemplate)
 		})
 
-		// ===== PDF 鐠囦椒鍔熼悽鐔稿灇鐠囬攱鐪扮粻锛勬倞 (PDF Requests) =====
+		// ===== PDF 生成请求接口 (PDF Requests) =====
 		r.Route("/pdf-requests", func(r chi.Router) {
 			r.Get("/", h.ListPdfRequests)
 		})
 
-		// ===== 鐠併垹宕熸稉搴㈡暜娴?(Mall) =====
+		// ===== 商城 (Mall) =====
 		r.Route("/mall", func(r chi.Router) {
 			r.Get("/stages/{stage_ulid}/order-status", h.GetStageOrderStatus)
 			r.Get("/stage-orders", h.ListStageOrders)
@@ -284,7 +284,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			})
 		})
 
-		// ===== Webhook 鐎孤ゎ吀 (Exam Webhooks) =====
+		// ===== Webhook 审计 (Exam Webhooks) =====
 		// ===== Memberships =====
 		r.Route("/memberships", func(r chi.Router) {
 			r.Get("/", h.ListMemberships)
@@ -314,7 +314,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/reprocess", h.ReprocessWebhookMessage)
 		})
 
-		// ===== 閺夊啴妾烘禍鍝勪紣楠炴煡顣?(Permissions) =====
+		// ===== 权限管理 (Permissions) =====
 		r.Route("/permissions", func(r chi.Router) {
 			r.Get("/check", h.CheckCandidateQualification)
 			r.Post("/grant", h.GrantUploadPermission)
@@ -322,7 +322,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Post("/mark-expired", h.MarkExpired)
 			r.Post("/revoke-credential", h.RevokeCredential)
 		})
-	}) // <-- 鐞涖儱娲?/api 鐠侯垳鏁遍惃鍕波閺夌喎銇囬幏顒€褰?
+	}) // <-- /api 路由分组结束
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		handler.WriteJSON(w, http.StatusNotFound, map[string]string{"error": "API route not found"})
 	})

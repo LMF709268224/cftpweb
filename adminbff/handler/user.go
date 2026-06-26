@@ -66,7 +66,7 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "淇敼鎴愬姛"})
+	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "修改成功"})
 }
 
 // UpdateUserPassword PUT /api/user/password
@@ -95,7 +95,7 @@ func (h *Handler) UpdateUserPassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "瀵嗙爜淇敼鎴愬姛"})
+	WriteJSON(w, http.StatusOK, BaseRsp{Code: 0, Msg: "密码修改成功"})
 }
 
 // ListUsers GET /api/user/list
@@ -114,7 +114,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 			name = u.Name
 		}
 
-		// 閫氳繃 gmid 鑾峰彇鐪熷疄鐨?ULID
+		// 通过 gmid 获取真实的 ULID
 		gmidResp, err := h.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
 			UserUuid: u.Id,
 		})

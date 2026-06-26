@@ -244,19 +244,19 @@ func (h *Handler) GetPipeline(w http.ResponseWriter, r *http.Request) {
 
 // ListCatalogs GET /api/catalogs
 func (h *Handler) ListCatalogs(w http.ResponseWriter, r *http.Request) {
-	// TODO: 寰呭井鏈嶅姟鍥㈤槦琛ュ厖 GCC catalog 绠＄悊鎺ュ彛鍚庢帴鍏ワ紱褰撳墠 GCC proto 宸茬Щ闄?ListCatalogs/CreateCatalog/UpdateCatalog銆?
+	// TODO: 待微服务团队补充 GCC catalog 管理接口后接入；当前 GCC proto 已移除 ListCatalogs/CreateCatalog/UpdateCatalog。
 	WriteJSON(w, http.StatusOK, map[string]any{"catalogs": []any{}})
 }
 
 // CreateCatalog POST /api/catalogs
 func (h *Handler) CreateCatalog(w http.ResponseWriter, r *http.Request) {
-	// TODO: 寰呭井鏈嶅姟鍥㈤槦琛ュ厖 GCC catalog 绠＄悊鎺ュ彛鍚庢帴鍏ワ紱褰撳墠 GCC proto 宸茬Щ闄?ListCatalogs/CreateCatalog/UpdateCatalog銆?
+	// TODO: 待微服务团队补充 GCC catalog 管理接口后接入；当前 GCC proto 已移除 ListCatalogs/CreateCatalog/UpdateCatalog。
 	WriteError(w, http.StatusNotImplemented, ErrInvalidRequest, "catalog management API is not available in current GCC proto")
 }
 
 // UpdateCatalog PUT /api/catalogs/{catalog_id}
 func (h *Handler) UpdateCatalog(w http.ResponseWriter, r *http.Request) {
-	// TODO: 寰呭井鏈嶅姟鍥㈤槦琛ュ厖 GCC catalog 绠＄悊鎺ュ彛鍚庢帴鍏ワ紱褰撳墠 GCC proto 宸茬Щ闄?ListCatalogs/CreateCatalog/UpdateCatalog銆?
+	// TODO: 待微服务团队补充 GCC catalog 管理接口后接入；当前 GCC proto 已移除 ListCatalogs/CreateCatalog/UpdateCatalog。
 	WriteError(w, http.StatusNotImplemented, ErrInvalidRequest, "catalog management API is not available in current GCC proto")
 }
 

@@ -17,7 +17,7 @@ import (
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
 )
 
-// 鈹€鈹€ Context 閿?鈹€鈹€
+// ── Context 键 ──
 
 type ContextKey string
 
@@ -28,7 +28,7 @@ const (
 	CtxKeyToken   ContextKey = "raw_token"
 )
 
-// 鈹€鈹€ Handler 瀹瑰櫒 鈹€鈹€
+// ── Handler 容器 ──
 
 type Handler struct {
 	Lms                 lmspb.LmsServiceClient
@@ -81,7 +81,7 @@ func New(
 	}
 }
 
-// 鈹€鈹€ Context 鍙栧€艰緟鍔╁嚱鏁?鈹€鈹€
+// ── Context 取值辅助函数 ──
 
 func AdminID(r *http.Request) string {
 	v, _ := r.Context().Value(CtxKeyAdminID).(string)
@@ -103,7 +103,7 @@ func RawToken(r *http.Request) string {
 	return v
 }
 
-// 鈹€鈹€ Context 娉ㄥ叆杈呭姪 鈹€鈹€
+// ── Context 注入辅助 ──
 
 func WithCandidate(ctx context.Context, id, email, name, token string) context.Context {
 	ctx = context.WithValue(ctx, CtxKeyAdminID, id)

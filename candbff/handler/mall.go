@@ -195,7 +195,7 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		out.Instance = toPipelineSummary(p)
-		out.PipelineStatus = p.GetStatus()
+		out.PipelineStatus = p.GetStatus().String()
 		out.CurrentStageUlid = strings.TrimSpace(p.GetCurrentStageUlid())
 		runtimeResp, runtimeErr := h.Gprog.GetPipelineDetail(ctx, &gprog.GetPipelineDetailReq{
 			PipelineUlid: p.GetPipelineUlid(),
@@ -204,7 +204,7 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 			mergeRuntimeStatuses(&out.Config, runtimeResp)
 			out.NextStep = buildPipelineNextStep(runtimeResp, gccResp, p)
 			if runtimeResp.GetPipeline() != nil {
-				out.PipelineStatus = runtimeResp.GetPipeline().GetStatus()
+				out.PipelineStatus = runtimeResp.GetPipeline().GetStatus().String()
 				out.CurrentStageUlid = strings.TrimSpace(runtimeResp.GetPipeline().GetCurrentStageUlid())
 			}
 			if stageDetails := runtimeResp.GetStages(); len(stageDetails) > 0 {
@@ -214,13 +214,13 @@ func (h *Handler) GetPipelineRuntime(w http.ResponseWriter, r *http.Request) {
 					}
 					if out.CurrentStageUlid != "" && stage.GetStage().GetStageUlid() == out.CurrentStageUlid {
 						out.CurrentStageName = stageConfigNameByID(gccResp, stage.GetStage().GetStageCcUlid())
-						out.CurrentStageStatus = stage.GetStage().GetStatus()
+						out.CurrentStageStatus = stage.GetStage().GetStatus().String()
 						for _, unit := range stage.GetCourseUnits() {
 							if unit == nil {
 								continue
 							}
 							if unit.GetStatus() != gprog.CourseUnitStatus_COURSE_UNIT_STATUS_COMPLETED {
-								out.CurrentUnitStatus = unit.GetStatus()
+								out.CurrentUnitStatus = unit.GetStatus().String()
 								break
 							}
 						}
@@ -261,7 +261,7 @@ func mergeRuntimeStatuses(config *PipelineConfig, runtime *gprog.GetPipelineDeta
 		if !ok {
 			continue
 		}
-		config.Stages[stageIndex].RuntimeStatus = stageDetail.GetStage().GetStatus()
+		config.Stages[stageIndex].RuntimeStatus = stageDetail.GetStage().GetStatus().String()
 
 		unitIndexes := make(map[string]int, len(config.Stages[stageIndex].Units))
 		for unitIndex := range config.Stages[stageIndex].Units {
@@ -280,7 +280,7 @@ func mergeRuntimeStatuses(config *PipelineConfig, runtime *gprog.GetPipelineDeta
 			if !ok {
 				continue
 			}
-			config.Stages[stageIndex].Units[unitIndex].RuntimeStatus = unit.GetStatus()
+			config.Stages[stageIndex].Units[unitIndex].RuntimeStatus = unit.GetStatus().String()
 			config.Stages[stageIndex].Units[unitIndex].CourseUnitUlid = unit.GetCourseUnitUlid()
 		}
 	}
@@ -1326,15 +1326,15 @@ func toUnits(units []*gccpb.UnitConfig) []UnitConfig {
 func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.PipelineConfig, instance *gprogpb.PipelineSummary) PipelineNextStep {
 	out := PipelineNextStep{}
 	if instance != nil {
-		out.PipelineStatus = instance.GetStatus()
+		out.PipelineStatus = instance.GetStatus().String()
 	}
 	issuesCertificate := pipelineIssuesCertificate(config)
-	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG {
+	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG.String() {
 		fillFinalEligibilityNextStep(&out, issuesCertificate)
 		return out
 	}
-	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED ||
-		out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_ISSUING_CERT {
+	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED.String() ||
+		out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_ISSUING_CERT.String() {
 		fillCompletedPipelineNextStep(&out, issuesCertificate)
 		return out
 	}
@@ -1375,7 +1375,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 				}
 				out.Action = "wait_candidate"
 				out.Message = "stage is waiting for candidate action"
-				out.Status = gprog.CourseUnitStatus_COURSE_UNIT_STATUS_UNSPECIFIED
+				out.Status = gprog.CourseUnitStatus_COURSE_UNIT_STATUS_UNSPECIFIED.String()
 				return out
 			}
 		}
@@ -1395,8 +1395,8 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 	currentStageUlid := ""
 	if runtime.GetPipeline() != nil {
 		currentStageUlid = strings.TrimSpace(runtime.GetPipeline().GetCurrentStageUlid())
-		out.PipelineStatus = runtime.GetPipeline().GetStatus()
-		if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG {
+		out.PipelineStatus = runtime.GetPipeline().GetStatus().String()
+		if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG.String() {
 			fillFinalEligibilityNextStep(&out, issuesCertificate)
 			return out
 		}
@@ -1447,7 +1447,7 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 	fillNextStepFromUnit(&out, pickStage, configUnitByID(config, pickUnit.GetCourseUnitCcUlid()), stageConfigNameByID(config, pickStage.GetStage().GetStageCcUlid()))
 	out.CourseUnitUlid = pickUnit.GetCourseUnitUlid()
 	out.CourseUnitCcUlid = pickUnit.GetCourseUnitCcUlid()
-	out.Status = pickUnit.GetStatus()
+	out.Status = pickUnit.GetStatus().String()
 	switch pickUnit.GetStatus() {
 	case gprog.CourseUnitStatus_COURSE_UNIT_STATUS_WAITING_STUDY:
 		out.Action = "continue_learning"
@@ -1512,7 +1512,7 @@ func fillCompletedPipelineNextStep(out *PipelineNextStep, issuesCertificate bool
 }
 
 func fillFinalEligibilityNextStep(out *PipelineNextStep, issuesCertificate bool) {
-	out.PipelineStatus = gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG
+	out.PipelineStatus = gprogpb.PipelineStatus_PIPELINE_STATUS_WAIT_FINAL_ELIG.String()
 	if issuesCertificate {
 		out.Action = "final_qualification"
 		out.Message = "submit final qualification materials"

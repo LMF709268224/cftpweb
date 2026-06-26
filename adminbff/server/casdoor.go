@@ -9,7 +9,7 @@ import (
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
 
-// CasdoorClient 灏佽 Casdoor SDK 鐨?IAM 楠屾潈鎿嶄綔銆?
+// CasdoorClient 封装 Casdoor SDK 的 IAM 验权操作。
 type CasdoorClient struct {
 	cfg config.CasdoorConfig
 }
@@ -22,7 +22,7 @@ func getCasdoorEndpoint() string {
 	return addr
 }
 
-// NewCasdoorClient 鍒濆鍖?Casdoor SDK 鍏ㄥ眬閰嶇疆锛屼粎闇€杩涚▼鍚姩鏃舵墽琛屼竴娆°€?
+// NewCasdoorClient 初始化 Casdoor SDK 全局配置，仅需进程启动时执行一次。
 func NewCasdoorClient(cfg config.CasdoorConfig) *CasdoorClient {
 	endpoint := getCasdoorEndpoint()
 	casdoorsdk.InitConfig(

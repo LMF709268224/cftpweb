@@ -24,7 +24,7 @@ const constraints = ref<FileConstraint[]>([])
 
 const fileTypes = [
   { value: 0, label: "不限" },
-  { value: 1, label: "图片" },
+  { value: 1, label: "ͼƬ" },
   { value: 2, label: "PDF" },
   { value: 4, label: "视频" },
   { value: 8, label: "文本" },

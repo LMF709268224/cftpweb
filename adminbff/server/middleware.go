@@ -16,7 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ContextKey 鐢ㄤ簬鍦?context 涓紶閫掔敤鎴蜂俊鎭?
+// ContextKey 用于在 context 中传递用户信息
 type ContextKey = handler.ContextKey
 
 const (
@@ -26,7 +26,7 @@ const (
 	CtxKeyToken   = handler.CtxKeyToken
 )
 
-// corsMiddleware 澶勭悊 CORS 璺ㄥ煙璇锋眰
+// corsMiddleware 处理 CORS 跨域请求
 func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
@@ -69,17 +69,17 @@ func isAllowedOrigin(origin, raw string) bool {
 	return false
 }
 
-// authMiddleware 楠岃瘉 Casdoor JWT 骞跺皢鐢ㄦ埛淇℃伅娉ㄥ叆 context
+// authMiddleware 验证 Casdoor JWT 并将用户信息注入 context
 func (s *Server) authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var tokenStr string
 
-		// 浼樺厛浠?Cookie 璇诲彇
+		// 优先从 Cookie 读取
 		cookie, err := r.Cookie("access_token")
 		if err == nil && cookie.Value != "" {
 			tokenStr = cookie.Value
 		} else {
-			// 鍚庨€€绛栫暐锛氫粠 Header 璇诲彇
+			// 后退策略：从 Header 读取
 			authHeader := r.Header.Get("Authorization")
 			if authHeader != "" {
 				tokenStr = strings.TrimPrefix(authHeader, "Bearer ")
@@ -97,7 +97,7 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 
 		slog.Info("authMiddleware: token found, parsing JWT...", "path", r.URL.Path)
 
-		// 浣跨敤 Casdoor SDK 楠岃瘉 JWT 绛惧悕鍜屾湁鏁堟湡
+		// 使用 Casdoor SDK 验证 JWT 签名和有效期
 		claims, err := casdoorsdk.ParseJwtToken(tokenStr)
 		if err != nil {
 			slog.Warn("JWT validation failed", "error", err)
@@ -105,21 +105,21 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// 楠岃瘉鏄惁鏄鐞嗗憳
+		// 验证是否是管理员
 		if !handler.IsCftpAdmin(&claims.User) {
 			slog.Warn("authMiddleware: user is not an admin", "casdoor_user_id", claims.User.Id)
 			handler.WriteError(w, http.StatusForbidden, handler.ErrUnauthorized, "admin privileges required")
 			return
 		}
 
-		// 璋冪敤 gmid 鏈嶅姟杩涜 UID 瑙ｆ瀽
+		// 调用 gmid 服务进行 UID 解析
 		resp, err := s.grpcPool.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
 			UserUuid: claims.User.Id,
 		})
 
 		if err != nil {
 			if status.Code(err) == codes.NotFound {
-				// 鏈湪鍐呴儴寤虹珛鏄犲皠鍏崇郴锛屽彲鑳芥槸鏃犳晥鎴栧皻鏈畬鎴愬垵濮嬪寲
+				// 未在内部建立映射关系，可能是无效或尚未完成初始化
 				slog.Error("authMiddleware: Candidate ULID not found in gmid for user", "casdoor_user_id", claims.User.Id, "user_name", claims.User.Name)
 				handler.WriteError(w, http.StatusUnauthorized, handler.ErrUnauthorized, "user mapping not found")
 				return
@@ -132,7 +132,7 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		candidateID := resp.UserUlid
 		slog.Info("authMiddleware: Authentication successful", "candidate_id", candidateID, "user_name", claims.Name, "path", r.URL.Path)
 
-		// 娉ㄥ叆 context
+		// 注入 context
 		ctx := handler.WithCandidate(r.Context(), candidateID, claims.Email, claims.Name, tokenStr)
 
 		next.ServeHTTP(w, r.WithContext(ctx))

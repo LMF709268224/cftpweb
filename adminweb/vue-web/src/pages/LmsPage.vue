@@ -231,7 +231,7 @@ function questionTypeLabel(value: unknown) {
   if (type === 1) return "单选"
   if (type === 2) return "多选"
   if (type === 3) return "判断"
-  return "未知"
+  return "δ֪"
 }
 
 function courseFormFrom(course: JsonRecord): CourseForm {
@@ -1155,7 +1155,7 @@ onMounted(() => {
                   <option value="1">视频</option>
                   <option value="2">文本</option>
                   <option value="3">PDF</option>
-                  <option value="4">图片</option>
+                  <option value="4">ͼƬ</option>
                   <option value="5">音频</option>
                   <option value="6">文件</option>
                   <option value="7">链接</option>

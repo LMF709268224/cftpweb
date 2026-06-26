@@ -12,7 +12,7 @@ import (
 
 type apiResponse struct {
 	Code      int         `json:"code"`
-	ErrorCode ErrorCode   `json:"error_code,omitempty"` // 涓氬姟閿欒鐮?
+	ErrorCode ErrorCode   `json:"error_code,omitempty"` // 业务错误码
 	Message   string      `json:"message"`
 	Data      interface{} `json:"data,omitempty"`
 }
@@ -23,7 +23,7 @@ func WriteJSON(w http.ResponseWriter, httpStatus int, data interface{}) {
 
 	resp := apiResponse{
 		Code:      httpStatus,
-		ErrorCode: "OK", // 鎴愬姛鏃跺浐瀹氳繑鍥?OK 鎴栦笉杩斿洖
+		ErrorCode: "OK", // 成功时固定返回 OK 或不返回
 		Message:   http.StatusText(httpStatus),
 		Data:      data,
 	}
@@ -60,7 +60,7 @@ func WriteError(w http.ResponseWriter, httpStatus int, errorCode ErrorCode, mess
 	}
 }
 
-// HandleAppError 缁熶竴澶勭悊鑷畾涔変笟鍔￠敊璇?
+// HandleAppError 统一处理自定义业务错误
 func HandleAppError(w http.ResponseWriter, err *AppError) {
 	WriteError(w, err.HttpStatus, err.Code, err.Message)
 }
