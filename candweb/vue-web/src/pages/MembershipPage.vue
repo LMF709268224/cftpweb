@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue"
 import { AlertCircle, Check, Crown, Loader2, Percent, RefreshCw, Shield, Star, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
+import AppPagination from "@/components/AppPagination.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
@@ -16,6 +17,15 @@ const activeMembership = ref<RecordData | null>(null)
 const plans = ref<RecordData[]>([])
 const history = ref<RecordData[]>([])
 const billings = ref<RecordData[]>([])
+const historyPage = ref(1)
+const historyPageSize = ref(10)
+const historyTotal = ref(0)
+const historyTotalPages = ref(0)
+const billingPage = ref(1)
+const billingPageSize = ref(10)
+const billingTotal = ref(0)
+const billingTotalPages = ref(0)
+const pageSizeOptions = [10, 30, 50, 100]
 
 const tabs = computed(() => [
   { id: "overview", label: lang.value === "zh" ? "当前会员" : "Current" },
@@ -144,18 +154,42 @@ function parseFeatures(plan: RecordData) {
   }
 }
 
+function totalFrom(data: any, list: RecordData[]) {
+  return Number(data?.total ?? data?.total_count ?? data?.total_items ?? list.length ?? 0) || 0
+}
+
+function totalPagesFrom(data: any, total: number, pageSize: number) {
+  return Number(data?.total_pages || Math.ceil(total / pageSize) || 0)
+}
+
+async function loadMembershipHistory() {
+  const historyData = await apiClient(`/api/membership/history?page=${historyPage.value}&page_size=${historyPageSize.value}`)
+  const nextHistory = listFrom(historyData, ["user_memberships", "memberships", "records", "items", "history"])
+  history.value = nextHistory
+  historyTotal.value = totalFrom(historyData, nextHistory)
+  historyTotalPages.value = totalPagesFrom(historyData, historyTotal.value, historyPageSize.value)
+  return nextHistory
+}
+
+async function loadMembershipBillings() {
+  const billingData = await apiClient(`/api/membership/billings?page=${billingPage.value}&page_size=${billingPageSize.value}`)
+  const nextBillings = listFrom(billingData, ["billings", "records", "items"])
+  billings.value = nextBillings
+  billingTotal.value = totalFrom(billingData, nextBillings)
+  billingTotalPages.value = totalPagesFrom(billingData, billingTotal.value, billingPageSize.value)
+  return nextBillings
+}
+
 async function loadMembership() {
   loading.value = true
   try {
-    const [planData, historyData, billingData] = await Promise.all([
+    const [planData, nextHistory] = await Promise.all([
       apiClient("/api/membership/plans?page=1&page_size=50"),
-      apiClient("/api/membership/history?page=1&page_size=10"),
-      apiClient("/api/membership/billings?page=1&page_size=10"),
+      loadMembershipHistory(),
+      loadMembershipBillings(),
     ])
     plans.value = listFrom(planData, ["memberships", "plans", "items"])
-    history.value = listFrom(historyData, ["user_memberships", "memberships", "records", "items", "history"])
-    billings.value = listFrom(billingData, ["billings", "records", "items"])
-    activeMembership.value = await loadActiveMembershipFromHistory(history.value) || { user_memberships: history.value }
+    activeMembership.value = await loadActiveMembershipFromHistory(nextHistory) || { user_memberships: nextHistory }
   } catch (err) {
     console.error(err)
     toast.error(lang.value === "zh" ? "会员信息加载失败" : "Failed to load membership")
@@ -203,6 +237,16 @@ async function cancelMembership() {
   } finally {
     cancelling.value = false
   }
+}
+
+function handleHistoryPaginationChange() {
+  if (loading.value) return
+  void loadMembershipHistory()
+}
+
+function handleBillingPaginationChange() {
+  if (loading.value) return
+  void loadMembershipBillings()
 }
 
 onMounted(() => {
@@ -374,6 +418,17 @@ onMounted(() => {
               <span class="h-fit rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
             </div>
             <div v-if="!history.length" class="p-8 text-center text-muted-foreground">{{ lang === "zh" ? "暂无会员历史。" : "No membership history." }}</div>
+            <AppPagination
+              v-if="historyTotal > 0"
+              v-model:page="historyPage"
+              v-model:page-size="historyPageSize"
+              :total="historyTotal"
+              :total-pages="historyTotalPages"
+              :page-size-options="pageSizeOptions"
+              :disabled="loading"
+              :locale="lang"
+              @page-change="handleHistoryPaginationChange"
+            />
           </section>
 
           <section v-if="activeTab === 'billings'" class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
@@ -386,6 +441,17 @@ onMounted(() => {
               <span class="h-fit rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
             </div>
             <div v-if="!billings.length" class="p-8 text-center text-muted-foreground">{{ lang === "zh" ? "暂无账单记录。" : "No billing records." }}</div>
+            <AppPagination
+              v-if="billingTotal > 0"
+              v-model:page="billingPage"
+              v-model:page-size="billingPageSize"
+              :total="billingTotal"
+              :total-pages="billingTotalPages"
+              :page-size-options="pageSizeOptions"
+              :disabled="loading"
+              :locale="lang"
+              @page-change="handleBillingPaginationChange"
+            />
           </section>
         </template>
       </main>
