@@ -5,7 +5,7 @@ import { Bell, CheckCheck, ChevronRight, CreditCard, FileText, Gift, Loader2, Me
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
-import { setCachedUnreadCount } from "@/lib/unreadCountCache"
+import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
 
@@ -21,6 +21,7 @@ const loading = ref(true)
 const markAllLoading = ref(false)
 const messageActionLoadingId = ref<string | null>(null)
 const detailLoadingId = ref<string | null>(null)
+const totalUnreadCount = ref(0)
 
 const typeConfig = computed(() => ({
   system: { icon: Bell, iconBg: "bg-primary/10", iconColor: "text-primary", label: t.value.messagesPage.systemNotice },
@@ -31,10 +32,14 @@ const typeConfig = computed(() => ({
 }))
 
 const filteredMessages = computed(() => selectedType.value ? messageList.value.filter((m) => m.type === selectedType.value) : messageList.value)
-const unreadCount = computed(() => messageList.value.filter((m) => !m.isRead).length)
+const listUnreadCount = computed(() => messageList.value.filter((m) => !m.isRead).length)
 
-function syncUnreadCount() {
-  setCachedUnreadCount(unreadCount.value)
+async function syncUnreadCount(suppressErrorToast = true) {
+  try {
+    totalUnreadCount.value = await fetchUnreadCount(suppressErrorToast)
+  } catch {
+    // The message list should remain usable even if the count refresh fails.
+  }
 }
 
 function configFor(type: string) {
@@ -42,7 +47,7 @@ function configFor(type: string) {
 }
 
 function unreadCountText() {
-  return t.value.messagesPage.unreadCount.replace("{{count}}", String(unreadCount.value))
+  return t.value.messagesPage.unreadCount.replace("{{count}}", String(totalUnreadCount.value))
 }
 
 function markReadMenuLabel() {
@@ -213,7 +218,6 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
           isRead: m.status === 1,
         }
       })
-      syncUnreadCount()
     }
   } catch (e) {
     console.error(e)
@@ -230,7 +234,7 @@ async function markAllAsRead() {
   try {
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: unreadIds }) })
     messageList.value = messageList.value.map((m) => ({ ...m, isRead: true }))
-    syncUnreadCount()
+    await syncUnreadCount()
     toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
     // apiClient handles toast.
@@ -245,7 +249,7 @@ async function markAsRead(id: string, showToast = true) {
   try {
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: [id] }) })
     messageList.value = messageList.value.map((m) => (m.id === id ? { ...m, isRead: true } : m))
-    syncUnreadCount()
+    await syncUnreadCount()
     openMenuId.value = null
     if (showToast) toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
@@ -261,7 +265,7 @@ async function deleteMessage(id: string) {
   try {
     await apiClient("/api/messages/delete", { method: "POST", body: JSON.stringify({ message_ids: [id] }) })
     messageList.value = messageList.value.filter((m) => m.id !== id)
-    syncUnreadCount()
+    await syncUnreadCount()
     openMenuId.value = null
     toast.success(t.value.messagesPage.deleteSuccess)
   } catch {
@@ -294,12 +298,16 @@ async function handleViewDetail(message: Message) {
 }
 
 const messagesPolling = usePolling(
-  () => fetchMessages(false, true),
+  async () => {
+    await fetchMessages(false, true)
+    await syncUnreadCount()
+  },
   { shouldPoll: () => !detailModalOpen.value && !markAllLoading.value && !messageActionLoadingId.value && !detailLoadingId.value },
 )
 
 onMounted(() => {
   void fetchMessages()
+  void syncUnreadCount()
   messagesPolling.start()
 })
 </script>
@@ -318,7 +326,7 @@ onMounted(() => {
             <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
             <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
           </div>
-          <div v-if="unreadCount > 0" class="flex justify-end">
+          <div v-if="listUnreadCount > 0" class="flex justify-end">
         <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="markAllLoading" @click="markAllAsRead">
           <Loader2 v-if="markAllLoading" class="h-4 w-4 animate-spin" />
           <CheckCheck v-else class="h-4 w-4" />
