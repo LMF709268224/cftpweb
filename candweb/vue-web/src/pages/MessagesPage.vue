@@ -24,6 +24,8 @@ const detailLoadingId = ref<string | null>(null)
 const totalUnreadCount = ref(0)
 
 const page = ref(1)
+const pageHistory = ref<number[]>([0])
+const hasMore = ref(false)
 const pageSize = 10
 
 const typeConfig = computed(() => ({
@@ -35,26 +37,31 @@ const typeConfig = computed(() => ({
 }))
 
 const filteredMessages = computed(() => selectedType.value ? messageList.value.filter((m) => m.type === selectedType.value) : messageList.value)
-const listUnreadCount = computed(() => messageList.value.filter((m) => !m.isRead).length)
+const unreadCount = computed(() => messageList.value.filter((m) => !m.isRead).length)
 
-const paginatedMessages = computed(() => {
-  const start = (page.value - 1) * pageSize
-  return filteredMessages.value.slice(start, start + pageSize)
-})
-
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredMessages.value.length / pageSize)))
-
-const messageRangeLabel = computed(() => {
-  if (filteredMessages.value.length === 0) return "0 / 0"
-  const start = (page.value - 1) * pageSize + 1
-  const end = Math.min(page.value * pageSize, filteredMessages.value.length)
-  return `${start}-${end} / ${filteredMessages.value.length}`
-})
-
-function goToPage(nextPage: number) {
-  if (nextPage < 1 || nextPage > totalPages.value) return
-  page.value = nextPage
+function nextPage() {
+  if (!hasMore.value || loading.value) return
+  if (messageList.value.length > 0) {
+    const lastItem = messageList.value[messageList.value.length - 1]
+    pageHistory.value[page.value] = lastItem.numericId
+  }
+  page.value++
+  void fetchMessages()
   window.scrollTo({ top: 0, behavior: "smooth" })
+}
+
+function prevPage() {
+  if (page.value <= 1 || loading.value) return
+  page.value--
+  void fetchMessages()
+  window.scrollTo({ top: 0, behavior: "smooth" })
+}
+
+function resetPagination() {
+  page.value = 1
+  pageHistory.value = [0]
+  hasMore.value = false
+  // Note: Local filtering will only apply to the current page of items since the backend doesn't support type filtering.
 }
 
 async function syncUnreadCount(suppressErrorToast = true) {
@@ -206,7 +213,9 @@ function formatPayloadSummary(payload: unknown) {
 async function fetchMessages(showLoading = true, suppressErrorToast = false) {
   if (showLoading) loading.value = true
   try {
-    const res = await apiClient("/api/messages?limit=500", { suppressErrorToast })
+    const currentLastId = pageHistory.value[page.value - 1] || 0
+    const res = await apiClient(`/api/messages?limit=10&lastId=${currentLastId}`, { suppressErrorToast })
+    hasMore.value = !!res?.has_more
     if (res?.messages) {
       messageList.value = res.messages.map((m: any) => {
         let type = "system"
@@ -234,6 +243,7 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
 
         return {
           id: String(m.message_id || m.id),
+          numericId: Number(m.id),
           type,
           rawTitle: title,
           rawContent: content,
@@ -363,20 +373,19 @@ onMounted(() => {
         <div class="flex flex-wrap gap-10">
           <button
             :class="['relative cursor-pointer whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === null ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-            @click="selectedType = null; page = 1"
+            @click="selectedType = null"
           >
-            {{ t.messagesPage.all }} <span class="ml-2 text-sm text-muted-foreground">{{ messageList.length }}</span>
+            {{ t.messagesPage.all }}
             <span v-if="selectedType === null" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
           </button>
           <button
             v-for="(config, type) in typeConfig"
             :key="type"
             :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-7 text-base font-medium transition-colors duration-200', selectedType === type ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-            @click="selectedType = type; page = 1"
+            @click="selectedType = type"
           >
             <component :is="config.icon" class="h-4 w-4" />
             {{ config.label }}
-            <span class="text-sm text-muted-foreground">{{ messageList.filter((m) => m.type === type).length }}</span>
             <span v-if="selectedType === type" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
           </button>
         </div>
@@ -393,7 +402,7 @@ onMounted(() => {
       </div>
       <div v-else>
         <div
-          v-for="message in paginatedMessages"
+          v-for="message in filteredMessages"
           :key="message.id"
           :class="['group relative flex cursor-pointer items-start gap-4 border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead ? 'bg-primary/5' : '', detailLoadingId === message.id ? 'pointer-events-none opacity-75' : '']"
           @click="handleViewDetail(message)"
@@ -434,13 +443,13 @@ onMounted(() => {
           </div>
         </div>
         <div class="flex items-center justify-between px-4 py-3 text-sm text-muted-foreground">
-          <span>{{ messageRangeLabel }}</span>
+          <span></span>
           <div class="flex items-center gap-2">
-            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page <= 1" @click="goToPage(page - 1)">
+            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page <= 1" @click="prevPage()">
               {{ lang === "zh" ? "上一页" : "Previous" }}
             </button>
-            <span class="min-w-20 text-center">{{ page }} / {{ totalPages }}</span>
-            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page >= totalPages" @click="goToPage(page + 1)">
+            <span class="min-w-20 text-center">{{ page }}</span>
+            <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="!hasMore" @click="nextPage()">
               {{ lang === "zh" ? "下一页" : "Next" }}
             </button>
           </div>
