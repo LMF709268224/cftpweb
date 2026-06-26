@@ -84,6 +84,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		}
 		items = append(items, adminOrderSummary{
 			OrderULID:     item.GetOrderUlid(),
+			ProductName:   item.GetMeta().GetProductName(),
 			CandidateULID: item.GetCandidateUlid(),
 			BizType:       item.GetBizType(),
 			BizRefULID:    item.GetBizRefUlid(),
@@ -116,6 +117,7 @@ type adminOrderListResponse struct {
 
 type adminOrderSummary struct {
 	OrderULID     string `json:"order_ulid"`
+	ProductName   string `json:"product_name,omitempty"`
 	CandidateULID string `json:"candidate_ulid"`
 	BizType       string `json:"biz_type"`
 	BizRefULID    string `json:"biz_ref_ulid"`

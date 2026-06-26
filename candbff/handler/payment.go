@@ -91,7 +91,9 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var name string
-		if item.GetBizType() == orderBizPipelinePayment || item.GetBizType() == orderBizPipelineUnlock {
+		if meta := item.GetMeta(); meta != nil && meta.GetProductName() != "" {
+			name = meta.GetProductName()
+		} else if item.GetBizType() == orderBizPipelinePayment || item.GetBizType() == orderBizPipelineUnlock {
 			pName := h.pipelineName(r, item.GetBizRefUlid(), nameCache)
 			if pName != "" && pName != item.GetBizRefUlid() {
 				name = orderBizTypeLabel(item.GetBizType()) + " - " + pName

@@ -10,7 +10,7 @@ require (
 )
 
 require (
-	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260625060139-2a48ad4af3b4
+	github.com/afnandelfin620-star/cftptest/cftp v0.0.0-20260626092432-91bd8a862dbf
 	github.com/casdoor/casdoor-go-sdk v1.46.0
 	github.com/oklog/ulid/v2 v2.1.1
 )
@@ -24,5 +24,3 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260511170946-3700d4141b60 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
-
-replace github.com/afnandelfin620-star/cftptest/cftp => ../../cftptest/cftp

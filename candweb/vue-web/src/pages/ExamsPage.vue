@@ -125,7 +125,7 @@ function hasAppointmentEnded(exam: any) {
   return Number.isFinite(endTime) && endTime <= Date.now()
 }
 function shouldShowNoResultBadge(exam: any) {
-  return !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam) && hasAppointmentEnded(exam)
+  return !hasExamResult(exam) && !isWaitingExamConfirmation(exam) && hasAppointmentDetails(exam) && hasAppointmentEnded(exam)
 }
 function isExamCompletedWithoutResult(exam: any) {
   if (hasExamResult(exam)) return false
