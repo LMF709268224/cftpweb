@@ -124,6 +124,9 @@ async function fetchData() {
         students: typeof b.purchase_count === "number" ? b.purchase_count : undefined,
         versionLabel: `${t.value.courses.version} ${b.version || 0}`,
         eligibility: b?.eligibility || null,
+        activeOrder: b?.purchase_state?.active_order || b?.active_order || null,
+        paymentPreview: b?.purchase_state?.payment_preview || b?.payment_preview || null,
+        exemptionOptions: b?.purchase_state?.exemption_options || b?.exemption_options || null,
         activeMembership: b?.active_membership || null,
         stats: [
           { label: t.value.courses.stages, value: stages.length },

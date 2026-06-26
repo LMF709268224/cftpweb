@@ -9,6 +9,9 @@ import PurchaseDialog from "./PurchaseDialog.vue"
 type CourseCardStat = { label: string; value: string | number }
 type EligibilityBlocker = { blocker_type?: string; description?: string }
 type EligibilityPreview = { eligible?: boolean; can_purchase?: boolean; can_unlock?: boolean; blockers?: EligibilityBlocker[] }
+type ActiveOrderPreview = { action?: "purchase" | "unlock"; order_id?: string; orderId?: string; status?: string; pay_order_id?: string; payOrderId?: string; message?: string }
+type PaymentPreview = { subtotal?: number; discount_total?: number; tax_total?: number; total?: number; currency?: string }
+type ExemptionOptions = { stages?: any[] }
 
 const props = defineProps<{
   id: string
@@ -33,6 +36,9 @@ const props = defineProps<{
   priceLabel?: string
   stats?: CourseCardStat[]
   eligibility?: EligibilityPreview | null
+  activeOrder?: ActiveOrderPreview | null
+  paymentPreview?: PaymentPreview | null
+  exemptionOptions?: ExemptionOptions | null
   activeMembership?: Record<string, unknown> | null
 }>()
 
@@ -44,7 +50,7 @@ const isMembershipProduct = computed(() => Boolean(props.isMembershipBundle || p
 const effectivePurchased = computed(() =>
   Boolean(props.isPurchased || props.activeMembership || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")),
 )
-const hasInProgressOrder = computed(() => blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
+const hasInProgressOrder = computed(() => Boolean(props.activeOrder) || blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
 const resolvedStatusLabel = computed(() =>
   props.statusValue !== undefined ? statusLabel(t.value, CANDIDATE_PIPELINE_STATUS_LABELS, props.statusValue) : props.statusLabel,
 )
@@ -223,5 +229,9 @@ const accessState = computed(() => {
     :is-membership-bundle="isMembershipProduct"
     :membership-id="membershipId || ''"
     :membership-gpath="membershipGpath || ''"
+    :initial-eligibility="eligibility || null"
+    :initial-active-order="activeOrder || null"
+    :initial-payment-preview="paymentPreview || null"
+    :initial-exemption-options="exemptionOptions || null"
   />
 </template>
