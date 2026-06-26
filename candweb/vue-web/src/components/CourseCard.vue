@@ -97,7 +97,7 @@ function blockerText(blocker?: EligibilityBlocker) {
 
 const accessState = computed(() => {
   if (effectivePurchased.value) return null
-  if (props.eligibility?.can_purchase) {
+  if (props.eligibility?.can_purchase || hasInProgressOrder.value) {
     return { label: isMembershipProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
   }
   if (props.eligibility?.can_unlock) {
