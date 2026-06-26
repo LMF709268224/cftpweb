@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"github.com/go-chi/chi/v5"
 )
@@ -25,11 +26,39 @@ var invoiceHTTPClient = &http.Client{Timeout: invoicePDFFetchTimeout}
 var stripeInvoicePDFPattern = regexp.MustCompile(`https://invoice\.stripe\.com/i/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
 var stripeRelativeInvoicePDFPattern = regexp.MustCompile(`/i/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
 
+func (h *Handler) verifyOrderOwnership(ctx context.Context, candidateID, orderID string) error {
+	limit := int32(50)
+	for offset := int32(0); offset < 500; offset += limit {
+		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
+			CandidateUlid: candidateID,
+			Limit:         limit,
+			Offset:        offset,
+		})
+		if err != nil {
+			return err
+		}
+		for _, item := range resp.GetItems() {
+			if item.GetOrderUlid() == orderID {
+				return nil
+			}
+		}
+		if len(resp.GetItems()) < int(limit) {
+			break
+		}
+	}
+	return fmt.Errorf("order not found or access denied")
+}
+
 // QueryInvoice  GET /api/invoices/{orderId}
 // TODO(security): GetInvoiceRequest has no CandidateUlid field — gpay cannot enforce ownership
 // at the proto level. Add candidate_ulid to GetInvoiceRequest and verify here once backend is updated.
 func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "orderId")
+
+	if err := h.verifyOrderOwnership(r.Context(), CandidateID(r), orderID); err != nil {
+		WriteError(w, http.StatusForbidden, ErrForbidden, "access denied")
+		return
+	}
 
 	resp, err := h.Gpay.GetInvoice(r.Context(), &gpaypb.GetInvoiceRequest{
 		Lookup: &gpaypb.GetInvoiceRequest_OrderUlid{
@@ -58,6 +87,11 @@ func (h *Handler) DownloadPdf(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "orderId")
 	if strings.TrimSpace(orderID) == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "order_id is required")
+		return
+	}
+
+	if err := h.verifyOrderOwnership(r.Context(), CandidateID(r), orderID); err != nil {
+		WriteError(w, http.StatusForbidden, ErrForbidden, "access denied")
 		return
 	}
 

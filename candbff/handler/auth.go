@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"candbff/config"
@@ -189,7 +190,10 @@ func IsCftpStudent(user *casdoorsdk.User) bool {
 	}
 
 	for _, role := range user.Roles {
-		if role.Name == studentRole {
+		if role == nil {
+			continue
+		}
+		if strings.EqualFold(role.Name, studentRole) {
 			return true
 		}
 	}

@@ -156,11 +156,14 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 	candidateID := CandidateID(r)
 	credDefID := strings.TrimSpace(firstNonEmpty(r.URL.Query().Get("cred_def_ulid"), r.URL.Query().Get("cred_def_id")))
 
+	page := parsePositiveIntQuery(r, "page", 1)
+	pageSize := parsePositiveIntQuery(r, "page_size", parsePositiveIntQuery(r, "limit", 10))
+
 	req := &gcredspb.ListApplicationsRequest{
 		CandidateUlid: candidateID,
 		CredDefUlid:   credDefID,
-		Page:          1,
-		PageSize:      100, // For now, get all applications for candidate
+		Page:          uint32(page),
+		PageSize:      uint32(pageSize),
 	}
 
 	res, err := h.Creds.ListApplications(r.Context(), req)
