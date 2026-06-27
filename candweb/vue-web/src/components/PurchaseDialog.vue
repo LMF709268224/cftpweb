@@ -117,7 +117,6 @@ const paymentPreview = ref<PaymentPreview | null>(null)
 const previewError = ref("")
 const exemptionError = ref("")
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
-const previewedExemptionSignature = ref("")
 const resolvedBundleId = ref(props.bundleId || "")
 const activePaymentSession = ref<{
   paymentKey?: string
@@ -147,11 +146,6 @@ const hasInProgressOrder = computed(() => blockers.value.some((blocker) => block
 const exemptionStages = computed(() => exemptionOptions.value?.stages?.filter((stage) => (stage.units?.length || 0) > 0) || [])
 const hasExemptionOptions = computed(() => exemptionStages.value.length > 0)
 const selectedExemptionCount = computed(() => Object.values(selectedExemptionUnitIds.value).filter(Boolean).length)
-const selectedExemptionSignature = computed(() => Object.entries(selectedExemptionUnitIds.value)
-  .filter(([, selected]) => selected)
-  .map(([unitId]) => unitId)
-  .sort()
-  .join("|"))
 const isPreparingOrder = computed(() => Boolean(actionLoading.value && activeOrder.value && !paymentPreview.value && !activePaymentSession.value && !previewError.value))
 
 
@@ -182,7 +176,6 @@ function hydrateFromInitialState() {
   exemptionOptions.value = props.initialExemptionOptions || null
   previewError.value = ""
   exemptionError.value = ""
-  previewedExemptionSignature.value = ""
   selectedExemptionUnitIds.value = {}
   pruneSelectedExemptions(exemptionOptions.value)
 }
@@ -194,7 +187,6 @@ function applyBundlePurchaseState(bundle: any) {
   exemptionOptions.value = bundle?.purchase_state?.exemption_options || bundle?.exemption_options || null
   previewError.value = ""
   exemptionError.value = ""
-  previewedExemptionSignature.value = ""
   activePaymentSession.value = null
   pruneSelectedExemptions(exemptionOptions.value)
 }
@@ -275,12 +267,14 @@ watch(() => props.open, async (open) => {
     await loadFreshDialogState()
   } else {
     activePaymentSession.value = null
+    paymentLoading.value = false
   }
 })
 
 function close() {
   activePaymentSession.value = null
   credentialApplicationOrder.value = null
+  paymentLoading.value = false
   emit("update:open", false)
 }
 
@@ -435,6 +429,10 @@ function onExemptionToggle(unit: ExemptionUnit, event: Event) {
 }
 
 function buildSelectedExemptionsJson() {
+  if (!shouldUsePipelineEligibility.value) {
+    return JSON.stringify({})
+  }
+
   const stages = exemptionStages.value
     .map((stage) => {
       const exemptedUnitIds = (stage.units || [])
@@ -448,9 +446,6 @@ function buildSelectedExemptionsJson() {
     })
     .filter((stage) => stage.exempted_unit_cc_ulids.length > 0)
 
-  if (!shouldUsePipelineEligibility.value) {
-    return JSON.stringify({})
-  }
   return JSON.stringify({
     [props.pipelineId]: {
       stages
@@ -678,8 +673,8 @@ function rememberPendingMallPayment() {
   }))
 }
 
-async function initiatePayment() {
-  if (!activeOrder.value?.orderId) return
+function initiatePayment() {
+  if (paymentLoading.value || activePaymentSession.value || !activeOrder.value?.orderId) return
   const bizType = activeOrder.value.action === "unlock" ? "PIPELINE_UNLOCK" : "BUNDLE_PURCHASE"
   if (paymentMethod.value !== "stripe") {
     toast.error(copy.value.unsupportedPaymentKey)
@@ -701,7 +696,6 @@ async function initiatePayment() {
     }
   } catch (error) {
     console.error(error)
-  } finally {
     paymentLoading.value = false
   }
 }
@@ -768,9 +762,6 @@ async function initiatePayment() {
           <div v-if="exemptionError" class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
             <div class="flex items-center gap-2 font-semibold"><AlertCircle class="h-4 w-4" />{{ copy.exemptionsLoadFailed }}</div>
             <p class="mt-2">{{ copy.exemptionsFallback }}</p>
-          </div>
-          <div v-else-if="!hasExemptionOptions" class="rounded-lg bg-background/70 p-3 text-sm text-muted-foreground">
-            {{ copy.noExemptions }}
           </div>
           <div v-else class="space-y-3">
             <div v-for="stage in exemptionStages" :key="stage.stage_id || stage.index" class="rounded-lg border border-border bg-background p-3">
