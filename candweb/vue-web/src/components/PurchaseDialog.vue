@@ -152,6 +152,7 @@ const selectedExemptionSignature = computed(() => Object.entries(selectedExempti
   .map(([unitId]) => unitId)
   .sort()
   .join("|"))
+const isPreparingOrder = computed(() => Boolean(actionLoading.value && activeOrder.value && !paymentPreview.value && !activePaymentSession.value && !previewError.value))
 
 
 function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveOrder | null {
@@ -722,6 +723,13 @@ async function initiatePayment() {
             <Loader2 class="h-4 w-4 animate-spin" />
             {{ copy.checking }}
           </div>
+        </div>
+        <div v-else-if="isPreparingOrder" class="rounded-lg border border-blue-200 bg-blue-50 p-4 text-blue-900">
+          <div class="flex items-center gap-2 font-semibold">
+            <Loader2 class="h-4 w-4 animate-spin" />
+            {{ copy.preparingOrderTitle }}
+          </div>
+          <p class="mt-2 text-sm leading-6 text-blue-800">{{ copy.preparingOrderDesc }}</p>
         </div>
         <div v-else-if="cannotContinue && !hasInProgressOrder" class="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-amber-900"><AlertCircle class="h-4 w-4" />{{ copy.blockedTitle }}</div>

@@ -676,6 +676,8 @@ export const en: AppTranslations = {
     unknownBlocker: "Unable to continue",
     createPurchaseOrder: "Create purchase order",
     createUnlockOrder: "Create unlock order",
+    preparingOrderTitle: "Preparing order",
+    preparingOrderDesc: "The order has been submitted. Fetching price and payment details, please wait...",
     refreshEligibility: "Recheck status",
     pricePreviewTitle: "Price preview",
     pricePreviewFailed: "Price preview is temporarily unavailable. Payment cannot be initiated until the price is confirmed.",

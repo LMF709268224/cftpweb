@@ -674,6 +674,8 @@ export const zh = {
     unknownBlocker: "暂时不能继续",
     createPurchaseOrder: "创建购买订单",
     createUnlockOrder: "创建解锁订单",
+    preparingOrderTitle: "正在准备订单",
+    preparingOrderDesc: "订单已提交，正在获取价格和支付信息，请稍候...",
     refreshEligibility: "重新检查状态",
     pricePreviewTitle: "价格预览",
     pricePreviewFailed: "暂时无法获取价格预览，请稍后重试。价格未确认前不能发起支付。",
