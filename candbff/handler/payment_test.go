@@ -25,3 +25,23 @@ func TestCandidateOrderRawStatus(t *testing.T) {
 	}
 }
 
+func TestOrderCancelTargetID(t *testing.T) {
+	tests := []struct {
+		name       string
+		orderID    string
+		payOrderID string
+		want       string
+	}{
+		{name: "uses pay order id", orderID: "business-order", payOrderID: "pay-order", want: "pay-order"},
+		{name: "trims pay order id", orderID: "business-order", payOrderID: " pay-order ", want: "pay-order"},
+		{name: "falls back to business order id", orderID: " business-order ", payOrderID: "", want: "business-order"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := orderCancelTargetID(tt.orderID, tt.payOrderID); got != tt.want {
+				t.Fatalf("orderCancelTargetID(%q, %q) = %q, want %q", tt.orderID, tt.payOrderID, got, tt.want)
+			}
+		})
+	}
+}
