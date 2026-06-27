@@ -75,11 +75,11 @@ export function applicationStatusLabel(value: unknown) {
 
 export function badgeClass(value: unknown) {
   const status = normalizeStatus(value)
-  if (status.includes("COMPLETED") || status.includes("APPROVED") || status.includes("PAID") || status.includes("RESOLVED") || status === "2") {
-    return "border-emerald-200 bg-emerald-50 text-emerald-700"
-  }
-  if (status.includes("WAIT") || status.includes("PENDING") || status.includes("REVIEW") || status.includes("READY") || status === "1" || status === "4") {
+  if (status === "UNPAID" || status === "WAIT_PAY" || status === "WAIT_PAYMENT" || status.includes("WAIT") || status.includes("PENDING") || status.includes("REVIEW") || status.includes("READY") || status === "1" || status === "4") {
     return "border-amber-200 bg-amber-50 text-amber-700"
+  }
+  if (status.includes("COMPLETED") || status.includes("APPROVED") || status === "PAID" || status.includes("RESOLVED") || status === "2") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700"
   }
   if (status.includes("FAILED") || status.includes("REJECTED") || status.includes("CANCEL") || status.includes("EXPIRED") || status === "3") {
     return "border-red-200 bg-red-50 text-red-700"
