@@ -517,7 +517,14 @@ const resourceContentTabs = computed(() => [
   },
 ])
 const certificationTitle = computed(() => course.value?.title || runtime.value?.config?.name || t.value.common.unknownCourse)
-const lessonStepDone = computed(() => lessons.value.length > 0 && completedLessonsCount.value >= lessons.value.length)
+const allLessonsMarkedCompleted = computed(() =>
+  lessons.value.length > 0 &&
+  lessons.value.every((item) => {
+    const lessonId = lessonIdOf(item.lesson)
+    return Boolean(lessonId && completedLessonIds.value.has(lessonId))
+  }),
+)
+const lessonStepDone = computed(() => allLessonsMarkedCompleted.value)
 const quizStepDone = computed(() => quizTasks.value.length > 0 && completedQuizTaskCount.value >= quizTasks.value.length)
 const examStepDone = computed(() => {
   if (nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value)) return true
