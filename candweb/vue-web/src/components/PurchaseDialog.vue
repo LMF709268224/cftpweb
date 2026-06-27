@@ -148,6 +148,7 @@ const exemptionStages = computed(() => exemptionOptions.value?.stages?.filter((s
 const hasExemptionOptions = computed(() => exemptionStages.value.length > 0)
 const selectedExemptionCount = computed(() => Object.values(selectedExemptionUnitIds.value).filter(Boolean).length)
 const isPreparingOrder = computed(() => Boolean(actionLoading.value && activeOrder.value && !paymentPreview.value && !activePaymentSession.value && !previewError.value))
+const isOrderPreviewLoading = computed(() => Boolean(activeOrder.value && !paymentPreview.value && !previewError.value && !activePaymentSession.value))
 
 
 function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveOrder | null {
@@ -856,7 +857,49 @@ function initiatePayment() {
         </div>
 
 
-        <div v-if="paymentPreview" class="rounded-lg border border-border bg-muted/30 p-4">
+        <div v-if="isOrderPreviewLoading" class="space-y-5">
+          <div class="rounded-lg border border-border bg-muted/30 p-4">
+            <div class="mb-3 text-sm font-semibold text-foreground">{{ copy.pricePreviewTitle }}</div>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">{{ copy.subtotal }}</span>
+                <span class="h-4 w-24 animate-pulse rounded bg-muted-foreground/15" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">{{ copy.discount }}</span>
+                <span class="h-4 w-20 animate-pulse rounded bg-muted-foreground/15" />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">{{ copy.tax }}</span>
+                <span class="h-4 w-20 animate-pulse rounded bg-muted-foreground/15" />
+              </div>
+              <div class="mt-2 flex items-center justify-between border-t border-border pt-3">
+                <span class="font-semibold text-foreground">{{ copy.total }}</span>
+                <span class="h-6 w-28 animate-pulse rounded bg-muted-foreground/20" />
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-3">
+            <label class="text-sm font-medium text-foreground">{{ t.common.purchaseDialogPaymentMethod }}</label>
+            <div class="space-y-2">
+              <div class="flex w-full items-center gap-3 rounded-lg border border-border p-3">
+                <span class="h-5 w-5 animate-pulse rounded-full bg-muted-foreground/15" />
+                <CreditCard class="h-4 w-4 text-primary/60" />
+                <span class="h-4 w-32 animate-pulse rounded bg-muted-foreground/15" />
+                <span class="ml-auto h-5 w-20 animate-pulse rounded-full bg-muted-foreground/15" />
+              </div>
+              <div class="flex w-full items-center gap-3 rounded-lg border border-border p-3">
+                <span class="h-5 w-5 animate-pulse rounded-full bg-muted-foreground/15" />
+                <Building2 class="h-4 w-4 text-muted-foreground/70" />
+                <span class="h-4 w-24 animate-pulse rounded bg-muted-foreground/15" />
+              </div>
+            </div>
+            <div class="h-10 rounded-lg border border-amber-200 bg-amber-50/70" />
+          </div>
+        </div>
+
+        <div v-if="paymentPreview" class="rounded-lg border border-border bg-muted/30 p-4 transition-opacity duration-200">
           <div class="mb-3 text-sm font-semibold text-foreground">{{ copy.pricePreviewTitle }}</div>
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
@@ -905,7 +948,7 @@ function initiatePayment() {
           />
         </div>
 
-        <div v-if="activeOrder && paymentPreview && !activePaymentSession" class="space-y-3">
+        <div v-if="activeOrder && paymentPreview && !activePaymentSession" class="space-y-3 transition-opacity duration-200">
           <label class="text-sm font-medium text-foreground">{{ t.common.purchaseDialogPaymentMethod }}</label>
           <div class="space-y-2">
             <button
