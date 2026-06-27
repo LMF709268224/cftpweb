@@ -24,7 +24,8 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addressText := strings.Join(fullUser.Address, ", ")
+	addressText := addressLine(fullUser.Address, 0)
+	province := firstNonEmpty(addressLine(fullUser.Address, 1), getUserProperty(fullUser, userPropProvince))
 
 	WriteJSON(w, http.StatusOK, UserMeRsp{
 		Name:        fullUser.Name,
@@ -36,7 +37,7 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 		HomePhone:   getUserProperty(fullUser, "home_phone"),
 		WorkPhone:   getUserProperty(fullUser, userPropWorkPhone),
 		Country:     fullUser.Region,
-		Province:    getUserProperty(fullUser, userPropProvince),
+		Province:    province,
 		City:        fullUser.Location,
 		Region:      fullUser.Region,
 		Location:    fullUser.Location,
@@ -79,7 +80,7 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	fullUser.Phone = firstNonEmpty(input.HomePhone, input.Phone)
 	fullUser.Region = input.Country
 	fullUser.Location = input.City
-	fullUser.Address = addressFromText(input.Address)
+	fullUser.Address = addressFromProfile(input.Address, input.Province)
 	fullUser.Affiliation = input.Affiliation
 	fullUser.Title = input.Title
 	fullUser.RealName = input.RealName
@@ -157,10 +158,22 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
-func addressFromText(value string) []string {
-	value = strings.TrimSpace(value)
-	if value == "" {
+func addressFromProfile(address string, province string) []string {
+	address = strings.TrimSpace(address)
+	province = strings.TrimSpace(province)
+	if address == "" && province == "" {
 		return nil
 	}
-	return []string{value}
+	values := []string{address}
+	if province != "" {
+		values = append(values, province)
+	}
+	return values
+}
+
+func addressLine(address []string, index int) string {
+	if index < 0 || index >= len(address) {
+		return ""
+	}
+	return strings.TrimSpace(address[index])
 }
