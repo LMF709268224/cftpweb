@@ -14,6 +14,7 @@ import (
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
+	"google.golang.org/grpc"
 )
 
 // ── Context 键 ──
@@ -32,6 +33,7 @@ const (
 type Handler struct {
 	Lms                 lmspb.LmsServiceClient
 	Mall                mallpb.MallServiceClient
+	MallConn            grpc.ClientConnInterface
 	Gcc                 gccpb.CCServiceClient
 	Gprog               gprogpb.ProgServiceClient
 	Gmsg                gmsgpb.MessageServiceClient
@@ -48,6 +50,7 @@ type Handler struct {
 func New(
 	lms lmspb.LmsServiceClient,
 	mall mallpb.MallServiceClient,
+	mallConn grpc.ClientConnInterface,
 	gcc gccpb.CCServiceClient,
 	gprog gprogpb.ProgServiceClient,
 	gmsg gmsgpb.MessageServiceClient,
@@ -63,6 +66,7 @@ func New(
 	return &Handler{
 		Lms:                 lms,
 		Mall:                mall,
+		MallConn:            mallConn,
 		Gcc:                 gcc,
 		Gprog:               gprog,
 		Gmsg:                gmsg,

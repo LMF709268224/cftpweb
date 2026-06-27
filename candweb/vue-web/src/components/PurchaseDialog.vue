@@ -40,6 +40,7 @@ type ActiveOrder = {
   orderId: string
   status?: string
   payOrderId?: string
+  canCancel?: boolean
   message?: string
 }
 
@@ -50,6 +51,8 @@ type ActiveOrderPayload = {
   status?: string
   pay_order_id?: string
   payOrderId?: string
+  can_cancel?: boolean
+  canCancel?: boolean
   message?: string
 }
 
@@ -119,6 +122,7 @@ const previewError = ref("")
 const exemptionError = ref("")
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const resolvedBundleId = ref(props.bundleId || "")
+const newlyCreatedOrderId = ref("")
 const activePaymentSession = ref<{
   paymentKey?: string
   bizType: string
@@ -149,6 +153,7 @@ const hasExemptionOptions = computed(() => exemptionStages.value.length > 0)
 const selectedExemptionCount = computed(() => Object.values(selectedExemptionUnitIds.value).filter(Boolean).length)
 const isPreparingOrder = computed(() => Boolean(actionLoading.value && activeOrder.value && !paymentPreview.value && !activePaymentSession.value && !previewError.value))
 const isOrderPreviewLoading = computed(() => Boolean(activeOrder.value && !paymentPreview.value && !previewError.value && !activePaymentSession.value))
+const canCancelActiveOrder = computed(() => Boolean(activeOrder.value?.canCancel && activeOrder.value.orderId !== newlyCreatedOrderId.value && !activePaymentSession.value))
 
 
 function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveOrder | null {
@@ -159,6 +164,7 @@ function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveO
     orderId,
     status: order?.status,
     payOrderId: order?.pay_order_id || order?.payOrderId,
+    canCancel: Boolean(order?.can_cancel || order?.canCancel),
     message: order?.message || copy.value.inProgressPurchaseDesc,
   }
 }
@@ -261,6 +267,7 @@ watch(() => props.open, async (open) => {
     if (hasInitialActiveOrderState()) {
       hydrateFromInitialState()
     } else {
+      newlyCreatedOrderId.value = ""
       eligibility.value = null
       activeOrder.value = null
       paymentPreview.value = null
@@ -277,6 +284,7 @@ watch(() => props.open, async (open) => {
 function close() {
   activePaymentSession.value = null
   credentialApplicationOrder.value = null
+  newlyCreatedOrderId.value = ""
   paymentLoading.value = false
   cancelOrderLoading.value = false
   emit("update:open", false)
@@ -515,11 +523,13 @@ async function createBundlePurchaseOrder(bundleOrderUlid = "") {
   })
   const orderId = String(order?.bundle_order_ulid || "").trim()
   const orderStatus = String(order?.order_status || "")
+  newlyCreatedOrderId.value = orderId
   activeOrder.value = {
     action: "purchase",
     orderId,
     status: orderStatus,
     payOrderId: order?.bundle_pay_order_ulid,
+    canCancel: false,
     message: order?.message,
   }
   paymentPreview.value = null
@@ -581,6 +591,7 @@ async function createUnlockOrder() {
       orderId,
       status: orderStatus,
       payOrderId: order.pay_order_ulid,
+      canCancel: false,
       message: order.message,
     }
     if (isCompletedStatus(orderStatus)) {
@@ -1006,7 +1017,7 @@ function initiatePayment() {
         <button v-if="activeOrder && previewError" class="btn btn-outline" :disabled="actionLoading" @click="refreshEligibility">
           {{ copy.retryPreview }}
         </button>
-        <button v-if="activeOrder && !activePaymentSession" class="btn btn-outline text-red-600 hover:border-red-200 hover:bg-red-50" :disabled="cancelOrderLoading || actionLoading || paymentLoading" @click="cancelActiveOrder">
+        <button v-if="canCancelActiveOrder" class="btn btn-outline text-red-600 hover:border-red-200 hover:bg-red-50" :disabled="cancelOrderLoading || actionLoading || paymentLoading" @click="cancelActiveOrder">
           <Loader2 v-if="cancelOrderLoading" class="h-4 w-4 animate-spin" />
           {{ copy.cancelOrder }}
         </button>
