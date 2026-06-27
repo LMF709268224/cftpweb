@@ -355,20 +355,6 @@ function applicationLoadingKey(unit: ExemptionUnit, qual: ExemptionQual) {
   return `${unit.unit_id || "unit"}:${qual.qual_id || "qual"}`
 }
 
-function collectMissingQualificationIds(clickedQualId: string) {
-  const ids = new Set<string>()
-  if (clickedQualId) ids.add(clickedQualId)
-  for (const stage of exemptionStages.value) {
-    for (const unit of stage.units || []) {
-      if (unit.qualified) continue
-      for (const qual of unit.exemption_quals || []) {
-        if (!qual.eligible && qual.qual_id) ids.add(qual.qual_id)
-      }
-    }
-  }
-  return Array.from(ids)
-}
-
 function credentialUploadPath(qualIds: string[]) {
   const ids = qualIds.map((id) => String(id || "").trim()).filter(Boolean)
   const params = new URLSearchParams()
@@ -593,7 +579,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
       }
     }
 
-    const qualIds = collectMissingQualificationIds(qualId)
+    const qualIds = [qualId]
     const order = await apiClient("/api/credentials/application-orders", {
       method: "POST",
       body: JSON.stringify({
