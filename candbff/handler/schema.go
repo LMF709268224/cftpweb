@@ -639,9 +639,12 @@ type OrderListRsp struct {
 }
 
 type CancelOrderRsp struct {
-	Success bool   `json:"success"`
-	Message string `json:"message,omitempty"`
-	OrderID string `json:"order_id,omitempty"`
+	Success    bool   `json:"success"`
+	Message    string `json:"message,omitempty"`
+	OrderID    string `json:"order_id,omitempty"`
+	BizType    string `json:"biz_type,omitempty"`
+	BizRefUlid string `json:"biz_ref_ulid,omitempty"`
+	Status     string `json:"order_status,omitempty"`
 }
 
 // ===================== 消息 (Messages) =====================

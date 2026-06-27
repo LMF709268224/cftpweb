@@ -44,6 +44,7 @@ type bundleActiveOrderSummary struct {
 	OrderID    string `json:"order_id"`
 	Status     string `json:"status,omitempty"`
 	PayOrderID string `json:"pay_order_id,omitempty"`
+	CanCancel  bool   `json:"can_cancel"`
 	Message    string `json:"message,omitempty"`
 }
 
@@ -919,6 +920,7 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 			OrderID:    orderID,
 			Status:     bundleOrderStatus(order),
 			PayOrderID: bundleOrderPayID(order),
+			CanCancel:  canCancelBusinessOrder(orderBizBundlePurchase, bundleOrderStatus(order)),
 			Message:    "in-progress purchase order exists",
 		}
 		return active, h.previewPaymentSummary(ctx, orderBizBundlePurchase, orderID)
