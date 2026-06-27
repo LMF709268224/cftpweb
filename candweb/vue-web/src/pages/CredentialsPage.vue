@@ -20,6 +20,7 @@ const uploadedFiles = ref<Record<string, { name: string; url: string; ext: strin
 const isSubmitting = ref(false)
 const uploadingConstraintName = ref("")
 const UPLOAD_TIMEOUT_MS = 30000
+const PENDING_CREDENTIAL_QUAL_IDS_KEY = "pending_credential_qual_ulids"
 
 async function sha256Hex(file: File) {
   const buffer = await file.arrayBuffer()
@@ -112,6 +113,7 @@ async function handleSubmitApplication() {
       await apiClient("/api/credentials/submit", { method: "POST", body: JSON.stringify({ cred_def_ulid: credentialDefinitionId(selectedDef.value), files: evidenceFiles }) })
     }
     isApplyOpen.value = false
+    removePendingCredentialQualId(credentialDefinitionId(selectedDef.value))
     await fetchData()
   } catch {
     alert(t.value.credentialsPage.submitFailed)
@@ -204,6 +206,20 @@ function latestApplicationForDef(credDefId: string) {
   const normalizedCredDefId = String(credDefId || "").trim()
   const matches = applications.value.filter((app) => applicationCredentialDefinitionId(app) === normalizedCredDefId)
   return matches[0] || null
+}
+
+function removePendingCredentialQualId(qualId: string) {
+  const value = String(qualId || "").trim()
+  if (!value) return
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PENDING_CREDENTIAL_QUAL_IDS_KEY) || "[]")
+    if (!Array.isArray(parsed)) return
+    const next = parsed.map((item) => String(item || "").trim()).filter((item) => item && item !== value)
+    if (next.length > 0) localStorage.setItem(PENDING_CREDENTIAL_QUAL_IDS_KEY, JSON.stringify(Array.from(new Set(next))))
+    else localStorage.removeItem(PENDING_CREDENTIAL_QUAL_IDS_KEY)
+  } catch {
+    localStorage.removeItem(PENDING_CREDENTIAL_QUAL_IDS_KEY)
+  }
 }
 
 function applicationActionLabel(def: any) {

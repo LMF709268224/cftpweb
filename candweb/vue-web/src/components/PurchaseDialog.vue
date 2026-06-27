@@ -84,6 +84,8 @@ type ExemptionOptions = {
   stages?: ExemptionStage[]
 }
 
+const PENDING_CREDENTIAL_QUAL_IDS_KEY = "pending_credential_qual_ulids"
+
 const props = defineProps<{
   open: boolean
   courseName: string
@@ -356,7 +358,7 @@ function applicationLoadingKey(unit: ExemptionUnit, qual: ExemptionQual) {
 }
 
 function credentialUploadPath(qualIds: string[]) {
-  const ids = qualIds.map((id) => String(id || "").trim()).filter(Boolean)
+  const ids = mergeCredentialQualIds(readPendingCredentialQualIds(), qualIds)
   const params = new URLSearchParams()
   if (ids.length > 0) params.set("qual_ulids", ids.join(","))
   return `/credentials${params.toString() ? `?${params.toString()}` : ""}`
@@ -364,6 +366,38 @@ function credentialUploadPath(qualIds: string[]) {
 
 function goToCredentialUpload(qualIds: string[]) {
   window.location.assign(credentialUploadPath(qualIds))
+}
+
+function mergeCredentialQualIds(...groups: string[][]) {
+  const ids: string[] = []
+  const seen = new Set<string>()
+  for (const group of groups) {
+    for (const id of group) {
+      const value = String(id || "").trim()
+      if (!value || seen.has(value)) continue
+      seen.add(value)
+      ids.push(value)
+    }
+  }
+  return ids
+}
+
+function readPendingCredentialQualIds() {
+  try {
+    const value = localStorage.getItem(PENDING_CREDENTIAL_QUAL_IDS_KEY)
+    if (!value) return []
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed)) return mergeCredentialQualIds(parsed.map((item) => String(item || "")))
+  } catch {
+    // Ignore invalid legacy values and start a fresh pending list.
+  }
+  return []
+}
+
+function rememberPendingCredentialQualIds(qualIds: string[]) {
+  const ids = mergeCredentialQualIds(readPendingCredentialQualIds(), qualIds)
+  localStorage.setItem(PENDING_CREDENTIAL_QUAL_IDS_KEY, JSON.stringify(ids))
+  return ids
 }
 
 function resetExemptionSelection() {
@@ -590,6 +624,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     })
     const orderId = String(order?.application_order_ulid || "").trim()
     const orderStatus = String(order?.order_status || "")
+    rememberPendingCredentialQualIds(qualIds)
     credentialApplicationOrder.value = {
       applicationOrderUlid: orderId,
       orderStatus,
