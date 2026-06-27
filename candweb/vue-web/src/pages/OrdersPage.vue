@@ -253,7 +253,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
       orders.value = res.orders.map((o: any) => ({
         id: o.order_id,
         invoiceOrderId: o.pay_order_ulid || o.pipeline_pay_order_ulid || "",
-        canViewInvoice: Boolean(o.pay_order_ulid || o.pipeline_pay_order_ulid || o.can_view_invoice),
+        canViewInvoice: Boolean(o.can_view_invoice),
         items: [o.product_name || orderTypeLabel(o.biz_type)],
         date: formatBackendDateMinute(o.created_at),
         currency: (o.currency || "USD").toUpperCase(),

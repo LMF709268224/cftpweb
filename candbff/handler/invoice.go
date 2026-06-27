@@ -26,7 +26,7 @@ var invoiceHTTPClient = &http.Client{Timeout: invoicePDFFetchTimeout}
 var stripeInvoicePDFPattern = regexp.MustCompile(`https://invoice\.stripe\.com/i/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
 var stripeRelativeInvoicePDFPattern = regexp.MustCompile(`/i/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
 
-func (h *Handler) verifyOrderOwnership(ctx context.Context, candidateID, orderID string) error {
+func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, orderID string) error {
 	limit := int32(50)
 	for offset := int32(0); offset < 500; offset += limit {
 		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
@@ -39,6 +39,9 @@ func (h *Handler) verifyOrderOwnership(ctx context.Context, candidateID, orderID
 		}
 		for _, item := range resp.GetItems() {
 			if item.GetOrderUlid() == orderID {
+				if candidateOrderStatus(item.GetOrderStatus()) != "completed" {
+					return NewError(http.StatusConflict, ErrPrecondition, "invoice is only available for completed orders")
+				}
 				return nil
 			}
 		}
@@ -46,7 +49,15 @@ func (h *Handler) verifyOrderOwnership(ctx context.Context, candidateID, orderID
 			break
 		}
 	}
-	return fmt.Errorf("order not found or access denied")
+	return NewError(http.StatusForbidden, ErrForbidden, "access denied")
+}
+
+func writeInvoiceOrderVerificationError(w http.ResponseWriter, err error) {
+	if appErr, ok := err.(*AppError); ok {
+		HandleAppError(w, appErr)
+		return
+	}
+	HandleGrpcError(w, err)
 }
 
 // QueryInvoice  GET /api/invoices/{orderId}
@@ -55,8 +66,8 @@ func (h *Handler) verifyOrderOwnership(ctx context.Context, candidateID, orderID
 func (h *Handler) QueryInvoice(w http.ResponseWriter, r *http.Request) {
 	orderID := chi.URLParam(r, "orderId")
 
-	if err := h.verifyOrderOwnership(r.Context(), CandidateID(r), orderID); err != nil {
-		WriteError(w, http.StatusForbidden, ErrForbidden, "access denied")
+	if err := h.verifyInvoiceableOrder(r.Context(), CandidateID(r), orderID); err != nil {
+		writeInvoiceOrderVerificationError(w, err)
 		return
 	}
 
@@ -90,8 +101,8 @@ func (h *Handler) DownloadPdf(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.verifyOrderOwnership(r.Context(), CandidateID(r), orderID); err != nil {
-		WriteError(w, http.StatusForbidden, ErrForbidden, "access denied")
+	if err := h.verifyInvoiceableOrder(r.Context(), CandidateID(r), orderID); err != nil {
+		writeInvoiceOrderVerificationError(w, err)
 		return
 	}
 
