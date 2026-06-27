@@ -49,7 +49,6 @@ func (s *Server) Run(ctx context.Context) error {
 	h := handler.New(
 		pool.Lms,
 		pool.Mall,
-		pool.mallConn,
 		pool.Gcc,
 		pool.Gprog,
 		pool.Gmsg,

@@ -11,11 +11,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/reflect/protodesc"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
-	"google.golang.org/protobuf/types/descriptorpb"
-	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 const (
@@ -26,8 +21,6 @@ const (
 	orderBizCredentialApply      = "CREDENTIAL_APPLICATION"
 	orderBizBundlePurchase       = "BUNDLE_PURCHASE"
 	defaultCandidateOrderPageMax = 50
-
-	cancelBusinessOrderFullMethod = "/gmall.MallService/CancelBusinessOrder"
 )
 
 var candidateOrderBizTypes = []string{
@@ -45,13 +38,6 @@ type candidateCancelableOrder struct {
 	BizRefUlid string
 	Status     string
 	Candidate  string
-}
-
-type cancelBusinessOrderResult struct {
-	BizType    string
-	BizRefUlid string
-	Status     string
-	Message    string
 }
 
 // ListOrders GET /api/orders
@@ -196,137 +182,23 @@ func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.cancelBusinessOrder(r.Context(), candidateID, order.BizType, order.BizRefUlid)
+	resp, err := h.Mall.CancelBusinessOrder(r.Context(), &mallpb.CancelBusinessOrderRequest{
+		CandidateUlid: candidateID,
+		BizType:       order.BizType,
+		BizRefUlid:    order.BizRefUlid,
+	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 	WriteJSON(w, http.StatusOK, CancelOrderRsp{
 		Success:    true,
-		Message:    resp.Message,
+		Message:    resp.GetMessage(),
 		OrderID:    orderID,
-		BizType:    resp.BizType,
-		BizRefUlid: resp.BizRefUlid,
-		Status:     resp.Status,
+		BizType:    resp.GetBizType(),
+		BizRefUlid: resp.GetBizRefUlid(),
+		Status:     resp.GetOrderStatus(),
 	})
-}
-
-func (h *Handler) cancelBusinessOrder(ctx context.Context, candidateID, bizType, bizRefULID string) (*cancelBusinessOrderResult, error) {
-	if h.MallConn == nil {
-		return nil, status.Error(codes.Unavailable, "mall connection is unavailable")
-	}
-	reqDesc, respDesc, err := cancelBusinessOrderDescriptors()
-	if err != nil {
-		return nil, err
-	}
-	req := dynamicpb.NewMessage(reqDesc)
-	setDynamicString(req, "candidate_ulid", candidateID)
-	setDynamicString(req, "biz_type", bizType)
-	setDynamicString(req, "biz_ref_ulid", bizRefULID)
-
-	resp := dynamicpb.NewMessage(respDesc)
-	if err := h.MallConn.Invoke(ctx, cancelBusinessOrderFullMethod, req, resp); err != nil {
-		return nil, err
-	}
-
-	return &cancelBusinessOrderResult{
-		BizType:    dynamicString(resp, "biz_type"),
-		BizRefUlid: dynamicString(resp, "biz_ref_ulid"),
-		Status:     dynamicString(resp, "order_status"),
-		Message:    dynamicString(resp, "message"),
-	}, nil
-}
-
-func cancelBusinessOrderDescriptors() (protoreflect.MessageDescriptor, protoreflect.MessageDescriptor, error) {
-	file := &descriptorpb.FileDescriptorProto{
-		Syntax:  stringPtr("proto3"),
-		Name:    stringPtr("cancel_business_order.proto"),
-		Package: stringPtr("gmall"),
-		MessageType: []*descriptorpb.DescriptorProto{
-			{
-				Name: stringPtr("CancelBusinessOrderRequest"),
-				Field: []*descriptorpb.FieldDescriptorProto{
-					stringField("candidate_ulid", 1),
-					stringField("biz_type", 2),
-					stringField("biz_ref_ulid", 3),
-				},
-			},
-			{
-				Name: stringPtr("CancelBusinessOrderResponse"),
-				Field: []*descriptorpb.FieldDescriptorProto{
-					stringField("biz_type", 1),
-					stringField("biz_ref_ulid", 2),
-					stringField("order_status", 3),
-					stringField("message", 4),
-				},
-			},
-		},
-	}
-	files, err := protodesc.NewFiles(&descriptorpb.FileDescriptorSet{File: []*descriptorpb.FileDescriptorProto{file}})
-	if err != nil {
-		return nil, nil, err
-	}
-	req, err := findDynamicMessage(files, "gmall.CancelBusinessOrderRequest")
-	if err != nil {
-		return nil, nil, err
-	}
-	resp, err := findDynamicMessage(files, "gmall.CancelBusinessOrderResponse")
-	if err != nil {
-		return nil, nil, err
-	}
-	return req, resp, nil
-}
-
-func findDynamicMessage(files *protoregistry.Files, fullName protoreflect.FullName) (protoreflect.MessageDescriptor, error) {
-	desc, err := files.FindDescriptorByName(fullName)
-	if err != nil {
-		return nil, err
-	}
-	msg, ok := desc.(protoreflect.MessageDescriptor)
-	if !ok {
-		return nil, status.Errorf(codes.Internal, "%s is not a message descriptor", fullName)
-	}
-	return msg, nil
-}
-
-func setDynamicString(msg *dynamicpb.Message, fieldName protoreflect.Name, value string) {
-	field := msg.Descriptor().Fields().ByName(fieldName)
-	if field != nil {
-		msg.Set(field, protoreflect.ValueOfString(strings.TrimSpace(value)))
-	}
-}
-
-func dynamicString(msg *dynamicpb.Message, fieldName protoreflect.Name) string {
-	field := msg.Descriptor().Fields().ByName(fieldName)
-	if field == nil {
-		return ""
-	}
-	return strings.TrimSpace(msg.Get(field).String())
-}
-
-func stringField(name string, number int32) *descriptorpb.FieldDescriptorProto {
-	return &descriptorpb.FieldDescriptorProto{
-		Name:   stringPtr(name),
-		Number: int32Ptr(number),
-		Label:  labelPtr(descriptorpb.FieldDescriptorProto_LABEL_OPTIONAL),
-		Type:   typePtr(descriptorpb.FieldDescriptorProto_TYPE_STRING),
-	}
-}
-
-func stringPtr(value string) *string {
-	return &value
-}
-
-func int32Ptr(value int32) *int32 {
-	return &value
-}
-
-func labelPtr(value descriptorpb.FieldDescriptorProto_Label) *descriptorpb.FieldDescriptorProto_Label {
-	return &value
-}
-
-func typePtr(value descriptorpb.FieldDescriptorProto_Type) *descriptorpb.FieldDescriptorProto_Type {
-	return &value
 }
 
 func (h *Handler) candidateCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
