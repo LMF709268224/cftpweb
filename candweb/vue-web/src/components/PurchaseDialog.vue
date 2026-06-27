@@ -122,7 +122,6 @@ const previewError = ref("")
 const exemptionError = ref("")
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const resolvedBundleId = ref(props.bundleId || "")
-const newlyCreatedOrderId = ref("")
 const activePaymentSession = ref<{
   paymentKey?: string
   bizType: string
@@ -153,7 +152,7 @@ const hasExemptionOptions = computed(() => exemptionStages.value.length > 0)
 const selectedExemptionCount = computed(() => Object.values(selectedExemptionUnitIds.value).filter(Boolean).length)
 const isPreparingOrder = computed(() => Boolean(actionLoading.value && activeOrder.value && !paymentPreview.value && !activePaymentSession.value && !previewError.value))
 const isOrderPreviewLoading = computed(() => Boolean(activeOrder.value && !paymentPreview.value && !previewError.value && !activePaymentSession.value))
-const canCancelActiveOrder = computed(() => Boolean(activeOrder.value?.canCancel && activeOrder.value.orderId !== newlyCreatedOrderId.value && !activePaymentSession.value))
+const canCancelActiveOrder = computed(() => Boolean(activeOrder.value?.canCancel && !activePaymentSession.value))
 
 
 function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveOrder | null {
@@ -267,7 +266,6 @@ watch(() => props.open, async (open) => {
     if (hasInitialActiveOrderState()) {
       hydrateFromInitialState()
     } else {
-      newlyCreatedOrderId.value = ""
       eligibility.value = null
       activeOrder.value = null
       paymentPreview.value = null
@@ -284,7 +282,6 @@ watch(() => props.open, async (open) => {
 function close() {
   activePaymentSession.value = null
   credentialApplicationOrder.value = null
-  newlyCreatedOrderId.value = ""
   paymentLoading.value = false
   cancelOrderLoading.value = false
   emit("update:open", false)
@@ -523,7 +520,6 @@ async function createBundlePurchaseOrder(bundleOrderUlid = "") {
   })
   const orderId = String(order?.bundle_order_ulid || "").trim()
   const orderStatus = String(order?.order_status || "")
-  newlyCreatedOrderId.value = orderId
   activeOrder.value = {
     action: "purchase",
     orderId,
