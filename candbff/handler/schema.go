@@ -677,6 +677,11 @@ type MessageListRsp struct {
 	HasMore  bool          `json:"has_more"`
 }
 
+type MessageTypeCountsRsp struct {
+	Total  uint32            `json:"total"`
+	Counts map[string]uint32 `json:"counts"`
+}
+
 type MessageUnreadCountRsp struct {
 	UnreadCount uint32 `json:"unread_count"`
 }
