@@ -13,21 +13,7 @@ const refreshKey = ref(0)
 const allCourses = ref<any[]>([])
 const loading = ref(false)
 
-const emptyCopy = computed(() => lang.value === "zh"
-  ? {
-      noAvailableTitle: "暂无可购买商品",
-      noAvailableDesc: "商城开放商品后，会显示在这里。",
-      noSearchTitle: "没有匹配的商品",
-      noSearchDesc: "换个关键词再试，或清空搜索查看全部商品。",
-      clearSearch: "清空搜索",
-    }
-  : {
-      noAvailableTitle: "No products available",
-      noAvailableDesc: "Products will appear here once they are available in the marketplace.",
-      noSearchTitle: "No matching products",
-      noSearchDesc: "Try another keyword or clear the search to view all products.",
-      clearSearch: "Clear search",
-    })
+const emptyCopy = computed(() => t.value.courses)
 
 const filteredCourses = computed(() => allCourses.value.filter((course) =>
   course.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||

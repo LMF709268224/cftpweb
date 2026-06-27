@@ -8,23 +8,11 @@ import { useTranslation } from "@/lib/language"
 
 const route = useRoute()
 const router = useRouter()
-const { lang } = useTranslation()
+const { t } = useTranslation()
 const session = ref<PendingPaymentSession>({})
 const ready = ref(false)
 
-const copy = computed(() =>
-  lang.value === "zh"
-    ? {
-        title: "\u6b63\u5728\u6253\u5f00\u652f\u4ed8",
-        loading: "\u652f\u4ed8\u4fe1\u606f\u51c6\u5907\u4e2d",
-        back: "\u8fd4\u56de\u4e0a\u4e00\u9875",
-      }
-    : {
-        title: "Opening payment",
-        loading: "Preparing payment information",
-        back: "Go back",
-      },
-)
+const copy = computed(() => t.value.paymentBridge)
 
 const orderLabel = computed(() => session.value.orderId || session.value.bizRefUlid || session.value.bizType || copy.value.loading)
 

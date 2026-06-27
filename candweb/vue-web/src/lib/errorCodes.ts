@@ -112,6 +112,14 @@ export const ErrorMessages: Record<string, { zh: string; en: string }> = {
     zh: "发生未知错误，请联系客服",
     en: "An unknown error occurred. Please contact support.",
   },
+  REQUEST_TIMEOUT: {
+    zh: "请求超时，请稍后重试",
+    en: "Request timed out. Please try again.",
+  },
+  NETWORK_ERROR: {
+    zh: "网络请求失败，请检查网络后重试",
+    en: "Network request failed. Please check your connection and try again.",
+  },
 }
 
 export function getErrorMessage(errorCode: string | undefined | null, lang: "zh" | "en" = "zh"): string {

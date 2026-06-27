@@ -21,16 +21,10 @@ const counts = ref({
 })
 
 
-const guideCopy = computed(() => lang.value === "zh"
-  ? {
-      title: "欢迎来到门户",
-      subtitle: "探索我们的认证、课程、网络研讨会、洞察和报告，持续提升你的专业知识。",
-    }
-  : {
-      title: "Welcome to Portal",
-      subtitle: "Explore our collection of certifications, courses, webinars, insights and reports to advance your knowledge.",
-    },
-)
+const guideCopy = computed(() => ({
+  title: t.value.home.portalTitle,
+  subtitle: t.value.home.portalSubtitle,
+}))
 
 type CardColor = "orange" | "purple" | "blue" | "teal" | "green"
 type PortalCard = {

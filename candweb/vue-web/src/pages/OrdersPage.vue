@@ -66,9 +66,9 @@ const showPurchaseDialog = ref(false)
 const selectedCourseName = ref("")
 const selectedPipelineId = ref("")
 
-const invoiceOpeningLabel = computed(() => (lang.value === "zh" ? "正在打开发票，请稍候..." : "Opening invoice. Please wait..."))
+const invoiceOpeningLabel = computed(() => t.value.orders.invoiceOpening)
 const orderTypeOptions = computed(() => [
-  { value: "", label: lang.value === "zh" ? "\u5168\u90e8\u8ba2\u5355" : "All Orders" },
+  { value: "", label: t.value.orders.allOrders },
   { value: "PIPELINE_PAYMENT", label: orderTypeLabel("PIPELINE_PAYMENT") },
   { value: "STAGE_PAYMENT", label: orderTypeLabel("STAGE_PAYMENT") },
   { value: "COURSE_RETAKE_PAYMENT", label: orderTypeLabel("COURSE_RETAKE_PAYMENT") },
@@ -77,7 +77,7 @@ const orderTypeOptions = computed(() => [
   { value: "BUNDLE_PURCHASE", label: orderTypeLabel("BUNDLE_PURCHASE") },
 ])
 const orderStatusOptions = computed(() => [
-  { value: "", label: lang.value === "zh" ? "\u5168\u90e8\u72b6\u6001" : "All Statuses" },
+  { value: "", label: t.value.orders.allStatuses },
   { value: "WAIT_PIPELINE_PAYMENT", label: orderStatusFilterLabel("WAIT_PIPELINE_PAYMENT") },
   { value: "WAIT_STAGE_PAYMENT", label: orderStatusFilterLabel("WAIT_STAGE_PAYMENT") },
   { value: "WAIT_RETAKE_PAYMENT", label: orderStatusFilterLabel("WAIT_RETAKE_PAYMENT") },
@@ -138,10 +138,10 @@ async function cancelOrder(order: OrderItem) {
   try {
     const res = await apiClient(`/api/orders/${encodeURIComponent(order.id)}/cancel`, { method: "POST" })
     if (res?.success === false) {
-      toast.error(res?.message || t.value.orders.cancelOrderFailed)
+      toast.error(t.value.orders.cancelOrderFailed)
       return
     }
-    toast.success(res?.message || t.value.orders.cancelOrderSuccess)
+    toast.success(t.value.orders.cancelOrderSuccess)
     await fetchOrders(false)
   } catch (error) {
     console.error(error)
@@ -259,7 +259,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
         currency: (o.currency || "USD").toUpperCase(),
         bizType: o.biz_type || "",
         bizRefUlid: o.biz_ref_ulid || "",
-        amount: o.amount > 0 ? formatMoney(o.amount, o.currency || "USD") : (lang.value === "zh" ? "免费" : "Free"),
+        amount: o.amount > 0 ? formatMoney(o.amount, o.currency || "USD") : t.value.orders.free,
         status: (o.status in statusConfig ? o.status : "pending") as OrderStatus,
         rawStatus: o.raw_status,
         pipelineId: o.pipeline_id,
@@ -330,7 +330,7 @@ onMounted(() => {
         </div>
         <div class="flex flex-col gap-3 sm:items-end">
           <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-            <label class="sr-only" for="order-type-filter">{{ lang === 'zh' ? '订单类型' : 'Order type' }}</label>
+            <label class="sr-only" for="order-type-filter">{{ t.orders.orderType }}</label>
             <select
               id="order-type-filter"
               :value="selectedBizType"
@@ -341,7 +341,7 @@ onMounted(() => {
                 {{ option.label }}
               </option>
             </select>
-            <label class="sr-only" for="order-status-filter">{{ lang === 'zh' ? '订单状态' : 'Order status' }}</label>
+            <label class="sr-only" for="order-status-filter">{{ t.orders.orderStatus }}</label>
             <select
               id="order-status-filter"
               :value="selectedOrderStatus"
@@ -381,10 +381,10 @@ onMounted(() => {
               </span>
             </div>
             <div class="text-right"><p class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p></div>
-            <button v-if="canContinuePayment(order)" @click.stop="continuePayment(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary/10" :title="lang === 'zh' ? '继续支付' : 'Continue payment'">
+            <button v-if="canContinuePayment(order)" @click.stop="continuePayment(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary/10" :title="t.orders.continuePayment">
               <Loader2 v-if="paymentLoading === order.id" class="h-4 w-4 animate-spin" />
               <CreditCard v-else class="h-4 w-4" />
-              <span class="sr-only">{{ lang === 'zh' ? '继续支付' : 'Continue payment' }}</span>
+              <span class="sr-only">{{ t.orders.continuePayment }}</span>
             </button>
             <span v-else class="h-9 w-9" />
             <button v-if="canCancelOrder(order)" @click.stop="cancelOrder(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50" :title="t.orders.cancelOrder">
@@ -393,7 +393,7 @@ onMounted(() => {
               <span class="sr-only">{{ t.orders.cancelOrder }}</span>
             </button>
             <span v-else class="h-9 w-9" />
-            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary" title="View Invoice">
+            <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary" :title="t.orders.viewInvoice">
               <Loader2 v-if="invoiceLoading === order.invoiceOrderId" class="h-4 w-4 animate-spin text-primary" />
               <FileText v-else class="h-4 w-4" />
               <span class="sr-only">{{ invoiceOpeningLabel }}</span>
@@ -428,7 +428,7 @@ onMounted(() => {
     <PaymentSessionDialog
       v-if="orderPaymentSession"
       v-model:open="orderPaymentDialogOpen"
-      :title="lang === 'zh' ? '继续支付' : 'Continue payment'"
+      :title="t.orders.continuePayment"
       :subtitle="orderPaymentSession.orderId"
       :biz-type="orderPaymentSession.bizType"
       :biz-ref-ulid="orderPaymentSession.bizRefUlid"

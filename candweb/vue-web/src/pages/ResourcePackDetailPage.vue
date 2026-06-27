@@ -28,7 +28,7 @@ type ResourcePackFile = {
 
 const route = useRoute()
 const router = useRouter()
-const { lang } = useTranslation()
+const { t } = useTranslation()
 const loading = ref(false)
 const openingFileId = ref("")
 const search = ref("")
@@ -49,59 +49,20 @@ const isWebinarsPack = computed(() =>
 const isReportsPack = computed(() =>
   `${storedPackTitle.value} ${storedPackRespath.value}`.toLowerCase().includes("report"),
 )
-const copy = computed(() => lang.value === "zh"
-  ? {
-      title: isWebinarsPack.value ? "网络研讨会" : isReportsPack.value ? "报告" : "资源包详情",
-      subtitle: isInsightsPack.value
-        ? "会员专属行业洞察与分析"
-        : isWebinarsPack.value
-          ? "来自领先金融科技专家的独家网络研讨会"
-          : isReportsPack.value
-            ? "会员专属行业报告与研究"
-          : "浏览你有权限访问的报告、视频和资料，点击卡片即可在线预览。",
-      back: "返回资源包",
-      search: "搜索资源标题或说明",
-      emptyTitle: "这个资源包暂无文件",
-      emptyDesc: "管理员添加文件并发布后，会显示在这里。",
-      noSearchTitle: "没有匹配的资源",
-      noSearchDesc: "换个关键词试试，或清空搜索查看全部资源。",
-      clearSearch: "清空搜索",
-      preview: "预览",
-      size: "文件大小",
-      updated: "更新于",
-      refresh: "刷新",
-      missing: "缺少资源包 ID",
-      loading: "加载中...",
-      loadingPreview: "正在打开预览...",
-      loadMore: "加载更多",
-      noViewUrl: "暂时无法打开预览，请稍后再试。",
-    }
-  : {
-      title: isWebinarsPack.value ? "Webinars" : isReportsPack.value ? "Reports" : "Resource Pack Detail",
-      subtitle: isInsightsPack.value
-        ? "Exclusive industry insights and analysis for members"
-        : isWebinarsPack.value
-          ? "Exclusive webinars from leading fintech experts"
-          : isReportsPack.value
-            ? "Exclusive industry reports and research for members"
-          : "Browse reports, videos, and materials you are allowed to access. Click a card to preview online.",
-      back: "Back to packs",
-      search: "Search resources",
-      emptyTitle: "No files in this pack",
-      emptyDesc: "Files will appear here after admins add and publish them.",
-      noSearchTitle: "No matching resources",
-      noSearchDesc: "Try another keyword or clear the search to view all resources.",
-      clearSearch: "Clear search",
-      preview: "Preview",
-      size: "File size",
-      updated: "Updated",
-      refresh: "Refresh",
-      missing: "Missing resource pack ID",
-      loading: "Loading...",
-      loadingPreview: "Opening preview...",
-      loadMore: "Load more",
-      noViewUrl: "Unable to open the preview right now. Please try again later.",
-    })
+const copy = computed(() => {
+  const page = t.value.resourcePackDetailPage
+  return {
+    ...page,
+    title: isWebinarsPack.value ? page.titleWebinars : isReportsPack.value ? page.titleReports : page.titleDefault,
+    subtitle: isInsightsPack.value
+      ? page.subtitleInsights
+      : isWebinarsPack.value
+        ? page.subtitleWebinars
+        : isReportsPack.value
+          ? page.subtitleReports
+        : page.subtitleDefault,
+  }
+})
 
 const orderedFiles = computed(() =>
   files.value.slice().sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0)),

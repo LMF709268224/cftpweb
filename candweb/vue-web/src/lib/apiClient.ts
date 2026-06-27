@@ -49,13 +49,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     })
   } catch (err) {
     const isAbort = err instanceof DOMException && err.name === "AbortError"
-    const errorMsg = isAbort
-      ? currentLang === "zh"
-        ? "请求超时，请稍后重试"
-        : "Request timed out. Please try again."
-      : currentLang === "zh"
-        ? "网络请求失败，请检查网络后重试"
-        : "Network request failed. Please check your connection and try again."
+    const errorMsg = getErrorMessage(isAbort ? "REQUEST_TIMEOUT" : "NETWORK_ERROR", currentLang)
     showErrorToast(errorMsg)
     throw new Error(errorMsg)
   } finally {

@@ -490,10 +490,10 @@ async function cancelActiveOrder() {
   try {
     const res = await apiClient(`/api/orders/${encodeURIComponent(orderId)}/cancel`, { method: "POST" })
     if (res?.success === false) {
-      toast.error(res?.message || copy.value.cancelOrderFailed)
+      toast.error(copy.value.cancelOrderFailed)
       return
     }
-    toast.success(res?.message || copy.value.cancelOrderSuccess)
+    toast.success(copy.value.cancelOrderSuccess)
     emit("update:open", false)
     activeOrder.value = null
     paymentPreview.value = null
@@ -632,14 +632,14 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
   credentialApplicationLoadingKey.value = loadingKey
   activePaymentSession.value = null
   try {
-    const existingApplication = await latestCredentialApplication(qualId)
+      const existingApplication = await latestCredentialApplication(qualId)
     if (existingApplication?.status) {
       if (isApplicationPendingStatus(existingApplication.status)) {
-        toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果。")
+        toast.info(copy.value.qualificationUnderReview)
         return
       }
       if (isApplicationApprovedStatus(existingApplication.status)) {
-        toast.success(copy.value.qualificationAlreadyApproved || "资格已审核通过，正在重新检查免考资格。")
+        toast.success(copy.value.qualificationAlreadyApproved)
         await refreshEligibility()
         return
       }
@@ -671,16 +671,16 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     }
 
     if (isUploadReadyStatus(orderStatus)) {
-      toast.info(copy.value.qualificationUploadReady || "资料上传入口已开放，正在前往资格申请页面。")
+      toast.info(copy.value.qualificationUploadReady)
       window.setTimeout(() => goToCredentialUpload(qualIds), 300)
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
-      toast.info(copy.value.qualificationUnderReview || "资格申请已提交，请等待审核结果。")
+      toast.info(copy.value.qualificationUnderReview)
       return
     }
     if (isCredentialApplicationResolvedStatus(orderStatus)) {
-      toast.info(order?.message || copy.value.refreshEligibility)
+      toast.info(copy.value.refreshEligibility)
       await refreshEligibility()
       return
     }
@@ -695,7 +695,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
       }
       return
     }
-    toast.info(order?.message || copy.value.qualificationApplicationCreated)
+    toast.info(copy.value.qualificationApplicationCreated)
   } catch (error) {
     console.error(error)
   } finally {
@@ -960,7 +960,7 @@ function initiatePayment() {
             <p class="mt-2">{{ credentialApplicationOrder ? copy.qualificationPaymentDesc : copy.embeddedCheckoutDesc }}</p>
           </div>
           <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-            <strong>测试提示：</strong> 当前为测试环境，请使用测试卡号 <code>4242 4242 4242 4242</code>，有效期和CVV随意。
+            {{ t.paymentSession.testHint }}
           </div>
           <PaymentSessionPanel
             :payment-key="activePaymentSession.paymentKey"
@@ -1008,7 +1008,7 @@ function initiatePayment() {
             </button>
           </div>
           <div v-if="paymentMethod === 'stripe'" class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-            <strong>测试提示：</strong> 当前为测试环境，请使用测试卡号 <code>4242 4242 4242 4242</code>，有效期和CVV随意。
+            {{ t.paymentSession.testHint }}
           </div>
         </div>
       </div>

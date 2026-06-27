@@ -20,35 +20,11 @@ type CandidatePipelineCard = {
   completedAt: string
 }
 
-const { t, lang } = useTranslation()
+const { t } = useTranslation()
 const myCourses = ref<CandidatePipelineCard[]>([])
 const loading = ref(false)
 
-const copy = computed(() => lang.value === "zh"
-  ? {
-      title: "我的认证",
-      subtitle: "查看你已购买或正在进行的认证进度。",
-      status: "状态",
-      details: "查看详情",
-      viewDetailsHint: "点击查看认证详情",
-      emptyTitle: "还没有购买认证",
-      emptyDesc: "前往商城浏览并选择适合你的认证或会员商品。",
-      browseMarketplace: "浏览商城",
-      startedAt: "开始时间",
-      completedAt: "完成时间",
-    }
-  : {
-      title: "My Certifications",
-      subtitle: "View certifications you have purchased or are currently completing.",
-      status: "Status",
-      details: "View Details",
-      viewDetailsHint: "Click to view certification details",
-      emptyTitle: "No certifications purchased yet",
-      emptyDesc: "Browse the marketplace and choose the certification or membership product that fits your goals.",
-      browseMarketplace: "Browse Marketplace",
-      startedAt: "Started At",
-      completedAt: "Completed At",
-    })
+const copy = computed(() => t.value.myCertificationsPage)
 
 function certificationDisplayName(value?: string) {
   return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "认证")

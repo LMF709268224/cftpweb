@@ -58,15 +58,15 @@ function isNavItemActive(href: string) {
 
 const navItems = computed(() => [
   { href: "/", label: t.value.sidebar.home, group: "" },
-  { href: "/certifications", label: t.value.sidebar.courses, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
-  { href: "/my-certifications", label: t.value.sidebar.myCertifications, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
-  { href: "/exams", label: t.value.sidebar.exams, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
-  { href: "/resource-packs", label: lang.value === "zh" ? "资源包" : "Resources", group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
-  { href: "/credentials", label: t.value.sidebar.credentials, group: lang.value === "zh" ? "认证与学习" : "Certifications & Learning" },
-  { href: "/certificates", label: t.value.sidebar.certificates, group: lang.value === "zh" ? "我的" : "Mine" },
-  { href: "/membership", label: t.value.sidebar.membership, group: lang.value === "zh" ? "我的" : "Mine" },
-  { href: "/orders", label: t.value.sidebar.orders, group: lang.value === "zh" ? "我的" : "Mine" },
-  { href: "/messages", label: t.value.sidebar.messages, group: lang.value === "zh" ? "我的" : "Mine", badge: unreadCount.value > 0 ? unreadCount.value : undefined },
+  { href: "/certifications", label: t.value.sidebar.courses, group: t.value.sidebar.groupLearning },
+  { href: "/my-certifications", label: t.value.sidebar.myCertifications, group: t.value.sidebar.groupLearning },
+  { href: "/exams", label: t.value.sidebar.exams, group: t.value.sidebar.groupLearning },
+  { href: "/resource-packs", label: t.value.sidebar.resourcePacks, group: t.value.sidebar.groupLearning },
+  { href: "/credentials", label: t.value.sidebar.credentials, group: t.value.sidebar.groupLearning },
+  { href: "/certificates", label: t.value.sidebar.certificates, group: t.value.sidebar.groupMine },
+  { href: "/membership", label: t.value.sidebar.membership, group: t.value.sidebar.groupMine },
+  { href: "/orders", label: t.value.sidebar.orders, group: t.value.sidebar.groupMine },
+  { href: "/messages", label: t.value.sidebar.messages, group: t.value.sidebar.groupMine, badge: unreadCount.value > 0 ? unreadCount.value : undefined },
 ])
 
 const navIconByHref = {
@@ -163,7 +163,7 @@ async function handleLogout() {
         @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
       >
         <Languages class="h-4 w-4" />
-        <span>{{ lang === "zh" ? "EN" : "中" }}</span>
+        <span>{{ t.sidebar.languageCompact }}</span>
       </button>
     </div>
   </header>
@@ -219,7 +219,7 @@ async function handleLogout() {
           @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
         >
           <Languages class="h-4 w-4" />
-          <span>{{ lang === "zh" ? "中文 / EN" : "EN / 中文" }}</span>
+          <span>{{ t.sidebar.languageToggle }}</span>
         </button>
 
         <button
@@ -301,10 +301,10 @@ async function handleLogout() {
         ]"
         type="button"
         @click="changeLanguage(lang === 'zh' ? 'en' : 'zh')"
-        :title="lang === 'zh' ? 'English' : '中文'"
+        :title="lang === 'zh' ? t.sidebar.englishTitle : t.sidebar.chineseTitle"
       >
         <Languages class="h-4 w-4" />
-        <span>{{ lang === "zh" ? "中文 / EN" : "EN / 中文" }}</span>
+        <span>{{ t.sidebar.languageToggle }}</span>
       </button>
 
       <button

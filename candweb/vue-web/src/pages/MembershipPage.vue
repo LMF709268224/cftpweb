@@ -28,10 +28,10 @@ const billingTotalPages = ref(0)
 const pageSizeOptions = [10, 30, 50, 100]
 
 const tabs = computed(() => [
-  { id: "overview", label: lang.value === "zh" ? "当前会员" : "Current" },
+  { id: "overview", label: t.value.membership.tabsOverview },
   { id: "levels", label: t.value.membership.tabs.levels },
-  { id: "history", label: lang.value === "zh" ? "会员历史" : "History" },
-  { id: "billings", label: lang.value === "zh" ? "账单记录" : "Billings" },
+  { id: "history", label: t.value.membership.tabsHistory },
+  { id: "billings", label: t.value.membership.tabsBillings },
 ])
 
 const currentRecord = computed(() => {
@@ -57,7 +57,7 @@ const hasActiveMembership = computed(() => {
 })
 
 const currentMembershipName = computed(() => {
-  return membershipDisplayName(currentRecord.value, lang.value === "zh" ? "会员记录" : "Membership record")
+  return membershipDisplayName(currentRecord.value, t.value.membership.membershipRecord)
 })
 
 const isAutoRenewCancelled = computed(() => {
@@ -70,15 +70,15 @@ const canCancelMembership = computed(() => {
 })
 
 const autoRenewLabel = computed(() => {
-  if (isAutoRenewCancelled.value) return lang.value === "zh" ? "已取消续费" : "Auto-renew cancelled"
-  if (currentRecord.value?.auto_renew) return lang.value === "zh" ? "已开启" : "Enabled"
+  if (isAutoRenewCancelled.value) return t.value.membership.autoRenewCancelled
+  if (currentRecord.value?.auto_renew) return t.value.membership.autoRenewEnabled
   return "-"
 })
 
 const cancelMembershipButtonLabel = computed(() => {
-  if (isAutoRenewCancelled.value) return lang.value === "zh" ? "已取消续费" : "Auto-renew cancelled"
-  if (!currentRecord.value?.auto_renew) return lang.value === "zh" ? "未开启自动续费" : "Auto-renew disabled"
-  return lang.value === "zh" ? "取消续费" : "Cancel auto-renew"
+  if (isAutoRenewCancelled.value) return t.value.membership.autoRenewCancelled
+  if (!currentRecord.value?.auto_renew) return t.value.membership.autoRenewDisabled
+  return t.value.membership.cancelAutoRenew
 })
 
 function listFrom(data: any, keys: string[]) {
@@ -112,12 +112,12 @@ function formatMoney(amount: unknown, currency = "USD") {
   return `${currency} ${(value / 100).toFixed(2)}`
 }
 
-function formatSource(source: unknown, langCode: string) {
+function formatSource(source: unknown) {
   const s = String(source || "").toLowerCase()
-  if (s === "initial") return langCode === "zh" ? "首次开通" : "Initial subscription"
-  if (s === "bundle_purchase") return langCode === "zh" ? "套餐购买" : "Bundle Purchase"
-  if (s === "admin_grant") return langCode === "zh" ? "管理员发卡" : "Admin Grant"
-  if (s === "renewal") return langCode === "zh" ? "会员续费" : "Renewal"
+  if (s === "initial") return t.value.membership.sourceInitial
+  if (s === "bundle_purchase") return t.value.membership.sourceBundlePurchase
+  if (s === "admin_grant") return t.value.membership.sourceAdminGrant
+  if (s === "renewal") return t.value.membership.sourceRenewal
   return String(source || "-")
 }
 
@@ -133,36 +133,36 @@ function membershipDisplayName(record: RecordData, fallback = "-") {
 }
 
 function membershipRecordSummary(record: RecordData) {
-  const source = formatSource(record?.source, lang.value)
+  const source = formatSource(record?.source)
   const renewalCount = record?.renewal_count
   const parts = [
     source !== "-" ? source : "",
-    renewalCount !== undefined && renewalCount !== null ? `${lang.value === "zh" ? "续费次数" : "Renewals"} ${renewalCount}` : "",
+    renewalCount !== undefined && renewalCount !== null ? `${t.value.membership.renewalCount} ${renewalCount}` : "",
   ].filter(Boolean)
-  return parts.join(" · ") || (lang.value === "zh" ? "会员记录" : "Membership record")
+  return parts.join(" · ") || t.value.membership.membershipRecord
 }
 
 function billingTitle(item: RecordData) {
   const type = String(item?.billing_type || "").trim()
-  if (type) return formatSource(type, lang.value)
-  if (item?.stripe_invoice_id) return lang.value === "zh" ? "Stripe 账单" : "Stripe invoice"
-  return lang.value === "zh" ? "会员账单" : "Membership billing"
+  if (type) return formatSource(type)
+  if (item?.stripe_invoice_id) return t.value.membership.stripeInvoice
+  return t.value.membership.membershipBilling
 }
 
 function statusLabel(status: unknown) {
   const value = String(status || "").toUpperCase()
   if (!value) return "-"
-  const zh: Record<string, string> = {
-    ACTIVE: "有效",
-    CURRENT: "有效",
-    GRACE: "宽限期",
-    CANCELLED: "已取消",
-    EXPIRED: "已过期",
-    PENDING: "待处理",
-    PAID: "已支付",
-    FAILED: "失败",
+  const labels: Record<string, string> = {
+    ACTIVE: t.value.membership.statusActive,
+    CURRENT: t.value.membership.statusActive,
+    GRACE: t.value.membership.statusGrace,
+    CANCELLED: t.value.membership.statusCancelled,
+    EXPIRED: t.value.membership.statusExpired,
+    PENDING: t.value.membership.statusPending,
+    PAID: t.value.membership.statusPaid,
+    FAILED: t.value.membership.statusFailed,
   }
-  return lang.value === "zh" ? zh[value] || value : value
+  return labels[value] || value
 }
 
 function badgeClass(status: unknown) {
@@ -242,7 +242,7 @@ async function loadMembership() {
     activeMembership.value = await loadActiveMembershipFromHistory(nextHistory) || { user_memberships: nextHistory }
   } catch (err) {
     console.error(err)
-    toast.error(lang.value === "zh" ? "会员信息加载失败" : "Failed to load membership")
+    toast.error(t.value.membership.loadFailed)
   } finally {
     loading.value = false
   }
@@ -274,7 +274,7 @@ async function loadActiveMembershipFromHistory(membershipHistory: RecordData[]) 
 async function cancelMembership() {
   const recordUlid = currentRecord.value?.membership_record_ulid
   if (!recordUlid || !canCancelMembership.value) return
-  const ok = window.confirm(lang.value === "zh" ? "确认取消续费吗？" : "Cancel current auto-renew?")
+  const ok = window.confirm(t.value.membership.cancelAutoRenewConfirm)
   if (!ok) return
   cancelling.value = true
   try {
@@ -282,7 +282,7 @@ async function cancelMembership() {
       method: "POST",
       body: JSON.stringify({ membership_record_ulid: recordUlid, reason: "user_requested" }),
     })
-    toast.success(lang.value === "zh" ? "已提交取消续费请求" : "Cancel auto-renew request submitted")
+    toast.success(t.value.membership.cancelAutoRenewSubmitted)
     await loadMembership()
   } finally {
     cancelling.value = false
@@ -314,7 +314,7 @@ onMounted(() => {
         </div>
         <button class="membership-refresh-btn inline-flex h-9 items-center gap-2 rounded-xl border px-4 text-sm font-semibold" type="button" @click="loadMembership">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
-          {{ lang === "zh" ? "刷新" : "Refresh" }}
+          {{ t.membership.refresh }}
         </button>
       </header>
 
@@ -331,7 +331,7 @@ onMounted(() => {
 
         <div v-if="loading" class="rounded-[16px] bg-white p-12 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <Loader2 class="mx-auto mb-3 h-7 w-7 animate-spin text-primary" />
-          {{ lang === "zh" ? "正在加载会员信息..." : "Loading membership..." }}
+          {{ t.membership.loading }}
         </div>
 
         <template v-else>
@@ -341,28 +341,28 @@ onMounted(() => {
                 <Crown class="h-24 w-24" />
               </div>
               <div class="relative">
-                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">{{ lang === "zh" ? "当前会员" : "Current membership" }}</p>
-                <h2 class="mt-3 text-3xl font-black">{{ hasActiveMembership ? currentMembershipName : (lang === "zh" ? "暂无有效会员" : "No active membership") }}</h2>
+                <p class="text-sm font-semibold uppercase tracking-[0.24em] text-white/70">{{ t.membership.currentMembership }}</p>
+                <h2 class="mt-3 text-3xl font-black">{{ hasActiveMembership ? currentMembershipName : t.membership.noActiveMembership }}</h2>
                 <p class="mt-2 max-w-2xl text-sm text-white/80">
-                  {{ hasActiveMembership ? (currentPlan?.description || currentRecord?.description || (lang === "zh" ? "你的会员权益当前可用。" : "Your membership benefits are available.")) : (lang === "zh" ? "你还没有有效会员，可以查看下方会员等级。" : "You do not have an active membership yet. Review available plans below.") }}
+                  {{ hasActiveMembership ? (currentPlan?.description || currentRecord?.description || t.membership.activeMembershipDesc) : t.membership.noActiveMembershipDesc }}
                 </p>
               </div>
             </div>
             <div class="grid gap-3 p-5 md:grid-cols-4">
               <div class="rounded-2xl bg-slate-50 p-4">
-                <div class="text-xs font-bold text-slate-500">{{ lang === "zh" ? "开始时间" : "Started" }}</div>
+                <div class="text-xs font-bold text-slate-500">{{ t.membership.started }}</div>
                 <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.started_at) }}</div>
               </div>
               <div class="rounded-2xl bg-slate-50 p-4">
-                <div class="text-xs font-bold text-slate-500">{{ lang === "zh" ? "过期时间" : "Expires" }}</div>
+                <div class="text-xs font-bold text-slate-500">{{ t.membership.expires }}</div>
                 <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.expires_at) }}</div>
               </div>
               <div class="rounded-2xl bg-slate-50 p-4">
-                <div class="text-xs font-bold text-slate-500">{{ lang === "zh" ? "下次扣费" : "Next billing" }}</div>
+                <div class="text-xs font-bold text-slate-500">{{ t.membership.nextBilling }}</div>
                 <div class="mt-2 text-sm font-black text-slate-900">{{ formatDate(currentRecord.next_billing_at) }}</div>
               </div>
               <div class="rounded-2xl bg-slate-50 p-4">
-                <div class="text-xs font-bold text-slate-500">{{ lang === "zh" ? "自动续费" : "Auto renew" }}</div>
+                <div class="text-xs font-bold text-slate-500">{{ t.membership.autoRenew }}</div>
                 <div class="mt-2 text-sm font-black text-slate-900">{{ autoRenewLabel }}</div>
               </div>
             </div>
@@ -384,7 +384,7 @@ onMounted(() => {
 
           <section v-if="activeTab === 'overview'" class="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
             <div class="rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-              <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ lang === "zh" ? "会员权益" : "Benefits" }}</h2>
+              <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.benefits }}</h2>
               <div v-if="currentPlan && parseFeatures(currentPlan).length" class="grid gap-3 sm:grid-cols-2">
                 <div v-for="feature in parseFeatures(currentPlan)" :key="feature" class="flex gap-3 rounded-xl border border-emerald-100 bg-emerald-50/70 p-4">
                   <Check class="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
@@ -393,17 +393,17 @@ onMounted(() => {
               </div>
               <div v-else class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                 <AlertCircle class="mt-0.5 h-4 w-4 shrink-0" />
-                {{ lang === "zh" ? "当前会员暂无可展示的权益配置。" : "No benefit details are configured for the current membership." }}
+                {{ t.membership.noBenefits }}
               </div>
             </div>
 
             <div class="rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-              <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ lang === "zh" ? "会员操作" : "Membership actions" }}</h2>
+              <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ t.membership.actions }}</h2>
               <div class="space-y-3 text-sm text-slate-600">
-                <div class="flex justify-between gap-4"><span>{{ lang === "zh" ? "会员名称" : "Membership" }}</span><span class="text-right font-semibold text-slate-800">{{ currentMembershipName }}</span></div>
-                <div class="flex justify-between"><span>{{ lang === "zh" ? "来源" : "Source" }}</span><span>{{ formatSource(currentRecord.source, lang) }}</span></div>
-                <div class="flex justify-between"><span>{{ lang === "zh" ? "续费次数" : "Renewals" }}</span><span>{{ currentRecord.renewal_count ?? "-" }}</span></div>
-                <div class="flex justify-between"><span>{{ lang === "zh" ? "最近支付" : "Last payment" }}</span><span>{{ formatMoney(currentRecord.last_payment_amount_minor, "USD") }}</span></div>
+                <div class="flex justify-between gap-4"><span>{{ t.membership.membershipName }}</span><span class="text-right font-semibold text-slate-800">{{ currentMembershipName }}</span></div>
+                <div class="flex justify-between"><span>{{ t.membership.source }}</span><span>{{ formatSource(currentRecord.source) }}</span></div>
+                <div class="flex justify-between"><span>{{ t.membership.renewalCount }}</span><span>{{ currentRecord.renewal_count ?? "-" }}</span></div>
+                <div class="flex justify-between"><span>{{ t.membership.lastPayment }}</span><span>{{ formatMoney(currentRecord.last_payment_amount_minor, "USD") }}</span></div>
               </div>
               <button
                 v-if="hasActiveMembership && currentRecord.membership_record_ulid"
@@ -434,17 +434,17 @@ onMounted(() => {
               </div>
               <div class="mb-4 grid grid-cols-2 gap-3 text-sm">
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs text-slate-500">{{ lang === "zh" ? "等级" : "Tier" }}</div>
+                  <div class="text-xs text-slate-500">{{ t.membership.tier }}</div>
                   <div class="font-black">{{ plan.tier_level || "-" }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs text-slate-500">{{ lang === "zh" ? "时长" : "Duration" }}</div>
-                  <div class="font-black">{{ plan.duration_in_months || "-" }} {{ lang === "zh" ? "个月" : "months" }}</div>
+                  <div class="text-xs text-slate-500">{{ t.membership.duration }}</div>
+                  <div class="font-black">{{ plan.duration_in_months || "-" }} {{ t.membership.months }}</div>
                 </div>
               </div>
               <div v-if="plan.course_discount_coupon" class="mb-4 flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-bold text-amber-700">
                 <Percent class="h-4 w-4" />
-                <span>{{ lang === "zh" ? "专属课程折扣码：" : "Course Discount Code: " }}{{ plan.course_discount_coupon }}</span>
+                <span>{{ t.membership.courseDiscountCode }}{{ plan.course_discount_coupon }}</span>
               </div>
               <ul class="space-y-2">
                 <li v-for="feature in parseFeatures(plan)" :key="feature" class="flex items-center gap-2 text-sm">
@@ -454,20 +454,20 @@ onMounted(() => {
               </ul>
             </div>
             <div v-if="!plans.length" class="rounded-[16px] bg-white p-8 text-center text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] md:col-span-2 xl:col-span-3">
-              {{ lang === "zh" ? "暂无可展示的会员等级。" : "No membership plans are available." }}
+              {{ t.membership.noPlans }}
             </div>
           </section>
 
           <section v-if="activeTab === 'history'" class="overflow-hidden rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
             <div v-for="item in history" :key="item.membership_record_ulid || item.membership_order_ulid" class="mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
-                <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="membershipDisplayName(item, lang === 'zh' ? '会员记录' : 'Membership record')">{{ membershipDisplayName(item, lang === "zh" ? "会员记录" : "Membership record") }}</div>
+                <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="membershipDisplayName(item, t.membership.membershipRecord)">{{ membershipDisplayName(item, t.membership.membershipRecord) }}</div>
                 <div class="mt-1 text-sm font-medium text-slate-600">{{ formatDate(item.started_at) }} - {{ formatDate(item.expires_at) }}</div>
                 <div class="mt-1 break-words text-xs text-slate-400 md:truncate">{{ membershipRecordSummary(item) }}</div>
               </div>
               <span class="inline-flex h-fit min-w-[76px] items-center justify-center justify-self-start rounded-full border px-3 py-1 text-xs font-black md:justify-self-end" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
             </div>
-            <div v-if="!history.length" class="p-8 text-center text-muted-foreground">{{ lang === "zh" ? "暂无会员历史。" : "No membership history." }}</div>
+            <div v-if="!history.length" class="p-8 text-center text-muted-foreground">{{ t.membership.noHistory }}</div>
             <AppPagination
               v-if="historyTotal > 0"
               v-model:page="historyPage"
@@ -489,7 +489,7 @@ onMounted(() => {
               </div>
               <span class="inline-flex h-fit min-w-[76px] items-center justify-center justify-self-start rounded-full border px-3 py-1 text-xs font-black md:justify-self-end" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
             </div>
-            <div v-if="!billings.length" class="p-8 text-center text-muted-foreground">{{ lang === "zh" ? "暂无账单记录。" : "No billing records." }}</div>
+            <div v-if="!billings.length" class="p-8 text-center text-muted-foreground">{{ t.membership.noBillings }}</div>
             <AppPagination
               v-if="billingTotal > 0"
               v-model:page="billingPage"
