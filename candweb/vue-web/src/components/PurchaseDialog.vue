@@ -167,6 +167,10 @@ function hasInitialPurchaseState() {
   return Boolean(props.initialEligibility || props.initialActiveOrder || props.initialPaymentPreview || props.initialExemptionOptions)
 }
 
+function hasInitialActiveOrderState() {
+  return Boolean(props.initialActiveOrder || props.initialPaymentPreview)
+}
+
 function hydrateFromInitialState() {
   eligibility.value = props.initialEligibility || { can_purchase: true, can_unlock: false, blockers: [] }
   activeOrder.value = normalizeInitialActiveOrder(props.initialActiveOrder)
@@ -256,8 +260,13 @@ async function loadLegacyDialogState() {
 watch(() => props.open, async (open) => {
   if (open) {
     resolvedBundleId.value = props.bundleId || ""
-    if (hasInitialPurchaseState()) {
+    if (hasInitialActiveOrderState()) {
       hydrateFromInitialState()
+    } else {
+      eligibility.value = null
+      activeOrder.value = null
+      paymentPreview.value = null
+      resetExemptionSelection()
     }
     await loadFreshDialogState()
   } else {
