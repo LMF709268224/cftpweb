@@ -218,6 +218,18 @@ async function resolveBundleFromCatalog() {
   }
 }
 
+async function loadFreshDialogState() {
+  if (!resolvedBundleId.value) {
+    await resolveBundleFromCatalog()
+  }
+  if (await loadBundlePurchaseState()) return
+  if (props.initialEligibility || props.initialActiveOrder || props.initialPaymentPreview || props.initialExemptionOptions) {
+    hydrateFromInitialState()
+    return
+  }
+  await loadLegacyDialogState()
+}
+
 async function loadLegacyDialogState() {
   if (await resolveBundleFromCatalog()) return
   if (await loadBundlePurchaseState()) return
@@ -234,15 +246,7 @@ async function loadLegacyDialogState() {
 watch(() => props.open, async (open) => {
   if (open) {
     resolvedBundleId.value = props.bundleId || ""
-    const hasInitialState = Boolean(props.initialEligibility || props.initialActiveOrder || props.initialPaymentPreview || props.initialExemptionOptions)
-    if (hasInitialState) {
-      hydrateFromInitialState()
-    } else if (!resolvedBundleId.value) {
-      await resolveBundleFromCatalog()
-    }
-    if (!hasInitialState && !eligibility.value) {
-      await loadLegacyDialogState()
-    }
+    await loadFreshDialogState()
   } else {
     activePaymentSession.value = null
   }
