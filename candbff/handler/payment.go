@@ -8,6 +8,8 @@ import (
 
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
+	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
+	"github.com/go-chi/chi/v5"
 )
 
 const (
@@ -28,8 +30,6 @@ var candidateOrderBizTypes = []string{
 	orderBizCredentialApply,
 	orderBizBundlePurchase,
 }
-
-
 
 // ListOrders GET /api/orders
 func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
@@ -118,6 +118,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			PayOrderUlid:         item.GetOrderUlid(),
 			PipelinePayOrderUlid: item.GetOrderUlid(),
 			CanViewInvoice:       statusStr == "completed" && strings.TrimSpace(item.GetOrderUlid()) != "",
+			CanCancel:            canCancelCandidateOrder(rawStatus),
 		}
 
 		outOrders = append(outOrders, orderItem)
@@ -142,6 +143,45 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		PageSize:    pageSize,
 		TotalPages:  totalPages,
 		Orders:      outOrders,
+	})
+}
+
+// CancelOrder POST /api/orders/{orderId}/cancel
+func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	orderID := strings.TrimSpace(chi.URLParam(r, "orderId"))
+	if !requireRequestFields(w, candidateID, "candidate_id", orderID, "order_id") {
+		return
+	}
+
+	summaryResp, err := h.Mall.GetOrderSummary(r.Context(), &mallpb.GetOrderSummaryRequest{OrderUlid: orderID})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	summary := summaryResp.GetSummary()
+	if !summaryResp.GetFound() || summary == nil || summary.GetCandidateUlid() != candidateID {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "order not found or access denied")
+		return
+	}
+	if !isCandidateOrderBizType(summary.GetBizType()) {
+		WriteError(w, http.StatusForbidden, ErrForbidden, "unsupported order type")
+		return
+	}
+	if !canCancelCandidateOrder(summary.GetOrderStatus()) {
+		WriteError(w, http.StatusConflict, ErrPrecondition, "order cannot be cancelled in current status")
+		return
+	}
+
+	resp, err := h.Gpay.CancelOrder(r.Context(), &gpaypb.CancelOrderRequest{OrderUlid: orderID})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, CancelOrderRsp{
+		Success: resp.GetSuccess(),
+		Message: resp.GetMessage(),
+		OrderID: orderID,
 	})
 }
 
@@ -177,6 +217,15 @@ func candidateOrderStatus(raw string) string {
 		return "pending"
 	default:
 		return "processing"
+	}
+}
+
+func canCancelCandidateOrder(raw string) bool {
+	switch candidateOrderStatus(raw) {
+	case "completed", "cancelled":
+		return false
+	default:
+		return true
 	}
 }
 

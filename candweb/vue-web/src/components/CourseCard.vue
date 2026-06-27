@@ -267,5 +267,6 @@ async function handleCardClick() {
     :initial-active-order="currentActiveOrder || null"
     :initial-payment-preview="currentPaymentPreview || null"
     :initial-exemption-options="currentExemptionOptions || null"
+    @cancelled="refreshBundleState"
   />
 </template>

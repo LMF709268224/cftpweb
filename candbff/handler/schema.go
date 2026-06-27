@@ -553,6 +553,7 @@ type OrderItem struct {
 	PayOrderUlid         string  `json:"pay_order_ulid,omitempty"`
 	PipelinePayOrderUlid string  `json:"pipeline_pay_order_ulid,omitempty"`
 	CanViewInvoice       bool    `json:"can_view_invoice"`
+	CanCancel            bool    `json:"can_cancel"`
 }
 
 type PurchasePipelineReq struct {
@@ -635,6 +636,12 @@ type OrderListRsp struct {
 	PageSize    int         `json:"page_size"`
 	TotalPages  int         `json:"total_pages"`
 	Orders      []OrderItem `json:"orders"`
+}
+
+type CancelOrderRsp struct {
+	Success bool   `json:"success"`
+	Message string `json:"message,omitempty"`
+	OrderID string `json:"order_id,omitempty"`
 }
 
 // ===================== 消息 (Messages) =====================

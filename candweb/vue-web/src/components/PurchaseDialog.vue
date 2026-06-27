@@ -102,13 +102,14 @@ const props = defineProps<{
   initialExemptionOptions?: ExemptionOptions | null
 }>()
 
-const emit = defineEmits<{ "update:open": [value: boolean] }>()
+const emit = defineEmits<{ "update:open": [value: boolean]; cancelled: [] }>()
 const { t } = useTranslation()
 const paymentMethod = ref<PaymentMethod>("stripe")
 const eligibilityLoading = ref(false)
 const dialogStateLoading = ref(false)
 const actionLoading = ref(false)
 const paymentLoading = ref(false)
+const cancelOrderLoading = ref(false)
 const credentialApplicationLoadingKey = ref("")
 const eligibility = ref<EligibilityPreview | null>(null)
 const exemptionOptions = ref<ExemptionOptions | null>(null)
@@ -268,6 +269,7 @@ watch(() => props.open, async (open) => {
   } else {
     activePaymentSession.value = null
     paymentLoading.value = false
+    cancelOrderLoading.value = false
   }
 })
 
@@ -275,6 +277,7 @@ function close() {
   activePaymentSession.value = null
   credentialApplicationOrder.value = null
   paymentLoading.value = false
+  cancelOrderLoading.value = false
   emit("update:open", false)
 }
 
@@ -469,6 +472,34 @@ async function refreshEligibility() {
     if (!await loadBundlePurchaseState()) await loadLegacyDialogState()
   } finally {
     eligibilityLoading.value = false
+  }
+}
+
+async function cancelActiveOrder() {
+  const orderId = activeOrder.value?.orderId
+  if (!orderId || cancelOrderLoading.value) return
+  const confirmed = window.confirm(copy.value.cancelOrderConfirm)
+  if (!confirmed) return
+  cancelOrderLoading.value = true
+  try {
+    const res = await apiClient(`/api/orders/${encodeURIComponent(orderId)}/cancel`, { method: "POST" })
+    if (res?.success === false) {
+      toast.error(res?.message || copy.value.cancelOrderFailed)
+      return
+    }
+    toast.success(res?.message || copy.value.cancelOrderSuccess)
+    activeOrder.value = null
+    paymentPreview.value = null
+    previewError.value = ""
+    activePaymentSession.value = null
+    paymentLoading.value = false
+    await loadBundlePurchaseState()
+    emit("cancelled")
+  } catch (error) {
+    console.error(error)
+    toast.error(copy.value.cancelOrderFailed)
+  } finally {
+    cancelOrderLoading.value = false
   }
 }
 
@@ -931,6 +962,10 @@ function initiatePayment() {
         </button>
         <button v-if="activeOrder && previewError" class="btn btn-outline" :disabled="actionLoading" @click="refreshEligibility">
           {{ copy.retryPreview }}
+        </button>
+        <button v-if="activeOrder && !activePaymentSession" class="btn btn-outline text-red-600 hover:border-red-200 hover:bg-red-50" :disabled="cancelOrderLoading || actionLoading || paymentLoading" @click="cancelActiveOrder">
+          <Loader2 v-if="cancelOrderLoading" class="h-4 w-4 animate-spin" />
+          {{ copy.cancelOrder }}
         </button>
         <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-primary" :disabled="paymentLoading" @click="initiatePayment">
           <Loader2 v-if="paymentLoading" class="h-4 w-4 animate-spin" />

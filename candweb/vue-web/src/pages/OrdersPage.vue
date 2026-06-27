@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
-import { ChevronRight, CreditCard, FileText, Loader2, Package, Receipt } from "lucide-vue-next"
+import { toast } from "vue-sonner"
+import { ChevronRight, CreditCard, FileText, Loader2, Package, Receipt, XCircle } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -28,6 +29,7 @@ type OrderItem = {
   rawStatus: string
   pipelineId: string
   paymentMethod: string
+  canCancel: boolean
 }
 
 const statusConfig = {
@@ -51,6 +53,7 @@ const selectedBizType = ref("")
 const selectedOrderStatus = ref("")
 const invoiceLoading = ref<string | null>(null)
 const paymentLoading = ref<string | null>(null)
+const cancelLoading = ref<string | null>(null)
 const orderPaymentDialogOpen = ref(false)
 const orderPaymentSession = ref<{
   orderId: string
@@ -121,6 +124,31 @@ function canContinuePayment(order: OrderItem) {
   const rawStatus = String(order.rawStatus || "").toUpperCase()
   if (order.status === "completed" || rawStatus.includes("COMPLETED")) return false
   return payableOrderStatuses.has(rawStatus)
+}
+
+function canCancelOrder(order: OrderItem) {
+  return Boolean(order.canCancel && order.id && !cancelLoading.value)
+}
+
+async function cancelOrder(order: OrderItem) {
+  if (!canCancelOrder(order)) return
+  const confirmed = window.confirm(t.value.orders.cancelOrderConfirm)
+  if (!confirmed) return
+  cancelLoading.value = order.id
+  try {
+    const res = await apiClient(`/api/orders/${encodeURIComponent(order.id)}/cancel`, { method: "POST" })
+    if (res?.success === false) {
+      toast.error(res?.message || t.value.orders.cancelOrderFailed)
+      return
+    }
+    toast.success(res?.message || t.value.orders.cancelOrderSuccess)
+    await fetchOrders(false)
+  } catch (error) {
+    console.error(error)
+    toast.error(t.value.orders.cancelOrderFailed)
+  } finally {
+    if (cancelLoading.value === order.id) cancelLoading.value = null
+  }
 }
 
 function continuePayment(order: OrderItem) {
@@ -236,6 +264,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
         rawStatus: o.raw_status,
         pipelineId: o.pipeline_id,
         paymentMethod: o.payment_method,
+        canCancel: Boolean(o.can_cancel),
       }))
     } else {
       orders.value = []
@@ -345,7 +374,7 @@ onMounted(() => {
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
           </div>
-          <div class="grid w-full grid-cols-[1fr_auto_auto_auto_auto] items-center gap-x-3 gap-y-3 pl-16 md:w-auto md:shrink-0 md:grid-cols-[96px_96px_36px_36px_20px] md:gap-x-5 md:pl-0">
+          <div class="grid w-full grid-cols-[1fr_auto_auto_auto_auto_auto] items-center gap-x-3 gap-y-3 pl-16 md:w-auto md:shrink-0 md:grid-cols-[96px_96px_36px_36px_36px_20px] md:gap-x-5 md:pl-0">
             <div class="flex justify-start md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.rawStatus) }}
@@ -356,6 +385,12 @@ onMounted(() => {
               <Loader2 v-if="paymentLoading === order.id" class="h-4 w-4 animate-spin" />
               <CreditCard v-else class="h-4 w-4" />
               <span class="sr-only">{{ lang === 'zh' ? '继续支付' : 'Continue payment' }}</span>
+            </button>
+            <span v-else class="h-9 w-9" />
+            <button v-if="canCancelOrder(order)" @click.stop="cancelOrder(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50" :title="t.orders.cancelOrder">
+              <Loader2 v-if="cancelLoading === order.id" class="h-4 w-4 animate-spin" />
+              <XCircle v-else class="h-4 w-4" />
+              <span class="sr-only">{{ t.orders.cancelOrder }}</span>
             </button>
             <span v-else class="h-9 w-9" />
             <button v-if="order.canViewInvoice" @click.stop="viewInvoice(order.invoiceOrderId)" class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary" title="View Invoice">
