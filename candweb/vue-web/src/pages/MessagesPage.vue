@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import { Bell, CheckCheck, ChevronRight, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, Trash2 } from "lucide-vue-next"
+import { Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, Trash2 } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
 import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
-type Message = { id: string; numericId: number; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean }
+type Message = { id: string; numericId: number; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean; isUnread: boolean }
 type MessageTypeKey = "system" | "announcement" | "score" | "payment" | "other"
+type MessageStatusFilter = "unread" | "read"
 
 const { t, lang } = useTranslation()
-const selectedType = ref<MessageTypeKey | null>(null)
+const selectedStatus = ref<MessageStatusFilter | null>(null)
 const detailModalOpen = ref(false)
 const selectedMessageDetail = ref<any>(null)
 const messageList = ref<Message[]>([])
@@ -22,13 +23,6 @@ const markAllLoading = ref(false)
 const messageActionLoadingId = ref<string | null>(null)
 const detailLoadingId = ref<string | null>(null)
 const totalUnreadCount = ref(0)
-const typeCounts = ref<Record<MessageTypeKey, number>>({
-  system: 0,
-  announcement: 0,
-  score: 0,
-  payment: 0,
-  other: 0,
-})
 
 const page = ref(1)
 const pageHistory = ref<number[]>([0])
@@ -43,8 +37,13 @@ const typeConfig = computed(() => ({
   other: { icon: FileText, iconBg: "bg-zinc-500/10", iconColor: "text-zinc-600", label: t.value.messagesPage.other },
 }))
 
-const unreadCount = computed(() => messageList.value.filter((m) => !m.isRead).length)
-const totalMessageCount = computed(() => Object.values(typeCounts.value).reduce((sum, count) => sum + count, 0))
+const statusTabs = computed(() => [
+  { value: null, label: t.value.messagesPage.all, icon: MessageSquare },
+  { value: "unread" as const, label: t.value.messagesPage.statusUnread, icon: Bell },
+  { value: "read" as const, label: t.value.messagesPage.statusRead, icon: Circle },
+])
+
+const unreadCount = computed(() => messageList.value.filter((m) => m.isUnread).length)
 
 function nextPage() {
   if (!hasMore.value || loading.value) return
@@ -70,9 +69,9 @@ function resetPagination() {
   hasMore.value = false
 }
 
-async function selectType(type: MessageTypeKey | null) {
-  if (selectedType.value === type && !loading.value) return
-  selectedType.value = type
+async function selectStatus(status: MessageStatusFilter | null) {
+  if (selectedStatus.value === status && !loading.value) return
+  selectedStatus.value = status
   resetPagination()
   await fetchMessages()
 }
@@ -93,10 +92,6 @@ function unreadCountText() {
   return t.value.messagesPage.unreadCount.replace("{{count}}", String(totalUnreadCount.value))
 }
 
-function tabCount(type: MessageTypeKey | null) {
-  return type === null ? totalMessageCount.value : typeCounts.value[type] || 0
-}
-
 function countBadgeClass(active: boolean) {
   return active
     ? "bg-primary text-primary-foreground"
@@ -113,6 +108,17 @@ function deleteMenuLabel() {
 
 function unreadLabel() {
   return t.value.messagesPage.unread
+}
+
+function messageStatusValue(status: unknown) {
+  if (typeof status === "number") return status
+  const normalized = String(status || "").toUpperCase()
+  if (normalized === "UNREAD" || normalized === "MESSAGE_STATUS_UNREAD") return 0
+  if (normalized === "READ" || normalized === "MESSAGE_STATUS_READ") return 1
+  if (normalized === "DELETED" || normalized === "MESSAGE_STATUS_DELETED") return 2
+  if (normalized === "REVOKED" || normalized === "MESSAGE_STATUS_REVOKED") return 3
+  const numeric = Number(status)
+  return Number.isFinite(numeric) ? numeric : -1
 }
 
 function splitBilingualText(value: string) {
@@ -241,7 +247,7 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
       limit: String(pageSize),
       lastId: String(currentLastId),
     })
-    if (selectedType.value) params.set("msg_type", selectedType.value)
+    if (selectedStatus.value) params.set("status", selectedStatus.value)
     const res = await apiClient(`/api/messages?${params.toString()}`, { suppressErrorToast })
     hasMore.value = !!res?.has_more
     if (res?.messages) {
@@ -269,6 +275,7 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
           title = m.title || title
         }
 
+        const statusValue = messageStatusValue(m.status)
         return {
           id: String(m.message_id || m.id),
           numericId: Number(m.id),
@@ -276,7 +283,8 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
           rawTitle: title,
           rawContent: content,
           time: formatBackendDate(m.created_at),
-          isRead: m.status === 1,
+          isRead: statusValue === 1,
+          isUnread: statusValue === 0,
         }
       })
     }
@@ -287,32 +295,15 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
   }
 }
 
-async function fetchTypeCounts(suppressErrorToast = true) {
-  try {
-    const payload = await apiClient("/api/messages/counts", { suppressErrorToast })
-    const counts = payload?.counts || {}
-    typeCounts.value = {
-      system: Number(counts.system || 0),
-      announcement: Number(counts.announcement || 0),
-      score: Number(counts.score || 0),
-      payment: Number(counts.payment || 0),
-      other: Number(counts.other || 0),
-    }
-  } catch {
-    // Counts are decorative; the message list should remain usable.
-  }
-}
-
 async function markAllAsRead() {
   if (markAllLoading.value) return
-  const unreadIds = messageList.value.filter((m) => !m.isRead).map((m) => m.id)
+  const unreadIds = messageList.value.filter((m) => m.isUnread).map((m) => m.id)
   if (unreadIds.length === 0) return
   markAllLoading.value = true
   try {
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: unreadIds }) })
-    messageList.value = messageList.value.map((m) => ({ ...m, isRead: true }))
+    messageList.value = messageList.value.map((m) => (m.isUnread ? { ...m, isRead: true, isUnread: false } : m))
     await syncUnreadCount()
-    await fetchTypeCounts()
     toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
     // apiClient handles toast.
@@ -326,9 +317,8 @@ async function markAsRead(id: string, showToast = true) {
   messageActionLoadingId.value = id
   try {
     await apiClient("/api/messages/read", { method: "PUT", body: JSON.stringify({ message_ids: [id] }) })
-    messageList.value = messageList.value.map((m) => (m.id === id ? { ...m, isRead: true } : m))
+    messageList.value = messageList.value.map((m) => (m.id === id ? { ...m, isRead: true, isUnread: false } : m))
     await syncUnreadCount()
-    await fetchTypeCounts()
     openMenuId.value = null
     if (showToast) toast.success(t.value.messagesPage.markReadSuccess)
   } catch {
@@ -345,7 +335,6 @@ async function deleteMessage(id: string) {
     await apiClient("/api/messages/delete", { method: "POST", body: JSON.stringify({ message_ids: [id] }) })
     messageList.value = messageList.value.filter((m) => m.id !== id)
     await syncUnreadCount()
-    await fetchTypeCounts()
     openMenuId.value = null
     toast.success(t.value.messagesPage.deleteSuccess)
   } catch {
@@ -359,7 +348,7 @@ async function handleViewDetail(message: Message) {
   if (detailLoadingId.value || messageActionLoadingId.value === message.id) return
   detailLoadingId.value = message.id
   try {
-    if (!message.isRead) await markAsRead(message.id, false)
+    if (message.isUnread) await markAsRead(message.id, false)
     const detail = await apiClient(`/api/messages/${message.id}`)
     const detailType = message.type
     selectedMessageDetail.value = {
@@ -381,7 +370,6 @@ const messagesPolling = usePolling(
   async () => {
     await fetchMessages(false, true)
     await syncUnreadCount()
-    await fetchTypeCounts()
   },
   { shouldPoll: () => !detailModalOpen.value && !markAllLoading.value && !messageActionLoadingId.value && !detailLoadingId.value },
 )
@@ -389,7 +377,6 @@ const messagesPolling = usePolling(
 onMounted(() => {
   void fetchMessages()
   void syncUnreadCount()
-  void fetchTypeCounts()
   messagesPolling.start()
 })
 </script>
@@ -421,23 +408,15 @@ onMounted(() => {
       <div class="bg-white px-5 pt-4 md:px-6">
         <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2]">
           <button
-            :class="['relative inline-flex cursor-pointer items-center whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', selectedType === null ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-            @click="selectType(null)"
+            v-for="tab in statusTabs"
+            :key="tab.value || 'all'"
+            :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', selectedStatus === tab.value ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            @click="selectStatus(tab.value)"
           >
-            {{ t.messagesPage.all }}
-            <span :class="['ml-2 rounded-full px-2 py-0.5 text-xs font-bold', countBadgeClass(selectedType === null)]">{{ tabCount(null) }}</span>
-            <span v-if="selectedType === null" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
-          </button>
-          <button
-            v-for="(config, type) in typeConfig"
-            :key="type"
-            :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', selectedType === type ? 'text-primary' : 'text-[#111827] hover:text-primary']"
-            @click="selectType(type)"
-          >
-            <component :is="config.icon" class="h-4 w-4" />
-            {{ config.label }}
-            <span :class="['rounded-full px-2 py-0.5 text-xs font-bold', countBadgeClass(selectedType === type)]">{{ tabCount(type) }}</span>
-            <span v-if="selectedType === type" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+            <component :is="tab.icon" class="h-4 w-4" />
+            {{ tab.label }}
+            <span v-if="tab.value === 'unread'" :class="['rounded-full px-2 py-0.5 text-xs font-bold', countBadgeClass(selectedStatus === tab.value)]">{{ totalUnreadCount }}</span>
+            <span v-if="selectedStatus === tab.value" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
           </button>
         </div>
       </div>
@@ -455,18 +434,18 @@ onMounted(() => {
         <div
           v-for="message in messageList"
           :key="message.id"
-          :class="['group relative flex cursor-pointer items-start gap-4 border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10', !message.isRead ? 'bg-primary/5' : '', detailLoadingId === message.id ? 'pointer-events-none opacity-75' : '']"
+          :class="['group relative flex cursor-pointer items-start gap-4 border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10', message.isUnread ? 'bg-primary/5' : '', detailLoadingId === message.id ? 'pointer-events-none opacity-75' : '']"
           @click="handleViewDetail(message)"
         >
-          <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', configFor(message.type).iconBg, !message.isRead && 'ring-2 ring-primary/25']">
+          <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', configFor(message.type).iconBg, message.isUnread && 'ring-2 ring-primary/25']">
             <component :is="configFor(message.type).icon" :class="['h-5 w-5', configFor(message.type).iconColor]" />
           </div>
           <div class="min-w-0 flex-1">
             <div class="mb-2 flex flex-wrap items-center gap-2">
-              <span v-if="!message.isRead" class="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow-sm shadow-primary/20">
+              <span v-if="message.isUnread" class="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow-sm shadow-primary/20">
                 {{ unreadLabel() }}
               </span>
-              <h3 :class="['line-clamp-2 text-base text-card-foreground', !message.isRead ? 'font-bold' : 'font-semibold']">{{ localizedMessageTitle(message.rawTitle, configFor(message.type).label) }}</h3>
+              <h3 :class="['line-clamp-2 text-base text-card-foreground', message.isUnread ? 'font-bold' : 'font-semibold']">{{ localizedMessageTitle(message.rawTitle, configFor(message.type).label) }}</h3>
               <span class="badge">{{ configFor(message.type).label }}</span>
             </div>
             <span class="text-xs text-muted-foreground">{{ message.time }}</span>
@@ -477,7 +456,7 @@ onMounted(() => {
                 <MoreHorizontal class="h-4 w-4" />
               </button>
               <div v-if="openMenuId === message.id" class="absolute right-0 top-9 z-50 min-w-36 overflow-hidden rounded-lg bg-white p-1 shadow-md" @click.stop>
-                <button v-if="!message.isRead" class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60" :disabled="messageActionLoadingId === message.id" @click="markAsRead(message.id)">
+                <button v-if="message.isUnread" class="flex w-full items-center rounded-lg px-2 py-1.5 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60" :disabled="messageActionLoadingId === message.id" @click="markAsRead(message.id)">
                   <Loader2 v-if="messageActionLoadingId === message.id" class="mr-2 h-4 w-4 animate-spin" />
                   <CheckCheck v-else class="mr-2 h-4 w-4" />
                   {{ markReadMenuLabel() }}

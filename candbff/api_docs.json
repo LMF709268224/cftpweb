@@ -704,7 +704,11 @@
       "auth_required": true,
       "request": {
         "params": [],
-        "query": [],
+        "query": [
+          { "name": "limit", "type": "int", "required": false, "description": "每页数量，默认 10，最大 50" },
+          { "name": "lastId", "type": "int", "required": false, "description": "上一页最后一条消息的自增 ID" },
+          { "name": "status", "type": "string", "required": false, "description": "消息状态筛选：all / unread / read / deleted / revoked，也支持 0-3" }
+        ],
         "body": null
       },
       "response": {
@@ -713,14 +717,16 @@
           "messages": {
             "type": "array",
             "items": {
-              "id": { "type": "string", "description": "消息ID" },
+              "id": { "type": "int", "description": "消息自增ID" },
+              "message_id": { "type": "string", "description": "消息ULID" },
               "title": { "type": "string", "description": "消息标题" },
-              "category": { "type": "string", "description": "分类: system_notify / announcement / promo" },
+              "msg_type": { "type": "int", "description": "消息类型，仅用于展示标签" },
+              "status": { "type": "int", "description": "消息状态：0 未读，1 已读，2 已删除，3 已撤回" },
               "content": { "type": "string", "description": "消息内容" },
-              "isRead": { "type": "bool", "description": "是否已读" },
-              "createdAt": { "type": "string", "description": "创建时间" }
+              "created_at": { "type": "string", "description": "创建时间" }
             }
-          }
+          },
+          "has_more": { "type": "bool", "description": "是否还有下一页" }
         },
         "note": "需要 gmail 新增 GetMessages gRPC 接口"
       }
