@@ -10,6 +10,8 @@ import (
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -29,6 +31,15 @@ var candidateOrderBizTypes = []string{
 	orderBizPipelineUnlock,
 	orderBizCredentialApply,
 	orderBizBundlePurchase,
+}
+
+type candidateCancelableOrder struct {
+	OrderID    string
+	BizType    string
+	BizRefUlid string
+	Status     string
+	Candidate  string
+	PayOrderID string
 }
 
 // ListOrders GET /api/orders
@@ -105,6 +116,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			name = orderProductName(item.GetBizType(), item.GetBizRefUlid())
 		}
 
+		payOrderID := h.payOrderIDForCandidateOrder(r.Context(), item.GetBizType(), item.GetBizRefUlid(), item.GetOrderUlid())
 		orderItem := OrderItem{
 			OrderID:              item.GetOrderUlid(),
 			ProductName:          name,
@@ -115,9 +127,9 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			CreatedAt:            formatOrderCreatedAt(item.GetCreatedAt()),
 			Amount:               amount,
 			Currency:             currency,
-			PayOrderUlid:         item.GetOrderUlid(),
-			PipelinePayOrderUlid: item.GetOrderUlid(),
-			CanViewInvoice:       statusStr == "completed" && strings.TrimSpace(item.GetOrderUlid()) != "",
+			PayOrderUlid:         payOrderID,
+			PipelinePayOrderUlid: payOrderID,
+			CanViewInvoice:       statusStr == "completed" && payOrderID != "",
 			CanCancel:            canCancelCandidateOrder(rawStatus),
 		}
 
@@ -154,26 +166,26 @@ func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	summaryResp, err := h.Mall.GetOrderSummary(r.Context(), &mallpb.GetOrderSummaryRequest{OrderUlid: orderID})
+	order, err := h.candidateCancelableOrder(r.Context(), orderID)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
-	summary := summaryResp.GetSummary()
-	if !summaryResp.GetFound() || summary == nil || summary.GetCandidateUlid() != candidateID {
+	if order == nil || order.Candidate != candidateID {
 		WriteError(w, http.StatusNotFound, ErrNotFound, "order not found or access denied")
 		return
 	}
-	if !isCandidateOrderBizType(summary.GetBizType()) {
+	if !isCandidateOrderBizType(order.BizType) {
 		WriteError(w, http.StatusForbidden, ErrForbidden, "unsupported order type")
 		return
 	}
-	if !canCancelCandidateOrder(summary.GetOrderStatus()) {
+	if !canCancelCandidateOrder(order.Status) {
 		WriteError(w, http.StatusConflict, ErrPrecondition, "order cannot be cancelled in current status")
 		return
 	}
+	payOrderID := cancelTargetOrderID(order)
 
-	resp, err := h.Gpay.CancelOrder(r.Context(), &gpaypb.CancelOrderRequest{OrderUlid: orderID})
+	resp, err := h.Gpay.CancelOrder(r.Context(), &gpaypb.CancelOrderRequest{OrderUlid: payOrderID})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -183,6 +195,229 @@ func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		Message: resp.GetMessage(),
 		OrderID: orderID,
 	})
+}
+
+func (h *Handler) candidateCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
+	summaryResp, err := h.Mall.GetOrderSummary(ctx, &mallpb.GetOrderSummaryRequest{OrderUlid: orderID})
+	if err == nil {
+		if summary := summaryResp.GetSummary(); summaryResp.GetFound() && summary != nil {
+			return &candidateCancelableOrder{
+				OrderID:    strings.TrimSpace(summary.GetOrderUlid()),
+				BizType:    normalizeOrderBizType(summary.GetBizType()),
+				BizRefUlid: strings.TrimSpace(summary.GetBizRefUlid()),
+				Status:     summary.GetOrderStatus(),
+				Candidate:  strings.TrimSpace(summary.GetCandidateUlid()),
+				PayOrderID: h.payOrderIDForCandidateOrder(ctx, summary.GetBizType(), summary.GetBizRefUlid(), summary.GetOrderUlid()),
+			}, nil
+		}
+	} else if status.Code(err) != codes.NotFound {
+		return nil, err
+	}
+
+	return h.candidateCancelableOrderByBizID(ctx, orderID)
+}
+
+func (h *Handler) candidateCancelableOrderByBizID(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
+	if order, err := h.bundleCancelableOrder(ctx, orderID); err != nil || order != nil {
+		return order, err
+	}
+	if order, err := h.pipelineUnlockCancelableOrder(ctx, orderID); err != nil || order != nil {
+		return order, err
+	}
+	if order, err := h.credentialApplicationCancelableOrder(ctx, orderID); err != nil || order != nil {
+		return order, err
+	}
+	if order, err := h.courseRetakeCancelableOrder(ctx, orderID); err != nil || order != nil {
+		return order, err
+	}
+	if order, err := h.stageCancelableOrder(ctx, orderID); err != nil || order != nil {
+		return order, err
+	}
+	return h.pipelineCancelableOrder(ctx, orderID)
+}
+
+func (h *Handler) bundleCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
+	resp, err := h.Mall.GetBundleOrderSummary(ctx, &mallpb.GetBundleOrderSummaryRequest{BundleOrderUlid: orderID})
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	summary := resp.GetSummary()
+	if !resp.GetFound() || summary == nil {
+		return nil, nil
+	}
+	return &candidateCancelableOrder{
+		OrderID:    strings.TrimSpace(summary.GetBundleOrderUlid()),
+		BizType:    orderBizBundlePurchase,
+		BizRefUlid: strings.TrimSpace(summary.GetBundleOrderUlid()),
+		Status:     summary.GetOrderStatus(),
+		Candidate:  strings.TrimSpace(summary.GetCandidateUlid()),
+		PayOrderID: strings.TrimSpace(summary.GetBundlePayOrderUlid()),
+	}, nil
+}
+
+func (h *Handler) pipelineUnlockCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
+	resp, err := h.Mall.GetPipelineUnlockOrderSummary(ctx, &mallpb.GetPipelineUnlockOrderSummaryRequest{PipelineUnlockOrderUlid: orderID})
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	summary := resp.GetSummary()
+	if !resp.GetFound() || summary == nil {
+		return nil, nil
+	}
+	return &candidateCancelableOrder{
+		OrderID:    strings.TrimSpace(summary.GetPipelineUnlockOrderUlid()),
+		BizType:    orderBizPipelineUnlock,
+		BizRefUlid: strings.TrimSpace(summary.GetPipelineUnlockOrderUlid()),
+		Status:     summary.GetOrderStatus(),
+		Candidate:  strings.TrimSpace(summary.GetCandidateUlid()),
+		PayOrderID: strings.TrimSpace(summary.GetPayOrderUlid()),
+	}, nil
+}
+
+func (h *Handler) credentialApplicationCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
+	resp, err := h.Mall.GetCredentialApplicationOrderSummary(ctx, &mallpb.GetCredentialApplicationOrderSummaryRequest{ApplicationOrderUlid: orderID})
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	summary := resp.GetSummary()
+	if !resp.GetFound() || summary == nil {
+		return nil, nil
+	}
+	return &candidateCancelableOrder{
+		OrderID:    strings.TrimSpace(summary.GetApplicationOrderUlid()),
+		BizType:    orderBizCredentialApply,
+		BizRefUlid: strings.TrimSpace(summary.GetApplicationOrderUlid()),
+		Status:     summary.GetOrderStatus(),
+		Candidate:  strings.TrimSpace(summary.GetCandidateUlid()),
+		PayOrderID: strings.TrimSpace(summary.GetPayOrderUlid()),
+	}, nil
+}
+
+func (h *Handler) courseRetakeCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
+	resp, err := h.Mall.GetCourseRetakeOrderSummary(ctx, &mallpb.GetCourseRetakeOrderSummaryRequest{CourseRetakeOrderUlid: orderID})
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	summary := resp.GetSummary()
+	if !resp.GetFound() || summary == nil {
+		return nil, nil
+	}
+	return &candidateCancelableOrder{
+		OrderID:    strings.TrimSpace(summary.GetCourseRetakeOrderUlid()),
+		BizType:    orderBizCourseRetakePayment,
+		BizRefUlid: strings.TrimSpace(summary.GetCourseRetakeOrderUlid()),
+		Status:     summary.GetOrderStatus(),
+		Candidate:  strings.TrimSpace(summary.GetCandidateUlid()),
+		PayOrderID: strings.TrimSpace(summary.GetPayOrderUlid()),
+	}, nil
+}
+
+func (h *Handler) stageCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
+	resp, err := h.Mall.GetStageOrderSummary(ctx, &mallpb.GetStageOrderSummaryRequest{StageOrderUlid: orderID})
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	summary := resp.GetSummary()
+	if !resp.GetFound() || summary == nil {
+		return nil, nil
+	}
+	return &candidateCancelableOrder{
+		OrderID:    strings.TrimSpace(summary.GetStageOrderUlid()),
+		BizType:    orderBizStagePayment,
+		BizRefUlid: strings.TrimSpace(summary.GetStageOrderUlid()),
+		Status:     summary.GetOrderStatus(),
+		Candidate:  strings.TrimSpace(summary.GetCandidateUlid()),
+		PayOrderID: strings.TrimSpace(summary.GetStagePayOrderUlid()),
+	}, nil
+}
+
+func (h *Handler) pipelineCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
+	resp, err := h.Mall.GetPipelineOrderSummary(ctx, &mallpb.GetPipelineOrderSummaryRequest{PipelineOrderUlid: orderID})
+	if err != nil {
+		if status.Code(err) == codes.NotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	summary := resp.GetSummary()
+	if !resp.GetFound() || summary == nil {
+		return nil, nil
+	}
+	payOrderID := ""
+	if bundleOrderID := strings.TrimSpace(summary.GetBundleOrderUlid()); bundleOrderID != "" {
+		payOrderID = h.payOrderIDForCandidateOrder(ctx, orderBizBundlePurchase, bundleOrderID, "")
+	}
+	return &candidateCancelableOrder{
+		OrderID:    strings.TrimSpace(summary.GetPipelineOrderUlid()),
+		BizType:    orderBizPipelinePayment,
+		BizRefUlid: strings.TrimSpace(summary.GetPipelineOrderUlid()),
+		Status:     summary.GetOrderStatus(),
+		Candidate:  strings.TrimSpace(summary.GetCandidateUlid()),
+		PayOrderID: payOrderID,
+	}, nil
+}
+
+func (h *Handler) payOrderIDForCandidateOrder(ctx context.Context, bizType, bizRefULID, fallback string) string {
+	bizRefULID = strings.TrimSpace(bizRefULID)
+	payOrderID := ""
+	switch normalizeOrderBizType(bizType) {
+	case orderBizBundlePurchase:
+		if resp, err := h.Mall.GetBundleOrderSummary(ctx, &mallpb.GetBundleOrderSummaryRequest{BundleOrderUlid: bizRefULID}); err == nil {
+			payOrderID = resp.GetSummary().GetBundlePayOrderUlid()
+		}
+	case orderBizPipelineUnlock:
+		if resp, err := h.Mall.GetPipelineUnlockOrderSummary(ctx, &mallpb.GetPipelineUnlockOrderSummaryRequest{PipelineUnlockOrderUlid: bizRefULID}); err == nil {
+			payOrderID = resp.GetSummary().GetPayOrderUlid()
+		}
+	case orderBizCredentialApply:
+		if resp, err := h.Mall.GetCredentialApplicationOrderSummary(ctx, &mallpb.GetCredentialApplicationOrderSummaryRequest{ApplicationOrderUlid: bizRefULID}); err == nil {
+			payOrderID = resp.GetSummary().GetPayOrderUlid()
+		}
+	case orderBizCourseRetakePayment:
+		if resp, err := h.Mall.GetCourseRetakeOrderSummary(ctx, &mallpb.GetCourseRetakeOrderSummaryRequest{CourseRetakeOrderUlid: bizRefULID}); err == nil {
+			payOrderID = resp.GetSummary().GetPayOrderUlid()
+		}
+	case orderBizStagePayment:
+		if resp, err := h.Mall.GetStageOrderSummary(ctx, &mallpb.GetStageOrderSummaryRequest{StageOrderUlid: bizRefULID}); err == nil {
+			payOrderID = resp.GetSummary().GetStagePayOrderUlid()
+		}
+	case orderBizPipelinePayment:
+		if resp, err := h.Mall.GetPipelineOrderSummary(ctx, &mallpb.GetPipelineOrderSummaryRequest{PipelineOrderUlid: bizRefULID}); err == nil {
+			if bundleOrderID := strings.TrimSpace(resp.GetSummary().GetBundleOrderUlid()); bundleOrderID != "" {
+				return h.payOrderIDForCandidateOrder(ctx, orderBizBundlePurchase, bundleOrderID, fallback)
+			}
+		}
+	}
+	return orderCancelTargetID(fallback, payOrderID)
+}
+
+func cancelTargetOrderID(order *candidateCancelableOrder) string {
+	if order == nil {
+		return ""
+	}
+	return orderCancelTargetID(order.OrderID, order.PayOrderID)
+}
+
+func orderCancelTargetID(orderID, payOrderID string) string {
+	if payOrderID = strings.TrimSpace(payOrderID); payOrderID != "" {
+		return payOrderID
+	}
+	return strings.TrimSpace(orderID)
 }
 
 func normalizeOrderBizType(raw string) string {
