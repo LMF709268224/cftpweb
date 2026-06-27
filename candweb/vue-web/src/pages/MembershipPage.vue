@@ -60,6 +60,27 @@ const currentMembershipName = computed(() => {
   return currentPlan.value?.name || currentRecord.value?.name || currentRecord.value?.membership_name || currentRecord.value?.membership_ulid || "-"
 })
 
+const isAutoRenewCancelled = computed(() => {
+  const record = currentRecord.value || {}
+  return Boolean(record.cancelled_at || record.canceled_at || record.cancel_requested_at || record.renewal_cancelled_at)
+})
+
+const canCancelMembership = computed(() => {
+  return Boolean(hasActiveMembership.value && currentRecord.value?.membership_record_ulid && currentRecord.value?.auto_renew && !isAutoRenewCancelled.value)
+})
+
+const autoRenewLabel = computed(() => {
+  if (isAutoRenewCancelled.value) return lang.value === "zh" ? "已取消续费" : "Auto-renew cancelled"
+  if (currentRecord.value?.auto_renew) return lang.value === "zh" ? "已开启" : "Enabled"
+  return "-"
+})
+
+const cancelMembershipButtonLabel = computed(() => {
+  if (isAutoRenewCancelled.value) return lang.value === "zh" ? "已取消续费" : "Auto-renew cancelled"
+  if (!currentRecord.value?.auto_renew) return lang.value === "zh" ? "未开启自动续费" : "Auto-renew disabled"
+  return lang.value === "zh" ? "取消续费" : "Cancel auto-renew"
+})
+
 function listFrom(data: any, keys: string[]) {
   for (const key of keys) {
     if (Array.isArray(data?.[key])) return data[key]
@@ -223,7 +244,7 @@ async function loadActiveMembershipFromHistory(membershipHistory: RecordData[]) 
 
 async function cancelMembership() {
   const recordUlid = currentRecord.value?.membership_record_ulid
-  if (!recordUlid) return
+  if (!recordUlid || !canCancelMembership.value) return
   const ok = window.confirm(lang.value === "zh" ? "确认取消续费吗？" : "Cancel current auto-renew?")
   if (!ok) return
   cancelling.value = true
@@ -313,7 +334,7 @@ onMounted(() => {
               </div>
               <div class="rounded-2xl bg-slate-50 p-4">
                 <div class="text-xs font-bold text-slate-500">{{ lang === "zh" ? "自动续费" : "Auto renew" }}</div>
-                <div class="mt-2 text-sm font-black text-slate-900">{{ currentRecord.auto_renew ? (lang === "zh" ? "已开启" : "Enabled") : "-" }}</div>
+                <div class="mt-2 text-sm font-black text-slate-900">{{ autoRenewLabel }}</div>
               </div>
             </div>
           </section>
@@ -358,13 +379,13 @@ onMounted(() => {
               <button
                 v-if="hasActiveMembership && currentRecord.membership_record_ulid"
                 class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                :disabled="cancelling"
+                :disabled="cancelling || !canCancelMembership"
                 type="button"
                 @click="cancelMembership"
               >
                 <Loader2 v-if="cancelling" class="h-4 w-4 animate-spin" />
                 <XCircle v-else class="h-4 w-4" />
-                {{ lang === "zh" ? "取消续费" : "Cancel auto-renew" }}
+                {{ cancelMembershipButtonLabel }}
               </button>
             </div>
           </section>
