@@ -84,6 +84,8 @@ type ExemptionOptions = {
   stages?: ExemptionStage[]
 }
 
+const PENDING_CREDENTIAL_QUAL_IDS_KEY = "pending_credential_qual_ulids"
+
 const props = defineProps<{
   open: boolean
   courseName: string
@@ -118,6 +120,7 @@ const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const previewedExemptionSignature = ref("")
 const resolvedBundleId = ref(props.bundleId || "")
 const activePaymentSession = ref<{
+  paymentKey?: string
   bizType: string
   bizRefUlid: string
   orderId: string
@@ -354,22 +357,8 @@ function applicationLoadingKey(unit: ExemptionUnit, qual: ExemptionQual) {
   return `${unit.unit_id || "unit"}:${qual.qual_id || "qual"}`
 }
 
-function collectMissingQualificationIds(clickedQualId: string) {
-  const ids = new Set<string>()
-  if (clickedQualId) ids.add(clickedQualId)
-  for (const stage of exemptionStages.value) {
-    for (const unit of stage.units || []) {
-      if (unit.qualified) continue
-      for (const qual of unit.exemption_quals || []) {
-        if (!qual.eligible && qual.qual_id) ids.add(qual.qual_id)
-      }
-    }
-  }
-  return Array.from(ids)
-}
-
 function credentialUploadPath(qualIds: string[]) {
-  const ids = qualIds.map((id) => String(id || "").trim()).filter(Boolean)
+  const ids = mergeCredentialQualIds(readPendingCredentialQualIds(), qualIds)
   const params = new URLSearchParams()
   if (ids.length > 0) params.set("qual_ulids", ids.join(","))
   return `/credentials${params.toString() ? `?${params.toString()}` : ""}`
@@ -377,6 +366,38 @@ function credentialUploadPath(qualIds: string[]) {
 
 function goToCredentialUpload(qualIds: string[]) {
   window.location.assign(credentialUploadPath(qualIds))
+}
+
+function mergeCredentialQualIds(...groups: string[][]) {
+  const ids: string[] = []
+  const seen = new Set<string>()
+  for (const group of groups) {
+    for (const id of group) {
+      const value = String(id || "").trim()
+      if (!value || seen.has(value)) continue
+      seen.add(value)
+      ids.push(value)
+    }
+  }
+  return ids
+}
+
+function readPendingCredentialQualIds() {
+  try {
+    const value = localStorage.getItem(PENDING_CREDENTIAL_QUAL_IDS_KEY)
+    if (!value) return []
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed)) return mergeCredentialQualIds(parsed.map((item) => String(item || "")))
+  } catch {
+    // Ignore invalid legacy values and start a fresh pending list.
+  }
+  return []
+}
+
+function rememberPendingCredentialQualIds(qualIds: string[]) {
+  const ids = mergeCredentialQualIds(readPendingCredentialQualIds(), qualIds)
+  localStorage.setItem(PENDING_CREDENTIAL_QUAL_IDS_KEY, JSON.stringify(ids))
+  return ids
 }
 
 function resetExemptionSelection() {
@@ -545,8 +566,19 @@ async function createUnlockOrder() {
     }
     if (orderId && (paymentKey || order.pay_order_ulid || normalizedStatus(orderStatus).includes("PAYMENT"))) {
       paymentPreview.value = null
-      await refreshEligibility()
-      if (!paymentPreview.value) previewError.value = copy.value.pricePreviewFailed || t.value.common.error
+      previewError.value = ""
+      activePaymentSession.value = {
+        paymentKey,
+        bizType: "PIPELINE_UNLOCK",
+        bizRefUlid: orderId,
+        orderId,
+        source: "unlock",
+        returnPath: "/certifications",
+        extraReturnParams: {
+          pipeline_id: props.pipelineId,
+          bundle_id: resolvedBundleId.value,
+        },
+      }
     } else {
       toast.info(copy.value.refreshEligibility)
     }
@@ -581,7 +613,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
       }
     }
 
-    const qualIds = collectMissingQualificationIds(qualId)
+    const qualIds = [qualId]
     const order = await apiClient("/api/credentials/application-orders", {
       method: "POST",
       body: JSON.stringify({
@@ -592,6 +624,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     })
     const orderId = String(order?.application_order_ulid || "").trim()
     const orderStatus = String(order?.order_status || "")
+    rememberPendingCredentialQualIds(qualIds)
     credentialApplicationOrder.value = {
       applicationOrderUlid: orderId,
       orderStatus,
@@ -831,6 +864,7 @@ async function initiatePayment() {
             <strong>测试提示：</strong> 当前为测试环境，请使用测试卡号 <code>4242 4242 4242 4242</code>，有效期和CVV随意。
           </div>
           <PaymentSessionPanel
+            :payment-key="activePaymentSession.paymentKey"
             :biz-type="activePaymentSession.bizType"
             :biz-ref-ulid="activePaymentSession.bizRefUlid"
             :order-id="activePaymentSession.orderId"

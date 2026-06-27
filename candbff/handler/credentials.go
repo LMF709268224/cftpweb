@@ -147,8 +147,7 @@ func (h *Handler) CreateCredentialApplicationOrder(w http.ResponseWriter, r *htt
 		HandleGrpcError(w, err)
 		return
 	}
-	res.PaymentKey = formatPaymentKey(res.GetPaymentKey())
-	WriteJSON(w, http.StatusCreated, res)
+	WriteJSON(w, http.StatusCreated, credentialApplicationOrderPayload(res))
 }
 
 // ListCandidateApplications GET /api/credentials/applications
@@ -172,7 +171,50 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, res)
+	applications := make([]map[string]interface{}, 0, len(res.GetApplications()))
+	for _, app := range res.GetApplications() {
+		if app == nil {
+			continue
+		}
+		applications = append(applications, credentialApplicationPayload(app))
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"applications": applications,
+		"total":        res.GetTotal(),
+		"page":         page,
+		"page_size":    pageSize,
+	})
+}
+
+func credentialApplicationOrderPayload(res *mallpb.CreateCredentialApplicationOrderResponse) map[string]interface{} {
+	if res == nil {
+		return map[string]interface{}{}
+	}
+	return map[string]interface{}{
+		"application_order_ulid": res.GetApplicationOrderUlid(),
+		"order_status":           res.GetOrderStatus(),
+		"pay_order_ulid":         res.GetPayOrderUlid(),
+		"payment_key":            formatPaymentKey(res.GetPaymentKey()),
+		"reused_existing":        res.GetReusedExisting(),
+		"message":                res.GetMessage(),
+	}
+}
+
+func credentialApplicationPayload(app *gcredspb.ApplicationSummary) map[string]interface{} {
+	return map[string]interface{}{
+		"app_ulid":       app.GetAppUlid(),
+		"app_id":         app.GetAppUlid(),
+		"candidate_ulid": app.GetCandidateUlid(),
+		"cred_def_ulid":  app.GetCredDefUlid(),
+		"cred_def_id":    app.GetCredDefUlid(),
+		"status":         app.GetStatus(),
+		"auditor_ulid":   app.GetAuditorUlid(),
+		"audit_remark":   app.GetAuditRemark(),
+		"audit_at":       app.GetAuditAt(),
+		"created_at":     app.GetCreatedAt(),
+		"update_count":   app.GetUpdateCount(),
+	}
 }
 
 // CheckUploadPermission GET /api/credentials/upload-permission
