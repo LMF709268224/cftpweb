@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue"
 import { toast } from "vue-sonner"
-import { AlertCircle, Building2, CheckCircle2, CreditCard, Lock, Loader2, ShoppingCart } from "lucide-vue-next"
+import { AlertCircle, Building2, Check, CreditCard, Lock, Loader2, ShoppingCart } from "lucide-vue-next"
 import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -788,12 +788,12 @@ function initiatePayment() {
         </div>
 
         <div v-if="canPurchase && !activeOrder && (exemptionError || hasExemptionOptions)" class="rounded-lg border border-border bg-muted/20 p-4">
-          <div class="mb-3 flex items-start justify-between gap-3">
-            <div>
+          <div class="mb-3 grid grid-cols-1 items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+            <div class="max-w-[390px] min-w-0">
               <div class="text-sm font-semibold text-foreground">{{ copy.exemptionsTitle }}</div>
               <p class="mt-1 text-xs leading-5 text-muted-foreground">{{ copy.exemptionsDesc }}</p>
             </div>
-            <span v-if="selectedExemptionCount > 0" class="badge border-emerald-200 bg-emerald-50 text-xs text-emerald-700">
+            <span v-if="selectedExemptionCount > 0" class="badge shrink-0 whitespace-nowrap border-emerald-200 bg-emerald-50 px-3 text-xs text-emerald-700">
               {{ selectedExemptionCount }} {{ copy.selectedExemptions }}
             </span>
           </div>
@@ -813,17 +813,35 @@ function initiatePayment() {
                   v-for="unit in stage.units"
                   :key="unit.unit_id"
                   :class="[
-                    'flex gap-3 rounded-lg border p-3 transition-colors',
-                    unit.qualified ? 'cursor-pointer border-emerald-200 bg-emerald-50/40 hover:border-emerald-300' : 'border-border bg-muted/30 opacity-75',
+                    'group flex gap-3 rounded-xl border p-3.5 transition-all duration-200',
+                    selectedExemptionUnitIds[unit.unit_id]
+                      ? 'border-emerald-300 bg-emerald-50/70 shadow-sm ring-1 ring-emerald-100'
+                      : unit.qualified
+                        ? 'cursor-pointer border-border bg-background hover:border-primary/30 hover:bg-primary/5'
+                        : 'border-border bg-muted/30 opacity-75',
                   ]"
                 >
                   <input
                     type="checkbox"
-                    class="mt-1 h-4 w-4 rounded border-border text-primary"
+                    class="sr-only"
                     :checked="Boolean(selectedExemptionUnitIds[unit.unit_id])"
                     :disabled="!unit.qualified"
                     @change="onExemptionToggle(unit, $event)"
                   />
+                  <span
+                    :class="[
+                      'mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-200',
+                      selectedExemptionUnitIds[unit.unit_id]
+                        ? 'border-emerald-500 bg-emerald-500 text-white shadow-sm shadow-emerald-200'
+                        : unit.qualified
+                          ? 'border-slate-300 bg-white text-transparent group-hover:border-primary/50'
+                          : 'border-slate-200 bg-muted text-transparent',
+                    ]"
+                    aria-hidden="true"
+                  >
+                    <Check v-if="selectedExemptionUnitIds[unit.unit_id]" class="h-[18px] w-[18px] stroke-[3]" />
+                    <span v-else class="h-2 w-2 rounded-full bg-current opacity-0" />
+                  </span>
                   <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-2">
                       <span class="text-sm font-semibold text-foreground">{{ unit.unit_name || unit.unit_id }}</span>
