@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -172,11 +173,18 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 	}
 
 	applications := make([]map[string]interface{}, 0, len(res.GetApplications()))
+	definitionNameCache := map[string]map[string]interface{}{}
 	for _, app := range res.GetApplications() {
 		if app == nil {
 			continue
 		}
-		applications = append(applications, credentialApplicationPayload(app))
+		payload := credentialApplicationPayload(app)
+		if def := h.credentialDefinitionSummary(r.Context(), app.GetCredDefUlid(), definitionNameCache); def != nil {
+			for key, value := range def {
+				payload[key] = value
+			}
+		}
+		applications = append(applications, payload)
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
@@ -185,6 +193,30 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 		"page":         page,
 		"page_size":    pageSize,
 	})
+}
+
+func (h *Handler) credentialDefinitionSummary(ctx context.Context, credDefULID string, cache map[string]map[string]interface{}) map[string]interface{} {
+	credDefULID = strings.TrimSpace(credDefULID)
+	if credDefULID == "" {
+		return nil
+	}
+	if cached, ok := cache[credDefULID]; ok {
+		return cached
+	}
+	def, err := h.Creds.GetCredentialDefinitionDetail(ctx, &gcredspb.GetCredentialDefinitionDetailRequest{
+		CredDefUlid: credDefULID,
+	})
+	if err != nil || def == nil {
+		cache[credDefULID] = nil
+		return nil
+	}
+	summary := map[string]interface{}{
+		"credential_name":        def.GetName(),
+		"credential_description": def.GetDescription(),
+		"credential_category":    def.GetCategory(),
+	}
+	cache[credDefULID] = summary
+	return summary
 }
 
 func credentialApplicationOrderPayload(res *mallpb.CreateCredentialApplicationOrderResponse) map[string]interface{} {

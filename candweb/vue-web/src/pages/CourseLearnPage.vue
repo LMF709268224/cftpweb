@@ -1877,8 +1877,8 @@ watch(selectedMaterial, () => {
               <h3 class="mb-5 text-lg font-semibold text-foreground">{{ t.learning.certificateDetailsTitle }}</h3>
               <div class="grid gap-5 sm:grid-cols-2">
                 <div>
-                  <p class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.certificatesPage.certificateId }}</p>
-                  <p class="break-all font-mono text-sm text-foreground">{{ courseCertificateSummary.credentialId }}</p>
+                  <p class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.certificatesPage.title }}</p>
+                  <p class="text-sm text-foreground">{{ courseCertificateSummary.name || t.learning.certificateDetailsTitle }}</p>
                 </div>
                 <div>
                   <p class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
@@ -1910,8 +1910,7 @@ watch(selectedMaterial, () => {
             </div>
             <div class="mt-4 grid gap-2 sm:grid-cols-2">
               <div v-for="qual in finalQualifications" :key="qual.qualId" class="rounded-lg border border-blue-100 bg-white px-4 py-3">
-                <div class="text-sm font-semibold text-foreground">{{ qual.name || qual.qualId }}</div>
-                <div class="mt-1 break-all font-mono text-xs text-muted-foreground">{{ qual.qualId }}</div>
+                <div class="text-sm font-semibold text-foreground">{{ qual.name || (t.credentialsPage?.availableQualifications ?? t.learning.finalQualificationTitle) }}</div>
               </div>
             </div>
           </div>
