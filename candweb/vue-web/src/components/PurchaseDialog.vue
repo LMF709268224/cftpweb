@@ -1032,7 +1032,7 @@ function initiatePayment() {
         <button v-if="activeOrder && previewError" class="btn btn-outline" :disabled="actionLoading" @click="refreshEligibility">
           {{ copy.retryPreview }}
         </button>
-        <button v-if="canCancelActiveOrder" class="btn btn-outline text-red-600 hover:border-red-200 hover:bg-red-50" :disabled="cancelOrderLoading || actionLoading || paymentLoading" @click="cancelActiveOrder">
+        <button v-if="canCancelActiveOrder" class="btn border-red-600 bg-red-600 text-white shadow-sm shadow-red-100 hover:border-red-700 hover:bg-red-700 disabled:border-red-300 disabled:bg-red-300 disabled:text-white" :disabled="cancelOrderLoading || actionLoading || paymentLoading" @click="cancelActiveOrder">
           <Loader2 v-if="cancelOrderLoading" class="h-4 w-4 animate-spin" />
           {{ copy.cancelOrder }}
         </button>
