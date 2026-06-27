@@ -104,6 +104,7 @@ const emit = defineEmits<{ "update:open": [value: boolean] }>()
 const { t } = useTranslation()
 const paymentMethod = ref<PaymentMethod>("stripe")
 const eligibilityLoading = ref(false)
+const dialogStateLoading = ref(false)
 const actionLoading = ref(false)
 const paymentLoading = ref(false)
 const credentialApplicationLoadingKey = ref("")
@@ -160,6 +161,10 @@ function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveO
     payOrderId: order?.pay_order_id || order?.payOrderId,
     message: order?.message || copy.value.inProgressPurchaseDesc,
   }
+}
+
+function hasInitialPurchaseState() {
+  return Boolean(props.initialEligibility || props.initialActiveOrder || props.initialPaymentPreview || props.initialExemptionOptions)
 }
 
 function hydrateFromInitialState() {
@@ -219,15 +224,20 @@ async function resolveBundleFromCatalog() {
 }
 
 async function loadFreshDialogState() {
+  dialogStateLoading.value = !eligibility.value && !activeOrder.value && !paymentPreview.value
   if (!resolvedBundleId.value) {
     await resolveBundleFromCatalog()
   }
-  if (await loadBundlePurchaseState()) return
-  if (props.initialEligibility || props.initialActiveOrder || props.initialPaymentPreview || props.initialExemptionOptions) {
-    hydrateFromInitialState()
-    return
+  try {
+    if (await loadBundlePurchaseState()) return
+    if (hasInitialPurchaseState()) {
+      hydrateFromInitialState()
+      return
+    }
+    await loadLegacyDialogState()
+  } finally {
+    dialogStateLoading.value = false
   }
-  await loadLegacyDialogState()
 }
 
 async function loadLegacyDialogState() {
@@ -246,6 +256,9 @@ async function loadLegacyDialogState() {
 watch(() => props.open, async (open) => {
   if (open) {
     resolvedBundleId.value = props.bundleId || ""
+    if (hasInitialPurchaseState()) {
+      hydrateFromInitialState()
+    }
     await loadFreshDialogState()
   } else {
     activePaymentSession.value = null
@@ -662,7 +675,7 @@ async function initiatePayment() {
       <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
 
 
-        <div v-if="eligibilityLoading && !eligibility" class="rounded-lg border border-border bg-muted/30 p-4">
+        <div v-if="dialogStateLoading || (eligibilityLoading && !eligibility)" class="rounded-lg border border-border bg-muted/30 p-4">
           <div class="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 class="h-4 w-4 animate-spin" />
             {{ copy.checking }}
