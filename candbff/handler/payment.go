@@ -76,7 +76,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		statusStr := candidateOrderStatus(item.GetOrderStatus())
+		rawStatus := candidateOrderRawStatus(item.GetOrderStatus())
+		statusStr := candidateOrderStatus(rawStatus)
 		amount := float64(item.GetAmountMinor()) / 100.0
 		currency := item.GetCurrencyCode()
 
@@ -110,7 +111,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			BizType:              item.GetBizType(),
 			BizRefUlid:           item.GetBizRefUlid(),
 			Status:               statusStr,
-			RawStatus:            strings.ToUpper(strings.TrimSpace(item.GetOrderStatus())),
+			RawStatus:            rawStatus,
 			CreatedAt:            formatOrderCreatedAt(item.GetCreatedAt()),
 			Amount:               amount,
 			Currency:             currency,
@@ -166,7 +167,7 @@ func isCandidateOrderBizType(bizType string) bool {
 }
 
 func candidateOrderStatus(raw string) string {
-	orderStatus := strings.ToUpper(strings.TrimSpace(raw))
+	orderStatus := candidateOrderRawStatus(raw)
 	switch orderStatus {
 	case "COMPLETED", "SUCCESS", "PAID":
 		return "completed"
@@ -176,6 +177,27 @@ func candidateOrderStatus(raw string) string {
 		return "pending"
 	default:
 		return "processing"
+	}
+}
+
+func candidateOrderRawStatus(raw string) string {
+	orderStatus := strings.ToUpper(strings.TrimSpace(raw))
+	orderStatus = strings.NewReplacer("-", "_", " ", "_").Replace(orderStatus)
+	switch orderStatus {
+	case "0", "UNSPECIFIED", "ORDER_STATUS_UNSPECIFIED":
+		return "PENDING"
+	case "1", "ORDER_STATUS_PENDING_CREATE":
+		return "PENDING_CREATE"
+	case "2", "PENDING", "WAIT_PAY", "UNPAID", "ORDER_STATUS_PENDING_PAYMENT":
+		return "PENDING_PAYMENT"
+	case "3", "SUCCESS", "ORDER_STATUS_COMPLETED":
+		return "COMPLETED"
+	case "4", "CANCEL", "CANCELED", "ORDER_STATUS_CANCELLED", "ORDER_STATUS_CANCELED":
+		return "CANCELLED"
+	case "5", "ORDER_STATUS_FAILED":
+		return "FAILED"
+	default:
+		return orderStatus
 	}
 }
 

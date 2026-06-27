@@ -240,6 +240,7 @@ export const MALL_ORDER_STATUS_LABELS: StatusLabelMap = {
   "COMPLETED": "orders.statusCompleted",
   "FAILED": "orders.statusFailed",
   "CANCELLED": "orders.statusCancelled",
+  "PENDING": "orders.statusPending",
   "PENDING_CREATE": "orders.statusPendingCreate",
   "PENDING_PAYMENT": "orders.statusPendingPayment",
 }
@@ -261,6 +262,7 @@ export const MALL_ORDER_STATUS_ENUM_NAMES: StatusEnumNameMap = {
   "COMPLETED": "COMPLETED",
   "FAILED": "FAILED",
   "CANCELLED": "CANCELLED",
+  "PENDING": "PENDING",
   "PENDING_CREATE": "PENDING",
   "PENDING_PAYMENT": "PENDING",
 }
