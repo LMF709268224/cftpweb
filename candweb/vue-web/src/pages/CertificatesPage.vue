@@ -246,9 +246,7 @@ onMounted(async () => {
 
             <div class="mt-6 rounded-[18px] bg-[#f7fbfc] px-4 py-4 shadow-inner shadow-primary/5">
               <p class="text-xs uppercase tracking-[0.22em] text-primary/70">{{ featuredCertificate.name }}</p>
-              <p class="mt-2 text-sm text-muted-foreground">
-                {{ t.certificatesPage.certificateId }}: <span class="font-mono text-card-foreground">{{ featuredCertificate.credentialId }}</span>
-              </p>
+              <p class="mt-2 text-sm text-muted-foreground">{{ featuredCertificate.issueDate }} · {{ featuredCertificate.expiryDate }}</p>
             </div>
 
             <div class="mt-6 grid gap-3 sm:grid-cols-2">
@@ -337,11 +335,6 @@ onMounted(async () => {
               <p class="mb-1 text-xs text-muted-foreground">{{ t.certificatesPage.expiryDate }}</p>
               <p class="flex items-center gap-1.5 font-medium text-card-foreground"><Calendar class="h-4 w-4 text-muted-foreground" /> {{ cert.expiryDate }}</p>
             </div>
-          </div>
-          <div class="mb-4 flex items-center gap-2 px-1 text-sm text-muted-foreground">
-            <span class="text-base leading-none text-muted-foreground">#</span>
-            <span>{{ t.certificatesPage.certificateId }}</span>
-            <span class="font-mono text-xs font-semibold text-card-foreground">{{ cert.credentialId }}</span>
           </div>
           <div class="flex gap-3">
             <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20 transition-all duration-300 group-hover:shadow-primary/30" :disabled="!cert.pdfUrl" @click="openCertificate(cert.pdfUrl)">

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -12,46 +13,243 @@ import (
 	gmsgpb "github.com/afnandelfin620-star/cftptest/cftp/gmsg"
 )
 
+const (
+	defaultMessageListLimit = 10
+	maxMessageListLimit     = 50
+	messageScanBatchSize    = 100
+	maxMessageScanRows      = 2000
+)
+
 func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 
-	limit := parsePositiveIntQuery(r, "limit", 10)
+	limit := parsePositiveIntQuery(r, "limit", defaultMessageListLimit)
+	if limit > maxMessageListLimit {
+		limit = maxMessageListLimit
+	}
 	lastID := uint64(parseNonNegativeIntQuery(r, "lastId", 0))
+	msgTypeParam := firstNonEmpty(r.URL.Query().Get("msg_type"), r.URL.Query().Get("type"))
+	msgType, hasMsgType, ok := parseCandidateMessageType(msgTypeParam)
+	if !ok {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "unsupported msg_type")
+		return
+	}
 
-	rsp, err := h.Gmsg.ListMessages(r.Context(), &gmsgpb.ListMessagesRequest{
-		UserUlid: candidateID,
-		Limit:    uint32(limit),
-		LastId:   lastID,
-	})
+	var messages []MessageItem
+	var hasMore bool
+	var err error
+	if hasMsgType {
+		messages, hasMore, err = h.listMessagesByType(r.Context(), candidateID, msgType, limit, lastID)
+	} else {
+		messages, hasMore, err = h.listMessagesPage(r.Context(), candidateID, limit, lastID)
+	}
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
-	out := MessageListRsp{
-		Messages: make([]MessageItem, 0, len(rsp.GetMessages())),
-		HasMore:  rsp.GetHasMore(),
-	}
-	for _, msg := range rsp.GetMessages() {
-		title, content := h.renderMessageSummary(r.Context(), msg)
-		out.Messages = append(out.Messages, MessageItem{
-			Id:              msg.GetId(),
-			MessageId:       msg.GetMessageUlid(),
-			UserUlid:        msg.GetUserUlid(),
-			TemplateId:      msg.GetTemplatePath(),
-			Payload:         msg.GetPayload(),
-			TemplatePayload: msg.GetPayload(),
-			Title:           title,
-			Content:         content,
-			MsgType:         msg.GetMsgType(),
-			MsgSource:       msg.GetMsgSource(),
-			SenderId:        msg.GetSenderUlid(),
-			Status:          msg.GetStatus(),
-			CreatedAt:       msg.GetCreatedAt(),
-		})
+	WriteJSON(w, http.StatusOK, MessageListRsp{
+		Messages: messages,
+		HasMore:  hasMore,
+	})
+}
+
+func (h *Handler) listMessagesPage(ctx context.Context, candidateID string, limit int, lastID uint64) ([]MessageItem, bool, error) {
+	rsp, err := h.Gmsg.ListMessages(ctx, &gmsgpb.ListMessagesRequest{
+		UserUlid: candidateID,
+		Limit:    uint32(limit),
+		LastId:   lastID,
+	})
+	if err != nil {
+		return nil, false, err
 	}
 
-	WriteJSON(w, http.StatusOK, out)
+	messages := make([]MessageItem, 0, len(rsp.GetMessages()))
+	for _, msg := range rsp.GetMessages() {
+		messages = append(messages, h.messageItem(ctx, msg))
+	}
+	return messages, rsp.GetHasMore(), nil
+}
+
+func (h *Handler) listMessagesByType(ctx context.Context, candidateID string, msgType gmsgpb.MsgType, limit int, lastID uint64) ([]MessageItem, bool, error) {
+	messages := make([]MessageItem, 0, limit)
+	cursor := lastID
+	scanned := 0
+	for scanned < maxMessageScanRows {
+		rsp, err := h.Gmsg.ListMessages(ctx, &gmsgpb.ListMessagesRequest{
+			UserUlid: candidateID,
+			Limit:    messageScanBatchSize,
+			LastId:   cursor,
+		})
+		if err != nil {
+			return nil, false, err
+		}
+		items := rsp.GetMessages()
+		if len(items) == 0 {
+			return messages, false, nil
+		}
+		scanned += len(items)
+		for _, msg := range items {
+			cursor = msg.GetId()
+			if msg.GetMsgType() != msgType {
+				continue
+			}
+			messages = append(messages, h.messageItem(ctx, msg))
+			if len(messages) >= limit {
+				return messages, rsp.GetHasMore() || h.hasMoreMessagesOfType(ctx, candidateID, msgType, cursor), nil
+			}
+		}
+		if !rsp.GetHasMore() {
+			return messages, false, nil
+		}
+	}
+	return messages, true, nil
+}
+
+func (h *Handler) hasMoreMessagesOfType(ctx context.Context, candidateID string, msgType gmsgpb.MsgType, lastID uint64) bool {
+	cursor := lastID
+	scanned := 0
+	for scanned < maxMessageScanRows {
+		rsp, err := h.Gmsg.ListMessages(ctx, &gmsgpb.ListMessagesRequest{
+			UserUlid: candidateID,
+			Limit:    messageScanBatchSize,
+			LastId:   cursor,
+		})
+		if err != nil {
+			return false
+		}
+		items := rsp.GetMessages()
+		if len(items) == 0 {
+			return false
+		}
+		scanned += len(items)
+		for _, msg := range items {
+			cursor = msg.GetId()
+			if msg.GetMsgType() == msgType {
+				return true
+			}
+		}
+		if !rsp.GetHasMore() {
+			return false
+		}
+	}
+	return true
+}
+
+func (h *Handler) messageItem(ctx context.Context, msg *gmsgpb.MessageItem) MessageItem {
+	title, content := h.renderMessageSummary(ctx, msg)
+	return MessageItem{
+		Id:              msg.GetId(),
+		MessageId:       msg.GetMessageUlid(),
+		UserUlid:        msg.GetUserUlid(),
+		TemplateId:      msg.GetTemplatePath(),
+		Payload:         msg.GetPayload(),
+		TemplatePayload: msg.GetPayload(),
+		Title:           title,
+		Content:         content,
+		MsgType:         msg.GetMsgType(),
+		MsgSource:       msg.GetMsgSource(),
+		SenderId:        msg.GetSenderUlid(),
+		Status:          msg.GetStatus(),
+		CreatedAt:       msg.GetCreatedAt(),
+	}
+}
+
+func (h *Handler) GetMessageTypeCounts(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	counts, err := h.messageTypeCounts(r.Context(), candidateID)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	total := uint32(0)
+	for _, count := range counts {
+		total += count
+	}
+	WriteJSON(w, http.StatusOK, MessageTypeCountsRsp{
+		Total:  total,
+		Counts: counts,
+	})
+}
+
+func (h *Handler) messageTypeCounts(ctx context.Context, candidateID string) (map[string]uint32, error) {
+	counts := map[string]uint32{
+		"system":       0,
+		"announcement": 0,
+		"score":        0,
+		"payment":      0,
+		"other":        0,
+	}
+	cursor := uint64(0)
+	scanned := 0
+	for scanned < maxMessageScanRows {
+		rsp, err := h.Gmsg.ListMessages(ctx, &gmsgpb.ListMessagesRequest{
+			UserUlid: candidateID,
+			Limit:    messageScanBatchSize,
+			LastId:   cursor,
+		})
+		if err != nil {
+			return counts, err
+		}
+		items := rsp.GetMessages()
+		if len(items) == 0 {
+			return counts, nil
+		}
+		scanned += len(items)
+		for _, msg := range items {
+			cursor = msg.GetId()
+			counts[candidateMessageTypeKey(msg.GetMsgType())]++
+		}
+		if !rsp.GetHasMore() {
+			return counts, nil
+		}
+	}
+	return counts, nil
+}
+
+func parseCandidateMessageType(raw string) (gmsgpb.MsgType, bool, bool) {
+	value := strings.TrimSpace(raw)
+	if value == "" || strings.EqualFold(value, "all") {
+		return gmsgpb.MsgType_UNKNOWN_TYPE, false, true
+	}
+	normalized := strings.ToUpper(strings.ReplaceAll(strings.ReplaceAll(value, "-", "_"), " ", "_"))
+	switch normalized {
+	case "SYSTEM", "SYSTEM_NOTICE", "1":
+		return gmsgpb.MsgType_SYSTEM_NOTICE, true, true
+	case "ANNOUNCEMENT", "NOTICE", "EXAM", "EXAM_REMIND", "2":
+		return gmsgpb.MsgType_EXAM_REMIND, true, true
+	case "SCORE", "TRANSCRIPT", "SCORE_REPORT", "PROMOTION", "3":
+		return gmsgpb.MsgType_SCORE_REPORT, true, true
+	case "PAYMENT", "PAYMENT_NOTICE", "4":
+		return gmsgpb.MsgType_PAYMENT_NOTICE, true, true
+	case "OTHER", "5":
+		return gmsgpb.MsgType_OTHER, true, true
+	default:
+		if n, err := strconv.Atoi(normalized); err == nil {
+			msgType := gmsgpb.MsgType(n)
+			if msgType >= gmsgpb.MsgType_SYSTEM_NOTICE && msgType <= gmsgpb.MsgType_OTHER {
+				return msgType, true, true
+			}
+		}
+		return gmsgpb.MsgType_UNKNOWN_TYPE, false, false
+	}
+}
+
+func candidateMessageTypeKey(msgType gmsgpb.MsgType) string {
+	switch msgType {
+	case gmsgpb.MsgType_SYSTEM_NOTICE:
+		return "system"
+	case gmsgpb.MsgType_EXAM_REMIND:
+		return "announcement"
+	case gmsgpb.MsgType_SCORE_REPORT:
+		return "score"
+	case gmsgpb.MsgType_PAYMENT_NOTICE:
+		return "payment"
+	case gmsgpb.MsgType_OTHER:
+		return "other"
+	default:
+		return "other"
+	}
 }
 
 func (h *Handler) GetUnreadMessageCount(w http.ResponseWriter, r *http.Request) {

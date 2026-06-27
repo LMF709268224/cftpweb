@@ -34,8 +34,6 @@ const copy = computed(() => lang.value === "zh"
       emptyTitle: "还没有购买认证",
       emptyDesc: "前往商城浏览并选择适合你的认证或会员商品。",
       browseMarketplace: "浏览商城",
-      configId: "认证配置 ID",
-      instanceId: "认证实例 ID",
       startedAt: "开始时间",
       completedAt: "完成时间",
     }
@@ -48,8 +46,6 @@ const copy = computed(() => lang.value === "zh"
       emptyTitle: "No certifications purchased yet",
       emptyDesc: "Browse the marketplace and choose the certification or membership product that fits your goals.",
       browseMarketplace: "Browse Marketplace",
-      configId: "Certification Config ID",
-      instanceId: "Certification Instance ID",
       startedAt: "Started At",
       completedAt: "Completed At",
     })
@@ -121,15 +117,6 @@ onMounted(() => {
               <h3 class="line-clamp-2 text-xl font-bold leading-tight tracking-tight text-[#111827] transition-colors group-hover:text-primary">
                 {{ course.title || t.common.unknownCourse }}
               </h3>
-
-              <div class="mt-4 space-y-2 text-xs text-slate-500">
-                <p v-if="course.configId" class="font-mono">
-                  {{ copy.configId }}: {{ course.configId }}
-                </p>
-                <p v-if="course.instanceId" class="font-mono">
-                  {{ copy.instanceId }}: {{ course.instanceId }}
-                </p>
-              </div>
 
               <div class="mt-6 space-y-5 text-base text-[#4b5563]">
                 <div class="flex items-center justify-between gap-4">

@@ -57,7 +57,7 @@ const hasActiveMembership = computed(() => {
 })
 
 const currentMembershipName = computed(() => {
-  return currentPlan.value?.name || currentRecord.value?.name || currentRecord.value?.membership_name || currentRecord.value?.membership_ulid || "-"
+  return membershipDisplayName(currentRecord.value, lang.value === "zh" ? "会员记录" : "Membership record")
 })
 
 const isAutoRenewCancelled = computed(() => {
@@ -114,10 +114,39 @@ function formatMoney(amount: unknown, currency = "USD") {
 
 function formatSource(source: unknown, langCode: string) {
   const s = String(source || "").toLowerCase()
+  if (s === "initial") return langCode === "zh" ? "首次开通" : "Initial subscription"
   if (s === "bundle_purchase") return langCode === "zh" ? "套餐购买" : "Bundle Purchase"
   if (s === "admin_grant") return langCode === "zh" ? "管理员发卡" : "Admin Grant"
   if (s === "renewal") return langCode === "zh" ? "会员续费" : "Renewal"
   return String(source || "-")
+}
+
+function membershipPlanForRecord(record: RecordData) {
+  const membershipUlid = String(record?.membership_ulid || "").trim()
+  const membershipGpath = String(record?.membership_gpath || "").trim()
+  return plans.value.find((plan) => plan.membership_ulid === membershipUlid || plan.membership_gpath === membershipGpath) || null
+}
+
+function membershipDisplayName(record: RecordData, fallback = "-") {
+  const plan = membershipPlanForRecord(record)
+  return String(record?.membership_name || record?.name || plan?.name || fallback)
+}
+
+function membershipRecordSummary(record: RecordData) {
+  const source = formatSource(record?.source, lang.value)
+  const renewalCount = record?.renewal_count
+  const parts = [
+    source !== "-" ? source : "",
+    renewalCount !== undefined && renewalCount !== null ? `${lang.value === "zh" ? "续费次数" : "Renewals"} ${renewalCount}` : "",
+  ].filter(Boolean)
+  return parts.join(" · ") || (lang.value === "zh" ? "会员记录" : "Membership record")
+}
+
+function billingTitle(item: RecordData) {
+  const type = String(item?.billing_type || "").trim()
+  if (type) return formatSource(type, lang.value)
+  if (item?.stripe_invoice_id) return lang.value === "zh" ? "Stripe 账单" : "Stripe invoice"
+  return lang.value === "zh" ? "会员账单" : "Membership billing"
 }
 
 function statusLabel(status: unknown) {
@@ -371,7 +400,7 @@ onMounted(() => {
             <div class="rounded-[16px] bg-white p-5 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
               <h2 class="mb-4 text-lg font-semibold text-card-foreground">{{ lang === "zh" ? "会员操作" : "Membership actions" }}</h2>
               <div class="space-y-3 text-sm text-slate-600">
-                <div class="flex justify-between"><span>{{ lang === "zh" ? "会员记录" : "Record" }}</span><span class="font-mono text-xs">{{ currentRecord.membership_record_ulid || "-" }}</span></div>
+                <div class="flex justify-between gap-4"><span>{{ lang === "zh" ? "会员名称" : "Membership" }}</span><span class="text-right font-semibold text-slate-800">{{ currentMembershipName }}</span></div>
                 <div class="flex justify-between"><span>{{ lang === "zh" ? "来源" : "Source" }}</span><span>{{ formatSource(currentRecord.source, lang) }}</span></div>
                 <div class="flex justify-between"><span>{{ lang === "zh" ? "续费次数" : "Renewals" }}</span><span>{{ currentRecord.renewal_count ?? "-" }}</span></div>
                 <div class="flex justify-between"><span>{{ lang === "zh" ? "最近支付" : "Last payment" }}</span><span>{{ formatMoney(currentRecord.last_payment_amount_minor, "USD") }}</span></div>
@@ -432,9 +461,9 @@ onMounted(() => {
           <section v-if="activeTab === 'history'" class="overflow-hidden rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
             <div v-for="item in history" :key="item.membership_record_ulid || item.membership_order_ulid" class="mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
-                <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="item.membership_name || item.membership_ulid || '-'">{{ item.membership_name || item.membership_ulid || "-" }}</div>
+                <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="membershipDisplayName(item, lang === 'zh' ? '会员记录' : 'Membership record')">{{ membershipDisplayName(item, lang === "zh" ? "会员记录" : "Membership record") }}</div>
                 <div class="mt-1 text-sm font-medium text-slate-600">{{ formatDate(item.started_at) }} - {{ formatDate(item.expires_at) }}</div>
-                <div class="mt-1 break-words font-mono text-xs text-slate-400 md:truncate" :title="item.membership_record_ulid">{{ item.membership_record_ulid }}</div>
+                <div class="mt-1 break-words text-xs text-slate-400 md:truncate">{{ membershipRecordSummary(item) }}</div>
               </div>
               <span class="inline-flex h-fit min-w-[76px] items-center justify-center justify-self-start rounded-full border px-3 py-1 text-xs font-black md:justify-self-end" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
             </div>
@@ -455,9 +484,8 @@ onMounted(() => {
           <section v-if="activeTab === 'billings'" class="overflow-hidden rounded-[16px] border border-slate-100 bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
             <div v-for="item in billings" :key="item.billing_record_ulid || item.gpay_order_ulid" class="mb-3 grid gap-4 rounded-[14px] border border-slate-100 bg-slate-50/70 p-4 transition-all last:mb-0 hover:-translate-y-0.5 hover:border-primary/20 hover:bg-white hover:shadow-[0_12px_28px_rgba(15,74,82,0.08)] md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
               <div>
-                <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="item.billing_type || item.stripe_invoice_id || '-'">{{ item.billing_type || item.stripe_invoice_id || "-" }}</div>
+                <div class="break-words text-base font-black leading-6 text-slate-950 md:truncate" :title="billingTitle(item)">{{ billingTitle(item) }}</div>
                 <div class="mt-1 text-sm text-slate-500">{{ formatMoney(item.amount_minor, item.currency || "USD") }} · {{ formatDate(item.period_start) }} - {{ formatDate(item.period_end) }}</div>
-                <div class="mt-1 break-words font-mono text-xs text-slate-400 md:truncate" :title="item.gpay_order_ulid || item.stripe_invoice_id || '-'">{{ item.gpay_order_ulid || item.stripe_invoice_id || "-" }}</div>
               </div>
               <span class="inline-flex h-fit min-w-[76px] items-center justify-center justify-self-start rounded-full border px-3 py-1 text-xs font-black md:justify-self-end" :class="badgeClass(item.status)">{{ statusLabel(item.status) }}</span>
             </div>

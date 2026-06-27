@@ -674,8 +674,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
             <p class="mt-2 max-w-3xl text-sm leading-6 text-blue-800">{{ t.learning.finalQualificationDesc }}</p>
             <div class="mt-4 grid gap-2 md:grid-cols-2">
               <div v-for="qual in finalQualifications" :key="qual.qualId" class="rounded-lg border border-blue-100 bg-white px-4 py-3">
-                <div class="font-semibold text-blue-950">{{ qual.name || qual.qualId }}</div>
-                <div class="mt-1 font-mono text-xs text-blue-700">{{ qual.qualId }}</div>
+                <div class="font-semibold text-blue-950">{{ qual.name || t.credentialsPage.availableQualifications }}</div>
                 <p v-if="qual.description" class="mt-2 text-xs leading-5 text-slate-600">{{ qual.description }}</p>
                 <div v-if="qual.constraints.length > 0" class="mt-3 space-y-2">
                   <div class="text-xs font-semibold uppercase tracking-wide text-blue-900">{{ t.credentialsPage.uploadMaterials }}</div>
