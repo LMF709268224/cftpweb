@@ -494,6 +494,7 @@ async function cancelActiveOrder() {
       return
     }
     toast.success(copy.value.cancelOrderSuccess)
+    emit("update:open", false)
     activeOrder.value = null
     paymentPreview.value = null
     previewError.value = ""

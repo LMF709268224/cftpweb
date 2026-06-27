@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue"
 import { RouterLink, useRoute } from "vue-router"
-import { ArrowLeft, Award, CheckCircle2, ClipboardList, ExternalLink, Loader2 } from "lucide-vue-next"
-import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
+import { ArrowLeft, CheckCircle2, ClipboardList, ExternalLink, Loader2 } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
@@ -48,10 +47,6 @@ onMounted(async () => {
     <div v-else>
       <section class="rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
         <div class="mb-4 flex flex-wrap items-center gap-2">
-          <span :class="['badge border', statusBadgeClassForStatusValue(result.is_passed ? 'SUCCESS' : 'FAILED')]">
-            <Award class="mr-1 h-3 w-3" />
-            {{ result.is_passed ? t.examsPage.statusPassed : t.examsPage.statusFailed }}
-          </span>
           <span class="badge">{{ result.exam_id || examId }}</span>
         </div>
         <h1 class="text-3xl font-bold text-foreground">{{ t.examsPage.resultTitle }}</h1>
