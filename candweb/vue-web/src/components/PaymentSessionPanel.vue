@@ -31,7 +31,7 @@ const emit = defineEmits<{
   error: [message: string]
 }>()
 
-const { lang } = useTranslation()
+const { t } = useTranslation()
 const status = ref<"loading" | "redirecting" | "embedded" | "error">("loading")
 const errorMessage = ref("")
 const checkoutUrl = ref("")
@@ -42,31 +42,7 @@ const checkoutContainerId = `stripe-checkout-${Math.random().toString(36).slice(
 let stripeCheckoutInstance: any = null
 let stripeCheckoutMountToken = 0
 
-const copy = computed(() =>
-  lang.value === "zh"
-    ? {
-        loading: "\u6b63\u5728\u83b7\u53d6\u652f\u4ed8\u4fe1\u606f\uff0c\u8bf7\u7a0d\u5019...",
-        redirecting: "\u5df2\u51c6\u5907\u597d\u652f\u4ed8\u94fe\u63a5\uff0c\u6b63\u5728\u6253\u5f00 Stripe \u652f\u4ed8\u9875\u9762...",
-        loadingCheckout: "\u6b63\u5728\u52a0\u8f7d Stripe \u652f\u4ed8\u7ec4\u4ef6...",
-        stripeConnectionHint: "如果下方显示 “Something went wrong”，通常是浏览器无法连接 Stripe 或证书校验失败。请检查网络、代理/VPN、HTTPS 抓包工具、公司网关或系统时间。",
-        missing: "\u7f3a\u5c11\u652f\u4ed8\u4fe1\u606f\uff0c\u65e0\u6cd5\u7ee7\u7eed\u3002",
-        failed: "\u6253\u5f00\u652f\u4ed8\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5\u3002",
-        stripeConnectionFailed: "无法连接 Stripe 支付组件。请检查网络、代理/VPN、HTTPS 抓包工具、公司网关、系统时间或证书信任设置后重试。",
-        retry: "\u91cd\u8bd5",
-        openNow: "\u7acb\u5373\u6253\u5f00",
-      }
-    : {
-        loading: "Fetching payment session. Please wait...",
-        redirecting: "Payment link is ready. Opening Stripe checkout...",
-        loadingCheckout: "Loading Stripe checkout...",
-        stripeConnectionHint: "If the area below shows “Something went wrong”, the browser usually cannot reach Stripe or cannot validate Stripe's certificate. Please check your network, proxy/VPN, HTTPS inspection tools, company gateway, or system time.",
-        missing: "Missing payment information. Unable to continue.",
-        failed: "Failed to open payment. Please try again later.",
-        stripeConnectionFailed: "Unable to connect to Stripe checkout. Please check your network, proxy/VPN, HTTPS inspection tools, company gateway, system time, or certificate trust settings, then try again.",
-        retry: "Retry",
-        openNow: "Open now",
-      },
-)
+const copy = computed(() => t.value.paymentSession)
 
 function setStatus(nextStatus: typeof status.value) {
   status.value = nextStatus

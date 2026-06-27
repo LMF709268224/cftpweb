@@ -16,47 +16,13 @@ type ResourcePack = {
   updated_at?: string
 }
 
-const { lang } = useTranslation()
+const { t } = useTranslation()
 const loading = ref(false)
 const search = ref("")
 const packs = ref<ResourcePack[]>([])
 const nextPageToken = ref("")
 
-const copy = computed(() => lang.value === "zh"
-  ? {
-      title: "资源包",
-      subtitle: "查看你当前有权限访问的补充资料包，进入详情后可以打开视频、PDF 或 ZIP 文件。",
-      search: "搜索资源包标题或说明",
-      refresh: "刷新",
-      emptyTitle: "暂无可访问资源包",
-      emptyDesc: "当后台为你的资格或课程开放资源包后，会显示在这里。",
-      noSearchTitle: "没有匹配的资源包",
-      noSearchDesc: "换个关键词再试，或清空搜索查看全部可访问资源包。",
-      clearSearch: "清空搜索",
-      open: "查看详情",
-      path: "权限路径",
-      updated: "更新于",
-      count: "个资源包",
-      loading: "加载中...",
-      loadMore: "加载更多",
-    }
-  : {
-      title: "Resource Packs",
-      subtitle: "Browse supplemental packs you are allowed to access. Open a pack to view videos, PDFs, or ZIP files.",
-      search: "Search resource packs",
-      refresh: "Refresh",
-      emptyTitle: "No resource packs yet",
-      emptyDesc: "Accessible resource packs will appear here once enabled by admins.",
-      noSearchTitle: "No matching resource packs",
-      noSearchDesc: "Try another keyword or clear the search to view all accessible packs.",
-      clearSearch: "Clear search",
-      open: "Open",
-      path: "Access path",
-      updated: "Updated",
-      count: "packs",
-      loading: "Loading...",
-      loadMore: "Load more",
-    })
+const copy = computed(() => t.value.resourcePacksPage)
 
 const filteredPacks = computed(() => {
   const keyword = search.value.trim().toLowerCase()
@@ -129,7 +95,7 @@ onMounted(() => {
         <div class="relative flex h-24 items-end overflow-hidden px-4 pb-3 text-white bg-[linear-gradient(135deg,rgb(11,31,69)_0%,rgb(27,69,141)_55%,rgb(58,111,192)_100%)]">
           <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(255,255,255,0.24),transparent_30%)] opacity-70" />
           <span class="relative z-10 inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-primary shadow-sm">
-            {{ lang === 'zh' ? '资料包' : 'Resource Pack' }}
+            {{ copy.packBadge }}
           </span>
           <div class="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-105">
             <PackageOpen class="h-7 w-7 text-white/70" />

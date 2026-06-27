@@ -64,28 +64,16 @@ const resolvedStatusLabel = computed(() =>
 )
 const purchasedTarget = computed(() => isMembershipProduct.value ? "/membership" : `/certifications/${encodeURIComponent(props.pipelineId || props.id)}`)
 
-const cardCopy = computed(() => ({
-  ready: lang.value === "zh" ? "\u53ef\u8d2d\u4e70\u8ba4\u8bc1" : "Ready to buy",
-  readyMembership: lang.value === "zh" ? "\u53ef\u8d2d\u4e70\u4f1a\u5458" : "Ready to subscribe",
-  unlock: lang.value === "zh" ? "\u9700\u8981\u5148\u89e3\u9501" : "Unlock required",
-  blocked: lang.value === "zh" ? "\u6682\u4e0d\u53ef\u8d2d\u4e70" : "Unavailable",
-  checking: lang.value === "zh" ? "\u68c0\u67e5\u4e2d" : "Checking",
-  missingQualification: lang.value === "zh" ? "\u7f3a\u5c11\u89e3\u9501\u8d44\u683c" : "Missing unlock qualification",
-  alreadyPurchased: lang.value === "zh" ? "\u5df2\u8d2d\u4e70" : "Already purchased",
-  inProgressPurchase: lang.value === "zh" ? "\u6709\u672a\u5b8c\u6210\u8ba2\u5355" : "Order in progress",
-  pipelineNotFound: lang.value === "zh" ? "\u8ba4\u8bc1\u5df2\u4e0d\u53ef\u7528" : "No longer available",
-  estimatedPrice: lang.value === "zh" ? "\u9884\u4f30\u4ef7\u683c" : "Estimated price",
-  free: lang.value === "zh" ? "\u514d\u8d39" : "Free",
-}))
+const cardCopy = computed(() => t.value.courseCard)
 
 const actionCopy = computed(() => {
-  if (effectivePurchased.value) return isMembershipProduct.value ? (lang.value === "zh" ? "\u8fdb\u5165\u4f1a\u5458\u4e2d\u5fc3" : "Membership Center") : (lang.value === "zh" ? "\u8fdb\u5165\u8ba4\u8bc1" : "Enter Certification")
+  if (effectivePurchased.value) return isMembershipProduct.value ? cardCopy.value.membershipCenter : cardCopy.value.enterCertification
   if (statusRefreshing.value) return cardCopy.value.checking
-  if (hasInProgressOrder.value) return lang.value === "zh" ? "\u7ee7\u7eed\u652f\u4ed8" : "Continue Payment"
-  if (currentEligibility.value?.can_unlock) return lang.value === "zh" ? "\u53bb\u89e3\u9501" : "Unlock"
-  if (currentEligibility.value?.can_purchase) return lang.value === "zh" ? "\u53bb\u8d2d\u4e70" : "Buy Now"
-  if (currentEligibility.value) return lang.value === "zh" ? "\u6682\u4e0d\u53ef\u8d2d\u4e70" : "Unavailable"
-  return lang.value === "zh" ? "\u67e5\u770b\u8d2d\u4e70\u72b6\u6001" : "Check Status"
+  if (hasInProgressOrder.value) return cardCopy.value.continuePayment
+  if (currentEligibility.value?.can_unlock) return cardCopy.value.unlockAction
+  if (currentEligibility.value?.can_purchase) return cardCopy.value.buyNow
+  if (currentEligibility.value) return cardCopy.value.unavailable
+  return cardCopy.value.checkStatus
 })
 
 const actionClass = computed(() => {

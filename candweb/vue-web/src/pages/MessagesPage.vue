@@ -104,15 +104,15 @@ function countBadgeClass(active: boolean) {
 }
 
 function markReadMenuLabel() {
-  return lang.value === "zh" ? "\u6807\u8bb0\u4e3a\u5df2\u8bfb" : "Mark as read"
+  return t.value.messagesPage.markAsRead
 }
 
 function deleteMenuLabel() {
-  return lang.value === "zh" ? "\u5220\u9664" : "Delete"
+  return t.value.messagesPage.delete
 }
 
 function unreadLabel() {
-  return lang.value === "zh" ? "\u672a\u8bfb" : "Unread"
+  return t.value.messagesPage.unread
 }
 
 function splitBilingualText(value: string) {
@@ -371,7 +371,7 @@ async function handleViewDetail(message: Message) {
     }
     detailModalOpen.value = true
   } catch {
-    toast.error("Failed to load message detail")
+    toast.error(t.value.messagesPage.detailLoadFailed)
   } finally {
     if (detailLoadingId.value === message.id) detailLoadingId.value = null
   }
@@ -497,11 +497,11 @@ onMounted(() => {
           <span></span>
           <div class="flex items-center gap-2">
             <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="page <= 1" @click="prevPage()">
-              {{ lang === "zh" ? "上一页" : "Previous" }}
+              {{ t.messagesPage.previous }}
             </button>
             <span class="min-w-20 text-center">{{ page }}</span>
             <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-medium transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50" :disabled="!hasMore" @click="nextPage()">
-              {{ lang === "zh" ? "下一页" : "Next" }}
+              {{ t.messagesPage.next }}
             </button>
           </div>
         </div>

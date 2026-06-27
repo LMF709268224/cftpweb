@@ -4,8 +4,10 @@ import { useUser } from "@/lib/user"
 import { onErrorCaptured, onMounted, ref, watch } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { getAccessToken } from "@/lib/authStorage"
+import { useTranslation } from "@/lib/language"
 
 const { fetchUser } = useUser()
+const { t } = useTranslation()
 const route = useRoute()
 const router = useRouter()
 const appError = ref("")
@@ -20,7 +22,7 @@ onMounted(() => {
 
 onErrorCaptured((err) => {
   console.error("Unhandled page error:", err)
-  appError.value = "页面加载失败，请重试或返回首页。"
+  appError.value = t.value.app.pageErrorMessage
   return false
 })
 
@@ -47,14 +49,14 @@ function goHome() {
   <div v-else class="flex min-h-screen items-center justify-center bg-[#eef8f7] p-6">
     <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-[0_20px_45px_rgba(15,74,82,0.12)]">
       <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-2xl text-amber-600">!</div>
-      <h1 class="text-xl font-bold text-slate-900">页面暂时无法显示</h1>
+      <h1 class="text-xl font-bold text-slate-900">{{ t.app.pageErrorTitle }}</h1>
       <p class="mt-2 text-sm text-slate-600">{{ appError }}</p>
       <div class="mt-5 flex justify-center gap-3">
         <button class="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" @click="goHome">
-          返回首页
+          {{ t.app.backHome }}
         </button>
         <button class="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600" @click="reloadPage">
-          重新加载
+          {{ t.app.reload }}
         </button>
       </div>
     </div>

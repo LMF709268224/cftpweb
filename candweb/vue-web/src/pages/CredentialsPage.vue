@@ -229,15 +229,15 @@ function definitionForApplication(app: any) {
 }
 
 function applicationTitle(app: any) {
-  return app?.credential_name || definitionForApplication(app)?.name || (lang.value === "zh" ? "资格申请记录" : "Qualification application")
+  return app?.credential_name || definitionForApplication(app)?.name || t.value.credentialsPage.applicationRecord
 }
 
 function applicationMeta(app: any) {
   const parts = [
     app?.credential_category,
-    app?.created_at ? `${lang.value === "zh" ? "提交于" : "Submitted"} ${formatBackendDateOnly(app.created_at)}` : "",
+    app?.created_at ? `${t.value.credentialsPage.submittedAt} ${formatBackendDateOnly(app.created_at)}` : "",
   ].filter(Boolean)
-  return parts.join(" · ") || (lang.value === "zh" ? "资格申请" : "Qualification application")
+  return parts.join(" · ") || t.value.credentialsPage.application
 }
 
 function latestApplicationForDef(credDefId: string) {

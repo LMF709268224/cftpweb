@@ -16,31 +16,6 @@ const celebrationVisible = ref(false)
 const CERTIFICATE_PREVIEW_TIMEOUT_MS = 20000
 const CERTIFICATE_CELEBRATED_IDS_KEY = "cftp-certificates-celebrated-ids"
 
-type CertificatesModalTexts = {
-  celebrationModalTitle?: string
-  celebrationModalHeadline?: string
-  celebrationModalDesc?: string
-  celebrationModalDownload?: string
-  celebrationModalShare?: string
-  celebrationModalDismiss?: string
-  shareText?: string
-}
-
-const certificateTexts = computed(() => {
-  const page = t.value.certificatesPage as typeof t.value.certificatesPage & CertificatesModalTexts
-  return {
-    celebrationModalTitle: page.celebrationModalTitle ?? "恭喜！",
-    celebrationModalHeadline: page.celebrationModalHeadline ?? "您已获得 CFtP 专业认证证书",
-    celebrationModalDesc:
-      page.celebrationModalDesc ??
-      "您的学习成果已经正式转化为专业证书。现在可以下载荣誉证书，或一键分享这一值得庆祝的成就。",
-    celebrationModalDownload: page.celebrationModalDownload ?? "下载您的荣誉证书",
-    celebrationModalShare: page.celebrationModalShare ?? "一键分享",
-    celebrationModalDismiss: page.celebrationModalDismiss ?? "稍后再说",
-    shareText: page.shareText ?? "我已获得 CFtP 专业认证，欢迎查看我的学习成果。",
-  }
-})
-
 const featuredCertificate = computed(() => certificates.value[0] ?? null)
 
 function openCertificate(url?: string) {
@@ -132,7 +107,7 @@ async function shareFeaturedCertificate() {
   if (!cert?.pdfUrl) return
 
   const shareTitle = cert.name || t.value.certificatesPage.title
-  const shareText = certificateTexts.value.shareText
+  const shareText = t.value.certificatesPage.shareText
 
   if (navigator.share) {
     try {
@@ -234,14 +209,14 @@ onMounted(async () => {
           <div class="relative z-10 mt-2">
             <span class="inline-flex items-center gap-1 rounded-full bg-primary/8 px-3 py-1 text-sm font-semibold text-primary">
               <Sparkles class="h-4 w-4" />
-              {{ certificateTexts.celebrationModalTitle }}
+              {{ t.certificatesPage.celebrationModalTitle }}
             </span>
 
             <h2 class="mt-4 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
-              {{ certificateTexts.celebrationModalHeadline }}
+              {{ t.certificatesPage.celebrationModalHeadline }}
             </h2>
             <p class="mx-auto mt-4 max-w-[420px] text-sm leading-7 text-muted-foreground md:text-base">
-              {{ certificateTexts.celebrationModalDesc }}
+              {{ t.certificatesPage.celebrationModalDesc }}
             </p>
 
             <div class="mt-6 rounded-[18px] bg-[#f7fbfc] px-4 py-4 shadow-inner shadow-primary/5">
@@ -256,7 +231,7 @@ onMounted(async () => {
                 @click="downloadFeaturedCertificate"
               >
                 <Download class="h-4 w-4" />
-                {{ certificateTexts.celebrationModalDownload }}
+                {{ t.certificatesPage.celebrationModalDownload }}
               </button>
               <button
                 class="inline-flex items-center justify-center gap-2 rounded-[14px] border border-primary/18 bg-primary/[0.04] px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/[0.08] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
@@ -264,12 +239,12 @@ onMounted(async () => {
                 @click="shareFeaturedCertificate"
               >
                 <Share2 class="h-4 w-4" />
-                {{ certificateTexts.celebrationModalShare }}
+                {{ t.certificatesPage.celebrationModalShare }}
               </button>
             </div>
 
             <button class="mt-4 text-sm text-muted-foreground transition hover:text-foreground" @click="closeCelebrationModal">
-              {{ certificateTexts.celebrationModalDismiss }}
+              {{ t.certificatesPage.celebrationModalDismiss }}
             </button>
           </div>
         </div>

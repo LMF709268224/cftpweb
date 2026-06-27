@@ -18,23 +18,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ "update:open": [value: boolean] }>()
-const { lang } = useTranslation()
-
-const copy = computed(() =>
-  lang.value === "zh"
-    ? {
-        paymentTitle: "完成支付",
-        paymentDesc: "请在下方完成 Stripe 在线支付。支付完成后页面会自动返回并刷新状态。",
-        testHint: "测试环境提示：请使用通用测试信用卡号 4242 4242 4242 4242，任意有效日期和 CVV 进行体验。",
-        close: "关闭",
-      }
-    : {
-        paymentTitle: "Complete payment",
-        paymentDesc: "Please complete Stripe online payment below. After payment, the page will return and refresh the status.",
-        testHint: "Test mode: use card 4242 4242 4242 4242 with any valid expiry date and CVV.",
-        close: "Close",
-      },
-)
+const { t } = useTranslation()
+const copy = computed(() => t.value.paymentSession)
 
 function close() {
   emit("update:open", false)

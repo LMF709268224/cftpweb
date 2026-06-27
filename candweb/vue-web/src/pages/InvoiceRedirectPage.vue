@@ -7,7 +7,7 @@ import { useTranslation } from "@/lib/language"
 
 const route = useRoute()
 const router = useRouter()
-const { lang } = useTranslation()
+const { t } = useTranslation()
 
 const orderId = computed(() => String(route.query.orderId || ""))
 const invoiceUrl = ref("")
@@ -15,31 +15,7 @@ const status = ref<"loading" | "redirecting" | "error">("loading")
 const errorMessage = ref("")
 let redirectTimer: number | undefined
 
-const copy = computed(() =>
-  lang.value === "zh"
-    ? {
-        title: "正在打开发票",
-        loading: "正在获取发票链接，请稍候...",
-        redirecting: "已获取发票链接，正在打开 Stripe 发票页面...",
-        hint: "外部页面加载可能需要一点时间，请不要关闭此页面。",
-        direct: "立即打开",
-        retry: "重试",
-        back: "返回订单",
-        missing: "缺少订单编号，无法打开发票。",
-        failed: "获取发票失败，请稍后重试。",
-      }
-    : {
-        title: "Opening invoice",
-        loading: "Fetching the invoice link. Please wait...",
-        redirecting: "Invoice link is ready. Opening the Stripe invoice page...",
-        hint: "The external page may take a moment to load. Please keep this tab open.",
-        direct: "Open now",
-        retry: "Retry",
-        back: "Back to orders",
-        missing: "Missing order ID. Unable to open invoice.",
-        failed: "Failed to fetch the invoice. Please try again later.",
-      },
-)
+const copy = computed(() => t.value.invoiceRedirect)
 
 function clearRedirectTimer() {
   if (redirectTimer) {

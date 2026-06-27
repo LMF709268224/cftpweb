@@ -843,7 +843,7 @@ async function handleFinalQualificationApplication() {
       await loadRuntime()
       return
     }
-    toast.info(order?.message || t.value.learning.finalQualificationOrderCreated)
+    toast.info(t.value.learning.finalQualificationOrderCreated)
   } catch (error) {
     console.error(error)
   } finally {
