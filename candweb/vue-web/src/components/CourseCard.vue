@@ -4,6 +4,7 @@ import { RouterLink } from "vue-router"
 import { AlertCircle, BookOpen, CheckCircle2, Clock, Lock, ShoppingCart, Users } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
 import { useTranslation } from "@/lib/language"
+import { apiClient } from "@/lib/apiClient"
 import PurchaseDialog from "./PurchaseDialog.vue"
 
 type CourseCardStat = { label: string; value: string | number }
@@ -44,13 +45,20 @@ const props = defineProps<{
 
 const { t, lang } = useTranslation()
 const showPurchaseDialog = ref(false)
-const blockers = computed(() => props.eligibility?.blockers || [])
+const freshBundle = ref<any | null>(null)
+const statusRefreshing = ref(false)
+const currentEligibility = computed<EligibilityPreview | null>(() => freshBundle.value?.purchase_state?.eligibility || freshBundle.value?.eligibility || props.eligibility || null)
+const currentActiveOrder = computed<ActiveOrderPreview | null>(() => freshBundle.value?.purchase_state?.active_order || freshBundle.value?.active_order || props.activeOrder || null)
+const currentPaymentPreview = computed<PaymentPreview | null>(() => freshBundle.value?.purchase_state?.payment_preview || freshBundle.value?.payment_preview || props.paymentPreview || null)
+const currentExemptionOptions = computed<ExemptionOptions | null>(() => freshBundle.value?.purchase_state?.exemption_options || freshBundle.value?.exemption_options || props.exemptionOptions || null)
+const currentActiveMembership = computed<Record<string, unknown> | null>(() => freshBundle.value?.active_membership || props.activeMembership || null)
+const blockers = computed(() => currentEligibility.value?.blockers || [])
 const isPipelineProduct = computed(() => Boolean(props.isPipelineBundle && props.pipelineId))
 const isMembershipProduct = computed(() => Boolean(props.isMembershipBundle || props.itemTypes?.some((type) => String(type).includes("membership"))))
 const effectivePurchased = computed(() =>
-  Boolean(props.isPurchased || props.activeMembership || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")),
+  Boolean(props.isPurchased || currentActiveMembership.value || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")),
 )
-const hasInProgressOrder = computed(() => Boolean(props.activeOrder) || blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
+const hasInProgressOrder = computed(() => Boolean(currentActiveOrder.value) || blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
 const resolvedStatusLabel = computed(() =>
   props.statusValue !== undefined ? statusLabel(t.value, CANDIDATE_PIPELINE_STATUS_LABELS, props.statusValue) : props.statusLabel,
 )
@@ -72,15 +80,17 @@ const cardCopy = computed(() => ({
 
 const actionCopy = computed(() => {
   if (effectivePurchased.value) return isMembershipProduct.value ? (lang.value === "zh" ? "\u8fdb\u5165\u4f1a\u5458\u4e2d\u5fc3" : "Membership Center") : (lang.value === "zh" ? "\u8fdb\u5165\u8ba4\u8bc1" : "Enter Certification")
+  if (statusRefreshing.value) return cardCopy.value.checking
   if (hasInProgressOrder.value) return lang.value === "zh" ? "\u7ee7\u7eed\u652f\u4ed8" : "Continue Payment"
-  if (props.eligibility?.can_unlock) return lang.value === "zh" ? "\u53bb\u89e3\u9501" : "Unlock"
-  if (props.eligibility?.can_purchase) return lang.value === "zh" ? "\u53bb\u8d2d\u4e70" : "Buy Now"
-  if (props.eligibility) return lang.value === "zh" ? "\u6682\u4e0d\u53ef\u8d2d\u4e70" : "Unavailable"
+  if (currentEligibility.value?.can_unlock) return lang.value === "zh" ? "\u53bb\u89e3\u9501" : "Unlock"
+  if (currentEligibility.value?.can_purchase) return lang.value === "zh" ? "\u53bb\u8d2d\u4e70" : "Buy Now"
+  if (currentEligibility.value) return lang.value === "zh" ? "\u6682\u4e0d\u53ef\u8d2d\u4e70" : "Unavailable"
   return lang.value === "zh" ? "\u67e5\u770b\u8d2d\u4e70\u72b6\u6001" : "Check Status"
 })
 
 const actionClass = computed(() => {
-  if (props.eligibility && !effectivePurchased.value && !props.eligibility.can_purchase && !props.eligibility.can_unlock && !hasInProgressOrder.value) {
+  if (statusRefreshing.value) return "bg-slate-200 text-slate-500"
+  if (currentEligibility.value && !effectivePurchased.value && !currentEligibility.value.can_purchase && !currentEligibility.value.can_unlock && !hasInProgressOrder.value) {
     return "bg-slate-200 text-slate-500"
   }
   return "bg-primary text-white shadow-sm shadow-primary/20 group-hover:bg-primary/90"
@@ -97,17 +107,41 @@ function blockerText(blocker?: EligibilityBlocker) {
 
 const accessState = computed(() => {
   if (effectivePurchased.value) return null
-  if (props.eligibility?.can_purchase || hasInProgressOrder.value) {
+  if (statusRefreshing.value) {
+    return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
+  }
+  if (currentEligibility.value?.can_purchase || hasInProgressOrder.value) {
     return { label: isMembershipProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
   }
-  if (props.eligibility?.can_unlock) {
+  if (currentEligibility.value?.can_unlock) {
     return { label: cardCopy.value.unlock, icon: Lock, className: "border-blue-200 bg-blue-50 text-blue-700", hint: "" }
   }
-  if (props.eligibility) {
+  if (currentEligibility.value) {
     return { label: cardCopy.value.blocked, icon: AlertCircle, className: "border-amber-200 bg-amber-50 text-amber-800", hint: blockerText(blockers.value[0]) }
   }
   return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
 })
+
+async function refreshBundleState() {
+  if (!props.id || statusRefreshing.value) return false
+  statusRefreshing.value = true
+  try {
+    freshBundle.value = await apiClient(`/api/mall/bundles/${encodeURIComponent(props.id)}`, { suppressErrorToast: true })
+    return true
+  } catch (error) {
+    console.error("Failed to refresh bundle state", error)
+    return false
+  } finally {
+    statusRefreshing.value = false
+  }
+}
+
+async function handleCardClick() {
+  if (effectivePurchased.value || statusRefreshing.value) return
+  await refreshBundleState()
+  if (effectivePurchased.value) return
+  showPurchaseDialog.value = true
+}
 </script>
 
 <template>
@@ -116,7 +150,7 @@ const accessState = computed(() => {
     :to="effectivePurchased ? purchasedTarget : undefined"
     class="group flex h-full flex-col overflow-hidden rounded-[16px] border-2 border-[#dfe4ea] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all duration-300 hover:-translate-y-0.5 hover:border-primary hover:shadow-[0_18px_42px_rgba(16,30,67,0.16)]"
     :class="!effectivePurchased && 'cursor-pointer'"
-    @click="!effectivePurchased && (showPurchaseDialog = true)"
+    @click="handleCardClick"
   >
     <div class="relative h-32 overflow-hidden bg-white sm:h-36 xl:h-40">
       <template v-if="image">
@@ -229,9 +263,9 @@ const accessState = computed(() => {
     :is-membership-bundle="isMembershipProduct"
     :membership-id="membershipId || ''"
     :membership-gpath="membershipGpath || ''"
-    :initial-eligibility="eligibility || null"
-    :initial-active-order="activeOrder || null"
-    :initial-payment-preview="paymentPreview || null"
-    :initial-exemption-options="exemptionOptions || null"
+    :initial-eligibility="currentEligibility || null"
+    :initial-active-order="currentActiveOrder || null"
+    :initial-payment-preview="currentPaymentPreview || null"
+    :initial-exemption-options="currentExemptionOptions || null"
   />
 </template>
