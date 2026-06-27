@@ -1676,6 +1676,7 @@ func (h *Handler) UnlockPipelineInBundle(w http.ResponseWriter, r *http.Request)
 		HandleGrpcError(w, err)
 		return
 	}
+	resp.PaymentKey = formatPaymentKey(resp.GetPaymentKey())
 	WriteJSON(w, http.StatusOK, resp)
 }
 

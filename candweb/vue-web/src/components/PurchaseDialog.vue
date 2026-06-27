@@ -118,6 +118,7 @@ const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const previewedExemptionSignature = ref("")
 const resolvedBundleId = ref(props.bundleId || "")
 const activePaymentSession = ref<{
+  paymentKey?: string
   bizType: string
   bizRefUlid: string
   orderId: string
@@ -545,8 +546,19 @@ async function createUnlockOrder() {
     }
     if (orderId && (paymentKey || order.pay_order_ulid || normalizedStatus(orderStatus).includes("PAYMENT"))) {
       paymentPreview.value = null
-      await refreshEligibility()
-      if (!paymentPreview.value) previewError.value = copy.value.pricePreviewFailed || t.value.common.error
+      previewError.value = ""
+      activePaymentSession.value = {
+        paymentKey,
+        bizType: "PIPELINE_UNLOCK",
+        bizRefUlid: orderId,
+        orderId,
+        source: "unlock",
+        returnPath: "/certifications",
+        extraReturnParams: {
+          pipeline_id: props.pipelineId,
+          bundle_id: resolvedBundleId.value,
+        },
+      }
     } else {
       toast.info(copy.value.refreshEligibility)
     }
@@ -831,6 +843,7 @@ async function initiatePayment() {
             <strong>测试提示：</strong> 当前为测试环境，请使用测试卡号 <code>4242 4242 4242 4242</code>，有效期和CVV随意。
           </div>
           <PaymentSessionPanel
+            :payment-key="activePaymentSession.paymentKey"
             :biz-type="activePaymentSession.bizType"
             :biz-ref-ulid="activePaymentSession.bizRefUlid"
             :order-id="activePaymentSession.orderId"
