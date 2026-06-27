@@ -3,16 +3,23 @@ import { onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
 import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, XCircle } from "lucide-vue-next"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
+import AppPagination from "@/components/AppPagination.vue"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
 
-const { t } = useTranslation()
+const { t, lang } = useTranslation()
 const route = useRoute()
 const definitions = ref<any[]>([])
 const applications = ref<any[]>([])
+const applicationPage = ref(1)
+const applicationPageSize = ref(10)
+const applicationPageSizeOptions = [10, 30, 50, 100]
+const applicationTotal = ref(0)
+const applicationTotalPages = ref(0)
 const loading = ref(true)
+const applicationsLoading = ref(false)
 const selectedDef = ref<any>(null)
 const resubmitAppId = ref("")
 const isApplyOpen = ref(false)
@@ -38,20 +45,49 @@ async function uploadWithTimeout(url: string, init: RequestInit) {
   }
 }
 
+function totalFrom(data: any, list: any[]) {
+  return Number(data?.total ?? data?.total_count ?? data?.total_items ?? list.length ?? 0) || 0
+}
+
+function totalPagesFrom(data: any, total: number, pageSize: number) {
+  return Number(data?.total_pages || Math.ceil(total / pageSize) || 0)
+}
+
+async function fetchApplications(options: { showLoading?: boolean } = {}) {
+  if (options.showLoading) applicationsLoading.value = true
+  try {
+    const params = new URLSearchParams({
+      page: String(applicationPage.value),
+      page_size: String(applicationPageSize.value),
+    })
+    const appsRes = await apiClient(`/api/credentials/applications?${params.toString()}`)
+    const nextApplications = appsRes?.applications || []
+    applications.value = nextApplications
+    applicationTotal.value = totalFrom(appsRes, nextApplications)
+    applicationTotalPages.value = totalPagesFrom(appsRes, applicationTotal.value, applicationPageSize.value)
+  } finally {
+    if (options.showLoading) applicationsLoading.value = false
+  }
+}
+
 async function fetchData() {
   loading.value = true
   try {
     const qualIds = String(route.query.qual_ulids || route.query.qual_ids || "").trim()
     const definitionsEndpoint = qualIds ? `/api/credentials/definitions?qual_ulids=${encodeURIComponent(qualIds)}` : "/api/credentials/definitions"
-    const [defsRes, appsRes] = await Promise.all([apiClient(definitionsEndpoint), apiClient("/api/credentials/applications")])
+    const defsRes = await apiClient(definitionsEndpoint)
     definitions.value = defsRes?.definitions || []
-    applications.value = appsRes?.applications || []
+    await fetchApplications()
     if (qualIds && definitions.value.length === 1 && !isApplyOpen.value) {
       handleApplyClick(definitions.value[0])
     }
   } finally {
     loading.value = false
   }
+}
+
+async function handleApplicationPageChange() {
+  await fetchApplications({ showLoading: true })
 }
 
 function handleApplyClick(def: any, appId = "") {
@@ -114,6 +150,7 @@ async function handleSubmitApplication() {
     }
     isApplyOpen.value = false
     removePendingCredentialQualId(credentialDefinitionId(selectedDef.value))
+    applicationPage.value = 1
     await fetchData()
   } catch {
     alert(t.value.credentialsPage.submitFailed)
@@ -307,7 +344,11 @@ onMounted(fetchData)
           </div>
           <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.myApplications }}</h2>
         </div>
-        <div v-if="applications.length === 0" class="flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+        <div v-if="applicationsLoading" class="flex items-center justify-center gap-2 rounded-[16px] bg-white py-14 text-muted-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <Loader2 class="h-5 w-5 animate-spin" />
+          <span>{{ t.common.loading }}</span>
+        </div>
+        <div v-else-if="applications.length === 0" class="flex flex-col items-center justify-center rounded-[16px] bg-white px-4 py-14 text-center shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
           <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
             <FileText class="h-8 w-8 text-primary" />
           </div>
@@ -329,6 +370,16 @@ onMounted(fetchData)
               <span v-else class="justify-self-end whitespace-nowrap text-sm text-muted-foreground">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>
+          <AppPagination
+            v-if="applicationTotal > 0"
+            v-model:page="applicationPage"
+            v-model:page-size="applicationPageSize"
+            :total="applicationTotal"
+            :total-pages="applicationTotalPages"
+            :page-size-options="applicationPageSizeOptions"
+            :locale="lang"
+            @page-change="handleApplicationPageChange"
+          />
         </div>
       </section>
     </div>
