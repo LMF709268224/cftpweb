@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, Eye, Loader2, RefreshCw, RotateCcw, XCircle } from "lucide-vue-next"
+import { CheckCircle2, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -9,12 +9,14 @@ import { applicationStatusLabel, applicationStatusOptions, badgeClass, pickFirst
 const applications = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
+const detailLoading = ref(false)
 const auditing = ref(false)
 const page = ref(1)
 const total = ref(0)
 const statusFilter = ref("0")
 const auditRemark = ref("")
 const pageSize = 20
+let detailRequestId = 0
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => applications.value.length >= pageSize)
@@ -37,7 +39,74 @@ function status(app: JsonRecord) {
 
 function files(app: JsonRecord) {
   const value = app.files
-  return Array.isArray(value) ? value : []
+  return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
+}
+
+function fileName(file: JsonRecord) {
+  return String(pickFirst(file, ["file_name", "name", "filename", "file_hash"]) || "文件")
+}
+
+function fileUrl(file: JsonRecord) {
+  return String(pickFirst(file, ["view_url", "download_url", "url"]) || "")
+}
+
+function fileUsage(file: JsonRecord) {
+  return String(pickFirst(file, ["file_usage", "usage"]) || "申请材料")
+}
+
+function fileHash(file: JsonRecord) {
+  return String(file.file_hash || "")
+}
+
+function fileSize(file: JsonRecord) {
+  const size = Number(file.file_size || 0)
+  if (!Number.isFinite(size) || size <= 0) return ""
+  if (size < 1024) return `${size} B`
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
+  return `${(size / 1024 / 1024).toFixed(1)} MB`
+}
+
+function mergeApplicationDetail(appID: string, detail: JsonRecord) {
+  const index = applications.value.findIndex((app) => appUlid(app) === appID)
+  const base = index >= 0 ? applications.value[index] : selected.value || {}
+  const merged = { ...base, ...detail }
+  if (index >= 0) {
+    applications.value.splice(index, 1, merged)
+  }
+  if (selected.value && appUlid(selected.value) === appID) {
+    selected.value = merged
+  }
+}
+
+async function loadApplicationDetail(app: JsonRecord | null) {
+  if (!app) return
+  const appID = appUlid(app)
+  if (!appID) return
+
+  const requestId = ++detailRequestId
+  detailLoading.value = true
+  try {
+    const detail = await apiClient<JsonRecord>(`/api/applications/${encodeURIComponent(appID)}`)
+    if (requestId !== detailRequestId) return
+    if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+      mergeApplicationDetail(appID, detail)
+    }
+  } catch (err) {
+    console.error(err)
+    if (requestId === detailRequestId) {
+      toast.error("申请材料加载失败")
+    }
+  } finally {
+    if (requestId === detailRequestId) {
+      detailLoading.value = false
+    }
+  }
+}
+
+function selectApplication(app: JsonRecord) {
+  selected.value = app
+  auditRemark.value = ""
+  void loadApplicationDetail(app)
 }
 
 async function load(targetPage = page.value) {
@@ -49,6 +118,7 @@ async function load(targetPage = page.value) {
     total.value = Number(data.total || applications.value.length) || 0
     selected.value = applications.value[0] || null
     page.value = targetPage
+    void loadApplicationDetail(selected.value)
   } catch (err) {
     console.error(err)
     applications.value = []
@@ -130,7 +200,7 @@ onMounted(() => load(1))
           class="grid w-full grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
           :class="selected === app ? 'bg-sky-50' : ''"
           type="button"
-          @click="selected = app"
+          @click="selectApplication(app)"
         >
           <div class="min-w-0">
             <div class="font-black text-slate-950">{{ credential(app) }}</div>
@@ -161,19 +231,63 @@ onMounted(() => load(1))
           </div>
 
           <div class="mb-5 rounded-2xl bg-slate-50 p-4">
-            <div class="mb-3 text-sm font-black">申请材料</div>
-            <div v-if="!files(selected).length" class="text-sm text-slate-500">暂无文件</div>
-            <a
-              v-for="file in files(selected)"
-              v-else
-              :key="String(file.file_name || file.name || file.file_hash)"
-              class="mb-2 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50"
-              :href="String(file.view_url || file.url || '#')"
-              target="_blank"
-            >
-              {{ file.file_name || file.name || "文件" }}
-              <Eye class="h-4 w-4" />
-            </a>
+            <div class="mb-3 flex items-center justify-between gap-3">
+              <div class="text-sm font-black">申请材料</div>
+              <span v-if="files(selected).length" class="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-500">
+                {{ files(selected).length }} 个文件
+              </span>
+            </div>
+            <div v-if="detailLoading" class="flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 class="h-4 w-4 animate-spin" />
+              正在加载申请材料...
+            </div>
+            <div v-else-if="!files(selected).length" class="rounded-xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
+              暂无文件。若考生已上传材料，请检查微服务申请详情接口是否返回 files / view_url。
+            </div>
+            <div v-else class="space-y-3">
+              <div
+                v-for="file in files(selected)"
+                :key="String(file.file_hash || file.file_name || file.name)"
+                class="rounded-2xl border border-slate-200 bg-white p-4"
+              >
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 font-black text-slate-900">
+                      <FileText class="h-4 w-4 shrink-0 text-blue-600" />
+                      <span class="truncate">{{ fileName(file) }}</span>
+                    </div>
+                    <div class="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                      <span class="rounded-full bg-slate-100 px-2 py-1">用途：{{ fileUsage(file) }}</span>
+                      <span v-if="fileSize(file)" class="rounded-full bg-slate-100 px-2 py-1">大小：{{ fileSize(file) }}</span>
+                      <span v-if="file.file_ext" class="rounded-full bg-slate-100 px-2 py-1">格式：{{ file.file_ext }}</span>
+                    </div>
+                    <div v-if="fileHash(file)" class="mt-2 break-all text-xs text-slate-400">SHA256：{{ fileHash(file) }}</div>
+                  </div>
+                  <div class="flex shrink-0 gap-2">
+                    <a
+                      v-if="fileUrl(file)"
+                      class="inline-flex items-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100"
+                      :href="fileUrl(file)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Eye class="h-4 w-4" />
+                      预览
+                    </a>
+                    <a
+                      v-if="fileUrl(file)"
+                      class="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
+                      :href="fileUrl(file)"
+                      :download="fileName(file)"
+                    >
+                      <Download class="h-4 w-4" />
+                      下载
+                    </a>
+                    <span v-else class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700">缺少链接</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <textarea

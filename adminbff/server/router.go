@@ -241,6 +241,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		// ===== 应用 (Applications) =====
 		r.Route("/applications", func(r chi.Router) {
 			r.Get("/", h.ListApplications)
+			r.Get("/{app_id}", h.GetApplication)
 			r.Post("/audit", h.AuditApplication)
 		})
 
@@ -329,4 +330,3 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 	return r
 }
-

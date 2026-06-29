@@ -133,6 +133,66 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, res)
 }
 
+// GetApplication 查询考生资格申请详情
+func (h *Handler) GetApplication(w http.ResponseWriter, r *http.Request) {
+	appID, ok := requiredURLParam(w, r, "app_id")
+	if !ok {
+		return
+	}
+
+	res, err := h.Creds.GetApplicationDetail(r.Context(), &gcredspb.GetApplicationDetailRequest{
+		AppUlid: appID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, applicationDetailPayload(res))
+}
+
+func applicationDetailPayload(app *gcredspb.Application) map[string]interface{} {
+	if app == nil {
+		return map[string]interface{}{}
+	}
+
+	files := make([]map[string]interface{}, 0, len(app.GetFiles()))
+	for _, file := range app.GetFiles() {
+		files = append(files, credentialFilePayload(file))
+	}
+
+	return map[string]interface{}{
+		"app_ulid":       app.GetAppUlid(),
+		"app_id":         app.GetAppUlid(),
+		"candidate_ulid": app.GetCandidateUlid(),
+		"cred_def_ulid":  app.GetCredDefUlid(),
+		"cred_def_id":    app.GetCredDefUlid(),
+		"status":         app.GetStatus(),
+		"files":          files,
+		"auditor_ulid":   app.GetAuditorUlid(),
+		"audit_remark":   app.GetAuditRemark(),
+		"audit_at":       app.GetAuditAt(),
+		"created_at":     app.GetCreatedAt(),
+		"update_count":   app.GetUpdateCount(),
+	}
+}
+
+func credentialFilePayload(file *gcredspb.FileInfo) map[string]interface{} {
+	if file == nil {
+		return map[string]interface{}{}
+	}
+
+	return map[string]interface{}{
+		"file_hash":  file.GetFileHash(),
+		"file_name":  file.GetFileName(),
+		"file_type":  file.GetFileType(),
+		"file_ext":   file.GetFileExt(),
+		"file_size":  file.GetFileSize(),
+		"file_usage": file.GetFileUsage(),
+		"view_url":   file.GetViewUrl(),
+	}
+}
+
 func normalizeApplicationStatus(status string) string {
 	switch strings.ToUpper(strings.TrimSpace(status)) {
 	case "", "0", "ALL", "APPLICATION_STATUS_UNSPECIFIED":
