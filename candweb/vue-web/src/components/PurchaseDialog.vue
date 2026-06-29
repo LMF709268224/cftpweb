@@ -87,8 +87,6 @@ type ExemptionOptions = {
   stages?: ExemptionStage[]
 }
 
-const PENDING_CREDENTIAL_QUAL_IDS_KEY = "pending_credential_qual_ulids"
-
 const props = defineProps<{
   open: boolean
   courseName: string
@@ -361,35 +359,8 @@ function applicationLoadingKey(unit: ExemptionUnit, qual: ExemptionQual) {
   return `${unit.unit_id || "unit"}:${qual.qual_id || "qual"}`
 }
 
-function credentialUploadPath(qualIds: string[]) {
-  const ids = mergeCredentialQualIds(qualIds)
-  const params = new URLSearchParams()
-  if (ids.length > 0) params.set("qual_ulids", ids.join(","))
-  return `/credentials${params.toString() ? `?${params.toString()}` : ""}`
-}
-
-function goToCredentialUpload(qualIds: string[]) {
-  window.location.assign(credentialUploadPath(qualIds))
-}
-
-function mergeCredentialQualIds(...groups: string[][]) {
-  const ids: string[] = []
-  const seen = new Set<string>()
-  for (const group of groups) {
-    for (const id of group) {
-      const value = String(id || "").trim()
-      if (!value || seen.has(value)) continue
-      seen.add(value)
-      ids.push(value)
-    }
-  }
-  return ids
-}
-
-function rememberPendingCredentialQualIds(qualIds: string[]) {
-  const ids = mergeCredentialQualIds(qualIds)
-  localStorage.setItem(PENDING_CREDENTIAL_QUAL_IDS_KEY, JSON.stringify(ids))
-  return ids
+function goToCredentialUpload() {
+  window.location.assign("/credentials")
 }
 
 function resetExemptionSelection() {
@@ -632,7 +603,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
         return
       }
       if (isApplicationResubmitStatus(existingApplication.status)) {
-        goToCredentialUpload([qualId])
+        goToCredentialUpload()
         return
       }
     }
@@ -648,7 +619,6 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     })
     const orderId = String(order?.application_order_ulid || "").trim()
     const orderStatus = String(order?.order_status || "")
-    rememberPendingCredentialQualIds(qualIds)
     credentialApplicationOrder.value = {
       applicationOrderUlid: orderId,
       orderStatus,
@@ -660,7 +630,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
 
     if (isUploadReadyStatus(orderStatus)) {
       toast.info(copy.value.qualificationUploadReady)
-      window.setTimeout(() => goToCredentialUpload(qualIds), 300)
+      window.setTimeout(() => goToCredentialUpload(), 300)
       return
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
