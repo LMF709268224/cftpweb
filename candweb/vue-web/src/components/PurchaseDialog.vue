@@ -595,6 +595,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     if (existingApplication?.status) {
       if (isApplicationPendingStatus(existingApplication.status)) {
         toast.info(copy.value.qualificationUnderReview)
+        window.setTimeout(() => goToCredentialUpload(), 300)
         return
       }
       if (isApplicationApprovedStatus(existingApplication.status)) {
@@ -609,14 +610,26 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     }
 
     const qualIds = [qualId]
-    const order = await apiClient("/api/credentials/application-orders", {
-      method: "POST",
-      body: JSON.stringify({
-        pipeline_cc_ulid: props.pipelineId,
-        bundle_ulid: resolvedBundleId.value,
-        qual_ulids: qualIds,
-      }),
-    })
+    let order
+    try {
+      order = await apiClient("/api/credentials/application-orders", {
+        method: "POST",
+        suppressErrorToast: true,
+        body: JSON.stringify({
+          pipeline_cc_ulid: props.pipelineId,
+          bundle_ulid: resolvedBundleId.value,
+          qual_ulids: qualIds,
+        }),
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ""
+      if (message.includes("in-progress credential application") || message.includes("进行中") || message.includes("请先处理")) {
+        toast.info(copy.value.qualificationUnderReview)
+        window.setTimeout(() => goToCredentialUpload(), 300)
+        return
+      }
+      throw error
+    }
     const orderId = String(order?.application_order_ulid || "").trim()
     const orderStatus = String(order?.order_status || "")
     credentialApplicationOrder.value = {
@@ -635,6 +648,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
     }
     if (isCredentialApplicationUnderReviewStatus(orderStatus)) {
       toast.info(copy.value.qualificationUnderReview)
+      window.setTimeout(() => goToCredentialUpload(), 300)
       return
     }
     if (isCredentialApplicationResolvedStatus(orderStatus)) {
