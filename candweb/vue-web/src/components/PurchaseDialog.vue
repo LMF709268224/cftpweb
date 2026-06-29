@@ -150,7 +150,7 @@ const hasExemptionOptions = computed(() => exemptionStages.value.length > 0)
 const selectedExemptionCount = computed(() => Object.values(selectedExemptionUnitIds.value).filter(Boolean).length)
 const isPreparingOrder = computed(() => Boolean(actionLoading.value && activeOrder.value && !paymentPreview.value && !activePaymentSession.value && !previewError.value))
 const isOrderPreviewLoading = computed(() => Boolean(activeOrder.value && !paymentPreview.value && !previewError.value && !activePaymentSession.value))
-const canCancelActiveOrder = computed(() => Boolean(activeOrder.value?.canCancel && !activePaymentSession.value))
+const canCancelActiveOrder = computed(() => Boolean(activeOrder.value?.orderId && (activeOrder.value?.canCancel || isCancelableOrderStatus(activeOrder.value?.status))))
 const pendingCredentialApplications = ref<Record<string, boolean>>({})
 const hasPendingCredentialApplication = computed(() => Object.values(pendingCredentialApplications.value).some(Boolean))
 
@@ -296,13 +296,36 @@ function normalizedStatus(status: unknown) {
   return String(status || "").trim().toUpperCase()
 }
 
+function normalizedOrderStatus(status: unknown) {
+  const value = normalizedStatus(status)
+  switch (value) {
+    case "1":
+      return "PENDING_CREATE"
+    case "2":
+      return "PENDING_PAYMENT"
+    case "3":
+      return "COMPLETED"
+    case "4":
+      return "CANCELLED"
+    case "5":
+      return "FAILED"
+    default:
+      return value
+  }
+}
+
 function isCompletedStatus(status: unknown) {
-  return normalizedStatus(status).includes("COMPLETED")
+  return normalizedOrderStatus(status).includes("COMPLETED")
 }
 
 function isFailedStatus(status: unknown) {
-  const value = normalizedStatus(status)
+  const value = normalizedOrderStatus(status)
   return value.includes("FAILED") || value.includes("CANCEL") || value.includes("REJECT")
+}
+
+function isCancelableOrderStatus(status: unknown) {
+  const value = normalizedOrderStatus(status)
+  return value.includes("WAIT") || value.includes("PENDING")
 }
 
 function isUploadReadyStatus(status: unknown) {
@@ -525,7 +548,7 @@ async function createBundlePurchaseOrder(bundleOrderUlid = "") {
     orderId,
     status: orderStatus,
     payOrderId: order?.bundle_pay_order_ulid,
-    canCancel: false,
+    canCancel: isCancelableOrderStatus(orderStatus),
     message: order?.message,
   }
   paymentPreview.value = null
@@ -587,7 +610,7 @@ async function createUnlockOrder() {
       orderId,
       status: orderStatus,
       payOrderId: order.pay_order_ulid,
-      canCancel: false,
+      canCancel: isCancelableOrderStatus(orderStatus),
       message: order.message,
     }
     if (isCompletedStatus(orderStatus)) {
@@ -746,10 +769,16 @@ function initiatePayment() {
         bundle_id: resolvedBundleId.value,
       },
     }
+    paymentLoading.value = false
   } catch (error) {
     console.error(error)
     paymentLoading.value = false
   }
+}
+
+async function handlePaymentSessionError() {
+  paymentLoading.value = false
+  await refreshEligibility()
 }
 </script>
 
@@ -983,6 +1012,7 @@ function initiatePayment() {
             :return-path="activePaymentSession.returnPath"
             :extra-return-params="activePaymentSession.extraReturnParams"
             min-height-class="min-h-[420px]"
+            @error="handlePaymentSessionError"
           />
         </div>
 
@@ -1044,7 +1074,7 @@ function initiatePayment() {
         <button v-if="activeOrder && previewError" class="btn btn-outline" :disabled="actionLoading" @click="refreshEligibility">
           {{ copy.retryPreview }}
         </button>
-        <button v-if="canCancelActiveOrder" class="btn border-red-600 bg-red-600 text-white shadow-sm shadow-red-100 hover:border-red-700 hover:bg-red-700 disabled:border-red-300 disabled:bg-red-300 disabled:text-white" :disabled="cancelOrderLoading || actionLoading || paymentLoading" @click="cancelActiveOrder">
+        <button v-if="canCancelActiveOrder" class="btn border-red-600 bg-red-600 text-white shadow-sm shadow-red-100 hover:border-red-700 hover:bg-red-700 disabled:border-red-300 disabled:bg-red-300 disabled:text-white" :disabled="cancelOrderLoading || actionLoading" @click="cancelActiveOrder">
           <Loader2 v-if="cancelOrderLoading" class="h-4 w-4 animate-spin" />
           {{ copy.cancelOrder }}
         </button>
