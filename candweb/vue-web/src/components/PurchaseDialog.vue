@@ -603,7 +603,6 @@ async function createUnlockOrder() {
       })
     })
     const orderId = order.pipeline_unlock_order_ulid
-    const paymentKey = order.payment_key
     const orderStatus = order.order_status
     activeOrder.value = {
       action: "unlock",
@@ -622,11 +621,11 @@ async function createUnlockOrder() {
       toast.error(copy.value.unlockFailed)
       return
     }
-    if (orderId && (paymentKey || order.pay_order_ulid || normalizedStatus(orderStatus).includes("PAYMENT"))) {
+    if (orderId) {
       paymentPreview.value = null
       previewError.value = ""
+      // Re-initiate by business order so a reused unlock order never mounts an expired Stripe session.
       activePaymentSession.value = {
-        paymentKey,
         bizType: "PIPELINE_UNLOCK",
         bizRefUlid: orderId,
         orderId,
@@ -778,6 +777,7 @@ function initiatePayment() {
 
 async function handlePaymentSessionError() {
   paymentLoading.value = false
+  activePaymentSession.value = null
   await refreshEligibility()
 }
 </script>
