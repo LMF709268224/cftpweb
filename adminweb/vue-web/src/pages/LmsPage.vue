@@ -69,6 +69,21 @@ type MaterialForm = {
   sort_order: string
 }
 
+type SupplementaryMaterialForm = {
+  kind: string
+  data_json: string
+}
+
+type SupplementaryMaterialItem = {
+  key: string
+  chapter: string
+  type: string
+  title: string
+  description: string
+  url: string
+  sourceKind: string
+}
+
 type LessonListItem = {
   lesson: JsonRecord
   chapter: JsonRecord | null
@@ -93,6 +108,7 @@ const selectedChapter = ref<JsonRecord | null>(null)
 const lessons = ref<JsonRecord[]>([])
 const materials = ref<JsonRecord[]>([])
 const selectedMaterial = ref<JsonRecord | null>(null)
+const supplementaryMaterial = ref<JsonRecord | null>(null)
 const quizzes = ref<JsonRecord[]>([])
 const selectedQuiz = ref<JsonRecord | null>(null)
 const questions = ref<JsonRecord[]>([])
@@ -105,6 +121,7 @@ const completeLoading = ref(false)
 const chaptersLoading = ref(false)
 const lessonsLoading = ref(false)
 const materialsLoading = ref(false)
+const supplementaryMaterialLoading = ref(false)
 const quizzesLoading = ref(false)
 const questionsLoading = ref(false)
 const optionsLoading = ref(false)
@@ -112,6 +129,7 @@ const savingCourse = ref(false)
 const savingChapter = ref(false)
 const savingLesson = ref(false)
 const savingMaterial = ref(false)
+const savingSupplementaryMaterial = ref(false)
 const savingQuiz = ref(false)
 const savingQuestion = ref(false)
 const savingOption = ref(false)
@@ -126,6 +144,7 @@ const courseForm = ref<CourseForm>(emptyCourseForm())
 const chapterForm = ref<ChapterForm>(emptyChapterForm())
 const lessonForm = ref<LessonForm>(emptyLessonForm())
 const materialForm = ref<MaterialForm>(emptyMaterialForm())
+const supplementaryMaterialForm = ref<SupplementaryMaterialForm>(emptySupplementaryMaterialForm())
 const quizForm = ref<QuizForm>(emptyQuizForm())
 const questionForm = ref<QuestionForm>(emptyQuestionForm())
 const optionForm = ref<OptionForm>(emptyOptionForm())
@@ -143,6 +162,7 @@ const importJson = ref("")
 const selectedCourseId = computed(() => courseId(selectedCourse.value))
 const selectedChapterId = computed(() => chapterId(selectedChapter.value))
 const selectedMaterialId = computed(() => materialId(selectedMaterial.value))
+const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() => parseSupplementaryMaterialItems(normalizeSupplementaryMaterials(supplementaryMaterial.value), "Chapter"))
 const selectedQuizId = computed(() => quizId(selectedQuiz.value))
 const selectedQuestionId = computed(() => questionId(selectedQuestion.value))
 const selectedCoursePublished = computed(() => Boolean(selectedCourse.value?.is_published))
@@ -264,6 +284,13 @@ function emptyMaterialForm(): MaterialForm {
   }
 }
 
+function emptySupplementaryMaterialForm(): SupplementaryMaterialForm {
+  return {
+    kind: "supplementary_materials",
+    data_json: "[]",
+  }
+}
+
 function emptyQuizForm(): QuizForm {
   return {
     scope: "chapter",
@@ -308,6 +335,10 @@ function lessonId(lesson: JsonRecord | null | undefined) {
 
 function materialId(material: JsonRecord | null | undefined) {
   return String(pickFirst(material || {}, ["material_id", "material_ulid"]) || "")
+}
+
+function supplementaryMaterialId(material: JsonRecord | null | undefined) {
+  return String(pickFirst(material || {}, ["material_id", "material_ulid", "materialId", "materialUlid"]) || "")
 }
 
 function quizId(quiz: JsonRecord | null | undefined) {
@@ -387,6 +418,23 @@ function materialTypeLabel(value: unknown) {
   return "未指定"
 }
 
+function supplementaryTypeLabel(type: string) {
+  const normalized = type.trim().toLowerCase()
+  if (normalized === "article") return "Article"
+  if (normalized === "video") return "Video"
+  if (normalized === "pdf") return "PDF"
+  if (normalized === "link") return "Link"
+  return type || "Material"
+}
+
+function supplementaryTypeClass(type: string) {
+  const normalized = type.trim().toLowerCase()
+  if (normalized === "video") return "border-violet-200 bg-violet-50 text-violet-700"
+  if (normalized === "article") return "border-blue-200 bg-blue-50 text-blue-700"
+  if (normalized === "pdf") return "border-red-200 bg-red-50 text-red-700"
+  return "border-slate-200 bg-slate-50 text-slate-700"
+}
+
 function quizzableTypeLabel(value: unknown) {
   const type = Number(value || 0)
   if (type === 1) return "课时测验"
@@ -405,6 +453,97 @@ function displayValue(value: unknown) {
 function recordEntries(record: JsonRecord | null | undefined) {
   if (!record) return []
   return Object.entries(record).map(([key, value]) => ({ key, value: displayValue(value) }))
+}
+
+function normalizeSupplementaryMaterials(raw: unknown): JsonRecord[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw.filter(isJsonRecord)
+  if (isJsonRecord(raw)) return [raw]
+  return []
+}
+
+function parseSupplementaryMaterialItems(materialsToParse: JsonRecord[], fallbackChapter = "Chapter"): SupplementaryMaterialItem[] {
+  return materialsToParse.flatMap((material, materialIndex) => {
+    const data = parseSupplementaryJson(material.data_json ?? material.dataJson)
+    const records = supplementaryRecordsFromData(data)
+
+    return records.map((record, recordIndex) => {
+      const title = stringFromRecord(record, ["title", "name", "label", "heading"])
+      const description = stringFromRecord(record, ["description", "desc", "summary", "detail", "content"])
+      const type = stringFromRecord(record, ["type", "material_type", "resource_type", "kind"]) || "Material"
+      const chapter = stringFromRecord(record, ["chapter", "chapter_title", "chapterTitle", "section"]) || fallbackChapter
+      const url = stringFromRecord(record, ["resource_link", "resourceLink", "url", "link", "href", "external_url", "externalUrl"])
+      const sourceId = supplementaryMaterialId(material) || "supplementary"
+      const fallbackKey = `${sourceId}-${materialIndex}-${recordIndex}`
+
+      return {
+        key: stringFromRecord(record, ["id", "material_id", "material_ulid", "materialId", "materialUlid", "resource_id", "resource_ulid", "resourceId", "resourceUlid", "key"]) || fallbackKey,
+        chapter,
+        type,
+        title: title || "Untitled material",
+        description,
+        url,
+        sourceKind: String(material.kind || ""),
+      }
+    })
+  })
+}
+
+function parseSupplementaryJson(dataJson: unknown): unknown {
+  if (!dataJson) return null
+  if (typeof dataJson !== "string") return dataJson
+
+  const trimmed = dataJson.trim()
+  if (!trimmed) return null
+
+  try {
+    const parsed = JSON.parse(trimmed)
+    if (typeof parsed === "string" && parsed.trim()) return parseSupplementaryJson(parsed)
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function supplementaryRecordsFromData(data: unknown): JsonRecord[] {
+  if (Array.isArray(data)) return data.filter(isJsonRecord)
+  if (!isJsonRecord(data)) return []
+
+  for (const key of ["items", "resources", "materials", "data", "data_json", "dataJson", "list"]) {
+    const value = data[key]
+    if (Array.isArray(value)) return value.filter(isJsonRecord)
+    const parsed = parseSupplementaryJson(value)
+    if (Array.isArray(parsed)) return parsed.filter(isJsonRecord)
+  }
+
+  return [data]
+}
+
+function isJsonRecord(value: unknown): value is JsonRecord {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value))
+}
+
+function stringFromRecord(record: JsonRecord, keys: string[]) {
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === "string" && value.trim()) return value.trim()
+    if (typeof value === "number" && Number.isFinite(value)) return String(value)
+  }
+  return ""
+}
+
+function formatSupplementaryDataJson(value: unknown) {
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    if (!trimmed) return "[]"
+    try {
+      return JSON.stringify(JSON.parse(trimmed), null, 2)
+    } catch {
+      return trimmed
+    }
+  }
+  if (value === null || value === undefined) return "[]"
+  return JSON.stringify(value, null, 2)
 }
 
 function extractQuizRecord(value: unknown) {
@@ -472,6 +611,7 @@ function resetContent() {
   lessons.value = []
   materials.value = []
   selectedMaterial.value = null
+  supplementaryMaterial.value = null
   quizzes.value = []
   selectedQuiz.value = null
   questions.value = []
@@ -486,6 +626,7 @@ function resetContent() {
   chapterForm.value = emptyChapterForm()
   lessonForm.value = emptyLessonForm()
   materialForm.value = emptyMaterialForm()
+  supplementaryMaterialForm.value = emptySupplementaryMaterialForm()
   quizForm.value = emptyQuizForm()
   questionForm.value = emptyQuestionForm()
   optionForm.value = emptyOptionForm()
@@ -516,7 +657,7 @@ async function selectCourse(course: JsonRecord) {
   courseForm.value = courseFormFrom(course)
   resetContent()
   courseView.value = "detail"
-  await Promise.all([loadCourseDetail(), loadCompleteCourse(), loadChapters(), loadMaterials()])
+  await Promise.all([loadCourseDetail(), loadCompleteCourse(), loadChapters(), loadMaterials(), loadSupplementaryMaterial()])
 }
 
 function newCourse() {
@@ -590,7 +731,7 @@ async function saveCourse() {
         courseForm.value = courseFormFrom(refreshed)
       }
     }
-    await Promise.all([loadCourseDetail(), loadCompleteCourse(), loadMaterials()])
+    await Promise.all([loadCourseDetail(), loadCompleteCourse(), loadMaterials(), loadSupplementaryMaterial()])
   } catch (err) {
     console.error(err)
     toast.error("课程保存失败")
@@ -825,6 +966,28 @@ async function loadMaterials() {
   }
 }
 
+async function loadSupplementaryMaterial() {
+  if (!selectedCourseId.value) return
+  supplementaryMaterialLoading.value = true
+  try {
+    const data = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material`)
+    const material = isJsonRecord(data.material) ? data.material : null
+    supplementaryMaterial.value = material
+    supplementaryMaterialForm.value = material
+      ? {
+          kind: String(material.kind || "supplementary_materials"),
+          data_json: formatSupplementaryDataJson(material.data_json ?? material.dataJson),
+        }
+      : emptySupplementaryMaterialForm()
+  } catch (err) {
+    console.error(err)
+    supplementaryMaterial.value = null
+    supplementaryMaterialForm.value = emptySupplementaryMaterialForm()
+  } finally {
+    supplementaryMaterialLoading.value = false
+  }
+}
+
 function editMaterial(material: JsonRecord) {
   selectedMaterial.value = material
   editingMaterialId.value = materialId(material)
@@ -843,6 +1006,56 @@ function newMaterial() {
   selectedMaterial.value = null
   editingMaterialId.value = ""
   materialForm.value = emptyMaterialForm()
+}
+
+async function saveSupplementaryMaterial() {
+  if (!selectedCourseId.value) return
+  if (!supplementaryMaterialForm.value.kind.trim()) {
+    toast.error("请填写辅助资料 kind")
+    return
+  }
+  try {
+    JSON.parse(supplementaryMaterialForm.value.data_json)
+  } catch {
+    toast.error("辅助资料 data_json 必须是合法 JSON")
+    return
+  }
+
+  savingSupplementaryMaterial.value = true
+  try {
+    const body: JsonRecord = {
+      kind: supplementaryMaterialForm.value.kind.trim(),
+      data_json: supplementaryMaterialForm.value.data_json.trim(),
+    }
+    const id = supplementaryMaterialId(supplementaryMaterial.value)
+    if (id) {
+      body.version = versionOf(supplementaryMaterial.value)
+      await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(body) })
+      toast.success("辅助资料已更新")
+    } else {
+      await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material`, { method: "POST", body: JSON.stringify(body) })
+      toast.success("辅助资料已创建")
+    }
+    await Promise.all([loadSupplementaryMaterial(), loadCompleteCourse(), loadCourseDetail()])
+  } catch (err) {
+    console.error(err)
+    toast.error("辅助资料保存失败")
+  } finally {
+    savingSupplementaryMaterial.value = false
+  }
+}
+
+async function deleteSupplementaryMaterial() {
+  const id = supplementaryMaterialId(supplementaryMaterial.value)
+  if (!selectedCourseId.value || !id || !window.confirm("确认删除这份候选端辅助资料配置？")) return
+  try {
+    await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material/${encodeURIComponent(id)}?version=${versionOf(supplementaryMaterial.value)}`, { method: "DELETE" })
+    toast.success("辅助资料已删除")
+    await Promise.all([loadSupplementaryMaterial(), loadCompleteCourse(), loadCourseDetail()])
+  } catch (err) {
+    console.error(err)
+    toast.error("辅助资料删除失败")
+  }
 }
 
 async function saveMaterial() {
@@ -1440,12 +1653,112 @@ onMounted(() => {
       </section>
 
       <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+        <div class="border-b border-slate-200 p-5">
           <div>
             <h2 class="text-xl font-black">课程资料</h2>
-            <p class="mt-1 text-sm text-slate-500">资料是课程级内容，由资料 list/create/update/delete 接口维护。</p>
+            <p class="mt-1 text-sm text-slate-500">候选端看到的 Supplementary Materials 来自辅助资料接口；普通文件资料由 materials 接口维护。</p>
           </div>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">新增资料</button>
+        </div>
+
+        <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_460px]">
+          <div class="rounded-2xl border border-slate-200">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+              <div>
+                <h3 class="font-black">候选端辅助资料</h3>
+                <p class="mt-1 text-sm text-slate-500">这里对应用户端“课程资料 / Supplementary Materials”列表。</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">{{ supplementaryMaterialItems.length }} 条</span>
+                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" :disabled="!selectedCourseId || supplementaryMaterialLoading" type="button" @click="loadSupplementaryMaterial">
+                  刷新
+                </button>
+              </div>
+            </div>
+            <div v-if="supplementaryMaterialLoading" class="p-8 text-center text-slate-500">
+              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+              正在加载...
+            </div>
+            <div v-else-if="!supplementaryMaterialItems.length" class="p-8 text-center text-slate-500">
+              暂无候选端辅助资料
+              <div class="mt-2 text-xs">如果用户端有资料，请确认 supplementary_material.data_json 是否已配置。</div>
+            </div>
+            <div v-else class="overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th class="px-4 py-3">Chapter</th>
+                    <th class="px-4 py-3">Type</th>
+                    <th class="px-4 py-3">Title & Description</th>
+                    <th class="px-4 py-3">Resource Link</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr v-for="item in supplementaryMaterialItems" :key="item.key">
+                    <td class="whitespace-nowrap px-4 py-4 font-semibold text-slate-800">{{ item.chapter }}</td>
+                    <td class="px-4 py-4">
+                      <span class="rounded-full border px-2 py-1 text-xs font-black" :class="supplementaryTypeClass(item.type)">{{ supplementaryTypeLabel(item.type) }}</span>
+                    </td>
+                    <td class="px-4 py-4">
+                      <div class="font-black text-slate-950">{{ item.title }}</div>
+                      <div v-if="item.description" class="mt-1 max-w-2xl text-sm text-slate-500">{{ item.description }}</div>
+                    </td>
+                    <td class="px-4 py-4">
+                      <a v-if="item.url" class="inline-flex max-w-xs items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100" :href="item.url" target="_blank" rel="noreferrer">
+                        <span class="truncate">{{ item.url }}</span>
+                      </a>
+                      <span v-else class="text-slate-400">-</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveSupplementaryMaterial">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <h3 class="font-black">{{ supplementaryMaterialId(supplementaryMaterial) ? "编辑辅助资料" : "创建辅助资料" }}</h3>
+                <p class="mt-1 text-xs text-slate-500">保存后候选端课程资料区会按 data_json 展示。</p>
+              </div>
+              <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600 disabled:opacity-40" :disabled="!supplementaryMaterialId(supplementaryMaterial)" type="button" @click="deleteSupplementaryMaterial">
+                删除
+              </button>
+            </div>
+            <div class="mt-4 grid gap-3">
+              <label class="block">
+                <span class="text-sm font-bold">kind</span>
+                <input v-model="supplementaryMaterialForm.kind" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="supplementary_materials" />
+                <span class="mt-1 block text-xs text-slate-500">资料集合类型标识，一般保持默认即可。</span>
+              </label>
+              <label class="block">
+                <span class="text-sm font-bold">data_json</span>
+                <textarea v-model="supplementaryMaterialForm.data_json" class="mt-2 min-h-96 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-5" placeholder='例如 [{"chapter":"Chapter 1","type":"Article","title":"What is fintech?","resource_link":"https://..."}]' />
+                <span class="mt-1 block text-xs text-slate-500">支持数组，或包含 items/resources/materials/list 的对象；候选端会从 chapter、type、title、description、resource_link 等字段读取展示。</span>
+              </label>
+              <button class="rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
+                {{ savingSupplementaryMaterial ? "保存中..." : "保存辅助资料" }}
+              </button>
+            </div>
+            <div v-if="supplementaryMaterial" class="mt-5 border-t border-slate-200 pt-4">
+              <h4 class="font-black">辅助资料完整字段</h4>
+              <div class="mt-3 max-h-56 space-y-3 overflow-y-auto pr-1">
+                <label v-for="entry in recordEntries(supplementaryMaterial)" :key="`supplementary-${entry.key}`" class="block">
+                  <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
+                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="border-t border-slate-200 px-5 pt-5">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 class="font-black">普通文件资料</h3>
+              <p class="mt-1 text-sm text-slate-500">这里对应 /materials 接口，通常是对象存储文件类资料；和上面的候选端辅助资料不是同一份数据。</p>
+            </div>
+            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">新增普通资料</button>
+          </div>
         </div>
         <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div class="rounded-2xl border border-slate-200">
