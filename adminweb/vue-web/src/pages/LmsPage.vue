@@ -24,6 +24,7 @@ type ChapterForm = {
 }
 
 type LessonForm = {
+  chapter_id: string
   title: string
   sort_order: string
   lesson_type: string
@@ -241,6 +242,7 @@ function emptyChapterForm(): ChapterForm {
 
 function emptyLessonForm(): LessonForm {
   return {
+    chapter_id: "",
     title: "",
     sort_order: "1",
     lesson_type: "2",
@@ -330,6 +332,10 @@ function courseTitle(course: JsonRecord | null | undefined) {
 
 function chapterTitle(chapter: JsonRecord | null | undefined) {
   return String(pickFirst(chapter || {}, ["title", "name"]) || chapterId(chapter) || "章节")
+}
+
+function chapterById(id: string) {
+  return chapters.value.find((item) => chapterId(item) === id) || null
 }
 
 function lessonTitle(lesson: JsonRecord | null | undefined) {
@@ -732,6 +738,7 @@ function editLesson(lesson: JsonRecord) {
     selectedChapter.value = ownerChapter
   }
   lessonForm.value = {
+    chapter_id: chapterId(ownerChapter) || String(lesson.chapter_id || lesson.chapter_ulid || selectedChapterId.value),
     title: String(lesson.title || ""),
     sort_order: String(lesson.sort_order || 1),
     lesson_type: String(lesson.lesson_type || 2),
@@ -748,10 +755,12 @@ function editLesson(lesson: JsonRecord) {
 function newLesson() {
   editingLessonId.value = ""
   lessonForm.value = emptyLessonForm()
+  lessonForm.value.chapter_id = selectedChapterId.value
 }
 
 async function saveLesson() {
-  if (!selectedChapterId.value || !lessonForm.value.title.trim()) {
+  const targetChapterId = lessonForm.value.chapter_id || selectedChapterId.value
+  if (!targetChapterId || !lessonForm.value.title.trim()) {
     toast.error("请先选择章节并填写课时标题")
     return
   }
@@ -760,7 +769,7 @@ async function saveLesson() {
   try {
     const type = Number(lessonForm.value.lesson_type || 2)
     const body = JSON.stringify({
-      chapter_id: selectedChapterId.value,
+      chapter_id: targetChapterId,
       title: lessonForm.value.title.trim(),
       sort_order: Number(lessonForm.value.sort_order || 1),
       lesson_type: type,
@@ -774,7 +783,7 @@ async function saveLesson() {
       await apiClient(`/api/lms/lessons/${encodeURIComponent(editingLessonId.value)}`, { method: "PUT", body })
       toast.success("课时已更新")
     } else {
-      await apiClient(`/api/lms/chapters/${encodeURIComponent(selectedChapterId.value)}/lessons`, { method: "POST", body })
+      await apiClient(`/api/lms/chapters/${encodeURIComponent(targetChapterId)}/lessons`, { method: "POST", body })
       toast.success("课时已创建")
     }
     newLesson()
@@ -1605,14 +1614,11 @@ onMounted(() => {
           </div>
           <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div class="space-y-6">
-              <div class="grid gap-3 sm:grid-cols-2">
+              <div class="grid gap-3">
                 <div class="rounded-2xl bg-blue-50 p-4">
                   <div class="text-xs font-black text-blue-600">所属章节</div>
                   <div class="mt-1 text-lg font-black text-slate-900">{{ selectedLessonOwnerChapter ? chapterTitle(selectedLessonOwnerChapter) : (selectedChapterId ? chapterTitle(selectedChapter) : "未选择章节") }}</div>
-                </div>
-                <div class="rounded-2xl bg-slate-50 p-4">
-                  <div class="text-xs font-black text-slate-500">所属章节 ID</div>
-                  <div class="mt-1 break-all font-mono text-xs text-slate-700">{{ selectedLessonOwnerChapter ? chapterId(selectedLessonOwnerChapter) : (selectedChapterId || "-") }}</div>
+                  <div class="mt-2 break-all font-mono text-sm font-bold text-blue-900">ID: {{ selectedLessonOwnerChapter ? chapterId(selectedLessonOwnerChapter) : (selectedChapterId || "-") }}</div>
                 </div>
               </div>
               <div class="rounded-2xl border border-slate-200 p-4">
@@ -1630,11 +1636,22 @@ onMounted(() => {
             <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveLesson">
               <h3 class="font-black">{{ editingLessonId ? "编辑课时" : "创建课时" }}</h3>
               <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-                保存后属于章节：{{ selectedChapterId ? chapterTitle(selectedChapter) : "请先在章节列表选择章节" }}
+                保存后属于章节：{{ lessonForm.chapter_id ? chapterTitle(chapterById(lessonForm.chapter_id)) : "请选择章节" }}
               </div>
+              <label class="mt-3 block">
+                <span class="text-sm font-bold">所属章节</span>
+                <select v-model="lessonForm.chapter_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                  <option value="">请选择章节</option>
+                  <option v-for="chapter in chapters" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
+                </select>
+              </label>
               <input v-model="lessonForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="课时标题" />
               <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                <input v-model="lessonForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" min="1" />
+                <label class="block">
+                  <span class="text-sm font-bold">排序</span>
+                  <input v-model="lessonForm.sort_order" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="例如 1" type="number" min="1" />
+                  <span class="mt-1 block text-xs text-slate-500">当前章节内的展示顺序，数字越小越靠前。</span>
+                </label>
                 <select v-model="lessonForm.lesson_type" class="rounded-xl border border-slate-200 px-4 py-3">
                   <option value="1">视频</option>
                   <option value="2">文本</option>
@@ -1647,7 +1664,11 @@ onMounted(() => {
               </div>
               <textarea v-model="lessonForm.body" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="正文 / 链接说明" />
               <input v-model="lessonForm.asset_object_key" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="资产 Object Key 或外部链接" />
-              <input v-model="lessonForm.asset_file_hash" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="资产 File Hash" />
+              <label class="mt-3 block">
+                <span class="text-sm font-bold">资产 File Hash</span>
+                <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" title="文件内容的 SHA256 Hash，一般由上传接口或资源管理返回；文本/外链课时通常可以留空。">?</span>
+                <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="上传接口返回的文件 Hash，可为空" />
+              </label>
               <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedChapterId || savingLesson" type="submit">
                 {{ savingLesson ? "保存中..." : "保存课时" }}
               </button>
@@ -1684,21 +1705,6 @@ onMounted(() => {
             >
               新测验
             </button>
-          </div>
-        </div>
-
-        <div class="grid gap-3 border-b border-slate-100 p-5 text-sm text-slate-600 lg:grid-cols-3">
-          <div class="rounded-2xl bg-blue-50 p-4">
-            <div class="text-xs font-black text-blue-600">测验归属类型</div>
-            <div class="mt-1 text-lg font-black text-slate-900">{{ quizTarget().label }}级测验</div>
-          </div>
-          <div class="rounded-2xl bg-slate-50 p-4">
-            <div class="text-xs font-black text-slate-500">当前归属对象</div>
-            <div class="mt-1 text-lg font-black text-slate-900">{{ quizTarget().id ? quizTarget().title : `未选择${quizTarget().label}` }}</div>
-          </div>
-          <div class="rounded-2xl bg-slate-50 p-4">
-            <div class="text-xs font-black text-slate-500">归属对象 ID</div>
-            <div class="mt-1 break-all font-mono text-xs text-slate-700">{{ quizTarget().id || "-" }}</div>
           </div>
         </div>
 
@@ -1770,101 +1776,123 @@ onMounted(() => {
             </form>
             </section>
 
-          <section class="rounded-2xl border border-slate-200">
-            <div class="border-b border-slate-200 p-4">
-              <h3 class="font-black">题目</h3>
-              <p class="mt-1 text-xs text-slate-500">{{ selectedQuizId ? quizTitle(selectedQuiz) : "请先选择测验。" }}</p>
-            </div>
-            <div v-if="questionsLoading" class="p-6 text-center text-slate-500">
-              <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
-              正在加载...
-            </div>
-            <div v-else-if="!questions.length" class="p-6 text-center text-slate-500">暂无题目</div>
-            <div v-else class="max-h-96 divide-y divide-slate-100 overflow-y-auto">
-              <div v-for="question in questions" :key="questionId(question)" class="flex items-center justify-between gap-3 p-4" :class="questionId(question) === selectedQuestionId ? 'bg-sky-50' : ''">
-                <button class="flex-1 text-left" type="button" @click="editQuestion(question)">
-                  <div class="line-clamp-2 font-black">{{ questionTitle(question) }}</div>
-                  <div class="mt-1 text-xs text-slate-500">{{ questionTypeLabel(question.question_type) }} · {{ question.points || 0 }} 分</div>
-                </button>
-                <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuestion(question)">删除</button>
-              </div>
-            </div>
-            <form class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
-              <div class="flex items-center justify-between gap-3">
-                <h4 class="font-black">{{ editingQuestionId ? "编辑题目" : "创建题目" }}</h4>
+          <section class="grid gap-6 2xl:grid-cols-[360px_minmax(0,1fr)]">
+            <aside class="rounded-2xl border border-slate-200">
+              <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+                <div>
+                  <h3 class="font-black">题目列表</h3>
+                  <p class="mt-1 text-xs text-slate-500">题目属于当前选中的测验。</p>
+                </div>
                 <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuizId" type="button" @click="newQuestion">新题目</button>
               </div>
-              <textarea v-model="questionForm.question_text" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="题干" />
-              <div class="mt-3 grid gap-3 sm:grid-cols-3">
-                <select v-model="questionForm.question_type" class="rounded-xl border border-slate-200 px-4 py-3">
-                  <option value="1">单选</option>
-                  <option value="2">多选</option>
-                  <option value="3">判断</option>
-                </select>
-                <input v-model="questionForm.points" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="分值" type="number" />
-                <input v-model="questionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" />
+              <div v-if="questionsLoading" class="p-6 text-center text-slate-500">
+                <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
+                正在加载...
               </div>
-              <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
-                <input v-model="questionForm.is_required" type="checkbox" />
-                必答
-              </label>
-              <textarea v-model="questionForm.media_items_json" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs" placeholder="媒体 JSON，默认 []" />
-              <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
-                {{ savingQuestion ? "保存中..." : "保存题目" }}
-              </button>
-            </form>
-          </section>
+              <div v-else-if="!questions.length" class="p-6 text-center text-slate-500">暂无题目</div>
+              <div v-else class="max-h-96 divide-y divide-slate-100 overflow-y-auto">
+                <div v-for="question in questions" :key="questionId(question)" class="flex items-center justify-between gap-3 p-4" :class="questionId(question) === selectedQuestionId ? 'bg-sky-50' : ''">
+                  <button class="flex-1 text-left" type="button" @click="editQuestion(question)">
+                    <div class="line-clamp-2 font-black">{{ questionTitle(question) }}</div>
+                    <div class="mt-1 text-xs text-slate-500">{{ questionTypeLabel(question.question_type) }} · {{ question.points || 0 }} 分</div>
+                  </button>
+                  <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuestion(question)">删除</button>
+                </div>
+              </div>
+            </aside>
 
-          <section class="rounded-2xl border border-slate-200">
-            <div class="border-b border-slate-200 p-4">
-              <h3 class="font-black">选项</h3>
-              <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? "为当前题目配置答案。" : "请先选择题目。" }}</p>
-            </div>
-            <div v-if="optionsLoading" class="p-6 text-center text-slate-500">
-              <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
-              正在加载...
-            </div>
-            <div v-else-if="!options.length" class="p-6 text-center text-slate-500">暂无选项</div>
-            <div v-else class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
-              <div v-for="option in options" :key="optionId(option)" class="flex items-center justify-between gap-3 p-4" :class="optionId(option) === editingOptionId ? 'bg-sky-50' : ''">
-                <button class="flex-1 text-left" type="button" @click="editOption(option)">
-                  <div class="font-black">{{ optionTitle(option) }}</div>
-                  <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
-                    {{ option.is_correct ? "正确答案" : "普通选项" }} · 排序 {{ option.sort_order || 0 }}
+            <div class="space-y-6">
+              <section class="rounded-2xl border border-slate-200">
+                <div class="border-b border-slate-200 p-4">
+                  <h3 class="font-black">题目详情</h3>
+                  <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? questionTitle(selectedQuestion) : "选择题目编辑，或点击新题目创建。" }}</p>
+                </div>
+                <div class="grid gap-3 p-4 sm:grid-cols-2">
+                  <div class="rounded-2xl bg-blue-50 p-4">
+                    <div class="text-xs font-black text-blue-600">所属测验</div>
+                    <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizId ? quizTitle(selectedQuiz) : "未选择测验" }}</div>
+                    <div class="mt-2 break-all font-mono text-sm font-bold text-blue-900">ID: {{ selectedQuizId || "-" }}</div>
                   </div>
-                </button>
-                <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteOption(option)">删除</button>
-              </div>
-            </div>
-            <form class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
-              <div class="flex items-center justify-between gap-3">
-                <h4 class="font-black">{{ editingOptionId ? "编辑选项" : "创建选项" }}</h4>
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuestionId" type="button" @click="newOption">新选项</button>
-              </div>
-              <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="选项内容" />
-              <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                <input v-model="optionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" />
-                <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
-                  <input v-model="optionForm.is_correct" type="checkbox" />
-                  正确答案
-                </label>
-              </div>
-              <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuestionId || savingOption" type="submit">
-                {{ savingOption ? "保存中..." : "保存选项" }}
-              </button>
-            </form>
-            <div v-if="selectedQuiz || selectedQuestion" class="border-t border-slate-200 p-4">
-              <h4 class="font-black">测验/题目只读字段</h4>
-              <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
-                <label v-for="entry in recordEntries(selectedQuiz)" :key="`quiz-${entry.key}`" class="block">
-                  <span class="text-xs font-black text-slate-500">quiz.{{ entry.key }}</span>
-                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                </label>
-                <label v-for="entry in recordEntries(selectedQuestion)" :key="`question-${entry.key}`" class="block">
-                  <span class="text-xs font-black text-slate-500">question.{{ entry.key }}</span>
-                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                </label>
-              </div>
+                  <div class="rounded-2xl bg-slate-50 p-4">
+                    <div class="text-xs font-black text-slate-500">题目类型/分值</div>
+                    <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuestion ? questionTypeLabel(selectedQuestion.question_type) : questionTypeLabel(questionForm.question_type) }} · {{ selectedQuestion?.points || questionForm.points || 0 }} 分</div>
+                  </div>
+                </div>
+                <form class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
+                  <h4 class="font-black">{{ editingQuestionId ? "编辑题目" : "创建题目" }}</h4>
+                  <textarea v-model="questionForm.question_text" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="题干" />
+                  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                    <select v-model="questionForm.question_type" class="rounded-xl border border-slate-200 px-4 py-3">
+                      <option value="1">单选</option>
+                      <option value="2">多选</option>
+                      <option value="3">判断</option>
+                    </select>
+                    <input v-model="questionForm.points" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="分值" type="number" />
+                    <input v-model="questionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" />
+                  </div>
+                  <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
+                    <input v-model="questionForm.is_required" type="checkbox" />
+                    必答
+                  </label>
+                  <textarea v-model="questionForm.media_items_json" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs" placeholder="媒体 JSON，默认 []" />
+                  <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
+                    {{ savingQuestion ? "保存中..." : "保存题目" }}
+                  </button>
+                </form>
+              </section>
+
+              <section class="rounded-2xl border border-slate-200">
+                <div class="border-b border-slate-200 p-4">
+                  <h3 class="font-black">选项</h3>
+                  <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? "选项属于当前题目。" : "请先选择题目。" }}</p>
+                </div>
+                <div v-if="optionsLoading" class="p-6 text-center text-slate-500">
+                  <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
+                  正在加载...
+                </div>
+                <div v-else-if="!options.length" class="p-6 text-center text-slate-500">暂无选项</div>
+                <div v-else class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
+                  <div v-for="option in options" :key="optionId(option)" class="flex items-center justify-between gap-3 p-4" :class="optionId(option) === editingOptionId ? 'bg-sky-50' : ''">
+                    <button class="flex-1 text-left" type="button" @click="editOption(option)">
+                      <div class="font-black">{{ optionTitle(option) }}</div>
+                      <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
+                        {{ option.is_correct ? "正确答案" : "普通选项" }} · 排序 {{ option.sort_order || 0 }}
+                      </div>
+                    </button>
+                    <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteOption(option)">删除</button>
+                  </div>
+                </div>
+                <form class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
+                  <div class="flex items-center justify-between gap-3">
+                    <h4 class="font-black">{{ editingOptionId ? "编辑选项" : "创建选项" }}</h4>
+                    <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuestionId" type="button" @click="newOption">新选项</button>
+                  </div>
+                  <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="选项内容" />
+                  <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                    <input v-model="optionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" />
+                    <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
+                      <input v-model="optionForm.is_correct" type="checkbox" />
+                      正确答案
+                    </label>
+                  </div>
+                  <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuestionId || savingOption" type="submit">
+                    {{ savingOption ? "保存中..." : "保存选项" }}
+                  </button>
+                </form>
+                <div v-if="selectedQuiz || selectedQuestion" class="border-t border-slate-200 p-4">
+                  <h4 class="font-black">测验/题目只读字段</h4>
+                  <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
+                    <label v-for="entry in recordEntries(selectedQuiz)" :key="`quiz-${entry.key}`" class="block">
+                      <span class="text-xs font-black text-slate-500">quiz.{{ entry.key }}</span>
+                      <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
+                    </label>
+                    <label v-for="entry in recordEntries(selectedQuestion)" :key="`question-${entry.key}`" class="block">
+                      <span class="text-xs font-black text-slate-500">question.{{ entry.key }}</span>
+                      <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
+                    </label>
+                  </div>
+                </div>
+              </section>
             </div>
           </section>
           </div>
