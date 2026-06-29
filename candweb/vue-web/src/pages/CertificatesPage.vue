@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
-import { Award, Calendar, CheckCircle2, ClipboardCheck, Download, ExternalLink, Eye, Loader2, Share2, ShieldCheck, Sparkles, X } from "lucide-vue-next"
+import { Award, Calendar, CheckCircle2, ClipboardCheck, Download, ExternalLink, Eye, Loader2, ShieldCheck, Sparkles, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import rewGif from "@/assets/rew.gif"
 import { apiClient } from "@/lib/apiClient"
@@ -102,30 +102,6 @@ function closeCelebrationModal() {
   }
 }
 
-async function shareFeaturedCertificate() {
-  const cert = featuredCertificate.value
-  if (!cert?.pdfUrl) return
-
-  const shareTitle = cert.name || t.value.certificatesPage.title
-  const shareText = t.value.certificatesPage.shareText
-
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title: shareTitle,
-        text: shareText,
-        url: cert.pdfUrl,
-      })
-      return
-    } catch (error) {
-      if ((error as DOMException)?.name === "AbortError") return
-    }
-  }
-
-  const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(cert.pdfUrl)}`
-  window.open(linkedInUrl, "_blank", "noopener,noreferrer")
-}
-
 function normalizeCertificates(list: any[]) {
   return list
     .map((cert: any) => ({
@@ -224,22 +200,14 @@ onMounted(async () => {
               <p class="mt-2 text-sm text-muted-foreground">{{ featuredCertificate.issueDate }} · {{ featuredCertificate.expiryDate }}</p>
             </div>
 
-            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+            <div class="mt-6">
               <button
-                class="certificate-modal-primary inline-flex items-center justify-center gap-2 rounded-[14px] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(16,30,67,0.24)] disabled:cursor-not-allowed disabled:opacity-50"
+                class="certificate-modal-primary inline-flex w-full items-center justify-center gap-2 rounded-[14px] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(16,30,67,0.24)] disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="!featuredCertificate.pdfUrl"
                 @click="downloadFeaturedCertificate"
               >
                 <Download class="h-4 w-4" />
                 {{ t.certificatesPage.celebrationModalDownload }}
-              </button>
-              <button
-                class="inline-flex items-center justify-center gap-2 rounded-[14px] border border-primary/18 bg-primary/[0.04] px-5 py-3 text-sm font-semibold text-primary transition hover:bg-primary/[0.08] disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-                disabled
-                @click="shareFeaturedCertificate"
-              >
-                <Share2 class="h-4 w-4" />
-                {{ t.certificatesPage.celebrationModalShare }}
               </button>
             </div>
 
@@ -315,7 +283,6 @@ onMounted(async () => {
             <button class="btn btn-primary flex-1 rounded-lg shadow-sm shadow-primary/20 transition-all duration-300 group-hover:shadow-primary/30" :disabled="!cert.pdfUrl" @click="openCertificate(cert.pdfUrl)">
               <Download class="h-4 w-4" /> {{ cert.pdfUrl ? t.certificatesPage.downloadCertificate : t.certificatesPage.certificateGenerating }}
             </button>
-            <button class="btn btn-outline rounded-lg px-3" disabled><Share2 class="h-4 w-4" /></button>
             <button class="btn btn-outline rounded-lg px-3" :disabled="!cert.pdfUrl" @click="previewCertificate(cert.pdfUrl)"><Eye class="h-4 w-4" /></button>
           </div>
         </div>
