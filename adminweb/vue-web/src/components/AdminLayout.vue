@@ -26,24 +26,49 @@ const router = useRouter()
 const route = useRoute()
 const collapsed = ref(false)
 
-const navItems = [
-  { path: "/lms", label: "课程配置", icon: BookOpen },
-  { path: "/resource-packs", label: "资源包配置", icon: FileText },
-  { path: "/resource-pack-files", label: "资源文件配置", icon: FileText },
-  { path: "/pipelines", label: "管线配置", icon: FileBadge },
-  { path: "/bundles", label: "商品配置", icon: Boxes },
-  { path: "/prog", label: "管线管理", icon: GitBranch },
-  { path: "/messages", label: "站内信", icon: MessageSquare },
-  { path: "/mails", label: "邮件中心", icon: Mail },
-  { path: "/orders", label: "订单管理", icon: CreditCard },
-  { path: "/invoices", label: "发票管理", icon: Receipt },
-  { path: "/credentials", label: "资格定义", icon: ShieldCheck },
-  { path: "/applications", label: "审核中心", icon: ClipboardCheck },
-  { path: "/pdf-templates", label: "PDF 模板配置", icon: FileText },
-  { path: "/pdf-requests", label: "证书生成流水", icon: FileBadge },
-  { path: "/audit/webhooks", label: "Webhook 审计", icon: Webhook },
-  { path: "/permissions", label: "考生权限管理", icon: GraduationCap },
-  { path: "/settings", label: "账户设置", icon: Settings },
+const navGroups = [
+  {
+    label: "课程与资源",
+    items: [
+      { path: "/lms", label: "课程配置", icon: BookOpen },
+      { path: "/resource-packs", label: "资源包配置", icon: FileText },
+      { path: "/resource-pack-files", label: "资源文件配置", icon: FileText },
+    ],
+  },
+  {
+    label: "认证流程",
+    items: [
+      { path: "/pipelines", label: "管线配置", icon: FileBadge },
+      { path: "/prog", label: "管线管理", icon: GitBranch },
+      { path: "/credentials", label: "资格定义", icon: ShieldCheck },
+      { path: "/applications", label: "审核中心", icon: ClipboardCheck },
+      { path: "/permissions", label: "考生权限管理", icon: GraduationCap },
+    ],
+  },
+  {
+    label: "商品与财务",
+    items: [
+      { path: "/bundles", label: "商品配置", icon: Boxes },
+      { path: "/orders", label: "订单管理", icon: CreditCard },
+      { path: "/invoices", label: "发票管理", icon: Receipt },
+    ],
+  },
+  {
+    label: "消息通知",
+    items: [
+      { path: "/messages", label: "站内信", icon: MessageSquare },
+      { path: "/mails", label: "邮件中心", icon: Mail },
+    ],
+  },
+  {
+    label: "系统运维",
+    items: [
+      { path: "/pdf-templates", label: "PDF 模板配置", icon: FileText },
+      { path: "/pdf-requests", label: "证书生成流水", icon: FileBadge },
+      { path: "/audit/webhooks", label: "Webhook 审计", icon: Webhook },
+      { path: "/settings", label: "账户设置", icon: Settings },
+    ],
+  },
 ]
 
 const userName = computed(() => getUserName())
@@ -85,17 +110,25 @@ async function logout() {
         <ChevronLeft class="h-4 w-4 transition-transform" :class="collapsed ? 'rotate-180' : ''" />
       </button>
 
-      <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-5">
-        <RouterLink
-          v-for="item in navItems"
-          :key="item.path"
-          :to="item.path"
-          class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
-          :class="route.path === item.path || route.path.startsWith(`${item.path}/`) ? '!bg-[#0b4ea2] !text-white shadow-lg shadow-sky-200 hover:!bg-[#0b4ea2]' : ''"
-        >
-          <component :is="item.icon" class="h-5 w-5 shrink-0" />
-          <span v-if="!collapsed">{{ item.label }}</span>
-        </RouterLink>
+      <nav class="flex-1 overflow-y-auto px-3 py-5">
+        <div v-for="group in navGroups" :key="group.label" class="mb-5 last:mb-0">
+          <div v-if="!collapsed" class="mb-2 px-3 text-[11px] font-black uppercase tracking-wider text-slate-400">
+            {{ group.label }}
+          </div>
+          <div v-else class="mx-auto mb-3 h-px w-8 bg-slate-200 first:hidden" />
+          <div class="space-y-1">
+            <RouterLink
+              v-for="item in group.items"
+              :key="item.path"
+              :to="item.path"
+              class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
+              :class="route.path === item.path || route.path.startsWith(`${item.path}/`) ? '!bg-[#0b4ea2] !text-white shadow-lg shadow-sky-200 hover:!bg-[#0b4ea2]' : ''"
+            >
+              <component :is="item.icon" class="h-5 w-5 shrink-0" />
+              <span v-if="!collapsed">{{ item.label }}</span>
+            </RouterLink>
+          </div>
+        </div>
       </nav>
 
       <div class="border-t border-slate-200 p-4">
