@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
-import { BadgeCheck, Boxes, Clock, GraduationCap, Search, ShieldCheck, UserRoundCheck } from "lucide-vue-next"
+import { Clock, GraduationCap, Search } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import CourseCard from "@/components/CourseCard.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -17,11 +17,11 @@ const allCourses = ref<any[]>([])
 const loading = ref(false)
 
 const emptyCopy = computed(() => t.value.courses)
-const categoryOptions = computed<Array<{ key: CourseCategoryFilter; label: string; icon: any }>>(() => [
-  { key: "all", label: t.value.courses.categoryAll, icon: Boxes },
-  { key: "certification", label: t.value.courses.categoryCertification, icon: BadgeCheck },
-  { key: "bundle", label: t.value.courses.categoryBundle, icon: ShieldCheck },
-  { key: "membership", label: t.value.courses.categoryMembership, icon: UserRoundCheck },
+const categoryOptions = computed<Array<{ key: CourseCategoryFilter; label: string }>>(() => [
+  { key: "all", label: t.value.courses.categoryAll },
+  { key: "certification", label: t.value.courses.categoryCertification },
+  { key: "bundle", label: t.value.courses.categoryBundle },
+  { key: "membership", label: t.value.courses.categoryMembership },
 ])
 
 function courseCategory(course: any): Exclude<CourseCategoryFilter, "all"> | "other" {
@@ -211,27 +211,25 @@ onMounted(() => {
           <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
         </div>
 
-        <div class="mb-4 flex flex-col gap-4 rounded-[16px] bg-white px-5 pt-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] lg:flex-row lg:items-start lg:justify-between lg:px-6">
+        <div class="mb-4 flex flex-col gap-3 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] lg:flex-row lg:items-center lg:justify-between">
           <div class="overflow-x-auto">
-            <div class="flex min-w-max gap-x-8 gap-y-2">
+            <div class="inline-flex min-w-max rounded-lg bg-[#f6fafb] p-1">
               <button
                 v-for="option in categoryOptions"
                 :key="option.key"
                 type="button"
                 :class="[
-                  'relative inline-flex h-12 cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-4 text-base font-medium transition-colors duration-200',
-                  activeCategory === option.key ? 'text-primary' : 'text-[#111827] hover:text-primary',
+                  'h-9 rounded-md px-3 text-sm font-semibold transition-colors',
+                  activeCategory === option.key ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-white hover:text-foreground',
                 ]"
                 @click="activeCategory = option.key"
               >
-                <component :is="option.icon" class="h-4 w-4" />
                 {{ option.label }}
-                <span v-if="activeCategory === option.key" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
               </button>
             </div>
           </div>
 
-          <div class="relative w-full pb-4 lg:ml-auto lg:max-w-md">
+          <div class="relative w-full lg:ml-auto lg:max-w-md">
             <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input v-model="searchQuery" class="input pl-10" :placeholder="t.courses.searchPlaceholder" />
           </div>
