@@ -362,7 +362,7 @@ function applicationLoadingKey(unit: ExemptionUnit, qual: ExemptionQual) {
 }
 
 function credentialUploadPath(qualIds: string[]) {
-  const ids = mergeCredentialQualIds(readPendingCredentialQualIds(), qualIds)
+  const ids = mergeCredentialQualIds(qualIds)
   const params = new URLSearchParams()
   if (ids.length > 0) params.set("qual_ulids", ids.join(","))
   return `/credentials${params.toString() ? `?${params.toString()}` : ""}`
@@ -386,20 +386,8 @@ function mergeCredentialQualIds(...groups: string[][]) {
   return ids
 }
 
-function readPendingCredentialQualIds() {
-  try {
-    const value = localStorage.getItem(PENDING_CREDENTIAL_QUAL_IDS_KEY)
-    if (!value) return []
-    const parsed = JSON.parse(value)
-    if (Array.isArray(parsed)) return mergeCredentialQualIds(parsed.map((item) => String(item || "")))
-  } catch {
-    // Ignore invalid legacy values and start a fresh pending list.
-  }
-  return []
-}
-
 function rememberPendingCredentialQualIds(qualIds: string[]) {
-  const ids = mergeCredentialQualIds(readPendingCredentialQualIds(), qualIds)
+  const ids = mergeCredentialQualIds(qualIds)
   localStorage.setItem(PENDING_CREDENTIAL_QUAL_IDS_KEY, JSON.stringify(ids))
   return ids
 }
