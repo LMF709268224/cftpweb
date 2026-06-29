@@ -68,6 +68,19 @@ type MaterialForm = {
   sort_order: string
 }
 
+type LessonListItem = {
+  lesson: JsonRecord
+  chapter: JsonRecord | null
+}
+
+type QuizListItem = {
+  quiz: JsonRecord
+  ownerType: number
+  owner: JsonRecord | null
+  chapter: JsonRecord | null
+  lesson: JsonRecord | null
+}
+
 const pageSize = 20
 
 const courses = ref<JsonRecord[]>([])
@@ -135,6 +148,78 @@ const selectedCoursePublished = computed(() => Boolean(selectedCourse.value?.is_
 const selectedCourseStatus = computed(() => selectedCourse.value?.status || (selectedCoursePublished.value ? "Published" : "Draft"))
 const selectedLesson = computed(() => lessons.value.find((item) => lessonId(item) === editingLessonId.value) || null)
 const selectedMaterialRecord = computed(() => materials.value.find((item) => materialId(item) === selectedMaterialId.value) || selectedMaterial.value)
+const completeCourseRecord = computed(() => {
+  const value = completeCourse.value?.complete_course
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : completeCourse.value
+})
+const allLessonItems = computed<LessonListItem[]>(() => {
+  const chapterDetails = Array.isArray(completeCourseRecord.value?.chapters) ? completeCourseRecord.value.chapters : []
+  const items: LessonListItem[] = []
+  for (const detail of chapterDetails) {
+    if (!detail || typeof detail !== "object" || Array.isArray(detail)) continue
+    const record = detail as JsonRecord
+    const chapter = record.chapter && typeof record.chapter === "object" && !Array.isArray(record.chapter) ? record.chapter as JsonRecord : record
+    const lessonDetails = Array.isArray(record.lessons) ? record.lessons : []
+    for (const lessonDetail of lessonDetails) {
+      if (!lessonDetail || typeof lessonDetail !== "object" || Array.isArray(lessonDetail)) continue
+      const lessonRecord = lessonDetail as JsonRecord
+      const lesson = lessonRecord.lesson && typeof lessonRecord.lesson === "object" && !Array.isArray(lessonRecord.lesson) ? lessonRecord.lesson as JsonRecord : lessonRecord
+      items.push({ lesson, chapter })
+    }
+  }
+  const knownIds = new Set(items.map((item) => lessonId(item.lesson)).filter(Boolean))
+  for (const lesson of lessons.value) {
+    if (!knownIds.has(lessonId(lesson))) items.push({ lesson, chapter: selectedChapter.value })
+  }
+  return items
+})
+const selectedLessonOwnerChapter = computed(() => allLessonItems.value.find((item) => lessonId(item.lesson) === editingLessonId.value)?.chapter || selectedChapter.value)
+const allQuizItems = computed<QuizListItem[]>(() => {
+  const items: QuizListItem[] = []
+  const complete = completeCourseRecord.value || {}
+  const courseQuizzes = Array.isArray(complete.quizzes) ? complete.quizzes : []
+  for (const quizDetail of courseQuizzes) {
+    const quiz = extractQuizRecord(quizDetail)
+    if (quiz) items.push({ quiz, ownerType: 3, owner: selectedCourse.value, chapter: null, lesson: null })
+  }
+  const chapterDetails = Array.isArray(complete.chapters) ? complete.chapters : []
+  for (const detail of chapterDetails) {
+    if (!detail || typeof detail !== "object" || Array.isArray(detail)) continue
+    const record = detail as JsonRecord
+    const chapter = record.chapter && typeof record.chapter === "object" && !Array.isArray(record.chapter) ? record.chapter as JsonRecord : record
+    const chapterQuizzes = Array.isArray(record.quizzes) ? record.quizzes : []
+    for (const quizDetail of chapterQuizzes) {
+      const quiz = extractQuizRecord(quizDetail)
+      if (quiz) items.push({ quiz, ownerType: 2, owner: chapter, chapter, lesson: null })
+    }
+    const lessonDetails = Array.isArray(record.lessons) ? record.lessons : []
+    for (const lessonDetail of lessonDetails) {
+      if (!lessonDetail || typeof lessonDetail !== "object" || Array.isArray(lessonDetail)) continue
+      const lessonRecord = lessonDetail as JsonRecord
+      const lesson = lessonRecord.lesson && typeof lessonRecord.lesson === "object" && !Array.isArray(lessonRecord.lesson) ? lessonRecord.lesson as JsonRecord : lessonRecord
+      const lessonQuizzes = Array.isArray(lessonRecord.quizzes) ? lessonRecord.quizzes : []
+      for (const quizDetail of lessonQuizzes) {
+        const quiz = extractQuizRecord(quizDetail)
+        if (quiz) items.push({ quiz, ownerType: 1, owner: lesson, chapter, lesson })
+      }
+    }
+  }
+  const knownIds = new Set(items.map((item) => quizId(item.quiz)).filter(Boolean))
+  for (const quiz of quizzes.value) {
+    if (knownIds.has(quizId(quiz))) continue
+    const target = quizTarget(quizForm.value.scope)
+    const ownerType = Number(quiz.quizzable_type || target.type)
+    items.push({
+      quiz,
+      ownerType,
+      owner: ownerType === 3 ? selectedCourse.value : ownerType === 2 ? selectedChapter.value : selectedLesson.value,
+      chapter: ownerType === 2 ? selectedChapter.value : selectedLessonOwnerChapter.value,
+      lesson: ownerType === 1 ? selectedLesson.value : null,
+    })
+  }
+  return items
+})
+const selectedQuizItem = computed(() => allQuizItems.value.find((item) => quizId(item.quiz) === selectedQuizId.value) || null)
 
 function emptyCourseForm(): CourseForm {
   return {
@@ -330,6 +415,33 @@ function displayValue(value: unknown) {
 function recordEntries(record: JsonRecord | null | undefined) {
   if (!record) return []
   return Object.entries(record).map(([key, value]) => ({ key, value: displayValue(value) }))
+}
+
+function extractQuizRecord(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const record = value as JsonRecord
+  return record.quiz && typeof record.quiz === "object" && !Array.isArray(record.quiz) ? record.quiz as JsonRecord : record
+}
+
+function scopeFromQuizzableType(value: unknown): QuizScope {
+  const type = Number(value || 0)
+  if (type === 3) return "course"
+  if (type === 1) return "lesson"
+  return "chapter"
+}
+
+function quizItemOwnerTitle(item: QuizListItem | null | undefined) {
+  if (!item) return "-"
+  if (item.ownerType === 3) return courseTitle(item.owner)
+  if (item.ownerType === 2) return chapterTitle(item.chapter || item.owner)
+  return lessonTitle(item.lesson || item.owner)
+}
+
+function quizItemOwnerId(item: QuizListItem | null | undefined) {
+  if (!item) return ""
+  if (item.ownerType === 3) return courseId(item.owner)
+  if (item.ownerType === 2) return chapterId(item.chapter || item.owner)
+  return lessonId(item.lesson || item.owner)
 }
 
 function courseFormFrom(course: JsonRecord): CourseForm {
@@ -631,6 +743,10 @@ async function loadLessons() {
 
 function editLesson(lesson: JsonRecord) {
   editingLessonId.value = lessonId(lesson)
+  const ownerChapter = allLessonItems.value.find((item) => lessonId(item.lesson) === editingLessonId.value)?.chapter
+  if (ownerChapter && chapterId(ownerChapter) !== selectedChapterId.value) {
+    selectedChapter.value = ownerChapter
+  }
   lessonForm.value = {
     title: String(lesson.title || ""),
     sort_order: String(lesson.sort_order || 1),
@@ -678,7 +794,7 @@ async function saveLesson() {
       toast.success("课时已创建")
     }
     newLesson()
-    await loadLessons()
+    await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
     toast.error("课时保存失败")
@@ -694,7 +810,7 @@ async function deleteLesson(lesson: JsonRecord) {
     await apiClient(`/api/lms/lessons/${encodeURIComponent(id)}?version=${versionOf(lesson)}`, { method: "DELETE" })
     toast.success("课时已删除")
     newLesson()
-    await loadLessons()
+    await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
     toast.error("课时删除失败")
@@ -833,10 +949,14 @@ async function loadQuizzes(scope: QuizScope = quizForm.value.scope) {
 }
 
 function editQuiz(quiz: JsonRecord) {
+  const item = allQuizItems.value.find((entry) => quizId(entry.quiz) === quizId(quiz))
+  const scope = scopeFromQuizzableType(item?.ownerType || quiz.quizzable_type || quizForm.value.scope)
+  if (item?.chapter) selectedChapter.value = item.chapter
+  if (item?.lesson) editLesson(item.lesson)
   selectedQuiz.value = quiz
   editingQuizId.value = quizId(quiz)
   quizForm.value = {
-    scope: quizForm.value.scope,
+    scope,
     title: String(quiz.title || ""),
     description: String(quiz.description || ""),
     passing_score: String(quiz.passing_score || 70),
@@ -885,8 +1005,7 @@ async function saveQuiz() {
     }
     const scope = quizForm.value.scope
     newQuiz(scope)
-    await loadQuizzes(scope)
-    if (selectedCourseId.value) await loadCourseDetail()
+    await Promise.all([loadQuizzes(scope), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
     toast.error("测验保存失败")
@@ -903,8 +1022,7 @@ async function deleteQuiz(quiz: JsonRecord) {
     toast.success("测验已删除")
     const scope = quizForm.value.scope
     newQuiz(scope)
-    await loadQuizzes(scope)
-    if (selectedCourseId.value) await loadCourseDetail()
+    await Promise.all([loadQuizzes(scope), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
     toast.error("测验删除失败")
@@ -1365,11 +1483,27 @@ onMounted(() => {
                 <option value="4">其他</option>
               </select>
               <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 p-4" placeholder="资料描述" />
-              <input v-model="materialForm.file_object_key" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="文件 Object Key" />
-              <input v-model="materialForm.file_hash" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="文件 Hash" />
+              <label class="block">
+                <span class="text-sm font-bold">文件 Object Key</span>
+                <input v-model="materialForm.file_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="例如 courses/xxx/materials/file.pdf" />
+                <span class="mt-1 block text-xs text-slate-500">对象存储里的文件路径。一般先在资源/上传流程拿到，不建议手工猜。</span>
+              </label>
+              <label class="block">
+                <span class="text-sm font-bold">文件 Hash</span>
+                <input v-model="materialForm.file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="文件 SHA256 Hash" />
+                <span class="mt-1 block text-xs text-slate-500">用于校验文件内容，上传接口或资源系统通常会返回。</span>
+              </label>
               <div class="grid gap-3 sm:grid-cols-2">
-                <input v-model="materialForm.file_size" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="文件大小" type="number" min="0" />
-                <input v-model="materialForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" min="1" />
+                <label class="block">
+                  <span class="text-sm font-bold">文件大小（字节）</span>
+                  <input v-model="materialForm.file_size" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="例如 204800" type="number" min="0" />
+                  <span class="mt-1 block text-xs text-slate-500">不知道时可先填 0。</span>
+                </label>
+                <label class="block">
+                  <span class="text-sm font-bold">排序</span>
+                  <input v-model="materialForm.sort_order" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="1" type="number" min="1" />
+                  <span class="mt-1 block text-xs text-slate-500">数字越小越靠前。</span>
+                </label>
               </div>
               <button class="rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial" type="submit">
                 {{ savingMaterial ? "保存中..." : "保存资料" }}
@@ -1393,7 +1527,7 @@ onMounted(() => {
           <div class="flex items-center justify-between border-b border-slate-200 p-5">
             <div>
               <h2 class="text-xl font-black">章节列表</h2>
-              <p class="mt-1 text-sm text-slate-500">左侧只负责选择章节。</p>
+              <p class="mt-1 text-sm text-slate-500">左侧选择章节，右侧只处理章节本身。</p>
             </div>
             <button class="rounded-xl border px-3 py-2 font-bold" :disabled="!selectedCourseId" type="button" @click="newChapter">新章节</button>
           </div>
@@ -1421,94 +1555,128 @@ onMounted(() => {
           </form>
         </aside>
 
-        <div class="space-y-6">
-          <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
-              <div>
-                <h2 class="text-xl font-black">章节内容</h2>
-                <p class="mt-1 text-sm text-slate-500">{{ selectedChapterId ? chapterTitle(selectedChapter) : "请选择左侧章节。" }}</p>
-              </div>
-              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" :disabled="!selectedChapterId" type="button" @click="newLesson">新增课时</button>
+        <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-xl font-black">章节详情</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ selectedChapterId ? chapterTitle(selectedChapter) : "请选择左侧章节，或点击新章节创建。" }}</p>
             </div>
+          </div>
+          <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+            <div class="rounded-2xl border border-slate-200 p-4">
+              <h3 class="font-black">章节完整字段</h3>
+              <p class="mt-1 text-xs text-slate-500">接口返回但不直接修改的字段置灰展示。</p>
+              <div v-if="!selectedChapterId" class="p-8 text-center text-slate-500">暂无选中的章节</div>
+              <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
+                <label v-for="entry in recordEntries(selectedChapter)" :key="`chapter-${entry.key}`" class="block">
+                  <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
+                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
+                </label>
+              </div>
+            </div>
+            <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveChapter">
+              <h3 class="font-black">{{ editingChapterId ? "编辑章节" : "创建章节" }}</h3>
+              <input v-model="chapterForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="章节标题" />
+              <input v-model="chapterForm.sort_order" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" min="1" />
+              <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="submit">
+                {{ savingChapter ? "保存中..." : "保存章节" }}
+              </button>
+            </form>
+          </div>
+        </section>
+      </section>
 
-            <div v-if="!selectedChapterId" class="p-10 text-center text-slate-500">选中章节后，这里展示章节字段和课时内容。</div>
-            <div v-else class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-              <div class="space-y-6">
-                <div class="rounded-2xl border border-slate-200 p-4">
-                  <h3 class="font-black">章节完整字段</h3>
-                  <div class="mt-3 grid gap-3 md:grid-cols-2">
-                    <label v-for="entry in recordEntries(selectedChapter)" :key="`chapter-${entry.key}`" class="block">
-                      <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
-                      <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                    </label>
-                  </div>
+      <section class="grid gap-6 2xl:grid-cols-[390px_minmax(0,1fr)]" :class="!selectedCourseId ? 'opacity-50' : ''">
+        <aside class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-xl font-black">课时列表</h2>
+              <p class="mt-1 text-sm text-slate-500">课时独立维护，详情里显示所属章节。</p>
+            </div>
+            <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-40" :disabled="!selectedChapterId" type="button" @click="newLesson">新课时</button>
+          </div>
+          <div v-if="completeLoading || lessonsLoading" class="p-8 text-center text-slate-500">
+            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+            正在加载...
+          </div>
+          <div v-else-if="!allLessonItems.length" class="p-8 text-center text-slate-500">暂无课时</div>
+          <div v-else class="max-h-[520px] divide-y divide-slate-100 overflow-y-auto">
+            <div v-for="item in allLessonItems" :key="lessonId(item.lesson)" class="grid gap-3 p-4 lg:grid-cols-[1fr_auto]" :class="lessonId(item.lesson) === editingLessonId ? 'bg-sky-50' : ''">
+              <button class="text-left" type="button" @click="editLesson(item.lesson)">
+                <div class="font-black">{{ lessonTitle(item.lesson) }}</div>
+                <div class="mt-1 text-sm text-slate-500">属于章节：{{ chapterTitle(item.chapter) }}</div>
+                <div class="mt-1 text-xs text-slate-500">排序 {{ item.lesson.sort_order || 0 }} · {{ lessonTypeLabel(item.lesson.lesson_type) }}</div>
+              </button>
+              <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteLesson(item.lesson)">删除</button>
+            </div>
+          </div>
+        </aside>
+
+        <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-xl font-black">课时详情</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ editingLessonId ? lessonTitle(selectedLesson) : "选择课时编辑，或先选择章节后新建课时。" }}</p>
+            </div>
+          </div>
+          <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <div class="space-y-6">
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div class="rounded-2xl bg-blue-50 p-4">
+                  <div class="text-xs font-black text-blue-600">所属章节</div>
+                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedLessonOwnerChapter ? chapterTitle(selectedLessonOwnerChapter) : (selectedChapterId ? chapterTitle(selectedChapter) : "未选择章节") }}</div>
                 </div>
-
-                <div class="rounded-2xl border border-slate-200">
-                  <div class="border-b border-slate-200 p-4">
-                    <h3 class="font-black">课时列表</h3>
-                    <p class="mt-1 text-xs text-slate-500">点击课时后，右侧表单进入编辑状态。</p>
-                  </div>
-                  <div v-if="lessonsLoading" class="p-8 text-center text-slate-500">
-                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-                    正在加载...
-                  </div>
-                  <div v-else-if="!lessons.length" class="p-8 text-center text-slate-500">暂无课时</div>
-                  <div v-else class="divide-y divide-slate-100">
-                    <div v-for="lesson in lessons" :key="lessonId(lesson)" class="grid gap-3 p-4 lg:grid-cols-[1fr_auto]" :class="lessonId(lesson) === editingLessonId ? 'bg-sky-50' : ''">
-                      <button class="text-left" type="button" @click="editLesson(lesson)">
-                        <div class="font-black">{{ lessonTitle(lesson) }}</div>
-                        <div class="mt-1 text-sm text-slate-500">排序 {{ lesson.sort_order || 0 }} · {{ lessonTypeLabel(lesson.lesson_type) }}</div>
-                        <div class="mt-1 break-all text-xs text-slate-400">{{ lesson.media_object_key || lesson.external_url || "-" }}</div>
-                      </button>
-                      <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteLesson(lesson)">删除</button>
-                    </div>
-                  </div>
+                <div class="rounded-2xl bg-slate-50 p-4">
+                  <div class="text-xs font-black text-slate-500">所属章节 ID</div>
+                  <div class="mt-1 break-all font-mono text-xs text-slate-700">{{ selectedLessonOwnerChapter ? chapterId(selectedLessonOwnerChapter) : (selectedChapterId || "-") }}</div>
                 </div>
               </div>
-
-              <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveLesson">
-                <h3 class="font-black">{{ editingLessonId ? "编辑课时" : "创建课时" }}</h3>
-                <input v-model="lessonForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="课时标题" />
-                <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                  <input v-model="lessonForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" min="1" />
-                  <select v-model="lessonForm.lesson_type" class="rounded-xl border border-slate-200 px-4 py-3">
-                    <option value="1">视频</option>
-                    <option value="2">文本</option>
-                    <option value="3">PDF</option>
-                    <option value="4">图片</option>
-                    <option value="5">音频</option>
-                    <option value="6">文件</option>
-                    <option value="7">链接</option>
-                  </select>
+              <div class="rounded-2xl border border-slate-200 p-4">
+                <h3 class="font-black">课时完整字段</h3>
+                <p class="mt-1 text-xs text-slate-500">接口返回但不直接修改的字段置灰展示。</p>
+                <div v-if="!selectedLesson" class="p-8 text-center text-slate-500">暂无选中的课时</div>
+                <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
+                  <label v-for="entry in recordEntries(selectedLesson)" :key="`lesson-${entry.key}`" class="block">
+                    <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
+                    <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
+                  </label>
                 </div>
-                <textarea v-model="lessonForm.body" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="正文 / 链接说明" />
-                <input v-model="lessonForm.asset_object_key" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="资产 Object Key 或外部链接" />
-                <input v-model="lessonForm.asset_file_hash" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="资产 File Hash" />
-                <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedChapterId || savingLesson" type="submit">
-                  {{ savingLesson ? "保存中..." : "保存课时" }}
-                </button>
-
-                <div v-if="selectedLesson" class="mt-5 border-t border-slate-200 pt-4">
-                  <h4 class="font-black">课时完整字段</h4>
-                  <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
-                    <label v-for="entry in recordEntries(selectedLesson)" :key="`lesson-${entry.key}`" class="block">
-                      <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
-                      <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                    </label>
-                  </div>
-                </div>
-              </form>
+              </div>
             </div>
-          </section>
-        </div>
+            <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveLesson">
+              <h3 class="font-black">{{ editingLessonId ? "编辑课时" : "创建课时" }}</h3>
+              <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+                保存后属于章节：{{ selectedChapterId ? chapterTitle(selectedChapter) : "请先在章节列表选择章节" }}
+              </div>
+              <input v-model="lessonForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="课时标题" />
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                <input v-model="lessonForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" min="1" />
+                <select v-model="lessonForm.lesson_type" class="rounded-xl border border-slate-200 px-4 py-3">
+                  <option value="1">视频</option>
+                  <option value="2">文本</option>
+                  <option value="3">PDF</option>
+                  <option value="4">图片</option>
+                  <option value="5">音频</option>
+                  <option value="6">文件</option>
+                  <option value="7">链接</option>
+                </select>
+              </div>
+              <textarea v-model="lessonForm.body" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="正文 / 链接说明" />
+              <input v-model="lessonForm.asset_object_key" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="资产 Object Key 或外部链接" />
+              <input v-model="lessonForm.asset_file_hash" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="资产 File Hash" />
+              <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedChapterId || savingLesson" type="submit">
+                {{ savingLesson ? "保存中..." : "保存课时" }}
+              </button>
+            </form>
+          </div>
+        </section>
       </section>
 
       <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
         <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
           <div>
             <h2 class="text-xl font-black">测验题库</h2>
-            <p class="mt-1 text-sm text-slate-500">测验可挂在课程或选中的章节下，题目和选项跟随选中的测验展开。</p>
+            <p class="mt-1 text-sm text-slate-500">测验可挂在课程、章节或课时下；左侧列表选择测验，右侧详情展示归属和题目选项。</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <select v-model="quizForm.scope" class="rounded-xl border border-slate-200 px-4 py-2 font-bold" @change="newQuiz(quizForm.scope)">
@@ -1550,31 +1718,53 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="grid gap-6 p-5 2xl:grid-cols-[360px_minmax(0,1fr)_420px]">
+        <div class="grid gap-6 p-5 2xl:grid-cols-[390px_minmax(0,1fr)]">
           <div class="rounded-2xl border border-slate-200">
             <div class="border-b border-slate-200 p-4">
               <h3 class="font-black">测验列表</h3>
-              <p class="mt-1 text-xs text-slate-500">点击测验后加载题目。</p>
+              <p class="mt-1 text-xs text-slate-500">左侧只负责选择测验，右侧展示详情。</p>
             </div>
             <div v-if="quizzesLoading" class="p-6 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
               正在加载...
             </div>
-            <div v-else-if="!quizzes.length" class="p-6 text-center text-slate-500">暂无测验</div>
+            <div v-else-if="!allQuizItems.length" class="p-6 text-center text-slate-500">暂无测验</div>
             <div v-else class="max-h-96 divide-y divide-slate-100 overflow-y-auto">
-              <div v-for="quiz in quizzes" :key="quizId(quiz)" class="flex items-center justify-between gap-3 p-4" :class="quizId(quiz) === selectedQuizId ? 'bg-sky-50' : ''">
-                <button class="flex-1 text-left" type="button" @click="editQuiz(quiz)">
-                  <div class="font-black">{{ quizTitle(quiz) }}</div>
-                  <div class="mt-1 text-xs text-slate-500">通过分 {{ quiz.passing_score || 0 }} · 题目 {{ quiz.question_count || 0 }}</div>
+              <div v-for="item in allQuizItems" :key="quizId(item.quiz)" class="flex items-center justify-between gap-3 p-4" :class="quizId(item.quiz) === selectedQuizId ? 'bg-sky-50' : ''">
+                <button class="flex-1 text-left" type="button" @click="editQuiz(item.quiz)">
+                  <div class="font-black">{{ quizTitle(item.quiz) }}</div>
+                  <div class="mt-1 text-xs text-slate-500">通过分 {{ item.quiz.passing_score || 0 }} · 题目 {{ item.quiz.question_count || 0 }}</div>
                   <div class="mt-2 inline-flex max-w-full items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
-                    <span>{{ quizzableTypeLabel(quiz.quizzable_type) }}</span>
-                    <span class="truncate">属于：{{ quizOwnerTitleByType(quiz.quizzable_type, quiz.quizzable_ulid) }}</span>
+                    <span>{{ quizzableTypeLabel(item.ownerType) }}</span>
+                    <span class="truncate">属于：{{ quizItemOwnerTitle(item) }}</span>
                   </div>
-                  <div class="mt-1 break-all font-mono text-[11px] text-slate-400">归属 ID: {{ quiz.quizzable_ulid || "-" }}</div>
+                  <div class="mt-1 break-all font-mono text-[11px] text-slate-400">归属 ID: {{ quizItemOwnerId(item) || "-" }}</div>
                 </button>
-                <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuiz(quiz)">删除</button>
+                <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuiz(item.quiz)">删除</button>
               </div>
             </div>
+          </div>
+
+          <div class="space-y-6">
+            <section class="rounded-2xl border border-slate-200">
+              <div class="border-b border-slate-200 p-4">
+                <h3 class="font-black">测验详情</h3>
+                <p class="mt-1 text-xs text-slate-500">{{ selectedQuizId ? quizTitle(selectedQuiz) : "选择测验查看详情，或按当前归属创建测验。" }}</p>
+              </div>
+              <div class="grid gap-4 p-4 lg:grid-cols-3">
+                <div class="rounded-2xl bg-blue-50 p-4">
+                  <div class="text-xs font-black text-blue-600">属于</div>
+                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem ? quizzableTypeLabel(selectedQuizItem.ownerType) : `${quizTarget().label}级测验` }}</div>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4">
+                  <div class="text-xs font-black text-slate-500">所属章节</div>
+                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem?.chapter ? chapterTitle(selectedQuizItem.chapter) : (quizForm.scope === "chapter" ? chapterTitle(selectedChapter) : "-") }}</div>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4">
+                  <div class="text-xs font-black text-slate-500">所属课时</div>
+                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem?.lesson ? lessonTitle(selectedQuizItem.lesson) : (quizForm.scope === "lesson" ? lessonTitle(selectedLesson) : "-") }}</div>
+                </div>
+              </div>
             <form class="border-t border-slate-200 p-4" @submit.prevent="saveQuiz">
               <h4 class="font-black">{{ editingQuizId ? "编辑测验" : "创建测验" }}</h4>
               <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
@@ -1594,9 +1784,9 @@ onMounted(() => {
                 {{ savingQuiz ? "保存中..." : "保存测验" }}
               </button>
             </form>
-          </div>
+            </section>
 
-          <div class="rounded-2xl border border-slate-200">
+          <section class="rounded-2xl border border-slate-200">
             <div class="border-b border-slate-200 p-4">
               <h3 class="font-black">题目</h3>
               <p class="mt-1 text-xs text-slate-500">{{ selectedQuizId ? quizTitle(selectedQuiz) : "请先选择测验。" }}</p>
@@ -1639,9 +1829,9 @@ onMounted(() => {
                 {{ savingQuestion ? "保存中..." : "保存题目" }}
               </button>
             </form>
-          </div>
+          </section>
 
-          <div class="rounded-2xl border border-slate-200">
+          <section class="rounded-2xl border border-slate-200">
             <div class="border-b border-slate-200 p-4">
               <h3 class="font-black">选项</h3>
               <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? "为当前题目配置答案。" : "请先选择题目。" }}</p>
@@ -1692,6 +1882,7 @@ onMounted(() => {
                 </label>
               </div>
             </div>
+          </section>
           </div>
         </div>
       </section>
