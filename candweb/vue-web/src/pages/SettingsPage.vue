@@ -9,6 +9,7 @@ import { clearAccessToken } from "@/lib/authStorage"
 import { getMessage } from "@/lib/messages"
 import { useTranslation } from "@/lib/language"
 import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData } from "@/lib/locationOptions"
+import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 
 const route = useRoute()
 const router = useRouter()
@@ -43,6 +44,7 @@ const selectedProvinceCode = ref("")
 const countryOptions = ref<Array<{ code: string; name: string }>>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
+const genderOptions = GENDER_OPTIONS
 
 const CN_STATE_LABELS: Record<string, string> = {
   AH: "安徽", BJ: "北京", CQ: "重庆", FJ: "福建", GS: "甘肃", GD: "广东", GX: "广西", GZ: "贵州",
@@ -173,16 +175,28 @@ function handleProvinceChange() {
   refreshCityOptions()
 }
 
-function normalizeInternationalPhone(value: string) {
-  const trimmed = value.trim()
-  const prefix = trimmed.includes("+") ? "+" : ""
-  const digits = trimmed.replace(/\D/g, "").slice(0, 15)
-  return `${prefix}${digits}`
-}
-
 function handlePhoneInput(field: "homePhone" | "workPhone", event: Event) {
   const target = event.target as HTMLInputElement
   profile[field] = normalizeInternationalPhone(target.value)
+}
+
+function sanitizeProfileForm() {
+  profile.displayName = trimToMax(profile.displayName, PROFILE_TEXT_LIMITS.short)
+  profile.realName = trimToMax(profile.realName, PROFILE_TEXT_LIMITS.short)
+  profile.firstName = trimToMax(profile.firstName, PROFILE_TEXT_LIMITS.short)
+  profile.lastName = trimToMax(profile.lastName, PROFILE_TEXT_LIMITS.short)
+  profile.gender = normalizeGender(profile.gender)
+  profile.country = trimToMax(profile.country, PROFILE_TEXT_LIMITS.short)
+  profile.province = trimToMax(profile.province, PROFILE_TEXT_LIMITS.short)
+  profile.city = trimToMax(profile.city, PROFILE_TEXT_LIMITS.short)
+  profile.address = trimToMax(profile.address, PROFILE_TEXT_LIMITS.address)
+  profile.postalCode = normalizePostalCode(profile.postalCode)
+  profile.affiliation = trimToMax(profile.affiliation, PROFILE_TEXT_LIMITS.short)
+  profile.title = trimToMax(profile.title, PROFILE_TEXT_LIMITS.short)
+  profile.education = trimToMax(profile.education, PROFILE_TEXT_LIMITS.short)
+  profile.bio = trimToMax(profile.bio, PROFILE_TEXT_LIMITS.bio)
+  profile.homePhone = normalizeInternationalPhone(profile.homePhone)
+  profile.workPhone = normalizeInternationalPhone(profile.workPhone)
 }
 
 watch(
@@ -215,7 +229,7 @@ onMounted(async () => {
       profile.lastName = payload.last_name || ""
       profile.homePhone = payload.home_phone || payload.phone || ""
       profile.workPhone = payload.work_phone || ""
-      profile.gender = payload.gender || ""
+      profile.gender = normalizeGender(payload.gender)
       profile.birthday = normalizeDate(payload.birthday)
       profile.country = payload.country || payload.region || ""
       profile.province = payload.province || ""
@@ -246,6 +260,19 @@ watch(lang, () => {
 })
 
 async function handleUpdateProfile() {
+  sanitizeProfileForm()
+  if (!isValidInternationalPhone(profile.homePhone)) {
+    toast.error(t.value.settings.validationInvalidPhone.replace("{{field}}", t.value.settings.homePhone))
+    return
+  }
+  if (!isValidInternationalPhone(profile.workPhone)) {
+    toast.error(t.value.settings.validationInvalidPhone.replace("{{field}}", t.value.settings.workPhone))
+    return
+  }
+  if (!isValidPostalCode(profile.postalCode)) {
+    toast.error(t.value.settings.validationInvalidPostalCode)
+    return
+  }
   isProfileLoading.value = true
   try {
     await apiClient("/api/user/profile", {
@@ -344,11 +371,17 @@ async function handleUpdatePassword() {
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.loginId }}</span><input v-model="profile.name" class="input bg-muted" disabled /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.email }}</span><input v-model="profile.email" class="input bg-muted" disabled /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.displayName }}</span><input v-model="profile.displayName" class="input" :placeholder="t.settings.displayNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.realName }}</span><input v-model="profile.realName" class="input" :placeholder="t.settings.realNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.firstName }}</span><input v-model="profile.firstName" class="input" :placeholder="t.settings.firstNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.lastName }}</span><input v-model="profile.lastName" class="input" :placeholder="t.settings.lastNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.gender }}</span><input v-model="profile.gender" class="input" :placeholder="t.settings.genderPlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.displayName }}</span><input v-model="profile.displayName" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.displayNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.realName }}</span><input v-model="profile.realName" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.realNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.firstName }}</span><input v-model="profile.firstName" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.firstNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.lastName }}</span><input v-model="profile.lastName" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.lastNamePlaceholder" /></label>
+            <label class="space-y-2">
+              <span class="text-sm font-medium">{{ t.settings.gender }}</span>
+              <select v-model="profile.gender" class="input cursor-pointer">
+                <option value="">{{ t.settings.genderPlaceholder }}</option>
+                <option v-for="option in genderOptions" :key="option" :value="option">{{ t.common.genderOptions[option] }}</option>
+              </select>
+            </label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.birthday }}</span><input v-model="profile.birthday" class="input" type="date" /></label>
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.homePhone }}</span>
@@ -358,6 +391,7 @@ async function handleUpdatePassword() {
                 type="tel"
                 inputmode="tel"
                 maxlength="16"
+                pattern="\+?\d{7,15}"
                 :placeholder="t.settings.homePhonePlaceholder"
                 @input="handlePhoneInput('homePhone', $event)"
               />
@@ -370,6 +404,7 @@ async function handleUpdatePassword() {
                 type="tel"
                 inputmode="tel"
                 maxlength="16"
+                pattern="\+?\d{7,15}"
                 :placeholder="t.settings.workPhonePlaceholder"
                 @input="handlePhoneInput('workPhone', $event)"
               />
@@ -387,7 +422,7 @@ async function handleUpdatePassword() {
                 <option value="">{{ t.settings.provincePlaceholder }}</option>
                 <option v-for="province in provinceOptions" :key="province.isoCode" :value="province.isoCode">{{ localizedProvinceName(province) }}</option>
               </select>
-              <input v-else v-model="profile.province" class="input" :placeholder="t.settings.provincePlaceholder" />
+              <input v-else v-model="profile.province" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.provincePlaceholder" />
             </label>
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.city }}</span>
@@ -395,14 +430,14 @@ async function handleUpdatePassword() {
                 <option value="">{{ t.settings.cityPlaceholder }}</option>
                 <option v-for="city in cityOptions" :key="`${city.name}-${city.latitude}-${city.longitude}`" :value="localizedCityName(city)">{{ localizedCityName(city) }}</option>
               </select>
-              <input v-else v-model="profile.city" class="input" :placeholder="t.settings.cityPlaceholder" />
+              <input v-else v-model="profile.city" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.cityPlaceholder" />
             </label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.postalCode }}</span><input v-model="profile.postalCode" class="input" :placeholder="t.settings.postalCodePlaceholder" /></label>
-            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.address }}</span><input v-model="profile.address" class="input" :placeholder="t.settings.addressPlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.affiliation }}</span><input v-model="profile.affiliation" class="input" :placeholder="t.settings.affiliationPlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.jobTitle }}</span><input v-model="profile.title" class="input" :placeholder="t.settings.jobTitlePlaceholder" /></label>
-            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.education }}</span><input v-model="profile.education" class="input" :placeholder="t.settings.educationPlaceholder" /></label>
-            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.bio }}</span><textarea v-model="profile.bio" class="textarea" :placeholder="t.settings.bioPlaceholder" rows="3" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.postalCode }}</span><input v-model="profile.postalCode" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" :placeholder="t.settings.postalCodePlaceholder" @blur="profile.postalCode = normalizePostalCode(profile.postalCode)" /></label>
+            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.address }}</span><input v-model="profile.address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" :placeholder="t.settings.addressPlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.affiliation }}</span><input v-model="profile.affiliation" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.affiliationPlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.jobTitle }}</span><input v-model="profile.title" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.jobTitlePlaceholder" /></label>
+            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.education }}</span><input v-model="profile.education" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.educationPlaceholder" /></label>
+            <label class="space-y-2 md:col-span-2"><span class="text-sm font-medium">{{ t.settings.bio }}</span><textarea v-model="profile.bio" class="textarea" :maxlength="PROFILE_TEXT_LIMITS.bio" :placeholder="t.settings.bioPlaceholder" rows="3" /></label>
           </div>
           <button class="btn btn-primary" :disabled="isProfileLoading"><Loader2 v-if="isProfileLoading" class="h-4 w-4 animate-spin" /> {{ t.common.save }}</button>
         </form>

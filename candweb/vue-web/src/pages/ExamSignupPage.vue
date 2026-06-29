@@ -8,6 +8,7 @@ import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { useUser } from "@/lib/user"
 import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData } from "@/lib/locationOptions"
+import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,7 @@ const selectedProvinceCode = ref("")
 const countryOptions = ref<Array<{ code: string; name: string }>>([])
 const provinceOptions = ref<any[]>([])
 const cityOptions = ref<any[]>([])
+const genderOptions = GENDER_OPTIONS
 const formData = reactive({
   first_name: "",
   middle_name: "",
@@ -166,16 +168,24 @@ function handleProvinceChange() {
   refreshCityOptions()
 }
 
-function normalizeInternationalPhone(value: string) {
-  const trimmed = value.trim()
-  const prefix = trimmed.includes("+") ? "+" : ""
-  const digits = trimmed.replace(/\D/g, "").slice(0, 15)
-  return `${prefix}${digits}`
-}
-
 function handlePhoneInput(field: "home_phone" | "work_phone", event: Event) {
   const target = event.target as HTMLInputElement
   formData[field] = normalizeInternationalPhone(target.value)
+}
+
+function sanitizeSignupForm() {
+  formData.first_name = trimToMax(formData.first_name, PROFILE_TEXT_LIMITS.short)
+  formData.middle_name = trimToMax(formData.middle_name, PROFILE_TEXT_LIMITS.short)
+  formData.last_name = trimToMax(formData.last_name, PROFILE_TEXT_LIMITS.short)
+  formData.email = trimToMax(formData.email, PROFILE_TEXT_LIMITS.short)
+  formData.gender = normalizeGender(formData.gender)
+  formData.country = trimToMax(formData.country, PROFILE_TEXT_LIMITS.short)
+  formData.province = trimToMax(formData.province, PROFILE_TEXT_LIMITS.short)
+  formData.city = trimToMax(formData.city, PROFILE_TEXT_LIMITS.short)
+  formData.address = trimToMax(formData.address, PROFILE_TEXT_LIMITS.address)
+  formData.postal_code = normalizePostalCode(formData.postal_code)
+  formData.home_phone = normalizeInternationalPhone(formData.home_phone)
+  formData.work_phone = normalizeInternationalPhone(formData.work_phone)
 }
 
 function normalizeDate(value: unknown) {
@@ -202,7 +212,7 @@ function splitRealName(value: unknown) {
 function applyProfileToForm(profile: any) {
   const realName = splitRealName(profile.real_name)
   formData.email = profile.email || formData.email
-  formData.gender = profile.gender || formData.gender
+  formData.gender = normalizeGender(profile.gender) || formData.gender
   formData.birthdate = normalizeDate(profile.birthday) || formData.birthdate
   formData.first_name = profile.first_name || realName.firstName || formData.first_name
   formData.middle_name = profile.middle_name || profile.display_name || formData.middle_name
@@ -310,6 +320,7 @@ async function handleSubmit() {
     toast.error(t.value.common.error)
     return
   }
+  sanitizeSignupForm()
   const requiredFields = [
     ["first_name", t.value.examSignup.formFirstName],
     ["middle_name", t.value.examSignup.formMiddleName],
@@ -329,6 +340,18 @@ async function handleSubmit() {
       toast.error(t.value.examSignup.validationRequired.replace("{{field}}", label))
       return
     }
+  }
+  if (!isValidInternationalPhone(formData.home_phone, true)) {
+    toast.error(t.value.examSignup.validationInvalidPhone.replace("{{field}}", t.value.examSignup.formHomePhone))
+    return
+  }
+  if (!isValidInternationalPhone(formData.work_phone)) {
+    toast.error(t.value.examSignup.validationInvalidPhone.replace("{{field}}", t.value.examSignup.formWorkPhone))
+    return
+  }
+  if (!isValidPostalCode(formData.postal_code, true)) {
+    toast.error(t.value.examSignup.validationInvalidPostalCode)
+    return
   }
   loading.value = true
   try {
@@ -361,13 +384,19 @@ async function handleSubmit() {
         <div class="max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <form class="space-y-6" @submit.prevent="handleSubmit">
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formFirstName }} *</span><input v-model="formData.first_name" class="input" required /></label>
-          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formLastName }} *</span><input v-model="formData.last_name" class="input" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formFirstName }} *</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formLastName }} *</span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
         </div>
-        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formMiddleName }} *</span><input v-model="formData.middle_name" class="input" /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formMiddleName }} *</span><input v-model="formData.middle_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" /></label>
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formEmail }} *</span><input v-model="formData.email" class="input" type="email" required /></label>
-          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formGender }} *</span><input v-model="formData.gender" class="input" placeholder="Male / Female" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formEmail }} *</span><input v-model="formData.email" class="input" type="email" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
+          <label class="space-y-2">
+            <span class="text-sm font-medium">{{ t.examSignup.formGender }} *</span>
+            <select v-model="formData.gender" class="input cursor-pointer" required>
+              <option value="" disabled>{{ t.examSignup.formGender }}</option>
+              <option v-for="option in genderOptions" :key="option" :value="option">{{ t.common.genderOptions[option] }}</option>
+            </select>
+          </label>
         </div>
         <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formBirthdate }} *</span><input v-model="formData.birthdate" class="input" type="date" required /></label>
         <div class="grid gap-4 sm:grid-cols-3">
@@ -384,7 +413,7 @@ async function handleSubmit() {
               <option value="" disabled>{{ t.examSignup.formProvince }}</option>
               <option v-for="province in provinceOptions" :key="province.isoCode" :value="province.isoCode">{{ localizedProvinceName(province) }}</option>
             </select>
-            <input v-else v-model="formData.province" class="input" required />
+            <input v-else v-model="formData.province" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required />
           </label>
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formCity }} *</span>
@@ -392,11 +421,11 @@ async function handleSubmit() {
               <option value="" disabled>{{ t.examSignup.formCity }}</option>
               <option v-for="city in cityOptions" :key="`${city.name}-${city.latitude}-${city.longitude}`" :value="localizedCityName(city)">{{ localizedCityName(city) }}</option>
             </select>
-            <input v-else v-model="formData.city" class="input" required />
+            <input v-else v-model="formData.city" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required />
           </label>
         </div>
-        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formAddress }} *</span><input v-model="formData.address" class="input" required /></label>
-        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formPostalCode }} *</span><input v-model="formData.postal_code" class="input" required /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formAddress }} *</span><input v-model="formData.address" class="input" :maxlength="PROFILE_TEXT_LIMITS.address" required /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formPostalCode }} *</span><input v-model="formData.postal_code" class="input" :maxlength="PROFILE_TEXT_LIMITS.postalCode" pattern="[A-Za-z0-9][A-Za-z0-9 -]*[A-Za-z0-9]" required @blur="formData.postal_code = normalizePostalCode(formData.postal_code)" /></label>
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2">
             <span class="text-sm font-medium">{{ t.examSignup.formWorkPhone }}</span>
@@ -406,6 +435,7 @@ async function handleSubmit() {
               type="tel"
               inputmode="tel"
               maxlength="16"
+              pattern="\+?\d{7,15}"
               @input="handlePhoneInput('work_phone', $event)"
             />
           </label>
@@ -417,6 +447,7 @@ async function handleSubmit() {
               type="tel"
               inputmode="tel"
               maxlength="16"
+              pattern="\+?\d{7,15}"
               required
               @input="handlePhoneInput('home_phone', $event)"
             />

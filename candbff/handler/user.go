@@ -63,6 +63,10 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
+	if err := normalizeAndValidateUserProfileInput(&input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, err.Error())
+		return
+	}
 
 	fullUser, err := casdoorsdk.GetUser(name)
 	if err != nil {

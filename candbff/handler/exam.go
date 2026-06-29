@@ -53,6 +53,10 @@ func (h *Handler) SignupExam(w http.ResponseWriter, r *http.Request) {
 	if courseUnitUlid != "" {
 		input.CourseUnitULID = courseUnitUlid
 	}
+	if err := normalizeAndValidateSignupExamInput(&input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, err.Error())
+		return
+	}
 	if !requireRequestFields(w, candidateID, "candidate_id", input.CourseUnitULID, "course_unit_ulid") {
 		return
 	}
