@@ -36,8 +36,6 @@ export const en: AppTranslations = {
     genderOptions: {
       Male: "Male",
       Female: "Female",
-      Other: "Other",
-      "Prefer not to say": "Prefer not to say",
     },
   },
   app: {

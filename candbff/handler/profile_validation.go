@@ -25,10 +25,6 @@ func normalizeProfileGender(value string) string {
 		return "Male"
 	case "female", "f", "woman", "girl", "2", "女", "女性":
 		return "Female"
-	case "other", "其他", "其它":
-		return "Other"
-	case "prefer not to say", "prefer_not_to_say", "undisclosed", "保密", "不愿透露":
-		return "Prefer not to say"
 	default:
 		return ""
 	}

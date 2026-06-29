@@ -34,8 +34,6 @@ export const zh = {
     genderOptions: {
       Male: "男",
       Female: "女",
-      Other: "其他",
-      "Prefer not to say": "不愿透露",
     },
   },
   app: {

@@ -5,7 +5,7 @@ export const PROFILE_TEXT_LIMITS = {
   postalCode: 16,
 }
 
-export const GENDER_OPTIONS = ["Male", "Female", "Other", "Prefer not to say"] as const
+export const GENDER_OPTIONS = ["Male", "Female"] as const
 
 export type GenderOption = (typeof GENDER_OPTIONS)[number]
 
@@ -24,14 +24,6 @@ const genderAliases: Record<string, GenderOption> = {
   "2": "Female",
   女: "Female",
   女性: "Female",
-  other: "Other",
-  其他: "Other",
-  其它: "Other",
-  "prefer not to say": "Prefer not to say",
-  prefer_not_to_say: "Prefer not to say",
-  undisclosed: "Prefer not to say",
-  保密: "Prefer not to say",
-  不愿透露: "Prefer not to say",
 }
 
 export function normalizeGender(value: unknown) {
