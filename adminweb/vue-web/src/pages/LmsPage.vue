@@ -32,7 +32,7 @@ type LessonForm = {
   asset_file_hash: string
 }
 
-type QuizScope = "course" | "chapter"
+type QuizScope = "course" | "chapter" | "lesson"
 
 type QuizForm = {
   scope: QuizScope
@@ -294,6 +294,30 @@ function materialTypeLabel(value: unknown) {
   if (type === 3) return "参考资料"
   if (type === 4) return "其他"
   return "未指定"
+}
+
+function quizzableTypeLabel(value: unknown) {
+  const type = Number(value || 0)
+  if (type === 1) return "课时测验"
+  if (type === 2) return "章节测验"
+  if (type === 3) return "课程测验"
+  return "未知归属"
+}
+
+function quizOwnerTitleByType(type: unknown, id: unknown) {
+  const ownerId = String(id || "")
+  if (!ownerId) return "未指定"
+  const quizzableType = Number(type || 0)
+  if (quizzableType === 3) return courseId(selectedCourse.value) === ownerId ? courseTitle(selectedCourse.value) : ownerId
+  if (quizzableType === 2) {
+    const chapter = chapters.value.find((item) => chapterId(item) === ownerId)
+    return chapter ? chapterTitle(chapter) : ownerId
+  }
+  if (quizzableType === 1) {
+    const lesson = lessons.value.find((item) => lessonId(item) === ownerId)
+    return lesson ? lessonTitle(lesson) : ownerId
+  }
+  return ownerId
 }
 
 function displayValue(value: unknown) {
@@ -615,6 +639,10 @@ function editLesson(lesson: JsonRecord) {
     asset_object_key: String(lesson.media_object_key || lesson.asset_object_key || lesson.file_object_key || ""),
     asset_file_hash: String(lesson.media_file_hash || lesson.asset_file_hash || lesson.file_hash || ""),
   }
+  if (quizForm.value.scope === "lesson") {
+    newQuiz("lesson")
+    void loadQuizzes("lesson")
+  }
 }
 
 function newLesson() {
@@ -758,9 +786,13 @@ async function deleteMaterial(material: JsonRecord) {
 }
 
 function quizTarget(scope: QuizScope = quizForm.value.scope) {
-  return scope === "course"
-    ? { type: 3, id: selectedCourseId.value, label: "课程" }
-    : { type: 2, id: selectedChapterId.value, label: "章节" }
+  if (scope === "course") {
+    return { type: 3, id: selectedCourseId.value, label: "课程", title: courseTitle(selectedCourse.value) }
+  }
+  if (scope === "chapter") {
+    return { type: 2, id: selectedChapterId.value, label: "章节", title: chapterTitle(selectedChapter.value) }
+  }
+  return { type: 1, id: editingLessonId.value, label: "课时", title: lessonTitle(selectedLesson.value) }
 }
 
 function clearQuestionState() {
@@ -1482,21 +1514,40 @@ onMounted(() => {
             <select v-model="quizForm.scope" class="rounded-xl border border-slate-200 px-4 py-2 font-bold" @change="newQuiz(quizForm.scope)">
               <option value="course">课程测验</option>
               <option value="chapter">章节测验</option>
+              <option value="lesson">课时测验</option>
             </select>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" :disabled="!selectedCourseId || (quizForm.scope === 'chapter' && !selectedChapterId)" type="button" @click="loadQuizzes()">
+            <button
+              class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40"
+              :disabled="!selectedCourseId || (quizForm.scope === 'chapter' && !selectedChapterId) || (quizForm.scope === 'lesson' && !editingLessonId)"
+              type="button"
+              @click="loadQuizzes()"
+            >
               加载测验
             </button>
-            <button class="rounded-xl bg-[#0b4ea2] px-4 py-2 font-bold text-white disabled:opacity-40" :disabled="!selectedCourseId || (quizForm.scope === 'chapter' && !selectedChapterId)" type="button" @click="newQuiz(quizForm.scope)">
+            <button
+              class="rounded-xl bg-[#0b4ea2] px-4 py-2 font-bold text-white disabled:opacity-40"
+              :disabled="!selectedCourseId || (quizForm.scope === 'chapter' && !selectedChapterId) || (quizForm.scope === 'lesson' && !editingLessonId)"
+              type="button"
+              @click="newQuiz(quizForm.scope)"
+            >
               新测验
             </button>
           </div>
         </div>
 
-        <div class="border-b border-slate-100 p-5 text-sm text-slate-600">
-          当前目标：
-          <span class="font-black text-slate-900">
-            {{ quizForm.scope === "course" ? courseTitle(selectedCourse) : (selectedChapterId ? chapterTitle(selectedChapter) : "未选择章节") }}
-          </span>
+        <div class="grid gap-3 border-b border-slate-100 p-5 text-sm text-slate-600 lg:grid-cols-3">
+          <div class="rounded-2xl bg-blue-50 p-4">
+            <div class="text-xs font-black text-blue-600">测验归属类型</div>
+            <div class="mt-1 text-lg font-black text-slate-900">{{ quizTarget().label }}级测验</div>
+          </div>
+          <div class="rounded-2xl bg-slate-50 p-4">
+            <div class="text-xs font-black text-slate-500">当前归属对象</div>
+            <div class="mt-1 text-lg font-black text-slate-900">{{ quizTarget().id ? quizTarget().title : `未选择${quizTarget().label}` }}</div>
+          </div>
+          <div class="rounded-2xl bg-slate-50 p-4">
+            <div class="text-xs font-black text-slate-500">归属对象 ID</div>
+            <div class="mt-1 break-all font-mono text-xs text-slate-700">{{ quizTarget().id || "-" }}</div>
+          </div>
         </div>
 
         <div class="grid gap-6 p-5 2xl:grid-cols-[360px_minmax(0,1fr)_420px]">
@@ -1515,12 +1566,20 @@ onMounted(() => {
                 <button class="flex-1 text-left" type="button" @click="editQuiz(quiz)">
                   <div class="font-black">{{ quizTitle(quiz) }}</div>
                   <div class="mt-1 text-xs text-slate-500">通过分 {{ quiz.passing_score || 0 }} · 题目 {{ quiz.question_count || 0 }}</div>
+                  <div class="mt-2 inline-flex max-w-full items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
+                    <span>{{ quizzableTypeLabel(quiz.quizzable_type) }}</span>
+                    <span class="truncate">属于：{{ quizOwnerTitleByType(quiz.quizzable_type, quiz.quizzable_ulid) }}</span>
+                  </div>
+                  <div class="mt-1 break-all font-mono text-[11px] text-slate-400">归属 ID: {{ quiz.quizzable_ulid || "-" }}</div>
                 </button>
                 <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuiz(quiz)">删除</button>
               </div>
             </div>
             <form class="border-t border-slate-200 p-4" @submit.prevent="saveQuiz">
               <h4 class="font-black">{{ editingQuizId ? "编辑测验" : "创建测验" }}</h4>
+              <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+                保存后归属：{{ quizTarget().label }} · {{ quizTarget().id ? quizTarget().title : `未选择${quizTarget().label}` }}
+              </div>
               <input v-model="quizForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="测验标题" />
               <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4" placeholder="描述" />
               <div class="mt-3 grid gap-3 sm:grid-cols-2">
