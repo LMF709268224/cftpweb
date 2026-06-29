@@ -196,7 +196,12 @@ function canResubmit(status: string) {
   return ["REUPLOAD", "RESUBMIT", "NEEDS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD", "APPLICATION_STATUS_RESUBMIT"].includes(s)
 }
 
-  function isPendingReviewStatus(status: string) {
+function isRejectedStatus(status: string) {
+  const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
+  return ["REJECTED", "APPLICATION_STATUS_REJECTED"].includes(s)
+}
+
+function isPendingReviewStatus(status: string) {
   const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
   return ["PENDING", "APPLICATION_STATUS_PENDING"].includes(s)
 }
@@ -208,7 +213,7 @@ function isApprovedStatus(status: string) {
 
 function canStartNewApplication(status: string) {
   const s = statusEnumNameForStatus(CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, status).toUpperCase()
-  return !["PENDING", "APPLICATION_STATUS_PENDING", "APPROVED", "APPLICATION_STATUS_APPROVED"].includes(s)
+  return !["PENDING", "APPLICATION_STATUS_PENDING", "APPROVED", "APPLICATION_STATUS_APPROVED", "REJECTED", "APPLICATION_STATUS_REJECTED"].includes(s)
 }
 
 function credentialDefinitionId(def: any) {
@@ -266,6 +271,7 @@ function applicationActionLabel(def: any) {
   if (isPendingReviewStatus(existing.status)) return t.value.credentialsPage.applicationPendingHint
   if (isApprovedStatus(existing.status)) return t.value.credentialsPage.applicationApprovedHint
   if (canResubmit(existing.status)) return t.value.credentialsPage.appStatusResubmit
+  if (isRejectedStatus(existing.status)) return t.value.credentialsPage.appStatusRejected
   return t.value.credentialsPage.applyNow
 }
 

@@ -179,7 +179,7 @@ onMounted(() => load(1))
           <textarea
             v-model="auditRemark"
             class="mb-4 min-h-28 w-full rounded-2xl border border-slate-200 p-4 text-sm"
-            placeholder="审核备注，拒绝或要求补交时必填"
+            placeholder="审核备注：打回重提或最终拒绝时必填。需要用户重新提交材料时请选择“打回重提”。"
           />
           <div class="grid gap-3 md:grid-cols-3">
             <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('approve')">
@@ -188,11 +188,11 @@ onMounted(() => load(1))
             </button>
             <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('resubmit')">
               <RotateCcw class="h-4 w-4" />
-              要求补交
+              打回重提（允许再次提交）
             </button>
             <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('reject')">
               <XCircle class="h-4 w-4" />
-              拒绝
+              最终拒绝
             </button>
           </div>
 
