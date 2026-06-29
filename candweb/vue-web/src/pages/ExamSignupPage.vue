@@ -174,9 +174,9 @@ function handlePhoneInput(field: "home_phone" | "work_phone", event: Event) {
 }
 
 function sanitizeSignupForm() {
-  formData.first_name = trimToMax(formData.first_name, PROFILE_TEXT_LIMITS.short)
-  formData.middle_name = trimToMax(formData.middle_name, PROFILE_TEXT_LIMITS.short)
-  formData.last_name = trimToMax(formData.last_name, PROFILE_TEXT_LIMITS.short)
+  formData.first_name = trimToMax(formData.first_name, PROFILE_TEXT_LIMITS.name)
+  formData.middle_name = trimToMax(formData.middle_name, PROFILE_TEXT_LIMITS.name)
+  formData.last_name = trimToMax(formData.last_name, PROFILE_TEXT_LIMITS.name)
   formData.email = trimToMax(formData.email, PROFILE_TEXT_LIMITS.short)
   formData.gender = normalizeGender(formData.gender)
   formData.country = trimToMax(formData.country, PROFILE_TEXT_LIMITS.short)
@@ -384,10 +384,10 @@ async function handleSubmit() {
         <div class="max-w-2xl rounded-[16px] bg-white p-6 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
       <form class="space-y-6" @submit.prevent="handleSubmit">
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formFirstName }} *</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
-          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formLastName }} *</span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formFirstName }} *</span><input v-model="formData.first_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
+          <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formLastName }} *</span><input v-model="formData.last_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" required /></label>
         </div>
-        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formMiddleName }} *</span><input v-model="formData.middle_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" /></label>
+        <label class="block space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formMiddleName }} *</span><input v-model="formData.middle_name" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" /></label>
         <div class="grid gap-4 sm:grid-cols-2">
           <label class="space-y-2"><span class="text-sm font-medium">{{ t.examSignup.formEmail }} *</span><input v-model="formData.email" class="input" type="email" :maxlength="PROFILE_TEXT_LIMITS.short" required /></label>
           <label class="space-y-2">

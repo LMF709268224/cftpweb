@@ -181,10 +181,10 @@ function handlePhoneInput(field: "homePhone" | "workPhone", event: Event) {
 }
 
 function sanitizeProfileForm() {
-  profile.displayName = trimToMax(profile.displayName, PROFILE_TEXT_LIMITS.short)
-  profile.realName = trimToMax(profile.realName, PROFILE_TEXT_LIMITS.short)
-  profile.firstName = trimToMax(profile.firstName, PROFILE_TEXT_LIMITS.short)
-  profile.lastName = trimToMax(profile.lastName, PROFILE_TEXT_LIMITS.short)
+  profile.displayName = trimToMax(profile.displayName, PROFILE_TEXT_LIMITS.name)
+  profile.realName = trimToMax(profile.realName, PROFILE_TEXT_LIMITS.name)
+  profile.firstName = trimToMax(profile.firstName, PROFILE_TEXT_LIMITS.name)
+  profile.lastName = trimToMax(profile.lastName, PROFILE_TEXT_LIMITS.name)
   profile.gender = normalizeGender(profile.gender)
   profile.country = trimToMax(profile.country, PROFILE_TEXT_LIMITS.short)
   profile.province = trimToMax(profile.province, PROFILE_TEXT_LIMITS.short)
@@ -371,10 +371,10 @@ async function handleUpdatePassword() {
           <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.loginId }}</span><input v-model="profile.name" class="input bg-muted" disabled /></label>
             <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.email }}</span><input v-model="profile.email" class="input bg-muted" disabled /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.displayName }}</span><input v-model="profile.displayName" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.displayNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.realName }}</span><input v-model="profile.realName" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.realNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.firstName }}</span><input v-model="profile.firstName" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.firstNamePlaceholder" /></label>
-            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.lastName }}</span><input v-model="profile.lastName" class="input" :maxlength="PROFILE_TEXT_LIMITS.short" :placeholder="t.settings.lastNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.displayName }}</span><input v-model="profile.displayName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.displayNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.realName }}</span><input v-model="profile.realName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.realNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.firstName }}</span><input v-model="profile.firstName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.firstNamePlaceholder" /></label>
+            <label class="space-y-2"><span class="text-sm font-medium">{{ t.settings.lastName }}</span><input v-model="profile.lastName" class="input" :maxlength="PROFILE_TEXT_LIMITS.name" :placeholder="t.settings.lastNamePlaceholder" /></label>
             <label class="space-y-2">
               <span class="text-sm font-medium">{{ t.settings.gender }}</span>
               <select v-model="profile.gender" class="input cursor-pointer">

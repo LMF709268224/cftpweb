@@ -1,4 +1,5 @@
 export const PROFILE_TEXT_LIMITS = {
+  name: 20,
   short: 64,
   address: 160,
   bio: 500,

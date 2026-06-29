@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	profileNameTextMax   = 20
 	profileShortTextMax  = 64
 	profileAddressMax    = 160
 	profileBioMax        = 500
@@ -108,16 +109,16 @@ func normalizeAndValidateUserProfileInput(input *UserProfileInput) error {
 		value string
 		max   int
 	}{
-		{"display_name", input.DisplayName, profileShortTextMax},
-		{"first_name", input.FirstName, profileShortTextMax},
-		{"last_name", input.LastName, profileShortTextMax},
+		{"display_name", input.DisplayName, profileNameTextMax},
+		{"first_name", input.FirstName, profileNameTextMax},
+		{"last_name", input.LastName, profileNameTextMax},
 		{"country", input.Country, profileShortTextMax},
 		{"province", input.Province, profileShortTextMax},
 		{"city", input.City, profileShortTextMax},
 		{"address", input.Address, profileAddressMax},
 		{"affiliation", input.Affiliation, profileShortTextMax},
 		{"title", input.Title, profileShortTextMax},
-		{"real_name", input.RealName, profileShortTextMax},
+		{"real_name", input.RealName, profileNameTextMax},
 		{"bio", input.Bio, profileBioMax},
 		{"education", input.Education, profileShortTextMax},
 	}
@@ -126,9 +127,9 @@ func normalizeAndValidateUserProfileInput(input *UserProfileInput) error {
 			return err
 		}
 	}
-	input.DisplayName = trimProfileText(input.DisplayName, profileShortTextMax)
-	input.FirstName = trimProfileText(input.FirstName, profileShortTextMax)
-	input.LastName = trimProfileText(input.LastName, profileShortTextMax)
+	input.DisplayName = trimProfileText(input.DisplayName, profileNameTextMax)
+	input.FirstName = trimProfileText(input.FirstName, profileNameTextMax)
+	input.LastName = trimProfileText(input.LastName, profileNameTextMax)
 	input.Phone = normalizeProfilePhone(input.Phone)
 	input.HomePhone = normalizeProfilePhone(input.HomePhone)
 	input.WorkPhone = normalizeProfilePhone(input.WorkPhone)
@@ -139,7 +140,7 @@ func normalizeAndValidateUserProfileInput(input *UserProfileInput) error {
 	input.PostalCode = normalizeProfilePostalCode(input.PostalCode)
 	input.Affiliation = trimProfileText(input.Affiliation, profileShortTextMax)
 	input.Title = trimProfileText(input.Title, profileShortTextMax)
-	input.RealName = trimProfileText(input.RealName, profileShortTextMax)
+	input.RealName = trimProfileText(input.RealName, profileNameTextMax)
 	input.Bio = trimProfileText(input.Bio, profileBioMax)
 	rawGender := strings.TrimSpace(input.Gender)
 	input.Gender = normalizeProfileGender(input.Gender)
@@ -169,9 +170,9 @@ func normalizeAndValidateSignupExamInput(input *SignupExamInput) error {
 		value string
 		max   int
 	}{
-		{"first_name", input.FirstName, profileShortTextMax},
-		{"middle_name", input.MiddleName, profileShortTextMax},
-		{"last_name", input.LastName, profileShortTextMax},
+		{"first_name", input.FirstName, profileNameTextMax},
+		{"middle_name", input.MiddleName, profileNameTextMax},
+		{"last_name", input.LastName, profileNameTextMax},
 		{"email", input.Email, profileShortTextMax},
 		{"country", input.Country, profileShortTextMax},
 		{"province", input.Province, profileShortTextMax},
@@ -183,9 +184,9 @@ func normalizeAndValidateSignupExamInput(input *SignupExamInput) error {
 			return err
 		}
 	}
-	input.FirstName = trimProfileText(input.FirstName, profileShortTextMax)
-	input.MiddleName = trimProfileText(input.MiddleName, profileShortTextMax)
-	input.LastName = trimProfileText(input.LastName, profileShortTextMax)
+	input.FirstName = trimProfileText(input.FirstName, profileNameTextMax)
+	input.MiddleName = trimProfileText(input.MiddleName, profileNameTextMax)
+	input.LastName = trimProfileText(input.LastName, profileNameTextMax)
 	input.Email = trimProfileText(input.Email, profileShortTextMax)
 	input.HomePhone = normalizeProfilePhone(input.HomePhone)
 	input.WorkPhone = normalizeProfilePhone(input.WorkPhone)
