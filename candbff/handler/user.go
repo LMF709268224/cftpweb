@@ -12,6 +12,8 @@ const (
 	userPropWorkPhone  = "work_phone"
 	userPropProvince   = "province"
 	userPropPostalCode = "postal_code"
+	userPropRealName   = "realName"
+	userPropRealNameV2 = "real_name"
 )
 
 // GetUserMe GET /api/user/me
@@ -46,7 +48,7 @@ func (h *Handler) GetUserMe(w http.ResponseWriter, r *http.Request) {
 		PostalCode:  getUserProperty(fullUser, userPropPostalCode),
 		Affiliation: fullUser.Affiliation,
 		Title:       fullUser.Title,
-		RealName:    fullUser.RealName,
+		RealName:    userRealName(fullUser),
 		Bio:         fullUser.Bio,
 		Gender:      fullUser.Gender,
 		Birthday:    fullUser.Birthday,
@@ -95,6 +97,8 @@ func (h *Handler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
 	setUserProperty(fullUser, userPropWorkPhone, input.WorkPhone)
 	setUserProperty(fullUser, userPropProvince, input.Province)
 	setUserProperty(fullUser, userPropPostalCode, input.PostalCode)
+	setUserProperty(fullUser, userPropRealName, input.RealName)
+	setUserProperty(fullUser, userPropRealNameV2, input.RealName)
 
 	if _, err := casdoorsdk.UpdateUser(fullUser); err != nil {
 		slog.Error("Failed to update user", "error", err)
@@ -139,6 +143,13 @@ func getUserProperty(user *casdoorsdk.User, key string) string {
 		return ""
 	}
 	return user.Properties[key]
+}
+
+func userRealName(user *casdoorsdk.User) string {
+	if user == nil {
+		return ""
+	}
+	return firstNonEmpty(user.RealName, getUserProperty(user, userPropRealName), getUserProperty(user, userPropRealNameV2))
 }
 
 func setUserProperty(user *casdoorsdk.User, key string, value string) {
