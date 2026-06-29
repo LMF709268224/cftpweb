@@ -16,6 +16,8 @@ import PdfTemplatesPage from "@/pages/PdfTemplatesPage.vue"
 import PermissionsPage from "@/pages/PermissionsPage.vue"
 import PipelinesPage from "@/pages/PipelinesPage.vue"
 import ProgPage from "@/pages/ProgPage.vue"
+import ResourcePackFilesPage from "@/pages/ResourcePackFilesPage.vue"
+import ResourcePacksPage from "@/pages/ResourcePacksPage.vue"
 import SettingsPage from "@/pages/SettingsPage.vue"
 import WebhookAuditPage from "@/pages/WebhookAuditPage.vue"
 
@@ -31,7 +33,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/resource-packs",
     name: "resource-packs",
-    component: () => import("@/pages/ResourcePage.vue"),
+    component: ResourcePacksPage,
     meta: {
       title: "资源包",
       subtitle: "查看资源包 (Resource Packs)",
@@ -43,7 +45,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
   {
     path: "/resource-pack-files",
     name: "resource-pack-files",
-    component: () => import("@/pages/ResourcePage.vue"),
+    component: ResourcePackFilesPage,
     meta: {
       title: "资源文件",
       subtitle: "查看资源包内的所有文件配置",
