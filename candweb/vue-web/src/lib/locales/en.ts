@@ -884,6 +884,7 @@ export const en: AppTranslations = {
     unsupportedPaymentKey: "Unsupported payment credential type. Please try again later.",
     purchaseCompleted: "Purchase successful. The certification is now active.",
     qualificationApplicationCreated: "Qualification application order created. Please follow the next steps.",
+    qualificationApplicationBlocked: "Another qualification application is in progress",
     qualificationUploadReady: "The upload entry is ready. Opening the qualification application page.",
     qualificationPaymentTitle: "Pay qualification review fee first",
     qualificationPaymentDesc: "After payment, the upload entry for this qualification will be enabled. Once approved, return here to select the exemption.",

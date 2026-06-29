@@ -151,6 +151,8 @@ const selectedExemptionCount = computed(() => Object.values(selectedExemptionUni
 const isPreparingOrder = computed(() => Boolean(actionLoading.value && activeOrder.value && !paymentPreview.value && !activePaymentSession.value && !previewError.value))
 const isOrderPreviewLoading = computed(() => Boolean(activeOrder.value && !paymentPreview.value && !previewError.value && !activePaymentSession.value))
 const canCancelActiveOrder = computed(() => Boolean(activeOrder.value?.canCancel && !activePaymentSession.value))
+const pendingCredentialApplications = ref<Record<string, boolean>>({})
+const hasPendingCredentialApplication = computed(() => Object.values(pendingCredentialApplications.value).some(Boolean))
 
 
 function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveOrder | null {
@@ -234,12 +236,17 @@ async function loadFreshDialogState() {
     await resolveBundleFromCatalog()
   }
   try {
-    if (await loadBundlePurchaseState()) return
+    if (await loadBundlePurchaseState()) {
+      await refreshPendingCredentialApplications()
+      return
+    }
     if (hasInitialPurchaseState()) {
       hydrateFromInitialState()
+      await refreshPendingCredentialApplications()
       return
     }
     await loadLegacyDialogState()
+    await refreshPendingCredentialApplications()
   } finally {
     dialogStateLoading.value = false
   }
@@ -363,6 +370,22 @@ function goToCredentialUpload() {
   window.location.assign("/credentials")
 }
 
+function qualificationActionDisabled(unit: ExemptionUnit, qual: ExemptionQual) {
+  const qualId = String(qual.qual_id || "").trim()
+  return Boolean(
+    credentialApplicationLoadingKey.value === applicationLoadingKey(unit, qual) ||
+    pendingCredentialApplications.value[qualId] ||
+    hasPendingCredentialApplication.value,
+  )
+}
+
+function qualificationActionLabel(qual: ExemptionQual) {
+  const qualId = String(qual.qual_id || "").trim()
+  if (pendingCredentialApplications.value[qualId]) return copy.value.qualificationUnderReview
+  if (hasPendingCredentialApplication.value) return copy.value.qualificationApplicationBlocked
+  return copy.value.goApplyQualification
+}
+
 function resetExemptionSelection() {
   exemptionOptions.value = null
   exemptionError.value = ""
@@ -431,10 +454,27 @@ async function latestCredentialApplication(qualId: string) {
   }
 }
 
+async function refreshPendingCredentialApplications() {
+  const qualIds = Array.from(new Set(
+    exemptionStages.value
+      .flatMap((stage) => stage.units || [])
+      .flatMap((unit) => unit.exemption_quals || [])
+      .map((qual) => String(qual.qual_id || "").trim())
+      .filter(Boolean),
+  ))
+  const next: Record<string, boolean> = {}
+  await Promise.all(qualIds.map(async (qualId) => {
+    const app = await latestCredentialApplication(qualId)
+    next[qualId] = Boolean(app?.status && isApplicationPendingStatus(app.status))
+  }))
+  pendingCredentialApplications.value = next
+}
+
 async function refreshEligibility() {
   eligibilityLoading.value = true
   try {
     if (!await loadBundlePurchaseState()) await loadLegacyDialogState()
+    await refreshPendingCredentialApplications()
   } finally {
     eligibilityLoading.value = false
   }
@@ -840,11 +880,11 @@ function initiatePayment() {
                         :key="`apply-${unit.unit_id}-${qual.qual_id}`"
                         type="button"
                         class="inline-flex items-center gap-1 rounded-md px-1.5 py-1 font-semibold text-primary hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
-                        :disabled="credentialApplicationLoadingKey === applicationLoadingKey(unit, qual)"
+                        :disabled="qualificationActionDisabled(unit, qual)"
                         @click.prevent="createCredentialApplicationOrder(unit, qual)"
                       >
                         <Loader2 v-if="credentialApplicationLoadingKey === applicationLoadingKey(unit, qual)" class="h-3 w-3 animate-spin" />
-                        {{ copy.goApplyQualification }}
+                        {{ qualificationActionLabel(qual) }}
                       </button>
                     </div>
                   </div>

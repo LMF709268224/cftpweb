@@ -881,6 +881,7 @@ export const zh = {
     unsupportedPaymentKey: "暂不支持的支付凭证类型，请稍后重试。",
     purchaseCompleted: "购买成功，认证已开通。",
     qualificationApplicationCreated: "资格申请订单已创建，请按提示继续处理。",
+    qualificationApplicationBlocked: "已有资格申请处理中",
     qualificationUploadReady: "资料上传入口已开放，正在前往资格申请页面。",
     qualificationPaymentTitle: "请先支付资格审核费",
     qualificationPaymentDesc: "支付完成后，系统会开放该资格的资料上传入口；上传并审核通过后即可回来选择免考。",
