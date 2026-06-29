@@ -389,22 +389,6 @@ function quizzableTypeLabel(value: unknown) {
   return "未知归属"
 }
 
-function quizOwnerTitleByType(type: unknown, id: unknown) {
-  const ownerId = String(id || "")
-  if (!ownerId) return "未指定"
-  const quizzableType = Number(type || 0)
-  if (quizzableType === 3) return courseId(selectedCourse.value) === ownerId ? courseTitle(selectedCourse.value) : ownerId
-  if (quizzableType === 2) {
-    const chapter = chapters.value.find((item) => chapterId(item) === ownerId)
-    return chapter ? chapterTitle(chapter) : ownerId
-  }
-  if (quizzableType === 1) {
-    const lesson = lessons.value.find((item) => lessonId(item) === ownerId)
-    return lesson ? lessonTitle(lesson) : ownerId
-  }
-  return ownerId
-}
-
 function displayValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "-"
   if (typeof value === "boolean") return value ? "是" : "否"
