@@ -8,17 +8,39 @@ import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
 const { t, lang } = useTranslation()
+type CourseCategoryFilter = "all" | "certification" | "bundle" | "membership"
+
 const searchQuery = ref("")
+const activeCategory = ref<CourseCategoryFilter>("all")
 const refreshKey = ref(0)
 const allCourses = ref<any[]>([])
 const loading = ref(false)
 
 const emptyCopy = computed(() => t.value.courses)
+const categoryOptions = computed<Array<{ key: CourseCategoryFilter; label: string }>>(() => [
+  { key: "all", label: t.value.courses.categoryAll },
+  { key: "certification", label: t.value.courses.categoryCertification },
+  { key: "bundle", label: t.value.courses.categoryBundle },
+  { key: "membership", label: t.value.courses.categoryMembership },
+])
 
-const filteredCourses = computed(() => allCourses.value.filter((course) =>
-  course.title.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-  course.description.toLowerCase().includes(searchQuery.value.toLowerCase()),
-))
+function courseCategory(course: any): Exclude<CourseCategoryFilter, "all"> | "other" {
+  if (course.isPipelineBundle && course.isMembershipBundle) return "bundle"
+  if (course.isPipelineBundle) return "certification"
+  if (course.isMembershipBundle) return "membership"
+  return "other"
+}
+
+const filteredCourses = computed(() => {
+  const keyword = searchQuery.value.trim().toLowerCase()
+  return allCourses.value.filter((course) => {
+    const matchesCategory = activeCategory.value === "all" || courseCategory(course) === activeCategory.value
+    const matchesSearch = !keyword ||
+      course.title.toLowerCase().includes(keyword) ||
+      course.description.toLowerCase().includes(keyword)
+    return matchesCategory && matchesSearch
+  })
+})
 
 function certificationDisplayName(value?: string) {
   return String(value || "").replace(/\bPipeline\b/g, "Certification").replace(/管线/g, "认证")
@@ -189,8 +211,25 @@ onMounted(() => {
           <p class="mt-2 text-muted-foreground">{{ t.courses.subtitle }}</p>
         </div>
 
-        <div class="mb-4 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="relative max-w-md">
+        <div class="mb-4 flex flex-col gap-3 rounded-[16px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)] lg:flex-row lg:items-center lg:justify-between">
+          <div class="overflow-x-auto">
+            <div class="inline-flex min-w-max rounded-lg bg-[#f6fafb] p-1">
+              <button
+                v-for="option in categoryOptions"
+                :key="option.key"
+                type="button"
+                :class="[
+                  'h-9 rounded-md px-3 text-sm font-semibold transition-colors',
+                  activeCategory === option.key ? 'bg-primary text-white shadow-sm shadow-primary/20' : 'text-muted-foreground hover:bg-white hover:text-foreground',
+                ]"
+                @click="activeCategory = option.key"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
+
+          <div class="relative w-full lg:ml-auto lg:max-w-md">
             <Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input v-model="searchQuery" class="input pl-10" :placeholder="t.courses.searchPlaceholder" />
           </div>
@@ -208,9 +247,9 @@ onMounted(() => {
           <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary/10">
             <Search class="h-8 w-8 text-primary" />
           </div>
-          <h3 class="mb-2 text-lg font-semibold text-foreground">{{ searchQuery.trim() ? emptyCopy.noSearchTitle : emptyCopy.noAvailableTitle }}</h3>
-          <p class="mx-auto max-w-md text-sm leading-6 text-muted-foreground">{{ searchQuery.trim() ? emptyCopy.noSearchDesc : emptyCopy.noAvailableDesc }}</p>
-          <button v-if="searchQuery.trim()" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="searchQuery = ''">
+          <h3 class="mb-2 text-lg font-semibold text-foreground">{{ searchQuery.trim() || activeCategory !== 'all' ? emptyCopy.noSearchTitle : emptyCopy.noAvailableTitle }}</h3>
+          <p class="mx-auto max-w-md text-sm leading-6 text-muted-foreground">{{ searchQuery.trim() || activeCategory !== 'all' ? emptyCopy.noSearchDesc : emptyCopy.noAvailableDesc }}</p>
+          <button v-if="searchQuery.trim() || activeCategory !== 'all'" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="searchQuery = ''; activeCategory = 'all'">
             {{ emptyCopy.clearSearch }}
           </button>
         </div>
