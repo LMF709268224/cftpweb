@@ -36,8 +36,8 @@
 
 ### 2. Admin Portal (管理端)
 * **[adminweb](file:///d:/CFtP/mufan/cftpweb/adminweb)**:
-  * 职责：使用 `//go:embed` 机制嵌入 Next.js 静态导出编译产物 (`web/build`) 的高效 Web 服务器。
-  * 路由：适配 Next.js Static Export 页面路由机制，自动根据路径解析请求匹配对应的 `.html` 文件或 `<subfolder>/index.html`。
+  * 职责：使用 `//go:embed` 机制嵌入编译后的 Vue SPA 静态文件 (`vue-web/dist`)，并启动高效的静态文件 Web 服务器。
+  * 路由：支持单页应用 (SPA) 客户端路由 fallback，自动将非静态资源请求回退至 `index.html`。
 * **[adminbff](file:///d:/CFtP/mufan/cftpweb/adminbff)**:
   * 职责：管理端 RESTful API 聚合网关。
   * 路由：仅处理 `/api/...` 请求，未匹配的请求统一返回 API `404 Not Found` JSON。
@@ -52,8 +52,8 @@ cftpweb/
 ├── candweb/          # 考生端 Web 服务 (Go + Vue SPA 嵌入)
 │   └── vue-web/      # Vue 前端源码
 ├── adminbff/         # 管理端 BFF 网关 (Go)
-├── adminweb/         # 管理端 Web 服务 (Go + Next.js SPA 嵌入)
-│   └── web/          # Next.js 前端源码
+├── adminweb/         # 管理端 Web 服务 (Go + Vue SPA 嵌入)
+│   └── vue-web/      # Vue 前端源码
 ├── shared/           # 前端共享模块 / 公共 TS 类型定义
 ├── docs/             # 历史设计文档与防复发复盘清单
 ├── tidy.ps1          # 自动化整理所有 Go 模块依赖的 PowerShell 脚本
@@ -79,7 +79,7 @@ cftpweb/
 每个微服务在各自目录下都配备了统一规范的部署配置：
 1. **[Dockerfile](file:///d:/CFtP/mufan/cftpweb/candweb/Dockerfile)**：采用超轻量级的 `alpine:latest`，容器内不进行任何编译，只拷贝预先编译好的 host 静态二进制文件，并补充安装 CA 证书及本地时区。
 2. **[image_build.sh](file:///d:/CFtP/mufan/cftpweb/candweb/image_build.sh)**：
-   * 在宿主机进行前端打包（如 Vue 的 `npm run build` 或 Next.js 的 `pnpm build`）。
+   * 在宿主机进行前端打包（Vue 的 `npm run build`）。
    * 通过 `CGO_ENABLED=0 GOOS=linux GOARCH=amd64` 静态交叉编译 Go 宿主机二进制文件（包含嵌入的静态文件）。
    * 使用 `buildah` 打包容器镜像，并直接导入至本地的 `k3s` 容器中。
 
