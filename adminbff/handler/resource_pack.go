@@ -1,11 +1,22 @@
-﻿package handler
+package handler
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"strings"
 
 	lmspb "github.com/afnandelfin620-star/cftptest/cftp/glms"
 )
+
+const resourcePackFilePackPageSize = 20
+
+type allResourcePackFilesPageToken struct {
+	PackIDs       []string `json:"pack_ids"`
+	PackNextToken string   `json:"pack_next_token"`
+	FileToken     string   `json:"file_token"`
+	PackListDone  bool     `json:"pack_list_done"`
+}
 
 // ListLmsResourcePacks GET /api/lms/resource-packs
 func (h *Handler) ListLmsResourcePacks(w http.ResponseWriter, r *http.Request) {
@@ -244,28 +255,91 @@ func (h *Handler) ListAllLmsResourcePackFiles(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	// If no pack_id is specified, fetch all packs and then all files for each pack
-	packsResp, err := h.Lms.ListResourcePacksAdmin(r.Context(), &lmspb.ListResourcePacksRequest{
-		PageSize: 1000,
-	})
-	if err != nil {
-		writeLmsError(w, err)
-		return
+	pageSize := parseUint32Query(r, "page_size")
+	if pageSize == 0 {
+		pageSize = 10
 	}
 
+	state, ok := decodeAllResourcePackFilesPageToken(r.URL.Query().Get("page_token"))
+	if !ok {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid page_token")
+		return
+	}
 	var allFiles []*lmspb.ResourcePackFile
-	for _, pack := range packsResp.Packs {
-		filesResp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
-			PackId:   pack.PackId,
-			PageSize: 1000,
-		})
-		if err == nil && filesResp != nil {
-			allFiles = append(allFiles, filesResp.Files...)
+	for uint32(len(allFiles)) < pageSize {
+		if len(state.PackIDs) == 0 {
+			if state.PackListDone {
+				break
+			}
+			packsResp, err := h.Lms.ListResourcePacksAdmin(r.Context(), &lmspb.ListResourcePacksRequest{
+				PageSize:  resourcePackFilePackPageSize,
+				PageToken: state.PackNextToken,
+			})
+			if err != nil {
+				writeLmsError(w, err)
+				return
+			}
+			state.PackNextToken = packsResp.GetNextPageToken()
+			state.PackListDone = state.PackNextToken == ""
+			for _, pack := range packsResp.GetPacks() {
+				if strings.TrimSpace(pack.GetPackId()) != "" {
+					state.PackIDs = append(state.PackIDs, pack.GetPackId())
+				}
+			}
+			if len(state.PackIDs) == 0 {
+				break
+			}
 		}
+
+		packID := state.PackIDs[0]
+		remaining := pageSize - uint32(len(allFiles))
+		filesResp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
+			PackId:    packID,
+			PageSize:  remaining,
+			PageToken: state.FileToken,
+		})
+		if err != nil {
+			writeLmsError(w, err)
+			return
+		}
+		if filesResp != nil {
+			allFiles = append(allFiles, filesResp.GetFiles()...)
+			state.FileToken = filesResp.GetNextPageToken()
+		}
+		if state.FileToken != "" {
+			break
+		}
+		state.PackIDs = state.PackIDs[1:]
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"files": allFiles,
+		"files":           allFiles,
+		"next_page_token": encodeAllResourcePackFilesPageToken(state),
 	})
 }
 
+func decodeAllResourcePackFilesPageToken(raw string) (allResourcePackFilesPageToken, bool) {
+	if strings.TrimSpace(raw) == "" {
+		return allResourcePackFilesPageToken{}, true
+	}
+	data, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		return allResourcePackFilesPageToken{}, false
+	}
+	var token allResourcePackFilesPageToken
+	if err := json.Unmarshal(data, &token); err != nil {
+		return allResourcePackFilesPageToken{}, false
+	}
+	return token, true
+}
+
+func encodeAllResourcePackFilesPageToken(token allResourcePackFilesPageToken) string {
+	if token.FileToken == "" && len(token.PackIDs) == 0 && token.PackNextToken == "" {
+		return ""
+	}
+	data, err := json.Marshal(token)
+	if err != nil {
+		return ""
+	}
+	return base64.RawURLEncoding.EncodeToString(data)
+}
