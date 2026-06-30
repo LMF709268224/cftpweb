@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue"
 import { toast } from "vue-sonner"
-import { AlertCircle, Building2, Check, CreditCard, Lock, Loader2, ShoppingCart } from "lucide-vue-next"
+import { AlertCircle, Building2, Check, CreditCard, Lock, Loader2, ShoppingCart, X } from "lucide-vue-next"
 import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
 import { apiClient } from "@/lib/apiClient"
@@ -867,11 +867,16 @@ async function handlePaymentSessionError() {
 </script>
 
 <template>
-  <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="close">
+  <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
     <div class="flex max-h-[86vh] w-full max-w-[620px] flex-col overflow-hidden rounded-xl bg-card shadow-2xl">
-      <div class="shrink-0 border-b border-border px-6 pb-4 pt-6">
-        <h2 class="text-xl font-semibold">{{ courseName }}</h2>
-        <p v-if="description" class="mt-2 text-sm leading-6 text-muted-foreground">{{ description }}</p>
+      <div class="flex shrink-0 items-start justify-between gap-4 border-b border-border px-6 pb-4 pt-6">
+        <div class="min-w-0">
+          <h2 class="text-xl font-semibold">{{ courseName }}</h2>
+          <p v-if="description" class="mt-2 text-sm leading-6 text-muted-foreground">{{ description }}</p>
+        </div>
+        <button class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="close">
+          <X class="h-5 w-5" />
+        </button>
       </div>
 
       <div class="min-h-0 flex-1 space-y-5 overflow-y-auto px-6 py-5">
