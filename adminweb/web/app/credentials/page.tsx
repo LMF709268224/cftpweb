@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label"
 import { Sidebar } from "@/components/sidebar"
 import { Plus, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 interface FileConstraint {
   name: string
@@ -85,7 +86,7 @@ export default function CredentialsPage() {
 
   const handleSubmit = async () => {
     if (!name || !category) {
-      alert(t.credentialsDefPage.alertNameCategory)
+      toast.error(t.credentialsDefPage.alertNameCategory)
       return
     }
 

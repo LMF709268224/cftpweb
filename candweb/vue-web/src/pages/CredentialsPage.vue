@@ -8,6 +8,7 @@ import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateOnly } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
+import { toast } from "vue-sonner"
 
 const { t, lang } = useTranslation()
 const route = useRoute()
@@ -124,7 +125,7 @@ async function handleFileUpload(constraintName: string, file: File) {
     if (!uploadRes.ok) throw new Error("S3 upload failed")
     uploadedFiles.value = { ...uploadedFiles.value, [constraintName]: { name: file.name, url: res.file_key, ext: fileExt, hash: fileHash, size: file.size } }
   } catch {
-    alert(t.value.credentialsPage.uploadFailed)
+    toast.error(t.value.credentialsPage.uploadFailed)
   } finally {
     uploadingConstraintName.value = ""
   }
@@ -151,7 +152,7 @@ async function handleSubmitApplication() {
     applicationPage.value = 1
     await fetchData()
   } catch {
-    alert(t.value.credentialsPage.submitFailed)
+    toast.error(t.value.credentialsPage.submitFailed)
   } finally {
     isSubmitting.value = false
   }

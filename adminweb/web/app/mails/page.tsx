@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Send, List, FileText } from "lucide-react"
 import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
+import { toast } from "sonner"
 
 function MailDetailPreview({ mailId }: { mailId: string }) {
   const { t } = useTranslation()
@@ -174,11 +175,11 @@ export default function AdminMailsPage() {
 
   const handleCreateTemplate = async () => {
     if (!editingTemplateId && !newTplPath) {
-      alert(t.mailsPage.alertTemplatePathRequired)
+      toast.error(t.mailsPage.alertTemplatePathRequired)
       return
     }
     if (!newTplName || !newTplContent || !newTplSubject) {
-      alert(t.mailsPage.alertFillFields)
+      toast.error(t.mailsPage.alertFillFields)
       return
     }
     setCreatingTpl(true)
@@ -195,7 +196,7 @@ export default function AdminMailsPage() {
             description: newTplDesc,
           })
         })
-        alert(t.mailsPage.alertUpdateSuccess)
+        toast.success(t.mailsPage.alertUpdateSuccess)
       } else {
         await apiClient("/api/mails/templates", {
           method: "POST",
@@ -208,7 +209,7 @@ export default function AdminMailsPage() {
             description: newTplDesc,
           })
         })
-        alert(t.mailsPage.alertCreateSuccess)
+        toast.success(t.mailsPage.alertCreateSuccess)
       }
 
       setNewTplPath("")
@@ -233,14 +234,14 @@ export default function AdminMailsPage() {
       await apiClient(`/api/mails/templates?path=${encodeURIComponent(id)}`, {
         method: "DELETE"
       })
-      alert(t.mailsPage.alertDeleteSuccess)
+      toast.success(t.mailsPage.alertDeleteSuccess)
       fetchTemplates()
     } catch (err: any) {
       // If the backend returns 501 or not implemented
       if (err.message && err.message.includes("not implemented")) {
-        alert(t.mailsPage.alertDeleteNotSupported)
+        toast.error(t.mailsPage.alertDeleteNotSupported)
       } else {
-        alert(t.mailsPage.alertDeleteNotSupported) // Fallback since grpc has no delete
+        toast.error(t.mailsPage.alertDeleteNotSupported) // Fallback since grpc has no delete
       }
     }
   }
@@ -262,7 +263,7 @@ export default function AdminMailsPage() {
       }
     } catch (err) {
       console.error("Failed to fetch template detail", err)
-      alert(t.mailsPage.alertLoadTemplateFailed)
+      toast.error(t.mailsPage.alertLoadTemplateFailed)
       setNewTplSubject("")
     }
   }
@@ -288,17 +289,17 @@ export default function AdminMailsPage() {
 
   const handleSend = async () => {
     if (selectedUsers.length === 0) {
-      alert(t.mailsPage.alertNoUsers)
+      toast.error(t.mailsPage.alertNoUsers)
       return
     }
 
     if (!templateId) {
       if (!subject) {
-        alert(t.mailsPage.alertNoSubject)
+        toast.error(t.mailsPage.alertNoSubject)
         return
       }
       if (!payload || payload.trim() === "{\n}" || payload.trim() === "{}") {
-        alert(t.mailsPage.alertNoPayload || t.common.error)
+        toast.error(t.mailsPage.alertNoPayload || t.common.error)
         return
       }
     }
@@ -308,11 +309,11 @@ export default function AdminMailsPage() {
       try {
         const parsed = JSON.parse(payload);
         if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-          alert(t.mailsPage.alertPayloadObject);
+          toast.error(t.mailsPage.alertPayloadObject);
           return;
         }
       } catch (e) {
-        alert(t.mailsPage.alertPayloadJson.replace("{{error}}", (e as Error).message));
+        toast.error(t.mailsPage.alertPayloadJson.replace("{{error}}", (e as Error).message));
         return;
       }
     }
@@ -337,7 +338,7 @@ export default function AdminMailsPage() {
         successCount++;
       }
 
-      alert(t.mailsPage.alertSendSuccess)
+      toast.success(t.mailsPage.alertSendSuccess)
       setSelectedUsers([])
       setPayload("{\n}")
       setTemplateId("")
@@ -735,7 +736,7 @@ export default function AdminMailsPage() {
                               selection?.removeAllRanges();
                               selection?.addRange(range);
                               document.execCommand('copy');
-                              alert(t.mailsPage.copied);
+                              toast.success(t.mailsPage.copied);
                             }}>
                               {path}
                             </span>

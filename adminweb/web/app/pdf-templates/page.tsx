@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/useLanguage"
 import { FileCode2, Edit, Plus } from "lucide-react"
+import { toast } from "sonner"
 
 export default function PdfTemplatesPage() {
   const { t } = useTranslation()
@@ -87,7 +88,7 @@ export default function PdfTemplatesPage() {
       setIsOpen(false)
       fetchTemplates()
     } catch (e) {
-      alert(t.common.error)
+      toast.error(t.common.error)
     }
   }
 

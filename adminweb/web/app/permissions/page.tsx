@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import { useTranslation } from "@/lib/useLanguage"
 import { ShieldAlert, Search, ShieldCheck, UserX, Clock, AlertTriangle } from "lucide-react"
 import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
+import { toast } from "sonner"
 
 export default function PermissionsPage() {
   const { t } = useTranslation()
@@ -39,21 +40,27 @@ export default function PermissionsPage() {
   }, [])
 
   const handleCheck = async () => {
-    if (!candidateId || !credDefId) return alert(t.permissionsPage.alertProvideIds)
+    if (!candidateId || !credDefId) {
+      toast.error(t.permissionsPage.alertProvideIds)
+      return
+    }
     
     setLoading(true)
     try {
       const res = await apiClient(`/api/permissions/check?candidate_id=${candidateId}&cred_def_id=${credDefId}`)
       setCheckResult(res)
     } catch (e) {
-      alert(t.common.error)
+      toast.error(t.common.error)
     } finally {
       setLoading(false)
     }
   }
 
   const handleAction = async (endpoint: string) => {
-    if (!reason) return alert(t.permissionsPage.alertProvideReason)
+    if (!reason) {
+      toast.error(t.permissionsPage.alertProvideReason)
+      return
+    }
     
     setLoading(true)
     try {
@@ -65,11 +72,11 @@ export default function PermissionsPage() {
           reason: reason
         })
       })
-      alert(t.common.success)
+      toast.success(t.common.success)
       setReason("")
       handleCheck() // Refresh status
     } catch (e) {
-      alert(t.common.error)
+      toast.error(t.common.error)
     } finally {
       setLoading(false)
     }

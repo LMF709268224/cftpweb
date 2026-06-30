@@ -10,6 +10,7 @@ import { Activity, RefreshCw, Search, RotateCcw } from "lucide-react"
 import { formatBackendDate } from "@/lib/utils"
 import { useTranslation } from "@/lib/useLanguage"
 import { statusBadgeClassForStatusValue } from "@/lib/status-labels"
+import { toast } from "sonner"
 
 function WebhookDetailPreview({ msgFp }: { msgFp: string }) {
   const { t } = useTranslation()
@@ -106,11 +107,11 @@ export default function AuditWebhooksPage() {
         method: "POST",
         body: JSON.stringify({ webhook_msg_id: id })
       })
-      alert("Reprocess requested successfully")
+      toast.success("Reprocess requested successfully")
       fetchMessages()
     } catch (err) {
       console.error(err)
-      alert("Failed to reprocess webhook")
+      toast.error("Failed to reprocess webhook")
     } finally {
       setReprocessing(null)
     }

@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/sidebar"
 import { Badge } from "@/components/ui/badge"
 import { Send, List, FileText } from "lucide-react"
 import { MESSAGE_STATUS_LABELS, MESSAGE_STATUS_ENUM_NAMES, statusBadgeClassForStatus, statusLabelWithDiagnostics } from "@/lib/status-labels"
+import { toast } from "sonner"
 
 export default function AdminMessagesPage() {
   const { t } = useTranslation()
@@ -114,11 +115,11 @@ export default function AdminMessagesPage() {
 
   const handleCreateTemplate = async () => {
     if (!editingTemplateId && !newTplPath) {
-      alert(t.messagesPage.alertTemplatePathRequired)
+      toast.error(t.messagesPage.alertTemplatePathRequired)
       return
     }
     if (!newTplTitle || !newTplContent) {
-      alert(t.messagesPage.alertFillFields)
+      toast.error(t.messagesPage.alertFillFields)
       return
     }
     setCreatingTpl(true)
@@ -134,7 +135,7 @@ export default function AdminMessagesPage() {
             current_version: editingTemplateVersion
           })
         })
-        alert(t.messagesPage.alertUpdateSuccess)
+        toast.success(t.messagesPage.alertUpdateSuccess)
       } else {
         await apiClient("/api/messages/templates", {
           method: "POST",
@@ -145,7 +146,7 @@ export default function AdminMessagesPage() {
             description: newTplDesc
           })
         })
-        alert(t.messagesPage.alertCreateSuccess)
+        toast.success(t.messagesPage.alertCreateSuccess)
       }
       setNewTplPath("")
       setNewTplTitle("")
@@ -169,13 +170,13 @@ export default function AdminMessagesPage() {
       await apiClient(`/api/messages/templates?path=${encodeURIComponent(id)}`, {
         method: "DELETE"
       })
-      alert(t.messagesPage.alertDeleteSuccess)
+      toast.success(t.messagesPage.alertDeleteSuccess)
       fetchTemplates()
     } catch (err: any) {
       if (err.message && err.message.includes("not implemented")) {
-        alert(t.messagesPage.alertDeleteNotSupported)
+        toast.error(t.messagesPage.alertDeleteNotSupported)
       } else {
-        alert(t.messagesPage.alertDeleteNotSupported)
+        toast.error(t.messagesPage.alertDeleteNotSupported)
       }
     }
   }
@@ -196,7 +197,7 @@ export default function AdminMessagesPage() {
       }
     } catch (err) {
       console.error("Failed to fetch template detail", err)
-      alert(t.messagesPage.alertLoadTemplateFailed)
+      toast.error(t.messagesPage.alertLoadTemplateFailed)
       setNewTplTitle("")
     }
   }
@@ -222,11 +223,11 @@ export default function AdminMessagesPage() {
 
   const handleSend = async () => {
     if (selectedUserIds.length === 0) {
-      alert(t.messagesPage.alertNoUsers)
+      toast.error(t.messagesPage.alertNoUsers)
       return
     }
     if (!templateId) {
-      alert(t.messagesPage.alertNoTemplate)
+      toast.error(t.messagesPage.alertNoTemplate)
       return
     }
 
@@ -235,11 +236,11 @@ export default function AdminMessagesPage() {
       try {
         const parsed = JSON.parse(payload);
         if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-          alert(t.messagesPage.alertPayloadObject);
+          toast.error(t.messagesPage.alertPayloadObject);
           return;
         }
       } catch (e) {
-        alert(t.messagesPage.alertPayloadJson.replace("{{error}}", (e as Error).message));
+        toast.error(t.messagesPage.alertPayloadJson.replace("{{error}}", (e as Error).message));
         return;
       }
     }
@@ -256,7 +257,7 @@ export default function AdminMessagesPage() {
         }),
       })
 
-      alert(t.messagesPage.alertSendSuccess.replace('{{count}}', String(res.count || 0)))
+      toast.success(t.messagesPage.alertSendSuccess.replace('{{count}}', String(res.count || 0)))
       setSelectedUserIds([])
       setPayload("{\n}")
       setTemplateId("")
@@ -619,7 +620,7 @@ export default function AdminMessagesPage() {
                               selection?.removeAllRanges();
                               selection?.addRange(range);
                               document.execCommand('copy');
-                              alert(t.messagesPage.copied);
+                              toast.success(t.messagesPage.copied);
                             }}>
                               {path}
                             </span>
