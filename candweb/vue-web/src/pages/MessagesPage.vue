@@ -389,14 +389,14 @@ onMounted(() => {
         <span class="text-sm font-medium text-foreground">{{ t.messagesPage.title }}</span>
       </header>
 
-      <main class="px-5 py-8 md:px-8 lg:px-10">
+      <main class="px-4 py-6 md:px-8 md:py-8 lg:px-10">
         <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.messagesPage.title }}</h1>
+            <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">{{ t.messagesPage.title }}</h1>
             <p class="mt-2 text-muted-foreground">{{ unreadCountText() }}</p>
           </div>
           <div v-if="unreadCount > 0" class="flex justify-end">
-        <button class="btn btn-outline rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary" :disabled="markAllLoading" @click="markAllAsRead">
+        <button class="btn btn-outline w-full justify-center rounded-lg bg-white/80 shadow-sm hover:border-primary/25 hover:bg-primary/10 hover:text-primary sm:w-auto" :disabled="markAllLoading" @click="markAllAsRead">
           <Loader2 v-if="markAllLoading" class="h-4 w-4 animate-spin" />
           <CheckCheck v-else class="h-4 w-4" />
           {{ t.messagesPage.markAllAsRead }}
@@ -405,18 +405,18 @@ onMounted(() => {
         </div>
 
     <div class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-      <div class="bg-white px-5 pt-4 md:px-6">
-        <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2]">
+      <div class="bg-white px-3 pt-3 md:px-6 md:pt-4">
+        <div class="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 md:flex md:flex-wrap md:gap-x-8 md:gap-y-2 md:rounded-none md:border-b md:border-[#edf0f2] md:bg-transparent md:p-0">
           <button
             v-for="tab in statusTabs"
             :key="tab.value || 'all'"
-            :class="['relative inline-flex cursor-pointer items-center gap-2 whitespace-nowrap px-1 pb-5 text-base font-medium transition-colors duration-200', selectedStatus === tab.value ? 'text-primary' : 'text-[#111827] hover:text-primary']"
+            :class="['relative inline-flex cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2 py-2.5 text-sm font-semibold transition-colors duration-200 md:justify-start md:gap-2 md:rounded-none md:px-1 md:pb-5 md:pt-0 md:text-base md:font-medium', selectedStatus === tab.value ? 'bg-white text-primary shadow-sm md:bg-transparent md:shadow-none' : 'text-slate-600 hover:text-primary md:text-[#111827]']"
             @click="selectStatus(tab.value)"
           >
             <component :is="tab.icon" class="h-4 w-4" />
             {{ tab.label }}
             <span v-if="tab.value === 'unread'" :class="['rounded-full px-2 py-0.5 text-xs font-bold', countBadgeClass(selectedStatus === tab.value)]">{{ totalUnreadCount }}</span>
-            <span v-if="selectedStatus === tab.value" class="absolute bottom-[-1px] left-0 h-0.5 w-full rounded-full bg-primary" />
+            <span v-if="selectedStatus === tab.value" class="absolute bottom-[-1px] left-0 hidden h-0.5 w-full rounded-full bg-primary md:block" />
           </button>
         </div>
       </div>
@@ -434,23 +434,23 @@ onMounted(() => {
         <div
           v-for="message in messageList"
           :key="message.id"
-          :class="['group relative flex cursor-pointer items-start gap-4 border-b border-slate-100 px-4 py-4 transition-colors hover:bg-primary/10', message.isUnread ? 'bg-primary/5' : '', detailLoadingId === message.id ? 'pointer-events-none opacity-75' : '']"
+          :class="['group relative flex cursor-pointer items-start gap-3 border-b border-slate-100 px-3 py-4 transition-colors hover:bg-primary/10 md:gap-4 md:px-4', message.isUnread ? 'bg-primary/5' : '', detailLoadingId === message.id ? 'pointer-events-none opacity-75' : '']"
           @click="handleViewDetail(message)"
         >
-          <div :class="['flex h-10 w-10 shrink-0 items-center justify-center rounded-lg', configFor(message.type).iconBg, message.isUnread && 'ring-2 ring-primary/25']">
-            <component :is="configFor(message.type).icon" :class="['h-5 w-5', configFor(message.type).iconColor]" />
+          <div :class="['flex h-9 w-9 shrink-0 items-center justify-center rounded-lg md:h-10 md:w-10', configFor(message.type).iconBg, message.isUnread && 'ring-2 ring-primary/25']">
+            <component :is="configFor(message.type).icon" :class="['h-4 w-4 md:h-5 md:w-5', configFor(message.type).iconColor]" />
           </div>
           <div class="min-w-0 flex-1">
-            <div class="mb-2 flex flex-wrap items-center gap-2">
+            <div class="mb-1.5 flex flex-wrap items-center gap-2 md:mb-2">
               <span v-if="message.isUnread" class="rounded-full bg-primary px-2 py-0.5 text-[11px] font-bold text-primary-foreground shadow-sm shadow-primary/20">
                 {{ unreadLabel() }}
               </span>
-              <h3 :class="['line-clamp-2 text-base text-card-foreground', message.isUnread ? 'font-bold' : 'font-semibold']">{{ localizedMessageTitle(message.rawTitle, configFor(message.type).label) }}</h3>
+              <h3 :class="['line-clamp-2 text-sm leading-snug text-card-foreground md:text-base', message.isUnread ? 'font-bold' : 'font-semibold']">{{ localizedMessageTitle(message.rawTitle, configFor(message.type).label) }}</h3>
               <span class="badge">{{ configFor(message.type).label }}</span>
             </div>
             <span class="text-xs text-muted-foreground">{{ message.time }}</span>
           </div>
-          <div :class="['flex items-center gap-2 transition-opacity group-hover:opacity-100', detailLoadingId === message.id ? 'opacity-100' : 'opacity-0']">
+          <div :class="['flex items-center gap-1 transition-opacity md:gap-2 md:group-hover:opacity-100', detailLoadingId === message.id ? 'opacity-100' : 'opacity-100 md:opacity-0']">
             <div class="relative">
               <button class="btn btn-ghost h-8 rounded-lg px-2" :disabled="messageActionLoadingId === message.id || detailLoadingId === message.id" @click.stop="openMenuId = openMenuId === message.id ? null : message.id">
                 <MoreHorizontal class="h-4 w-4" />
