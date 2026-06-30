@@ -143,13 +143,9 @@ const detailSummaryFields = computed<DetailField[]>(() => {
     { label: t.value.orders.detailProductName, value: summary.meta?.product_name || "" },
     { label: t.value.orders.detailOrderId, value: summary.order_id || "" },
     { label: t.value.orders.detailType, value: orderTypeLabel(summary.biz_type) },
-    { label: t.value.orders.detailBizRef, value: summary.biz_ref_ulid || "" },
     { label: t.value.orders.detailAmount, value: formatMoney(Number(summary.amount || 0), summary.currency || "USD") },
-    { label: t.value.orders.detailAmountMinor, value: typeof summary.amount_minor === "number" ? String(summary.amount_minor) : "" },
     { label: t.value.orders.detailCurrency, value: summary.currency || "" },
     { label: t.value.orders.detailStatus, value: summary.raw_status ? timelineStatusLabelWithDiagnostics(t, "MALL_ORDER", summary.raw_status) : summary.status || "" },
-    { label: t.value.orders.detailRawStatus, value: summary.raw_status || "" },
-    { label: t.value.orders.detailPaymentStatus, value: summary.payment_status || "" },
     { label: t.value.orders.detailCreatedAt, value: summary.created_at || "" },
   ].filter((field) => field.value !== "")
 })
@@ -158,25 +154,9 @@ const detailExtraFields = computed<DetailField[]>(() => {
   const detail = selectedOrderDetail.value
   if (!detail) return []
   return [
-    { label: t.value.orders.detailGpayOrderId, value: detail.gpay_order_ulid || "" },
-    { label: t.value.orders.detailPaymentKey, value: detail.has_payment_key ? t.value.orders.detailPaymentKeyExists : "" },
     { label: t.value.orders.detailPaidAt, value: detail.paid_at || "" },
     { label: t.value.orders.detailClosedAt, value: detail.closed_at || "" },
-    { label: t.value.orders.detailLastReconciledAt, value: detail.last_reconciled_at || "" },
-    { label: t.value.orders.detailOrderStatusAt, value: detail.order_status_at || "" },
-    { label: t.value.orders.detailPaymentStatusAt, value: detail.payment_status_at || "" },
-    { label: t.value.orders.detailUpdatedAt, value: detail.updated_at || "" },
-    { label: t.value.orders.detailVersion, value: typeof detail.version === "number" ? String(detail.version) : "" },
   ].filter((field) => field.value !== "")
-})
-
-const detailRawText = computed(() => {
-  if (!selectedOrderDetail.value?.raw) return ""
-  try {
-    return JSON.stringify(selectedOrderDetail.value.raw, null, 2)
-  } catch {
-    return ""
-  }
 })
 
 function orderStatusBadgeClass(order: OrderItem) {
@@ -556,14 +536,6 @@ onMounted(() => {
               </dl>
             </section>
 
-            <section v-if="selectedOrderDetail.discount_unsupported" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {{ t.orders.detailDiscountUnsupported }}
-            </section>
-
-            <details v-if="detailRawText" class="rounded-2xl border border-slate-100 bg-slate-950 text-white">
-              <summary class="cursor-pointer px-4 py-3 text-sm font-semibold">{{ t.orders.detailRawData }}</summary>
-              <pre class="max-h-72 overflow-auto border-t border-white/10 p-4 text-xs leading-5 text-slate-100">{{ detailRawText }}</pre>
-            </details>
           </div>
         </div>
       </div>
