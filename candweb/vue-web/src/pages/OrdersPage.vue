@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
-import { useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { ChevronRight, CreditCard, FileText, Loader2, Package, Receipt, XCircle } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
-import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateMinute } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
@@ -32,6 +30,42 @@ type OrderItem = {
   canCancel: boolean
 }
 
+type DetailField = {
+  label: string
+  value: string
+}
+
+type OrderDetail = {
+  found?: boolean
+  summary?: {
+    order_id?: string
+    candidate_id?: string
+    biz_type?: string
+    biz_ref_ulid?: string
+    currency?: string
+    amount?: number
+    amount_minor?: number
+    status?: string
+    raw_status?: string
+    payment_status?: string
+    created_at?: string
+    meta?: {
+      product_name?: string
+    }
+  }
+  gpay_order_ulid?: string
+  has_payment_key?: boolean
+  paid_at?: string
+  closed_at?: string
+  last_reconciled_at?: string
+  version?: number
+  updated_at?: string
+  order_status_at?: string
+  payment_status_at?: string
+  discount_unsupported?: boolean
+  raw?: unknown
+}
+
 const statusConfig = {
   completed: { labelKey: "statusCompleted", statusValue: "SUCCESS" },
   pending: { labelKey: "statusPending", statusValue: "PENDING" },
@@ -40,7 +74,6 @@ const statusConfig = {
 } as const
 
 const { t, lang } = useTranslation()
-const router = useRouter()
 
 const orders = ref<OrderItem[]>([])
 const loading = ref(true)
@@ -54,6 +87,10 @@ const selectedOrderStatus = ref("")
 const invoiceLoading = ref<string | null>(null)
 const paymentLoading = ref<string | null>(null)
 const cancelLoading = ref<string | null>(null)
+const detailLoading = ref(false)
+const detailLoadingOrderId = ref<string | null>(null)
+const detailError = ref("")
+const selectedOrderDetail = ref<OrderDetail | null>(null)
 const orderPaymentDialogOpen = ref(false)
 const orderPaymentSession = ref<{
   orderId: string
@@ -62,9 +99,6 @@ const orderPaymentSession = ref<{
   source: string
   returnPath: string
 } | null>(null)
-const showPurchaseDialog = ref(false)
-const selectedCourseName = ref("")
-const selectedPipelineId = ref("")
 
 const invoiceOpeningLabel = computed(() => t.value.orders.invoiceOpening)
 const orderTypeOptions = computed(() => [
@@ -101,6 +135,50 @@ const payableOrderStatuses = new Set([
   "UNPAID",
 ])
 
+const detailSummaryFields = computed<DetailField[]>(() => {
+  const detail = selectedOrderDetail.value
+  const summary = detail?.summary
+  if (!summary) return []
+  return [
+    { label: t.value.orders.detailProductName, value: summary.meta?.product_name || "" },
+    { label: t.value.orders.detailOrderId, value: summary.order_id || "" },
+    { label: t.value.orders.detailType, value: orderTypeLabel(summary.biz_type) },
+    { label: t.value.orders.detailBizRef, value: summary.biz_ref_ulid || "" },
+    { label: t.value.orders.detailAmount, value: formatMoney(Number(summary.amount || 0), summary.currency || "USD") },
+    { label: t.value.orders.detailAmountMinor, value: typeof summary.amount_minor === "number" ? String(summary.amount_minor) : "" },
+    { label: t.value.orders.detailCurrency, value: summary.currency || "" },
+    { label: t.value.orders.detailStatus, value: summary.raw_status ? timelineStatusLabelWithDiagnostics(t, "MALL_ORDER", summary.raw_status) : summary.status || "" },
+    { label: t.value.orders.detailRawStatus, value: summary.raw_status || "" },
+    { label: t.value.orders.detailPaymentStatus, value: summary.payment_status || "" },
+    { label: t.value.orders.detailCreatedAt, value: summary.created_at || "" },
+  ].filter((field) => field.value !== "")
+})
+
+const detailExtraFields = computed<DetailField[]>(() => {
+  const detail = selectedOrderDetail.value
+  if (!detail) return []
+  return [
+    { label: t.value.orders.detailGpayOrderId, value: detail.gpay_order_ulid || "" },
+    { label: t.value.orders.detailPaymentKey, value: detail.has_payment_key ? t.value.orders.detailPaymentKeyExists : "" },
+    { label: t.value.orders.detailPaidAt, value: detail.paid_at || "" },
+    { label: t.value.orders.detailClosedAt, value: detail.closed_at || "" },
+    { label: t.value.orders.detailLastReconciledAt, value: detail.last_reconciled_at || "" },
+    { label: t.value.orders.detailOrderStatusAt, value: detail.order_status_at || "" },
+    { label: t.value.orders.detailPaymentStatusAt, value: detail.payment_status_at || "" },
+    { label: t.value.orders.detailUpdatedAt, value: detail.updated_at || "" },
+    { label: t.value.orders.detailVersion, value: typeof detail.version === "number" ? String(detail.version) : "" },
+  ].filter((field) => field.value !== "")
+})
+
+const detailRawText = computed(() => {
+  if (!selectedOrderDetail.value?.raw) return ""
+  try {
+    return JSON.stringify(selectedOrderDetail.value.raw, null, 2)
+  } catch {
+    return ""
+  }
+})
+
 function orderStatusBadgeClass(order: OrderItem) {
   if (order.status === "completed" || order.rawStatus === "COMPLETED") {
     return "border-[#6CE9A6] bg-[#ECFDF3] text-[#027A48]"
@@ -108,15 +186,27 @@ function orderStatusBadgeClass(order: OrderItem) {
   return timelineStatusBadgeClassForStatus("MALL_ORDER", order.rawStatus)
 }
 
-function handleOrderClick(order: OrderItem) {
-  if (order.bizType !== "PIPELINE_PAYMENT" || !order.pipelineId) return
-  if (order.status !== "completed") {
-    selectedCourseName.value = order.items.join(", ")
-    selectedPipelineId.value = order.pipelineId
-    showPurchaseDialog.value = true
-  } else {
-    router.push(`/certifications/${encodeURIComponent(order.pipelineId)}`)
+async function openOrderDetail(order: OrderItem) {
+  if (!order.id || detailLoading.value) return
+  detailLoading.value = true
+  detailLoadingOrderId.value = order.id
+  detailError.value = ""
+  selectedOrderDetail.value = null
+  try {
+    selectedOrderDetail.value = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`)
+  } catch (error) {
+    console.error(error)
+    detailError.value = t.value.orders.detailLoadFailed
+  } finally {
+    detailLoading.value = false
+    detailLoadingOrderId.value = null
   }
+}
+
+function closeOrderDetail() {
+  if (detailLoading.value) return
+  selectedOrderDetail.value = null
+  detailError.value = ""
 }
 
 function canContinuePayment(order: OrderItem) {
@@ -363,7 +453,7 @@ onMounted(() => {
         <p class="max-w-md text-sm text-muted-foreground">{{ t.orders.noOrdersDesc }}</p>
       </div>
       <div v-else>
-        <div v-for="order in orders" :key="order.id" @click="handleOrderClick(order)" class="order-row group flex cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 transition-all duration-200 hover:bg-primary/10 md:flex-row md:items-center md:justify-between">
+        <div v-for="order in orders" :key="order.id" @click="openOrderDetail(order)" class="order-row group flex cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 transition-all duration-200 hover:bg-primary/10 md:flex-row md:items-center md:justify-between">
           <div class="flex min-w-0 items-center gap-4">
             <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary/10"><Package class="h-6 w-6 text-primary" /></div>
             <div class="min-w-0">
@@ -400,7 +490,8 @@ onMounted(() => {
             </button>
             <span v-else class="h-9 w-9" />
 
-            <ChevronRight class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
+            <Loader2 v-if="detailLoadingOrderId === order.id" class="h-5 w-5 animate-spin text-muted-foreground" />
+            <ChevronRight v-else class="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
           </div>
         </div>
         <AppPagination
@@ -419,12 +510,65 @@ onMounted(() => {
       </main>
     </div>
 
-    <PurchaseDialog
-      v-if="showPurchaseDialog"
-      v-model:open="showPurchaseDialog"
-      :course-name="selectedCourseName"
-      :pipeline-id="selectedPipelineId"
-    />
+    <div v-if="detailLoading || detailError || selectedOrderDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 py-6" @click.self="closeOrderDetail">
+      <div class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
+        <header class="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
+          <div>
+            <h2 class="text-xl font-bold text-slate-950">{{ t.orders.detailTitle }}</h2>
+            <p class="mt-1 text-sm text-muted-foreground">{{ selectedOrderDetail?.summary?.order_id || t.orders.detailSubtitle }}</p>
+          </div>
+          <button class="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900" @click="closeOrderDetail">
+            {{ t.orders.detailClose }}
+          </button>
+        </header>
+
+        <div class="overflow-y-auto px-6 py-5">
+          <div v-if="detailLoading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+            <Loader2 class="h-5 w-5 animate-spin" />
+            {{ t.common.loading }}
+          </div>
+          <div v-else-if="detailError" class="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {{ detailError }}
+          </div>
+          <div v-else-if="selectedOrderDetail" class="space-y-5">
+            <section class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+              <div class="mb-3 flex items-center justify-between gap-3">
+                <h3 class="font-semibold text-slate-950">{{ t.orders.detailSummary }}</h3>
+                <span v-if="selectedOrderDetail.summary?.raw_status" class="badge text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', selectedOrderDetail.summary.raw_status)">
+                  {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', selectedOrderDetail.summary.raw_status) }}
+                </span>
+              </div>
+              <dl class="grid gap-3 md:grid-cols-2">
+                <div v-for="field in detailSummaryFields" :key="field.label" class="rounded-xl bg-white px-3 py-3 ring-1 ring-slate-100">
+                  <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ field.label }}</dt>
+                  <dd class="mt-1 break-words text-sm font-semibold text-slate-900">{{ field.value }}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section v-if="detailExtraFields.length" class="rounded-2xl border border-slate-100 bg-white p-4">
+              <h3 class="mb-3 font-semibold text-slate-950">{{ t.orders.detailPaymentInfo }}</h3>
+              <dl class="grid gap-3 md:grid-cols-2">
+                <div v-for="field in detailExtraFields" :key="field.label" class="rounded-xl bg-slate-50 px-3 py-3">
+                  <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ field.label }}</dt>
+                  <dd class="mt-1 break-words text-sm font-semibold text-slate-900">{{ field.value }}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section v-if="selectedOrderDetail.discount_unsupported" class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {{ t.orders.detailDiscountUnsupported }}
+            </section>
+
+            <details v-if="detailRawText" class="rounded-2xl border border-slate-100 bg-slate-950 text-white">
+              <summary class="cursor-pointer px-4 py-3 text-sm font-semibold">{{ t.orders.detailRawData }}</summary>
+              <pre class="max-h-72 overflow-auto border-t border-white/10 p-4 text-xs leading-5 text-slate-100">{{ detailRawText }}</pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <PaymentSessionDialog
       v-if="orderPaymentSession"
       v-model:open="orderPaymentDialogOpen"
