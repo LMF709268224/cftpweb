@@ -625,13 +625,15 @@ type InitiatePaymentReq struct {
 	BizRefUlid  string   `json:"biz_ref_ulid"`
 	SuccessUrl  string   `json:"success_url"`
 	CancelUrl   string   `json:"cancel_url"`
-	CouponCodes []string `json:"coupon_codes"`
+	PromoCodes  []string `json:"promo_codes"`
+	CouponCodes []string `json:"coupon_codes"` // legacy name, accepted for cached older clients
 }
 
 type PreviewPaymentReq struct {
 	BizType     string   `json:"biz_type"`
 	BizRefUlid  string   `json:"biz_ref_ulid"`
-	CouponCodes []string `json:"coupon_codes"`
+	PromoCodes  []string `json:"promo_codes"`
+	CouponCodes []string `json:"coupon_codes"` // legacy name, accepted for cached older clients
 }
 
 type OrderListRsp struct {

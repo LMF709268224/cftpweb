@@ -174,7 +174,7 @@ async function startPayment() {
         biz_ref_ulid: bizRefUlid,
         success_url: paymentReturnUrl("success"),
         cancel_url: paymentReturnUrl("cancelled"),
-        coupon_codes: props.couponCodes.map((code) => String(code || "").trim()).filter(Boolean),
+        promo_codes: props.couponCodes.map((code) => String(code || "").trim()).filter(Boolean),
       }),
     })
     const nextKey = String(res?.payment_key || "").trim()

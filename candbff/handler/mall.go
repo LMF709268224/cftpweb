@@ -1671,6 +1671,14 @@ func compactStrings(values []string) []string {
 	return out
 }
 
+func compactPromoCodes(primary []string, legacy []string) []string {
+	codes := compactStrings(primary)
+	if len(codes) > 0 {
+		return codes
+	}
+	return compactStrings(legacy)
+}
+
 // UnlockPipeline POST /api/mall/pipelines/{pipelineId}/unlock
 func (h *Handler) UnlockPipeline(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
@@ -1737,9 +1745,9 @@ func (h *Handler) PreviewPayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Mall.PreviewPayment(r.Context(), &mallpb.PreviewPaymentRequest{
-		BizType:     req.BizType,
-		BizRefUlid:  req.BizRefUlid,
-		CouponCodes: compactStrings(req.CouponCodes),
+		BizType:    req.BizType,
+		BizRefUlid: req.BizRefUlid,
+		PromoCodes: compactPromoCodes(req.PromoCodes, req.CouponCodes),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -1767,11 +1775,11 @@ func (h *Handler) InitiatePayment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Mall.InitiatePayment(r.Context(), &mallpb.InitiatePaymentRequest{
-		BizType:     bizType,
-		BizRefUlid:  req.BizRefUlid,
-		SuccessUrl:  strings.TrimSpace(req.SuccessUrl),
-		CancelUrl:   strings.TrimSpace(req.CancelUrl),
-		CouponCodes: compactStrings(req.CouponCodes),
+		BizType:    bizType,
+		BizRefUlid: req.BizRefUlid,
+		SuccessUrl: strings.TrimSpace(req.SuccessUrl),
+		CancelUrl:  strings.TrimSpace(req.CancelUrl),
+		PromoCodes: compactPromoCodes(req.PromoCodes, req.CouponCodes),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

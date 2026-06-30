@@ -561,7 +561,7 @@ async function refreshPaymentPreviewWithCoupons(codes = activeCouponCodes.value)
       body: JSON.stringify({
         biz_type: "BUNDLE_PURCHASE",
         biz_ref_ulid: orderId,
-        coupon_codes: normalizeCouponCodes(codes),
+        promo_codes: normalizeCouponCodes(codes),
       }),
     })
     paymentPreview.value = preview
