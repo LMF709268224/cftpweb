@@ -486,12 +486,17 @@ function submitPageJump() {
 
 @media (max-width: 640px) {
   .app-pagination {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    justify-items: stretch;
+    gap: 0.75rem;
     min-height: auto;
-    padding: 0.875rem 0.75rem;
+    padding: 0.875rem 1rem;
   }
 
   .pagination-pages {
-    gap: 0.35rem;
+    justify-content: flex-end;
+    gap: 0.4rem;
     flex-wrap: nowrap;
   }
 
@@ -504,15 +509,14 @@ function submitPageJump() {
   }
 
   .pagination-total {
-    gap: 0.75rem;
+    justify-content: flex-start;
+    gap: 0;
+    font-size: 0.95rem;
   }
 
+  .page-size-wrap,
   .pagination-jump {
-    gap: 0.5rem;
-  }
-
-  .page-size-trigger {
-    min-width: 7rem;
+    display: none;
   }
 
   .page-arrow,
