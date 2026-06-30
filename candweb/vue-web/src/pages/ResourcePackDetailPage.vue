@@ -175,13 +175,13 @@ async function openFile(file: ResourcePackFile) {
   openingFileId.value = file.file_id
   try {
     if (normalizedType(file.file_type) === 2) {
-      sessionStorage.setItem(`resource-pack-file-preview-title:${file.file_id}`, file.title || file.file_name || file.file_id)
+      if (file.title) sessionStorage.setItem(`resource-pack-file-preview-title:${file.file_id}`, file.title)
       const target = router.resolve(`/resource-pack-files/${encodeURIComponent(file.file_id)}/preview`)
       window.open(target.href, "_blank", "noopener,noreferrer")
       return
     }
     if (normalizedType(file.file_type) === 1) {
-      sessionStorage.setItem(`resource-pack-file-preview-title:${file.file_id}`, file.title || file.file_name || file.file_id)
+      if (file.title) sessionStorage.setItem(`resource-pack-file-preview-title:${file.file_id}`, file.title)
       const target = router.resolve(`/video-preview/resource-pack-files/${encodeURIComponent(file.file_id)}`)
       window.open(target.href, "_blank", "noopener,noreferrer")
       return

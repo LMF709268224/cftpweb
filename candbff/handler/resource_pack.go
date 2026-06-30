@@ -166,7 +166,11 @@ func (h *Handler) GetResourcePackFilePreviewURL(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	title := firstNonEmpty(strings.TrimSpace(file.GetTitle()), strings.TrimSpace(file.GetFileName()), fileID)
+	title := strings.TrimSpace(file.GetTitle())
+	if title == "" {
+		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "resource pack file title is missing")
+		return
+	}
 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
 		URL:       viewURL,
 		ExpiresAt: viewResp.GetExpiresAt(),
