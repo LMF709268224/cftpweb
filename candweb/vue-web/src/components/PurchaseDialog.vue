@@ -1075,7 +1075,7 @@ async function handlePaymentSessionError() {
             <div v-for="item in paymentPreview.breakdown" :key="`${item.code}-${item.discount}`" class="flex items-start justify-between gap-3">
               <div>
                 <div class="font-medium">{{ couponLabel(item) }}</div>
-                <div v-if="item.description" class="text-emerald-700">{{ item.description }}</div>
+                <div v-if="item.code && item.code !== couponLabel(item)" class="text-emerald-700">{{ item.code }}</div>
               </div>
               <div class="shrink-0 font-semibold">-{{ formatMoney(item.discount || 0, paymentPreview.currency) }}</div>
             </div>
