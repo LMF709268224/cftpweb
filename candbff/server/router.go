@@ -174,6 +174,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		r.Route("/orders", func(r chi.Router) {
 			r.Get("/", h.ListOrders)
+			r.Get("/{orderId}", h.GetOrder)
 			r.Post("/{orderId}/cancel", h.CancelOrder)
 		})
 		r.Route("/invoices", func(r chi.Router) {

@@ -644,6 +644,41 @@ type OrderListRsp struct {
 	Orders      []OrderItem `json:"orders"`
 }
 
+type OrderMetaDetail struct {
+	ProductName string `json:"product_name,omitempty"`
+}
+
+type OrderSummaryDetail struct {
+	OrderID       string          `json:"order_id"`
+	CandidateID   string          `json:"candidate_id,omitempty"`
+	BizType       string          `json:"biz_type,omitempty"`
+	BizRefUlid    string          `json:"biz_ref_ulid,omitempty"`
+	Currency      string          `json:"currency,omitempty"`
+	Amount        float64         `json:"amount"`
+	AmountMinor   int64           `json:"amount_minor"`
+	Status        string          `json:"status"`
+	RawStatus     string          `json:"raw_status"`
+	PaymentStatus string          `json:"payment_status,omitempty"`
+	CreatedAt     string          `json:"created_at,omitempty"`
+	Meta          OrderMetaDetail `json:"meta,omitempty"`
+}
+
+type OrderDetailRsp struct {
+	Found               bool               `json:"found"`
+	Summary             OrderSummaryDetail `json:"summary"`
+	GpayOrderUlid       string             `json:"gpay_order_ulid,omitempty"`
+	HasPaymentKey       bool               `json:"has_payment_key"`
+	PaidAt              string             `json:"paid_at,omitempty"`
+	ClosedAt            string             `json:"closed_at,omitempty"`
+	LastReconciledAt    string             `json:"last_reconciled_at,omitempty"`
+	Version             uint32             `json:"version,omitempty"`
+	UpdatedAt           string             `json:"updated_at,omitempty"`
+	OrderStatusAt       string             `json:"order_status_at,omitempty"`
+	PaymentStatusAt     string             `json:"payment_status_at,omitempty"`
+	DiscountUnsupported bool               `json:"discount_unsupported"`
+	Raw                 any                `json:"raw,omitempty"`
+}
+
 type CancelOrderRsp struct {
 	Success    bool   `json:"success"`
 	Message    string `json:"message,omitempty"`

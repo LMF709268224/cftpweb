@@ -146,6 +146,33 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GetOrder GET /api/orders/{orderId}
+func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	orderID := strings.TrimSpace(chi.URLParam(r, "orderId"))
+	if !requireRequestFields(w, candidateID, "candidate_id", orderID, "order_id") {
+		return
+	}
+
+	resp, err := h.Mall.GetOrderDetail(r.Context(), &mallpb.GetOrderDetailRequest{OrderUlid: orderID})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	detail := resp.GetDetail()
+	summary := detail.GetSummary()
+	if !resp.GetFound() || detail == nil || summary == nil || strings.TrimSpace(summary.GetCandidateUlid()) != candidateID {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "order not found or access denied")
+		return
+	}
+	if !isCandidateOrderBizType(normalizeOrderBizType(summary.GetBizType())) {
+		WriteError(w, http.StatusForbidden, ErrForbidden, "unsupported order type")
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, h.orderDetailResponse(resp))
+}
+
 // CancelOrder POST /api/orders/{orderId}/cancel
 func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
@@ -189,6 +216,55 @@ func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 		BizRefUlid: resp.GetBizRefUlid(),
 		Status:     resp.GetOrderStatus(),
 	})
+}
+
+func (h *Handler) orderDetailResponse(resp *mallpb.GetOrderDetailResponse) OrderDetailRsp {
+	detail := resp.GetDetail()
+	summary := detail.GetSummary()
+	rawStatus := candidateOrderRawStatus(summary.GetOrderStatus())
+	meta := summary.GetMeta()
+	out := OrderDetailRsp{
+		Found: resp.GetFound(),
+		Summary: OrderSummaryDetail{
+			OrderID:       strings.TrimSpace(summary.GetOrderUlid()),
+			CandidateID:   strings.TrimSpace(summary.GetCandidateUlid()),
+			BizType:       normalizeOrderBizType(summary.GetBizType()),
+			BizRefUlid:    strings.TrimSpace(summary.GetBizRefUlid()),
+			Currency:      strings.ToUpper(strings.TrimSpace(summary.GetCurrencyCode())),
+			Amount:        float64(summary.GetAmountMinor()) / 100.0,
+			AmountMinor:   summary.GetAmountMinor(),
+			Status:        candidateOrderStatus(rawStatus),
+			RawStatus:     rawStatus,
+			PaymentStatus: strings.TrimSpace(summary.GetPaymentStatus()),
+			CreatedAt:     formatOrderCreatedAt(summary.GetCreatedAt()),
+		},
+		GpayOrderUlid:       strings.TrimSpace(detail.GetGpayOrderUlid()),
+		HasPaymentKey:       strings.TrimSpace(detail.GetPaymentKey()) != "",
+		PaidAt:              formatOrderCreatedAt(detail.GetPaidAt()),
+		ClosedAt:            formatOrderCreatedAt(detail.GetClosedAt()),
+		LastReconciledAt:    formatOrderCreatedAt(detail.GetLastReconciledAt()),
+		Version:             detail.GetVersion(),
+		UpdatedAt:           formatOrderCreatedAt(detail.GetUpdatedAt()),
+		OrderStatusAt:       formatOrderCreatedAt(detail.GetOrderStatusAt()),
+		PaymentStatusAt:     formatOrderCreatedAt(detail.GetPaymentStatusAt()),
+		DiscountUnsupported: true,
+	}
+	if meta != nil {
+		out.Summary.Meta.ProductName = strings.TrimSpace(meta.GetProductName())
+	}
+	out.Raw = map[string]any{
+		"summary":            out.Summary,
+		"gpay_order_ulid":    out.GpayOrderUlid,
+		"has_payment_key":    out.HasPaymentKey,
+		"paid_at":            out.PaidAt,
+		"closed_at":          out.ClosedAt,
+		"last_reconciled_at": out.LastReconciledAt,
+		"version":            out.Version,
+		"updated_at":         out.UpdatedAt,
+		"order_status_at":    out.OrderStatusAt,
+		"payment_status_at":  out.PaymentStatusAt,
+	}
+	return out
 }
 
 func (h *Handler) candidateCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
