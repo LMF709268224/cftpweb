@@ -11,7 +11,7 @@ const fileTypeOptions = [
   { value: 3, label: "ZIP 压缩包" },
 ]
 
-const pageSize = 20
+const pageSize = 10
 
 const packs = ref<JsonRecord[]>([])
 const files = ref<JsonRecord[]>([])
@@ -23,6 +23,7 @@ const mode = ref<"create" | "edit">("edit")
 const pageToken = ref("")
 const nextPageToken = ref("")
 const previousTokens = ref<string[]>([])
+const currentPage = ref(1)
 const packFilter = ref("")
 let detailRequestId = 0
 
@@ -291,6 +292,7 @@ function resetPaging() {
   pageToken.value = ""
   nextPageToken.value = ""
   previousTokens.value = []
+  currentPage.value = 1
 }
 
 function changePackFilter() {
@@ -301,6 +303,7 @@ function changePackFilter() {
 function previousPage() {
   if (!canPrevious.value) return
   pageToken.value = previousTokens.value.pop() || ""
+  currentPage.value = Math.max(1, currentPage.value - 1)
   void loadFiles()
 }
 
@@ -308,6 +311,7 @@ function nextPage() {
   if (!canNext.value) return
   previousTokens.value.push(pageToken.value)
   pageToken.value = nextPageToken.value
+  currentPage.value += 1
   void loadFiles()
 }
 
@@ -354,7 +358,7 @@ onMounted(load)
             <h2 class="text-xl font-black">资源文件列表</h2>
             <p class="mt-1 text-sm text-slate-500">左侧选择文件，右侧查看详情并编辑。</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">{{ files.length }} 条</span>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">本页 {{ files.length }} / {{ pageSize }} 条</span>
         </div>
 
         <div v-if="loading" class="p-12 text-center text-slate-500">
@@ -385,7 +389,8 @@ onMounted(load)
           </span>
         </button>
 
-        <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
+        <div class="flex items-center justify-end gap-3 border-t border-slate-200 p-5">
+          <span class="mr-auto text-sm font-bold text-slate-500">第 {{ currentPage }} 页</span>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevious || loading" @click="previousPage">上一页</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext || loading" @click="nextPage">下一页</button>
         </div>
