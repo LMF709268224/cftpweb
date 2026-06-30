@@ -144,7 +144,7 @@ const detailSummaryFields = computed<DetailField[]>(() => {
     { label: t.value.orders.detailOrderId, value: summary.order_id || "" },
     { label: t.value.orders.detailType, value: orderTypeLabel(summary.biz_type) },
     { label: t.value.orders.detailAmount, value: formatMoney(Number(summary.amount || 0), summary.currency || "USD") },
-    { label: t.value.orders.detailCurrency, value: summary.currency || "" },
+    { label: t.value.orders.detailPaidAt, value: detail?.paid_at || "" },
     { label: t.value.orders.detailStatus, value: summary.raw_status ? timelineStatusLabelWithDiagnostics(t, "MALL_ORDER", summary.raw_status) : summary.status || "" },
     { label: t.value.orders.detailCreatedAt, value: summary.created_at || "" },
   ].filter((field) => field.value !== "")
@@ -154,7 +154,6 @@ const detailExtraFields = computed<DetailField[]>(() => {
   const detail = selectedOrderDetail.value
   if (!detail) return []
   return [
-    { label: t.value.orders.detailPaidAt, value: detail.paid_at || "" },
     { label: t.value.orders.detailClosedAt, value: detail.closed_at || "" },
   ].filter((field) => field.value !== "")
 })
@@ -490,19 +489,24 @@ onMounted(() => {
       </main>
     </div>
 
-    <div v-if="detailLoading || detailError || selectedOrderDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4 py-6" @click.self="closeOrderDetail">
-      <div class="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_rgba(15,23,42,0.24)]">
-        <header class="flex items-start justify-between gap-4 border-b border-slate-100 px-6 py-5">
-          <div>
-            <h2 class="text-xl font-bold text-slate-950">{{ t.orders.detailTitle }}</h2>
-            <p class="mt-1 text-sm text-muted-foreground">{{ selectedOrderDetail?.summary?.order_id || t.orders.detailSubtitle }}</p>
+    <div v-if="detailLoading || detailError || selectedOrderDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-3 py-4 backdrop-blur-[2px] sm:px-4 sm:py-6" @click.self="closeOrderDetail">
+      <div class="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)]">
+        <header class="flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-5 py-4 sm:px-6 sm:py-5">
+          <div class="flex min-w-0 items-start gap-3">
+            <div class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:flex">
+              <Receipt class="h-5 w-5" />
+            </div>
+            <div class="min-w-0">
+              <h2 class="text-xl font-bold text-slate-950">{{ t.orders.detailTitle }}</h2>
+              <p class="mt-1 break-all text-sm text-muted-foreground">{{ selectedOrderDetail?.summary?.order_id || t.orders.detailSubtitle }}</p>
+            </div>
           </div>
-          <button class="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900" @click="closeOrderDetail">
+          <button class="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900" @click="closeOrderDetail">
             {{ t.orders.detailClose }}
           </button>
         </header>
 
-        <div class="overflow-y-auto px-6 py-5">
+        <div class="overflow-y-auto bg-slate-50/70 px-4 py-4 sm:px-6 sm:py-5">
           <div v-if="detailLoading" class="flex items-center justify-center gap-2 py-16 text-muted-foreground">
             <Loader2 class="h-5 w-5 animate-spin" />
             {{ t.common.loading }}
@@ -510,28 +514,56 @@ onMounted(() => {
           <div v-else-if="detailError" class="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {{ detailError }}
           </div>
-          <div v-else-if="selectedOrderDetail" class="space-y-5">
-            <section class="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-              <div class="mb-3 flex items-center justify-between gap-3">
-                <h3 class="font-semibold text-slate-950">{{ t.orders.detailSummary }}</h3>
-                <span v-if="selectedOrderDetail.summary?.raw_status" class="badge text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', selectedOrderDetail.summary.raw_status)">
-                  {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', selectedOrderDetail.summary.raw_status) }}
-                </span>
+          <div v-else-if="selectedOrderDetail" class="space-y-4">
+            <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
+              <div class="border-b border-primary/10 bg-gradient-to-r from-primary/10 via-white to-emerald-50 px-4 py-4 sm:px-5">
+                <div class="mb-4 flex items-start justify-between gap-3">
+                  <h3 class="font-semibold text-slate-950">{{ t.orders.detailSummary }}</h3>
+                  <span v-if="selectedOrderDetail.summary?.raw_status" class="badge shrink-0 text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', selectedOrderDetail.summary.raw_status)">
+                    {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', selectedOrderDetail.summary.raw_status) }}
+                  </span>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+                  <div class="min-w-0">
+                    <p class="text-xs font-semibold text-slate-500">{{ t.orders.detailProductName }}</p>
+                    <h4 class="mt-1 break-words text-lg font-black leading-snug text-slate-950">
+                      {{ selectedOrderDetail.summary?.meta?.product_name || "-" }}
+                    </h4>
+                  </div>
+                  <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm sm:min-w-44 sm:text-right">
+                    <p class="text-xs font-semibold text-slate-500">{{ t.orders.detailAmount }}</p>
+                    <p class="mt-1 text-2xl font-black tracking-tight text-primary">
+                      {{ formatMoney(Number(selectedOrderDetail.summary?.amount || 0), selectedOrderDetail.summary?.currency || "USD") }}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <dl class="grid gap-3 md:grid-cols-2">
-                <div v-for="field in detailSummaryFields" :key="field.label" class="rounded-xl bg-white px-3 py-3 ring-1 ring-slate-100">
-                  <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ field.label }}</dt>
-                  <dd class="mt-1 break-words text-sm font-semibold text-slate-900">{{ field.value }}</dd>
+              <dl class="divide-y divide-slate-100 px-4 sm:px-5">
+                <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                  <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailOrderId }}</dt>
+                  <dd class="break-all text-sm font-semibold text-slate-950">{{ selectedOrderDetail.summary?.order_id || "-" }}</dd>
+                </div>
+                <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                  <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailType }}</dt>
+                  <dd class="break-words text-sm font-semibold text-slate-950">{{ orderTypeLabel(selectedOrderDetail.summary?.biz_type) }}</dd>
+                </div>
+                <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                  <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailPaidAt }}</dt>
+                  <dd class="break-words text-sm font-semibold text-slate-950">{{ selectedOrderDetail.paid_at || "-" }}</dd>
+                </div>
+                <div class="grid gap-1 py-3 sm:grid-cols-[140px_1fr] sm:gap-4">
+                  <dt class="text-xs font-semibold text-slate-500">{{ t.orders.detailCreatedAt }}</dt>
+                  <dd class="break-words text-sm font-semibold text-slate-950">{{ selectedOrderDetail.summary?.created_at || "-" }}</dd>
                 </div>
               </dl>
             </section>
 
-            <section v-if="detailExtraFields.length" class="rounded-2xl border border-slate-100 bg-white p-4">
-              <h3 class="mb-3 font-semibold text-slate-950">{{ t.orders.detailPaymentInfo }}</h3>
-              <dl class="grid gap-3 md:grid-cols-2">
-                <div v-for="field in detailExtraFields" :key="field.label" class="rounded-xl bg-slate-50 px-3 py-3">
-                  <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ field.label }}</dt>
-                  <dd class="mt-1 break-words text-sm font-semibold text-slate-900">{{ field.value }}</dd>
+            <section v-if="detailExtraFields.length" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
+              <h3 class="border-b border-slate-100 bg-white px-4 py-3 font-semibold text-slate-950 sm:px-5">{{ t.orders.detailPaymentInfo }}</h3>
+              <dl class="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+                <div v-for="field in detailExtraFields" :key="field.label" class="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+                  <dt class="text-xs font-semibold text-slate-500">{{ field.label }}</dt>
+                  <dd class="mt-1.5 break-words text-sm font-bold leading-snug text-slate-950">{{ field.value }}</dd>
                 </div>
               </dl>
             </section>
