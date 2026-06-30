@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import { ChevronRight, CreditCard, FileText, Loader2, Package, Receipt, XCircle } from "lucide-vue-next"
+import { ChevronRight, CreditCard, FileText, Loader2, Package, Receipt, X, XCircle } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -489,7 +489,7 @@ onMounted(() => {
       </main>
     </div>
 
-    <div v-if="detailLoading || detailError || selectedOrderDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-3 py-4 backdrop-blur-[2px] sm:px-4 sm:py-6" @click.self="closeOrderDetail">
+    <div v-if="detailLoading || detailError || selectedOrderDetail" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-3 py-4 backdrop-blur-[2px] sm:px-4 sm:py-6">
       <div class="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-[22px] bg-white shadow-[0_28px_90px_rgba(15,23,42,0.28)]">
         <header class="flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-5 py-4 sm:px-6 sm:py-5">
           <div class="flex min-w-0 items-start gap-3">
@@ -501,8 +501,8 @@ onMounted(() => {
               <p class="mt-1 break-all text-sm text-muted-foreground">{{ selectedOrderDetail?.summary?.order_id || t.orders.detailSubtitle }}</p>
             </div>
           </div>
-          <button class="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-500 shadow-sm transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900" @click="closeOrderDetail">
-            {{ t.orders.detailClose }}
+          <button class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="closeOrderDetail">
+            <X class="h-5 w-5" />
           </button>
         </header>
 
