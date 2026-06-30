@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import { Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, Trash2 } from "lucide-vue-next"
+import { Bell, CheckCheck, ChevronRight, Circle, CreditCard, FileText, Gift, Loader2, Megaphone, MessageSquare, MoreHorizontal, Trash2, X } from "lucide-vue-next"
 import AppShell from "@/components/AppShell.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDate } from "@/lib/utils"
@@ -490,21 +490,41 @@ onMounted(() => {
       </main>
     </div>
 
-    <div v-if="detailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="detailModalOpen = false">
-      <div class="w-full max-w-xl rounded-[16px] bg-white p-4 shadow-2xl">
-        <div class="flex items-start justify-between gap-4">
-          <div>
-            <div class="mb-2 flex flex-wrap items-start gap-2">
-              <h2 class="min-w-0 flex-1 text-xl font-semibold leading-snug">{{ localizedMessageTitle(selectedMessageDetail?.rawTitle || '', t.messagesPage.systemNotice) }}</h2>
-              <span v-if="selectedMessageDetail?.typeLabel" class="badge shrink-0">{{ selectedMessageDetail.typeLabel }}</span>
+    <div v-if="detailModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4 backdrop-blur-[2px]">
+      <div class="flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-[20px] bg-white shadow-[0_24px_70px_rgba(15,23,42,0.28)]">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6">
+          <div class="min-w-0">
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+              <h2 class="min-w-0 flex-1 text-xl font-bold leading-snug text-slate-950 sm:text-2xl">{{ localizedMessageTitle(selectedMessageDetail?.rawTitle || '', t.messagesPage.systemNotice) }}</h2>
+              <span v-if="selectedMessageDetail?.typeLabel" class="badge shrink-0 border-primary/15 bg-primary/5 text-primary">{{ selectedMessageDetail.typeLabel }}</span>
             </div>
-            <p class="text-sm text-muted-foreground">{{ selectedMessageDetail?.time }}</p>
+            <p class="text-sm font-medium text-slate-500">{{ selectedMessageDetail?.time }}</p>
           </div>
-          <button class="text-xl leading-none text-muted-foreground transition-colors hover:text-foreground" @click="detailModalOpen = false">x</button>
+          <button class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="detailModalOpen = false">
+            <X class="h-5 w-5" />
+          </button>
         </div>
-        <div class="mt-4 border-t border-border pt-4 text-sm leading-relaxed text-foreground" v-html="markdownToHtml(selectedMessageDetail?.rawContent || '')" />
+        <div class="min-h-0 overflow-y-auto bg-slate-50/70 px-5 py-5 sm:px-6">
+          <div class="message-detail-content rounded-2xl border border-slate-100 bg-white px-5 py-4 text-sm leading-7 text-slate-800 shadow-sm shadow-slate-200/70" v-html="markdownToHtml(selectedMessageDetail?.rawContent || '')" />
+        </div>
       </div>
     </div>
   </AppShell>
 </template>
+
+<style scoped>
+.message-detail-content :deep(p:first-child) {
+  margin-top: 0;
+}
+
+.message-detail-content :deep(p:last-child),
+.message-detail-content :deep(ul:last-child) {
+  margin-bottom: 0;
+}
+
+.message-detail-content :deep(strong) {
+  color: rgb(15 23 42);
+  font-weight: 700;
+}
+</style>
 
