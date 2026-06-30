@@ -156,25 +156,9 @@ func (h *Handler) GetResourcePackFilePreviewURL(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	file, err := h.findResourcePackFileForCandidate(r, candidateID, fileID)
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-	if file.GetFileType() != lmspb.ResourcePackFileType_RESOURCE_PACK_FILE_TYPE_PDF {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "resource pack file is not a pdf")
-		return
-	}
-
-	title := strings.TrimSpace(file.GetTitle())
-	if title == "" {
-		WriteError(w, http.StatusBadGateway, ErrServiceUnavailable, "resource pack file title is missing")
-		return
-	}
 	WriteJSON(w, http.StatusOK, GetAccessURLRsp{
 		URL:       viewURL,
 		ExpiresAt: viewResp.GetExpiresAt(),
-		Title:     title,
 	})
 }
 
