@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
-import { AlertCircle, Check, Crown, Loader2, Percent, RefreshCw, Shield, Star, XCircle } from "lucide-vue-next"
+import { AlertCircle, Check, ChevronDown, Crown, Loader2, Percent, RefreshCw, Shield, Star, XCircle } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
@@ -368,8 +368,21 @@ onMounted(() => {
             </div>
           </section>
 
-          <div class="mb-4 rounded-[14px] bg-white px-5 pt-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6">
-            <div class="flex flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2]">
+          <div class="mb-4 rounded-[14px] bg-white p-4 shadow-[0_10px_24px_rgba(15,74,82,0.04)] md:px-6 md:pt-4 md:pb-0">
+            <div class="relative md:hidden">
+              <select
+                v-model="activeTab"
+                class="input h-11 cursor-pointer appearance-none rounded-xl border-slate-200 bg-slate-50 pr-10 font-semibold text-foreground shadow-sm shadow-slate-100/70 focus:bg-white"
+                aria-label="Membership tabs"
+              >
+                <option v-for="tab in tabs" :key="tab.id" :value="tab.id">
+                  {{ tab.label }}
+                </option>
+              </select>
+              <ChevronDown class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            </div>
+
+            <div class="hidden flex-wrap gap-x-8 gap-y-2 border-b border-[#edf0f2] md:flex">
               <button
                 v-for="tab in tabs"
                 :key="tab.id"

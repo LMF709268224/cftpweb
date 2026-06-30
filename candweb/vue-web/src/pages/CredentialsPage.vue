@@ -346,19 +346,19 @@ onMounted(fetchData)
           <h3 class="mb-2 text-lg font-semibold text-foreground">{{ t.credentialsPage.noApplications }}</h3>
         </div>
         <div v-else class="overflow-hidden rounded-[16px] bg-white shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="space-y-2">
-            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 px-4 py-4 transition-colors hover:bg-primary/10 md:gap-x-6 lg:grid-cols-[minmax(320px,2.4fr)_minmax(160px,1fr)_minmax(128px,auto)_minmax(104px,auto)] lg:gap-x-8">
-              <div class="col-span-2 min-w-0 lg:col-span-1">
-                <div class="break-words text-base font-medium text-foreground md:truncate" :title="applicationTitle(app)">{{ applicationTitle(app) }}</div>
-                <div class="break-words text-sm text-muted-foreground md:truncate" :title="applicationMeta(app)">{{ applicationMeta(app) }}</div>
+          <div class="space-y-3 p-3 md:space-y-2 md:p-0">
+            <div v-for="app in applications" :key="applicationId(app) || applicationCredentialDefinitionId(app)" class="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-3 rounded-xl border border-slate-100 bg-white px-3 py-4 shadow-sm shadow-slate-100/80 transition-colors hover:bg-primary/10 md:items-center md:rounded-none md:border-0 md:px-4 md:shadow-none md:gap-x-6 lg:grid-cols-[minmax(320px,2.4fr)_minmax(160px,1fr)_minmax(128px,auto)_minmax(104px,auto)] lg:gap-x-8">
+              <div class="min-w-0 lg:col-span-1">
+                <div class="break-words text-base font-semibold leading-6 text-foreground md:truncate md:font-medium" :title="applicationTitle(app)">{{ applicationTitle(app) }}</div>
+                <div class="mt-1 break-words text-sm leading-5 text-muted-foreground md:truncate" :title="applicationMeta(app)">{{ applicationMeta(app) }}</div>
               </div>
-              <div class="col-span-2 min-w-0 break-words text-sm text-muted-foreground md:truncate lg:col-span-1" :title="app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na">{{ app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na }}</div>
-              <span :class="['inline-flex min-w-[88px] items-center justify-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold', applicationStatusPillClass(app.status)]">
+              <span :class="['inline-flex w-fit min-w-0 items-center justify-center gap-1.5 justify-self-end rounded-full border px-3 py-1 text-xs font-semibold lg:min-w-[88px]', applicationStatusPillClass(app.status)]">
                 <component :is="statusIcon(app.status)" class="h-3.5 w-3.5" />
                 {{ statusLabel(t, CANDIDATE_APPLICATION_STATUS_LABELS, app.status, 'credentialsPage.appStatusUnknown') }}
               </span>
-              <button v-if="canResubmit(app.status)" class="btn btn-primary cursor-pointer justify-self-end rounded-lg py-1 text-sm shadow-sm shadow-primary/20" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
-              <span v-else class="justify-self-end whitespace-nowrap text-sm text-muted-foreground">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
+              <div class="col-span-2 min-w-0 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-5 text-muted-foreground md:col-span-2 md:bg-transparent md:px-0 md:py-0 md:truncate lg:col-span-1" :title="app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na">{{ app.audit_remark ? `${t.credentialsPage.auditRemark}: ${app.audit_remark}` : t.common.na }}</div>
+              <button v-if="canResubmit(app.status)" class="btn btn-primary col-span-2 h-9 w-full cursor-pointer rounded-lg py-1 text-sm shadow-sm shadow-primary/20 md:col-span-1 md:w-auto md:justify-self-end" @click="handleApplyClick(definitionForApplication(app), applicationId(app))">{{ t.credentialsPage.appStatusResubmit }}</button>
+              <span v-else class="col-span-2 justify-self-start whitespace-nowrap text-sm text-muted-foreground md:col-span-1 md:justify-self-end">{{ formatBackendDateOnly(app.created_at) || t.common.na }}</span>
             </div>
           </div>
           <AppPagination

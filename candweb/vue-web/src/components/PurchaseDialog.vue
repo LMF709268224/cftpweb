@@ -1070,39 +1070,48 @@ async function handlePaymentSessionError() {
               <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney(paymentPreview.total, paymentPreview.currency) }}</span>
             </div>
           </div>
-          <div v-if="paymentPreview.breakdown?.length" class="mt-3 space-y-2 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-xs text-emerald-900">
-            <div class="font-semibold">{{ copy.couponApplied }}</div>
-            <div v-for="item in paymentPreview.breakdown" :key="`${item.code}-${item.discount}`" class="flex items-start justify-between gap-3">
-              <div>
-                <div class="font-medium">{{ couponLabel(item) }}</div>
-                <div v-if="item.code && item.code !== couponLabel(item)" class="text-emerald-700">{{ item.code }}</div>
+          <div v-if="paymentPreview.breakdown?.length" class="mt-3 overflow-hidden rounded-xl border border-emerald-200/80 bg-white shadow-sm shadow-emerald-100/60">
+            <div class="border-b border-emerald-100 bg-emerald-50/90 px-3 py-2 text-xs font-semibold text-emerald-900">{{ copy.couponApplied }}</div>
+            <div class="divide-y divide-emerald-100">
+              <div v-for="item in paymentPreview.breakdown" :key="`${item.code}-${item.discount}`" class="flex items-start justify-between gap-3 px-3 py-2.5 text-xs">
+                <div class="min-w-0 pr-2">
+                  <div class="break-words text-sm font-medium leading-5 text-emerald-950">{{ couponLabel(item) }}</div>
+                  <div v-if="item.code && item.code !== couponLabel(item)" class="mt-1 inline-flex max-w-full rounded-md bg-emerald-100/80 px-2 py-0.5 font-mono text-[11px] font-semibold text-emerald-700">
+                    <span class="break-all">{{ item.code }}</span>
+                  </div>
+                </div>
+                <div class="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 font-bold text-emerald-800">-{{ formatMoney(item.discount || 0, paymentPreview.currency) }}</div>
               </div>
-              <div class="shrink-0 font-semibold">-{{ formatMoney(item.discount || 0, paymentPreview.currency) }}</div>
             </div>
           </div>
-          <div v-if="paymentPreview.invalid?.length" class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-            <div class="font-semibold">{{ copy.couponInvalidTitle }}</div>
-            <div v-for="item in paymentPreview.invalid" :key="`${item.code}-${item.reason}`" class="mt-1">{{ invalidCouponText(item) }}</div>
+          <div v-if="paymentPreview.invalid?.length" class="mt-3 overflow-hidden rounded-xl border border-amber-200 bg-white shadow-sm shadow-amber-100/50">
+            <div class="border-b border-amber-100 bg-amber-50/90 px-3 py-2 text-xs font-semibold text-amber-900">{{ copy.couponInvalidTitle }}</div>
+            <div class="divide-y divide-amber-100">
+              <div v-for="item in paymentPreview.invalid" :key="`${item.code}-${item.reason}`" class="flex items-start gap-2 px-3 py-2.5 text-xs text-amber-900">
+                <span class="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                <span class="min-w-0 break-words leading-5">{{ invalidCouponText(item) }}</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div v-if="activeOrder?.action === 'purchase' && paymentPreview && !activePaymentSession" class="rounded-lg border border-border bg-background p-4">
+        <div v-if="activeOrder?.action === 'purchase' && paymentPreview && !activePaymentSession" class="rounded-lg border border-blue-100 bg-blue-50/70 p-4">
           <label class="text-sm font-semibold text-foreground" for="purchase-coupon-input">{{ copy.couponTitle }}</label>
           <p class="mt-1 text-xs text-muted-foreground">{{ copy.couponHint }}</p>
-          <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+          <div class="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
             <input
               id="purchase-coupon-input"
               v-model="couponInput"
-              class="input flex-1"
+              class="input h-10 bg-white shadow-sm shadow-blue-100/40"
               :placeholder="copy.couponPlaceholder"
               :disabled="couponPreviewLoading || paymentLoading"
               @keydown.enter.prevent="applyCouponCodes"
             />
-            <button type="button" class="btn btn-outline" :disabled="couponPreviewLoading || paymentLoading" @click="applyCouponCodes">
+            <button type="button" class="inline-flex h-10 min-w-[112px] shrink-0 items-center justify-center gap-2 rounded-lg border border-blue-100 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm shadow-blue-100/50 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" :disabled="couponPreviewLoading || paymentLoading" @click="applyCouponCodes">
               <Loader2 v-if="couponPreviewLoading" class="h-4 w-4 animate-spin" />
               {{ copy.applyCoupon }}
             </button>
-            <button v-if="activeCouponCodes.length" type="button" class="btn btn-outline" :disabled="couponPreviewLoading || paymentLoading" @click="clearCouponCodes">
+            <button v-if="activeCouponCodes.length" type="button" class="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100 hover:text-blue-900 disabled:cursor-not-allowed disabled:opacity-50 sm:col-start-2" :disabled="couponPreviewLoading || paymentLoading" @click="clearCouponCodes">
               {{ copy.clearCoupon }}
             </button>
           </div>
@@ -1180,30 +1189,30 @@ async function handlePaymentSessionError() {
         </div>
       </div>
 
-      <div class="shrink-0 flex items-center justify-end gap-3 border-t border-border bg-muted/30 px-6 py-4">
-        <button class="btn btn-outline" @click="close">{{ t.common.cancel }}</button>
-        <button v-if="cannotContinue" class="btn btn-outline" :disabled="eligibilityLoading" @click="refreshEligibility">
+      <div class="grid shrink-0 grid-cols-2 gap-2 border-t border-border bg-muted/30 px-4 py-3 sm:flex sm:items-center sm:justify-end sm:gap-3 sm:px-6 sm:py-4">
+        <button class="btn btn-outline min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" @click="close">{{ t.common.cancel }}</button>
+        <button v-if="cannotContinue" class="btn btn-outline min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="eligibilityLoading" @click="refreshEligibility">
           <Loader2 v-if="eligibilityLoading" class="h-4 w-4 animate-spin" />
           {{ copy.refreshEligibility }}
         </button>
-        <button v-if="canUnlock && !activeOrder" class="btn btn-primary" :disabled="actionLoading" @click="createUnlockOrder">
+        <button v-if="canUnlock && !activeOrder" class="btn btn-primary min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="actionLoading" @click="createUnlockOrder">
           <Loader2 v-if="actionLoading" class="h-4 w-4 animate-spin" />
           <Lock v-else class="h-4 w-4" />
           {{ copy.createUnlockOrder }}
         </button>
-        <button v-if="canPurchase && !activeOrder" class="btn btn-primary" :disabled="actionLoading" @click="createPurchaseOrder">
+        <button v-if="canPurchase && !activeOrder" class="btn btn-primary min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="actionLoading" @click="createPurchaseOrder">
           <Loader2 v-if="actionLoading" class="h-4 w-4 animate-spin" />
           <ShoppingCart v-else class="h-4 w-4" />
           {{ copy.createPurchaseOrder }}
         </button>
-        <button v-if="activeOrder && previewError" class="btn btn-outline" :disabled="actionLoading" @click="refreshEligibility">
+        <button v-if="activeOrder && previewError" class="btn btn-outline min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="actionLoading" @click="refreshEligibility">
           {{ copy.retryPreview }}
         </button>
-        <button v-if="canCancelActiveOrder" class="btn border-red-600 bg-red-600 text-white shadow-sm shadow-red-100 hover:border-red-700 hover:bg-red-700 disabled:border-red-300 disabled:bg-red-300 disabled:text-white" :disabled="cancelOrderLoading || actionLoading" @click="cancelActiveOrder">
+        <button v-if="canCancelActiveOrder" class="btn min-h-11 w-full border-red-600 bg-red-600 px-3 text-center leading-tight text-white shadow-sm shadow-red-100 hover:border-red-700 hover:bg-red-700 disabled:border-red-300 disabled:bg-red-300 disabled:text-white sm:min-h-0 sm:w-auto sm:px-4" :disabled="cancelOrderLoading || actionLoading" @click="cancelActiveOrder">
           <Loader2 v-if="cancelOrderLoading" class="h-4 w-4 animate-spin" />
           {{ copy.cancelOrder }}
         </button>
-        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-primary" :disabled="paymentLoading" @click="initiatePayment">
+        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-primary min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="paymentLoading" @click="initiatePayment">
           <Loader2 v-if="paymentLoading" class="h-4 w-4 animate-spin" />
           <CreditCard v-else class="h-4 w-4" />
           {{ copy.payNow }}
