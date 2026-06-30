@@ -91,6 +91,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Post("/{bundleId}/unlock", h.UnlockPipelineInBundle)
 			})
 			r.Route("/payments", func(r chi.Router) {
+				r.Post("/preview", h.PreviewPayment)
 				r.Post("/initiate", h.InitiatePayment)
 			})
 		})

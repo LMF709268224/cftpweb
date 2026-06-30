@@ -49,11 +49,28 @@ type bundleActiveOrderSummary struct {
 }
 
 type bundlePaymentPreviewSummary struct {
-	Subtotal      int64  `json:"subtotal"`
-	DiscountTotal int64  `json:"discount_total"`
-	TaxTotal      int64  `json:"tax_total"`
-	Total         int64  `json:"total"`
-	Currency      string `json:"currency,omitempty"`
+	Subtotal      int64                  `json:"subtotal"`
+	DiscountTotal int64                  `json:"discount_total"`
+	TaxTotal      int64                  `json:"tax_total"`
+	Total         int64                  `json:"total"`
+	Currency      string                 `json:"currency,omitempty"`
+	Breakdown     []bundleCouponDiscount `json:"breakdown,omitempty"`
+	Invalid       []bundleInvalidCoupon  `json:"invalid,omitempty"`
+}
+
+type bundleCouponDiscount struct {
+	Code        string  `json:"code,omitempty"`
+	Name        string  `json:"name,omitempty"`
+	Type        string  `json:"type,omitempty"`
+	PercentOff  float64 `json:"percent_off,omitempty"`
+	AmountOff   int64   `json:"amount_off,omitempty"`
+	Discount    int64   `json:"discount,omitempty"`
+	Description string  `json:"description,omitempty"`
+}
+
+type bundleInvalidCoupon struct {
+	Code   string `json:"code,omitempty"`
+	Reason string `json:"reason,omitempty"`
 }
 
 type bundlePurchaseState struct {
@@ -856,13 +873,37 @@ func toBundlePaymentPreviewSummary(resp *mallpb.PreviewPaymentResponse) *bundleP
 	if resp == nil {
 		return nil
 	}
-	return &bundlePaymentPreviewSummary{
+	out := &bundlePaymentPreviewSummary{
 		Subtotal:      resp.GetSubtotal(),
 		DiscountTotal: resp.GetDiscountTotal(),
 		TaxTotal:      resp.GetTaxTotal(),
 		Total:         resp.GetTotal(),
 		Currency:      resp.GetCurrency(),
 	}
+	for _, item := range resp.GetBreakdown() {
+		if item == nil {
+			continue
+		}
+		out.Breakdown = append(out.Breakdown, bundleCouponDiscount{
+			Code:        item.GetCode(),
+			Name:        item.GetName(),
+			Type:        item.GetType(),
+			PercentOff:  item.GetPercentOff(),
+			AmountOff:   item.GetAmountOff(),
+			Discount:    item.GetDiscount(),
+			Description: item.GetDescription(),
+		})
+	}
+	for _, item := range resp.GetInvalid() {
+		if item == nil {
+			continue
+		}
+		out.Invalid = append(out.Invalid, bundleInvalidCoupon{
+			Code:   item.GetCode(),
+			Reason: item.GetReason(),
+		})
+	}
+	return out
 }
 
 func (h *Handler) previewPaymentSummary(ctx context.Context, bizType string, bizRefULID string) *bundlePaymentPreviewSummary {
@@ -1682,6 +1723,31 @@ func (h *Handler) UnlockPipelineInBundle(w http.ResponseWriter, r *http.Request)
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+// PreviewPayment POST /api/mall/payments/preview
+func (h *Handler) PreviewPayment(w http.ResponseWriter, r *http.Request) {
+	var req PreviewPaymentReq
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
+		return
+	}
+	req.BizType = strings.TrimSpace(req.BizType)
+	req.BizRefUlid = strings.TrimSpace(req.BizRefUlid)
+	if !requireRequestField(w, req.BizType, "biz_type") || !requireRequestField(w, req.BizRefUlid, "biz_ref_ulid") {
+		return
+	}
+
+	resp, err := h.Mall.PreviewPayment(r.Context(), &mallpb.PreviewPaymentRequest{
+		BizType:     req.BizType,
+		BizRefUlid:  req.BizRefUlid,
+		CouponCodes: compactStrings(req.CouponCodes),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, toBundlePaymentPreviewSummary(resp))
+}
+
 // InitiatePayment POST /api/mall/payments/initiate
 func (h *Handler) InitiatePayment(w http.ResponseWriter, r *http.Request) {
 	var req InitiatePaymentReq
@@ -1705,7 +1771,7 @@ func (h *Handler) InitiatePayment(w http.ResponseWriter, r *http.Request) {
 		BizRefUlid:  req.BizRefUlid,
 		SuccessUrl:  strings.TrimSpace(req.SuccessUrl),
 		CancelUrl:   strings.TrimSpace(req.CancelUrl),
-		CouponCodes: req.CouponCodes,
+		CouponCodes: compactStrings(req.CouponCodes),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

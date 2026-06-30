@@ -19,9 +19,11 @@ const props = withDefaults(defineProps<{
   source?: string
   returnPath?: string
   extraReturnParams?: Record<string, string | number | boolean | null | undefined>
+  couponCodes?: string[]
   autoStart?: boolean
   minHeightClass?: string
 }>(), {
+  couponCodes: () => [],
   autoStart: true,
   minHeightClass: "min-h-[60vh]",
 })
@@ -172,7 +174,7 @@ async function startPayment() {
         biz_ref_ulid: bizRefUlid,
         success_url: paymentReturnUrl("success"),
         cancel_url: paymentReturnUrl("cancelled"),
-        coupon_codes: [],
+        coupon_codes: props.couponCodes.map((code) => String(code || "").trim()).filter(Boolean),
       }),
     })
     const nextKey = String(res?.payment_key || "").trim()
@@ -202,7 +204,7 @@ async function startPayment() {
 }
 
 watch(
-  () => [props.paymentKey, props.bizType, props.bizRefUlid, props.orderId, props.returnPath, props.source, props.extraReturnParams],
+  () => [props.paymentKey, props.bizType, props.bizRefUlid, props.orderId, props.returnPath, props.source, props.extraReturnParams, props.couponCodes],
   () => {
     if (props.autoStart) void startPayment()
   },

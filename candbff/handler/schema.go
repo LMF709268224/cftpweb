@@ -628,6 +628,12 @@ type InitiatePaymentReq struct {
 	CouponCodes []string `json:"coupon_codes"`
 }
 
+type PreviewPaymentReq struct {
+	BizType     string   `json:"biz_type"`
+	BizRefUlid  string   `json:"biz_ref_ulid"`
+	CouponCodes []string `json:"coupon_codes"`
+}
+
 type OrderListRsp struct {
 	TotalOrders int         `json:"total_orders"`
 	Completed   int         `json:"completed"`

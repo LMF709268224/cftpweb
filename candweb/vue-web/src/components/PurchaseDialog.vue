@@ -29,10 +29,27 @@ type PaymentPreview = {
   tax_total?: number
   total?: number
   currency?: string
+  breakdown?: CouponDiscount[]
+  invalid?: InvalidCoupon[]
   amount_label?: string
   amount?: string | number
   pay_amount_label?: string
   pay_amount?: string | number
+}
+
+type CouponDiscount = {
+  code?: string
+  name?: string
+  type?: string
+  percent_off?: number
+  amount_off?: number
+  discount?: number
+  description?: string
+}
+
+type InvalidCoupon = {
+  code?: string
+  reason?: string
 }
 
 type ActiveOrder = {
@@ -118,6 +135,10 @@ const activeOrder = ref<ActiveOrder | null>(null)
 const paymentPreview = ref<PaymentPreview | null>(null)
 const previewError = ref("")
 const exemptionError = ref("")
+const couponInput = ref("")
+const appliedCouponCodes = ref<string[]>([])
+const couponPreviewLoading = ref(false)
+const couponError = ref("")
 const selectedExemptionUnitIds = ref<Record<string, boolean>>({})
 const resolvedBundleId = ref(props.bundleId || "")
 const activePaymentSession = ref<{
@@ -128,6 +149,7 @@ const activePaymentSession = ref<{
   source: string
   returnPath: string
   extraReturnParams?: Record<string, string>
+  couponCodes?: string[]
 } | null>(null)
 const credentialApplicationOrder = ref<{
   applicationOrderUlid: string
@@ -153,6 +175,7 @@ const isOrderPreviewLoading = computed(() => Boolean(activeOrder.value && !payme
 const canCancelActiveOrder = computed(() => Boolean(activeOrder.value?.orderId && (activeOrder.value?.canCancel || isCancelableOrderStatus(activeOrder.value?.status))))
 const pendingCredentialApplications = ref<Record<string, boolean>>({})
 const hasPendingCredentialApplication = computed(() => Object.values(pendingCredentialApplications.value).some(Boolean))
+const activeCouponCodes = computed(() => appliedCouponCodes.value.map((code) => code.trim()).filter(Boolean))
 
 
 function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveOrder | null {
@@ -184,6 +207,9 @@ function hydrateFromInitialState() {
   previewError.value = ""
   exemptionError.value = ""
   selectedExemptionUnitIds.value = {}
+  couponInput.value = ""
+  appliedCouponCodes.value = []
+  couponError.value = ""
   pruneSelectedExemptions(exemptionOptions.value)
 }
 
@@ -195,6 +221,7 @@ function applyBundlePurchaseState(bundle: any) {
   previewError.value = ""
   exemptionError.value = ""
   activePaymentSession.value = null
+  couponError.value = ""
   pruneSelectedExemptions(exemptionOptions.value)
 }
 
@@ -275,6 +302,9 @@ watch(() => props.open, async (open) => {
       activeOrder.value = null
       paymentPreview.value = null
       resetExemptionSelection()
+      couponInput.value = ""
+      appliedCouponCodes.value = []
+      couponError.value = ""
     }
     await loadFreshDialogState()
   } else {
@@ -362,6 +392,23 @@ function isApplicationResubmitStatus(status: unknown) {
 function formatMoney(amount?: number, currency = "usd") {
   if (typeof amount !== "number") return "-"
   return new Intl.NumberFormat(undefined, { style: "currency", currency: currency || "usd" }).format(amount / 100)
+}
+
+function normalizeCouponCodes(codes: string[]) {
+  return Array.from(new Set(codes.map((code) => String(code || "").trim()).filter(Boolean)))
+}
+
+function couponInputCodes() {
+  return normalizeCouponCodes(couponInput.value.split(/[\s,，;；]+/))
+}
+
+function couponLabel(item: CouponDiscount) {
+  return item.name || item.code || copy.value.couponApplied
+}
+
+function invalidCouponText(item: InvalidCoupon) {
+  const code = item.code || copy.value.couponUnknown
+  return item.reason ? `${code}: ${item.reason}` : code
 }
 
 function detailText(detail: unknown) {
@@ -501,6 +548,42 @@ async function refreshEligibility() {
   } finally {
     eligibilityLoading.value = false
   }
+}
+
+async function refreshPaymentPreviewWithCoupons(codes = activeCouponCodes.value) {
+  const orderId = activeOrder.value?.orderId
+  if (!orderId || activeOrder.value?.action !== "purchase") return
+  couponPreviewLoading.value = true
+  couponError.value = ""
+  try {
+    const preview = await apiClient("/api/mall/payments/preview", {
+      method: "POST",
+      body: JSON.stringify({
+        biz_type: "BUNDLE_PURCHASE",
+        biz_ref_ulid: orderId,
+        coupon_codes: normalizeCouponCodes(codes),
+      }),
+    })
+    paymentPreview.value = preview
+    previewError.value = ""
+  } catch (error) {
+    console.error(error)
+    couponError.value = copy.value.couponPreviewFailed || copy.value.pricePreviewFailed || t.value.common.error
+  } finally {
+    couponPreviewLoading.value = false
+  }
+}
+
+async function applyCouponCodes() {
+  const nextCodes = couponInputCodes()
+  appliedCouponCodes.value = nextCodes
+  await refreshPaymentPreviewWithCoupons(nextCodes)
+}
+
+async function clearCouponCodes() {
+  couponInput.value = ""
+  appliedCouponCodes.value = []
+  await refreshPaymentPreviewWithCoupons([])
 }
 
 async function cancelActiveOrder() {
@@ -757,17 +840,18 @@ function initiatePayment() {
   paymentLoading.value = true
   try {
     rememberPendingMallPayment()
-    activePaymentSession.value = {
-      bizType,
-      bizRefUlid: activeOrder.value.orderId,
-      orderId: activeOrder.value.orderId,
-      source: activeOrder.value.action,
+  activePaymentSession.value = {
+    bizType,
+    bizRefUlid: activeOrder.value.orderId,
+    orderId: activeOrder.value.orderId,
+    source: activeOrder.value.action,
       returnPath: "/certifications",
       extraReturnParams: {
         pipeline_id: props.pipelineId,
-        bundle_id: resolvedBundleId.value,
-      },
-    }
+      bundle_id: resolvedBundleId.value,
+    },
+    couponCodes: activeOrder.value.action === "purchase" ? activeCouponCodes.value : [],
+  }
     paymentLoading.value = false
   } catch (error) {
     console.error(error)
@@ -986,6 +1070,46 @@ async function handlePaymentSessionError() {
               <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney(paymentPreview.total, paymentPreview.currency) }}</span>
             </div>
           </div>
+          <div v-if="paymentPreview.breakdown?.length" class="mt-3 space-y-2 rounded-lg border border-emerald-100 bg-emerald-50 p-3 text-xs text-emerald-900">
+            <div class="font-semibold">{{ copy.couponApplied }}</div>
+            <div v-for="item in paymentPreview.breakdown" :key="`${item.code}-${item.discount}`" class="flex items-start justify-between gap-3">
+              <div>
+                <div class="font-medium">{{ couponLabel(item) }}</div>
+                <div v-if="item.description" class="text-emerald-700">{{ item.description }}</div>
+              </div>
+              <div class="shrink-0 font-semibold">-{{ formatMoney(item.discount || 0, paymentPreview.currency) }}</div>
+            </div>
+          </div>
+          <div v-if="paymentPreview.invalid?.length" class="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+            <div class="font-semibold">{{ copy.couponInvalidTitle }}</div>
+            <div v-for="item in paymentPreview.invalid" :key="`${item.code}-${item.reason}`" class="mt-1">{{ invalidCouponText(item) }}</div>
+          </div>
+        </div>
+
+        <div v-if="activeOrder?.action === 'purchase' && paymentPreview && !activePaymentSession" class="rounded-lg border border-border bg-background p-4">
+          <label class="text-sm font-semibold text-foreground" for="purchase-coupon-input">{{ copy.couponTitle }}</label>
+          <p class="mt-1 text-xs text-muted-foreground">{{ copy.couponHint }}</p>
+          <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              id="purchase-coupon-input"
+              v-model="couponInput"
+              class="input flex-1"
+              :placeholder="copy.couponPlaceholder"
+              :disabled="couponPreviewLoading || paymentLoading"
+              @keydown.enter.prevent="applyCouponCodes"
+            />
+            <button type="button" class="btn btn-outline" :disabled="couponPreviewLoading || paymentLoading" @click="applyCouponCodes">
+              <Loader2 v-if="couponPreviewLoading" class="h-4 w-4 animate-spin" />
+              {{ copy.applyCoupon }}
+            </button>
+            <button v-if="activeCouponCodes.length" type="button" class="btn btn-outline" :disabled="couponPreviewLoading || paymentLoading" @click="clearCouponCodes">
+              {{ copy.clearCoupon }}
+            </button>
+          </div>
+          <div v-if="activeCouponCodes.length" class="mt-2 flex flex-wrap gap-2">
+            <span v-for="code in activeCouponCodes" :key="code" class="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{{ code }}</span>
+          </div>
+          <p v-if="couponError" class="mt-2 text-xs text-red-600">{{ couponError }}</p>
         </div>
 
         <div v-if="activeOrder && previewError" class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
@@ -1011,6 +1135,7 @@ async function handlePaymentSessionError() {
             :source="activePaymentSession.source"
             :return-path="activePaymentSession.returnPath"
             :extra-return-params="activePaymentSession.extraReturnParams"
+            :coupon-codes="activePaymentSession.couponCodes"
             min-height-class="min-h-[420px]"
             @error="handlePaymentSessionError"
           />
