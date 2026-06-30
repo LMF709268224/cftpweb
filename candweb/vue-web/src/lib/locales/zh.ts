@@ -895,6 +895,7 @@ export const zh = {
     clearCoupon: "清空",
     couponApplied: "已应用优惠",
     couponInvalidTitle: "未生效的促销码",
+    couponInvalidPaymentBlocked: "请先清空或修改无效促销码，再继续支付。",
     couponUnknown: "未知促销码",
     couponPreviewFailed: "促销码预览失败，请稍后重试。",
     stripe: "Stripe 在线支付",

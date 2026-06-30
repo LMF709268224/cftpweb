@@ -176,6 +176,8 @@ const canCancelActiveOrder = computed(() => Boolean(activeOrder.value?.orderId &
 const pendingCredentialApplications = ref<Record<string, boolean>>({})
 const hasPendingCredentialApplication = computed(() => Object.values(pendingCredentialApplications.value).some(Boolean))
 const activeCouponCodes = computed(() => appliedCouponCodes.value.map((code) => code.trim()).filter(Boolean))
+const hasInvalidCouponCodes = computed(() => Boolean(paymentPreview.value?.invalid?.length))
+const cannotPayReason = computed(() => hasInvalidCouponCodes.value ? copy.value.couponInvalidPaymentBlocked : "")
 
 
 function normalizeInitialActiveOrder(order?: ActiveOrderPayload | null): ActiveOrder | null {
@@ -832,6 +834,10 @@ function rememberPendingMallPayment() {
 
 function initiatePayment() {
   if (paymentLoading.value || activePaymentSession.value || !activeOrder.value?.orderId) return
+  if (hasInvalidCouponCodes.value) {
+    toast.error(copy.value.couponInvalidPaymentBlocked)
+    return
+  }
   const bizType = activeOrder.value.action === "unlock" ? "PIPELINE_UNLOCK" : "BUNDLE_PURCHASE"
   if (paymentMethod.value !== "stripe") {
     toast.error(copy.value.unsupportedPaymentKey)
@@ -1124,6 +1130,9 @@ async function handlePaymentSessionError() {
             <span v-for="code in activeCouponCodes" :key="code" class="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{{ code }}</span>
           </div>
           <p v-if="couponError" class="mt-2 text-xs text-red-600">{{ couponError }}</p>
+          <p v-if="cannotPayReason" class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+            {{ cannotPayReason }}
+          </p>
         </div>
 
         <div v-if="activeOrder && previewError" class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
@@ -1217,7 +1226,7 @@ async function handlePaymentSessionError() {
           <Loader2 v-if="cancelOrderLoading" class="h-4 w-4 animate-spin" />
           {{ copy.cancelOrder }}
         </button>
-        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-primary min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="paymentLoading" @click="initiatePayment">
+        <button v-if="activeOrder && paymentPreview && !activePaymentSession" class="btn btn-primary min-h-11 w-full px-3 text-center leading-tight sm:min-h-0 sm:w-auto sm:px-4" :disabled="paymentLoading || hasInvalidCouponCodes" @click="initiatePayment">
           <Loader2 v-if="paymentLoading" class="h-4 w-4 animate-spin" />
           <CreditCard v-else class="h-4 w-4" />
           {{ copy.payNow }}

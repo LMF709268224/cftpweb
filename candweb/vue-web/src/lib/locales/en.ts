@@ -898,6 +898,7 @@ export const en: AppTranslations = {
     clearCoupon: "Clear",
     couponApplied: "Applied discounts",
     couponInvalidTitle: "Promotion codes not applied",
+    couponInvalidPaymentBlocked: "Please clear or correct invalid promotion codes before paying.",
     couponUnknown: "Unknown promotion code",
     couponPreviewFailed: "Failed to preview promotion code discounts. Please try again later.",
     stripe: "Stripe online payment",
