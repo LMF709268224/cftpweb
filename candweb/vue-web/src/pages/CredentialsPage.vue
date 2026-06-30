@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue"
 import { useRoute } from "vue-router"
-import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, XCircle } from "lucide-vue-next"
+import { AlertCircle, Award, CheckCircle, Clock, FileText, Loader2, X, XCircle } from "lucide-vue-next"
 import { CANDIDATE_APPLICATION_STATUS_ENUM_NAMES, CANDIDATE_APPLICATION_STATUS_LABELS, statusEnumNameForStatus, statusLabel } from "@/lib/status-labels"
 import AppPagination from "@/components/AppPagination.vue"
 import AppShell from "@/components/AppShell.vue"
@@ -379,11 +379,13 @@ onMounted(fetchData)
       </main>
     </div>
 
-    <div v-if="isApplyOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @click.self="isApplyOpen = false">
+    <div v-if="isApplyOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div class="w-full max-w-md rounded-[16px] bg-white p-4 shadow-lg shadow-slate-900/20">
         <div class="flex items-start justify-between gap-4">
           <h2 class="text-lg font-semibold leading-none tracking-tight">{{ selectedDef?.name }}</h2>
-          <button class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-base leading-none text-muted-foreground transition-colors hover:bg-muted hover:text-foreground" @click="isApplyOpen = false">X</button>
+          <button class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 transition hover:border-primary/25 hover:text-primary" @click="isApplyOpen = false">
+            <X class="h-5 w-5" />
+          </button>
         </div>
         <div class="space-y-4 py-4">
           <p class="text-sm text-muted-foreground">{{ t.credentialsPage.description }}: {{ selectedDef?.description }}</p>
