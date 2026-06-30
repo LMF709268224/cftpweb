@@ -75,8 +75,8 @@ func (h *Handler) UpdateBundlePricing(w http.ResponseWriter, r *http.Request) {
 	}
 	bundleULID := strings.TrimSpace(firstNonEmpty(body.BundleUlid, chi.URLParam(r, "bundle_ulid")))
 	if bundleULID == "" && strings.TrimSpace(body.BundleGpath) != "" {
-		getResp, err := h.Mall.GetBundle(r.Context(), &mallpb.GetBundleRequest{
-			Query: &mallpb.GetBundleRequest_BundleGpath{BundleGpath: strings.TrimSpace(body.BundleGpath)},
+		getResp, err := h.Mall.AdminGetBundle(r.Context(), &mallpb.AdminGetBundleRequest{
+			Query: &mallpb.AdminGetBundleRequest_BundleGpath{BundleGpath: strings.TrimSpace(body.BundleGpath)},
 		})
 		if err != nil {
 			HandleGrpcError(w, err)
@@ -107,13 +107,13 @@ func (h *Handler) GetBundle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req := &mallpb.GetBundleRequest{}
+	req := &mallpb.AdminGetBundleRequest{}
 	if bundleULID != "" {
-		req.Query = &mallpb.GetBundleRequest_BundleUlid{BundleUlid: bundleULID}
+		req.Query = &mallpb.AdminGetBundleRequest_BundleUlid{BundleUlid: bundleULID}
 	} else {
-		req.Query = &mallpb.GetBundleRequest_BundleGpath{BundleGpath: bundleGPath}
+		req.Query = &mallpb.AdminGetBundleRequest_BundleGpath{BundleGpath: bundleGPath}
 	}
-	resp, err := h.Mall.GetBundle(r.Context(), req)
+	resp, err := h.Mall.AdminGetBundle(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -237,7 +237,7 @@ func (h *Handler) GetBundleOrderDetail(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, bundleOrderULID, "bundle_order_ulid") {
 		return
 	}
-	resp, err := h.Mall.GetBundleOrderDetail(r.Context(), &mallpb.GetBundleOrderDetailRequest{
+	resp, err := h.Mall.AdminGetBundleOrderDetail(r.Context(), &mallpb.AdminGetBundleOrderDetailRequest{
 		BundleOrderUlid: bundleOrderULID,
 	})
 	if err != nil {
