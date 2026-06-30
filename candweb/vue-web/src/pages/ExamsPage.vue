@@ -382,10 +382,10 @@ onMounted(() => {
           <span>{{ activeTab === 'history' ? t.examsPage.historyFilterHint : t.examsPage.visibleRecordsHint }}</span>
         </div>
         <div class="grid gap-3">
-          <div v-for="exam in filtered" :key="exam.exam_id" class="relative overflow-hidden rounded-[14px] bg-white p-4 shadow-[0_8px_22px_rgba(15,74,82,0.05)] transition-all hover:shadow-md hover:shadow-primary/10 md:p-5">
-            <div class="absolute left-0 top-0 h-full w-1 bg-primary" />
+          <div v-for="exam in filtered" :key="exam.exam_id" class="relative overflow-hidden rounded-[14px] bg-white p-3 shadow-[0_8px_22px_rgba(15,74,82,0.05)] transition-all hover:shadow-md hover:shadow-primary/10 md:p-5">
+            <div class="absolute left-0 top-0 h-full w-0.5 bg-primary md:w-1" />
             <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <div class="min-w-0 space-y-2 pl-1">
+              <div class="min-w-0 space-y-3 pl-1 md:space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
                   <span v-if="isExamFailedUnit(exam)" :class="['badge', statusBadgeClassForStatusValue('FAILED')]">{{ t.examsPage.examFailedTitle }}</span>
                   <template v-else>
@@ -397,12 +397,18 @@ onMounted(() => {
                     {{ passStatusLabel(exam) }}
                   </span>
                 </div>
-                <h3 class="text-lg font-semibold text-foreground">{{ exam.exam_code || exam.program_code || exam.exam_id || t.common.unknown }}</h3>
-                <div class="grid gap-x-8 gap-y-2 text-sm text-muted-foreground sm:grid-cols-2 xl:grid-cols-[minmax(260px,auto)_minmax(220px,auto)]">
-                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.confirmation_number)"><span class="font-medium text-foreground">{{ t.examsPage.confirmationNumber }}:</span> {{ exam.confirmation_number }}</div>
-                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.site_name)"><span class="font-medium text-foreground">{{ t.examsPage.site }}:</span> {{ exam.site_name }}</div>
-                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_start_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
-                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_end_time)"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
+                <h3 class="text-lg font-semibold leading-6 text-foreground">{{ exam.exam_code || exam.program_code || exam.exam_id || t.common.unknown }}</h3>
+                <div class="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2 sm:gap-x-8 xl:grid-cols-[minmax(260px,auto)_minmax(220px,auto)]">
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.confirmation_number)" class="rounded-lg bg-slate-50 px-3 py-2 sm:bg-transparent sm:px-0 sm:py-0">
+                    <div class="text-xs font-medium text-muted-foreground sm:inline sm:text-sm sm:text-foreground">{{ t.examsPage.confirmationNumber }}:</div>
+                    <div class="mt-1 break-all font-medium leading-5 text-foreground sm:mt-0 sm:inline sm:break-words sm:font-normal sm:text-muted-foreground"> {{ exam.confirmation_number }}</div>
+                  </div>
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.site_name)" class="min-w-0">
+                    <span class="font-medium text-foreground">{{ t.examsPage.site }}:</span>
+                    <span class="break-words"> {{ exam.site_name }}</span>
+                  </div>
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_start_time)" class="min-w-0"><span class="font-medium text-foreground">{{ t.examsPage.appointmentStart }}:</span> {{ formatBackendDate(exam.appointment_start_time) }}</div>
+                  <div v-if="shouldShowStoredExamDetails(exam) && hasText(exam.appointment_end_time)" class="min-w-0"><span class="font-medium text-foreground">{{ t.examsPage.appointmentEnd }}:</span> {{ formatBackendDate(exam.appointment_end_time) }}</div>
                   <div v-if="isWaitingScheduleSync(exam)" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 sm:col-span-2">
                     <div class="flex items-start gap-2">
                       <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
@@ -436,25 +442,25 @@ onMounted(() => {
                       </div>
                     </div>
                   </div>
-                  <div><span class="font-medium text-foreground">{{ t.examsPage.candidate }}:</span> {{ [exam.candidate_first_name, exam.candidate_last_name].filter(Boolean).join(" ") || exam.candidate_email || t.common.unknown }}</div>
-                  <div v-if="hasExamResult(exam)"><span class="font-medium text-foreground">{{ t.examsPage.score }}:</span> {{ typeof exam.total_score === 'number' ? exam.total_score.toFixed(2) : t.common.unknown }}</div>
+                  <div class="min-w-0"><span class="font-medium text-foreground">{{ t.examsPage.candidate }}:</span> <span class="break-words">{{ [exam.candidate_first_name, exam.candidate_last_name].filter(Boolean).join(" ") || exam.candidate_email || t.common.unknown }}</span></div>
+                  <div v-if="hasExamResult(exam)" class="min-w-0"><span class="font-medium text-foreground">{{ t.examsPage.score }}:</span> {{ typeof exam.total_score === 'number' ? exam.total_score.toFixed(2) : t.common.unknown }}</div>
                 </div>
               </div>
               <div class="flex flex-wrap gap-2 lg:min-w-[140px] lg:justify-end">
-                <RouterLink v-if="canSignupExam(exam)" :to="`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || '')}`" class="btn btn-primary h-10 rounded-lg px-5 shadow-sm shadow-primary/20">
+                <RouterLink v-if="canSignupExam(exam)" :to="`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || '')}`" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto">
                   {{ t.learning.actionSignupExam }}
                 </RouterLink>
-                <button v-if="canApplyRetake(exam)" class="btn btn-primary h-10 rounded-lg px-5 shadow-sm shadow-primary/20" :disabled="retakeLoadingUnitId === exam.course_unit_ulid" @click="handleApplyRetake(exam)">
+                <button v-if="canApplyRetake(exam)" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto" :disabled="retakeLoadingUnitId === exam.course_unit_ulid" @click="handleApplyRetake(exam)">
                   <Loader2 v-if="retakeLoadingUnitId === exam.course_unit_ulid" class="h-4 w-4 animate-spin" />
                   <RefreshCw v-else class="h-4 w-4" />
                   {{ retakeButtonLabel(exam) }}
                 </button>
-                <button v-if="canScheduleExam(exam)" class="btn btn-primary h-10 rounded-lg px-5 shadow-sm shadow-primary/20" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleScheduleExam(exam)">
+                <button v-if="canScheduleExam(exam)" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto" :disabled="scheduleLoadingExamId === exam.exam_id" @click="handleScheduleExam(exam)">
                   <Loader2 v-if="scheduleLoadingExamId === exam.exam_id" class="h-4 w-4 animate-spin" />
                   <ExternalLink v-else class="h-4 w-4" />
                   {{ t.learning.actionScheduleExam }}
                 </button>
-                <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary h-10 rounded-lg px-5 shadow-sm shadow-primary/20">{{ t.examsPage.viewResult }}</RouterLink>
+                <RouterLink v-if="hasExamResult(exam)" :to="`/exams/result?examId=${encodeURIComponent(exam.exam_id)}`" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto">{{ t.examsPage.viewResult }}</RouterLink>
               </div>
             </div>
           </div>
@@ -513,4 +519,5 @@ onMounted(() => {
   outline: none;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16), 0 14px 28px -18px rgba(37, 99, 235, 0.42);
 }
+
 </style>
