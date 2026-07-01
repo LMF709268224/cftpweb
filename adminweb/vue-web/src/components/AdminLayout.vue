@@ -2,6 +2,7 @@
 import {
   BookOpen,
   Boxes,
+  ChevronDown,
   ChevronLeft,
   ClipboardCheck,
   CreditCard,
@@ -9,6 +10,7 @@ import {
   FileText,
   GitBranch,
   GraduationCap,
+  LogOut,
   Mail,
   MessageSquare,
   Receipt,
@@ -25,6 +27,8 @@ import { clearAuthSession, getUserName } from "@/lib/authStorage"
 const router = useRouter()
 const route = useRoute()
 const collapsed = ref(false)
+const userMenuOpen = ref(false)
+const userMenuRef = ref<HTMLElement | null>(null)
 
 const navGroups = [
   {
@@ -77,7 +81,15 @@ function refreshUserName() {
   userName.value = getUserName()
 }
 
+function closeUserMenuOnOutsideClick(event: PointerEvent) {
+  if (!userMenuOpen.value) return
+  const target = event.target
+  if (target instanceof Node && userMenuRef.value?.contains(target)) return
+  userMenuOpen.value = false
+}
+
 async function logout() {
+  userMenuOpen.value = false
   try {
     await apiClient("/api/auth/logout", { method: "POST" })
   } catch {
@@ -91,10 +103,12 @@ async function logout() {
 
 onMounted(() => {
   window.addEventListener("storage", refreshUserName)
+  document.addEventListener("pointerdown", closeUserMenuOnOutsideClick)
 })
 
 onUnmounted(() => {
   window.removeEventListener("storage", refreshUserName)
+  document.removeEventListener("pointerdown", closeUserMenuOnOutsideClick)
 })
 </script>
 
@@ -143,8 +157,41 @@ onUnmounted(() => {
         </div>
       </nav>
 
-      <div class="border-t border-slate-200 p-4">
-        <div class="mb-3 flex items-center gap-3">
+      <div ref="userMenuRef" class="border-t border-slate-200 p-4">
+        <div v-if="!collapsed && userMenuOpen" class="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60">
+          <div class="flex items-center gap-3 px-4 py-4">
+            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-700">
+              {{ userName.slice(0, 1).toUpperCase() }}
+            </div>
+            <div class="min-w-0">
+              <div class="truncate text-sm font-bold text-slate-950">{{ userName }}</div>
+              <div class="truncate text-xs text-slate-500">Admin</div>
+            </div>
+          </div>
+          <RouterLink
+            class="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            to="/settings"
+            @click="userMenuOpen = false"
+          >
+            <Settings class="h-4 w-4 text-slate-500" />
+            账户设置
+          </RouterLink>
+          <button
+            class="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            type="button"
+            @click="logout"
+          >
+            <LogOut class="h-4 w-4 text-slate-500" />
+            退出登录
+          </button>
+        </div>
+
+        <button
+          class="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-100"
+          :class="!collapsed && userMenuOpen ? 'bg-blue-50 text-[#0b4ea2]' : ''"
+          type="button"
+          @click="userMenuOpen = !userMenuOpen"
+        >
           <div class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-700">
             {{ userName.slice(0, 1).toUpperCase() }}
           </div>
@@ -152,14 +199,11 @@ onUnmounted(() => {
             <div class="truncate text-sm font-bold">{{ userName }}</div>
             <div class="text-xs text-slate-500">Admin</div>
           </div>
-        </div>
-        <button
-          v-if="!collapsed"
-          class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-          type="button"
-          @click="logout"
-        >
-          退出登录
+          <ChevronDown
+            v-if="!collapsed"
+            class="ml-auto h-4 w-4 text-slate-500 transition-transform"
+            :class="userMenuOpen ? 'rotate-180' : ''"
+          />
         </button>
       </div>
     </aside>
