@@ -1603,8 +1603,8 @@ onMounted(() => {
         <p class="mt-2 text-slate-600">按 GLMS 层级维护课程、资料、章节、课时和测验题库。</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="loadCourses()">
-          <RefreshCw class="h-4 w-4" />
+        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm disabled:opacity-60" type="button" :disabled="loading" @click="loadCourses()">
+          <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           刷新
         </button>
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="importOpen = true">
@@ -1670,9 +1670,9 @@ onMounted(() => {
           </div>
         </button>
       </div>
-      <div class="border-t border-slate-200 p-4">
+      <div v-if="nextPageToken" class="border-t border-slate-200 p-4">
         <button class="w-full rounded-xl border px-4 py-3 font-bold transition hover:bg-slate-50 disabled:cursor-default disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400 disabled:opacity-100" type="button" :disabled="!nextPageToken || loading" @click="loadCourses(nextPageToken)">
-          {{ nextPageToken ? "加载更多" : "没有更多了" }}
+          加载更多
         </button>
       </div>
     </section>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, List, Loader2, RefreshCw, Send } from "lucide-vue-next"
+import { FileText, List, Loader2, RefreshCw, Send, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -26,6 +26,7 @@ const messagePage = ref(1)
 const statusFilter = ref("")
 const total = ref(0)
 const selectedMessage = ref<JsonRecord | null>(null)
+const messageDetailOpen = ref(false)
 
 const usersLoading = ref(false)
 const templatesLoading = ref(false)
@@ -37,11 +38,11 @@ const formContent = ref("")
 const formDescription = ref("")
 const formVersion = ref(0)
 
-const tabs = [
+const tabs = computed(() => [
   { key: "send" as const, label: "发送站内信", icon: Send, count: selectedUserIds.value.length },
   { key: "sent" as const, label: "发送记录", icon: List, count: total.value },
   { key: "templates" as const, label: "模板管理", icon: FileText, count: templates.value.length },
-]
+])
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const selectedTemplateFields = computed(() => selectedTemplate.value || {})
@@ -163,14 +164,27 @@ async function loadSentMessages() {
     messages.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || messages.value.length)
     if (!selectedMessage.value || !messages.value.some((item) => messageId(item) === messageId(selectedMessage.value))) {
-      selectedMessage.value = messages.value[0] || null
+      openMessage(messages.value[0] || null, messageDetailOpen.value)
     }
+    if (!messages.value.length) messageDetailOpen.value = false
   } catch (err) {
     console.error(err)
+    messages.value = []
+    selectedMessage.value = null
+    messageDetailOpen.value = false
     toast.error("发送记录加载失败")
   } finally {
     messagesLoading.value = false
   }
+}
+
+function openMessage(message: JsonRecord | null, open = true) {
+  selectedMessage.value = message
+  messageDetailOpen.value = open && !!message
+}
+
+function closeMessageDetail() {
+  messageDetailOpen.value = false
 }
 
 async function sendMessage() {
@@ -320,28 +334,28 @@ onMounted(async () => {
       </div>
     </header>
 
-    <div class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-      <aside class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 class="px-2 text-lg font-black">功能</h2>
-        <div class="mt-4 space-y-2">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            class="w-full rounded-2xl border px-4 py-3 text-left"
-            :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
-            type="button"
-            @click="activeTab = tab.key"
-          >
-            <div class="flex items-center justify-between gap-3">
-              <span class="inline-flex items-center gap-2 font-black">
-                <component :is="tab.icon" class="h-4 w-4" />
-                {{ tab.label }}
-              </span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
-            </div>
-          </button>
-        </div>
-      </aside>
+    <section class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div class="flex flex-wrap gap-3">
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="min-h-12 flex-1 rounded-2xl border px-4 py-3 text-left transition md:flex-none md:min-w-48"
+          :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 shadow-sm' : 'border-slate-100 hover:bg-slate-50'"
+          type="button"
+          @click="activeTab = tab.key"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <span class="inline-flex items-center gap-2 font-black">
+              <component :is="tab.icon" class="h-4 w-4" />
+              {{ tab.label }}
+            </span>
+            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <div>
 
       <main class="min-w-0">
         <section v-if="activeTab === 'send'" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -402,66 +416,67 @@ onMounted(async () => {
           </div>
         </section>
 
-        <section v-else-if="activeTab === 'sent'" class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
-              <div>
-                <h2 class="text-xl font-black">发送记录</h2>
-                <p class="mt-1 text-sm text-slate-500">每页 {{ pageSize }} 条，总计 {{ total }} 条。</p>
-              </div>
-              <select v-model="statusFilter" class="rounded-xl border border-slate-200 px-4 py-2">
-                <option value="">全部状态</option>
-                <option value="1">未读</option>
-                <option value="2">已读</option>
-              </select>
+        <section v-else-if="activeTab === 'sent'" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-xl font-black">发送记录</h2>
+              <p class="mt-1 text-sm text-slate-500">每页 {{ pageSize }} 条，总计 {{ total }} 条。</p>
             </div>
-            <div v-if="messagesLoading" class="p-12 text-center text-slate-500">
-              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-              正在加载...
-            </div>
-            <button
+            <select v-model="statusFilter" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
+              <option value="">全部状态</option>
+              <option value="1">未读</option>
+              <option value="2">已读</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+            <span>站内信</span>
+            <span>用户</span>
+            <span class="text-center">状态</span>
+            <span class="text-right">时间</span>
+            <span class="text-right">操作</span>
+          </div>
+          <div v-if="messagesLoading" class="p-12 text-center text-slate-500">
+            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+            正在加载...
+          </div>
+          <div v-else-if="messages.length" class="divide-y divide-slate-100">
+            <div
               v-for="message in messages"
-              v-else
               :key="messageId(message)"
-              class="block w-full border-b border-slate-100 p-5 text-left last:border-b-0 hover:bg-sky-50"
+              class="grid cursor-pointer grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
               :class="messageId(selectedMessage) === messageId(message) ? 'bg-sky-50' : ''"
-              type="button"
-              @click="selectedMessage = message"
+              role="button"
+              tabindex="0"
+              @click="openMessage(message)"
+              @keydown.enter.prevent="openMessage(message)"
+              @keydown.space.prevent="openMessage(message)"
             >
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="truncate font-black">{{ pickFirst(message, ["title", "subject", "template_path", "message_id"]) || "站内信" }}</div>
-                  <div class="mt-1 break-all text-sm text-slate-500">{{ pickFirst(message, ["user_name", "user_id", "candidate_ulid"]) || "-" }}</div>
-                </div>
-                <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(messageStatus(message))">{{ messageStatus(message) }}</span>
+              <div class="min-w-0">
+                <div class="truncate font-black text-slate-950">{{ pickFirst(message, ["title", "subject", "template_path", "message_id"]) || "站内信" }}</div>
+                <div class="mt-1 break-all text-xs font-semibold text-slate-500">ID：{{ messageId(message) || "-" }}</div>
               </div>
-              <div class="mt-2 text-sm text-slate-500">{{ formatDate(String(pickFirst(message, ["created_at", "sent_at", "updated_at"]) || "")) }}</div>
-            </button>
-            <div v-if="!messagesLoading && !messages.length" class="p-12 text-center text-slate-500">暂无发送记录</div>
-            <div class="flex items-center justify-end gap-3 border-t border-slate-200 p-5">
-              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage <= 1" @click="messagePage--">上一页</button>
-              <span class="text-sm font-bold">{{ messagePage }} / {{ totalPages }}</span>
-              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage >= totalPages" @click="messagePage++">下一页</button>
+              <div class="min-w-0 break-all text-sm font-semibold text-slate-500">{{ pickFirst(message, ["user_name", "user_id", "candidate_ulid"]) || "-" }}</div>
+              <div class="text-center">
+                <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(messageStatus(message))">{{ messageStatus(message) }}</span>
+              </div>
+              <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(message, ["created_at", "sent_at", "updated_at"]) || "")) }}</div>
+              <div class="text-right">
+                <button
+                  class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-[#0b4ea2] shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
+                  type="button"
+                  @click.stop="openMessage(message)"
+                >
+                  查看详情
+                </button>
+              </div>
             </div>
           </div>
-
-          <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 class="text-xl font-black">站内信详情</h2>
-            <div v-if="!selectedMessage" class="p-10 text-center text-slate-500">请选择一条发送记录</div>
-            <div v-else class="mt-4 space-y-5">
-              <div class="grid gap-4 md:grid-cols-2">
-                <label v-for="(value, key) in selectedMessageFields" :key="key" class="grid gap-2 text-sm font-bold">
-                  {{ key }}
-                  <textarea
-                    v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                    class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                    disabled
-                    :value="JSON.stringify(value, null, 2)"
-                  />
-                  <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
-                </label>
-              </div>
-              <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify(selectedMessage, null, 2) }}</pre>
+          <div v-else class="p-12 text-center text-slate-500">暂无发送记录</div>
+          <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
+            <span class="text-sm font-bold text-slate-500">第 {{ messagePage }} / {{ totalPages }} 页</span>
+            <div class="flex gap-3">
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage <= 1" @click="messagePage--">上一页</button>
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage >= totalPages" @click="messagePage++">下一页</button>
             </div>
           </div>
         </section>
@@ -541,5 +556,41 @@ onMounted(async () => {
         </section>
       </main>
     </div>
+
+    <Teleport to="body">
+      <div v-if="messageDetailOpen && selectedMessage" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+        <section class="flex max-h-[88vh] w-full max-w-[1120px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+            <div class="min-w-0">
+              <h2 class="truncate text-2xl font-black text-slate-950">站内信详情</h2>
+            </div>
+            <button
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+              type="button"
+              aria-label="关闭"
+              @click="closeMessageDetail"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+            <div class="grid gap-4 md:grid-cols-2">
+              <label v-for="(value, key) in selectedMessageFields" :key="key" class="grid gap-2 text-sm font-bold">
+                {{ key }}
+                <textarea
+                  v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                  class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                  disabled
+                  :value="JSON.stringify(value, null, 2)"
+                />
+                <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
+              </label>
+            </div>
+            <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify(selectedMessage, null, 2) }}</pre>
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </section>
 </template>
