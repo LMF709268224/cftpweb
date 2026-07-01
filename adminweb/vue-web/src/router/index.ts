@@ -5,8 +5,6 @@ import ApplicationsPage from "@/pages/ApplicationsPage.vue"
 import BundlesPage from "@/pages/BundlesPage.vue"
 import CallbackPage from "@/pages/CallbackPage.vue"
 import CredentialsPage from "@/pages/CredentialsPage.vue"
-import DashboardPage from "@/pages/DashboardPage.vue"
-import ExamsPage from "@/pages/ExamsPage.vue"
 import InvoicesPage from "@/pages/InvoicesPage.vue"
 import LmsPage from "@/pages/LmsPage.vue"
 import LoginPage from "@/pages/LoginPage.vue"
@@ -32,17 +30,7 @@ export type ResourceRouteMeta = {
 }
 
 export const resourceRoutes: RouteRecordRaw[] = [
-  {
-    path: "/dashboard",
-    name: "dashboard",
-    component: DashboardPage,
-    meta: {
-      title: "运营看板",
-      subtitle: "查看考生总数、阶段分布和今日收款金额",
-      endpoint: "/api/dashboard/ops",
-      itemKeys: [],
-    } satisfies ResourceRouteMeta,
-  },
+  { path: "/dashboard", redirect: "/lms" },
   {
     path: "/resource-packs",
     name: "resource-packs",
@@ -112,18 +100,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
       itemKeys: ["pipelines", "items"],
     } satisfies ResourceRouteMeta,
   },
-  {
-    path: "/exams",
-    name: "exams",
-    component: ExamsPage,
-    meta: {
-      title: "考试管理",
-      subtitle: "查看 gexam 考试实例、预约、成绩和状态流转",
-      endpoint: "/api/exams",
-      itemKeys: ["exams", "items"],
-      pagination: "page",
-    } satisfies ResourceRouteMeta,
-  },
+  { path: "/exams", redirect: "/lms" },
   {
     path: "/messages",
     name: "messages",
@@ -258,7 +235,7 @@ const router = createRouter({
     {
       path: "/",
       component: AdminLayout,
-      children: [{ path: "", redirect: "/dashboard" }, ...resourceRoutes],
+      children: [{ path: "", redirect: "/lms" }, ...resourceRoutes],
     },
   ],
 })
