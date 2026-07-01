@@ -338,22 +338,22 @@ onMounted(load)
       </div>
     </header>
 
-    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 class="text-xl font-black">按资源包筛选</h2>
+          <h2 class="text-lg font-black">按资源包筛选</h2>
           <p class="mt-1 text-sm text-slate-500">可查看全部文件，也可以只看某个资源包下的文件。</p>
         </div>
-        <select v-model="packFilter" class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold" @change="changePackFilter">
+        <select v-model="packFilter" class="h-10 min-w-[360px] rounded-xl border border-slate-200 px-3 text-sm font-bold" @change="changePackFilter">
           <option value="">全部资源包</option>
           <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ packTitle(pack) }}（{{ packId(pack) }}）</option>
         </select>
       </div>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 p-5">
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(560px,1.05fr)]">
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <h2 class="text-xl font-black">资源文件列表</h2>
             <p class="mt-1 text-sm text-slate-500">左侧选择文件，右侧查看详情并编辑。</p>
@@ -361,16 +361,20 @@ onMounted(load)
           <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">本页 {{ files.length }} / {{ pageSize }} 条</span>
         </div>
 
-        <div v-if="loading" class="p-12 text-center text-slate-500">
+        <div v-if="loading" class="px-6 py-10 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
           正在加载...
         </div>
-        <div v-else-if="!files.length" class="p-12 text-center text-slate-500">暂无资源文件</div>
+        <div v-else-if="!files.length" class="px-6 py-10 text-center text-slate-500">暂无资源文件</div>
+        <div v-else class="grid grid-cols-[minmax(0,1fr)_88px_92px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+          <span>资源文件</span>
+          <span class="text-center">排序</span>
+          <span class="text-right">类型</span>
+        </div>
         <button
           v-for="file in files"
-          v-else
           :key="fileId(file)"
-          class="grid w-full grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
+          class="grid w-full grid-cols-[minmax(0,1fr)_88px_92px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
           :class="fileId(selected) === fileId(file) ? 'bg-sky-50' : ''"
           type="button"
           @click="selectFile(file)"
@@ -378,26 +382,26 @@ onMounted(load)
           <div class="min-w-0">
             <div class="truncate text-lg font-black text-slate-950">{{ fileTitle(file) }}</div>
             <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ file.description || "-" }}</div>
-            <div class="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-              <span class="rounded-full bg-blue-50 px-2 py-1 text-blue-700">所属：{{ ownerText(file) }}</span>
-              <span class="rounded-full bg-slate-100 px-2 py-1">排序：{{ file.sort_order || 0 }}</span>
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
+              <span class="max-w-full truncate rounded-full bg-blue-50 px-2 py-1 text-blue-700">所属：{{ ownerText(file) }}</span>
               <span class="rounded-full bg-slate-100 px-2 py-1">Version：{{ file.version || 0 }}</span>
             </div>
           </div>
-          <span class="h-fit rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-700">
+          <span class="self-center text-center text-sm font-black text-slate-700">{{ file.sort_order || 0 }}</span>
+          <span class="h-fit self-center justify-self-end whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
             {{ fileTypeLabel(file.file_type) }}
           </span>
         </button>
 
-        <div class="flex items-center justify-end gap-3 border-t border-slate-200 p-5">
+        <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
           <span class="mr-auto text-sm font-bold text-slate-500">第 {{ currentPage }} 页</span>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevious || loading" @click="previousPage">上一页</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext || loading" @click="nextPage">下一页</button>
         </div>
       </section>
 
-      <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="mb-5 flex items-start justify-between gap-4">
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
             <h2 class="text-xl font-black">{{ mode === "create" ? "新增资源文件" : "资源文件详情" }}</h2>
             <p class="mt-1 text-sm text-slate-500">资源文件归属在创建时选择；更新接口不支持改所属资源包。</p>
@@ -418,77 +422,87 @@ onMounted(load)
           </button>
         </div>
 
-        <div class="mb-5 rounded-2xl border border-blue-100 bg-blue-50 p-4">
-          <div class="text-xs font-black uppercase text-blue-600">所属资源包</div>
-          <div class="mt-1 text-lg font-black text-slate-950">{{ selectedPack ? packTitle(selectedPack) : "请选择资源包" }}</div>
-          <div class="mt-1 break-all text-sm font-bold text-blue-700">{{ form.pack_id || "-" }}</div>
-        </div>
+        <div class="p-5">
+          <div class="mb-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+            <div class="text-xs font-black uppercase text-blue-600">所属资源包</div>
+            <div class="mt-1 text-lg font-black text-slate-950">{{ selectedPack ? packTitle(selectedPack) : "请选择资源包" }}</div>
+            <div class="mt-1 break-all text-sm font-bold text-blue-700">{{ form.pack_id || "-" }}</div>
+          </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
+          <div class="mb-3 text-sm font-black text-slate-700">基础信息</div>
+          <div class="grid gap-3 md:grid-cols-2">
           <label class="text-sm font-bold">
             File ID
-            <input v-model="form.file_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'" placeholder="留空则由后台生成" />
+            <input v-model="form.file_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'" placeholder="留空则由后台生成" />
           </label>
           <label class="text-sm font-bold">
             所属资源包
-            <select v-model="form.pack_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'">
+            <select v-model="form.pack_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'">
               <option value="">请选择资源包</option>
               <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ packTitle(pack) }}（{{ packId(pack) }}）</option>
             </select>
           </label>
           <label class="text-sm font-bold">
             标题
-            <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="资源文件标题" />
+            <input v-model="form.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="资源文件标题" />
           </label>
           <label class="text-sm font-bold">
             文件类型
-            <select v-model.number="form.file_type" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2">
+            <select v-model.number="form.file_type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
               <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
           <label class="md:col-span-2 text-sm font-bold">
             描述
-            <textarea v-model="form.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="资源文件描述" />
+            <textarea v-model="form.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="资源文件描述" />
           </label>
+          </div>
+
+          <div class="mb-3 mt-5 border-t border-slate-100 pt-5 text-sm font-black text-slate-700">文件与封面</div>
+          <div class="grid gap-3 md:grid-cols-2">
           <label class="text-sm font-bold">
             文件名
-            <input v-model="form.file_name" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="example.pdf" />
+            <input v-model="form.file_name" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="example.pdf" />
           </label>
           <label class="text-sm font-bold">
             文件大小（字节）
-            <input v-model.number="form.file_size" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" type="number" min="0" />
+            <input v-model.number="form.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
           </label>
           <label class="text-sm font-bold">
             文件 Object Key
-            <input v-model="form.file_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="resource-packs/.../file.pdf" />
+            <input v-model="form.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="resource-packs/.../file.pdf" />
           </label>
           <label class="text-sm font-bold">
             文件 Hash
-            <input v-model="form.file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="SHA256 Hash" />
+            <input v-model="form.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="SHA256 Hash" />
           </label>
           <label class="text-sm font-bold">
             封面 Object Key
-            <input v-model="form.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="thumbnail.jpg" />
+            <input v-model="form.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="thumbnail.jpg" />
           </label>
           <label class="text-sm font-bold">
             封面 Hash
-            <input v-model="form.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="SHA256 Hash" />
+            <input v-model="form.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="SHA256 Hash" />
           </label>
+          </div>
+
+          <div class="mb-3 mt-5 border-t border-slate-100 pt-5 text-sm font-black text-slate-700">排序与版本</div>
+          <div class="grid gap-3 md:grid-cols-3">
           <label class="text-sm font-bold">
             Video Stream UID
-            <input v-model="form.video_stream_uid" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="视频资源可填" />
+            <input v-model="form.video_stream_uid" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="视频资源可填" />
           </label>
           <label class="text-sm font-bold">
             排序
-            <input v-model.number="form.sort_order" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" type="number" min="0" />
+            <input v-model.number="form.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
           </label>
           <label class="text-sm font-bold">
             Version
-            <input v-model.number="form.version" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
+            <input v-model.number="form.version" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
           </label>
-        </div>
+          </div>
 
-        <button class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveFile">
+        <button class="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveFile">
           <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
           <Save v-else class="h-4 w-4" />
           {{ mode === "create" ? "创建资源文件" : "保存资源文件" }}
@@ -512,6 +526,7 @@ onMounted(load)
               <div v-else class="mt-1 break-words text-sm font-semibold">{{ value ?? "-" }}</div>
             </div>
           </div>
+        </div>
         </div>
       </section>
     </div>
