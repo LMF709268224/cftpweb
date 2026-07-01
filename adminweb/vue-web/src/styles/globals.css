@@ -35,3 +35,17 @@ pre {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+main > div > header h1.text-4xl,
+main > section > header h1.text-4xl {
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+main > div > header button,
+main > section > header button {
+  height: 40px;
+  align-items: center;
+  padding-top: 0;
+  padding-bottom: 0;
+}
