@@ -52,6 +52,22 @@ const selectedUsers = computed(() => users.value.filter((user) => selectedUserId
 const selectedMailHtml = computed(() => String(mailDetail.value?.html_body || mailDetail.value?.plain_body || selectedMail.value?.html_body || selectedMail.value?.plain_body || ""))
 const selectedMailRecord = computed(() => mailDetail.value || selectedMail.value || {})
 const selectedTemplateFields = computed(() => selectedTemplate.value || {})
+const statsCards = computed(() => {
+  const counts = stats.value?.status_counts
+  if (!counts || typeof counts !== "object" || Array.isArray(counts)) return []
+
+  const entries = Object.entries(counts)
+    .map(([key, value]) => ({
+      key,
+      label: mailStatusLabel(key),
+      value: Number(value || 0),
+    }))
+    .filter((item) => Number.isFinite(item.value))
+    .sort((a, b) => a.label.localeCompare(b.label, "zh-CN"))
+
+  const totalCount = entries.reduce((sum, item) => sum + item.value, 0)
+  return [{ key: "TOTAL", label: "总邮件数", value: totalCount }, ...entries]
+})
 
 function userId(user: JsonRecord) {
   return String(pickFirst(user, ["id", "user_id", "candidate_ulid", "ulid"]) || "")
@@ -83,6 +99,16 @@ function mailId(mail: JsonRecord | null | undefined) {
 
 function mailStatus(mail: JsonRecord | null | undefined) {
   return pickFirst(mail || {}, ["status", "raw_status"]) || "-"
+}
+
+function mailStatusLabel(status: unknown) {
+  const value = String(status || "").toUpperCase()
+  if (value === "SENT") return "已发送"
+  if (value === "FAILED") return "失败"
+  if (value === "CANCELLED") return "已取消"
+  if (value === "SCHEDULING") return "调度中"
+  if (value === "PENDING") return "待处理"
+  return value || "-"
 }
 
 function stripHtml(value: string) {
@@ -388,9 +414,21 @@ onMounted(async () => {
       </div>
     </header>
 
-    <div v-if="stats" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="text-sm font-black text-slate-500">邮件统计 / Stats</div>
-      <pre class="mt-3 max-h-40 overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify(stats, null, 2) }}</pre>
+    <div v-if="statsCards.length" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 class="text-xl font-black">邮件统计</h2>
+          <p class="mt-1 text-sm text-slate-500">来自 `/api/mails/stats`，按邮件状态汇总。</p>
+        </div>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">只读统计</span>
+      </div>
+      <div class="mt-4 grid gap-3 md:grid-cols-4">
+        <div v-for="card in statsCards" :key="card.key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <div class="text-xs font-black uppercase tracking-wide text-slate-400">{{ card.key }}</div>
+          <div class="mt-2 text-sm font-bold text-slate-600">{{ card.label }}</div>
+          <div class="mt-1 text-3xl font-black text-slate-950">{{ card.value }}</div>
+        </div>
+      </div>
     </div>
 
     <div class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">

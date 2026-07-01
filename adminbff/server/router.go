@@ -235,6 +235,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		// ===== 资格与证书管理 (Credentials) =====
 		r.Route("/credentials", func(r chi.Router) {
 			r.Get("/definitions", h.ListCredentialDefinitions)
+			r.Get("/definitions/{cred_def_ulid}", h.GetCredentialDefinitionDetail)
 			r.Post("/definitions", h.CreateCredentialDefinition)
 		})
 
