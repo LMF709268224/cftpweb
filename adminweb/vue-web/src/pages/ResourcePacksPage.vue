@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileBox, Loader2, Plus, RefreshCw, Save, Trash2 } from "lucide-vue-next"
+import { FileBox, Loader2, Plus, RefreshCw, Save, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -12,6 +12,7 @@ const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailLoading = ref(false)
 const saving = ref(false)
+const detailOpen = ref(false)
 const mode = ref<"create" | "edit">("edit")
 const pageToken = ref("")
 const nextPageToken = ref("")
@@ -128,11 +129,20 @@ async function load() {
   }
 }
 
-function selectPack(pack: JsonRecord | null) {
+function selectPack(pack: JsonRecord | null, openDetail = false) {
   selected.value = pack
   mode.value = pack ? "edit" : "create"
   fillForm(pack)
   void loadPackDetail(pack)
+  if (openDetail) detailOpen.value = true
+}
+
+function openPackDetail(pack: JsonRecord) {
+  selectPack(pack, true)
+}
+
+function closePackDetail() {
+  detailOpen.value = false
 }
 
 function startCreate() {
@@ -141,6 +151,7 @@ function startCreate() {
   selected.value = null
   mode.value = "create"
   fillForm(null)
+  detailOpen.value = true
 }
 
 async function savePack() {
@@ -254,12 +265,12 @@ onMounted(load)
       </div>
     </header>
 
-    <div class="grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="grid gap-6">
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 p-5">
           <div>
             <h2 class="text-xl font-black">资源包列表</h2>
-            <p class="mt-1 text-sm text-slate-500">左侧选择资源包，右侧查看详情并编辑。</p>
+            <p class="mt-1 text-sm text-slate-500">选择资源包后通过弹框查看详情并编辑。</p>
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">本页 {{ packs.length }} / {{ pageSize }} 条</span>
         </div>
@@ -270,10 +281,11 @@ onMounted(load)
         </div>
         <div v-else-if="!packs.length" class="p-12 text-center text-slate-500">暂无资源包</div>
         <div v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_84px_96px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+          <div class="hidden grid-cols-[minmax(0,1fr)_84px_96px_110px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
             <span>资源包</span>
             <span>版本</span>
             <span class="text-right">状态</span>
+            <span class="text-right">操作</span>
           </div>
           <button
             v-for="pack in packs"
@@ -281,9 +293,9 @@ onMounted(load)
             class="block w-full border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
             :class="packId(selected) === packId(pack) ? 'bg-sky-50/70' : ''"
             type="button"
-            @click="selectPack(pack)"
+            @click="openPackDetail(pack)"
           >
-            <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_84px_96px] lg:items-center lg:gap-4">
+            <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_84px_96px_110px] lg:items-center lg:gap-4">
               <div class="min-w-0">
                 <div class="truncate text-base font-black text-slate-950">{{ packTitle(pack) }}</div>
                 <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pack.description || "-" }}</div>
@@ -295,6 +307,7 @@ onMounted(load)
               <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-end">
                 {{ pack.status || "Active" }}
               </span>
+              <span class="justify-self-start rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-black text-blue-700 lg:justify-self-end">查看详情</span>
             </div>
           </button>
         </div>
@@ -306,7 +319,8 @@ onMounted(load)
         </div>
       </section>
 
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <section v-if="detailOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+        <div class="flex max-h-[88vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
             <h2 class="text-xl font-black">{{ mode === "create" ? "新增资源包" : "资源包详情" }}</h2>
@@ -316,19 +330,12 @@ onMounted(load)
               正在加载 get 详情...
             </p>
           </div>
-          <button
-            v-if="mode === 'edit'"
-            class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700"
-            type="button"
-            :disabled="saving"
-            @click="deletePack"
-          >
-            <Trash2 class="h-4 w-4" />
-            删除
+          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closePackDetail">
+            <X class="h-5 w-5" />
           </button>
         </div>
 
-        <div class="space-y-5 p-5">
+        <div class="flex-1 space-y-5 overflow-y-auto p-5">
           <div>
             <div class="mb-3 text-sm font-black text-slate-950">基础信息</div>
             <div class="grid gap-4 md:grid-cols-2">
@@ -387,11 +394,24 @@ onMounted(load)
             </div>
           </div>
 
-          <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePack">
-            <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-            <Save v-else class="h-4 w-4" />
-            {{ mode === "create" ? "创建资源包" : "保存资源包" }}
-          </button>
+          <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
+            <button
+              v-if="mode === 'edit'"
+              class="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 disabled:opacity-50"
+              type="button"
+              :disabled="saving"
+              @click="deletePack"
+            >
+              <Trash2 class="h-4 w-4" />
+              删除资源包
+            </button>
+            <span v-else class="hidden sm:block"></span>
+            <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePack">
+              <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+              <Save v-else class="h-4 w-4" />
+              {{ mode === "create" ? "创建资源包" : "保存资源包" }}
+            </button>
+          </div>
 
           <div v-if="selected" class="rounded-2xl border border-slate-200 bg-slate-50">
             <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-black">
@@ -406,6 +426,7 @@ onMounted(load)
               </div>
             </div>
           </div>
+        </div>
         </div>
       </section>
     </div>
