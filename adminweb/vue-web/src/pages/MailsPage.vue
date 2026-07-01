@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, List, Loader2, Mail, RefreshCw, Send, XCircle } from "lucide-vue-next"
+import { FileText, List, Loader2, Mail, RefreshCw, Send, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -28,6 +28,7 @@ const selectedMail = ref<JsonRecord | null>(null)
 const mailDetail = ref<JsonRecord | null>(null)
 const mailStatusDetail = ref<JsonRecord | null>(null)
 const mailDetailLoading = ref(false)
+const mailDetailOpen = ref(false)
 const canceling = ref(false)
 const stats = ref<JsonRecord | null>(null)
 
@@ -209,7 +210,7 @@ async function loadSentMails() {
     mails.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || mails.value.length)
     if (!selectedMail.value || !mails.value.some((item) => mailId(item) === mailId(selectedMail.value))) {
-      await openMail(mails.value[0] || null)
+      await openMail(mails.value[0] || null, mailDetailOpen.value)
     }
   } catch (err) {
     console.error(err)
@@ -333,8 +334,9 @@ async function saveTemplate() {
   }
 }
 
-async function openMail(mail: JsonRecord | null) {
+async function openMail(mail: JsonRecord | null, open = true) {
   selectedMail.value = mail
+  mailDetailOpen.value = open && !!mail
   mailDetail.value = null
   mailStatusDetail.value = null
   const id = mailId(mail)
@@ -350,6 +352,10 @@ async function openMail(mail: JsonRecord | null) {
   } finally {
     mailDetailLoading.value = false
   }
+}
+
+function closeMailDetail() {
+  mailDetailOpen.value = false
 }
 
 async function cancelMail() {
@@ -431,28 +437,28 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
-      <aside class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 class="px-2 text-lg font-black">功能</h2>
-        <div class="mt-4 space-y-2">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            class="w-full rounded-2xl border px-4 py-3 text-left"
-            :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
-            type="button"
-            @click="activeTab = tab.key"
-          >
-            <div class="flex items-center justify-between gap-3">
-              <span class="inline-flex items-center gap-2 font-black">
-                <component :is="tab.icon" class="h-4 w-4" />
-                {{ tab.label }}
-              </span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
-            </div>
-          </button>
-        </div>
-      </aside>
+    <section class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div class="flex flex-wrap gap-3">
+        <button
+          v-for="tab in tabs"
+          :key="tab.key"
+          class="min-h-12 flex-1 rounded-2xl border px-4 py-3 text-left transition md:flex-none md:min-w-48"
+          :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 shadow-sm' : 'border-slate-100 hover:bg-slate-50'"
+          type="button"
+          @click="activeTab = tab.key"
+        >
+          <div class="flex items-center justify-between gap-3">
+            <span class="inline-flex items-center gap-2 font-black">
+              <component :is="tab.icon" class="h-4 w-4" />
+              {{ tab.label }}
+            </span>
+            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
+          </div>
+        </button>
+      </div>
+    </section>
+
+    <div>
 
       <main class="min-w-0">
         <section v-if="activeTab === 'send'" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -504,68 +510,69 @@ onMounted(async () => {
           </div>
         </section>
 
-        <section v-else-if="activeTab === 'sent'" class="grid gap-6 xl:grid-cols-[430px_minmax(0,1fr)]">
-          <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
-              <div>
-                <h2 class="text-xl font-black">发送记录</h2>
-                <p class="mt-1 text-sm text-slate-500">每页 {{ pageSize }} 条，总计 {{ total }} 条。</p>
-              </div>
-              <select v-model="statusFilter" class="rounded-xl border border-slate-200 px-4 py-2">
-                <option value="">全部状态</option>
-                <option value="SCHEDULING">调度中</option>
-                <option value="SENT">已发送</option>
-                <option value="FAILED">失败</option>
-                <option value="CANCELLED">已取消</option>
-              </select>
+        <section v-else-if="activeTab === 'sent'" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-xl font-black">发送记录</h2>
+              <p class="mt-1 text-sm text-slate-500">每页 {{ pageSize }} 条，总计 {{ total }} 条。</p>
             </div>
-            <div v-if="mailsLoading" class="p-12 text-center text-slate-500">
-              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-              正在加载...
-            </div>
-            <button
+            <select v-model="statusFilter" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
+              <option value="">全部状态</option>
+              <option value="SCHEDULING">调度中</option>
+              <option value="SENT">已发送</option>
+              <option value="FAILED">失败</option>
+              <option value="CANCELLED">已取消</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+            <span>邮件</span>
+            <span>收件人</span>
+            <span class="text-center">状态</span>
+            <span class="text-right">时间</span>
+            <span class="text-right">操作</span>
+          </div>
+          <div v-if="mailsLoading" class="p-12 text-center text-slate-500">
+            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+            正在加载...
+          </div>
+          <div v-else-if="mails.length" class="divide-y divide-slate-100">
+            <div
               v-for="mail in mails"
-              v-else
               :key="mailId(mail)"
-              class="block w-full border-b border-slate-100 p-5 text-left last:border-b-0 hover:bg-sky-50"
+              class="grid cursor-pointer grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
               :class="mailId(selectedMail) === mailId(mail) ? 'bg-sky-50' : ''"
-              type="button"
+              role="button"
+              tabindex="0"
               @click="openMail(mail)"
+              @keydown.enter.prevent="openMail(mail)"
+              @keydown.space.prevent="openMail(mail)"
             >
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="min-w-0">
-                  <div class="truncate font-black">{{ pickFirst(mail, ["subject", "template_path", "mail_id"]) || "邮件" }}</div>
-                  <div class="mt-1 break-all text-sm text-slate-500">{{ pickFirst(mail, ["to_email", "recipient_email", "user_email"]) || "-" }}</div>
-                </div>
-                <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(mailStatus(mail))">{{ mailStatus(mail) }}</span>
+              <div class="min-w-0">
+                <div class="truncate font-black text-slate-950">{{ pickFirst(mail, ["subject", "template_path", "mail_id"]) || "邮件" }}</div>
+                <div class="mt-1 break-all text-xs font-semibold text-slate-500">ID：{{ mailId(mail) || "-" }}</div>
               </div>
-              <div class="mt-2 text-sm text-slate-500">{{ formatDate(String(pickFirst(mail, ["created_at", "sent_at", "updated_at"]) || "")) }}</div>
-            </button>
-            <div v-if="!mailsLoading && !mails.length" class="p-12 text-center text-slate-500">暂无发送记录</div>
-            <div class="flex items-center justify-end gap-3 border-t border-slate-200 p-5">
-              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="mailPage <= 1" @click="mailPage--">上一页</button>
-              <span class="text-sm font-bold">{{ mailPage }} / {{ totalPages }}</span>
-              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="mailPage >= totalPages" @click="mailPage++">下一页</button>
+              <div class="min-w-0 break-all text-sm font-semibold text-slate-500">{{ pickFirst(mail, ["to_email", "recipient_email", "user_email"]) || "-" }}</div>
+              <div class="text-center">
+                <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(mailStatus(mail))">{{ mailStatus(mail) }}</span>
+              </div>
+              <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(mail, ["created_at", "sent_at", "updated_at"]) || "")) }}</div>
+              <div class="text-right">
+                <button
+                  class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-[#0b4ea2] shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
+                  type="button"
+                  @click.stop="openMail(mail)"
+                >
+                  查看详情
+                </button>
+              </div>
             </div>
           </div>
-
-          <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <h2 class="text-xl font-black">邮件详情</h2>
-              <button class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!selectedMail || canceling" @click="cancelMail">
-                <XCircle class="h-4 w-4" />
-                取消邮件
-              </button>
-            </div>
-            <div v-if="mailDetailLoading" class="p-10 text-center text-slate-500">
-              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-              正在加载...
-            </div>
-            <div v-else-if="!selectedMail" class="p-10 text-center text-slate-500">请选择一封邮件</div>
-            <div v-else class="mt-4 space-y-5">
-              <pre v-if="mailStatusDetail" class="max-h-36 overflow-auto rounded-2xl bg-slate-100 p-4 text-xs text-slate-700">{{ JSON.stringify(mailStatusDetail, null, 2) }}</pre>
-              <iframe v-if="selectedMailHtml" class="h-[360px] w-full rounded-2xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="selectedMailHtml" />
-              <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify(selectedMailRecord, null, 2) }}</pre>
+          <div v-else class="p-12 text-center text-slate-500">暂无发送记录</div>
+          <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
+            <span class="text-sm font-bold text-slate-500">第 {{ mailPage }} / {{ totalPages }} 页</span>
+            <div class="flex gap-3">
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="mailPage <= 1" @click="mailPage--">上一页</button>
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="mailPage >= totalPages" @click="mailPage++">下一页</button>
             </div>
           </div>
         </section>
@@ -649,5 +656,48 @@ onMounted(async () => {
         </section>
       </main>
     </div>
+
+    <Teleport to="body">
+      <div v-if="mailDetailOpen && selectedMail" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+        <section class="flex max-h-[88vh] w-full max-w-[1280px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+            <div class="min-w-0">
+              <h2 class="truncate text-2xl font-black text-slate-950">邮件详情</h2>
+            </div>
+            <div class="flex shrink-0 items-center gap-3">
+              <button
+                class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                type="button"
+                :disabled="!selectedMail || canceling"
+                @click="cancelMail"
+              >
+                <XCircle class="h-4 w-4" />
+                取消邮件
+              </button>
+              <button
+                class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+                type="button"
+                aria-label="关闭"
+                @click="closeMailDetail"
+              >
+                <X class="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+            <div v-if="mailDetailLoading" class="p-10 text-center text-slate-500">
+              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+              正在加载...
+            </div>
+            <template v-else>
+              <pre v-if="mailStatusDetail" class="max-h-36 overflow-auto rounded-2xl bg-slate-100 p-4 text-xs text-slate-700">{{ JSON.stringify(mailStatusDetail, null, 2) }}</pre>
+              <iframe v-if="selectedMailHtml" class="h-[440px] w-full rounded-2xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="selectedMailHtml" />
+              <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify(selectedMailRecord, null, 2) }}</pre>
+            </template>
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </section>
 </template>
