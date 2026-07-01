@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, RefreshCw, Search, Trash2 } from "lucide-vue-next"
+import { Loader2, RefreshCw, Search, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -21,6 +21,7 @@ const selected = ref<JsonRecord | null>(null)
 const bundleDetail = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailLoading = ref(false)
+const detailOpen = ref(false)
 const purging = ref("")
 const showPurgeConfirm = ref(false)
 const page = ref(1)
@@ -108,11 +109,16 @@ async function loadBundleDetail(order: JsonRecord | null) {
   }
 }
 
-async function selectOrder(order: JsonRecord) {
+async function selectOrder(order: JsonRecord, open = true) {
   selected.value = order
   activeTab.value = "summary"
   showPurgeConfirm.value = false
+  detailOpen.value = open
   await loadBundleDetail(order)
+}
+
+function closeDetail() {
+  detailOpen.value = false
 }
 
 async function load(targetPage = page.value) {
@@ -134,16 +140,18 @@ async function load(targetPage = page.value) {
     total.value = Number(data.total ?? data.total_count ?? data.totalCount ?? orders.value.length) || 0
     page.value = targetPage
     if (orders.value.length) {
-      await selectOrder(orders.value[0])
+      await selectOrder(orders.value[0], detailOpen.value)
     } else {
       selected.value = null
       bundleDetail.value = null
+      detailOpen.value = false
     }
   } catch (err) {
     console.error(err)
     orders.value = []
     selected.value = null
     bundleDetail.value = null
+    detailOpen.value = false
     total.value = 0
     toast.error("订单加载失败")
   } finally {
@@ -203,90 +211,118 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <form class="grid gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:grid-cols-[1fr_180px_180px_180px_auto]" @submit.prevent="search">
-      <input v-model="candidateUlid" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="Candidate ULID / 用户关键字" />
-      <select v-model="bizType" class="rounded-xl border border-slate-200 px-4 py-3">
+    <form class="grid gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm lg:grid-cols-[1fr_180px_180px_180px_auto]" @submit.prevent="search">
+      <input v-model="candidateUlid" class="h-10 rounded-xl border border-slate-200 px-4 text-sm" placeholder="Candidate ULID / 用户关键字" />
+      <select v-model="bizType" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
         <option value="">全部类型</option>
         <option v-for="option in bizTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
       </select>
-      <select v-model="orderStatus" class="rounded-xl border border-slate-200 px-4 py-3">
+      <select v-model="orderStatus" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
         <option value="">全部状态</option>
         <option v-for="option in orderStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
       </select>
-      <select v-model="paymentStatus" class="rounded-xl border border-slate-200 px-4 py-3">
+      <select v-model="paymentStatus" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
         <option value="">全部支付状态</option>
         <option v-for="option in paymentStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
       </select>
-      <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white" type="submit">
+      <button class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 text-sm font-bold text-white" type="submit">
         <Search class="h-4 w-4" />
         查询
       </button>
     </form>
 
-    <div class="grid gap-6 xl:grid-cols-[520px_minmax(0,1fr)]">
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 p-5">
-          <div>
-            <h2 class="text-xl font-black">订单列表</h2>
-            <p class="mt-1 text-sm text-slate-500">来自 `/api/mall/orders`。</p>
-          </div>
-          <span class="text-sm font-bold text-slate-500">共 {{ total }} 条</span>
+    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div class="flex items-center justify-between border-b border-slate-200 p-5">
+        <div>
+          <h2 class="text-xl font-black">订单列表</h2>
+          <p class="mt-1 text-sm text-slate-500">来自 `/api/mall/orders`，点击查看详情后在弹框中处理。</p>
         </div>
-        <div v-if="loading" class="p-12 text-center text-slate-500">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          正在加载...
-        </div>
-        <button
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
+      </div>
+      <div class="grid grid-cols-[minmax(0,1fr)_140px_130px_130px_170px_112px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+        <span>订单</span>
+        <span class="text-right">金额</span>
+        <span class="text-center">状态</span>
+        <span class="text-center">支付</span>
+        <span>创建时间</span>
+        <span class="text-right">操作</span>
+      </div>
+      <div v-if="loading" class="p-12 text-center text-slate-500">
+        <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+        正在加载...
+      </div>
+      <div v-else-if="orders.length" class="divide-y divide-slate-100">
+        <div
           v-for="order in orders"
-          v-else
           :key="orderUlid(order)"
-          class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
+          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_140px_130px_130px_170px_112px] items-center gap-4 px-5 py-4 transition hover:bg-sky-50"
           :class="orderUlid(selected) === orderUlid(order) ? 'bg-sky-50' : ''"
-          type="button"
+          role="button"
+          tabindex="0"
           @click="selectOrder(order)"
+          @keydown.enter.prevent="selectOrder(order)"
+          @keydown.space.prevent="selectOrder(order)"
         >
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <div class="truncate font-black text-slate-950">{{ productName(order) }}</div>
-              <div class="mt-1 text-xs text-slate-500">{{ labelFor(bizTypeOptions, biz(order)) }}</div>
-              <div class="mt-2 break-all text-xs font-semibold text-slate-500">订单：{{ orderUlid(order) || "-" }}</div>
-            </div>
-            <div class="shrink-0 text-right">
-              <div class="text-sm font-black">{{ amountText(order) }}</div>
-              <span class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(order))">
-                {{ labelFor(orderStatusOptions, status(order)) }}
-              </span>
+          <div class="min-w-0">
+            <div class="truncate font-black text-slate-950">{{ productName(order) }}</div>
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+              <span>{{ labelFor(bizTypeOptions, biz(order)) }}</span>
+              <span class="break-all rounded-full bg-slate-100 px-2 py-1">订单：{{ orderUlid(order) || "-" }}</span>
+              <span class="break-all rounded-full bg-slate-100 px-2 py-1">{{ candidate(order) }}</span>
             </div>
           </div>
-          <div class="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
-            <span class="rounded-full bg-slate-100 px-2 py-1">支付：{{ labelFor(paymentStatusOptions, payStatus(order)) }}</span>
-            <span class="rounded-full bg-slate-100 px-2 py-1">{{ candidate(order) }}</span>
+          <div class="text-right text-sm font-black">{{ amountText(order) }}</div>
+          <div class="text-center">
+            <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(order))">
+              {{ labelFor(orderStatusOptions, status(order)) }}
+            </span>
           </div>
-          <div class="mt-2 text-xs text-slate-400">{{ createdAt(order) }}</div>
-        </button>
-        <div v-if="!loading && !orders.length" class="p-12 text-center text-slate-500">暂无订单</div>
-        <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
+          <div class="text-center">
+            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+              {{ labelFor(paymentStatusOptions, payStatus(order)) }}
+            </span>
+          </div>
+          <div class="text-sm font-semibold text-slate-500">{{ createdAt(order) }}</div>
+          <div class="text-right">
+            <button
+              class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-[#0b4ea2] shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
+              type="button"
+              @click.stop="selectOrder(order)"
+            >
+              查看详情
+            </button>
+          </div>
+        </div>
+      </div>
+      <div v-else class="p-12 text-center text-slate-500">暂无订单</div>
+      <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
+        <span class="text-sm font-bold text-slate-500">第 {{ page }} 页</span>
+        <div class="flex gap-3">
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">上一页</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">下一页</button>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div v-if="!selected" class="p-12 text-center text-slate-500">请选择一条订单</div>
-        <template v-else>
-          <div class="border-b border-slate-200 p-5">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h2 class="text-2xl font-black">{{ productName(selected) }}</h2>
-                <p class="mt-1 break-all text-sm text-slate-500">{{ orderUlid(selected) }}</p>
-              </div>
-              <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(selected))">
-                {{ labelFor(orderStatusOptions, status(selected)) }}
-              </span>
+    <Teleport to="body">
+      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+        <section class="flex max-h-[88vh] w-full max-w-[1280px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+            <div class="min-w-0">
+              <h2 class="truncate text-2xl font-black text-slate-950">{{ productName(selected) }}</h2>
+              <p class="mt-1 break-all text-sm text-slate-500">{{ orderUlid(selected) }}</p>
             </div>
+            <button
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+              type="button"
+              aria-label="关闭"
+              @click="closeDetail"
+            >
+              <X class="h-5 w-5" />
+            </button>
           </div>
 
-          <div class="grid min-h-[720px] lg:grid-cols-[240px_minmax(0,1fr)]">
+          <div class="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
             <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
               <div class="space-y-2">
                 <button
@@ -305,7 +341,7 @@ onMounted(() => load(1))
               </div>
             </aside>
 
-            <main class="min-w-0 p-5">
+            <main class="min-w-0 overflow-y-auto p-5">
               <div v-if="activeTab === 'summary'" class="space-y-5">
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -366,9 +402,9 @@ onMounted(() => load(1))
               </div>
             </main>
           </div>
-        </template>
-      </section>
-    </div>
+        </section>
+      </div>
+    </Teleport>
 
     <div v-if="showPurgeConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
       <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">

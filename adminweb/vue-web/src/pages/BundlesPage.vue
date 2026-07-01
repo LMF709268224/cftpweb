@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-vue-next"
+import { FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -37,6 +37,7 @@ const form = ref<BundleForm>({ ...emptyForm })
 const loading = ref(false)
 const saving = ref(false)
 const deleting = ref(false)
+const detailOpen = ref(false)
 const statusFilter = ref("")
 const offset = ref(0)
 const schemas = ref<JsonRecord | null>(null)
@@ -113,7 +114,7 @@ async function load() {
     const list = Array.isArray(data.bundles) ? data.bundles : []
     bundles.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     if (!selected.value && bundles.value.length) {
-      await selectBundle(bundles.value[0])
+      await selectBundle(bundles.value[0], false)
     }
   } catch (err) {
     console.error(err)
@@ -124,9 +125,10 @@ async function load() {
   }
 }
 
-async function selectBundle(bundle: JsonRecord) {
+async function selectBundle(bundle: JsonRecord, open = true) {
   const id = bundleUlid(bundle)
   selected.value = bundle
+  detailOpen.value = open
   mode.value = "detail"
   activeTab.value = "summary"
   showDeleteConfirm.value = false
@@ -144,10 +146,16 @@ async function selectBundle(bundle: JsonRecord) {
 
 function newBundle() {
   selected.value = null
+  detailOpen.value = true
   mode.value = "create"
   activeTab.value = "meta"
   showDeleteConfirm.value = false
   form.value = { ...emptyForm }
+}
+
+function closeDetail() {
+  detailOpen.value = false
+  if (mode.value === "create") mode.value = "detail"
 }
 
 async function createBundle() {
@@ -259,6 +267,7 @@ async function removeBundle() {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}`, { method: "DELETE" })
     toast.success("商品已删除")
     selected.value = null
+    detailOpen.value = false
     form.value = { ...emptyForm }
     showDeleteConfirm.value = false
     await load()
@@ -317,17 +326,16 @@ onMounted(load)
       </div>
     </header>
 
-    <div class="grid gap-6 xl:grid-cols-[460px_minmax(0,1fr)]">
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="space-y-4 border-b border-slate-200 p-5">
-          <div class="flex items-center justify-between gap-3">
+    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+          <div class="flex items-center gap-3">
             <div>
               <h2 class="text-xl font-black">商品列表</h2>
-              <p class="mt-1 text-sm text-slate-500">来自 `/api/mall/bundles`。</p>
+              <p class="mt-1 text-sm text-slate-500">来自 `/api/mall/bundles`，点击行或按钮查看详情。</p>
             </div>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ bundles.length }}</span>
           </div>
-          <select v-model="statusFilter" class="w-full rounded-xl border border-slate-200 px-4 py-3">
+          <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">
             <option value="">全部状态</option>
             <option value="Draft">Draft</option>
             <option value="Active">Active</option>
@@ -338,43 +346,62 @@ onMounted(load)
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
           正在加载...
         </div>
-        <button
-          v-for="bundle in bundles"
-          v-else
-          :key="bundleUlid(bundle)"
-          class="w-full border-b border-slate-100 px-5 py-5 text-left last:border-b-0 hover:bg-sky-50"
-          :class="mode === 'detail' && selectedId === bundleUlid(bundle) ? 'bg-sky-50' : ''"
-          type="button"
-          @click="selectBundle(bundle)"
-        >
-          <div class="flex items-start justify-between gap-4">
+        <template v-else>
+          <div class="grid grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+            <span>商品</span>
+            <span class="text-center">状态</span>
+            <span class="text-center">版本</span>
+            <span class="text-right">更新时间</span>
+            <span class="text-right">操作</span>
+          </div>
+          <div
+            v-for="bundle in bundles"
+            :key="bundleUlid(bundle)"
+            class="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+            :class="mode === 'detail' && selectedId === bundleUlid(bundle) ? 'bg-sky-50' : ''"
+            role="button"
+            tabindex="0"
+            @click="selectBundle(bundle)"
+            @keydown.enter.prevent="selectBundle(bundle)"
+            @keydown.space.prevent="selectBundle(bundle)"
+          >
             <div class="min-w-0">
               <div class="truncate text-lg font-black">{{ bundleName(bundle) }}</div>
-              <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ bundle.description || "暂无描述" }}</div>
+              <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ bundle.description || "暂无描述" }}</div>
+              <div class="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
+                <span class="rounded-full bg-slate-100 px-2 py-1">展示价格：{{ displayPrice(bundle) }}</span>
+                <span class="rounded-full bg-slate-100 px-2 py-1">ID: {{ bundleUlid(bundle) || "-" }}</span>
+              </div>
             </div>
-            <span class="shrink-0 rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(bundle))">{{ bundleStatus(bundle) || "-" }}</span>
+            <span class="self-center justify-self-center rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(bundle))">{{ bundleStatus(bundle) || "-" }}</span>
+            <span class="self-center text-center text-sm font-black text-slate-700">v{{ bundle.version || 0 }}</span>
+            <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</span>
+            <button class="inline-flex h-9 items-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click.stop="selectBundle(bundle)">
+              查看详情
+            </button>
           </div>
-          <div class="mt-3 text-sm font-bold text-slate-700">展示价格：{{ displayPrice(bundle) }}</div>
-          <div class="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
-            <span class="rounded-full bg-slate-100 px-2 py-1">v{{ bundle.version || 0 }}</span>
-            <span class="rounded-full bg-slate-100 px-2 py-1">ID: {{ bundleUlid(bundle) || "-" }}</span>
-          </div>
-          <div class="mt-2 text-xs text-slate-400">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</div>
-        </button>
+        </template>
         <div v-if="!loading && !bundles.length" class="p-12 text-center text-slate-500">暂无商品</div>
         <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - limit)">上一页</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += limit">下一页</button>
         </div>
-      </section>
+    </section>
 
-      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <Teleport to="body">
+      <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-6">
+        <section class="flex max-h-[88vh] w-full max-w-[1320px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <template v-if="mode === 'create'">
-          <div class="border-b border-slate-200 p-5">
-            <h2 class="text-2xl font-black">新建商品</h2>
-            <p class="mt-1 text-sm text-slate-500">创建草稿需要 bundle_ulid、bundle_gpath、名称，以及合法 JSON。</p>
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-2xl font-black">新建商品</h2>
+              <p class="mt-1 text-sm text-slate-500">创建草稿需要 bundle_ulid、bundle_gpath、名称，以及合法 JSON。</p>
+            </div>
+            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closeDetail">
+              <X class="h-5 w-5" />
+            </button>
           </div>
-          <div class="space-y-5 p-5">
+          <div class="space-y-5 overflow-y-auto p-5">
             <div class="grid gap-4 md:grid-cols-2">
               <label class="grid gap-2 text-sm font-bold">
                 Bundle ULID
@@ -420,7 +447,15 @@ onMounted(load)
           </div>
         </template>
 
-        <div v-else-if="!selected" class="p-12 text-center text-slate-500">请选择一个商品，或点击新建商品。</div>
+        <div v-else-if="!selected" class="flex items-start justify-between gap-4 p-6">
+          <div>
+            <h2 class="text-2xl font-black">商品详情</h2>
+            <p class="mt-1 text-sm text-slate-500">请选择一个商品，或点击新建商品。</p>
+          </div>
+          <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closeDetail">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
 
         <template v-else>
           <div class="border-b border-slate-200 p-5">
@@ -429,11 +464,16 @@ onMounted(load)
                 <h2 class="text-2xl font-black">{{ bundleName(selected) }}</h2>
                 <p class="mt-1 break-all text-sm text-slate-500">{{ selectedId }}</p>
               </div>
-              <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(selected))">{{ bundleStatus(selected) || "-" }}</span>
+              <div class="flex items-center gap-3">
+                <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(selected))">{{ bundleStatus(selected) || "-" }}</span>
+                <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closeDetail">
+                  <X class="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="grid min-h-[760px] lg:grid-cols-[260px_minmax(0,1fr)]">
+          <div class="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[260px_minmax(0,1fr)]">
             <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
               <div class="space-y-2">
                 <button
@@ -464,7 +504,7 @@ onMounted(load)
               </div>
             </aside>
 
-            <main class="min-w-0 p-5">
+            <main class="min-w-0 overflow-y-auto p-5">
               <div v-if="activeTab === 'summary'" class="space-y-5">
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -565,8 +605,9 @@ onMounted(load)
             </main>
           </div>
         </template>
-      </section>
-    </div>
+        </section>
+      </div>
+    </Teleport>
 
     <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
       <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
