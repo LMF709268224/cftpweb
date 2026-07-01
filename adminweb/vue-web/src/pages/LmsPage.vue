@@ -1678,8 +1678,8 @@ onMounted(() => {
     </section>
 
     <main v-else class="space-y-6">
-      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
           <div>
             <h2 class="text-xl font-black">{{ selectedCourseId ? "课程顶层数据" : "新建课程" }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ selectedCourseId || "填写课程基础信息后保存。" }}</p>
@@ -1689,35 +1689,35 @@ onMounted(() => {
           </span>
         </div>
 
-        <div class="grid gap-6 p-5 2xl:grid-cols-[minmax(0,1fr)_460px]">
-          <form class="grid gap-4 lg:grid-cols-2" @submit.prevent="saveCourse">
+        <div class="grid gap-4 p-5 2xl:grid-cols-[minmax(0,1fr)_420px]">
+          <form class="grid gap-3 lg:grid-cols-2" @submit.prevent="saveCourse">
             <label class="block">
               <span class="text-sm font-bold">课程标题</span>
-              <input v-model="courseForm.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
+              <input v-model="courseForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="block">
               <span class="text-sm font-bold">分类提示</span>
-              <input v-model="courseForm.category_tips" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
+              <input v-model="courseForm.category_tips" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="block lg:col-span-2">
               <span class="text-sm font-bold">描述</span>
-              <textarea v-model="courseForm.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" />
+              <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
             </label>
             <label class="block">
               <span class="text-sm font-bold">Respath</span>
-              <input v-model="courseForm.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="/gcc/pipeline/..." />
+              <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
             </label>
             <label class="block">
               <span class="text-sm font-bold">时长分钟</span>
-              <input v-model="courseForm.duration_min" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" type="number" min="0" />
+              <input v-model="courseForm.duration_min" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
             </label>
             <label class="block">
               <span class="text-sm font-bold">封面 Object Key</span>
-              <input v-model="courseForm.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
+              <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="block">
               <span class="text-sm font-bold">封面 File Hash</span>
-              <input v-model="courseForm.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
+              <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="inline-flex items-center gap-2 text-sm font-bold text-slate-600">
               <input v-model="courseForm.certification_enabled" type="checkbox" />
@@ -1725,47 +1725,47 @@ onMounted(() => {
             </label>
             <label class="block">
               <span class="text-sm font-bold">证书定义 ID</span>
-              <input v-model="courseForm.certification_def_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
+              <input v-model="courseForm.certification_def_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <div class="flex flex-wrap gap-3 lg:col-span-2">
-              <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
+              <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? "保存中..." : "保存课程" }}
               </button>
-              <button class="rounded-xl border px-5 py-3 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
+              <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
                 {{ publishing ? "发布中..." : "发布课程" }}
               </button>
-              <button class="inline-flex items-center gap-2 rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="deleteCourse">
+              <button class="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 px-4 font-bold text-red-600 disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="deleteCourse">
                 <Trash2 class="h-4 w-4" />
                 删除课程
               </button>
             </div>
           </form>
 
-          <aside class="space-y-4">
+          <aside class="space-y-3">
             <div class="grid gap-3 sm:grid-cols-2">
-              <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="rounded-xl bg-slate-50 p-3">
                 <div class="text-xs font-black uppercase text-slate-400">章节</div>
-                <div class="mt-2 text-2xl font-black">{{ courseDetail?.chapter_count ?? chapters.length }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseDetail?.chapter_count ?? chapters.length }}</div>
               </div>
-              <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="rounded-xl bg-slate-50 p-3">
                 <div class="text-xs font-black uppercase text-slate-400">课时</div>
-                <div class="mt-2 text-2xl font-black">{{ courseDetail?.lesson_count ?? lessons.length }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseDetail?.lesson_count ?? lessons.length }}</div>
               </div>
-              <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="rounded-xl bg-slate-50 p-3">
                 <div class="text-xs font-black uppercase text-slate-400">测验</div>
-                <div class="mt-2 text-2xl font-black">{{ courseDetail?.quiz_count ?? 0 }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseDetail?.quiz_count ?? 0 }}</div>
               </div>
-              <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="rounded-xl bg-slate-50 p-3">
                 <div class="text-xs font-black uppercase text-slate-400">资料</div>
-                <div class="mt-2 text-2xl font-black">{{ courseDetail?.material_count ?? materials.length }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseDetail?.material_count ?? materials.length }}</div>
               </div>
             </div>
-            <div class="rounded-2xl border border-slate-200 p-4">
+            <div class="rounded-xl border border-slate-200 p-3">
               <h3 class="font-black">不可编辑字段</h3>
               <p class="mt-1 text-xs text-slate-500">这些字段来自 get/list 接口，仅展示不修改。</p>
-              <div class="mt-4 max-h-96 space-y-3 overflow-y-auto pr-1">
+              <div class="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
                 <label v-for="entry in recordEntries(selectedCourse)" :key="`course-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
                   <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
@@ -1785,15 +1785,15 @@ onMounted(() => {
         </div>
       </section>
 
-      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
-        <div class="border-b border-slate-200 p-5">
+      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
+        <div class="border-b border-slate-200 px-5 py-4">
           <div>
             <h2 class="text-xl font-black">课程资料</h2>
             <p class="mt-1 text-sm text-slate-500">候选端看到的 Supplementary Materials 来自辅助资料接口；普通文件资料由 materials 接口维护。</p>
           </div>
         </div>
 
-        <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_460px]">
+        <div class="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
           <div class="rounded-2xl border border-slate-200">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
               <div>
@@ -1807,11 +1807,11 @@ onMounted(() => {
                 </button>
               </div>
             </div>
-            <div v-if="supplementaryMaterialLoading" class="p-8 text-center text-slate-500">
+            <div v-if="supplementaryMaterialLoading" class="px-6 py-10 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
               正在加载...
             </div>
-            <div v-else-if="!supplementaryMaterialItems.length" class="p-8 text-center text-slate-500">
+            <div v-else-if="!supplementaryMaterialItems.length" class="px-6 py-10 text-center text-slate-500">
               暂无候选端辅助资料
               <div class="mt-2 text-xs">如果用户端有资料，请确认 supplementary_material.data_json 是否已配置。</div>
             </div>
@@ -1874,12 +1874,12 @@ onMounted(() => {
             <div class="mt-4 grid gap-3">
               <label class="block">
                 <span class="text-sm font-bold">所属章节</span>
-                <input v-model="supplementaryItemForm.chapter" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="例如 Chapter 1: Overview of Fintech" />
+                <input v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="例如 Chapter 1: Overview of Fintech" />
               </label>
               <div class="grid gap-3 sm:grid-cols-2">
                 <label class="block">
                   <span class="text-sm font-bold">资料类型</span>
-                  <select v-model="supplementaryItemForm.type" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                  <select v-model="supplementaryItemForm.type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
                     <option value="Article">Article</option>
                     <option value="Video">Video</option>
                     <option value="PDF">PDF</option>
@@ -1889,22 +1889,22 @@ onMounted(() => {
                 </label>
                 <label class="block">
                   <span class="text-sm font-bold">时长/备注</span>
-                  <input v-model="supplementaryItemForm.duration" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="可选，例如 5 min" />
+                  <input v-model="supplementaryItemForm.duration" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="可选，例如 5 min" />
                 </label>
               </div>
               <label class="block">
                 <span class="text-sm font-bold">标题</span>
-                <input v-model="supplementaryItemForm.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="资料标题" />
+                <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="资料标题" />
               </label>
               <label class="block">
                 <span class="text-sm font-bold">描述</span>
-                <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="可选，用户端会展示在标题下方" />
+                <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="可选，用户端会展示在标题下方" />
               </label>
               <label class="block">
                 <span class="text-sm font-bold">资源链接</span>
-                <input v-model="supplementaryItemForm.url" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="https://..." />
+                <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
               </label>
-              <button class="rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
+              <button class="h-10 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
                 {{ savingSupplementaryMaterial ? "保存中..." : "保存本条资料" }}
               </button>
             </div>
@@ -1945,22 +1945,22 @@ onMounted(() => {
           </form>
         </div>
 
-        <div class="border-t border-slate-200 px-5 pt-5">
+        <div class="border-t border-slate-200 px-5 pt-4">
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 class="font-black">普通文件资料</h3>
               <p class="mt-1 text-sm text-slate-500">这里对应 /materials 接口，通常是对象存储文件类资料；和上面的候选端辅助资料不是同一份数据。</p>
             </div>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">新增普通资料</button>
+            <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">新增普通资料</button>
           </div>
         </div>
-        <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div class="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_400px]">
           <div class="rounded-2xl border border-slate-200">
-            <div v-if="materialsLoading" class="p-8 text-center text-slate-500">
+            <div v-if="materialsLoading" class="px-6 py-10 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
               正在加载...
             </div>
-            <div v-else-if="!materials.length" class="p-8 text-center text-slate-500">暂无资料</div>
+            <div v-else-if="!materials.length" class="px-6 py-10 text-center text-slate-500">暂无资料</div>
             <div v-else class="divide-y divide-slate-100">
               <div v-for="material in materials" :key="materialId(material)" class="grid gap-3 p-4 lg:grid-cols-[1fr_auto]" :class="materialId(material) === selectedMaterialId ? 'bg-sky-50' : ''">
                 <button class="text-left" type="button" @click="editMaterial(material)">
@@ -1975,37 +1975,37 @@ onMounted(() => {
           <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveMaterial">
             <h3 class="font-black">{{ editingMaterialId ? "编辑资料" : "创建资料" }}</h3>
             <div class="mt-4 grid gap-3">
-              <input v-model="materialForm.title" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="资料标题" />
-              <select v-model="materialForm.material_type" class="rounded-xl border border-slate-200 px-4 py-3">
+              <input v-model="materialForm.title" class="h-10 rounded-xl border border-slate-200 px-3" placeholder="资料标题" />
+              <select v-model="materialForm.material_type" class="h-10 rounded-xl border border-slate-200 px-3">
                 <option value="1">教材/课本</option>
                 <option value="2">幻灯片/课件</option>
                 <option value="3">参考资料</option>
                 <option value="4">其他</option>
               </select>
-              <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 p-4" placeholder="资料描述" />
+              <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 px-3 py-2" placeholder="资料描述" />
               <label class="block">
                 <span class="text-sm font-bold">文件 Object Key</span>
-                <input v-model="materialForm.file_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="例如 courses/xxx/materials/file.pdf" />
+                <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="例如 courses/xxx/materials/file.pdf" />
                 <span class="mt-1 block text-xs text-slate-500">对象存储里的文件路径。一般先在资源/上传流程拿到，不建议手工猜。</span>
               </label>
               <label class="block">
                 <span class="text-sm font-bold">文件 Hash</span>
-                <input v-model="materialForm.file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="文件 SHA256 Hash" />
+                <input v-model="materialForm.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="文件 SHA256 Hash" />
                 <span class="mt-1 block text-xs text-slate-500">用于校验文件内容，上传接口或资源系统通常会返回。</span>
               </label>
               <div class="grid gap-3 sm:grid-cols-2">
                 <label class="block">
                   <span class="text-sm font-bold">文件大小（字节）</span>
-                  <input v-model="materialForm.file_size" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="例如 204800" type="number" min="0" />
+                  <input v-model="materialForm.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="例如 204800" type="number" min="0" />
                   <span class="mt-1 block text-xs text-slate-500">不知道时可先填 0。</span>
                 </label>
                 <label class="block">
                   <span class="text-sm font-bold">排序</span>
-                  <input v-model="materialForm.sort_order" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="1" type="number" min="1" />
+                  <input v-model="materialForm.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
                   <span class="mt-1 block text-xs text-slate-500">数字越小越靠前。</span>
                 </label>
               </div>
-              <button class="rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial" type="submit">
+              <button class="h-10 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial" type="submit">
                 {{ savingMaterial ? "保存中..." : "保存资料" }}
               </button>
             </div>
