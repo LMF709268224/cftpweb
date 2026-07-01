@@ -70,7 +70,6 @@ const navGroups = [
       { path: "/pdf-templates", label: "PDF 模板配置", icon: FileText },
       { path: "/pdf-requests", label: "证书生成流水", icon: FileBadge },
       { path: "/audit/webhooks", label: "Webhook 审计", icon: Webhook },
-      { path: "/settings", label: "账户设置", icon: Settings },
     ],
   },
 ]
@@ -147,7 +146,7 @@ onUnmounted(() => {
               v-for="item in group.items"
               :key="item.path"
               :to="item.path"
-              class="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
+              class="flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
               :class="route.path === item.path || route.path.startsWith(`${item.path}/`) ? '!bg-[#0b4ea2] !text-white shadow-lg shadow-sky-200 hover:!bg-[#0b4ea2]' : ''"
             >
               <component :is="item.icon" class="h-5 w-5 shrink-0" />
