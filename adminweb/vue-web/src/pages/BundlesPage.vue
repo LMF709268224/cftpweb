@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, FileJson, Loader2, Plus, RefreshCw, Save, Send } from "lucide-vue-next"
+import { FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -17,6 +17,9 @@ type BundleForm = {
   thumbnail_file_hash: string
 }
 
+type DetailTab = "summary" | "meta" | "pricing" | "schema" | "raw"
+type Mode = "detail" | "create"
+
 const emptyForm: BundleForm = {
   bundle_ulid: "",
   bundle_gpath: "",
@@ -33,33 +36,43 @@ const selected = ref<JsonRecord | null>(null)
 const form = ref<BundleForm>({ ...emptyForm })
 const loading = ref(false)
 const saving = ref(false)
-const creating = ref(false)
+const deleting = ref(false)
 const statusFilter = ref("")
 const offset = ref(0)
 const schemas = ref<JsonRecord | null>(null)
+const activeTab = ref<DetailTab>("summary")
+const mode = ref<Mode>("detail")
+const showDeleteConfirm = ref(false)
 const limit = 20
 
 const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => bundles.value.length >= limit)
-const inEditor = computed(() => !!selected.value || creating.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
+const selectedFields = computed(() => selected.value || {})
+const detailTabs = computed(() => [
+  { key: "summary" as const, title: "概览", count: selected.value ? 1 : 0 },
+  { key: "meta" as const, title: "基础信息", count: 1 },
+  { key: "pricing" as const, title: "结构与价格", count: 2 },
+  { key: "schema" as const, title: "Schema", count: schemas.value ? 1 : 0 },
+  { key: "raw" as const, title: "完整字段", count: 1 },
+])
 
-function bundleUlid(bundle: JsonRecord) {
-  return String(pickFirst(bundle, ["bundle_ulid", "bundle_id"]) || "")
+function bundleUlid(bundle: JsonRecord | null | undefined) {
+  return String(pickFirst(bundle || {}, ["bundle_ulid", "bundle_id"]) || "")
 }
 
-function bundleName(bundle: JsonRecord) {
-  return String(pickFirst(bundle, ["name", "title"]) || "未命名商品")
+function bundleName(bundle: JsonRecord | null | undefined) {
+  return String(pickFirst(bundle || {}, ["name", "title"]) || "未命名商品")
 }
 
-function bundleStatus(bundle: JsonRecord) {
-  return pickFirst(bundle, ["status", "raw_status"])
+function bundleStatus(bundle: JsonRecord | null | undefined) {
+  return pickFirst(bundle || {}, ["status", "raw_status"])
 }
 
-function displayPrice(bundle: JsonRecord) {
-  const currency = String(bundle.display_currency || "")
-  const min = Number(bundle.display_amount_min || 0) / 100
-  const max = Number(bundle.display_amount_max || 0) / 100
+function displayPrice(bundle: JsonRecord | null | undefined) {
+  const currency = String(bundle?.display_currency || "")
+  const min = Number(bundle?.display_amount_min || 0) / 100
+  const max = Number(bundle?.display_amount_max || 0) / 100
   if (!currency || (!min && !max)) return "-"
   if (min === max) return `${currency} ${min.toFixed(2)}`
   return `${currency} ${min.toFixed(2)} - ${max.toFixed(2)}`
@@ -99,6 +112,9 @@ async function load() {
     const data = await apiClient<JsonRecord>(`/api/mall/bundles?${params}`)
     const list = Array.isArray(data.bundles) ? data.bundles : []
     bundles.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    if (!selected.value && bundles.value.length) {
+      await selectBundle(bundles.value[0])
+    }
   } catch (err) {
     console.error(err)
     bundles.value = []
@@ -111,7 +127,9 @@ async function load() {
 async function selectBundle(bundle: JsonRecord) {
   const id = bundleUlid(bundle)
   selected.value = bundle
-  creating.value = false
+  mode.value = "detail"
+  activeTab.value = "summary"
+  showDeleteConfirm.value = false
   form.value = formFromBundle(bundle)
   if (!id) return
   try {
@@ -126,13 +144,9 @@ async function selectBundle(bundle: JsonRecord) {
 
 function newBundle() {
   selected.value = null
-  creating.value = true
-  form.value = { ...emptyForm }
-}
-
-function back() {
-  selected.value = null
-  creating.value = false
+  mode.value = "create"
+  activeTab.value = "meta"
+  showDeleteConfirm.value = false
   form.value = { ...emptyForm }
 }
 
@@ -161,7 +175,6 @@ async function createBundle() {
       }),
     })
     toast.success("商品草稿已创建")
-    creating.value = false
     await load()
     const id = String(data.bundle_ulid || form.value.bundle_ulid)
     const created = bundles.value.find((item) => bundleUlid(item) === id)
@@ -241,11 +254,20 @@ async function deprecate() {
 
 async function removeBundle() {
   if (!selectedId.value) return
-  if (!window.confirm("确认删除这个商品草稿？已发布商品通常不能删除。")) return
-  await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}`, { method: "DELETE" })
-  toast.success("商品已删除")
-  back()
-  await load()
+  deleting.value = true
+  try {
+    await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}`, { method: "DELETE" })
+    toast.success("商品已删除")
+    selected.value = null
+    form.value = { ...emptyForm }
+    showDeleteConfirm.value = false
+    await load()
+  } catch (err) {
+    console.error(err)
+    toast.error("删除失败")
+  } finally {
+    deleting.value = false
+  }
 }
 
 async function syncDisplayPricing() {
@@ -259,25 +281,28 @@ async function syncDisplayPricing() {
 
 async function loadSchemas() {
   schemas.value = await apiClient<JsonRecord>("/api/mall/bundles/schemas")
+  activeTab.value = "schema"
 }
 
-watch([statusFilter, offset], () => load())
+watch([statusFilter, offset], () => {
+  selected.value = null
+  void load()
+})
 onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">商品配置</h1>
         <p class="mt-2 text-slate-600">配置 gmall Bundle：认证商品、管线引用、价格 JSON、封面和发布状态。</p>
+        <p class="mt-2 text-xs font-semibold text-slate-500">
+          已确认接口：list/get/create/update meta/update pricing/publish/deprecate/delete/schema/sync display pricing/upload-url。
+        </p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button v-if="inEditor" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="back">
-          <ArrowLeft class="h-4 w-4" />
-          返回列表
-        </button>
-        <button v-else class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newBundle">
+        <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newBundle">
           <Plus class="h-4 w-4" />
           新建商品
         </button>
@@ -292,140 +317,272 @@ onMounted(load)
       </div>
     </header>
 
-    <section v-if="!inEditor" class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
-        <div>
-          <h2 class="text-xl font-black">商品列表</h2>
-          <p class="mt-1 text-sm text-slate-500">列表隐藏 ULID，进入详情后可查看完整配置。</p>
-        </div>
-        <select v-model="statusFilter" class="rounded-xl border border-slate-200 px-4 py-3">
-          <option value="">全部状态</option>
-          <option value="Draft">Draft</option>
-          <option value="Active">Active</option>
-          <option value="Deprecated">Deprecated</option>
-        </select>
-      </div>
-      <div v-if="loading" class="p-12 text-center text-slate-500">
-        <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-        正在加载...
-      </div>
-      <button
-        v-for="bundle in bundles"
-        v-else
-        :key="bundleUlid(bundle)"
-        class="grid w-full grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-5 text-left last:border-b-0 hover:bg-sky-50"
-        type="button"
-        @click="selectBundle(bundle)"
-      >
-        <div>
-          <div class="text-lg font-black">{{ bundleName(bundle) }}</div>
-          <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ bundle.description || "暂无描述" }}</div>
-          <div class="mt-2 text-sm font-bold text-slate-700">展示价格：{{ displayPrice(bundle) }}</div>
-        </div>
-        <div class="text-right">
-          <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(bundle))">{{ bundleStatus(bundle) || "-" }}</span>
-          <div class="mt-3 text-xs text-slate-500">v{{ bundle.version || 0 }}</div>
-          <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</div>
-        </div>
-      </button>
-      <div v-if="!loading && !bundles.length" class="p-12 text-center text-slate-500">暂无商品</div>
-      <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
-        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - limit)">上一页</button>
-        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += limit">下一页</button>
-      </div>
-    </section>
-
-    <section v-else class="grid gap-6">
-      <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 class="text-2xl font-black">{{ creating ? "新建商品" : form.name || "商品详情" }}</h2>
-            <p class="mt-1 text-sm text-slate-500">Bundle 基础信息和价格结构。</p>
+    <div class="grid gap-6 xl:grid-cols-[460px_minmax(0,1fr)]">
+      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="space-y-4 border-b border-slate-200 p-5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-black">商品列表</h2>
+              <p class="mt-1 text-sm text-slate-500">来自 `/api/mall/bundles`。</p>
+            </div>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ bundles.length }}</span>
           </div>
-          <div v-if="!creating" class="flex flex-wrap gap-2">
-            <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">发布</button>
-            <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="deprecate">下架</button>
-            <button class="rounded-xl bg-red-600 px-4 py-2 font-bold text-white" type="button" @click="removeBundle">删除</button>
+          <select v-model="statusFilter" class="w-full rounded-xl border border-slate-200 px-4 py-3">
+            <option value="">全部状态</option>
+            <option value="Draft">Draft</option>
+            <option value="Active">Active</option>
+            <option value="Deprecated">Deprecated</option>
+          </select>
+        </div>
+        <div v-if="loading" class="p-12 text-center text-slate-500">
+          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+          正在加载...
+        </div>
+        <button
+          v-for="bundle in bundles"
+          v-else
+          :key="bundleUlid(bundle)"
+          class="w-full border-b border-slate-100 px-5 py-5 text-left last:border-b-0 hover:bg-sky-50"
+          :class="mode === 'detail' && selectedId === bundleUlid(bundle) ? 'bg-sky-50' : ''"
+          type="button"
+          @click="selectBundle(bundle)"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <div class="truncate text-lg font-black">{{ bundleName(bundle) }}</div>
+              <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ bundle.description || "暂无描述" }}</div>
+            </div>
+            <span class="shrink-0 rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(bundle))">{{ bundleStatus(bundle) || "-" }}</span>
           </div>
-        </div>
-
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm font-bold">
-            Bundle ULID
-            <input v-model="form.bundle_ulid" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-50" />
-          </label>
-          <label class="grid gap-2 text-sm font-bold">
-            Bundle GPath
-            <input v-model="form.bundle_gpath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-50" />
-          </label>
-          <label class="grid gap-2 text-sm font-bold">
-            名称
-            <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" />
-          </label>
-          <label class="grid gap-2 text-sm font-bold">
-            封面 Object Key
-            <input v-model="form.thumbnail_object_key" class="rounded-xl border border-slate-200 px-4 py-3" />
-          </label>
-          <label class="grid gap-2 text-sm font-bold md:col-span-2">
-            描述
-            <textarea v-model="form.description" class="min-h-24 rounded-xl border border-slate-200 p-4" />
-          </label>
-          <label class="grid gap-2 text-sm font-bold md:col-span-2">
-            Thumbnail File Hash
-            <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" />
-          </label>
-        </div>
-
-        <div class="mt-5 flex justify-end gap-3">
-          <button v-if="creating" class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="createBundle">
-            <Plus class="h-4 w-4" />
-            创建草稿
-          </button>
-          <button v-else class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveMeta">
-            <Save class="h-4 w-4" />
-            保存基础信息
-          </button>
-        </div>
-      </div>
-
-      <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h3 class="text-xl font-black">商品结构与价格 JSON</h3>
-            <p class="mt-1 text-sm text-slate-500">items_json 和 pricing_json 会直接提交到 gmall。</p>
+          <div class="mt-3 text-sm font-bold text-slate-700">展示价格：{{ displayPrice(bundle) }}</div>
+          <div class="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
+            <span class="rounded-full bg-slate-100 px-2 py-1">v{{ bundle.version || 0 }}</span>
+            <span class="rounded-full bg-slate-100 px-2 py-1">ID: {{ bundleUlid(bundle) || "-" }}</span>
           </div>
-          <button class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold" type="button" @click="loadSchemas">
-            <FileJson class="h-4 w-4" />
-            查看 Schema
+          <div class="mt-2 text-xs text-slate-400">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</div>
+        </button>
+        <div v-if="!loading && !bundles.length" class="p-12 text-center text-slate-500">暂无商品</div>
+        <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
+          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - limit)">上一页</button>
+          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += limit">下一页</button>
+        </div>
+      </section>
+
+      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <template v-if="mode === 'create'">
+          <div class="border-b border-slate-200 p-5">
+            <h2 class="text-2xl font-black">新建商品</h2>
+            <p class="mt-1 text-sm text-slate-500">创建草稿需要 bundle_ulid、bundle_gpath、名称，以及合法 JSON。</p>
+          </div>
+          <div class="space-y-5 p-5">
+            <div class="grid gap-4 md:grid-cols-2">
+              <label class="grid gap-2 text-sm font-bold">
+                Bundle ULID
+                <input v-model="form.bundle_ulid" class="rounded-xl border border-slate-200 px-4 py-3" />
+              </label>
+              <label class="grid gap-2 text-sm font-bold">
+                Bundle GPath
+                <input v-model="form.bundle_gpath" class="rounded-xl border border-slate-200 px-4 py-3" />
+              </label>
+              <label class="grid gap-2 text-sm font-bold">
+                名称
+                <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
+              </label>
+              <label class="grid gap-2 text-sm font-bold">
+                封面 Object Key
+                <input v-model="form.thumbnail_object_key" class="rounded-xl border border-slate-200 px-4 py-3" />
+              </label>
+              <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                描述
+                <textarea v-model="form.description" class="min-h-24 rounded-xl border border-slate-200 p-4" maxlength="1200" />
+              </label>
+              <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                Thumbnail File Hash
+                <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" />
+              </label>
+            </div>
+            <div class="grid gap-4 xl:grid-cols-2">
+              <label class="grid gap-2 text-sm font-bold">
+                items_json
+                <textarea v-model="form.items_json" class="min-h-[260px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
+              </label>
+              <label class="grid gap-2 text-sm font-bold">
+                pricing_json
+                <textarea v-model="form.pricing_json" class="min-h-[260px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
+              </label>
+            </div>
+            <div class="flex justify-end">
+              <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="createBundle">
+                <Plus class="h-4 w-4" />
+                创建草稿
+              </button>
+            </div>
+          </div>
+        </template>
+
+        <div v-else-if="!selected" class="p-12 text-center text-slate-500">请选择一个商品，或点击新建商品。</div>
+
+        <template v-else>
+          <div class="border-b border-slate-200 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 class="text-2xl font-black">{{ bundleName(selected) }}</h2>
+                <p class="mt-1 break-all text-sm text-slate-500">{{ selectedId }}</p>
+              </div>
+              <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(selected))">{{ bundleStatus(selected) || "-" }}</span>
+            </div>
+          </div>
+
+          <div class="grid min-h-[760px] lg:grid-cols-[260px_minmax(0,1fr)]">
+            <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
+              <div class="space-y-2">
+                <button
+                  v-for="tab in detailTabs"
+                  :key="tab.key"
+                  class="w-full rounded-2xl border px-4 py-3 text-left"
+                  :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
+                  type="button"
+                  @click="activeTab = tab.key"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="font-black">{{ tab.title }}</span>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
+                  </div>
+                </button>
+              </div>
+              <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <h3 class="font-black">状态操作</h3>
+                <p class="mt-1 text-xs text-slate-500">使用 gmall 发布/下架/删除接口。</p>
+                <div class="mt-3 grid gap-2">
+                  <button class="rounded-xl border bg-white px-4 py-2 text-sm font-bold" type="button" @click="publish">发布</button>
+                  <button class="rounded-xl border bg-white px-4 py-2 text-sm font-bold" type="button" @click="deprecate">下架</button>
+                  <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white" type="button" @click="showDeleteConfirm = true">
+                    <Trash2 class="h-4 w-4" />
+                    删除
+                  </button>
+                </div>
+              </div>
+            </aside>
+
+            <main class="min-w-0 p-5">
+              <div v-if="activeTab === 'summary'" class="space-y-5">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-black uppercase text-slate-400">展示价格</div>
+                    <div class="mt-2 text-lg font-black">{{ displayPrice(selected) }}</div>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-black uppercase text-slate-400">版本</div>
+                    <div class="mt-2 text-lg font-black">{{ selected.version || "-" }}</div>
+                  </div>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
+                    {{ key }}
+                    <textarea
+                      v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                      class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                      disabled
+                      :value="JSON.stringify(value, null, 2)"
+                    />
+                    <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
+                  </label>
+                </div>
+              </div>
+
+              <div v-else-if="activeTab === 'meta'" class="space-y-5">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <label class="grid gap-2 text-sm font-bold">
+                    Bundle ULID
+                    <input v-model="form.bundle_ulid" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold">
+                    Bundle GPath
+                    <input v-model="form.bundle_gpath" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold">
+                    名称
+                    <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold">
+                    封面 Object Key
+                    <input v-model="form.thumbnail_object_key" class="rounded-xl border border-slate-200 px-4 py-3" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                    描述
+                    <textarea v-model="form.description" class="min-h-28 rounded-xl border border-slate-200 p-4" maxlength="1200" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                    Thumbnail File Hash
+                    <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" />
+                  </label>
+                </div>
+                <div class="flex justify-end">
+                  <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveMeta">
+                    <Save class="h-4 w-4" />
+                    保存基础信息
+                  </button>
+                </div>
+              </div>
+
+              <div v-else-if="activeTab === 'pricing'" class="space-y-5">
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  items_json 和 pricing_json 会直接提交到 gmall；保存前会先校验 JSON 格式。
+                </div>
+                <div class="grid gap-4 xl:grid-cols-2">
+                  <label class="grid gap-2 text-sm font-bold">
+                    items_json
+                    <textarea v-model="form.items_json" class="min-h-[420px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold">
+                    pricing_json
+                    <textarea v-model="form.pricing_json" class="min-h-[420px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
+                  </label>
+                </div>
+                <div class="flex justify-end">
+                  <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePricing">
+                    <Send class="h-4 w-4" />
+                    保存结构与价格
+                  </button>
+                </div>
+              </div>
+
+              <div v-else-if="activeTab === 'schema'" class="space-y-4">
+                <button class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold" type="button" @click="loadSchemas">
+                  <FileJson class="h-4 w-4" />
+                  加载 Schema
+                </button>
+                <pre v-if="schemas" class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(schemas, null, 2) }}</pre>
+                <div v-else class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">暂无 Schema，点击加载。</div>
+              </div>
+
+              <div v-else-if="activeTab === 'raw'" class="space-y-4">
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  完整字段只读展示，避免手工修改不可编辑字段。
+                </div>
+                <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+              </div>
+            </main>
+          </div>
+        </template>
+      </section>
+    </div>
+
+    <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+      <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+        <h2 class="text-2xl font-black">确认删除商品</h2>
+        <p class="mt-3 text-sm text-slate-600">删除会调用 gmall delete 接口。已发布商品如果微服务不允许删除，会返回错误。</p>
+        <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+          <div class="font-black">{{ bundleName(selected) }}</div>
+          <div class="mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
+        </div>
+        <div class="mt-6 flex justify-end gap-3">
+          <button class="rounded-xl border px-5 py-3 font-bold" type="button" :disabled="deleting" @click="showDeleteConfirm = false">取消</button>
+          <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="deleting" @click="removeBundle">
+            {{ deleting ? "删除中..." : "确认删除" }}
           </button>
         </div>
-        <div class="grid gap-4 xl:grid-cols-2">
-          <label class="grid gap-2 text-sm font-bold">
-            items_json
-            <textarea v-model="form.items_json" class="min-h-[360px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
-          </label>
-          <label class="grid gap-2 text-sm font-bold">
-            pricing_json
-            <textarea v-model="form.pricing_json" class="min-h-[360px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
-          </label>
-        </div>
-        <div class="mt-5 flex justify-end">
-          <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || creating" @click="savePricing">
-            <Send class="h-4 w-4" />
-            保存结构与价格
-          </button>
-        </div>
       </div>
-
-      <div v-if="schemas" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 class="mb-4 text-xl font-black">Schema</h3>
-        <pre class="max-h-[520px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(schemas, null, 2) }}</pre>
-      </div>
-
-      <div v-if="selected" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 class="mb-4 text-xl font-black">完整详情</h3>
-        <pre class="max-h-[520px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
-      </div>
-    </section>
+    </div>
   </section>
 </template>
