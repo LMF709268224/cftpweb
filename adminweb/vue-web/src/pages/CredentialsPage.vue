@@ -17,6 +17,7 @@ type DetailMode = "detail" | "create"
 const definitions = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
+const detailLoading = ref(false)
 const creating = ref(false)
 const mode = ref<DetailMode>("detail")
 const name = ref("")
@@ -67,9 +68,33 @@ function startCreate() {
   resetForm()
 }
 
-function selectDefinition(definition: JsonRecord) {
+async function loadDefinitionDetail(definition: JsonRecord) {
+  const id = definitionUlid(definition)
+  if (!id) {
+    selected.value = definition
+    return
+  }
+
+  detailLoading.value = true
+  try {
+    const detail = await apiClient<JsonRecord>(`/api/credentials/definitions/${encodeURIComponent(id)}`)
+    const merged = { ...definition, ...detail }
+    const index = definitions.value.findIndex((item) => definitionUlid(item) === id)
+    if (index >= 0) definitions.value.splice(index, 1, merged)
+    selected.value = merged
+  } catch (err) {
+    console.error(err)
+    toast.error("资格定义详情加载失败")
+    selected.value = definition
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+async function selectDefinition(definition: JsonRecord) {
   selected.value = definition
   mode.value = "detail"
+  await loadDefinitionDetail(definition)
 }
 
 async function load() {
@@ -82,6 +107,7 @@ async function load() {
       selected.value = definitions.value[0] || null
     }
     if (!selected.value) mode.value = "create"
+    if (selected.value && mode.value === "detail") await loadDefinitionDetail(selected.value)
   } catch (err) {
     console.error(err)
     toast.error("资格定义加载失败")
@@ -138,7 +164,7 @@ onMounted(load)
         <h1 class="text-4xl font-black tracking-tight">资格定义</h1>
         <p class="mt-2 text-slate-600">维护认证资格、免考资格和最终证书所需材料。</p>
         <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：list/create。当前 adminbff 未暴露 update/delete/get detail，所以已有定义只读展示。
+          已确认接口：list/create/get detail。当前 gcreds 未提供 update/delete，所以已有定义只读展示。
         </p>
       </div>
       <div class="flex gap-3">
@@ -255,7 +281,10 @@ onMounted(load)
                   <h2 class="text-2xl font-black">{{ definitionName(selected) }}</h2>
                   <p class="mt-2 break-all text-sm text-slate-500">{{ definitionUlid(selected) }}</p>
                 </div>
-                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">只读 / Readonly</span>
+                <div class="flex items-center gap-2">
+                  <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
+                  <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">只读 / Readonly</span>
+                </div>
               </div>
             </div>
 

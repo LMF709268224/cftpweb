@@ -24,6 +24,24 @@ func (h *Handler) ListCredentialDefinitions(w http.ResponseWriter, r *http.Reque
 	WriteJSON(w, http.StatusOK, res)
 }
 
+// GetCredentialDefinitionDetail 获取资格定义详情
+func (h *Handler) GetCredentialDefinitionDetail(w http.ResponseWriter, r *http.Request) {
+	credDefULID, ok := requiredURLParam(w, r, "cred_def_ulid")
+	if !ok {
+		return
+	}
+
+	res, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
+		CredDefUlid: credDefULID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, res)
+}
+
 type CreateCredentialDefinitionReq struct {
 	Name            string `json:"name"`
 	Description     string `json:"description"`
