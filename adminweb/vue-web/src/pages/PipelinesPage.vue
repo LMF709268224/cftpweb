@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2 } from "lucide-vue-next"
+import { Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -571,11 +571,7 @@ onMounted(load)
         </p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button v-if="inEditor" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="back">
-          <ArrowLeft class="h-4 w-4" />
-          返回列表
-        </button>
-        <button v-else class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newPipeline">
+        <button v-if="!creating" class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newPipeline">
           <Plus class="h-4 w-4" />
           新建管线
         </button>
@@ -586,7 +582,7 @@ onMounted(load)
       </div>
     </header>
 
-    <section v-if="!inEditor" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
         <div>
           <h2 class="text-xl font-black">管线列表</h2>
@@ -606,18 +602,22 @@ onMounted(load)
       </div>
       <div v-else-if="!pipelines.length" class="px-6 py-10 text-center text-slate-500">暂无管线</div>
       <template v-else>
-        <div class="grid grid-cols-[minmax(0,1fr)_150px_72px_170px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+        <div class="grid grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
           <span>管线</span>
           <span class="text-center">状态</span>
           <span class="text-center">版本</span>
           <span class="text-right">更新时间</span>
+          <span class="text-right">操作</span>
         </div>
-        <button
+        <div
           v-for="pipeline in pipelines"
           :key="pipelineUlid(pipeline)"
-          class="grid w-full grid-cols-[minmax(0,1fr)_150px_72px_170px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
-          type="button"
+          class="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+          role="button"
+          tabindex="0"
           @click="selectPipeline(pipeline)"
+          @keydown.enter.prevent="selectPipeline(pipeline)"
+          @keydown.space.prevent="selectPipeline(pipeline)"
         >
           <div class="min-w-0">
             <div class="truncate text-lg font-black">{{ pipelineName(pipeline) }}</div>
@@ -630,7 +630,10 @@ onMounted(load)
           <span class="self-center justify-self-center whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(pipeline))">{{ pipelineStatusLabel(pipelineStatus(pipeline)) }}</span>
           <span class="self-center text-center text-sm font-black text-slate-700">v{{ pipeline.version || 0 }}</span>
           <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(pipeline.updated_at || pipeline.created_at || "")) }}</span>
-        </button>
+          <button class="inline-flex h-9 items-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click.stop="selectPipeline(pipeline)">
+            查看详情
+          </button>
+        </div>
       </template>
       <div class="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
         <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - limit)">上一页</button>
@@ -638,11 +641,24 @@ onMounted(load)
       </div>
     </section>
 
-    <section v-else class="grid gap-6">
+    <Teleport to="body">
+      <div v-if="inEditor" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-6">
+        <div class="flex max-h-[88vh] w-full max-w-[1320px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+            <div class="min-w-0">
+              <h2 class="truncate text-2xl font-black">{{ creating ? "新建管线" : form.name || "管线详情" }}</h2>
+              <p class="mt-1 text-sm text-slate-500">维护管线基础信息、结构层级和完整详情。</p>
+            </div>
+            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="back">
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <section class="grid gap-6 overflow-y-auto p-6">
       <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 class="text-2xl font-black">{{ creating ? "新建管线" : form.name || "管线详情" }}</h2>
+            <h2 class="text-2xl font-black">基础信息</h2>
             <p class="mt-1 text-sm text-slate-500">
               顶层信息由 metadata/create 接口维护；阶段、课程单元、证书和资格要求由 structure 接口整体保存。
             </p>
@@ -1016,6 +1032,9 @@ onMounted(load)
         <h3 class="mb-4 text-xl font-black">完整详情</h3>
         <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
       </div>
-    </section>
+          </section>
+        </div>
+      </div>
+    </Teleport>
   </section>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, XCircle } from "lucide-vue-next"
+import { CheckCircle2, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -12,6 +12,7 @@ const applications = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailLoading = ref(false)
+const detailOpen = ref(false)
 const auditing = ref(false)
 const page = ref(1)
 const total = ref(0)
@@ -116,9 +117,14 @@ async function loadApplicationDetail(app: JsonRecord | null) {
 
 function selectApplication(app: JsonRecord) {
   selected.value = app
+  detailOpen.value = true
   auditRemark.value = ""
   activeTab.value = "overview"
   void loadApplicationDetail(app)
+}
+
+function closeDetail() {
+  detailOpen.value = false
 }
 
 async function load(targetPage = page.value) {
@@ -192,17 +198,16 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <div class="grid gap-6 xl:grid-cols-[460px_minmax(0,1fr)]">
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="space-y-4 border-b border-slate-200 p-5">
-          <div class="flex items-center justify-between gap-3">
+    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+          <div class="flex items-center gap-3">
             <div>
               <h2 class="text-xl font-black">申请列表</h2>
               <p class="mt-1 text-sm text-slate-500">来自 `/api/applications`。</p>
             </div>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
           </div>
-          <select v-model="statusFilter" class="w-full rounded-xl border border-slate-200 px-4 py-3">
+          <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">
             <option v-for="option in applicationStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </div>
@@ -212,36 +217,57 @@ onMounted(() => load(1))
           正在加载...
         </div>
         <div v-else-if="!applications.length" class="p-12 text-center text-slate-500">暂无申请</div>
-        <button
-          v-for="app in applications"
-          v-else
-          :key="appUlid(app)"
-          class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
-          :class="appUlid(selected) === appUlid(app) ? 'bg-sky-50' : ''"
-          type="button"
-          @click="selectApplication(app)"
-        >
-          <div class="flex items-start justify-between gap-3">
+        <template v-else>
+          <div class="grid grid-cols-[minmax(0,1fr)_160px_170px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+            <span>申请</span>
+            <span class="text-center">状态</span>
+            <span class="text-right">提交时间</span>
+            <span class="text-right">操作</span>
+          </div>
+          <div
+            v-for="app in applications"
+            :key="appUlid(app)"
+            class="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_160px_170px_112px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+            :class="appUlid(selected) === appUlid(app) ? 'bg-sky-50' : ''"
+            role="button"
+            tabindex="0"
+            @click="selectApplication(app)"
+            @keydown.enter.prevent="selectApplication(app)"
+            @keydown.space.prevent="selectApplication(app)"
+          >
             <div class="min-w-0">
-              <div class="truncate font-black text-slate-950">{{ credential(app) }}</div>
+              <div class="truncate text-lg font-black text-slate-950">{{ credential(app) }}</div>
               <div class="mt-1 break-all text-sm text-slate-500">{{ candidate(app) }}</div>
+              <div class="mt-2 break-all text-xs font-semibold text-slate-500">申请 ID：{{ appUlid(app) || "-" }}</div>
             </div>
-            <span class="h-fit shrink-0 rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(app))">
+            <span class="self-center justify-self-center rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(app))">
               {{ applicationStatusLabel(status(app)) }}
             </span>
+            <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(app.created_at || "")) }}</span>
+            <button class="inline-flex h-9 items-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click.stop="selectApplication(app)">
+              查看详情
+            </button>
           </div>
-          <div class="mt-2 break-all text-xs font-semibold text-slate-500">申请 ID：{{ appUlid(app) || "-" }}</div>
-          <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(app.created_at || "")) }}</div>
-        </button>
+        </template>
 
         <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">上一页</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">下一页</button>
         </div>
-      </section>
+    </section>
 
-      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div v-if="!selected" class="p-10 text-center text-slate-500">请选择一条申请</div>
+    <Teleport to="body">
+      <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-6">
+        <section class="flex max-h-[88vh] w-full max-w-[1280px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div v-if="!selected" class="flex items-start justify-between gap-4 p-6">
+          <div>
+            <h2 class="text-2xl font-black">申请详情</h2>
+            <p class="mt-1 text-sm text-slate-500">请选择一条申请。</p>
+          </div>
+          <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closeDetail">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
         <template v-else>
           <div class="border-b border-slate-200 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
@@ -249,13 +275,16 @@ onMounted(() => load(1))
                 <h2 class="text-2xl font-black">{{ credential(selected) }}</h2>
                 <p class="mt-1 break-all text-sm text-slate-500">{{ appUlid(selected) }}</p>
               </div>
-              <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(selected))">
-                {{ applicationStatusLabel(status(selected)) }}
-              </span>
+              <div class="flex items-center gap-3">
+                <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
+                <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closeDetail">
+                  <X class="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div class="grid min-h-[720px] lg:grid-cols-[240px_minmax(0,1fr)]">
+          <div class="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
             <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
               <div class="space-y-2">
                 <button
@@ -274,7 +303,7 @@ onMounted(() => load(1))
               </div>
             </aside>
 
-            <main class="min-w-0 p-5">
+            <main class="min-w-0 overflow-y-auto p-5">
               <div v-if="activeTab === 'overview'" class="grid gap-4 md:grid-cols-2">
                 <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
                   {{ key }}
@@ -375,7 +404,8 @@ onMounted(() => load(1))
             </main>
           </div>
         </template>
-      </section>
-    </div>
+        </section>
+      </div>
+    </Teleport>
   </section>
 </template>
