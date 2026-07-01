@@ -1,15 +1,5 @@
 <script setup lang="ts">
-import {
-  ArrowLeft,
-  ChevronDown,
-  ChevronRight,
-  Eye,
-  Loader2,
-  RefreshCw,
-  Search,
-  ShieldX,
-  StepForward,
-} from "lucide-vue-next"
+import { ArrowLeft, Eye, Loader2, RefreshCw, Search, ShieldX, StepForward } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -17,11 +7,20 @@ import { formatDate, type JsonRecord } from "@/lib/display"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 type ActionKind = "trigger-next-stage" | "terminate-pipeline" | "force-completed" | "force-signup-exam"
+type DetailTab = "overview" | "stages" | "units" | "logs" | "raw"
 
 type PendingAction = {
   kind: ActionKind
   pipelineUlid: string
   courseUnitUlid?: string
+}
+
+type UnitListItem = {
+  key: string
+  stageIndex: number
+  unitIndex: number
+  stage: JsonRecord
+  unit: JsonRecord
 }
 
 const pageSize = 20
@@ -46,12 +45,20 @@ const candidateFilter = ref("")
 const statusFilter = ref("all")
 const offset = ref(0)
 const logOffset = ref(0)
-const expandedStages = ref<Record<string, boolean>>({})
+const activeTab = ref<DetailTab>("overview")
+const selectedStageIndex = ref(0)
+const selectedUnitKey = ref("")
 const pendingAction = ref<PendingAction | null>(null)
 const actionReason = ref("")
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {}
+}
+
+function asArray(value: unknown): JsonRecord[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    : []
 }
 
 const detailPipelineRecord = computed(() => asRecord(detail.value?.pipeline))
@@ -60,27 +67,51 @@ const selectedCandidateUlid = computed(() => String(detailPipelineRecord.value.c
 const selectedPipelineCcUlid = computed(() => String(detailPipelineRecord.value.pipeline_cc_ulid || selectedSummary.value?.pipeline_cc_ulid || ""))
 const selectedCurrentStageUlid = computed(() => String(detailPipelineRecord.value.current_stage_ulid || selectedSummary.value?.current_stage_ulid || ""))
 const selectedStatus = computed(() => detailPipelineRecord.value.status ?? selectedSummary.value?.status)
-const stages = computed(() => {
-  const value = detail.value?.stages
-  return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
+const stages = computed(() => asArray(detail.value?.stages))
+const units = computed<UnitListItem[]>(() => {
+  const list: UnitListItem[] = []
+  stages.value.forEach((stage, stageIndex) => {
+    courseUnits(stage).forEach((unit, unitIndex) => {
+      list.push({
+        key: `${stageIndex}:${unitIndex}:${courseUnitUlid(unit)}`,
+        stageIndex,
+        unitIndex,
+        stage,
+        unit,
+      })
+    })
+  })
+  return list
 })
-const totalUnits = computed(() => stages.value.reduce((count, stage) => count + courseUnits(stage).length, 0))
+const selectedStage = computed(() => stages.value[selectedStageIndex.value] || null)
+const selectedUnit = computed(() => units.value.find((item) => item.key === selectedUnitKey.value) || units.value[0] || null)
+const totalUnits = computed(() => units.value.length)
 const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => pipelines.value.length >= pageSize)
 const canPrevLogs = computed(() => logOffset.value > 0)
 const canNextLogs = computed(() => logs.value.length >= logPageSize)
+const canViewCertificate = computed(() => Boolean(selectedPipelineUlid.value && selectedCandidateUlid.value))
+const canTerminatePipeline = computed(() => Boolean(selectedPipelineUlid.value && !["3", "4"].includes(String(selectedStatus.value ?? ""))))
 const canTriggerNextStage = computed(() => {
   const currentStageUlid = String(detailPipelineRecord.value.current_stage_ulid || "")
   const currentStage = stages.value.find((stage) => stageUlid(stage) === currentStageUlid) || stages.value[0]
   return String(selectedStatus.value ?? "") === "1" && String(stageRecord(currentStage).status ?? "") === "3"
 })
 
+const detailTabs = computed(() => [
+  { key: "overview" as const, title: "总览", desc: "管线实例顶层信息", count: selectedSummary.value ? 1 : 0 },
+  { key: "stages" as const, title: "阶段", desc: "阶段实例列表和详情", count: stages.value.length },
+  { key: "units" as const, title: "课程单元", desc: "单元所属阶段和操作", count: units.value.length },
+  { key: "logs" as const, title: "状态日志", desc: "状态流转记录", count: logs.value.length },
+  { key: "raw" as const, title: "完整字段", desc: "微服务原始返回", count: 1 },
+])
+
 const statusOptions = [
-  { value: "all", label: "全部状态" },
-  { value: "1", label: "运行中" },
-  { value: "2", label: "等待最终资格" },
-  { value: "3", label: "已完成" },
-  { value: "4", label: "已终止" },
+  { value: "all", label: "全部状态 / All" },
+  { value: "1", label: "运行中 / Running" },
+  { value: "2", label: "等待最终资格 / Waiting Final Qualification" },
+  { value: "3", label: "已完成 / Completed" },
+  { value: "4", label: "已终止 / Terminated" },
 ]
 
 function pipelineUlid(pipeline: JsonRecord | null | undefined) {
@@ -99,64 +130,81 @@ function pipelineDisplayName(pipeline: JsonRecord | null | undefined) {
 function statusLabel(value: unknown, scope: "pipeline" | "stage" | "unit" = "pipeline") {
   const normalized = String(value ?? "")
   if (scope === "pipeline") {
-    if (normalized === "1") return "运行中"
-    if (normalized === "2") return "等待最终资格"
-    if (normalized === "3") return "已完成"
-    if (normalized === "4") return "已终止"
+    if (normalized === "1") return "运行中 / Running"
+    if (normalized === "2") return "等待最终资格 / Waiting Final Qualification"
+    if (normalized === "3") return "已完成 / Completed"
+    if (normalized === "4") return "已终止 / Terminated"
   }
   if (scope === "stage") {
-    if (normalized === "1") return "等待考生"
-    if (normalized === "2") return "运行中"
-    if (normalized === "3") return "已完成"
-    if (normalized === "4") return "已终止"
+    if (normalized === "1") return "等待考生 / Waiting Candidate"
+    if (normalized === "2") return "运行中 / Running"
+    if (normalized === "3") return "已完成 / Completed"
+    if (normalized === "4") return "已终止 / Terminated"
   }
   if (scope === "unit") {
-    if (normalized === "1") return "待学习"
-    if (normalized === "2") return "学习中"
-    if (normalized === "3") return "已完成"
-    if (normalized === "4") return "待报名考试"
-    if (normalized === "5") return "已预约考试"
-    if (normalized === "6") return "考试失败"
+    if (normalized === "1") return "待学习 / Not Started"
+    if (normalized === "2") return "学习中 / Studying"
+    if (normalized === "3") return "已完成 / Completed"
+    if (normalized === "4") return "待报名考试 / Ready For Exam Signup"
+    if (normalized === "5") return "已预约考试 / Exam Scheduled"
+    if (normalized === "6") return "考试失败 / Exam Failed"
   }
   return String(value || "-")
 }
 
-function stageUlid(stage: JsonRecord) {
-  return String(stageRecord(stage).stage_ulid || stage.stage_ulid || "")
+function actionLabel(kind: ActionKind) {
+  const labels: Record<ActionKind, string> = {
+    "trigger-next-stage": "推进下一阶段 / Trigger Next Stage",
+    "terminate-pipeline": "终止管线 / Terminate Pipeline",
+    "force-completed": "强制完成课程单元 / Force Course Completed",
+    "force-signup-exam": "重置为待预约考试 / Reset To Exam Signup",
+  }
+  return labels[kind]
 }
 
-function stageStatus(stage: JsonRecord) {
-  return stageRecord(stage).status ?? stage.status
+function entityStatusLabel(entityType: unknown, value: unknown) {
+  const normalizedType = String(entityType || "").toUpperCase()
+  if (normalizedType === "STAGE") return statusLabel(value, "stage")
+  if (normalizedType === "COURSE_UNIT") return statusLabel(value, "unit")
+  return statusLabel(value, "pipeline")
 }
 
-function stageRecord(stage: JsonRecord | undefined) {
+function stageRecord(stage: JsonRecord | null | undefined) {
   return asRecord(stage?.stage)
 }
 
-function stageName(stage: JsonRecord) {
+function stageUlid(stage: JsonRecord | null | undefined) {
+  return String(stageRecord(stage).stage_ulid || stage?.stage_ulid || "")
+}
+
+function stageStatus(stage: JsonRecord | null | undefined) {
+  return stageRecord(stage).status ?? stage?.status
+}
+
+function stageName(stage: JsonRecord | null | undefined) {
   const record = stageRecord(stage)
   const name = record.name
   if (name) return String(name)
   const seqNo = record.seq_no || record.sort_order
-  return seqNo ? `阶段 ${seqNo}` : "阶段"
+  return seqNo ? `阶段 ${seqNo} / Stage ${seqNo}` : "阶段 / Stage"
 }
 
-function courseUnits(stage: JsonRecord) {
-  const value = stage.course_units
-  return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
+function courseUnits(stage: JsonRecord | null | undefined) {
+  return asArray(stage?.course_units)
 }
 
-function courseUnitUlid(unit: JsonRecord) {
-  return String(unit.course_unit_ulid || "")
+function courseUnitUlid(unit: JsonRecord | null | undefined) {
+  return String(unit?.course_unit_ulid || "")
 }
 
-function courseUnitStatus(unit: JsonRecord) {
-  return unit.status
+function courseUnitStatus(unit: JsonRecord | null | undefined) {
+  return unit?.status
 }
 
-function toggleStage(stage: JsonRecord) {
-  const id = stageUlid(stage)
-  expandedStages.value[id] = !expandedStages.value[id]
+function ensureSelections() {
+  if (selectedStageIndex.value >= stages.value.length) selectedStageIndex.value = Math.max(0, stages.value.length - 1)
+  if (!selectedUnitKey.value || !units.value.some((item) => item.key === selectedUnitKey.value)) selectedUnitKey.value = units.value[0]?.key || ""
+  if (!selectedLog.value && logs.value.length) selectedLog.value = logs.value[0]
 }
 
 async function loadPipelineCatalog() {
@@ -202,7 +250,9 @@ async function openPipeline(pipeline: JsonRecord) {
   logs.value = []
   selectedLog.value = null
   logDetail.value = null
-  expandedStages.value = {}
+  activeTab.value = "overview"
+  selectedStageIndex.value = 0
+  selectedUnitKey.value = ""
   await loadDetail(pipelineUlid(pipeline))
   await loadLogs(pipelineUlid(pipeline), 0)
 }
@@ -212,9 +262,7 @@ async function loadDetail(pipelineId: string) {
   detailLoading.value = true
   try {
     detail.value = await apiClient<JsonRecord>(`/api/prog/pipelines/${encodeURIComponent(pipelineId)}`)
-    for (const stage of stages.value) {
-      expandedStages.value[stageUlid(stage)] = true
-    }
+    ensureSelections()
   } catch (err) {
     console.error(err)
     detail.value = null
@@ -292,10 +340,10 @@ async function submitAction() {
       toast.success("管线已终止")
     } else if (action.kind === "force-completed" && action.courseUnitUlid) {
       await apiClient(`/api/prog/course-units/${encodeURIComponent(action.courseUnitUlid)}/force-completed`, { method: "POST", body })
-      toast.success("课时单元已强制完成")
+      toast.success("课程单元已强制完成")
     } else if (action.kind === "force-signup-exam" && action.courseUnitUlid) {
       await apiClient(`/api/prog/course-units/${encodeURIComponent(action.courseUnitUlid)}/force-signup-exam`, { method: "POST", body })
-      toast.success("课时单元已重置为可预约考试")
+      toast.success("课程单元已重置为可预约考试")
     }
     pendingAction.value = null
     actionReason.value = ""
@@ -338,6 +386,7 @@ function backToList() {
   logs.value = []
   selectedLog.value = null
   logDetail.value = null
+  activeTab.value = "overview"
 }
 
 watch([candidateFilter, statusFilter, offset], () => loadPipelines())
@@ -347,11 +396,14 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">管线管理</h1>
-        <p class="mt-2 text-slate-600">查看考生正在运行的管线实例、阶段状态和流转日志。</p>
+        <p class="mt-2 text-slate-600">查看考生正在运行的管线实例、阶段状态、课程单元和流转日志。</p>
+        <p class="mt-2 text-xs font-semibold text-slate-500">
+          已确认接口：list/get detail/list logs/get log detail/trigger next stage/terminate/force completed/force signup exam/certificate url。
+        </p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button v-if="selectedSummary" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="backToList">
@@ -365,238 +417,333 @@ onMounted(async () => {
       </div>
     </header>
 
-    <template v-if="!selectedSummary">
-      <div class="grid gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-[1fr_180px]">
-        <label class="relative grid gap-2 text-sm font-bold">
-          考生筛选
-          <Search class="absolute bottom-3 left-3 h-4 w-4 text-slate-400" />
-          <input v-model="candidateFilter" class="rounded-xl border border-slate-200 py-3 pl-9 pr-4" placeholder="Candidate ULID" />
-        </label>
-        <label class="grid gap-2 text-sm font-bold">
-          ״̬筛选
-          <select v-model="statusFilter" class="rounded-xl border border-slate-200 px-4 py-3">
-            <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-          </select>
-        </label>
-      </div>
-
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 p-5">
-          <h2 class="text-xl font-black">管线实例</h2>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ pipelines.length }}</span>
-        </div>
-        <div v-if="loading" class="p-12 text-center text-slate-500">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          正在加载...
-        </div>
-        <button
-          v-for="pipeline in pipelines"
-          v-else
-          :key="pipelineUlid(pipeline)"
-          class="grid w-full grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-5 text-left last:border-b-0 hover:bg-sky-50"
-          type="button"
-          @click="openPipeline(pipeline)"
-        >
-          <div>
-            <div class="text-lg font-black">{{ pipelineDisplayName(pipeline) }}</div>
-            <div class="mt-1 text-sm text-slate-500">{{ pipeline.candidate_ulid || "-" }}</div>
-            <div class="mt-2 text-sm text-slate-600">当前阶段：{{ pipeline.current_stage_ulid || "-" }}</div>
-          </div>
-          <div class="text-right">
-            <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(pipeline.status))">{{ statusLabel(pipeline.status) }}</span>
-            <div class="mt-3 text-xs text-slate-500">{{ formatDate(String(pipeline.started_at || pipeline.created_at || "")) }}</div>
-          </div>
-        </button>
-        <div v-if="!loading && !pipelines.length" class="p-12 text-center text-slate-500">暂无管线实例</div>
-        <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - pageSize)">上一页</button>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += pageSize">下一页</button>
-        </div>
-      </section>
-    </template>
-
-    <template v-else>
-      <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 class="text-2xl font-black">{{ pipelineDisplayName(selectedSummary) }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
-          </div>
-          <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(selectedStatus))">
-            {{ statusLabel(selectedStatus) }}
-          </span>
+    <div class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+      <aside class="space-y-4">
+        <div class="grid gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <label class="relative grid gap-2 text-sm font-bold">
+            考生筛选 / Candidate
+            <Search class="absolute bottom-3 left-3 h-4 w-4 text-slate-400" />
+            <input v-model="candidateFilter" class="rounded-xl border border-slate-200 py-3 pl-9 pr-4" placeholder="Candidate ULID" />
+          </label>
+          <label class="grid gap-2 text-sm font-bold">
+            状态筛选 / Status
+            <select v-model="statusFilter" class="rounded-xl border border-slate-200 px-4 py-3">
+              <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </label>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div class="text-xs font-black uppercase text-slate-400">Candidate</div>
-            <div class="mt-2 break-all text-sm font-bold">{{ selectedCandidateUlid || "-" }}</div>
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div class="text-xs font-black uppercase text-slate-400">Pipeline CC</div>
-            <div class="mt-2 break-all text-sm font-bold">{{ selectedPipelineCcUlid || "-" }}</div>
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div class="text-xs font-black uppercase text-slate-400">当前阶段</div>
-            <div class="mt-2 break-all text-sm font-bold">{{ selectedCurrentStageUlid || "-" }}</div>
-          </div>
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div class="text-xs font-black uppercase text-slate-400">统计</div>
-            <div class="mt-2 text-sm font-bold">阶段 {{ stages.length }} / 课程单元 {{ totalUnits }}</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
-          <div>
-            <h2 class="text-xl font-black">管线操作</h2>
-            <p class="mt-1 text-sm text-slate-500">仅展示 gprog 当前支持的人工干预动作。</p>
-          </div>
-          <button class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-50" type="button" :disabled="certificateLoading" @click="viewCertificate">
-            <Eye class="h-4 w-4" />
-            查看证书
-          </button>
-        </div>
-        <div class="flex flex-wrap gap-3 p-5">
-          <button
-            class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-40"
-            type="button"
-            :disabled="!canTriggerNextStage"
-            @click="openAction({ kind: 'trigger-next-stage', pipelineUlid: selectedPipelineUlid })"
-          >
-            <StepForward class="h-4 w-4" />
-            推进下一阶段
-          </button>
-          <button
-            class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-40"
-            type="button"
-            :disabled="!selectedPipelineUlid"
-            @click="openAction({ kind: 'terminate-pipeline', pipelineUlid: selectedPipelineUlid })"
-          >
-            <ShieldX class="h-4 w-4" />
-            终止管线
-          </button>
-        </div>
-      </section>
-
-      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 p-5">
-          <h2 class="text-xl font-black">阶段树</h2>
-          <p class="mt-1 text-sm text-slate-500">展开阶段后可查看课程单元并执行强制完成/重置待预约。</p>
-        </div>
-        <div v-if="detailLoading" class="p-12 text-center text-slate-500">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          正在加载详情...
-        </div>
-        <div v-else-if="!stages.length" class="p-12 text-center text-slate-500">暂无阶段数据</div>
-        <div v-else class="divide-y divide-slate-100">
-          <div v-for="stage in stages" :key="stageUlid(stage)" class="p-5">
-            <button class="flex w-full items-center justify-between text-left" type="button" @click="toggleStage(stage)">
-              <div class="flex items-center gap-3">
-                <ChevronDown v-if="expandedStages[stageUlid(stage)]" class="h-5 w-5 text-slate-400" />
-                <ChevronRight v-else class="h-5 w-5 text-slate-400" />
-                <div>
-                  <div class="font-black">{{ stageName(stage) }}</div>
-                  <div class="mt-1 text-sm text-slate-500">{{ stageUlid(stage) }}</div>
-                </div>
-              </div>
-              <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(stageStatus(stage), 'stage'))">
-                {{ statusLabel(stageStatus(stage), "stage") }}
-              </span>
-            </button>
-
-            <div v-if="expandedStages[stageUlid(stage)]" class="mt-4 grid gap-3">
-              <div
-                v-for="unit in courseUnits(stage)"
-                :key="courseUnitUlid(unit)"
-                class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-              >
-                <div class="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div class="font-black">{{ unit.course_unit_cc_ulid || unit.course_unit_ulid || "课程单元" }}</div>
-                    <div class="mt-1 text-sm text-slate-500">进度：{{ unit.course_progress || "-" }} · 考试：{{ unit.exam_ulid || "-" }} · 重试：{{ unit.retried_count ?? 0 }}</div>
-                    <div class="mt-1 text-xs text-slate-400">{{ courseUnitUlid(unit) }}</div>
-                  </div>
-                  <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(courseUnitStatus(unit), 'unit'))">
-                    {{ statusLabel(courseUnitStatus(unit), "unit") }}
-                  </span>
-                </div>
-                <div class="mt-4 flex flex-wrap gap-2">
-                  <button
-                    class="rounded-xl border bg-white px-4 py-2 text-sm font-bold"
-                    type="button"
-                    @click="openAction({ kind: 'force-completed', pipelineUlid: selectedPipelineUlid, courseUnitUlid: courseUnitUlid(unit) })"
-                  >
-                    强制完成
-                  </button>
-                  <button
-                    class="rounded-xl border bg-white px-4 py-2 text-sm font-bold"
-                    type="button"
-                    @click="openAction({ kind: 'force-signup-exam', pipelineUlid: selectedPipelineUlid, courseUnitUlid: courseUnitUlid(unit) })"
-                  >
-                    重置待预约
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div class="flex items-center justify-between border-b border-slate-200 p-5">
             <div>
-              <h2 class="text-xl font-black">状态流转日志</h2>
-              <p class="mt-1 text-sm text-slate-500">查看管线的每一次状态变化。</p>
+              <h2 class="text-xl font-black">管线实例</h2>
+              <p class="mt-1 text-sm text-slate-500">来自 `/api/prog/pipelines`。</p>
             </div>
-            <button class="rounded-xl border px-4 py-2 text-sm font-bold" type="button" @click="loadLogs()">加载日志</button>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ pipelines.length }}</span>
           </div>
-          <div v-if="logsLoading" class="p-10 text-center text-slate-500">
+          <div v-if="loading" class="p-12 text-center text-slate-500">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
             正在加载...
           </div>
           <button
-            v-for="log in logs"
+            v-for="pipeline in pipelines"
             v-else
-            :key="String(log.transition_ulid)"
-            class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
-            :class="selectedLog === log ? 'bg-sky-50' : ''"
+            :key="pipelineUlid(pipeline)"
+            class="w-full border-b border-slate-100 px-5 py-5 text-left last:border-b-0 hover:bg-sky-50"
+            :class="pipelineUlid(pipeline) === selectedPipelineUlid ? 'bg-sky-50' : ''"
             type="button"
-            @click="selectedLog = log; loadLogDetail(String(log.transition_ulid || ''))"
+            @click="openPipeline(pipeline)"
           >
-            <div class="font-black">{{ log.to_status || "-" }}</div>
-            <div class="mt-1 text-sm text-slate-500">{{ log.entity_type || "-" }} · {{ log.entity_ulid || "-" }}</div>
-            <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</div>
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="truncate text-lg font-black">{{ pipelineDisplayName(pipeline) }}</div>
+                <div class="mt-1 break-all text-sm text-slate-500">{{ pipeline.candidate_ulid || "-" }}</div>
+              </div>
+              <span class="shrink-0 rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(pipeline.status))">{{ statusLabel(pipeline.status) }}</span>
+            </div>
+            <div class="mt-3 break-all text-xs font-semibold text-slate-500">Pipeline: {{ pipelineUlid(pipeline) || "-" }}</div>
+            <div class="mt-1 break-all text-xs text-slate-500">当前阶段：{{ pipeline.current_stage_ulid || "-" }}</div>
+            <div class="mt-2 text-xs text-slate-400">{{ formatDate(String(pipeline.started_at || pipeline.created_at || "")) }}</div>
           </button>
-          <div v-if="!logsLoading && !logs.length" class="p-10 text-center text-slate-500">暂无日志</div>
+          <div v-if="!loading && !pipelines.length" class="p-12 text-center text-slate-500">暂无管线实例</div>
           <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevLogs" @click="loadLogs(selectedPipelineUlid, Math.max(0, logOffset - logPageSize))">上一页</button>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNextLogs" @click="loadLogs(selectedPipelineUlid, logOffset + logPageSize)">下一页</button>
+            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - pageSize)">上一页</button>
+            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += pageSize">下一页</button>
           </div>
-        </div>
+        </section>
+      </aside>
 
-        <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 class="mb-4 text-xl font-black">日志详情</h2>
-          <div v-if="logDetailLoading" class="p-10 text-center text-slate-500">
-            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            正在加载详情...
+      <main v-if="selectedSummary" class="min-w-0 space-y-6">
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-black">{{ pipelineDisplayName(selectedSummary) }}</h2>
+              <p class="mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
+            </div>
+            <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(selectedStatus))">
+              {{ statusLabel(selectedStatus) }}
+            </span>
           </div>
-          <pre v-else class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(logDetail || selectedLog || {}, null, 2) }}</pre>
-        </div>
-      </section>
+          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-black uppercase text-slate-400">Candidate</div>
+              <div class="mt-2 break-all text-sm font-bold">{{ selectedCandidateUlid || "-" }}</div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-black uppercase text-slate-400">Pipeline CC</div>
+              <div class="mt-2 break-all text-sm font-bold">{{ selectedPipelineCcUlid || "-" }}</div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-black uppercase text-slate-400">当前阶段 / Current Stage</div>
+              <div class="mt-2 break-all text-sm font-bold">{{ selectedCurrentStageUlid || "-" }}</div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-black uppercase text-slate-400">统计 / Count</div>
+              <div class="mt-2 text-sm font-bold">阶段 {{ stages.length }} / 课程单元 {{ totalUnits }}</div>
+            </div>
+          </div>
+        </section>
 
-      <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="mb-4 text-xl font-black">完整管线详情</h2>
-        <pre class="max-h-[520px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(detail || selectedSummary, null, 2) }}</pre>
-      </section>
-    </template>
+        <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div class="grid lg:grid-cols-[280px_minmax(0,1fr)]">
+            <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
+              <h3 class="text-lg font-black">详情层级</h3>
+              <p class="mt-1 text-sm text-slate-500">左侧选择层级，右侧查看详情。</p>
+              <div class="mt-4 space-y-2">
+                <button
+                  v-for="tab in detailTabs"
+                  :key="tab.key"
+                  class="w-full rounded-2xl border px-4 py-3 text-left"
+                  :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
+                  type="button"
+                  @click="activeTab = tab.key"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="font-black">{{ tab.title }}</span>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
+                  </div>
+                  <p class="mt-1 text-xs text-slate-500">{{ tab.desc }}</p>
+                </button>
+              </div>
+
+              <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <h4 class="font-black">人工操作</h4>
+                <p class="mt-1 text-xs text-slate-500">只展示 gprog 已提供的动作接口。</p>
+                <div class="mt-3 grid gap-2">
+                  <button
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
+                    type="button"
+                    :disabled="!canTriggerNextStage"
+                    @click="openAction({ kind: 'trigger-next-stage', pipelineUlid: selectedPipelineUlid })"
+                  >
+                    <StepForward class="h-4 w-4" />
+                    推进下一阶段
+                  </button>
+                  <button
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
+                    type="button"
+                    :disabled="!canTerminatePipeline"
+                    @click="openAction({ kind: 'terminate-pipeline', pipelineUlid: selectedPipelineUlid })"
+                  >
+                    <ShieldX class="h-4 w-4" />
+                    终止管线
+                  </button>
+                  <button
+                    class="inline-flex items-center justify-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-bold disabled:opacity-40"
+                    type="button"
+                    :disabled="certificateLoading || !canViewCertificate"
+                    @click="viewCertificate"
+                  >
+                    <Eye class="h-4 w-4" />
+                    查看证书
+                  </button>
+                </div>
+              </div>
+            </aside>
+
+            <section class="min-h-[700px] min-w-0">
+              <div v-if="detailLoading" class="p-12 text-center text-slate-500">
+                <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+                正在加载详情...
+              </div>
+
+              <div v-else-if="activeTab === 'overview'" class="space-y-5 p-5">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div v-for="(value, key) in detailPipelineRecord" :key="key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                    <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
+                    <div class="mt-2 break-all text-sm font-bold">{{ key === 'status' ? statusLabel(value) : (value || '-') }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div v-else-if="activeTab === 'stages'" class="grid min-h-[700px] lg:grid-cols-[320px_minmax(0,1fr)]">
+                <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
+                  <div class="border-b border-slate-200 p-4">
+                    <div class="font-black">阶段列表 / Stages</div>
+                    <div class="text-xs text-slate-500">阶段为运行态只读数据。</div>
+                  </div>
+                  <button
+                    v-for="(stage, index) in stages"
+                    :key="stageUlid(stage) || index"
+                    class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50"
+                    :class="selectedStageIndex === index ? 'bg-sky-50' : ''"
+                    type="button"
+                    @click="selectedStageIndex = index"
+                  >
+                    <div class="font-black">{{ stageName(stage) }}</div>
+                    <div class="mt-1 text-sm text-slate-500">课程单元 {{ courseUnits(stage).length }}</div>
+                    <div class="mt-2 break-all text-xs text-slate-500">ID: {{ stageUlid(stage) || "-" }}</div>
+                    <span class="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(stageStatus(stage), 'stage'))">
+                      {{ statusLabel(stageStatus(stage), "stage") }}
+                    </span>
+                  </button>
+                  <div v-if="!stages.length" class="p-10 text-center text-slate-500">暂无阶段数据</div>
+                </div>
+                <div class="space-y-5 p-5">
+                  <template v-if="selectedStage">
+                    <div class="grid gap-4 md:grid-cols-2">
+                      <div v-for="(value, key) in stageRecord(selectedStage)" :key="key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
+                        <div class="mt-2 break-all text-sm font-bold">{{ key === 'status' ? statusLabel(value, 'stage') : (value || '-') }}</div>
+                      </div>
+                    </div>
+                    <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selectedStage, null, 2) }}</pre>
+                  </template>
+                  <div v-else class="p-12 text-center text-slate-500">请选择阶段</div>
+                </div>
+              </div>
+
+              <div v-else-if="activeTab === 'units'" class="grid min-h-[700px] lg:grid-cols-[360px_minmax(0,1fr)]">
+                <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
+                  <div class="border-b border-slate-200 p-4">
+                    <div class="font-black">课程单元列表 / Units</div>
+                    <div class="text-xs text-slate-500">每个单元显示所属阶段。</div>
+                  </div>
+                  <button
+                    v-for="item in units"
+                    :key="item.key"
+                    class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50"
+                    :class="selectedUnitKey === item.key ? 'bg-sky-50' : ''"
+                    type="button"
+                    @click="selectedUnitKey = item.key"
+                  >
+                    <div class="font-black">{{ item.unit.course_unit_cc_ulid || item.unit.course_unit_ulid || `课程单元 ${item.unitIndex + 1}` }}</div>
+                    <div class="mt-1 text-sm text-slate-500">所属阶段：{{ stageName(item.stage) }}</div>
+                    <div class="mt-2 break-all text-xs text-slate-500">ID: {{ courseUnitUlid(item.unit) || "-" }}</div>
+                    <span class="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(courseUnitStatus(item.unit), 'unit'))">
+                      {{ statusLabel(courseUnitStatus(item.unit), "unit") }}
+                    </span>
+                  </button>
+                  <div v-if="!units.length" class="p-10 text-center text-slate-500">暂无课程单元</div>
+                </div>
+                <div class="space-y-5 p-5">
+                  <template v-if="selectedUnit">
+                    <div class="rounded-2xl border border-sky-100 bg-sky-50 p-4">
+                      <div class="text-xs font-black uppercase text-sky-600">所属阶段 / Parent Stage</div>
+                      <div class="mt-2 break-all text-sm font-bold">{{ stageName(selectedUnit.stage) }} · {{ stageUlid(selectedUnit.stage) || "-" }}</div>
+                    </div>
+                    <div class="grid gap-4 md:grid-cols-2">
+                      <div v-for="(value, key) in selectedUnit.unit" :key="key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
+                        <div class="mt-2 break-all text-sm font-bold">{{ key === 'status' ? statusLabel(value, 'unit') : (value ?? '-') }}</div>
+                      </div>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                      <button
+                        class="rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40"
+                        type="button"
+                        :disabled="!courseUnitUlid(selectedUnit.unit)"
+                        @click="openAction({ kind: 'force-completed', pipelineUlid: selectedPipelineUlid, courseUnitUlid: courseUnitUlid(selectedUnit.unit) })"
+                      >
+                        强制完成
+                      </button>
+                      <button
+                        class="rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40"
+                        type="button"
+                        :disabled="!courseUnitUlid(selectedUnit.unit)"
+                        @click="openAction({ kind: 'force-signup-exam', pipelineUlid: selectedPipelineUlid, courseUnitUlid: courseUnitUlid(selectedUnit.unit) })"
+                      >
+                        重置待预约
+                      </button>
+                    </div>
+                    <pre class="max-h-[300px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selectedUnit.unit, null, 2) }}</pre>
+                  </template>
+                  <div v-else class="p-12 text-center text-slate-500">请选择课程单元</div>
+                </div>
+              </div>
+
+              <div v-else-if="activeTab === 'logs'" class="grid min-h-[700px] lg:grid-cols-[380px_minmax(0,1fr)]">
+                <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
+                  <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+                    <div>
+                      <div class="font-black">状态流转日志</div>
+                      <div class="text-xs text-slate-500">来自 `/logs` 列表。</div>
+                    </div>
+                    <button class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="loadLogs()">加载</button>
+                  </div>
+                  <div v-if="logsLoading" class="p-10 text-center text-slate-500">
+                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+                    正在加载...
+                  </div>
+                  <button
+                    v-for="log in logs"
+                    v-else
+                    :key="String(log.transition_ulid)"
+                    class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
+                    :class="selectedLog === log ? 'bg-sky-50' : ''"
+                    type="button"
+                    @click="selectedLog = log; loadLogDetail(String(log.transition_ulid || ''))"
+                  >
+                    <div class="font-black">{{ entityStatusLabel(log.entity_type, log.from_status) }} -> {{ entityStatusLabel(log.entity_type, log.to_status) }}</div>
+                    <div class="mt-1 text-sm text-slate-500">{{ log.entity_type || "-" }} · {{ log.entity_ulid || "-" }}</div>
+                    <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</div>
+                  </button>
+                  <div v-if="!logsLoading && !logs.length" class="p-10 text-center text-slate-500">暂无日志</div>
+                  <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
+                    <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevLogs" @click="loadLogs(selectedPipelineUlid, Math.max(0, logOffset - logPageSize))">上一页</button>
+                    <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNextLogs" @click="loadLogs(selectedPipelineUlid, logOffset + logPageSize)">下一页</button>
+                  </div>
+                </div>
+                <div class="space-y-5 p-5">
+                  <h4 class="text-lg font-black">日志详情 / Log Detail</h4>
+                  <div v-if="logDetailLoading" class="p-10 text-center text-slate-500">
+                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+                    正在加载详情...
+                  </div>
+                  <template v-else>
+                    <div v-if="selectedLog" class="grid gap-4 md:grid-cols-2">
+                      <div v-for="(value, key) in asRecord((logDetail || selectedLog).summary || selectedLog)" :key="key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
+                        <div class="mt-2 break-all text-sm font-bold">
+                          {{ key === 'from_status' || key === 'to_status' ? entityStatusLabel(asRecord((logDetail || selectedLog).summary || selectedLog).entity_type, value) : (value || '-') }}
+                        </div>
+                      </div>
+                    </div>
+                    <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(logDetail || selectedLog || {}, null, 2) }}</pre>
+                  </template>
+                </div>
+              </div>
+
+              <div v-else-if="activeTab === 'raw'" class="space-y-5 p-5">
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  完整字段只读展示，方便排查接口返回；运行态修改请使用左侧操作按钮。
+                </div>
+                <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify({ detail, logs }, null, 2) }}</pre>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+
+      <main v-else class="flex min-h-[520px] items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white/70 p-10 text-center text-slate-500">
+        从左侧选择一个管线实例查看分层详情。
+      </main>
+    </div>
 
     <div v-if="pendingAction" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
       <div class="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
         <h2 class="text-2xl font-black">确认操作</h2>
-        <p class="mt-2 text-sm text-slate-600">即将执行：{{ pendingAction.kind }}</p>
+        <p class="mt-2 text-sm text-slate-600">即将执行：{{ actionLabel(pendingAction.kind) }}</p>
         <textarea v-model="actionReason" class="mt-5 min-h-28 w-full rounded-xl border border-slate-200 p-4" placeholder="操作原因，可选" />
         <div class="mt-5 flex justify-end gap-3">
           <button class="rounded-xl border px-5 py-3 font-bold" type="button" :disabled="actionLoading" @click="pendingAction = null">取消</button>
