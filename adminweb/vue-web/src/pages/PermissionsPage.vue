@@ -1,46 +1,104 @@
 <script setup lang="ts">
-import { Loader2, Search, ShieldAlert, ShieldCheck, UserX } from "lucide-vue-next"
-import { onMounted, ref } from "vue"
+import { FileWarning, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, UserX } from "lucide-vue-next"
+import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { type JsonRecord } from "@/lib/display"
 import { badgeClass, pickFirst } from "@/lib/status"
 
+type PermissionAction = "grant" | "revoke-upload" | "mark-expired" | "revoke-credential"
+
 const definitions = ref<JsonRecord[]>([])
+const selectedDefinition = ref<JsonRecord | null>(null)
 const candidateUlid = ref("")
-const credDefUlid = ref("")
 const reason = ref("")
 const checkResult = ref<JsonRecord | null>(null)
+const definitionsLoading = ref(false)
 const loading = ref(false)
+const activeAction = ref<PermissionAction | null>(null)
 
-function definitionUlid(definition: JsonRecord) {
-  return String(pickFirst(definition, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
+const credDefUlid = computed(() => definitionUlid(selectedDefinition.value))
+const canCheck = computed(() => Boolean(candidateUlid.value.trim() && credDefUlid.value))
+const resultFields = computed(() => checkResult.value || {})
+
+const actions = [
+  {
+    key: "grant" as const,
+    title: "授予上传权限",
+    desc: "允许该考生提交这个资格定义的申请材料。",
+    endpoint: "/api/permissions/grant",
+    icon: ShieldCheck,
+    tone: "bg-emerald-600 text-white",
+  },
+  {
+    key: "revoke-upload" as const,
+    title: "撤销上传权限",
+    desc: "关闭该考生提交这个资格材料的权限。",
+    endpoint: "/api/permissions/revoke",
+    icon: ShieldOff,
+    tone: "bg-amber-500 text-white",
+  },
+  {
+    key: "mark-expired" as const,
+    title: "标记资格过期",
+    desc: "将该考生已持有的该资格标记为过期。",
+    endpoint: "/api/permissions/mark-expired",
+    icon: FileWarning,
+    tone: "bg-orange-600 text-white",
+  },
+  {
+    key: "revoke-credential" as const,
+    title: "撤销资格",
+    desc: "将该考生已持有的该资格撤销作废。",
+    endpoint: "/api/permissions/revoke-credential",
+    icon: UserX,
+    tone: "bg-red-600 text-white",
+  },
+]
+
+function definitionUlid(definition: JsonRecord | null | undefined) {
+  return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
 }
 
-function definitionName(definition: JsonRecord) {
-  return String(pickFirst(definition, ["name", "name_hint", "title"]) || definitionUlid(definition))
+function definitionName(definition: JsonRecord | null | undefined) {
+  return String(pickFirst(definition || {}, ["name", "name_hint", "title"]) || definitionUlid(definition) || "未命名资格")
+}
+
+function selectDefinition(definition: JsonRecord) {
+  selectedDefinition.value = definition
+  checkResult.value = null
+}
+
+function resultStatus() {
+  return pickFirst(checkResult.value || {}, ["credential_status", "status", "state", "eligible"])
 }
 
 async function loadDefinitions() {
+  definitionsLoading.value = true
   try {
     const data = await apiClient<JsonRecord>("/api/credentials/definitions")
     const list = Array.isArray(data.definitions) ? data.definitions : []
     definitions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    if (!selectedDefinition.value || !definitions.value.some((item) => definitionUlid(item) === definitionUlid(selectedDefinition.value))) {
+      selectedDefinition.value = definitions.value[0] || null
+    }
   } catch (err) {
     console.error(err)
     toast.error("资格定义加载失败")
+  } finally {
+    definitionsLoading.value = false
   }
 }
 
 async function check() {
-  if (!candidateUlid.value.trim() || !credDefUlid.value) {
-    toast.error("请填写候选人 ULID 并选择资格定义")
+  if (!canCheck.value) {
+    toast.error("请填写 Candidate ULID 并选择资格定义")
     return
   }
   loading.value = true
   try {
     checkResult.value = await apiClient<JsonRecord>(
-      `/api/permissions/check?candidate_id=${encodeURIComponent(candidateUlid.value.trim())}&cred_def_id=${encodeURIComponent(credDefUlid.value)}`,
+      `/api/permissions/check?candidate_ulid=${encodeURIComponent(candidateUlid.value.trim())}&cred_def_ulid=${encodeURIComponent(credDefUlid.value)}`,
     )
   } catch (err) {
     console.error(err)
@@ -50,18 +108,23 @@ async function check() {
   }
 }
 
-async function action(endpoint: string) {
+async function runAction(action: (typeof actions)[number]) {
+  if (!canCheck.value) {
+    toast.error("请先填写 Candidate ULID 并选择资格定义")
+    return
+  }
   if (!reason.value.trim()) {
     toast.error("请填写操作原因")
     return
   }
+  activeAction.value = action.key
   loading.value = true
   try {
-    await apiClient(endpoint, {
+    await apiClient(action.endpoint, {
       method: "POST",
       body: JSON.stringify({
-        candidate_id: candidateUlid.value.trim(),
-        cred_def_id: credDefUlid.value,
+        candidate_ulid: candidateUlid.value.trim(),
+        cred_def_ulid: credDefUlid.value,
         reason: reason.value.trim(),
       }),
     })
@@ -72,6 +135,7 @@ async function action(endpoint: string) {
     console.error(err)
     toast.error("操作失败")
   } finally {
+    activeAction.value = null
     loading.value = false
   }
 }
@@ -81,59 +145,144 @@ onMounted(loadDefinitions)
 
 <template>
   <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
-    <header>
-      <h1 class="text-4xl font-black tracking-tight">考生权限管理</h1>
-      <p class="mt-2 text-slate-600">检查和调整考生资格权限。</p>
+    <header class="flex flex-wrap items-start justify-between gap-4">
+      <div>
+        <h1 class="text-4xl font-black tracking-tight">考生权限管理</h1>
+        <p class="mt-2 text-slate-600">检查和调整考生资格上传权限、资格状态。</p>
+        <p class="mt-2 text-xs font-semibold text-slate-500">
+          已确认接口：check/grant/revoke/mark-expired/revoke-credential。不存在 suspend 接口，已移除暂停按钮。
+        </p>
+      </div>
+      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadDefinitions">
+        <RefreshCw class="h-4 w-4" :class="definitionsLoading ? 'animate-spin' : ''" />
+        刷新资格定义
+      </button>
     </header>
 
-    <div class="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
-      <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="mb-4 text-xl font-black">查询目标</h2>
-        <div class="grid gap-4">
-          <input v-model="candidateUlid" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="Candidate ULID" />
-          <select v-model="credDefUlid" class="rounded-xl border border-slate-200 px-4 py-3">
-            <option value="">选择资格定义</option>
-            <option v-for="definition in definitions" :key="definitionUlid(definition)" :value="definitionUlid(definition)">
-              {{ definitionName(definition) }}
-            </option>
-          </select>
-          <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="loading" @click="check">
-            <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
-            <Search v-else class="h-4 w-4" />
-            检查权限
-          </button>
-        </div>
-
-        <div v-if="checkResult" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <h3 class="mb-3 font-black">管理操作</h3>
-          <input v-model="reason" class="mb-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="操作原因" />
-          <div class="grid gap-3">
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white" type="button" @click="action('/api/permissions/grant')">
-              <ShieldCheck class="h-4 w-4" />
-              授予权限
-            </button>
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 font-bold text-white" type="button" @click="action('/api/permissions/suspend')">
-              <ShieldAlert class="h-4 w-4" />
-              暂停权限
-            </button>
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 font-bold text-white" type="button" @click="action('/api/permissions/revoke')">
-              <UserX class="h-4 w-4" />
-              撤销权限
+    <div class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+      <aside class="space-y-4">
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 class="text-xl font-black">查询目标</h2>
+          <div class="mt-4 grid gap-4">
+            <label class="grid gap-2 text-sm font-bold">
+              Candidate ULID
+              <input v-model="candidateUlid" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="64" placeholder="Candidate ULID" />
+            </label>
+            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="loading || !canCheck" @click="check">
+              <Loader2 v-if="loading && !activeAction" class="h-4 w-4 animate-spin" />
+              <Search v-else class="h-4 w-4" />
+              检查权限
             </button>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="mb-4 text-xl font-black">检查结果</h2>
-        <div v-if="!checkResult" class="p-12 text-center text-slate-500">暂无结果</div>
-        <template v-else>
-          <span class="mb-4 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(checkResult.status || checkResult.state)">
-            {{ checkResult.status || checkResult.state || "UNKNOWN" }}
-          </span>
-          <pre class="max-h-[720px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(checkResult, null, 2) }}</pre>
-        </template>
-      </section>
+        <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-xl font-black">资格定义</h2>
+              <p class="mt-1 text-sm text-slate-500">选择一个定义后再查询考生。</p>
+            </div>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ definitions.length }}</span>
+          </div>
+          <div v-if="definitionsLoading" class="p-10 text-center text-slate-500">
+            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+            正在加载...
+          </div>
+          <button
+            v-for="definition in definitions"
+            v-else
+            :key="definitionUlid(definition)"
+            class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
+            :class="definitionUlid(selectedDefinition) === definitionUlid(definition) ? 'bg-sky-50' : ''"
+            type="button"
+            @click="selectDefinition(definition)"
+          >
+            <div class="font-black">{{ definitionName(definition) }}</div>
+            <div class="mt-1 text-sm text-slate-500">{{ definition.category || "-" }}</div>
+            <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ definitionUlid(definition) || "-" }}</div>
+          </button>
+          <div v-if="!definitionsLoading && !definitions.length" class="p-10 text-center text-slate-500">暂无资格定义</div>
+        </section>
+      </aside>
+
+      <main class="space-y-6">
+        <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-black">当前对象</h2>
+              <p class="mt-1 text-sm text-slate-500">右侧所有操作都会作用于这个考生和资格定义。</p>
+            </div>
+            <span v-if="checkResult" class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(resultStatus())">
+              {{ resultStatus() || "UNKNOWN" }}
+            </span>
+          </div>
+          <div class="mt-5 grid gap-4 md:grid-cols-2">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-black uppercase text-slate-400">Candidate</div>
+              <div class="mt-2 break-all text-sm font-bold">{{ candidateUlid || "-" }}</div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div class="text-xs font-black uppercase text-slate-400">Credential Definition</div>
+              <div class="mt-2 break-all text-sm font-bold">{{ definitionName(selectedDefinition) }}</div>
+              <div class="mt-1 break-all text-xs text-slate-500">{{ credDefUlid || "-" }}</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+          <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="mb-4 text-xl font-black">检查结果</h2>
+            <div v-if="!checkResult" class="p-12 text-center text-slate-500">暂无结果。请先选择资格定义并检查考生。</div>
+            <div v-else class="space-y-5">
+              <div class="grid gap-4 md:grid-cols-2">
+                <label v-for="(value, key) in resultFields" :key="key" class="grid gap-2 text-sm font-bold">
+                  {{ key }}
+                  <textarea
+                    v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                    class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                    disabled
+                    :value="JSON.stringify(value, null, 2)"
+                  />
+                  <input
+                    v-else
+                    class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                    disabled
+                    :value="String(value ?? '-')"
+                  />
+                </label>
+              </div>
+              <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(checkResult, null, 2) }}</pre>
+            </div>
+          </div>
+
+          <aside class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="text-xl font-black">管理操作</h2>
+            <p class="mt-1 text-sm text-slate-500">只展示 adminbff 已暴露的权限接口。</p>
+            <label class="mt-4 grid gap-2 text-sm font-bold">
+              操作原因
+              <textarea v-model="reason" class="min-h-24 rounded-xl border border-slate-200 px-4 py-3" maxlength="500" placeholder="必填，便于审计追踪" />
+            </label>
+            <div class="mt-4 grid gap-3">
+              <button
+                v-for="item in actions"
+                :key="item.key"
+                class="rounded-2xl px-4 py-3 text-left font-bold disabled:opacity-50"
+                :class="item.tone"
+                type="button"
+                :disabled="loading || !canCheck"
+                @click="runAction(item)"
+              >
+                <div class="flex items-center gap-2">
+                  <Loader2 v-if="activeAction === item.key" class="h-4 w-4 animate-spin" />
+                  <component :is="item.icon" v-else class="h-4 w-4" />
+                  {{ item.title }}
+                </div>
+                <div class="mt-1 text-xs font-semibold opacity-80">{{ item.desc }}</div>
+              </button>
+            </div>
+          </aside>
+        </section>
+      </main>
     </div>
   </section>
 </template>
