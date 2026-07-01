@@ -128,6 +128,25 @@ function pipelineStatus(pipeline: JsonRecord) {
   return pickFirst(pipeline, ["status", "raw_status"])
 }
 
+function pipelineStatusLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  const normalized = raw.toUpperCase().replace(/^PIPELINE_STATUS_/, "")
+  const labels: Record<string, string> = {
+    ACTIVE: "已发布 / Active",
+    PUBLISHED: "已发布 / Published",
+    DRAFT: "草稿 / Draft",
+    DEPRECATED: "已下架 / Deprecated",
+    INACTIVE: "未启用 / Inactive",
+    ARCHIVED: "已归档 / Archived",
+    PENDING: "待处理 / Pending",
+    PENDING_CREATE: "等待创建 / Pending Create",
+    COMPLETED: "已完成 / Completed",
+    CANCELLED: "已取消 / Cancelled",
+    FAILED: "失败 / Failed",
+  }
+  return labels[normalized] || raw || "-"
+}
+
 function itemTitle(item: JsonRecord | null | undefined, fallback: string) {
   if (!item) return fallback
   return String(pickFirst(item, ["name", "title", "unit_name", "stage_name", "name_hint", "qual_name", "qual_ulid", "unit_ulid", "stage_ulid"]) || fallback)
@@ -600,7 +619,7 @@ onMounted(load)
           <div class="mt-2 text-xs font-semibold text-slate-400">ID: {{ pipelineUlid(pipeline) || "-" }}</div>
         </div>
         <div class="text-right">
-          <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(pipeline))">{{ pipelineStatus(pipeline) || "-" }}</span>
+          <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(pipeline))">{{ pipelineStatusLabel(pipelineStatus(pipeline)) }}</span>
           <div class="mt-3 text-xs text-slate-500">v{{ pipeline.version || 0 }}</div>
           <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(pipeline.updated_at || pipeline.created_at || "")) }}</div>
         </div>
@@ -705,7 +724,7 @@ onMounted(load)
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">状态</div>
-              <div class="mt-2"><span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(selected || {}))">{{ pipelineStatus(selected || {}) || "-" }}</span></div>
+              <div class="mt-2"><span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(selected || {}))">{{ pipelineStatusLabel(pipelineStatus(selected || {})) }}</span></div>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
               <div class="text-xs font-black uppercase text-slate-400">版本</div>
