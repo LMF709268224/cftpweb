@@ -2,11 +2,9 @@
 import {
   BookOpen,
   Boxes,
-  BarChart3,
   ChevronDown,
   ChevronLeft,
   ClipboardCheck,
-  ClipboardList,
   CreditCard,
   FileBadge,
   FileText,
@@ -36,7 +34,6 @@ const navGroups = [
   {
     label: "课程与资源",
     items: [
-      { path: "/dashboard", label: "运营看板", icon: BarChart3 },
       { path: "/lms", label: "课程配置", icon: BookOpen },
       { path: "/resource-packs", label: "资源包配置", icon: FileText },
       { path: "/resource-pack-files", label: "资源文件配置", icon: FileText },
@@ -47,7 +44,6 @@ const navGroups = [
     items: [
       { path: "/pipelines", label: "管线配置", icon: FileBadge },
       { path: "/prog", label: "管线管理", icon: GitBranch },
-      { path: "/exams", label: "考试管理", icon: ClipboardList },
       { path: "/credentials", label: "资格定义", icon: ShieldCheck },
       { path: "/applications", label: "审核中心", icon: ClipboardCheck },
       { path: "/permissions", label: "考生权限管理", icon: GraduationCap },
