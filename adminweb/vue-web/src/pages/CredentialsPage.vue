@@ -2,7 +2,7 @@
 import { Loader2, Plus, RefreshCw, Trash2 } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import { ApiError, apiClient } from "@/lib/apiClient"
+import { apiClient } from "@/lib/apiClient"
 import { type JsonRecord } from "@/lib/display"
 import { pickFirst } from "@/lib/status"
 
@@ -83,10 +83,6 @@ async function loadDefinitionDetail(definition: JsonRecord) {
     if (index >= 0) definitions.value.splice(index, 1, merged)
     selected.value = merged
   } catch (err) {
-    if (err instanceof ApiError && err.status === 404) {
-      selected.value = definition
-      return
-    }
     console.error(err)
     toast.error("资格定义详情加载失败")
     selected.value = definition
