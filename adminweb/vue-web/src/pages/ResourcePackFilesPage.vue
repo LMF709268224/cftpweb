@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, Loader2, Plus, RefreshCw, Save, Trash2 } from "lucide-vue-next"
+import { FileText, Loader2, Plus, RefreshCw, Save, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -19,6 +19,7 @@ const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailLoading = ref(false)
 const saving = ref(false)
+const detailOpen = ref(false)
 const mode = ref<"create" | "edit">("edit")
 const pageToken = ref("")
 const nextPageToken = ref("")
@@ -189,11 +190,20 @@ async function load() {
   }
 }
 
-function selectFile(file: JsonRecord | null) {
+function selectFile(file: JsonRecord | null, openDetail = false) {
   selected.value = file
   mode.value = file ? "edit" : "create"
   fillForm(file)
   void loadFileDetail(file)
+  if (openDetail) detailOpen.value = true
+}
+
+function openFileDetail(file: JsonRecord) {
+  selectFile(file, true)
+}
+
+function closeFileDetail() {
+  detailOpen.value = false
 }
 
 function startCreate() {
@@ -202,6 +212,7 @@ function startCreate() {
   selected.value = null
   mode.value = "create"
   fillForm(null)
+  detailOpen.value = true
 }
 
 async function saveFile() {
@@ -351,12 +362,12 @@ onMounted(load)
       </div>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(560px,1.05fr)]">
+    <div class="grid gap-6">
       <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <h2 class="text-xl font-black">资源文件列表</h2>
-            <p class="mt-1 text-sm text-slate-500">左侧选择文件，右侧查看详情并编辑。</p>
+            <p class="mt-1 text-sm text-slate-500">选择文件后通过弹框查看详情并编辑。</p>
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">本页 {{ files.length }} / {{ pageSize }} 条</span>
         </div>
@@ -366,18 +377,19 @@ onMounted(load)
           正在加载...
         </div>
         <div v-else-if="!files.length" class="px-6 py-10 text-center text-slate-500">暂无资源文件</div>
-        <div v-else class="grid grid-cols-[minmax(0,1fr)_88px_92px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+        <div v-else class="grid grid-cols-[minmax(0,1fr)_88px_92px_110px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
           <span>资源文件</span>
           <span class="text-center">排序</span>
           <span class="text-right">类型</span>
+          <span class="text-right">操作</span>
         </div>
         <button
           v-for="file in files"
           :key="fileId(file)"
-          class="grid w-full grid-cols-[minmax(0,1fr)_88px_92px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
+          class="grid w-full grid-cols-[minmax(0,1fr)_88px_92px_110px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
           :class="fileId(selected) === fileId(file) ? 'bg-sky-50' : ''"
           type="button"
-          @click="selectFile(file)"
+          @click="openFileDetail(file)"
         >
           <div class="min-w-0">
             <div class="truncate text-lg font-black text-slate-950">{{ fileTitle(file) }}</div>
@@ -391,6 +403,7 @@ onMounted(load)
           <span class="h-fit self-center justify-self-end whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
             {{ fileTypeLabel(file.file_type) }}
           </span>
+          <span class="self-center justify-self-end rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-black text-blue-700">查看详情</span>
         </button>
 
         <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
@@ -400,7 +413,8 @@ onMounted(load)
         </div>
       </section>
 
-      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <section v-if="detailOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+        <div class="flex max-h-[88vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
             <h2 class="text-xl font-black">{{ mode === "create" ? "新增资源文件" : "资源文件详情" }}</h2>
@@ -410,19 +424,12 @@ onMounted(load)
               正在加载 get 详情...
             </p>
           </div>
-          <button
-            v-if="mode === 'edit'"
-            class="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-bold text-red-700"
-            type="button"
-            :disabled="saving"
-            @click="deleteFile"
-          >
-            <Trash2 class="h-4 w-4" />
-            删除
+          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closeFileDetail">
+            <X class="h-5 w-5" />
           </button>
         </div>
 
-        <div class="p-5">
+        <div class="flex-1 overflow-y-auto p-5">
           <div class="mb-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
             <div class="text-xs font-black uppercase text-blue-600">所属资源包</div>
             <div class="mt-1 text-lg font-black text-slate-950">{{ selectedPack ? packTitle(selectedPack) : "请选择资源包" }}</div>
@@ -502,11 +509,24 @@ onMounted(load)
           </label>
           </div>
 
-        <button class="mt-5 inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveFile">
-          <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-          <Save v-else class="h-4 w-4" />
-          {{ mode === "create" ? "创建资源文件" : "保存资源文件" }}
-        </button>
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
+          <button
+            v-if="mode === 'edit'"
+            class="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 disabled:opacity-50"
+            type="button"
+            :disabled="saving"
+            @click="deleteFile"
+          >
+            <Trash2 class="h-4 w-4" />
+            删除资源文件
+          </button>
+          <span v-else class="hidden sm:block"></span>
+          <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveFile">
+            <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+            <Save v-else class="h-4 w-4" />
+            {{ mode === "create" ? "创建资源文件" : "保存资源文件" }}
+          </button>
+        </div>
 
         <div v-if="selected" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div class="mb-3 flex items-center gap-2 text-sm font-black">
@@ -526,6 +546,7 @@ onMounted(load)
               <div v-else class="mt-1 break-words text-sm font-semibold">{{ value ?? "-" }}</div>
             </div>
           </div>
+        </div>
         </div>
         </div>
       </section>

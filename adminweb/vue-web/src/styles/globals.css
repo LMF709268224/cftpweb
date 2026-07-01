@@ -36,6 +36,12 @@ pre {
   word-break: break-word;
 }
 
+main > section.mx-auto[class*="max-w-"] {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 main > div > header h1.text-4xl,
 main > section > header h1.text-4xl {
   font-size: 28px;
