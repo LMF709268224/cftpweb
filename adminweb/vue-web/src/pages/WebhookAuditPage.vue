@@ -20,10 +20,25 @@ const status = ref("")
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 const activeDetail = computed(() => detail.value || selected.value)
+const activeRecord = computed(() => activeDetail.value || selected.value || {})
+const summaryFields = computed(() => {
+  const record = activeRecord.value
+  if (!record || !Object.keys(record).length) return []
+  return [
+    { label: "这是什么", value: eventTitle(record) },
+    { label: "处理状态", value: statusText(messageStatus(record)) },
+    { label: "确认编号", value: fieldText(record, ["confirmation_number"]) },
+    { label: "考试 ID", value: fieldText(record, ["exam_ulid", "exam_id"]) },
+    { label: "事件时间", value: formatDate(fieldText(record, ["event_timestamp"])) || "-" },
+    { label: "处理时间", value: formatDate(fieldText(record, ["processed_at"])) || "-" },
+    { label: "Webhook 消息 ID", value: fieldText(record, ["webhook_msg_id", "id"]) },
+  ]
+})
 const detailFields = computed(() => {
   if (!activeDetail.value) return []
   return Object.entries(activeDetail.value)
     .filter(([, value]) => isPrimitive(value))
+    .filter(([key]) => !["payload_json", "msg_fp", "message_fp"].includes(key))
     .map(([key, value]) => ({
       key,
       label: fieldLabel(key),
@@ -65,11 +80,69 @@ function messageStatus(message: JsonRecord) {
 }
 
 function messageTitle(message: JsonRecord) {
-  return String(pickFirst(message, ["event_type", "provider", "type"]) || "Webhook")
+  return eventTitle(message)
+}
+
+function fieldText(record: JsonRecord | null | undefined, keys: string[]) {
+  const value = pickFirst(record || {}, keys)
+  if (value === null || value === undefined || value === "") return "-"
+  return String(value)
+}
+
+function eventType(message: JsonRecord | null | undefined) {
+  return String(pickFirst(message || {}, ["event_type", "type", "provider"]) || "")
+}
+
+function eventTitle(message: JsonRecord | null | undefined) {
+  const type = eventType(message).toLowerCase()
+  const labels: Record<string, string> = {
+    result_created: "考试结果回调",
+    appointment_scheduled: "考试预约回调",
+    appointment_rescheduled: "考试改期回调",
+    appointment_cancelled: "考试取消回调",
+    payment_intent_succeeded: "支付成功回调",
+    payment_intent_payment_failed: "支付失败回调",
+    invoice_created: "发票创建回调",
+  }
+  return labels[type] || eventType(message) || "Webhook 回调"
+}
+
+function eventDescription(message: JsonRecord | null | undefined) {
+  const type = eventType(message).toLowerCase()
+  if (type === "result_created") return "外部考试系统通知我们：某个考生的考试结果已经生成。系统会据此同步成绩、推进管线状态。"
+  if (type === "appointment_scheduled") return "外部考试系统通知我们：某个考试预约已经创建。系统会记录预约信息，方便后续同步考试结果。"
+  if (type === "appointment_rescheduled") return "外部考试系统通知我们：某个考试预约时间发生变更。"
+  if (type === "appointment_cancelled") return "外部考试系统通知我们：某个考试预约已取消。"
+  if (type.includes("payment")) return "支付服务通知我们一笔支付状态变化。"
+  if (type.includes("invoice")) return "外部系统通知我们一笔发票相关事件。"
+  return "这是外部系统发给平台的一条回调消息，系统会按事件类型自动处理。"
+}
+
+function messageSubtitle(message: JsonRecord) {
+  const confirmation = fieldText(message, ["confirmation_number"])
+  const examId = fieldText(message, ["exam_ulid", "exam_id"])
+  if (confirmation !== "-") return `确认编号：${confirmation}`
+  if (examId !== "-") return `考试 ID：${examId}`
+  return `消息 ID：${fieldText(message, ["webhook_msg_id", "id"])}`
+}
+
+function statusText(value: unknown) {
+  const statusValue = String(value || "").toUpperCase()
+  const labels: Record<string, string> = {
+    PROCESSED: "已处理",
+    SKIPPED: "已跳过",
+    FAILED: "处理失败",
+    PENDING: "待处理",
+    SUCCESS: "成功",
+    IGNORED: "已忽略",
+  }
+  return labels[statusValue] || String(value || "-")
 }
 
 function formatFieldValue(key: string, value: unknown) {
   if (key.endsWith("_at")) return formatDate(value)
+  if (key === "event_type") return eventTitle({ event_type: value })
+  if (key === "processed_status" || key === "status") return statusText(value)
   if (value === null || value === undefined || value === "") return "-"
   return String(value)
 }
@@ -161,7 +234,7 @@ onMounted(() => load(1))
     <header class="flex items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">Webhook 审计</h1>
-        <p class="mt-2 text-slate-600">查看支付和外部系统回调记录；支持按处理状态筛选、查看详情和重放。</p>
+        <p class="mt-2 text-slate-600">查看外部系统发来的回调记录。这里主要用于排查考试预约、考试结果、支付等异步通知是否处理成功。</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
@@ -172,9 +245,9 @@ onMounted(() => load(1))
     <form class="grid gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-[1fr_auto]" @submit.prevent="search">
       <select v-model="status" class="rounded-xl border border-slate-200 px-4 py-3">
         <option value="">全部处理状态</option>
-        <option value="SUCCESS">SUCCESS</option>
+        <option value="PROCESSED">已处理 / PROCESSED</option>
+        <option value="SKIPPED">已跳过 / SKIPPED</option>
         <option value="FAILED">FAILED</option>
-        <option value="IGNORED">IGNORED</option>
         <option value="PENDING">PENDING</option>
       </select>
       <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white" type="submit">
@@ -209,10 +282,10 @@ onMounted(() => load(1))
         >
           <div class="min-w-0">
             <div class="truncate text-base font-black">{{ messageTitle(message) }}</div>
-            <div class="mt-1 truncate text-sm font-bold text-blue-700">{{ msgKey(message) || "-" }}</div>
+            <div class="mt-1 truncate text-sm font-semibold text-slate-600">{{ messageSubtitle(message) }}</div>
             <div class="mt-1 text-xs text-slate-500">{{ formatDate(message.created_at) || "无创建时间" }}</div>
           </div>
-          <span class="h-fit rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(messageStatus(message))">{{ messageStatus(message) }}</span>
+          <span class="h-fit rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(messageStatus(message))">{{ statusText(messageStatus(message)) }}</span>
         </button>
 
         <div class="flex items-center justify-end gap-3 border-t border-slate-200 p-5">
@@ -242,7 +315,7 @@ onMounted(() => load(1))
         <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
           <div>
             <h2 class="text-xl font-black">Webhook 详情</h2>
-            <p class="mt-1 text-sm text-slate-500">详情接口按消息指纹获取；重放接口需要 webhook_msg_id。</p>
+            <p class="mt-1 text-sm text-slate-500">先看业务含义；消息指纹、Payload JSON 等技术字段收在下方。</p>
           </div>
           <button
             v-if="selected"
@@ -265,25 +338,34 @@ onMounted(() => load(1))
           <div class="rounded-2xl bg-blue-50 p-4">
             <div class="flex items-center gap-2 text-sm font-black text-blue-700">
               <Webhook class="h-4 w-4" />
-              当前 Webhook
+              当前回调
             </div>
-            <div class="mt-1 break-all text-lg font-black text-slate-950">{{ msgKey(selected) || "-" }}</div>
+            <div class="mt-1 break-all text-lg font-black text-slate-950">{{ eventTitle(activeRecord) }}</div>
+            <p class="mt-2 text-sm font-semibold leading-6 text-slate-600">{{ eventDescription(activeRecord) }}</p>
             <div class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(messageStatus(activeDetail || selected))">
-              {{ messageStatus(activeDetail || selected) }}
+              {{ statusText(messageStatus(activeDetail || selected)) }}
             </div>
           </div>
 
           <div class="grid gap-3 md:grid-cols-2">
-            <label v-for="field in detailFields" :key="field.key" class="rounded-2xl bg-slate-50 p-4">
-              <span class="text-xs font-black uppercase tracking-wide text-slate-400">{{ field.label }}</span>
+            <label v-for="field in summaryFields" :key="field.label" class="rounded-2xl bg-slate-50 p-4">
+              <span class="text-xs font-black tracking-wide text-slate-400">{{ field.label }}</span>
               <input class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700" :value="field.value" disabled />
             </label>
           </div>
 
-          <div class="rounded-2xl border border-slate-200">
-            <div class="border-b border-slate-100 px-4 py-3 text-sm font-black">完整原始字段</div>
+          <details class="rounded-2xl border border-slate-200">
+            <summary class="cursor-pointer px-4 py-3 text-sm font-black">技术字段：消息指纹、Payload JSON、完整原始字段</summary>
+            <div class="border-t border-slate-100 p-4">
+              <div class="grid gap-3 md:grid-cols-2">
+                <label v-for="field in detailFields" :key="field.key" class="rounded-2xl bg-slate-50 p-4">
+                  <span class="text-xs font-black tracking-wide text-slate-400">{{ field.label }}</span>
+                  <input class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700" :value="field.value" disabled />
+                </label>
+              </div>
+            </div>
             <pre class="max-h-[460px] overflow-auto rounded-b-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(activeDetail, null, 2) }}</pre>
-          </div>
+          </details>
         </div>
       </section>
     </div>
