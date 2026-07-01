@@ -34,10 +34,14 @@ const detailFields = computed(() => {
 function fieldLabel(key: string) {
   const labels: Record<string, string> = {
     webhook_msg_id: "Webhook 消息 ID",
+    id: "Webhook 消息 ID",
     msg_fp: "消息指纹",
     message_fp: "消息指纹",
     provider: "来源",
     event_type: "事件类型",
+    event_timestamp: "事件时间",
+    exam_ulid: "考试 ID",
+    confirmation_number: "确认编号",
     processed_status: "处理状态",
     status: "状态",
     error_message: "错误信息",
@@ -80,7 +84,8 @@ async function load(targetPage = page.value) {
     if (status.value) params.set("status", status.value)
 
     const data = await apiClient<JsonRecord>(`/api/audit/webhooks?${params}`)
-    const list = Array.isArray(data.messages) ? data.messages : []
+    const rawList = data.webhook_messages || data.messages || data.items
+    const list = Array.isArray(rawList) ? rawList : []
     const selectedKey = selected.value ? msgKey(selected.value) : ""
 
     messages.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
