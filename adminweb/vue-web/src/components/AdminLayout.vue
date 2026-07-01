@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ClipboardCheck,
+  ClipboardList,
   CreditCard,
   FileBadge,
   FileText,
@@ -46,6 +47,7 @@ const navGroups = [
     items: [
       { path: "/pipelines", label: "管线配置", icon: FileBadge },
       { path: "/prog", label: "管线管理", icon: GitBranch },
+      { path: "/exams", label: "考试管理", icon: ClipboardList },
       { path: "/credentials", label: "资格定义", icon: ShieldCheck },
       { path: "/applications", label: "审核中心", icon: ClipboardCheck },
       { path: "/permissions", label: "考生权限管理", icon: GraduationCap },

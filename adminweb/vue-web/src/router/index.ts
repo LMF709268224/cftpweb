@@ -6,6 +6,7 @@ import BundlesPage from "@/pages/BundlesPage.vue"
 import CallbackPage from "@/pages/CallbackPage.vue"
 import CredentialsPage from "@/pages/CredentialsPage.vue"
 import DashboardPage from "@/pages/DashboardPage.vue"
+import ExamsPage from "@/pages/ExamsPage.vue"
 import InvoicesPage from "@/pages/InvoicesPage.vue"
 import LmsPage from "@/pages/LmsPage.vue"
 import LoginPage from "@/pages/LoginPage.vue"
@@ -109,6 +110,18 @@ export const resourceRoutes: RouteRecordRaw[] = [
       subtitle: "查看考生正在运行的管线实例和状态流转",
       endpoint: "/api/prog/pipelines",
       itemKeys: ["pipelines", "items"],
+    } satisfies ResourceRouteMeta,
+  },
+  {
+    path: "/exams",
+    name: "exams",
+    component: ExamsPage,
+    meta: {
+      title: "考试管理",
+      subtitle: "查看 gexam 考试实例、预约、成绩和状态流转",
+      endpoint: "/api/exams",
+      itemKeys: ["exams", "items"],
+      pagination: "page",
     } satisfies ResourceRouteMeta,
   },
   {
