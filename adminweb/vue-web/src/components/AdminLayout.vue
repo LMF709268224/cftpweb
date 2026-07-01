@@ -2,6 +2,7 @@
 import {
   BookOpen,
   Boxes,
+  BarChart3,
   ChevronDown,
   ChevronLeft,
   ClipboardCheck,
@@ -34,6 +35,7 @@ const navGroups = [
   {
     label: "课程与资源",
     items: [
+      { path: "/dashboard", label: "运营看板", icon: BarChart3 },
       { path: "/lms", label: "课程配置", icon: BookOpen },
       { path: "/resource-packs", label: "资源包配置", icon: FileText },
       { path: "/resource-pack-files", label: "资源文件配置", icon: FileText },

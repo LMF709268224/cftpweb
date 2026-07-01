@@ -47,6 +47,9 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Put("/password", h.UpdateUserPassword)
 		})
 
+		// ===== 运营看板 =====
+		r.Get("/dashboard/ops", h.OpsDashboard)
+
 		// ===== 课程与认证 (GCC) =====
 		r.Route("/pipelines", func(r chi.Router) {
 			r.Get("/", h.ListPipelines)
