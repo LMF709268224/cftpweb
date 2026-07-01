@@ -6,6 +6,8 @@ import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { applicationStatusLabel, applicationStatusOptions, badgeClass, pickFirst } from "@/lib/status"
 
+type DetailTab = "overview" | "files" | "audit" | "raw"
+
 const applications = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
@@ -15,26 +17,35 @@ const page = ref(1)
 const total = ref(0)
 const statusFilter = ref("0")
 const auditRemark = ref("")
+const activeTab = ref<DetailTab>("overview")
 const pageSize = 20
 let detailRequestId = 0
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => applications.value.length >= pageSize)
+const selectedFields = computed(() => selected.value || {})
+const selectedFiles = computed(() => files(selected.value || {}))
+const detailTabs = computed(() => [
+  { key: "overview" as const, title: "概览", count: selected.value ? 1 : 0 },
+  { key: "files" as const, title: "申请材料", count: selectedFiles.value.length },
+  { key: "audit" as const, title: "审核操作", count: 3 },
+  { key: "raw" as const, title: "完整字段", count: 1 },
+])
 
-function appUlid(app: JsonRecord) {
-  return String(pickFirst(app, ["app_ulid", "app_id", "application_ulid", "application_id"]) || "")
+function appUlid(app: JsonRecord | null | undefined) {
+  return String(pickFirst(app || {}, ["app_ulid", "app_id", "application_ulid", "application_id"]) || "")
 }
 
-function candidate(app: JsonRecord) {
-  return String(pickFirst(app, ["candidate_name", "candidate_email", "candidate_ulid", "candidate_id"]) || "-")
+function candidate(app: JsonRecord | null | undefined) {
+  return String(pickFirst(app || {}, ["candidate_name", "candidate_email", "candidate_ulid", "candidate_id"]) || "-")
 }
 
-function credential(app: JsonRecord) {
-  return String(pickFirst(app, ["cred_def_name", "credential_name", "cred_def_ulid", "cred_def_id"]) || "-")
+function credential(app: JsonRecord | null | undefined) {
+  return String(pickFirst(app || {}, ["cred_def_name", "credential_name", "cred_def_ulid", "cred_def_id"]) || "-")
 }
 
-function status(app: JsonRecord) {
-  return pickFirst(app, ["status", "application_status"])
+function status(app: JsonRecord | null | undefined) {
+  return pickFirst(app || {}, ["status", "application_status"])
 }
 
 function files(app: JsonRecord) {
@@ -106,6 +117,7 @@ async function loadApplicationDetail(app: JsonRecord | null) {
 function selectApplication(app: JsonRecord) {
   selected.value = app
   auditRemark.value = ""
+  activeTab.value = "overview"
   void loadApplicationDetail(app)
 }
 
@@ -117,6 +129,7 @@ async function load(targetPage = page.value) {
     applications.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || applications.value.length) || 0
     selected.value = applications.value[0] || null
+    activeTab.value = "overview"
     page.value = targetPage
     void loadApplicationDetail(selected.value)
   } catch (err) {
@@ -164,11 +177,14 @@ onMounted(() => load(1))
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
-    <header class="flex items-start justify-between gap-4">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1520px] flex-col gap-6 px-8 py-8">
+    <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">审核中心</h1>
         <p class="mt-2 text-slate-600">审核考生提交的资格申请材料。</p>
+        <p class="mt-2 text-xs font-semibold text-slate-500">
+          已确认接口：list/get detail/audit。文件预览与下载使用申请详情返回的 view_url。
+        </p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
@@ -176,18 +192,21 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <div class="flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <select v-model="statusFilter" class="rounded-xl border border-slate-200 px-4 py-3">
-        <option v-for="option in applicationStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-      </select>
-      <span class="text-sm font-bold text-slate-500">共 {{ total }} 条</span>
-    </div>
-
-    <div class="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+    <div class="grid gap-6 xl:grid-cols-[460px_minmax(0,1fr)]">
       <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 p-5">
-          <h2 class="text-xl font-black">申请列表</h2>
+        <div class="space-y-4 border-b border-slate-200 p-5">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <h2 class="text-xl font-black">申请列表</h2>
+              <p class="mt-1 text-sm text-slate-500">来自 `/api/applications`。</p>
+            </div>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
+          </div>
+          <select v-model="statusFilter" class="w-full rounded-xl border border-slate-200 px-4 py-3">
+            <option v-for="option in applicationStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
         </div>
+
         <div v-if="loading" class="p-12 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
           正在加载...
@@ -197,120 +216,164 @@ onMounted(() => load(1))
           v-for="app in applications"
           v-else
           :key="appUlid(app)"
-          class="grid w-full grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
-          :class="selected === app ? 'bg-sky-50' : ''"
+          class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
+          :class="appUlid(selected) === appUlid(app) ? 'bg-sky-50' : ''"
           type="button"
           @click="selectApplication(app)"
         >
-          <div class="min-w-0">
-            <div class="font-black text-slate-950">{{ credential(app) }}</div>
-            <div class="mt-1 text-sm text-slate-500">{{ candidate(app) }}</div>
-            <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(app.created_at || "")) }}</div>
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="truncate font-black text-slate-950">{{ credential(app) }}</div>
+              <div class="mt-1 break-all text-sm text-slate-500">{{ candidate(app) }}</div>
+            </div>
+            <span class="h-fit shrink-0 rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(app))">
+              {{ applicationStatusLabel(status(app)) }}
+            </span>
           </div>
-          <span class="h-fit rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(app))">
-            {{ applicationStatusLabel(status(app)) }}
-          </span>
+          <div class="mt-2 break-all text-xs font-semibold text-slate-500">申请 ID：{{ appUlid(app) || "-" }}</div>
+          <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(app.created_at || "")) }}</div>
         </button>
+
         <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">上一页</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">下一页</button>
         </div>
       </section>
 
-      <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div v-if="!selected" class="p-10 text-center text-slate-500">请选择一条申请</div>
         <template v-else>
-          <div class="mb-5 flex items-start justify-between gap-4">
-            <div>
-              <h2 class="text-xl font-black">{{ credential(selected) }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ candidate(selected) }}</p>
-            </div>
-            <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(selected))">
-              {{ applicationStatusLabel(status(selected)) }}
-            </span>
-          </div>
-
-          <div class="mb-5 rounded-2xl bg-slate-50 p-4">
-            <div class="mb-3 flex items-center justify-between gap-3">
-              <div class="text-sm font-black">申请材料</div>
-              <span v-if="files(selected).length" class="rounded-full bg-white px-2.5 py-1 text-xs font-black text-slate-500">
-                {{ files(selected).length }} 个文件
+          <div class="border-b border-slate-200 p-5">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 class="text-2xl font-black">{{ credential(selected) }}</h2>
+                <p class="mt-1 break-all text-sm text-slate-500">{{ appUlid(selected) }}</p>
+              </div>
+              <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(selected))">
+                {{ applicationStatusLabel(status(selected)) }}
               </span>
             </div>
-            <div v-if="detailLoading" class="flex items-center gap-2 text-sm text-slate-500">
-              <Loader2 class="h-4 w-4 animate-spin" />
-              正在加载申请材料...
-            </div>
-            <div v-else-if="!files(selected).length" class="rounded-xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-500">
-              暂无文件。若考生已上传材料，请检查微服务申请详情接口是否返回 files / view_url。
-            </div>
-            <div v-else class="space-y-3">
-              <div
-                v-for="file in files(selected)"
-                :key="String(file.file_hash || file.file_name || file.name)"
-                class="rounded-2xl border border-slate-200 bg-white p-4"
-              >
-                <div class="flex items-start justify-between gap-4">
-                  <div class="min-w-0">
-                    <div class="flex items-center gap-2 font-black text-slate-900">
-                      <FileText class="h-4 w-4 shrink-0 text-blue-600" />
-                      <span class="truncate">{{ fileName(file) }}</span>
-                    </div>
-                    <div class="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-                      <span class="rounded-full bg-slate-100 px-2 py-1">用途：{{ fileUsage(file) }}</span>
-                      <span v-if="fileSize(file)" class="rounded-full bg-slate-100 px-2 py-1">大小：{{ fileSize(file) }}</span>
-                      <span v-if="file.file_ext" class="rounded-full bg-slate-100 px-2 py-1">格式：{{ file.file_ext }}</span>
-                    </div>
-                    <div v-if="fileHash(file)" class="mt-2 break-all text-xs text-slate-400">SHA256：{{ fileHash(file) }}</div>
+          </div>
+
+          <div class="grid min-h-[720px] lg:grid-cols-[240px_minmax(0,1fr)]">
+            <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
+              <div class="space-y-2">
+                <button
+                  v-for="tab in detailTabs"
+                  :key="tab.key"
+                  class="w-full rounded-2xl border px-4 py-3 text-left"
+                  :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
+                  type="button"
+                  @click="activeTab = tab.key"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <span class="font-black">{{ tab.title }}</span>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
                   </div>
-                  <div class="flex shrink-0 gap-2">
-                    <a
-                      v-if="fileUrl(file)"
-                      class="inline-flex items-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100"
-                      :href="fileUrl(file)"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Eye class="h-4 w-4" />
-                      预览
-                    </a>
-                    <a
-                      v-if="fileUrl(file)"
-                      class="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
-                      :href="fileUrl(file)"
-                      :download="fileName(file)"
-                    >
-                      <Download class="h-4 w-4" />
-                      下载
-                    </a>
-                    <span v-else class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700">缺少链接</span>
+                </button>
+              </div>
+            </aside>
+
+            <main class="min-w-0 p-5">
+              <div v-if="activeTab === 'overview'" class="grid gap-4 md:grid-cols-2">
+                <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
+                  {{ key }}
+                  <textarea
+                    v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                    class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                    disabled
+                    :value="JSON.stringify(value, null, 2)"
+                  />
+                  <input
+                    v-else
+                    class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                    disabled
+                    :value="key === 'status' ? applicationStatusLabel(value) : String(value ?? '-')"
+                  />
+                </label>
+              </div>
+
+              <div v-else-if="activeTab === 'files'" class="space-y-4">
+                <div v-if="detailLoading" class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
+                  <Loader2 class="h-4 w-4 animate-spin" />
+                  正在加载申请材料...
+                </div>
+                <div v-else-if="!selectedFiles.length" class="rounded-xl border border-dashed border-slate-200 bg-white p-5 text-sm text-slate-500">
+                  暂无文件。若考生已上传材料，请检查微服务申请详情接口是否返回 files / view_url。
+                </div>
+                <div v-for="file in selectedFiles" v-else :key="String(file.file_hash || file.file_name || file.name)" class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="flex items-start justify-between gap-4">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 font-black text-slate-900">
+                        <FileText class="h-4 w-4 shrink-0 text-blue-600" />
+                        <span class="truncate">{{ fileName(file) }}</span>
+                      </div>
+                      <div class="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
+                        <span class="rounded-full bg-slate-100 px-2 py-1">用途：{{ fileUsage(file) }}</span>
+                        <span v-if="fileSize(file)" class="rounded-full bg-slate-100 px-2 py-1">大小：{{ fileSize(file) }}</span>
+                        <span v-if="file.file_ext" class="rounded-full bg-slate-100 px-2 py-1">格式：{{ file.file_ext }}</span>
+                      </div>
+                      <div v-if="fileHash(file)" class="mt-2 break-all text-xs text-slate-400">SHA256：{{ fileHash(file) }}</div>
+                    </div>
+                    <div class="flex shrink-0 gap-2">
+                      <a
+                        v-if="fileUrl(file)"
+                        class="inline-flex items-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100"
+                        :href="fileUrl(file)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Eye class="h-4 w-4" />
+                        预览
+                      </a>
+                      <a
+                        v-if="fileUrl(file)"
+                        class="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
+                        :href="fileUrl(file)"
+                        :download="fileName(file)"
+                      >
+                        <Download class="h-4 w-4" />
+                        下载
+                      </a>
+                      <span v-else class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700">缺少链接</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <textarea
-            v-model="auditRemark"
-            class="mb-4 min-h-28 w-full rounded-2xl border border-slate-200 p-4 text-sm"
-            placeholder="审核备注：打回重提或最终拒绝时必填。需要用户重新提交材料时请选择“打回重提”。"
-          />
-          <div class="grid gap-3 md:grid-cols-3">
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('approve')">
-              <CheckCircle2 class="h-4 w-4" />
-              通过
-            </button>
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('resubmit')">
-              <RotateCcw class="h-4 w-4" />
-              打回重提（允许再次提交）
-            </button>
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('reject')">
-              <XCircle class="h-4 w-4" />
-              最终拒绝
-            </button>
-          </div>
+              <div v-else-if="activeTab === 'audit'" class="space-y-4">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                  审核接口支持：通过、打回重提、最终拒绝。打回重提或最终拒绝时必须填写备注。
+                </div>
+                <textarea
+                  v-model="auditRemark"
+                  class="min-h-32 w-full rounded-2xl border border-slate-200 p-4 text-sm"
+                  placeholder="审核备注：打回重提或最终拒绝时必填。需要用户重新提交材料时请选择“打回重提”。"
+                />
+                <div class="grid gap-3 md:grid-cols-3">
+                  <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('approve')">
+                    <CheckCircle2 class="h-4 w-4" />
+                    通过
+                  </button>
+                  <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('resubmit')">
+                    <RotateCcw class="h-4 w-4" />
+                    打回重提
+                  </button>
+                  <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('reject')">
+                    <XCircle class="h-4 w-4" />
+                    最终拒绝
+                  </button>
+                </div>
+              </div>
 
-          <pre class="mt-5 max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+              <div v-else-if="activeTab === 'raw'" class="space-y-4">
+                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  完整字段只读展示，方便核对微服务返回。
+                </div>
+                <pre class="max-h-[560px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+              </div>
+            </main>
+          </div>
         </template>
       </section>
     </div>

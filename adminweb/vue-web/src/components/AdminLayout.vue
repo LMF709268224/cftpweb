@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   Webhook,
 } from "lucide-vue-next"
-import { computed, ref } from "vue"
+import { onMounted, onUnmounted, ref } from "vue"
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -71,7 +71,11 @@ const navGroups = [
   },
 ]
 
-const userName = computed(() => getUserName())
+const userName = ref(getUserName())
+
+function refreshUserName() {
+  userName.value = getUserName()
+}
 
 async function logout() {
   try {
@@ -84,6 +88,14 @@ async function logout() {
     router.push("/login")
   }
 }
+
+onMounted(() => {
+  window.addEventListener("storage", refreshUserName)
+})
+
+onUnmounted(() => {
+  window.removeEventListener("storage", refreshUserName)
+})
 </script>
 
 <template>
