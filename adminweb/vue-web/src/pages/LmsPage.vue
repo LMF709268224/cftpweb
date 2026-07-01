@@ -1622,9 +1622,9 @@ onMounted(() => {
     </header>
 
     <section v-if="courseView === 'list'" class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="grid gap-3 border-b border-slate-200 p-5 lg:grid-cols-[1fr_auto]">
-        <input v-model="categoryFilter" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="分类筛选，例如 CFtP/CFtA" />
-        <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
+      <div class="grid gap-3 border-b border-slate-200 bg-slate-50/60 p-4 lg:grid-cols-[1fr_auto]">
+        <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" placeholder="分类筛选，例如 CFtP/CFtA" />
+        <label class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm">
           <input v-model="publishedOnly" type="checkbox" />
           仅看已发布
         </label>
@@ -1635,33 +1635,43 @@ onMounted(() => {
         正在加载...
       </div>
       <div v-else-if="!courses.length" class="p-12 text-center text-slate-500">暂无课程</div>
-      <div v-else class="divide-y divide-slate-100">
+      <div v-else>
+        <div class="hidden grid-cols-[minmax(0,1fr)_120px_260px_120px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+          <span>课程</span>
+          <span>版本</span>
+          <span>更新时间</span>
+          <span class="text-right">状态</span>
+        </div>
         <button
           v-for="course in courses"
           :key="courseId(course)"
-          class="block w-full p-5 text-left transition hover:bg-slate-50"
-          :class="courseId(course) === selectedCourseId ? 'bg-sky-50' : ''"
+          class="block w-full border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
+          :class="courseId(course) === selectedCourseId ? 'bg-sky-50/70' : ''"
           type="button"
           @click="selectCourse(course)"
         >
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div class="text-lg font-black">{{ courseTitle(course) }}</div>
-              <div class="mt-1 text-sm text-slate-500">{{ course.category_tips || "未分类" }}</div>
+          <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_120px_260px_120px] lg:items-center lg:gap-6">
+            <div class="min-w-0">
+              <div class="truncate text-base font-black text-slate-950">{{ courseTitle(course) }}</div>
+              <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                <span>{{ course.category_tips || "未分类" }}</span>
+                <span class="font-mono">ID: {{ courseId(course) || "-" }}</span>
+              </div>
             </div>
-            <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(course.is_published ? 'COMPLETED' : 'PENDING')">
+            <div class="text-sm font-bold text-slate-700">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">版本</span>{{ course.version || 0 }}
+            </div>
+            <div class="text-sm text-slate-500">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">更新</span>{{ formatDate(String(course.updated_at || course.created_at || "")) }}
+            </div>
+            <span class="justify-self-start rounded-full border px-3 py-1 text-xs font-black lg:justify-self-end" :class="badgeClass(course.is_published ? 'COMPLETED' : 'PENDING')">
               {{ course.is_published ? "已发布" : "草稿" }}
             </span>
-          </div>
-          <div class="mt-3 grid gap-2 text-xs text-slate-500 sm:grid-cols-3">
-            <span>ID: {{ courseId(course) || "-" }}</span>
-            <span>版本: {{ course.version || 0 }}</span>
-            <span>更新: {{ formatDate(String(course.updated_at || course.created_at || "")) }}</span>
           </div>
         </button>
       </div>
       <div class="border-t border-slate-200 p-4">
-        <button class="w-full rounded-xl border px-4 py-3 font-bold disabled:opacity-40" type="button" :disabled="!nextPageToken || loading" @click="loadCourses(nextPageToken)">
+        <button class="w-full rounded-xl border px-4 py-3 font-bold transition hover:bg-slate-50 disabled:cursor-default disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400 disabled:opacity-100" type="button" :disabled="!nextPageToken || loading" @click="loadCourses(nextPageToken)">
           {{ nextPageToken ? "加载更多" : "没有更多了" }}
         </button>
       </div>
