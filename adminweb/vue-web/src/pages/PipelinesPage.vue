@@ -586,46 +586,53 @@ onMounted(load)
       </div>
     </header>
 
-    <section v-if="!inEditor" class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
+    <section v-if="!inEditor" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
         <div>
           <h2 class="text-xl font-black">管线列表</h2>
           <p class="mt-1 text-sm text-slate-500">列表来自 `/api/pipelines`，进入详情后按层级维护完整配置。</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-          <input v-model="categoryFilter" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="分类提示，例如 CFtP/CFtP" />
-          <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold">
+          <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 px-3 text-sm" placeholder="分类提示，例如 CFtP/CFtP" />
+          <label class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-bold">
             <input v-model="onlyCurrent" type="checkbox" />
             仅当前版本
           </label>
         </div>
       </div>
-      <div v-if="loading" class="p-12 text-center text-slate-500">
+      <div v-if="loading" class="px-6 py-10 text-center text-slate-500">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
         正在加载...
       </div>
-      <button
-        v-for="pipeline in pipelines"
-        v-else
-        :key="pipelineUlid(pipeline)"
-        class="grid w-full grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-5 text-left last:border-b-0 hover:bg-sky-50"
-        type="button"
-        @click="selectPipeline(pipeline)"
-      >
-        <div>
-          <div class="text-lg font-black">{{ pipelineName(pipeline) }}</div>
-          <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ pipeline.description || "暂无描述" }}</div>
-          <div class="mt-2 text-sm text-slate-600">{{ pipeline.category_tips || "-" }}</div>
-          <div class="mt-2 text-xs font-semibold text-slate-400">ID: {{ pipelineUlid(pipeline) || "-" }}</div>
+      <div v-else-if="!pipelines.length" class="px-6 py-10 text-center text-slate-500">暂无管线</div>
+      <template v-else>
+        <div class="grid grid-cols-[minmax(0,1fr)_150px_72px_170px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+          <span>管线</span>
+          <span class="text-center">状态</span>
+          <span class="text-center">版本</span>
+          <span class="text-right">更新时间</span>
         </div>
-        <div class="text-right">
-          <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(pipeline))">{{ pipelineStatusLabel(pipelineStatus(pipeline)) }}</span>
-          <div class="mt-3 text-xs text-slate-500">v{{ pipeline.version || 0 }}</div>
-          <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(pipeline.updated_at || pipeline.created_at || "")) }}</div>
-        </div>
-      </button>
-      <div v-if="!loading && !pipelines.length" class="p-12 text-center text-slate-500">暂无管线</div>
-      <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
+        <button
+          v-for="pipeline in pipelines"
+          :key="pipelineUlid(pipeline)"
+          class="grid w-full grid-cols-[minmax(0,1fr)_150px_72px_170px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
+          type="button"
+          @click="selectPipeline(pipeline)"
+        >
+          <div class="min-w-0">
+            <div class="truncate text-lg font-black">{{ pipelineName(pipeline) }}</div>
+            <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pipeline.description || "暂无描述" }}</div>
+            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+              <span class="rounded-full bg-slate-100 px-2 py-1 text-slate-600">{{ pipeline.category_tips || "-" }}</span>
+              <span class="break-all text-slate-400">ID: {{ pipelineUlid(pipeline) || "-" }}</span>
+            </div>
+          </div>
+          <span class="self-center justify-self-center whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(pipeline))">{{ pipelineStatusLabel(pipelineStatus(pipeline)) }}</span>
+          <span class="self-center text-center text-sm font-black text-slate-700">v{{ pipeline.version || 0 }}</span>
+          <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(pipeline.updated_at || pipeline.created_at || "")) }}</span>
+        </button>
+      </template>
+      <div class="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
         <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - limit)">上一页</button>
         <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += limit">下一页</button>
       </div>
