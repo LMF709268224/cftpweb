@@ -269,27 +269,35 @@ onMounted(load)
           正在加载...
         </div>
         <div v-else-if="!packs.length" class="p-12 text-center text-slate-500">暂无资源包</div>
-        <button
-          v-for="pack in packs"
-          v-else
-          :key="packId(pack)"
-          class="grid w-full grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
-          :class="packId(selected) === packId(pack) ? 'bg-sky-50' : ''"
-          type="button"
-          @click="selectPack(pack)"
-        >
-          <div class="min-w-0">
-            <div class="truncate text-lg font-black text-slate-950">{{ packTitle(pack) }}</div>
-            <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ pack.description || "-" }}</div>
-            <div class="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-              <span class="rounded-full bg-slate-100 px-2 py-1">ID：{{ pack.pack_id }}</span>
-              <span class="rounded-full bg-slate-100 px-2 py-1">Version：{{ pack.version || 0 }}</span>
-            </div>
+        <div v-else>
+          <div class="hidden grid-cols-[minmax(0,1fr)_84px_96px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+            <span>资源包</span>
+            <span>版本</span>
+            <span class="text-right">状态</span>
           </div>
-          <span class="h-fit rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-            {{ pack.status || "Active" }}
-          </span>
-        </button>
+          <button
+            v-for="pack in packs"
+            :key="packId(pack)"
+            class="block w-full border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
+            :class="packId(selected) === packId(pack) ? 'bg-sky-50/70' : ''"
+            type="button"
+            @click="selectPack(pack)"
+          >
+            <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_84px_96px] lg:items-center lg:gap-4">
+              <div class="min-w-0">
+                <div class="truncate text-base font-black text-slate-950">{{ packTitle(pack) }}</div>
+                <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pack.description || "-" }}</div>
+                <div class="mt-1 truncate font-mono text-xs text-slate-500">ID: {{ pack.pack_id }}</div>
+              </div>
+              <div class="text-sm font-bold text-slate-700">
+                <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">Version</span>{{ pack.version || 0 }}
+              </div>
+              <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-end">
+                {{ pack.status || "Active" }}
+              </span>
+            </div>
+          </button>
+        </div>
 
         <div class="flex items-center justify-end gap-3 border-t border-slate-200 p-5">
           <span class="mr-auto text-sm font-bold text-slate-500">第 {{ currentPage }} 页</span>
@@ -298,8 +306,8 @@ onMounted(load)
         </div>
       </section>
 
-      <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="mb-5 flex items-start justify-between gap-4">
+      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
             <h2 class="text-xl font-black">{{ mode === "create" ? "新增资源包" : "资源包详情" }}</h2>
             <p class="mt-1 text-sm text-slate-500">不能修改的系统字段在下方完整字段里只读展示。</p>
@@ -320,65 +328,82 @@ onMounted(load)
           </button>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="text-sm font-bold">
-            Pack ID
-            <input v-model="form.pack_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'" placeholder="留空则由后台生成" />
-          </label>
-          <label class="text-sm font-bold">
-            标题
-            <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="资源包标题" />
-          </label>
-          <label class="md:col-span-2 text-sm font-bold">
-            描述
-            <textarea v-model="form.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="资源包描述" />
-          </label>
-          <label class="text-sm font-bold">
-            Respath
-            <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="/res-packages/..." />
-          </label>
-          <label class="text-sm font-bold">
-            状态
-            <input v-model="form.status" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :disabled="mode === 'create'" placeholder="Active" />
-          </label>
-          <label class="text-sm font-bold">
-            封面 Object Key
-            <input v-model="form.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="resource-packs/.../thumbnail.jpg" />
-          </label>
-          <label class="text-sm font-bold">
-            封面 File Hash
-            <input v-model="form.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="SHA256 Hash" />
-          </label>
-          <label class="text-sm font-bold">
-            Icon
-            <input v-model="form.icon" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="FileBarChart" />
-          </label>
-          <label class="text-sm font-bold">
-            Category
-            <input v-model="form.category" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="public / member / ..." />
-          </label>
-          <label class="text-sm font-bold">
-            Version
-            <input v-model.number="form.version" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
-          </label>
-        </div>
-
-        <button class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePack">
-          <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-          <Save v-else class="h-4 w-4" />
-          {{ mode === "create" ? "创建资源包" : "保存资源包" }}
-        </button>
-
-        <div v-if="selected" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div class="mb-3 flex items-center gap-2 text-sm font-black">
-            <FileBox class="h-4 w-4 text-blue-700" />
-            完整字段
+        <div class="space-y-5 p-5">
+          <div>
+            <div class="mb-3 text-sm font-black text-slate-950">基础信息</div>
+            <div class="grid gap-4 md:grid-cols-2">
+              <label class="text-sm font-bold">
+                标题
+                <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="资源包标题" />
+              </label>
+              <label class="text-sm font-bold">
+                Category
+                <input v-model="form.category" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="public / member / ..." />
+              </label>
+              <label class="text-sm font-bold">
+                Icon
+                <input v-model="form.icon" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="FileBarChart" />
+              </label>
+              <label class="md:col-span-2 text-sm font-bold">
+                描述
+                <textarea v-model="form.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="资源包描述" />
+              </label>
+            </div>
           </div>
-          <div class="grid gap-3 md:grid-cols-2">
-            <div v-for="[key, value] in selectedEntries" :key="key" class="rounded-xl bg-white p-3">
-              <div class="text-[11px] font-black uppercase text-slate-400">{{ humanizeKey(key) }}</div>
-              <div v-if="typeof value === 'string' && key.endsWith('_at')" class="mt-1 break-words text-sm font-semibold">{{ formatDate(value) }}</div>
-              <div v-else class="mt-1 break-words text-sm font-semibold">{{ value ?? "-" }}</div>
+
+          <div class="border-t border-slate-100 pt-5">
+            <div class="mb-3 text-sm font-black text-slate-950">路径与封面</div>
+            <div class="grid gap-4 md:grid-cols-2">
+              <label class="text-sm font-bold">
+                Respath
+                <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="/res-packages/..." />
+              </label>
+              <label class="text-sm font-bold">
+                封面 Object Key
+                <input v-model="form.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="resource-packs/.../thumbnail.jpg" />
+              </label>
+              <label class="md:col-span-2 text-sm font-bold">
+                封面 File Hash
+                <input v-model="form.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="SHA256 Hash" />
+              </label>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-100 pt-5">
+            <div class="mb-3 text-sm font-black text-slate-950">系统信息</div>
+            <div class="grid gap-4 md:grid-cols-3">
+              <label class="text-sm font-bold">
+                Pack ID
+                <input v-model="form.pack_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'" placeholder="留空则由后台生成" />
+              </label>
+              <label class="text-sm font-bold">
+                状态
+                <input v-model="form.status" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :disabled="mode === 'create'" placeholder="Active" />
+              </label>
+              <label class="text-sm font-bold">
+                Version
+                <input v-model.number="form.version" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
+              </label>
+            </div>
+          </div>
+
+          <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePack">
+            <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+            <Save v-else class="h-4 w-4" />
+            {{ mode === "create" ? "创建资源包" : "保存资源包" }}
+          </button>
+
+          <div v-if="selected" class="rounded-2xl border border-slate-200 bg-slate-50">
+            <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-black">
+              <FileBox class="h-4 w-4 text-blue-700" />
+              完整字段
+            </div>
+            <div class="divide-y divide-slate-200 px-4">
+              <div v-for="[key, value] in selectedEntries" :key="key" class="grid gap-2 py-2.5 text-sm md:grid-cols-[170px_1fr]">
+                <div class="text-[11px] font-black uppercase text-slate-400">{{ humanizeKey(key) }}</div>
+                <div v-if="typeof value === 'string' && key.endsWith('_at')" class="break-words font-semibold text-slate-700">{{ formatDate(value) }}</div>
+                <div v-else class="break-words font-semibold text-slate-700">{{ value ?? "-" }}</div>
+              </div>
             </div>
           </div>
         </div>
