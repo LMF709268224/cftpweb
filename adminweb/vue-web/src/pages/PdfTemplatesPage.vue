@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { Edit, Loader2, Plus, RefreshCw } from "lucide-vue-next"
-import { onMounted, ref } from "vue"
+import { Loader2, Plus, RefreshCw, Save } from "lucide-vue-next"
+import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { pickFirst } from "@/lib/status"
 
+type Mode = "detail" | "create"
+
 const templates = ref<JsonRecord[]>([])
+const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const saving = ref(false)
-const showEditor = ref(false)
-const editing = ref(false)
+const mode = ref<Mode>("detail")
 const form = ref({
   template_id: "",
   name: "",
@@ -18,25 +20,35 @@ const form = ref({
   html_template: "",
 })
 
-function templateUlid(template: JsonRecord) {
-  return String(pickFirst(template, ["template_ulid", "template_id", "id"]) || "")
+const selectedFields = computed(() => selected.value || {})
+
+function templateUlid(template: JsonRecord | null | undefined) {
+  return String(pickFirst(template || {}, ["template_ulid", "template_id", "id"]) || "")
+}
+
+function templateName(template: JsonRecord | null | undefined) {
+  return String(pickFirst(template || {}, ["name", "title"]) || "未命名模板")
+}
+
+function formFromTemplate(template: JsonRecord | null) {
+  return {
+    template_id: templateUlid(template),
+    name: String(template?.name || ""),
+    description: String(template?.description || ""),
+    html_template: String(template?.html_template || ""),
+  }
 }
 
 function openCreate() {
-  editing.value = false
+  mode.value = "create"
+  selected.value = null
   form.value = { template_id: "", name: "", description: "", html_template: "" }
-  showEditor.value = true
 }
 
-function openEdit(template: JsonRecord) {
-  editing.value = true
-  form.value = {
-    template_id: templateUlid(template),
-    name: String(template.name || ""),
-    description: String(template.description || ""),
-    html_template: String(template.html_template || ""),
-  }
-  showEditor.value = true
+function openTemplate(template: JsonRecord) {
+  selected.value = template
+  mode.value = "detail"
+  form.value = formFromTemplate(template)
 }
 
 async function load() {
@@ -45,6 +57,11 @@ async function load() {
     const data = await apiClient<JsonRecord>("/api/pdf-templates")
     const list = Array.isArray(data.templates) ? data.templates : []
     templates.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    if (!selected.value || !templates.value.some((item) => templateUlid(item) === templateUlid(selected.value))) {
+      selected.value = templates.value[0] || null
+      mode.value = selected.value ? "detail" : "create"
+      form.value = formFromTemplate(selected.value)
+    }
   } catch (err) {
     console.error(err)
     toast.error("PDF 模板加载失败")
@@ -61,15 +78,14 @@ async function save() {
   saving.value = true
   try {
     await apiClient("/api/pdf-templates", {
-      method: editing.value ? "PUT" : "POST",
-      body: JSON.stringify(editing.value ? form.value : {
+      method: mode.value === "detail" ? "PUT" : "POST",
+      body: JSON.stringify(mode.value === "detail" ? form.value : {
         name: form.value.name,
         description: form.value.description,
         html_template: form.value.html_template,
       }),
     })
     toast.success("模板已保存")
-    showEditor.value = false
     await load()
   } catch (err) {
     console.error(err)
@@ -84,10 +100,11 @@ onMounted(load)
 
 <template>
   <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
-    <header class="flex items-start justify-between gap-4">
+    <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">PDF 模板配置</h1>
         <p class="mt-2 text-slate-600">维护证书和证明文件的 HTML 模板。</p>
+        <p class="mt-2 text-xs font-semibold text-slate-500">已确认接口：list/create/update。当前 adminbff 未提供删除接口。</p>
       </div>
       <div class="flex gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
@@ -101,46 +118,96 @@ onMounted(load)
       </div>
     </header>
 
-    <div v-if="loading" class="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500">
-      <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-      正在加载...
-    </div>
-    <div v-else class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-      <article v-for="template in templates" :key="templateUlid(template)" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="mb-4 flex items-start justify-between gap-4">
+    <div class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
+      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex items-center justify-between border-b border-slate-200 p-5">
           <div>
-            <h2 class="text-xl font-black">{{ template.name || "未命名模板" }}</h2>
-            <p class="mt-2 line-clamp-2 text-sm text-slate-500">{{ template.description || "暂无描述" }}</p>
+            <h2 class="text-xl font-black">模板列表</h2>
+            <p class="mt-1 text-sm text-slate-500">来自 `/api/pdf-templates`。</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">v{{ template.version || 1 }}</span>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ templates.length }}</span>
         </div>
-        <div class="mb-4 text-xs text-slate-500">创建时间：{{ formatDate(String(template.created_at || "")) }}</div>
-        <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 font-bold hover:bg-slate-50" type="button" @click="openEdit(template)">
-          <Edit class="h-4 w-4" />
-          编辑模板
+        <div v-if="loading" class="p-12 text-center text-slate-500">
+          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+          正在加载...
+        </div>
+        <button
+          v-for="template in templates"
+          v-else
+          :key="templateUlid(template)"
+          class="w-full border-b border-slate-100 px-5 py-5 text-left last:border-b-0 hover:bg-sky-50"
+          :class="mode === 'detail' && templateUlid(selected) === templateUlid(template) ? 'bg-sky-50' : ''"
+          type="button"
+          @click="openTemplate(template)"
+        >
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <div class="text-lg font-black">{{ templateName(template) }}</div>
+              <div class="mt-2 line-clamp-2 text-sm text-slate-500">{{ template.description || "暂无描述" }}</div>
+            </div>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">v{{ template.version || 1 }}</span>
+          </div>
+          <div class="mt-3 break-all text-xs font-semibold text-slate-500">ID: {{ templateUlid(template) || "-" }}</div>
+          <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(template.created_at || "")) }}</div>
         </button>
-      </article>
-      <div v-if="!templates.length" class="col-span-full rounded-3xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">暂无模板</div>
-    </div>
+        <div v-if="!loading && !templates.length" class="p-12 text-center text-slate-500">暂无模板</div>
+      </section>
 
-    <div v-if="showEditor" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
-      <div class="flex max-h-[88vh] w-full max-w-5xl flex-col rounded-3xl bg-white p-6 shadow-2xl">
-        <div class="mb-5 flex items-center justify-between">
-          <h2 class="text-2xl font-black">{{ editing ? "编辑模板" : "新建模板" }}</h2>
-          <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="showEditor = false">关闭</button>
+      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-200 p-5">
+          <h2 class="text-2xl font-black">{{ mode === "create" ? "新建模板" : templateName(selected) }}</h2>
+          <p class="mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? "保存后会创建新的 PDF 模板。" : templateUlid(selected) }}</p>
         </div>
-        <div class="grid flex-1 gap-4 overflow-y-auto">
-          <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="模板名称" />
-          <input v-model="form.description" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="描述" />
-          <textarea v-model="form.html_template" class="min-h-[420px] rounded-xl border border-slate-200 p-4 font-mono text-sm" placeholder="HTML 模板内容" />
+        <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <form class="space-y-4" @submit.prevent="save">
+            <label v-if="mode === 'detail'" class="grid gap-2 text-sm font-bold">
+              Template ID
+              <input v-model="form.template_id" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" />
+            </label>
+            <label class="grid gap-2 text-sm font-bold">
+              模板名称
+              <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
+            </label>
+            <label class="grid gap-2 text-sm font-bold">
+              描述
+              <input v-model="form.description" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="500" />
+            </label>
+            <label class="grid gap-2 text-sm font-bold">
+              HTML 模板
+              <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6" />
+            </label>
+            <div class="flex justify-end">
+              <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="submit" :disabled="saving">
+                <Save class="h-4 w-4" />
+                {{ saving ? "保存中..." : "保存模板" }}
+              </button>
+            </div>
+          </form>
+
+          <div class="space-y-4">
+            <div v-if="mode === 'detail'" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <h3 class="font-black">完整字段</h3>
+              <p class="mt-1 text-sm text-slate-500">列表接口返回字段只读展示。</p>
+              <div class="mt-4 grid gap-3">
+                <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
+                  {{ key }}
+                  <textarea
+                    v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                    class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                    disabled
+                    :value="JSON.stringify(value, null, 2)"
+                  />
+                  <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
+                </label>
+              </div>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-white p-4">
+              <h3 class="font-black">HTML 预览</h3>
+              <iframe class="mt-4 h-[520px] w-full rounded-xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="form.html_template || '<p style=&quot;color:#64748b&quot;>暂无模板内容</p>'" />
+            </div>
+          </div>
         </div>
-        <div class="mt-5 flex justify-end gap-3">
-          <button class="rounded-xl border px-5 py-3 font-bold" type="button" @click="showEditor = false">取消</button>
-          <button class="rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="save">
-            {{ saving ? "保存中..." : "保存" }}
-          </button>
-        </div>
-      </div>
+      </section>
     </div>
   </section>
 </template>
