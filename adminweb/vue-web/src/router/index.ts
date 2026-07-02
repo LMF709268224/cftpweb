@@ -5,6 +5,7 @@ import ApplicationsPage from "@/pages/ApplicationsPage.vue"
 import BundlesPage from "@/pages/BundlesPage.vue"
 import CallbackPage from "@/pages/CallbackPage.vue"
 import CredentialsPage from "@/pages/CredentialsPage.vue"
+import DashboardPage from "@/pages/DashboardPage.vue"
 import InvoicesPage from "@/pages/InvoicesPage.vue"
 import LmsPage from "@/pages/LmsPage.vue"
 import LoginPage from "@/pages/LoginPage.vue"
@@ -30,7 +31,17 @@ export type ResourceRouteMeta = {
 }
 
 export const resourceRoutes: RouteRecordRaw[] = [
-  { path: "/dashboard", redirect: "/lms" },
+  {
+    path: "/dashboard",
+    name: "dashboard",
+    component: DashboardPage,
+    meta: {
+      title: "运营看板",
+      subtitle: "查看用户概览、角色分布、阶段状态和今日收款",
+      endpoint: "/api/dashboard/ops",
+      itemKeys: [],
+    } satisfies ResourceRouteMeta,
+  },
   {
     path: "/resource-packs",
     name: "resource-packs",
@@ -235,7 +246,7 @@ const router = createRouter({
     {
       path: "/",
       component: AdminLayout,
-      children: [{ path: "", redirect: "/lms" }, ...resourceRoutes],
+      children: [{ path: "", redirect: "/dashboard" }, ...resourceRoutes],
     },
   ],
 })
