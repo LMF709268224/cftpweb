@@ -404,9 +404,6 @@ onMounted(async () => {
       <div>
         <h1 class="text-4xl font-black tracking-tight">邮件中心</h1>
         <p class="mt-2 text-slate-600">发送邮件、维护模板并查看投递记录。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：send/list/get/status/cancel/stats/list templates/get/create/update/render/exists/builtin paths。delete 路由未实现，页面不提供删除按钮。
-        </p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadUsers">
@@ -424,9 +421,9 @@ onMounted(async () => {
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 class="text-xl font-black">邮件统计</h2>
-          <p class="mt-1 text-sm text-slate-500">来自 `/api/mails/stats`，按邮件状态汇总。</p>
+          <p class="mt-1 text-sm text-slate-500">按邮件状态汇总。</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">只读统计</span>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">统计</span>
       </div>
       <div class="mt-4 grid gap-3 md:grid-cols-4">
         <div v-for="card in statsCards" :key="card.key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
@@ -581,7 +578,7 @@ onMounted(async () => {
           <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-200 p-5">
               <h2 class="text-xl font-black">模板列表</h2>
-              <p class="mt-1 text-sm text-slate-500">删除接口未实现，因此这里只提供查看、创建和更新。</p>
+              <p class="mt-1 text-sm text-slate-500">可查看、创建和更新模板。</p>
             </div>
             <div v-if="templatesLoading" class="p-12 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />

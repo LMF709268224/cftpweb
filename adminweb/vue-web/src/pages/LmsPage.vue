@@ -1773,7 +1773,7 @@ onMounted(() => {
             </div>
             <div class="rounded-xl border border-slate-200 p-3">
               <h3 class="font-black">不可编辑字段</h3>
-              <p class="mt-1 text-xs text-slate-500">这些字段来自 get/list 接口，仅展示不修改。</p>
+              <p class="mt-1 text-xs text-slate-500">这些系统字段仅展示，不可直接修改。</p>
               <div class="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
                 <label v-for="entry in recordEntries(selectedCourse)" :key="`course-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
@@ -1798,7 +1798,7 @@ onMounted(() => {
         <div class="border-b border-slate-200 px-5 py-4">
           <div>
             <h2 class="text-xl font-black">课程资料</h2>
-            <p class="mt-1 text-sm text-slate-500">候选端看到的 Supplementary Materials 来自辅助资料接口；普通文件资料由 materials 接口维护。</p>
+            <p class="mt-1 text-sm text-slate-500">维护候选端看到的 Supplementary Materials；普通文件资料在下方单独维护。</p>
           </div>
         </div>
 
@@ -1982,7 +1982,7 @@ onMounted(() => {
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h3 class="font-black">普通文件资料</h3>
-              <p class="mt-1 text-sm text-slate-500">这里对应 /materials 接口，通常是对象存储文件类资料；和上面的候选端辅助资料不是同一份数据。</p>
+              <p class="mt-1 text-sm text-slate-500">维护课程文件类资料。</p>
             </div>
             <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">新增普通资料</button>
           </div>
@@ -2024,7 +2024,7 @@ onMounted(() => {
               <label class="block">
                 <span class="text-sm font-bold">文件 Hash</span>
                 <input v-model="materialForm.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="文件 SHA256 Hash" />
-                <span class="mt-1 block text-xs text-slate-500">用于校验文件内容，上传接口或资源系统通常会返回。</span>
+                <span class="mt-1 block text-xs text-slate-500">用于校验文件内容，通常由上传流程返回。</span>
               </label>
               <div class="grid gap-3 sm:grid-cols-2">
                 <label class="block">
@@ -2098,7 +2098,7 @@ onMounted(() => {
           <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div class="rounded-2xl border border-slate-200 p-4">
               <h3 class="font-black">章节完整字段</h3>
-              <p class="mt-1 text-xs text-slate-500">接口返回但不直接修改的字段置灰展示。</p>
+              <p class="mt-1 text-xs text-slate-500">系统字段置灰展示，不可直接修改。</p>
               <div v-if="!selectedChapterId" class="p-8 text-center text-slate-500">暂无选中的章节</div>
               <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
                 <label v-for="entry in recordEntries(selectedChapter)" :key="`chapter-${entry.key}`" class="block">
@@ -2163,7 +2163,7 @@ onMounted(() => {
               </div>
               <div class="rounded-2xl border border-slate-200 p-4">
                 <h3 class="font-black">课时完整字段</h3>
-                <p class="mt-1 text-xs text-slate-500">接口返回但不直接修改的字段置灰展示。</p>
+                <p class="mt-1 text-xs text-slate-500">系统字段置灰展示，不可直接修改。</p>
                 <div v-if="!selectedLesson" class="p-8 text-center text-slate-500">暂无选中的课时</div>
                 <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
                   <label v-for="entry in recordEntries(selectedLesson)" :key="`lesson-${entry.key}`" class="block">
@@ -2206,8 +2206,8 @@ onMounted(() => {
               <input v-model="lessonForm.asset_object_key" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="资产 Object Key 或外部链接" />
               <label class="mt-3 block">
                 <span class="text-sm font-bold">资产 File Hash</span>
-                <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" title="文件内容的 SHA256 Hash，一般由上传接口或资源管理返回；文本/外链课时通常可以留空。">?</span>
-                <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="上传接口返回的文件 Hash，可为空" />
+                <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" title="文件内容的 SHA256 Hash，通常由上传流程返回；文本/外链课时通常可以留空。">?</span>
+                <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="文件 Hash，可为空" />
               </label>
               <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedChapterId || savingLesson" type="submit">
                 {{ savingLesson ? "保存中..." : "保存课时" }}

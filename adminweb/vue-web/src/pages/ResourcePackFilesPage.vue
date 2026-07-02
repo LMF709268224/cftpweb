@@ -418,7 +418,7 @@ onMounted(load)
         <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
             <h2 class="text-xl font-black">{{ mode === "create" ? "新增资源文件" : "资源文件详情" }}</h2>
-            <p class="mt-1 text-sm text-slate-500">资源文件归属在创建时选择；更新接口不支持改所属资源包。</p>
+            <p class="mt-1 text-sm text-slate-500">资源文件归属在创建时选择，创建后不可修改所属资源包。</p>
             <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
               <Loader2 class="h-3.5 w-3.5 animate-spin" />
               正在加载 get 详情...

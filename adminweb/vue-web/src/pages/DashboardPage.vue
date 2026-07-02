@@ -93,7 +93,7 @@ const copy = computed(() => {
         searchPlaceholder: "Search users by name or email...",
       },
       userManagement: "User Management",
-      userManagementHint: "Recent users returned directly by the current Casdoor and gmid APIs.",
+      userManagementHint: "Search and filter users to review account status and roles.",
       table: {
         user: "User",
         email: "Email",
@@ -117,12 +117,6 @@ const copy = computed(() => {
       candidatesTotal: "Candidates",
       todayRevenue: "Today's Revenue",
       paidOrders: (count: number) => `Paid orders: ${count}`,
-      dataRoute: {
-        userStats: "User stats: from the Casdoor user list.",
-        candidates: "Candidates: counted from Casdoor users after mapping to platform ULIDs through gmid.",
-        stages: "Stage distribution: from gprog pipeline instances, grouped by current stage and status.",
-        revenue: "Today's revenue: from gmall orders, only counting orders created today with payment status PAID.",
-      },
       roles: {
         student: "student",
         admin: "admin",
@@ -157,7 +151,7 @@ const copy = computed(() => {
       searchPlaceholder: "搜索用户姓名或邮箱...",
     },
     userManagement: "用户管理",
-    userManagementHint: "来自 Casdoor 与 gmid 的用户摘要；这里先展示接口已能直接获取到的最近用户。",
+    userManagementHint: "搜索和筛选用户，查看账号状态与角色。",
     table: {
       user: "用户",
       email: "邮箱",
@@ -181,12 +175,6 @@ const copy = computed(() => {
     candidatesTotal: "考生总数",
     todayRevenue: "今日收款金额",
     paidOrders: (count: number) => `已支付订单 ${count} 笔`,
-    dataRoute: {
-      userStats: "用户统计：来自 Casdoor 用户列表。",
-      candidates: "考生总数：来自 Casdoor 用户列表，并通过 gmid 映射到平台 ULID 后统计。",
-      stages: "阶段分布：来自 gprog 管线实例列表，按当前阶段和状态聚合。",
-      revenue: "今日收款：来自 gmall 订单列表，只统计今天创建且支付状态为 PAID 的订单。",
-    },
     roles: {
       student: "学生",
       admin: "管理员",
@@ -470,12 +458,6 @@ onMounted(loadDashboard)
             <p class="mt-4 text-2xl font-black">{{ revenueText }}</p>
             <p class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
           </div>
-        </div>
-        <div class="mt-6 rounded-2xl border border-slate-100 bg-slate-50 p-5 text-sm leading-7 text-slate-600">
-          <p>{{ copy.dataRoute.userStats }}</p>
-          <p>{{ copy.dataRoute.candidates }}</p>
-          <p>{{ copy.dataRoute.stages }}</p>
-          <p>{{ copy.dataRoute.revenue }}</p>
         </div>
       </article>
     </section>

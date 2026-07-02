@@ -213,10 +213,7 @@ onMounted(() => loadExams(1))
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">考试管理</h1>
-        <p class="mt-2 text-slate-600">查看 gexam 考试实例、预约信息、成绩和状态流转；可触发结果同步。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：list/get detail/get result/get transitions/sync result。没有接入删除或清空类操作。
-        </p>
+        <p class="mt-2 text-slate-600">查看考试实例、预约信息、成绩和状态流转；可触发结果同步。</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button v-if="selectedSummary" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="clearSelection">
@@ -439,7 +436,7 @@ onMounted(() => loadExams(1))
           <article class="rounded-2xl border border-slate-200">
             <div class="border-b border-slate-200 px-4 py-3">
               <h4 class="text-lg font-black">状态流转</h4>
-              <p class="mt-1 text-sm text-slate-500">来自 gexam 状态变更记录。</p>
+              <p class="mt-1 text-sm text-slate-500">查看考试状态的历史变化。</p>
             </div>
             <div v-if="!transitions.length" class="px-4 py-8 text-center text-slate-500">暂无状态流转记录</div>
             <div v-else class="divide-y divide-slate-100">
@@ -458,7 +455,7 @@ onMounted(() => loadExams(1))
           </article>
 
           <details class="rounded-2xl border border-slate-200 p-4">
-            <summary class="cursor-pointer text-sm font-black text-slate-700">完整字段（排查用）</summary>
+            <summary class="cursor-pointer text-sm font-black text-slate-700">完整字段</summary>
             <pre class="mt-4 max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify({ detail: detail || selectedSummary, result, transitions }, null, 2) }}</pre>
           </details>
         </div>

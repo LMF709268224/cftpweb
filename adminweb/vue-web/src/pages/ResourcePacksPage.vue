@@ -250,7 +250,7 @@ onMounted(load)
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight text-slate-950">资源包配置</h1>
-        <p class="mt-2 text-slate-600">维护 Resource Packs。已接入 list / get / create / update / delete 接口。</p>
+        <p class="mt-2 text-slate-600">维护资源包信息、封面和状态。</p>
       </div>
       <div class="flex gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" :disabled="loading" @click="load">
@@ -324,10 +324,10 @@ onMounted(load)
         <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
             <h2 class="text-xl font-black">{{ mode === "create" ? "新增资源包" : "资源包详情" }}</h2>
-            <p class="mt-1 text-sm text-slate-500">不能修改的系统字段在下方完整字段里只读展示。</p>
+            <p class="mt-1 text-sm text-slate-500">系统字段仅用于查看，不可直接修改。</p>
             <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
               <Loader2 class="h-3.5 w-3.5 animate-spin" />
-              正在加载 get 详情...
+              正在加载详情...
             </p>
           </div>
           <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closePackDetail">

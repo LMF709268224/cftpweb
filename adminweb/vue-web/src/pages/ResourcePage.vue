@@ -81,7 +81,7 @@ async function load() {
     console.error(err)
     items.value = []
     selected.value = null
-    toast.error("加载数据失败，请确认接口是否已经接好。")
+    toast.error("加载数据失败，请稍后重试。")
   } finally {
     loading.value = false
   }
@@ -269,7 +269,7 @@ onMounted(load)
       <div class="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-black">{{ selectedTitle }}</h2>
-          <p class="mt-1 text-sm text-slate-500">详情区域保留完整字段，方便排查 ULID、状态和微服务返回结构。</p>
+          <p class="mt-1 text-sm text-slate-500">详情区域展示资源配置字段。</p>
         </div>
       </div>
 

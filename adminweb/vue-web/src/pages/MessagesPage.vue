@@ -318,9 +318,6 @@ onMounted(async () => {
       <div>
         <h1 class="text-4xl font-black tracking-tight">站内信</h1>
         <p class="mt-2 text-slate-600">发送站内通知、维护模板并查看发送记录。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：send/list sent/list templates/get template/create template/update template。delete 路由未实现，页面不提供删除按钮。
-        </p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadUsers">
@@ -485,7 +482,7 @@ onMounted(async () => {
           <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-200 p-5">
               <h2 class="text-xl font-black">模板列表</h2>
-              <p class="mt-1 text-sm text-slate-500">删除接口未实现，因此这里只提供查看、创建和更新。</p>
+              <p class="mt-1 text-sm text-slate-500">可查看、创建和更新模板。</p>
             </div>
             <div v-if="templatesLoading" class="p-12 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />

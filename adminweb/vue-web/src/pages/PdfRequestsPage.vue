@@ -115,7 +115,7 @@ onMounted(() => load(1))
     <header class="flex items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">证书生成流水</h1>
-        <p class="mt-2 text-slate-600">查看证书 PDF 生成任务及失败原因；当前后台只暴露列表查询，所以详情为只读展示。</p>
+        <p class="mt-2 text-slate-600">查看证书 PDF 生成任务及失败原因。</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load()">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
@@ -127,7 +127,7 @@ onMounted(() => load(1))
       <div class="flex items-center justify-between border-b border-slate-200 p-5">
         <div>
           <h2 class="text-xl font-black">流水列表</h2>
-          <p class="mt-1 text-sm text-slate-500">每页 10 条；点击查看详情后在弹框中查看完整字段。</p>
+          <p class="mt-1 text-sm text-slate-500">每页 10 条；点击查看详情。</p>
         </div>
         <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
       </div>

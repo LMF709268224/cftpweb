@@ -245,7 +245,7 @@ onMounted(() => load(1))
     <header class="flex items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">Webhook 审计</h1>
-        <p class="mt-2 text-slate-600">查看外部系统发来的回调记录。这里主要用于排查考试预约、考试结果、支付等异步通知是否处理成功。</p>
+        <p class="mt-2 text-slate-600">查看外部系统发来的回调记录，确认考试预约、考试结果、支付等异步通知是否处理成功。</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />

@@ -49,13 +49,13 @@ const sections = computed(() => [
   {
     key: "profile" as const,
     title: "个人资料",
-    description: "维护 Casdoor 同步过来的管理员资料。",
+    description: "维护管理员资料。",
     count: profile.value.display_name || profile.value.name ? 1 : 0,
   },
   {
     key: "password" as const,
     title: "修改密码",
-    description: "通过 Casdoor 修改当前管理员密码。",
+    description: "修改当前管理员密码。",
     count: 1,
   },
 ])
@@ -175,7 +175,7 @@ onMounted(() => {
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">账户设置</h1>
-        <p class="mt-2 text-slate-600">维护管理员个人资料和登录密码；字段来自 Casdoor 用户资料接口。</p>
+        <p class="mt-2 text-slate-600">维护管理员个人资料和登录密码。</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadProfile">
         <RefreshCw class="h-4 w-4" :class="profileLoading ? 'animate-spin' : ''" />
@@ -210,7 +210,7 @@ onMounted(() => {
           <div>
             <h2 class="text-xl font-black">{{ activeSection === "profile" ? "个人资料" : "修改密码" }}</h2>
             <p class="mt-1 text-sm text-slate-500">
-              {{ activeSection === "profile" ? "登录 ID 和邮箱只读；其他字段通过 /api/user/profile 保存。" : "密码通过 /api/user/password 修改，成功后会退出登录。" }}
+              {{ activeSection === "profile" ? "登录 ID 和邮箱只读；其他字段可保存修改。" : "密码修改成功后会退出登录。" }}
             </p>
           </div>
           <UserRound v-if="activeSection === 'profile'" class="h-5 w-5 text-blue-600" />

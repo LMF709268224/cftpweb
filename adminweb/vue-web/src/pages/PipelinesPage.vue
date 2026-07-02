@@ -98,7 +98,7 @@ const layerItems = computed(() => [
   { key: "certs" as const, title: "证书", desc: "完成后可签发的证书", count: certs.value.length },
   { key: "unlock_quals" as const, title: "解锁资格", desc: "进入管线前置资格", count: unlockQuals.value.length },
   { key: "certs_quals" as const, title: "结业资格", desc: "证书/结业资格要求", count: certQuals.value.length },
-  { key: "raw" as const, title: "完整结构 JSON", desc: "高级编辑和排查", count: 1 },
+  { key: "raw" as const, title: "完整结构 JSON", desc: "高级编辑", count: 1 },
 ])
 
 function asArray(value: unknown): JsonRecord[] {
@@ -218,7 +218,7 @@ function applyRawStructure() {
   const parsed = parseStructure()
   if (!parsed) return
   setStructure(parsed)
-  toast.success("已应用到分层视图，保存后才会提交微服务")
+  toast.success("已应用到分层视图，保存后才会生效")
 }
 
 function eventValue(event: Event) {
@@ -565,10 +565,7 @@ onMounted(load)
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">管线配置</h1>
-        <p class="mt-2 text-slate-600">按微服务接口能力维护认证管线、阶段、课程单元、证书和资格要求。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：list/get/create draft/duplicate/update metadata/update structure/publish/deprecate/delete。
-        </p>
+        <p class="mt-2 text-slate-600">维护认证管线、阶段、课程单元、证书和资格要求。</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button v-if="!creating" class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newPipeline">
@@ -586,7 +583,7 @@ onMounted(load)
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
         <div>
           <h2 class="text-xl font-black">管线列表</h2>
-          <p class="mt-1 text-sm text-slate-500">列表来自 `/api/pipelines`，进入详情后按层级维护完整配置。</p>
+          <p class="mt-1 text-sm text-slate-500">进入详情后按层级维护完整配置。</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
           <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 px-3 text-sm" placeholder="分类提示，例如 CFtP/CFtP" />
@@ -659,9 +656,7 @@ onMounted(load)
         <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 class="text-2xl font-black">基础信息</h2>
-            <p class="mt-1 text-sm text-slate-500">
-              顶层信息由 metadata/create 接口维护；阶段、课程单元、证书和资格要求由 structure 接口整体保存。
-            </p>
+            <p class="mt-1 text-sm text-slate-500">维护顶层信息、阶段、课程单元、证书和资格要求。</p>
           </div>
           <div v-if="!creating" class="flex flex-wrap gap-2">
             <button class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 font-bold" type="button" @click="clonePipeline">
@@ -843,7 +838,7 @@ onMounted(load)
                 <div class="flex items-center justify-between gap-3">
                   <div>
                     <h4 class="text-lg font-black">课程单元详情</h4>
-                    <p class="text-sm text-slate-500">右侧可调整所属阶段，保存后通过 structure 接口提交。</p>
+                    <p class="text-sm text-slate-500">右侧可调整所属阶段，保存后生效。</p>
                   </div>
                   <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeSelectedUnit">删除单元</button>
                 </div>
@@ -947,7 +942,7 @@ onMounted(load)
               <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                 <div>
                   <div class="font-black">{{ activeLayer === 'unlock_quals' ? '解锁资格列表' : '结业资格列表' }}</div>
-                  <div class="text-xs text-slate-500">资格项来自管线结构字段</div>
+                  <div class="text-xs text-slate-500">维护当前管线的资格要求</div>
                 </div>
                 <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="activeLayer === 'unlock_quals' ? addUnlockQual() : addCertQual()">新增</button>
               </div>
@@ -1007,7 +1002,7 @@ onMounted(load)
 
           <div v-else-if="activeLayer === 'raw'" class="space-y-5 p-5">
             <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              高级编辑区用于排查或补充暂未单独建表单的字段。点击“应用到分层视图”只更新页面状态，点击“保存结构”才会提交微服务。
+              高级编辑区用于补充暂未单独建表单的字段。点击“应用到分层视图”只更新页面状态，点击“保存结构”才会生效。
             </div>
             <textarea v-model="form.structure_json" :disabled="isStructureLocked()" class="min-h-[560px] w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6 disabled:bg-slate-100 disabled:text-slate-500" />
             <div class="flex flex-wrap justify-end gap-3">

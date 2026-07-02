@@ -149,9 +149,6 @@ onMounted(loadDefinitions)
       <div>
         <h1 class="text-4xl font-black tracking-tight">考生权限管理</h1>
         <p class="mt-2 text-slate-600">检查和调整考生资格上传权限、资格状态。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：check/grant/revoke/mark-expired/revoke-credential。不存在 suspend 接口，已移除暂停按钮。
-        </p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadDefinitions">
         <RefreshCw class="h-4 w-4" :class="definitionsLoading ? 'animate-spin' : ''" />
@@ -257,7 +254,7 @@ onMounted(loadDefinitions)
 
           <aside class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="text-xl font-black">管理操作</h2>
-            <p class="mt-1 text-sm text-slate-500">只展示 adminbff 已暴露的权限接口。</p>
+            <p class="mt-1 text-sm text-slate-500">请选择考生和资格定义后执行操作。</p>
             <label class="mt-4 grid gap-2 text-sm font-bold">
               操作原因
               <textarea v-model="reason" class="min-h-24 rounded-xl border border-slate-200 px-4 py-3" maxlength="500" placeholder="必填，便于审计追踪" />

@@ -171,9 +171,6 @@ onMounted(load)
       <div>
         <h1 class="text-4xl font-black tracking-tight">资格定义</h1>
         <p class="mt-2 text-slate-600">维护认证资格、免考资格和最终证书所需材料。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：list/create/get detail。当前 gcreds 未提供 update/delete，所以已有定义只读展示。
-        </p>
       </div>
       <div class="flex gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
@@ -191,7 +188,7 @@ onMounted(load)
       <div class="flex items-center justify-between border-b border-slate-200 p-5">
         <div>
           <h2 class="text-xl font-black">资格列表</h2>
-          <p class="mt-1 text-sm text-slate-500">来自 `/api/credentials/definitions`，点击行或按钮查看详情。</p>
+          <p class="mt-1 text-sm text-slate-500">点击行或按钮查看详情。</p>
         </div>
         <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ definitions.length }}</span>
       </div>
@@ -236,12 +233,12 @@ onMounted(load)
             <div class="min-w-0">
               <h2 class="truncate text-2xl font-black">{{ mode === "create" ? "新建资格定义" : selected ? definitionName(selected) : "资格详情" }}</h2>
               <p class="mt-1 break-all text-sm text-slate-500">
-                {{ mode === "create" ? "保存后会调用 create 接口，列表刷新后可查看。" : definitionUlid(selected) || "请选择一个资格定义" }}
+                {{ mode === "create" ? "保存后将刷新列表。" : definitionUlid(selected) || "请选择一个资格定义" }}
               </p>
             </div>
             <div class="flex items-center gap-3">
               <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
-              <span v-if="mode === 'detail'" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">只读 / Readonly</span>
+              <span v-if="mode === 'detail'" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">仅查看</span>
               <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closeDetail">
                 <X class="h-5 w-5" />
               </button>
@@ -262,7 +259,7 @@ onMounted(load)
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     资源路径
-                    <input v-model="respath" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="240" placeholder="可选，取决于微服务是否使用" />
+                    <input v-model="respath" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="240" placeholder="可选" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     获取方式说明

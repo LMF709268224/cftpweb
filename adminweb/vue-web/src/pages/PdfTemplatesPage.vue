@@ -104,7 +104,6 @@ onMounted(load)
       <div>
         <h1 class="text-4xl font-black tracking-tight">PDF 模板配置</h1>
         <p class="mt-2 text-slate-600">维护证书和证明文件的 HTML 模板。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">已确认接口：list/create/update。当前 adminbff 未提供删除接口。</p>
       </div>
       <div class="flex gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
@@ -123,7 +122,7 @@ onMounted(load)
         <div class="flex items-center justify-between border-b border-slate-200 p-5">
           <div>
             <h2 class="text-xl font-black">模板列表</h2>
-            <p class="mt-1 text-sm text-slate-500">来自 `/api/pdf-templates`。</p>
+            <p class="mt-1 text-sm text-slate-500">选择模板后查看或编辑。</p>
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ templates.length }}</span>
         </div>
@@ -187,7 +186,7 @@ onMounted(load)
           <div class="space-y-4">
             <div v-if="mode === 'detail'" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
               <h3 class="font-black">完整字段</h3>
-              <p class="mt-1 text-sm text-slate-500">列表接口返回字段只读展示。</p>
+              <p class="mt-1 text-sm text-slate-500">系统字段仅用于查看。</p>
               <div class="mt-4 grid gap-3">
                 <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
                   {{ key }}

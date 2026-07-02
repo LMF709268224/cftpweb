@@ -346,10 +346,7 @@ onMounted(load)
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 class="text-4xl font-black tracking-tight">商品配置</h1>
-        <p class="mt-2 text-slate-600">配置 gmall Bundle：认证商品、管线引用、价格 JSON、封面和发布状态。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：list/get/create/update meta/update pricing/publish/deprecate/delete/schema/sync display pricing/upload-url。
-        </p>
+        <p class="mt-2 text-slate-600">配置认证商品、管线引用、价格、封面和发布状态。</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newBundle">
@@ -372,7 +369,7 @@ onMounted(load)
           <div class="flex items-center gap-3">
             <div>
               <h2 class="text-xl font-black">商品列表</h2>
-              <p class="mt-1 text-sm text-slate-500">来自 `/api/mall/bundles`，点击行或按钮查看详情。</p>
+              <p class="mt-1 text-sm text-slate-500">点击行或按钮查看详情。</p>
             </div>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ bundles.length }}</span>
           </div>
@@ -596,7 +593,7 @@ onMounted(load)
 
               <div v-else-if="activeTab === 'pricing'" class="space-y-5">
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  items_json 和 pricing_json 会直接提交到 gmall；保存前会先校验 JSON 格式。
+                  保存前会先校验 JSON 格式。
                 </div>
                 <div class="grid gap-4 xl:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
@@ -628,7 +625,7 @@ onMounted(load)
               <div v-else-if="activeTab === 'actions'" class="space-y-5">
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                   <h3 class="font-black">状态操作</h3>
-                  <p class="mt-1 text-sm text-slate-500">使用 gmall 发布/下架/删除接口。</p>
+                  <p class="mt-1 text-sm text-slate-500">可发布、下架或删除当前商品。</p>
                   <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="publish">
                       <Loader2 v-if="publishing" class="h-4 w-4 animate-spin" />
@@ -649,7 +646,7 @@ onMounted(load)
 
               <div v-else-if="activeTab === 'raw'" class="space-y-4">
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  完整字段只读展示，避免手工修改不可编辑字段。
+                  系统字段不可直接修改。
                 </div>
                 <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
               </div>
@@ -663,7 +660,7 @@ onMounted(load)
     <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
       <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
         <h2 class="text-2xl font-black">确认删除商品</h2>
-        <p class="mt-3 text-sm text-slate-600">删除会调用 gmall delete 接口。已发布商品如果微服务不允许删除，会返回错误。</p>
+        <p class="mt-3 text-sm text-slate-600">删除后将无法恢复；已发布商品可能无法直接删除。</p>
         <div class="mt-5 rounded-2xl bg-slate-50 p-4">
           <div class="font-black">{{ bundleName(selected) }}</div>
           <div class="mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>

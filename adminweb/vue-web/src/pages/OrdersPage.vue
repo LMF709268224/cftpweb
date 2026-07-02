@@ -253,9 +253,6 @@ onMounted(() => load(1))
       <div>
         <h1 class="text-4xl font-black tracking-tight">订单管理</h1>
         <p class="mt-2 text-slate-600">查看认证、管线、阶段、重考和资格申请订单。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：list orders、bundle order detail、bundle order purge。金额只展示列表接口返回的 amount_minor，不做前端兜底推算。
-        </p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
@@ -287,7 +284,7 @@ onMounted(() => load(1))
       <div class="flex items-center justify-between border-b border-slate-200 p-5">
         <div>
           <h2 class="text-xl font-black">订单列表</h2>
-          <p class="mt-1 text-sm text-slate-500">来自 `/api/mall/orders`，点击查看详情后在弹框中处理。</p>
+          <p class="mt-1 text-sm text-slate-500">点击订单查看详情并处理。</p>
         </div>
         <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
       </div>
@@ -463,7 +460,7 @@ onMounted(() => load(1))
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                   <div class="text-base font-black text-slate-950">支持操作</div>
                   <p class="mt-2 text-sm text-slate-600">
-                    当前 adminbff 只提供认证套餐订单的测试数据清理接口。其他订单类型只读展示。
+                    认证套餐订单可清理关联测试数据；其他订单类型仅查看。
                   </p>
                 </div>
                 <button
@@ -479,7 +476,7 @@ onMounted(() => load(1))
 
               <div v-else-if="activeTab === 'raw'" class="space-y-4">
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  完整字段只读展示，包含列表接口原始字段。
+                  系统字段仅用于查看。
                 </div>
                 <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
               </div>
@@ -492,7 +489,7 @@ onMounted(() => load(1))
     <div v-if="showPurgeConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
       <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
         <h2 class="text-2xl font-black">确认清理认证测试数据</h2>
-        <p class="mt-3 text-sm text-slate-600">该操作会调用 `/api/mall/bundle-orders/purge`，用于清理认证套餐订单关联的测试数据。</p>
+        <p class="mt-3 text-sm text-slate-600">该操作会清理认证套餐订单关联的测试数据。</p>
         <div class="mt-5 rounded-2xl bg-slate-50 p-4">
           <div class="font-black">{{ productName(selected) }}</div>
           <div class="mt-1 break-all text-xs text-slate-500">{{ bizRef(selected) }}</div>

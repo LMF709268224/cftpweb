@@ -188,9 +188,6 @@ onMounted(() => load(1))
       <div>
         <h1 class="text-4xl font-black tracking-tight">审核中心</h1>
         <p class="mt-2 text-slate-600">审核考生提交的资格申请材料。</p>
-        <p class="mt-2 text-xs font-semibold text-slate-500">
-          已确认接口：list/get detail/audit。文件预览与下载使用申请详情返回的 view_url。
-        </p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
@@ -203,7 +200,7 @@ onMounted(() => load(1))
           <div class="flex items-center gap-3">
             <div>
               <h2 class="text-xl font-black">申请列表</h2>
-              <p class="mt-1 text-sm text-slate-500">来自 `/api/applications`。</p>
+              <p class="mt-1 text-sm text-slate-500">选择申请后查看材料和审核详情。</p>
             </div>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
           </div>
@@ -328,7 +325,7 @@ onMounted(() => load(1))
                   正在加载申请材料...
                 </div>
                 <div v-else-if="!selectedFiles.length" class="rounded-xl border border-dashed border-slate-200 bg-white p-5 text-sm text-slate-500">
-                  暂无文件。若考生已上传材料，请检查微服务申请详情接口是否返回 files / view_url。
+                  暂无文件。若考生已上传材料，请稍后刷新后再查看。
                 </div>
                 <div v-for="file in selectedFiles" v-else :key="String(file.file_hash || file.file_name || file.name)" class="rounded-2xl border border-slate-200 bg-white p-4">
                   <div class="flex items-start justify-between gap-4">
@@ -372,7 +369,7 @@ onMounted(() => load(1))
 
               <div v-else-if="activeTab === 'audit'" class="space-y-4">
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  审核接口支持：通过、打回重提、最终拒绝。打回重提或最终拒绝时必须填写备注。
+                  支持通过、打回重提、最终拒绝。打回重提或最终拒绝时必须填写备注。
                 </div>
                 <textarea
                   v-model="auditRemark"
@@ -397,7 +394,7 @@ onMounted(() => load(1))
 
               <div v-else-if="activeTab === 'raw'" class="space-y-4">
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  完整字段只读展示，方便核对微服务返回。
+                  系统字段仅用于查看。
                 </div>
                 <pre class="max-h-[560px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
               </div>
