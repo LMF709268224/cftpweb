@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { type JsonRecord } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 type PermissionAction = "grant" | "revoke-upload" | "mark-expired" | "revoke-credential"
@@ -16,52 +17,54 @@ const checkResult = ref<JsonRecord | null>(null)
 const definitionsLoading = ref(false)
 const loading = ref(false)
 const activeAction = ref<PermissionAction | null>(null)
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.permissions)
 
 const credDefUlid = computed(() => definitionUlid(selectedDefinition.value))
 const canCheck = computed(() => Boolean(candidateUlid.value.trim() && credDefUlid.value))
 const resultFields = computed(() => checkResult.value || {})
 
-const actions = [
+const actions = computed(() => [
   {
     key: "grant" as const,
-    title: "授予上传权限",
-    desc: "允许该考生提交这个资格定义的申请材料。",
+    title: copy.value.actions.grant.title,
+    desc: copy.value.actions.grant.desc,
     endpoint: "/api/permissions/grant",
     icon: ShieldCheck,
     tone: "bg-emerald-600 text-white",
   },
   {
     key: "revoke-upload" as const,
-    title: "撤销上传权限",
-    desc: "关闭该考生提交这个资格材料的权限。",
+    title: copy.value.actions.revokeUpload.title,
+    desc: copy.value.actions.revokeUpload.desc,
     endpoint: "/api/permissions/revoke",
     icon: ShieldOff,
     tone: "bg-amber-500 text-white",
   },
   {
     key: "mark-expired" as const,
-    title: "标记资格过期",
-    desc: "将该考生已持有的该资格标记为过期。",
+    title: copy.value.actions.markExpired.title,
+    desc: copy.value.actions.markExpired.desc,
     endpoint: "/api/permissions/mark-expired",
     icon: FileWarning,
     tone: "bg-orange-600 text-white",
   },
   {
     key: "revoke-credential" as const,
-    title: "撤销资格",
-    desc: "将该考生已持有的该资格撤销作废。",
+    title: copy.value.actions.revokeCredential.title,
+    desc: copy.value.actions.revokeCredential.desc,
     endpoint: "/api/permissions/revoke-credential",
     icon: UserX,
     tone: "bg-red-600 text-white",
   },
-]
+])
 
 function definitionUlid(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
 }
 
 function definitionName(definition: JsonRecord | null | undefined) {
-  return String(pickFirst(definition || {}, ["name", "name_hint", "title"]) || definitionUlid(definition) || "未命名资格")
+  return String(pickFirst(definition || {}, ["name", "name_hint", "title"]) || definitionUlid(definition) || copy.value.unnamedDefinition)
 }
 
 function selectDefinition(definition: JsonRecord) {
@@ -84,7 +87,7 @@ async function loadDefinitions() {
     }
   } catch (err) {
     console.error(err)
-    toast.error("资格定义加载失败")
+    toast.error(copy.value.toasts.definitionsLoadFailed)
   } finally {
     definitionsLoading.value = false
   }
@@ -92,7 +95,7 @@ async function loadDefinitions() {
 
 async function check() {
   if (!canCheck.value) {
-    toast.error("请填写 Candidate ULID 并选择资格定义")
+    toast.error(copy.value.toasts.checkRequired)
     return
   }
   loading.value = true
@@ -102,7 +105,7 @@ async function check() {
     )
   } catch (err) {
     console.error(err)
-    toast.error("权限检查失败")
+    toast.error(copy.value.toasts.checkFailed)
   } finally {
     loading.value = false
   }
@@ -110,11 +113,11 @@ async function check() {
 
 async function runAction(action: (typeof actions)[number]) {
   if (!canCheck.value) {
-    toast.error("请先填写 Candidate ULID 并选择资格定义")
+    toast.error(copy.value.toasts.actionRequired)
     return
   }
   if (!reason.value.trim()) {
-    toast.error("请填写操作原因")
+    toast.error(copy.value.toasts.reasonRequired)
     return
   }
   activeAction.value = action.key
@@ -128,12 +131,12 @@ async function runAction(action: (typeof actions)[number]) {
         reason: reason.value.trim(),
       }),
     })
-    toast.success("操作成功")
+    toast.success(copy.value.toasts.actionSuccess)
     reason.value = ""
     await check()
   } catch (err) {
     console.error(err)
-    toast.error("操作失败")
+    toast.error(copy.value.toasts.actionFailed)
   } finally {
     activeAction.value = null
     loading.value = false
@@ -147,28 +150,28 @@ onMounted(loadDefinitions)
   <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">考生权限管理</h1>
-        <p class="mt-2 text-slate-600">检查和调整考生资格上传权限、资格状态。</p>
+        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadDefinitions">
         <RefreshCw class="h-4 w-4" :class="definitionsLoading ? 'animate-spin' : ''" />
-        刷新资格定义
+        {{ copy.refreshDefinitions }}
       </button>
     </header>
 
     <div class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
       <aside class="space-y-4">
         <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 class="text-xl font-black">查询目标</h2>
+          <h2 class="text-xl font-black">{{ copy.targetTitle }}</h2>
           <div class="mt-4 grid gap-4">
             <label class="grid gap-2 text-sm font-bold">
-              Candidate ULID
-              <input v-model="candidateUlid" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="64" placeholder="Candidate ULID" />
+              {{ copy.candidateUlid }}
+              <input v-model="candidateUlid" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="64" :placeholder="copy.candidatePlaceholder" />
             </label>
             <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="loading || !canCheck" @click="check">
               <Loader2 v-if="loading && !activeAction" class="h-4 w-4 animate-spin" />
               <Search v-else class="h-4 w-4" />
-              检查权限
+              {{ copy.checkPermission }}
             </button>
           </div>
         </section>
@@ -176,14 +179,14 @@ onMounted(loadDefinitions)
         <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div class="flex items-center justify-between border-b border-slate-200 p-5">
             <div>
-              <h2 class="text-xl font-black">资格定义</h2>
-              <p class="mt-1 text-sm text-slate-500">选择一个定义后再查询考生。</p>
+              <h2 class="text-xl font-black">{{ copy.definitionsTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.definitionsDescription }}</p>
             </div>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ definitions.length }}</span>
           </div>
           <div v-if="definitionsLoading" class="p-10 text-center text-slate-500">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            正在加载...
+            {{ copy.loading }}
           </div>
           <button
             v-for="definition in definitions"
@@ -198,7 +201,7 @@ onMounted(loadDefinitions)
             <div class="mt-1 text-sm text-slate-500">{{ definition.category || "-" }}</div>
             <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ definitionUlid(definition) || "-" }}</div>
           </button>
-          <div v-if="!definitionsLoading && !definitions.length" class="p-10 text-center text-slate-500">暂无资格定义</div>
+          <div v-if="!definitionsLoading && !definitions.length" class="p-10 text-center text-slate-500">{{ copy.emptyDefinitions }}</div>
         </section>
       </aside>
 
@@ -206,8 +209,8 @@ onMounted(loadDefinitions)
         <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 class="text-2xl font-black">当前对象</h2>
-              <p class="mt-1 text-sm text-slate-500">右侧所有操作都会作用于这个考生和资格定义。</p>
+              <h2 class="text-2xl font-black">{{ copy.currentTarget }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.currentTargetDescription }}</p>
             </div>
             <span v-if="checkResult" class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(resultStatus())">
               {{ resultStatus() || "UNKNOWN" }}
@@ -215,11 +218,11 @@ onMounted(loadDefinitions)
           </div>
           <div class="mt-5 grid gap-4 md:grid-cols-2">
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">Candidate</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.candidate }}</div>
               <div class="mt-2 break-all text-sm font-bold">{{ candidateUlid || "-" }}</div>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">Credential Definition</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.credentialDefinition }}</div>
               <div class="mt-2 break-all text-sm font-bold">{{ definitionName(selectedDefinition) }}</div>
               <div class="mt-1 break-all text-xs text-slate-500">{{ credDefUlid || "-" }}</div>
             </div>
@@ -228,8 +231,8 @@ onMounted(loadDefinitions)
 
         <section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 class="mb-4 text-xl font-black">检查结果</h2>
-            <div v-if="!checkResult" class="p-12 text-center text-slate-500">暂无结果。请先选择资格定义并检查考生。</div>
+            <h2 class="mb-4 text-xl font-black">{{ copy.resultTitle }}</h2>
+            <div v-if="!checkResult" class="p-12 text-center text-slate-500">{{ copy.emptyResult }}</div>
             <div v-else class="space-y-5">
               <div class="grid gap-4 md:grid-cols-2">
                 <label v-for="(value, key) in resultFields" :key="key" class="grid gap-2 text-sm font-bold">
@@ -253,11 +256,11 @@ onMounted(loadDefinitions)
           </div>
 
           <aside class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 class="text-xl font-black">管理操作</h2>
-            <p class="mt-1 text-sm text-slate-500">请选择考生和资格定义后执行操作。</p>
+            <h2 class="text-xl font-black">{{ copy.actionTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.actionDescription }}</p>
             <label class="mt-4 grid gap-2 text-sm font-bold">
-              操作原因
-              <textarea v-model="reason" class="min-h-24 rounded-xl border border-slate-200 px-4 py-3" maxlength="500" placeholder="必填，便于审计追踪" />
+              {{ copy.reason }}
+              <textarea v-model="reason" class="min-h-24 rounded-xl border border-slate-200 px-4 py-3" maxlength="500" :placeholder="copy.reasonPlaceholder" />
             </label>
             <div class="mt-4 grid gap-3">
               <button
