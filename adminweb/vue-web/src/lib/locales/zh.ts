@@ -1208,6 +1208,28 @@ export const zh = {
       deleteFailed: "资源文件删除失败",
     },
   },
+  resourceAdmin: {
+    selectRecord: "请选择一条记录",
+    loadFailed: "加载数据失败，请稍后重试。",
+    missingId: "无法找到资源的 ID 字段，无法保存",
+    saveSuccess: "保存成功",
+    saveFailed: (message: string) => `保存失败：${message}`,
+    refresh: "刷新",
+    listTitle: "列表",
+    listDescription: "每页 20 条，列表隐藏 ULID；点进详情后可查看完整字段。",
+    pageSummary: (page: number, count: number) => `第 ${page} 页 / ${count} 条`,
+    loading: "正在加载...",
+    empty: "暂无数据",
+    viewDetails: "查看详情",
+    prev: "上一页",
+    next: "下一页",
+    detailDescription: "详情区域展示资源配置字段。",
+    selectFromList: "请先在列表中选择一条记录。",
+    rawJson: "原始 JSON",
+    editRawJson: "编辑原始 JSON",
+    cancel: "取消",
+    saveAndSubmit: "保存并提交",
+  },
 }
 
 export type AdminTranslations = typeof zh
