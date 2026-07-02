@@ -8,6 +8,7 @@ type ApiClientOptions = RequestInit & {
 }
 
 const DEFAULT_API_TIMEOUT_MS = 60000
+const UNAUTHORIZED_TOAST_ID = "candidate-session-expired"
 const isSilentResourceEndpoint = (endpoint: string) => /\/thumbnail-url(?:[/?#]|$)/.test(endpoint)
 
 export async function apiClient(endpoint: string, options: ApiClientOptions = {}) {
@@ -22,8 +23,8 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
   const token = getAccessToken()
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
-  const showErrorToast = (message: string) => {
-    if (!suppressErrorToast) toast.error(message)
+  const showErrorToast = (message: string, id?: string) => {
+    if (!suppressErrorToast) toast.error(message, id ? { id } : undefined)
   }
 
   if (signal) {
@@ -60,7 +61,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     clearAccessToken()
     localStorage.removeItem("is_authenticated")
     localStorage.removeItem("user_name")
-    showErrorToast(getErrorMessage("UNAUTHORIZED", currentLang))
+    showErrorToast(getErrorMessage("UNAUTHORIZED", currentLang), UNAUTHORIZED_TOAST_ID)
     setTimeout(() => {
       window.location.href = "/login"
     }, 1500)
