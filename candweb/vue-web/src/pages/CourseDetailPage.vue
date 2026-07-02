@@ -185,6 +185,19 @@ const finalQualificationRequired = computed(() =>
   finalQualificationIds.value.length > 0 &&
   (pipelineWaitsFinalEligibility.value || nextStepAction.value === "final_qualification"),
 )
+const certificateAvailable = computed(() =>
+  purchased.value &&
+  Boolean(instancePipelineId.value) &&
+  (nextStepAction.value === "view_certificate" || isPipelineTerminal.value),
+)
+const certificateDescription = computed(() => {
+  if (certificateAvailable.value) {
+    const name = pipeline.value?.name || t.value.common.unknownCourse
+    return t.value.learning.certificateCongratulationsDesc.replace(/\{\{name\}\}/g, name)
+  }
+  if (finalQualificationRequired.value) return t.value.learning.finalQualificationDesc
+  return t.value.learning.certificateUnavailableDesc
+})
 const firstCourseId = computed(() =>
   stages.value.flatMap((stage) => visibleStageUnits(stage)).find((unit) => unit.glms_course_id)?.glms_course_id || "",
 )
@@ -696,6 +709,43 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
             <Loader2 v-if="finalQualificationLoading" class="h-4 w-4 animate-spin" />
             <Award v-else class="h-4 w-4" />
             {{ t.learning.finalQualificationSubmitButton }}
+          </button>
+        </div>
+      </section>
+
+      <section
+        v-if="purchased"
+        class="mb-4 rounded-md border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
+      >
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 text-foreground">
+              <Award class="h-5 w-5 text-orange-500" />
+              <h2 class="text-lg font-semibold">{{ t.learning.certificatePanelTitle }}</h2>
+            </div>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{{ certificateDescription }}</p>
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t.certificatesPage.title }}</p>
+                <p class="mt-1 text-sm font-medium text-foreground">{{ pipeline.name || t.common.unknownCourse }}</p>
+              </div>
+              <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t.learning.currentStageStatusLabel }}</p>
+                <p class="mt-1 text-sm font-medium text-foreground">
+                  {{ certificateAvailable ? t.learning.certificationCertificateAvailableTag : finalQualificationRequired ? t.learning.certificationFinalQualRequiredTag : t.learning.certificationCertificateAfterExamTag }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <button
+            v-if="certificateAvailable"
+            class="btn btn-primary shrink-0 rounded-lg"
+            :disabled="certificateLoading"
+            @click="openCertificate"
+          >
+            <Loader2 v-if="certificateLoading" class="h-4 w-4 animate-spin" />
+            <ExternalLink v-else class="h-4 w-4" />
+            {{ t.learning.certificateViewCenterButton }}
           </button>
         </div>
       </section>
