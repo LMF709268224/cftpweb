@@ -27,6 +27,7 @@ import PurchaseDialog from "@/components/PurchaseDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
+import { formatBackendDateOnly } from "@/lib/utils"
 
 type PipelineDetail = {
   config?: PipelineConfig
@@ -198,6 +199,20 @@ const certificateDescription = computed(() => {
   if (finalQualificationRequired.value) return t.value.learning.finalQualificationDesc
   return t.value.learning.certificateUnavailableDesc
 })
+const certificateIssuedDate = computed(() =>
+  formatBackendDateOnly(
+    firstString(
+      detail.value?.instance?.completed_at,
+      detail.value?.instance?.completedAt,
+      detail.value?.instance?.issued_at,
+      detail.value?.instance?.issuedAt,
+      detail.value?.instance?.updated_at,
+      detail.value?.instance?.updatedAt,
+      detail.value?.instance?.created_at,
+      detail.value?.instance?.createdAt,
+    ),
+  ) || "-",
+)
 const firstCourseId = computed(() =>
   stages.value.flatMap((stage) => visibleStageUnits(stage)).find((unit) => unit.glms_course_id)?.glms_course_id || "",
 )
@@ -220,8 +235,8 @@ const activeStageIndex = computed(() => {
 })
 
 function pipelineIsTerminal(status?: string | number | null) {
-  const normalized = String(status ?? "").trim()
-  return normalized === "3" || normalized === "4"
+  const normalized = String(status ?? "").trim().toUpperCase()
+  return normalized === "3" || normalized === "4" || normalized.includes("COMPLETED") || normalized.includes("ISSUING_CERT")
 }
 
 function firstString(...values: unknown[]) {
@@ -717,7 +732,51 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
         v-if="purchased"
         class="mb-4 rounded-md border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
       >
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div v-if="certificateAvailable" class="space-y-5">
+          <div class="flex items-center gap-2 text-foreground">
+            <Award class="h-5 w-5 text-orange-500" />
+            <h2 class="text-lg font-semibold">{{ t.learning.certificatePanelTitle }}</h2>
+          </div>
+          <p class="max-w-3xl text-sm leading-6 text-muted-foreground">{{ t.learning.certificatePanelDesc }}</p>
+
+          <div class="relative overflow-hidden rounded-lg bg-emerald-600 px-5 py-5 text-white">
+            <div class="relative z-10 flex items-center justify-between gap-4">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 text-xl font-semibold">
+                  <Sparkles class="h-5 w-5" />
+                  {{ t.learning.certificateCongratulationsTitle }}
+                </div>
+                <p class="mt-2 text-sm font-medium text-emerald-50">{{ certificateDescription }}</p>
+              </div>
+              <Award class="h-14 w-14 shrink-0 text-white" />
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 class="text-base font-semibold text-foreground">{{ t.learning.certificateDetailsTitle }}</h3>
+            <div class="mt-5 grid gap-5 sm:grid-cols-2">
+              <div>
+                <p class="text-sm text-muted-foreground">{{ t.certificatesPage.title }}</p>
+                <p class="mt-2 text-sm font-medium text-foreground">{{ pipeline.name || t.common.unknownCourse }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
+                <p class="mt-2 text-sm font-medium text-foreground">{{ certificateIssuedDate }}</p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            class="btn btn-primary rounded-lg"
+            :disabled="certificateLoading"
+            @click="openCertificate"
+          >
+            <Loader2 v-if="certificateLoading" class="h-4 w-4 animate-spin" />
+            <ExternalLink v-else class="h-4 w-4" />
+            {{ t.learning.certificateViewCenterButton }}
+          </button>
+        </div>
+        <div v-else class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div class="min-w-0">
             <div class="flex items-center gap-2 text-foreground">
               <Award class="h-5 w-5 text-orange-500" />
@@ -737,16 +796,6 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               </div>
             </div>
           </div>
-          <button
-            v-if="certificateAvailable"
-            class="btn btn-primary shrink-0 rounded-lg"
-            :disabled="certificateLoading"
-            @click="openCertificate"
-          >
-            <Loader2 v-if="certificateLoading" class="h-4 w-4 animate-spin" />
-            <ExternalLink v-else class="h-4 w-4" />
-            {{ t.learning.certificateViewCenterButton }}
-          </button>
         </div>
       </section>
 
