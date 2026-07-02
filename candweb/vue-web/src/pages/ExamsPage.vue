@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { RouterLink, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { AlertCircle, CalendarClock, CheckCircle2, ClipboardList, ExternalLink, History, Loader2, RefreshCw, Search, ShieldCheck } from "lucide-vue-next"
@@ -20,6 +20,7 @@ const router = useRouter()
 const activeTab = ref<TabId>("current")
 const loading = ref(false)
 const scheduleLoadingExamId = ref<string | null>(null)
+const pendingScheduleExamIds = ref<Record<string, number>>({})
 const retakeLoadingUnitId = ref<string | null>(null)
 const search = ref("")
 const exams = ref<any[]>([])
@@ -37,6 +38,7 @@ const retakePaymentSession = ref<{
   returnPath: string
 } | null>(null)
 const retakePaymentDialogOpen = ref(false)
+const SCHEDULE_PENDING_TTL_MS = 2 * 60 * 1000
 
 const tabs = computed(() => [
   { id: "current" as TabId, icon: CalendarClock, label: t.value.examsPage.currentTab },
@@ -111,8 +113,35 @@ function hasText(value?: string | null) {
 function hasTermUrlReturn(exam: any) {
   return hasText(exam.last_termurl_timestamp)
 }
+function examIdOf(exam: any) {
+  return String(exam?.exam_id || "").trim()
+}
+function cleanupExpiredPendingScheduleIds(now = Date.now()) {
+  let changed = false
+  const next = { ...pendingScheduleExamIds.value }
+  for (const [examId, startedAt] of Object.entries(next)) {
+    if (now - startedAt > SCHEDULE_PENDING_TTL_MS) {
+      delete next[examId]
+      changed = true
+    }
+  }
+  if (changed) pendingScheduleExamIds.value = next
+}
+function markSchedulePending(examId?: string | null) {
+  const normalized = String(examId || "").trim()
+  if (!normalized) return
+  pendingScheduleExamIds.value = {
+    ...pendingScheduleExamIds.value,
+    [normalized]: Date.now(),
+  }
+}
+function isSchedulePending(exam: any) {
+  const examId = examIdOf(exam)
+  const startedAt = examId ? pendingScheduleExamIds.value[examId] : undefined
+  return Boolean(startedAt && Date.now() - startedAt <= SCHEDULE_PENDING_TTL_MS)
+}
 function isWaitingScheduleSync(exam: any) {
-  return activeTab.value !== "history" && hasTermUrlReturn(exam) && !hasExamResult(exam)
+  return activeTab.value !== "history" && (hasTermUrlReturn(exam) || isSchedulePending(exam)) && !hasExamResult(exam)
 }
 function hasAppointmentDetails(exam: any) {
   if (!shouldShowStoredExamDetails(exam)) return false
@@ -138,10 +167,13 @@ function examStatusLabel(exam: any) {
   }
   return statusLabel(t.value, EXAM_STATUS_LABELS, normalizedExamStatus(exam.exam_status))
 }
-function canScheduleExam(exam: any) {
-  if (hasExamResult(exam) || isWaitingScheduleSync(exam)) return false
+function canScheduleExamFromBackend(exam: any) {
+  if (hasExamResult(exam) || (activeTab.value !== "history" && hasTermUrlReturn(exam))) return false
   const status = normalizedExamStatus(exam.exam_status)
   return Boolean(exam.exam_id && ((status && status.includes("OPEN")) || (activeTab.value !== "history" && isExamOpenUnit(exam))))
+}
+function canScheduleExam(exam: any) {
+  return canScheduleExamFromBackend(exam) && !isSchedulePending(exam)
 }
 function canSignupExam(exam: any) {
   return Boolean(activeTab.value !== "history" && exam.course_unit_ulid && isWaitingSignupExamUnit(exam))
@@ -202,6 +234,33 @@ function examStatusBadgeClass(status?: string | number | null) {
   }
   return statusBadgeClassForStatusValue(status)
 }
+function syncPendingScheduleState(latestExams: any[]) {
+  cleanupExpiredPendingScheduleIds()
+  const pendingIds = Object.keys(pendingScheduleExamIds.value)
+  if (pendingIds.length === 0) return
+
+  let changed = false
+  const next = { ...pendingScheduleExamIds.value }
+  for (const examId of pendingIds) {
+    const exam = latestExams.find((item) => examIdOf(item) === examId)
+    if (!exam || !canScheduleExamFromBackend(exam)) {
+      delete next[examId]
+      changed = true
+    }
+  }
+  if (changed) pendingScheduleExamIds.value = next
+}
+function hasPendingScheduleExams() {
+  cleanupExpiredPendingScheduleIds()
+  return Object.keys(pendingScheduleExamIds.value).length > 0
+}
+function refreshAfterScheduleReturn() {
+  if (!hasPendingScheduleExams()) return
+  void loadExams(activeTab.value, search.value, false, true)
+}
+function handleVisibilityChange() {
+  if (document.visibilityState === "visible") refreshAfterScheduleReturn()
+}
 
 async function loadExams(tab: TabId = activeTab.value, keyword = search.value, showLoading = true, suppressErrorToast = false) {
   if (tab === "exemption" || tab === "records") {
@@ -218,7 +277,9 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     if (tab === "history") params.set("result_status", "DONE")
     if (keyword.trim()) params.set("confirmation_number", keyword.trim())
     const res = await apiClient(`/api/exams?${params.toString()}`, { suppressErrorToast })
-    exams.value = res?.exams || []
+    const nextExams = res?.exams || []
+    exams.value = nextExams
+    syncPendingScheduleState(nextExams)
     total.value = Number(res?.total || 0)
     totalPages.value = Number(res?.total_pages || Math.ceil(total.value / pageSize.value) || 0)
   } catch {
@@ -238,6 +299,7 @@ async function handleScheduleExam(exam: any) {
     const params = new URLSearchParams({ url_type: "schd", term_url_base: termUrlBase })
     const res = await apiClient(`/api/exams/${encodeURIComponent(exam.exam_id)}/schedule-url?${params.toString()}`)
     if (res?.url) {
+      markSchedulePending(exam.exam_id)
       toast.info(t.value.examsPage.scheduleRedirecting)
       window.open(res.url, "_blank", "noopener,noreferrer")
     } else {
@@ -315,6 +377,13 @@ onMounted(() => {
   if (route.query.schedule_return === "1") toast.success(t.value.examsPage.scheduleReturnToast)
   void loadExams()
   examsPolling.start()
+  window.addEventListener("focus", refreshAfterScheduleReturn)
+  document.addEventListener("visibilitychange", handleVisibilityChange)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("focus", refreshAfterScheduleReturn)
+  document.removeEventListener("visibilitychange", handleVisibilityChange)
 })
 </script>
 
@@ -424,7 +493,7 @@ onMounted(() => {
                       <div class="text-xs">{{ t.examsPage.waitingExamConfirmationDesc }}</div>
                     </div>
                   </div>
-                  <div v-if="!isWaitingExamConfirmation(exam) && !hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
+                  <div v-if="!isWaitingScheduleSync(exam) && !isWaitingExamConfirmation(exam) && !hasAppointmentDetails(exam) && !hasExamResult(exam)" class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700 sm:col-span-2">
                     <div class="flex items-start gap-2">
                       <CalendarClock class="mt-0.5 h-4 w-4 shrink-0" />
                       <div>
