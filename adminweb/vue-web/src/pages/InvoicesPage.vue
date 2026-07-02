@@ -19,7 +19,14 @@ const copy = computed(() => t.value.invoices)
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => page.value * pageSize < total.value || invoices.value.length >= pageSize)
-const selectedFields = computed(() => selected.value || {})
+const selectedFields = computed(() =>
+  Object.entries(selected.value || {}).map(([key, value]) => ({
+    key,
+    label: copy.value.fieldLabels[key as keyof typeof copy.value.fieldLabels] || key.replace(/_/g, " "),
+    value,
+    displayValue: key.endsWith("_at") ? formatDate(value) : String(value ?? "-"),
+  })),
+)
 
 function invoiceId(invoice: JsonRecord | null | undefined) {
   return String(pickFirst(invoice || {}, ["id", "invoice_id", "invoice_ulid"]) || "")
@@ -178,15 +185,15 @@ onMounted(() => load(1))
               </div>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
-                {{ key }}
+              <label v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold">
+                {{ field.label }}
                 <textarea
-                  v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                  v-if="Array.isArray(field.value) || (field.value && typeof field.value === 'object')"
                   class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
                   disabled
-                  :value="JSON.stringify(value, null, 2)"
+                  :value="JSON.stringify(field.value, null, 2)"
                 />
-                <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
+                <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="field.displayValue" />
               </label>
             </div>
             <pre class="max-h-[520px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
