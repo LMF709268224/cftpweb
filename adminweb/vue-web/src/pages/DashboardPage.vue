@@ -63,125 +63,8 @@ const data = ref<DashboardData | null>(null)
 const keyword = ref("")
 const roleFilter = ref("all")
 const statusFilter = ref("all")
-const { lang, isZh } = useAdminLanguage()
-
-const copy = computed(() => {
-  if (!isZh.value) {
-    return {
-      eyebrow: "Admin Dashboard",
-      title: "Dashboard",
-      subtitle: "View users, role distribution, pipeline stages, and today's revenue.",
-      auditLogs: "Audit Logs",
-      emailActivity: "Email Activity",
-      refresh: "Refresh",
-      loading: "Loading",
-      loadFailed: "Dashboard failed to load",
-      profileCompletion: "Profile Completion",
-      noRevenue: "No payments today",
-      summary: {
-        totalUsers: "Total Users",
-        activeUsers: "Active Users",
-        inactiveUsers: "Inactive Users",
-        admins: "Admins",
-      },
-      filters: {
-        allRoles: "All Roles",
-        allStatus: "All Status",
-        active: "Active",
-        inactive: "Inactive",
-        deleted: "Deleted",
-        searchPlaceholder: "Search users by name or email...",
-      },
-      userManagement: "User Management",
-      userManagementHint: "Search and filter users to review account status and roles.",
-      table: {
-        user: "User",
-        email: "Email",
-        location: "Location",
-        role: "Role",
-        status: "Status",
-        emailVerified: "Email Verified",
-        created: "Created",
-      },
-      noUsers: "No users",
-      verified: "Verified",
-      unverified: "Unverified",
-      stageDistribution: "Stage Distribution",
-      stageDistributionHint: "Grouped by current stage and pipeline status.",
-      pipelines: "pipelines",
-      noStageData: "No stage data",
-      unknownStatus: "Unknown status",
-      peoplePipelines: "people / pipelines",
-      businessOverview: "Business Overview",
-      businessOverviewHint: "Operational metrics specific to this system.",
-      candidatesTotal: "Candidates",
-      todayRevenue: "Today's Revenue",
-      paidOrders: (count: number) => `Paid orders: ${count}`,
-      roles: {
-        student: "student",
-        admin: "admin",
-        member: "member",
-      },
-    }
-  }
-
-  return {
-    eyebrow: "Admin Dashboard",
-    title: "运营看板",
-    subtitle: "查看用户概览、角色分布、阶段状态和今日收款。",
-    auditLogs: "审计日志",
-    emailActivity: "邮件活动",
-    refresh: "刷新",
-    loading: "加载中",
-    loadFailed: "运营看板加载失败",
-    profileCompletion: "资料完整度",
-    noRevenue: "暂无收款",
-    summary: {
-      totalUsers: "用户总数",
-      activeUsers: "活跃用户",
-      inactiveUsers: "停用用户",
-      admins: "管理员",
-    },
-    filters: {
-      allRoles: "全部角色",
-      allStatus: "全部状态",
-      active: "活跃",
-      inactive: "停用",
-      deleted: "已删除",
-      searchPlaceholder: "搜索用户姓名或邮箱...",
-    },
-    userManagement: "用户管理",
-    userManagementHint: "搜索和筛选用户，查看账号状态与角色。",
-    table: {
-      user: "用户",
-      email: "邮箱",
-      location: "地区",
-      role: "角色",
-      status: "状态",
-      emailVerified: "邮箱验证",
-      created: "创建时间",
-    },
-    noUsers: "暂无用户",
-    verified: "已验证",
-    unverified: "未验证",
-    stageDistribution: "阶段分布",
-    stageDistributionHint: "按当前阶段和管线状态统计。",
-    pipelines: "条管线",
-    noStageData: "暂无阶段数据",
-    unknownStatus: "未知状态",
-    peoplePipelines: "人/管线",
-    businessOverview: "业务概览",
-    businessOverviewHint: "我们系统特有的运营指标。",
-    candidatesTotal: "考生总数",
-    todayRevenue: "今日收款金额",
-    paidOrders: (count: number) => `已支付订单 ${count} 笔`,
-    roles: {
-      student: "学生",
-      admin: "管理员",
-      member: "会员",
-    },
-  }
-})
+const { lang, t } = useAdminLanguage()
+const copy = computed(() => t.value.dashboard)
 
 const userStats = computed<UserStats>(() => data.value?.user_stats || { total: 0, active: 0, inactive: 0, admins: 0, email_verified: 0 })
 const totalPipelines = computed(() => data.value?.stage_buckets.reduce((sum, item) => sum + Number(item.count || 0), 0) || 0)
@@ -216,7 +99,7 @@ const summaryCards = computed(() => [
 ])
 
 function stageLabel(stageId: string) {
-  return stageId === "未进入阶段" ? stageId : stageId
+  return stageId === copy.value.noStage ? copy.value.noStage : stageId
 }
 
 function roleBadgeClass(role: string) {

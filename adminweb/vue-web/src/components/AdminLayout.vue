@@ -31,81 +31,8 @@ const route = useRoute()
 const collapsed = ref(false)
 const userMenuOpen = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
-const { lang, setAdminLanguage } = useAdminLanguage()
-
-const copy = computed(() => {
-  if (lang.value === "en") {
-    return {
-      systemName: "Management System",
-      roleName: "Admin",
-      accountSettings: "Account Settings",
-      logout: "Log Out",
-      language: "EN / 中文",
-      groups: {
-        learning: "Courses & Resources",
-        certification: "Certification Flow",
-        commerce: "Commerce & Finance",
-        messages: "Messages",
-        operations: "Operations",
-      },
-      nav: {
-        dashboard: "Dashboard",
-        lms: "Course Config",
-        resourcePacks: "Resource Packs",
-        resourcePackFiles: "Resource Files",
-        pipelines: "Pipeline Config",
-        prog: "Pipeline Management",
-        exams: "Exam Management",
-        credentials: "Credential Definitions",
-        applications: "Review Center",
-        permissions: "Candidate Permissions",
-        bundles: "Product Config",
-        orders: "Orders",
-        invoices: "Invoices",
-        messages: "Messages",
-        mails: "Email Center",
-        pdfTemplates: "PDF Templates",
-        pdfRequests: "Certificate Jobs",
-        webhooks: "Webhook Audit",
-      },
-    }
-  }
-
-  return {
-    systemName: "管理系统",
-    roleName: "Admin",
-    accountSettings: "账户设置",
-    logout: "退出登录",
-    language: "中文 / EN",
-    groups: {
-      learning: "课程与资源",
-      certification: "认证流程",
-      commerce: "商品与财务",
-      messages: "消息通知",
-      operations: "系统运维",
-    },
-    nav: {
-      dashboard: "运营看板",
-      lms: "课程配置",
-      resourcePacks: "资源包配置",
-      resourcePackFiles: "资源文件配置",
-      pipelines: "管线配置",
-      prog: "管线管理",
-      exams: "考试管理",
-      credentials: "资格定义",
-      applications: "审核中心",
-      permissions: "考生权限管理",
-      bundles: "商品配置",
-      orders: "订单管理",
-      invoices: "发票管理",
-      messages: "站内信",
-      mails: "邮件中心",
-      pdfTemplates: "PDF 模板配置",
-      pdfRequests: "证书生成流水",
-      webhooks: "Webhook 审计",
-    },
-  }
-})
+const { lang, t, setAdminLanguage } = useAdminLanguage()
+const copy = computed(() => t.value.layout)
 
 const navGroups = computed(() => [
   {
@@ -177,7 +104,7 @@ async function logout() {
     // Local logout should still succeed if the server session is already gone.
   } finally {
     clearAuthSession()
-    toast.success("已退出登录")
+    toast.success(copy.value.logoutSuccess)
     router.push("/login")
   }
 }

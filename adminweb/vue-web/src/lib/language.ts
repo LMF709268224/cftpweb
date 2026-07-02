@@ -1,4 +1,6 @@
 import { computed, ref } from "vue"
+import { en } from "./locales/en"
+import { zh } from "./locales/zh"
 
 export type AdminLang = "zh" | "en"
 
@@ -21,9 +23,20 @@ export function setAdminLanguage(nextLang: AdminLang) {
 
 export function useAdminLanguage() {
   const isZh = computed(() => lang.value === "zh")
+  const t = computed(() => (lang.value === "zh" ? zh : en))
   return {
     lang,
     isZh,
+    t,
     setAdminLanguage,
+  }
+}
+
+export function useAdminTranslation() {
+  const { lang, t, setAdminLanguage } = useAdminLanguage()
+  return {
+    lang,
+    t,
+    changeLanguage: setAdminLanguage,
   }
 }
