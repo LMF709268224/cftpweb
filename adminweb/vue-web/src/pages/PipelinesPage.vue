@@ -736,11 +736,11 @@ onMounted(load)
 
           <div v-if="activeLayer === 'overview'" class="grid gap-5 p-5 lg:grid-cols-2">
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">Pipeline ID</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineId }}</div>
               <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selectedId || "-" }}</div>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">Pipeline GUID</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineGuid }}</div>
               <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected?.pipeline_guid || "-" }}</div>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">

@@ -537,7 +537,7 @@ onMounted(load)
           </div>
           <div class="grid gap-3 md:grid-cols-2">
             <div class="rounded-xl bg-white p-3 md:col-span-2">
-              <div class="text-[11px] font-black uppercase text-slate-400">Belongs To Resource Pack</div>
+              <div class="text-[11px] font-black uppercase text-slate-400">{{ copy.ownerRawTitle }}</div>
               <div class="mt-1 break-words text-sm font-semibold">{{ ownerText(selected) }}</div>
             </div>
             <div v-for="[key, value] in selectedEntries" :key="key" class="rounded-xl bg-white p-3">

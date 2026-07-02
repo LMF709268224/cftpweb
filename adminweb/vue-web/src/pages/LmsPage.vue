@@ -432,7 +432,7 @@ function lessonTypeLabel(value: unknown) {
   const type = Number(value || 0)
   if (type === 1) return copy.value.lessonTypes.video
   if (type === 2) return copy.value.lessonTypes.text
-  if (type === 3) return "PDF"
+  if (type === 3) return copy.value.lessonTypes.pdf
   if (type === 4) return copy.value.lessonTypes.image
   if (type === 5) return copy.value.lessonTypes.audio
   if (type === 6) return copy.value.lessonTypes.file
@@ -451,11 +451,11 @@ function materialTypeLabel(value: unknown) {
 
 function supplementaryTypeLabel(type: string) {
   const normalized = type.trim().toLowerCase()
-  if (normalized === "article") return "Article"
-  if (normalized === "video") return "Video"
-  if (normalized === "pdf") return "PDF"
-  if (normalized === "link") return "Link"
-  return type || "Material"
+  if (normalized === "article") return copy.value.supplementaryTypes.article
+  if (normalized === "video") return copy.value.supplementaryTypes.video
+  if (normalized === "pdf") return copy.value.supplementaryTypes.pdf
+  if (normalized === "link") return copy.value.supplementaryTypes.link
+  return type || copy.value.supplementaryTypes.material
 }
 
 function supplementaryTypeClass(type: string) {
@@ -1716,7 +1716,7 @@ onMounted(() => {
               <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">Respath</span>
+              <span class="text-sm font-bold">{{ copy.respath }}</span>
               <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
             </label>
             <label class="block">
@@ -1834,10 +1834,10 @@ onMounted(() => {
               <table class="min-w-full text-left text-sm">
                 <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th class="px-4 py-3">Chapter</th>
-                    <th class="px-4 py-3">Type</th>
-                    <th class="px-4 py-3">Title & Description</th>
-                    <th class="px-4 py-3">Resource Link</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.chapter }}</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.type }}</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.titleDescription }}</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.resourceLink }}</th>
                     <th class="w-24 px-4 py-3 text-right">{{ copy.columns.action }}</th>
                   </tr>
                 </thead>
@@ -1903,11 +1903,11 @@ onMounted(() => {
                       <label class="block">
                         <span class="text-sm font-bold">{{ copy.materialType }}</span>
                         <select v-model="supplementaryItemForm.type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
-                          <option value="Article">Article</option>
-                          <option value="Video">Video</option>
-                          <option value="PDF">PDF</option>
-                          <option value="Link">Link</option>
-                          <option value="Other">Other</option>
+                          <option value="Article">{{ copy.supplementaryTypes.article }}</option>
+                          <option value="Video">{{ copy.supplementaryTypes.video }}</option>
+                          <option value="PDF">{{ copy.supplementaryTypes.pdf }}</option>
+                          <option value="Link">{{ copy.supplementaryTypes.link }}</option>
+                          <option value="Other">{{ copy.materialTypes.other }}</option>
                         </select>
                       </label>
                       <label class="block">
@@ -1949,12 +1949,12 @@ onMounted(() => {
               <summary class="cursor-pointer font-black">{{ copy.supplementaryAdvancedTitle }}</summary>
               <div class="mt-4 grid gap-3">
                 <label class="block">
-                  <span class="text-sm font-bold">kind</span>
+                  <span class="text-sm font-bold">{{ copy.kind }}</span>
                   <input v-model="supplementaryMaterialForm.kind" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="supplementary_materials" />
                   <span class="mt-1 block text-xs text-slate-500">{{ copy.kindHint }}</span>
                 </label>
                 <label class="block">
-                  <span class="text-sm font-bold">data_json</span>
+                  <span class="text-sm font-bold">{{ copy.dataJson }}</span>
                   <textarea v-model="supplementaryMaterialForm.data_json" class="mt-2 min-h-64 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-5" :placeholder="copy.supplementaryJsonPlaceholder" />
                   <span class="mt-1 block text-xs text-slate-500">{{ copy.supplementaryAdvancedHint }}</span>
                 </label>
@@ -2198,7 +2198,7 @@ onMounted(() => {
                 <select v-model="lessonForm.lesson_type" class="rounded-xl border border-slate-200 px-4 py-3">
                   <option value="1">{{ copy.lessonTypes.video }}</option>
                   <option value="2">{{ copy.lessonTypes.text }}</option>
-                  <option value="3">PDF</option>
+                  <option value="3">{{ copy.lessonTypes.pdf }}</option>
                   <option value="4">{{ copy.lessonTypes.image }}</option>
                   <option value="5">{{ copy.lessonTypes.audio }}</option>
                   <option value="6">{{ copy.lessonTypes.file }}</option>

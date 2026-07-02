@@ -302,10 +302,10 @@ onMounted(load)
               <div class="min-w-0">
                 <div class="truncate text-base font-black text-slate-950">{{ packTitle(pack) }}</div>
                 <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pack.description || "-" }}</div>
-                <div class="mt-1 truncate font-mono text-xs text-slate-500">ID: {{ pack.pack_id }}</div>
+                <div class="mt-1 truncate font-mono text-xs text-slate-500">{{ copy.fields.idPrefix }}{{ pack.pack_id }}</div>
               </div>
               <div class="text-sm font-bold text-slate-700">
-                <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">Version</span>{{ pack.version || 0 }}
+                <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.fields.version }}</span>{{ pack.version || 0 }}
               </div>
               <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-end">
                 {{ pack.status || "Active" }}

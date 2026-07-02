@@ -321,7 +321,7 @@ onMounted(load)
                     <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected.category || "-" }}</div>
                   </div>
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">Respath</div>
+                    <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.respath }}</div>
                     <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected.respath || "-" }}</div>
                   </div>
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">

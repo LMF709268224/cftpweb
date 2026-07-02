@@ -501,11 +501,11 @@ onMounted(async () => {
           </div>
           <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <div class="text-xs font-black uppercase text-slate-400">Candidate</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.summary.candidate }}</div>
               <div class="mt-1 break-all text-sm font-bold">{{ selectedCandidateUlid || "-" }}</div>
             </div>
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <div class="text-xs font-black uppercase text-slate-400">Pipeline CC</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.summary.pipelineCc }}</div>
               <div class="mt-1 break-all text-sm font-bold">{{ selectedPipelineCcUlid || "-" }}</div>
             </div>
             <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
