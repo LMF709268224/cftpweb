@@ -362,12 +362,6 @@ onMounted(() => load(1))
               <p class="mt-1 break-all text-sm text-slate-500">{{ orderUlid(selected) }}</p>
             </div>
             <div class="flex shrink-0 items-center gap-2">
-              <span class="hidden rounded-full border px-3 py-1 text-xs font-black sm:inline-flex" :class="badgeClass(status(selected))">
-                {{ labelFor(orderStatusOptions, status(selected)) }}
-              </span>
-              <span class="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600 sm:inline-flex">
-                {{ labelFor(paymentStatusOptions, payStatus(selected)) }}
-              </span>
               <button
                 class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
                 type="button"
@@ -379,26 +373,23 @@ onMounted(() => load(1))
             </div>
           </div>
 
-          <div class="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
-            <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
-              <div class="space-y-2">
-                <button
-                  v-for="tab in detailTabs"
-                  :key="tab.key"
-                  class="w-full rounded-2xl border px-4 py-3 text-left"
-                  :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
-                  type="button"
-                  @click="activeTab = tab.key"
-                >
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="font-black">{{ tab.title }}</span>
-                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
-                  </div>
-                </button>
-              </div>
-            </aside>
+          <div class="border-b border-slate-200 px-5 py-4">
+            <div class="flex gap-2 overflow-x-auto">
+              <button
+                v-for="tab in detailTabs"
+                :key="tab.key"
+                class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-sm font-black transition"
+                :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 text-slate-950' : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'"
+                type="button"
+                @click="activeTab = tab.key"
+              >
+                <span>{{ tab.title }}</span>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
+              </button>
+            </div>
+          </div>
 
-            <main class="min-w-0 overflow-y-auto p-5">
+          <main class="h-[60vh] min-h-[360px] max-h-[620px] min-w-0 overflow-y-auto p-5">
               <div v-if="activeTab === 'summary'" class="space-y-5">
                 <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
                   <div class="flex flex-wrap items-start justify-between gap-4">
@@ -483,8 +474,7 @@ onMounted(() => load(1))
                 </div>
                 <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
               </div>
-            </main>
-          </div>
+          </main>
         </section>
       </div>
     </Teleport>
