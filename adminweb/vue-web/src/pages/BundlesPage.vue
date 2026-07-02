@@ -23,6 +23,11 @@ type SummaryField = {
   label: string
   value: string
 }
+type DetailField = {
+  key: string
+  label: string
+  value: unknown
+}
 
 const emptyForm: BundleForm = {
   bundle_ulid: "",
@@ -56,7 +61,26 @@ const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => bundles.value.length >= limit)
 const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
-const selectedFields = computed(() => selected.value || {})
+const bundleFieldLabels: Record<string, string> = {
+  bundle_ulid: "商品 ID",
+  bundle_id: "商品 ID",
+  bundle_gpath: "商品路径",
+  name: "商品名称",
+  title: "商品标题",
+  description: "商品描述",
+  items_json: "关联内容 JSON",
+  pricing_json: "价格配置 JSON",
+  thumbnail_object_key: "封面文件路径",
+  thumbnail_file_hash: "封面文件校验值",
+  status: "状态",
+  raw_status: "原始状态",
+  is_current: "当前版本",
+  created_at: "创建时间",
+  updated_at: "更新时间",
+  display_amount_min: "展示最低价",
+  display_amount_max: "展示最高价",
+  display_currency: "展示币种",
+}
 const detailTabs = computed(() => [
   { key: "summary" as const, title: "概览", count: selected.value ? 1 : 0 },
   { key: "meta" as const, title: "基础信息", count: 1 },
@@ -70,14 +94,18 @@ const summaryFields = computed<SummaryField[]>(() => {
   if (!bundle) return []
   return [
     { label: "展示价格", value: displayPrice(bundle) },
-    { label: "状态", value: String(bundleStatus(bundle) || "-") },
     { label: "版本", value: String(bundle.version ?? "-") },
-    { label: "Bundle ULID", value: bundleUlid(bundle) || "-" },
-    { label: "Bundle GPath", value: String(bundle.bundle_gpath || "-") },
-    { label: "名称", value: bundleName(bundle) },
-    { label: "封面 Object Key", value: String(bundle.thumbnail_object_key || "-") },
-    { label: "更新时间", value: formatDate(String(pickFirst(bundle, ["updated_at", "updatedAt"]) || "")) || "-" },
   ]
+})
+const selectedFields = computed<DetailField[]>(() => {
+  if (!selected.value) return []
+  return Object.entries(selected.value)
+    .filter(([key]) => key !== "version")
+    .map(([key, value]) => ({
+      key,
+      label: bundleFieldLabels[key] || key.replaceAll("_", " "),
+      value,
+    }))
 })
 
 function bundleUlid(bundle: JsonRecord | null | undefined) {
@@ -511,26 +539,24 @@ onMounted(load)
             </div>
           </div>
 
-          <div class="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[260px_minmax(0,1fr)]">
-            <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
-              <div class="space-y-2">
-                <button
-                  v-for="tab in detailTabs"
-                  :key="tab.key"
-                  class="w-full rounded-2xl border px-4 py-3 text-left"
-                  :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
-                  type="button"
-                  @click="activeTab = tab.key"
-                >
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="font-black">{{ tab.title }}</span>
-                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
-                  </div>
-                </button>
-              </div>
-            </aside>
+          <div class="border-b border-slate-200 p-4">
+            <div class="flex gap-2 overflow-x-auto">
+              <button
+                v-for="tab in detailTabs"
+                :key="tab.key"
+                class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-sm font-black transition"
+                :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 text-slate-950' : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'"
+                type="button"
+                @click="activeTab = tab.key"
+              >
+                <span>{{ tab.title }}</span>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
+              </button>
+            </div>
+          </div>
 
-            <main class="min-w-0 overflow-y-auto p-5">
+          <div class="min-h-0 flex-1 overflow-hidden">
+            <main class="h-[60vh] min-h-[360px] max-h-[620px] min-w-0 overflow-y-auto p-5">
               <div v-if="activeTab === 'summary'" class="space-y-5">
                 <div class="grid gap-4 md:grid-cols-2">
                   <div v-for="field in summaryFields" :key="field.label" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -543,15 +569,15 @@ onMounted(load)
                   <p class="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">{{ form.description || "-" }}</p>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
-                  <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
-                    {{ key }}
+                  <label v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold">
+                    {{ field.label }}
                     <textarea
-                      v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                      v-if="Array.isArray(field.value) || (field.value && typeof field.value === 'object')"
                       class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
                       disabled
-                      :value="JSON.stringify(value, null, 2)"
+                      :value="JSON.stringify(field.value, null, 2)"
                     />
-                    <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
+                    <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(field.value ?? '-')" />
                   </label>
                 </div>
               </div>
