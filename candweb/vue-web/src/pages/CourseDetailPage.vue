@@ -176,7 +176,15 @@ const finalQualifications = computed(() => {
         .filter((qual) => qual.qualId)
     : []
 })
-const finalQualificationIds = computed(() => finalQualifications.value.map((qual) => qual.qualId))
+const finalQualificationIds = computed(() => {
+  const quals = pipeline.value?.final_quals || []
+  return Array.isArray(quals)
+    ? quals
+        .map((qual) => firstString(qual?.qual_id, qual?.qualId, qual?.id))
+        .filter((id): id is string => Boolean(id))
+    : []
+})
+const finalQualificationIdsKey = computed(() => finalQualificationIds.value.join(","))
 const pipelineWaitsFinalEligibility = computed(() => {
   const raw = String(pipelineStatus.value ?? "").trim()
   return raw === "2" || raw.toUpperCase().includes("WAIT_FINAL_ELIG")
@@ -616,7 +624,7 @@ onMounted(() => {
 })
 watch(pipelineId, () => void loadDetail())
 watch([stages, purchased], () => void loadCourseSummaries(), { deep: true })
-watch(finalQualificationIds, () => void loadCredentialDefinitions(), { deep: true, immediate: true })
+watch(finalQualificationIdsKey, () => void loadCredentialDefinitions(), { immediate: true })
 watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
 </script>
 
