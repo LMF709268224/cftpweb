@@ -177,6 +177,9 @@ func IsCftpAdmin(user *casdoorsdk.User) bool {
 	}
 
 	for _, role := range user.Roles {
+		if role == nil {
+			continue
+		}
 		if role.Name == adminRole {
 			return true
 		}
