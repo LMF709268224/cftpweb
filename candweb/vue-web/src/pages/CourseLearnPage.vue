@@ -6,7 +6,6 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
-  Award,
   BookOpen,
   CalendarClock,
   CheckCircle2,
@@ -38,7 +37,7 @@ import LoadingState from "@/components/LoadingState.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
 import { apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
-import { formatBackendDate, formatBackendDateOnly } from "@/lib/utils"
+import { formatBackendDate } from "@/lib/utils"
 import { usePolling } from "@/lib/polling"
 import {
   normalizeSupplementaryMaterials,
@@ -157,7 +156,7 @@ type ProgressRecord = {
 }
 
 type MaterialGroupKey = "all" | "textbook" | "slides" | "reference" | "other"
-type LearnContentTabKey = "lesson" | "quiz" | "materials" | "exam" | "certificate"
+type LearnContentTabKey = "lesson" | "quiz" | "materials" | "exam"
 type CertificationStepKey = Exclude<LearnContentTabKey, "materials">
 type FlowStepStatus = "done" | "current" | "available" | "locked"
 
@@ -187,9 +186,6 @@ const quizChoicesExpanded = ref(false)
 const courseExamsLoading = ref(false)
 const courseExamsLoaded = ref(false)
 const courseExams = ref<any[]>([])
-const courseCertificateLoading = ref(false)
-const courseCertificateUrl = ref("")
-const courseCertificateError = ref("")
 const finalQualificationLoading = ref(false)
 const resolvedBundleId = ref("")
 const retakePaymentSession = ref<{
@@ -290,10 +286,6 @@ const currentUnitStatus = computed(() => runtime.value?.current_unit_status)
 const nextUnitStatus = computed(() => nextStep.value?.status || currentUnitStatus.value)
 const currentLessonId = computed(() => lessonIdOf(lesson.value))
 const currentLessonRawCompleted = computed(() => Boolean(currentLessonId.value && completedLessonIds.value.has(currentLessonId.value)))
-const pipelineHasCertificate = computed(() => {
-  const certQuals = runtime.value?.config?.cert_quals || runtime.value?.config?.final_quals || []
-  return Array.isArray(certQuals) && certQuals.some((qual) => firstString(qual?.qual_id, qual?.qualId))
-})
 const finalQualifications = computed(() => {
   const quals = runtime.value?.config?.final_quals || runtime.value?.config?.cert_quals || []
   return Array.isArray(quals)
@@ -307,7 +299,6 @@ const finalQualifications = computed(() => {
 })
 const finalQualificationIds = computed(() => finalQualifications.value.map((qual) => qual.qualId))
 const pipelineWaitsFinalEligibility = computed(() => {
-  const raw = String(pipelineStatus.value ?? "").trim()
   const normalized = normalizeEnumValueUpper(pipelineStatus.value)
   return normalized.includes("WAIT_FINAL_ELIG")
 })
@@ -343,20 +334,6 @@ const courseRuntimeUnitUlid = computed(() => {
   if (nextCourseId && nextCourseId !== courseId.value) return ""
   return nextStep.value?.course_unit_ulid || ""
 })
-const hasCertificateTab = computed(() => pipelineHasCertificate.value)
-const courseCertificateSummary = computed(() => {
-  const instance = runtime.value?.instance || {}
-  const config = runtime.value?.config || {}
-  const issuedAt = instance.completed_at || instance.updated_at || instance.created_at || config.created_at || ""
-  return {
-    name: config.name || course.value?.title || t.value.learning.actionViewCertificate,
-    description: config.description || course.value?.description || t.value.learning.nextStepViewCertificateDesc,
-    issueDate: issuedAt ? formatBackendDateOnly(issuedAt) : t.value.common.na,
-    expiryDate: t.value.common.permanent,
-    credentialId: instance.pipeline_ulid || pipelineId.value || t.value.common.na,
-  }
-})
-const certificateCongratulationsDesc = computed(() => t.value.learning.certificateCongratulationsDesc.replace(/\{\{name\}\}/g, courseCertificateSummary.value.name))
 
 const courseHasExam = computed(() => {
   const stages = runtime.value?.config?.stages || []
@@ -499,14 +476,6 @@ const learnContentTabs = computed(() => [
         count: courseExamTabCount.value,
       }]
     : []),
-  ...(hasCertificateTab.value
-    ? [{
-        id: "certificate" as const,
-        label: t.value.learning.actionViewCertificate,
-        icon: Award,
-        count: courseCertificateUrl.value ? 1 : 0,
-      }]
-    : []),
 ])
 const resourceContentTabs = computed(() => [
   {
@@ -531,12 +500,10 @@ const examStepDone = computed(() => {
   if (normalizeEnumValueUpper(courseRuntimeUnitStatus.value).includes("COMPLETED")) return true
   return courseExams.value.some((exam) => hasExamResult(exam) && exam?.is_passed === true)
 })
-const certificateStepDone = computed(() => Boolean(courseCertificateUrl.value) || nextStepState.value.action === "view_certificate" || pipelineIsTerminal(pipelineStatus.value))
 const currentCertificationStepId = computed<CertificationStepKey>(() => {
   if (!lessonStepDone.value) return "lesson"
   if (quizTasks.value.length > 0 && !quizStepDone.value) return "quiz"
-  if ((hasExamTab.value || courseHasExam.value) && !examStepDone.value) return "exam"
-  if (pipelineHasCertificate.value || hasCertificateTab.value) return "certificate"
+  if (hasExamTab.value || courseHasExam.value) return "exam"
   if (quizTasks.value.length > 0) return "quiz"
   return "lesson"
 })
@@ -581,16 +548,6 @@ const certificationFlowSteps = computed(() => {
       icon: CalendarClock,
       count: courseExamTabCount.value,
       actionable: hasExamTab.value,
-    },
-    {
-      id: "certificate",
-      label: t.value.learning.certificationCertificateLabel,
-      description: t.value.learning.certificationCertificateDesc,
-      statusText: certificateStepDone.value ? t.value.learning.certificationCertificateAvailableTag : finalQualificationRequired.value ? t.value.learning.certificationFinalQualRequiredTag : currentId === "certificate" ? t.value.learning.certificationCurrentStepTag : t.value.learning.certificationCertificateAfterExamTag,
-      status: certificateStepDone.value ? "done" : finalQualificationRequired.value || currentId === "certificate" ? "current" : hasCertificateTab.value ? "available" : "locked",
-      icon: Award,
-      count: courseCertificateUrl.value ? 1 : finalQualifications.value.length,
-      actionable: pipelineHasCertificate.value,
     },
   ]
   return steps
@@ -647,7 +604,7 @@ function flowStepBadgeClass(step: { status: FlowStepStatus }) {
 }
 
 function canSelectFlowStep(step: { id: CertificationStepKey; actionable: boolean; status: FlowStepStatus }) {
-  return step.id === "certificate" || (step.actionable && step.status !== "locked")
+  return step.actionable && step.status !== "locked"
 }
 
 function selectFlowStep(step: { id: CertificationStepKey; actionable: boolean; status: FlowStepStatus }) {
@@ -656,10 +613,6 @@ function selectFlowStep(step: { id: CertificationStepKey; actionable: boolean; s
 }
 
 function selectHeaderFlowStep(step: { id: CertificationStepKey; actionable: boolean; status: FlowStepStatus }) {
-  if (step.id === "certificate" && certificateStepDone.value) {
-    router.push("/certificates")
-    return
-  }
   selectFlowStep(step)
 }
 
@@ -1213,34 +1166,6 @@ async function loadCourseExams(showLoading = true, suppressErrorToast = false) {
   }
 }
 
-async function loadCourseCertificate(showLoading = true, suppressErrorToast = true) {
-  if (!hasCertificateTab.value || finalQualificationRequired.value || !runtime.value?.instance?.pipeline_ulid) {
-    courseCertificateUrl.value = ""
-    courseCertificateError.value = ""
-    courseCertificateLoading.value = false
-    return
-  }
-  if (showLoading) courseCertificateLoading.value = true
-  courseCertificateError.value = ""
-  try {
-    const res = await apiClient(`/api/pipeline/${encodeURIComponent(runtime.value.instance.pipeline_ulid)}/certificate-url`, {
-      suppressErrorToast,
-    })
-    courseCertificateUrl.value = res?.view_url || ""
-    if (!courseCertificateUrl.value) courseCertificateError.value = t.value.certificatesPage.certificateGenerating
-  } catch {
-    courseCertificateUrl.value = ""
-    courseCertificateError.value = t.value.certificatesPage.certificateGenerating
-  } finally {
-    if (showLoading) courseCertificateLoading.value = false
-  }
-}
-
-function openCourseCertificate() {
-  if (!courseCertificateUrl.value) return
-  window.open(courseCertificateUrl.value, "_blank", "noopener,noreferrer")
-}
-
 async function syncProgress(targetCourseId = courseId.value, showToast = false, manageSyncing = true) {
   if (!targetCourseId) return false
   if (manageSyncing) syncing.value = true
@@ -1265,7 +1190,6 @@ async function refreshProgress(showToast = false) {
     await loadCourse(false)
     await loadRuntime()
     if (activeContentTab.value === "exam") await loadCourseExams(false)
-    if (activeContentTab.value === "certificate") await loadCourseCertificate(false)
     if (showToast && synced) toast.success(t.value.common.success)
   } finally {
     syncing.value = false
@@ -1555,12 +1479,10 @@ watch(courseId, async () => {
 watch(pipelineId, () => void loadRuntime())
 watch(activeContentTab, async (tab) => {
   if (tab === "exam") await loadCourseExams()
-  if (tab === "certificate") await loadCourseCertificate()
 })
 watch([runtime, courseId], async () => {
   const showLoading = !syncing.value
   if (activeContentTab.value === "exam") await loadCourseExams(showLoading)
-  if (activeContentTab.value === "certificate") await loadCourseCertificate(showLoading)
 })
 watch(lessons, () => {
   if (!activeLessonId.value && lessons.value.length > 0) activeLessonId.value = lessonIdOf(lessons.value[0].lesson)
@@ -1847,80 +1769,6 @@ watch(selectedMaterial, () => {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div v-if="activeContentTab === 'certificate'" class="rounded-md border border-slate-200 bg-white p-6 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-          <div class="mb-6">
-            <div class="mb-1 flex items-center gap-2">
-              <Award class="h-5 w-5 text-orange-500" />
-              <h2 class="text-xl font-semibold text-foreground">{{ t.learning.certificatePanelTitle }}</h2>
-            </div>
-            <p class="text-sm text-muted-foreground">{{ t.learning.certificatePanelDesc }}</p>
-          </div>
-
-          <LoadingState v-if="courseCertificateLoading" :label="t.common.loading" variant="section" :rows="2" />
-
-          <template v-else-if="certificateStepDone">
-            <div class="mb-5 flex items-center justify-between gap-4 rounded-md bg-[#08a057] px-5 py-5 text-white">
-              <div>
-                <h3 class="flex items-center gap-2 text-xl font-bold">
-                  <Sparkles class="h-5 w-5" />
-                  {{ t.learning.certificateCongratulationsTitle }}
-                </h3>
-                <p class="mt-2 text-sm text-white">{{ certificateCongratulationsDesc }}</p>
-              </div>
-              <Award class="h-14 w-14 shrink-0 text-white" />
-            </div>
-
-            <div class="mb-5 rounded-md border border-slate-200 bg-white p-5">
-              <h3 class="mb-5 text-lg font-semibold text-foreground">{{ t.learning.certificateDetailsTitle }}</h3>
-              <div class="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <p class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.certificatesPage.title }}</p>
-                  <p class="text-sm text-foreground">{{ courseCertificateSummary.name || t.learning.certificateDetailsTitle }}</p>
-                </div>
-                <div>
-                  <p class="mb-2 text-xs font-medium uppercase text-muted-foreground">{{ t.certificatesPage.issueDate }}</p>
-                  <p class="text-sm text-foreground">{{ courseCertificateSummary.issueDate }}</p>
-                </div>
-              </div>
-            </div>
-
-            <RouterLink to="/certificates" class="btn inline-flex rounded-md bg-[#165DFF] px-4 text-white hover:bg-[#0f4fd8]">
-              <ExternalLink class="h-4 w-4" />
-              {{ t.learning.certificateViewCenterButton }}
-            </RouterLink>
-          </template>
-
-          <div v-else-if="finalQualificationRequired" class="rounded-md border border-blue-200 bg-blue-50 p-5">
-            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div>
-                <div class="mb-2 flex items-center gap-2 text-blue-900">
-                  <Award class="h-5 w-5" />
-                  <h3 class="text-lg font-semibold">{{ t.learning.finalQualificationTitle }}</h3>
-                </div>
-                <p class="text-sm leading-relaxed text-blue-800">{{ t.learning.finalQualificationDesc }}</p>
-              </div>
-              <button class="btn btn-primary shrink-0 rounded-lg" :disabled="finalQualificationLoading" @click="handleFinalQualificationApplication">
-                <Loader2 v-if="finalQualificationLoading" class="h-4 w-4 animate-spin" />
-                <FileText v-else class="h-4 w-4" />
-                {{ t.learning.finalQualificationSubmitButton }}
-              </button>
-            </div>
-            <div class="mt-4 grid gap-2 sm:grid-cols-2">
-              <div v-for="qual in finalQualifications" :key="qual.qualId" class="rounded-lg border border-blue-100 bg-white px-4 py-3">
-                <div class="text-sm font-semibold text-foreground">{{ qual.name || (t.credentialsPage?.availableQualifications ?? t.learning.finalQualificationTitle) }}</div>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="rounded-md border border-slate-200 bg-slate-50 px-6 py-10 text-center">
-            <div class="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-slate-400">
-              <Award class="h-6 w-6" />
-            </div>
-            <h3 class="text-lg font-semibold text-foreground">{{ t.learning.certificateUnavailableTitle }}</h3>
-            <p class="mt-3 text-sm text-muted-foreground">{{ t.learning.certificateUnavailableDesc }}</p>
           </div>
         </div>
 

@@ -30,6 +30,7 @@ export type ResourceRouteMeta = {
 }
 
 export const resourceRoutes: RouteRecordRaw[] = [
+  { path: "/dashboard", redirect: "/lms" },
   {
     path: "/resource-packs",
     name: "resource-packs",
@@ -99,6 +100,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
       itemKeys: ["pipelines", "items"],
     } satisfies ResourceRouteMeta,
   },
+  { path: "/exams", redirect: "/lms" },
   {
     path: "/messages",
     name: "messages",

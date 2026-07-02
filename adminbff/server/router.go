@@ -47,6 +47,9 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Put("/password", h.UpdateUserPassword)
 		})
 
+		// ===== 运营看板 =====
+		r.Get("/dashboard/ops", h.OpsDashboard)
+
 		// ===== 课程与认证 (GCC) =====
 		r.Route("/pipelines", func(r chi.Router) {
 			r.Get("/", h.ListPipelines)
@@ -72,6 +75,14 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Route("/prog/course-units", func(r chi.Router) {
 			r.Post("/{course_unit_ulid}/force-completed", h.AdminForceCourseCompleted)
 			r.Post("/{course_unit_ulid}/force-signup-exam", h.AdminForceCourseSignupExam)
+		})
+
+		r.Route("/exams", func(r chi.Router) {
+			r.Get("/", h.ListAdminExams)
+			r.Get("/{exam_ulid}", h.GetAdminExamDetail)
+			r.Get("/{exam_ulid}/result", h.GetAdminExamResult)
+			r.Get("/{exam_ulid}/transitions", h.GetAdminExamTransitions)
+			r.Post("/{exam_ulid}/sync-result", h.SyncAdminExamResult)
 		})
 
 		// ===== 目录 (Catalogs) =====
