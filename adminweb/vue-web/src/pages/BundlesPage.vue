@@ -17,8 +17,12 @@ type BundleForm = {
   thumbnail_file_hash: string
 }
 
-type DetailTab = "summary" | "meta" | "pricing" | "schema" | "raw"
+type DetailTab = "summary" | "meta" | "pricing" | "schema" | "actions" | "raw"
 type Mode = "detail" | "create"
+type SummaryField = {
+  label: string
+  value: string
+}
 
 const emptyForm: BundleForm = {
   bundle_ulid: "",
@@ -36,6 +40,8 @@ const selected = ref<JsonRecord | null>(null)
 const form = ref<BundleForm>({ ...emptyForm })
 const loading = ref(false)
 const saving = ref(false)
+const publishing = ref(false)
+const deprecating = ref(false)
 const deleting = ref(false)
 const detailOpen = ref(false)
 const statusFilter = ref("")
@@ -48,6 +54,7 @@ const limit = 20
 
 const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => bundles.value.length >= limit)
+const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
 const selectedFields = computed(() => selected.value || {})
 const detailTabs = computed(() => [
@@ -55,8 +62,23 @@ const detailTabs = computed(() => [
   { key: "meta" as const, title: "基础信息", count: 1 },
   { key: "pricing" as const, title: "结构与价格", count: 2 },
   { key: "schema" as const, title: "Schema", count: schemas.value ? 1 : 0 },
+  { key: "actions" as const, title: "状态操作", count: 3 },
   { key: "raw" as const, title: "完整字段", count: 1 },
 ])
+const summaryFields = computed<SummaryField[]>(() => {
+  const bundle = selected.value
+  if (!bundle) return []
+  return [
+    { label: "展示价格", value: displayPrice(bundle) },
+    { label: "状态", value: String(bundleStatus(bundle) || "-") },
+    { label: "版本", value: String(bundle.version ?? "-") },
+    { label: "Bundle ULID", value: bundleUlid(bundle) || "-" },
+    { label: "Bundle GPath", value: String(bundle.bundle_gpath || "-") },
+    { label: "名称", value: bundleName(bundle) },
+    { label: "封面 Object Key", value: String(bundle.thumbnail_object_key || "-") },
+    { label: "更新时间", value: formatDate(String(pickFirst(bundle, ["updated_at", "updatedAt"]) || "")) || "-" },
+  ]
+})
 
 function bundleUlid(bundle: JsonRecord | null | undefined) {
   return String(pickFirst(bundle || {}, ["bundle_ulid", "bundle_id"]) || "")
@@ -248,20 +270,39 @@ async function savePricing() {
 
 async function publish() {
   if (!selectedId.value) return
-  await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/publish`, { method: "POST" })
-  toast.success("商品已发布")
-  await load()
+  if (statusActionBusy.value) return
+  publishing.value = true
+  try {
+    await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/publish`, { method: "POST" })
+    toast.success("商品已发布")
+    await load()
+  } catch (err) {
+    console.error(err)
+    toast.error("发布失败")
+  } finally {
+    publishing.value = false
+  }
 }
 
 async function deprecate() {
   if (!selectedId.value) return
-  await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/deprecate`, { method: "POST" })
-  toast.success("商品已下架")
-  await load()
+  if (statusActionBusy.value) return
+  deprecating.value = true
+  try {
+    await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/deprecate`, { method: "POST" })
+    toast.success("商品已下架")
+    await load()
+  } catch (err) {
+    console.error(err)
+    toast.error("下架失败")
+  } finally {
+    deprecating.value = false
+  }
 }
 
 async function removeBundle() {
   if (!selectedId.value) return
+  if (statusActionBusy.value) return
   deleting.value = true
   try {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}`, { method: "DELETE" })
@@ -490,31 +531,19 @@ onMounted(load)
                   </div>
                 </button>
               </div>
-              <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <h3 class="font-black">状态操作</h3>
-                <p class="mt-1 text-xs text-slate-500">使用 gmall 发布/下架/删除接口。</p>
-                <div class="mt-3 grid gap-2">
-                  <button class="rounded-xl border bg-white px-4 py-2 text-sm font-bold" type="button" @click="publish">发布</button>
-                  <button class="rounded-xl border bg-white px-4 py-2 text-sm font-bold" type="button" @click="deprecate">下架</button>
-                  <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white" type="button" @click="showDeleteConfirm = true">
-                    <Trash2 class="h-4 w-4" />
-                    删除
-                  </button>
-                </div>
-              </div>
             </aside>
 
             <main class="min-w-0 overflow-y-auto p-5">
               <div v-if="activeTab === 'summary'" class="space-y-5">
                 <div class="grid gap-4 md:grid-cols-2">
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">展示价格</div>
-                    <div class="mt-2 text-lg font-black">{{ displayPrice(selected) }}</div>
+                  <div v-for="field in summaryFields" :key="field.label" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs font-black uppercase text-slate-400">{{ field.label }}</div>
+                    <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
                   </div>
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">版本</div>
-                    <div class="mt-2 text-lg font-black">{{ selected.version || "-" }}</div>
-                  </div>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="text-xs font-black uppercase text-slate-400">描述</div>
+                  <p class="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">{{ form.description || "-" }}</p>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
@@ -596,6 +625,28 @@ onMounted(load)
                 <div v-else class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">暂无 Schema，点击加载。</div>
               </div>
 
+              <div v-else-if="activeTab === 'actions'" class="space-y-5">
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <h3 class="font-black">状态操作</h3>
+                  <p class="mt-1 text-sm text-slate-500">使用 gmall 发布/下架/删除接口。</p>
+                  <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="publish">
+                      <Loader2 v-if="publishing" class="h-4 w-4 animate-spin" />
+                      {{ publishing ? "发布中..." : "发布" }}
+                    </button>
+                    <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="deprecate">
+                      <Loader2 v-if="deprecating" class="h-4 w-4 animate-spin" />
+                      {{ deprecating ? "下架中..." : "下架" }}
+                    </button>
+                    <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-white shadow-sm shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="showDeleteConfirm = true">
+                      <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
+                      <Trash2 v-else class="h-4 w-4" />
+                      {{ deleting ? "删除中..." : "删除" }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
               <div v-else-if="activeTab === 'raw'" class="space-y-4">
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   完整字段只读展示，避免手工修改不可编辑字段。
@@ -618,8 +669,9 @@ onMounted(load)
           <div class="mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
         </div>
         <div class="mt-6 flex justify-end gap-3">
-          <button class="rounded-xl border px-5 py-3 font-bold" type="button" :disabled="deleting" @click="showDeleteConfirm = false">取消</button>
-          <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="deleting" @click="removeBundle">
+          <button class="rounded-xl border px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="showDeleteConfirm = false">取消</button>
+          <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="removeBundle">
+            <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
             {{ deleting ? "删除中..." : "确认删除" }}
           </button>
         </div>
