@@ -20,7 +20,7 @@ export function humanizeKey(key: string) {
     .replace(/\bUlid\b/g, "ULID")
 }
 
-export function getDisplayTitle(item: JsonRecord) {
+export function getDisplayTitle(item: JsonRecord, fallback = "") {
   const keys = [
     "name",
     "title",
@@ -41,10 +41,10 @@ export function getDisplayTitle(item: JsonRecord) {
     }
   }
 
-  return "详情记录"
+  return fallback
 }
 
-export function getDisplaySubtitle(item: JsonRecord) {
+export function getDisplaySubtitle(item: JsonRecord, fallback = "") {
   const keys = ["description", "category_tips", "biz_type", "type", "status", "raw_status", "created_at"]
   for (const key of keys) {
     const value = item[key]
@@ -52,7 +52,7 @@ export function getDisplaySubtitle(item: JsonRecord) {
       return key.endsWith("_at") ? formatDate(value) : value
     }
   }
-  return "点击查看完整详情"
+  return fallback
 }
 
 export function getListFields(item: JsonRecord) {

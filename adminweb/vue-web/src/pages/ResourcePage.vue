@@ -29,8 +29,9 @@ const { t } = useAdminLanguage()
 const copy = computed(() => t.value.resourceAdmin)
 
 const meta = computed(() => route.meta as ResourceRouteMeta)
+const routeCopy = computed(() => copy.value.routes[meta.value.copyKey])
 
-const selectedTitle = computed(() => (selected.value ? getDisplayTitle(selected.value) : copy.value.selectRecord))
+const selectedTitle = computed(() => (selected.value ? getDisplayTitle(selected.value, copy.value.fallbackTitle) : copy.value.selectRecord))
 const selectedEntries = computed(() => Object.entries(selected.value || {}))
 const hasNext = computed(() => items.value.length >= pageSize)
 const hasPrevious = computed(() => page.value > 1)
@@ -175,8 +176,8 @@ onMounted(load)
   <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight text-slate-950">{{ meta.title }}</h1>
-        <p class="mt-2 text-base text-slate-600">{{ meta.subtitle }}</p>
+        <h1 class="text-4xl font-black tracking-tight text-slate-950">{{ routeCopy.title }}</h1>
+        <p class="mt-2 text-base text-slate-600">{{ routeCopy.subtitle }}</p>
       </div>
       <button
         class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
@@ -221,8 +222,8 @@ onMounted(load)
           @click="selected = item"
         >
           <div class="min-w-0">
-            <div class="truncate text-lg font-black text-slate-950">{{ getDisplayTitle(item) }}</div>
-            <div class="mt-1 truncate text-sm text-slate-500">{{ getDisplaySubtitle(item) }}</div>
+            <div class="truncate text-lg font-black text-slate-950">{{ getDisplayTitle(item, copy.fallbackTitle) }}</div>
+            <div class="mt-1 truncate text-sm text-slate-500">{{ getDisplaySubtitle(item, copy.fallbackSubtitle) }}</div>
           </div>
           <div class="grid grid-cols-2 gap-3 xl:grid-cols-3">
             <div v-for="field in getListFields(item)" :key="field.key" class="min-w-0">

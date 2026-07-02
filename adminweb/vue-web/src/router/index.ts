@@ -24,12 +24,32 @@ import SettingsPage from "@/pages/SettingsPage.vue"
 import WebhookAuditPage from "@/pages/WebhookAuditPage.vue"
 
 export type ResourceRouteMeta = {
-  title: string
-  subtitle: string
+  copyKey: ResourceRouteKey
   endpoint: string
   itemKeys: string[]
   pagination?: "offset" | "page"
 }
+
+export type ResourceRouteKey =
+  | "dashboard"
+  | "resourcePacks"
+  | "resourcePackFiles"
+  | "lms"
+  | "pipelines"
+  | "bundles"
+  | "prog"
+  | "exams"
+  | "messages"
+  | "mails"
+  | "orders"
+  | "invoices"
+  | "credentials"
+  | "applications"
+  | "pdfTemplates"
+  | "pdfRequests"
+  | "webhooks"
+  | "permissions"
+  | "settings"
 
 export const resourceRoutes: RouteRecordRaw[] = [
   {
@@ -37,8 +57,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "dashboard",
     component: DashboardPage,
     meta: {
-      title: "运营看板",
-      subtitle: "查看用户概览、角色分布、阶段状态和今日收款",
+      copyKey: "dashboard",
       endpoint: "/api/dashboard/ops",
       itemKeys: [],
     } satisfies ResourceRouteMeta,
@@ -48,8 +67,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "resource-packs",
     component: ResourcePacksPage,
     meta: {
-      title: "资源包",
-      subtitle: "查看资源包 (Resource Packs)",
+      copyKey: "resourcePacks",
       endpoint: "/api/lms/resource-packs",
       itemKeys: ["packs", "items"],
       pagination: "page",
@@ -60,8 +78,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "resource-pack-files",
     component: ResourcePackFilesPage,
     meta: {
-      title: "资源文件",
-      subtitle: "查看资源包内的所有文件配置",
+      copyKey: "resourcePackFiles",
       endpoint: "/api/lms/resource-pack-files",
       itemKeys: ["files", "items"],
       pagination: "page",
@@ -72,8 +89,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "lms",
     component: LmsPage,
     meta: {
-      title: "课程配置",
-      subtitle: "维护 GLMS 课程内容、发布状态和基础资料",
+      copyKey: "lms",
       endpoint: "/api/lms/courses",
       itemKeys: ["courses", "items"],
       pagination: "page",
@@ -84,8 +100,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "pipelines",
     component: PipelinesPage,
     meta: {
-      title: "管线配置",
-      subtitle: "维护认证管线、阶段、课程单元、证书和资格要求",
+      copyKey: "pipelines",
       endpoint: "/api/pipelines",
       itemKeys: ["pipelines", "items"],
     } satisfies ResourceRouteMeta,
@@ -95,8 +110,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "bundles",
     component: BundlesPage,
     meta: {
-      title: "商品配置",
-      subtitle: "维护 Bundle 商品、定价快照和支付入口配置",
+      copyKey: "bundles",
       endpoint: "/api/mall/bundles",
       itemKeys: ["bundles", "items"],
     } satisfies ResourceRouteMeta,
@@ -106,8 +120,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "prog",
     component: ProgPage,
     meta: {
-      title: "管线管理",
-      subtitle: "查看考生正在运行的管线实例和状态流转",
+      copyKey: "prog",
       endpoint: "/api/prog/pipelines",
       itemKeys: ["pipelines", "items"],
     } satisfies ResourceRouteMeta,
@@ -117,8 +130,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "exams",
     component: ExamsPage,
     meta: {
-      title: "考试管理",
-      subtitle: "查看 gexam 考试实例、预约信息、成绩和状态流转",
+      copyKey: "exams",
       endpoint: "/api/exams",
       itemKeys: ["exams", "items"],
       pagination: "page",
@@ -129,8 +141,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "messages",
     component: MessagesPage,
     meta: {
-      title: "站内信",
-      subtitle: "查看和管理站内通知",
+      copyKey: "messages",
       endpoint: "/api/messages",
       itemKeys: ["messages", "items"],
     } satisfies ResourceRouteMeta,
@@ -140,8 +151,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "mails",
     component: MailsPage,
     meta: {
-      title: "邮件中心",
-      subtitle: "查看邮件模板和投递记录",
+      copyKey: "mails",
       endpoint: "/api/mails",
       itemKeys: ["mails", "items"],
     } satisfies ResourceRouteMeta,
@@ -151,8 +161,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "orders",
     component: OrdersPage,
     meta: {
-      title: "订单管理",
-      subtitle: "查看认证、管线、阶段、重考和资格申请订单",
+      copyKey: "orders",
       endpoint: "/api/mall/orders",
       itemKeys: ["orders", "items"],
       pagination: "page",
@@ -163,8 +172,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "invoices",
     component: InvoicesPage,
     meta: {
-      title: "发票管理",
-      subtitle: "查看发票和支付凭证",
+      copyKey: "invoices",
       endpoint: "/api/invoices",
       itemKeys: ["invoices", "items"],
     } satisfies ResourceRouteMeta,
@@ -174,8 +182,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "credentials",
     component: CredentialsPage,
     meta: {
-      title: "资格定义",
-      subtitle: "维护认证资格、免考资格和最终证书定义",
+      copyKey: "credentials",
       endpoint: "/api/credentials/definitions",
       itemKeys: ["definitions", "credentials", "items"],
       pagination: "page",
@@ -186,8 +193,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "applications",
     component: ApplicationsPage,
     meta: {
-      title: "审核中心",
-      subtitle: "审核考生提交的资格申请",
+      copyKey: "applications",
       endpoint: "/api/credentials/applications",
       itemKeys: ["applications", "items"],
       pagination: "page",
@@ -198,8 +204,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "pdf-templates",
     component: PdfTemplatesPage,
     meta: {
-      title: "PDF 模板配置",
-      subtitle: "维护证书和证明文件模板",
+      copyKey: "pdfTemplates",
       endpoint: "/api/pdf-templates",
       itemKeys: ["templates", "items"],
     } satisfies ResourceRouteMeta,
@@ -209,8 +214,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "pdf-requests",
     component: PdfRequestsPage,
     meta: {
-      title: "证书生成流水",
-      subtitle: "查看证书 PDF 生成任务",
+      copyKey: "pdfRequests",
       endpoint: "/api/pdf-requests",
       itemKeys: ["requests", "items"],
     } satisfies ResourceRouteMeta,
@@ -220,8 +224,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "audit-webhooks",
     component: WebhookAuditPage,
     meta: {
-      title: "Webhook 审计",
-      subtitle: "查看支付和外部系统回调审计",
+      copyKey: "webhooks",
       endpoint: "/api/audit/webhooks",
       itemKeys: ["webhooks", "events", "items"],
     } satisfies ResourceRouteMeta,
@@ -231,8 +234,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "permissions",
     component: PermissionsPage,
     meta: {
-      title: "考生权限管理",
-      subtitle: "查看和调整考生访问权限",
+      copyKey: "permissions",
       endpoint: "/api/permissions",
       itemKeys: ["permissions", "items"],
     } satisfies ResourceRouteMeta,
@@ -242,8 +244,7 @@ export const resourceRoutes: RouteRecordRaw[] = [
     name: "settings",
     component: SettingsPage,
     meta: {
-      title: "账户设置",
-      subtitle: "维护管理员个人资料和登录密码",
+      copyKey: "settings",
       endpoint: "/api/user/me",
       itemKeys: [],
     } satisfies ResourceRouteMeta,
