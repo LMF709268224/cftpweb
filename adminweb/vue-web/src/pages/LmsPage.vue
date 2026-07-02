@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileJson, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud } from "lucide-vue-next"
+import { FileJson, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -156,6 +156,7 @@ const lessonForm = ref<LessonForm>(emptyLessonForm())
 const materialForm = ref<MaterialForm>(emptyMaterialForm())
 const supplementaryMaterialForm = ref<SupplementaryMaterialForm>(emptySupplementaryMaterialForm())
 const supplementaryItemForm = ref<SupplementaryItemForm>(emptySupplementaryItemForm())
+const supplementaryItemDialogOpen = ref(false)
 const quizForm = ref<QuizForm>(emptyQuizForm())
 const questionForm = ref<QuestionForm>(emptyQuestionForm())
 const optionForm = ref<OptionForm>(emptyOptionForm())
@@ -1049,13 +1050,13 @@ async function loadSupplementaryMaterial() {
       kind: supplementaryMaterialForm.value.kind,
       data_json: supplementaryMaterialForm.value.data_json,
     }), "Chapter")[0]
-    if (firstItem) editSupplementaryItem(firstItem)
-    else newSupplementaryItem()
+    if (firstItem) editSupplementaryItem(firstItem, false)
+    else newSupplementaryItem(false)
   } catch (err) {
     console.error(err)
     supplementaryMaterial.value = null
     supplementaryMaterialForm.value = emptySupplementaryMaterialForm()
-    newSupplementaryItem()
+    newSupplementaryItem(false)
   } finally {
     supplementaryMaterialLoading.value = false
   }
@@ -1081,7 +1082,7 @@ function newMaterial() {
   materialForm.value = emptyMaterialForm()
 }
 
-function editSupplementaryItem(item: SupplementaryMaterialItem) {
+function editSupplementaryItem(item: SupplementaryMaterialItem, openDialog = true) {
   const records = supplementaryEditableRecords()
   const record = records[item.recordIndex] || {}
   editingSupplementaryItemIndex.value = item.recordIndex
@@ -1093,11 +1094,17 @@ function editSupplementaryItem(item: SupplementaryMaterialItem) {
     url: stringFromRecord(record, ["resource_link", "resourceLink", "url", "link", "href", "external_url", "externalUrl"]) || item.url,
     duration: stringFromRecord(record, ["duration", "duration_min", "durationMin", "time", "length"]),
   }
+  supplementaryItemDialogOpen.value = openDialog
 }
 
-function newSupplementaryItem() {
+function newSupplementaryItem(openDialog = true) {
   editingSupplementaryItemIndex.value = -1
   supplementaryItemForm.value = emptySupplementaryItemForm()
+  supplementaryItemDialogOpen.value = openDialog
+}
+
+function closeSupplementaryItemDialog() {
+  supplementaryItemDialogOpen.value = false
 }
 
 async function saveSupplementaryItem() {
@@ -1119,6 +1126,7 @@ async function saveSupplementaryItem() {
   }
   updateSupplementaryDataJson(records)
   await saveSupplementaryMaterial()
+  supplementaryItemDialogOpen.value = false
 }
 
 async function deleteSupplementaryItem() {
@@ -1127,8 +1135,9 @@ async function deleteSupplementaryItem() {
   const records = supplementaryEditableRecords()
   records.splice(editingSupplementaryItemIndex.value, 1)
   updateSupplementaryDataJson(records)
-  newSupplementaryItem()
+  newSupplementaryItem(false)
   await saveSupplementaryMaterial()
+  supplementaryItemDialogOpen.value = false
 }
 
 async function saveSupplementaryMaterial() {
@@ -1793,7 +1802,7 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div class="space-y-4 p-5">
           <div class="rounded-2xl border border-slate-200">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
               <div>
@@ -1802,8 +1811,11 @@ onMounted(() => {
               </div>
               <div class="flex items-center gap-2">
                 <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">{{ supplementaryMaterialItems.length }} 条</span>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" :disabled="!selectedCourseId || supplementaryMaterialLoading" type="button" @click="loadSupplementaryMaterial">
+                <button class="h-10 rounded-xl border px-4 text-sm font-bold disabled:opacity-40" :disabled="!selectedCourseId || supplementaryMaterialLoading" type="button" @click="loadSupplementaryMaterial">
                   刷新
+                </button>
+                <button class="h-10 rounded-xl bg-[#0b4ea2] px-4 text-sm font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newSupplementaryItem()">
+                  新增
                 </button>
               </div>
             </div>
@@ -1823,15 +1835,15 @@ onMounted(() => {
                     <th class="px-4 py-3">Type</th>
                     <th class="px-4 py-3">Title & Description</th>
                     <th class="px-4 py-3">Resource Link</th>
+                    <th class="w-24 px-4 py-3 text-right">操作</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                   <tr
                     v-for="item in supplementaryMaterialItems"
                     :key="item.key"
-                    class="cursor-pointer transition hover:bg-sky-50"
+                    class="transition hover:bg-sky-50"
                     :class="item.recordIndex === editingSupplementaryItemIndex ? 'bg-sky-50' : ''"
-                    @click="editSupplementaryItem(item)"
                   >
                     <td class="whitespace-nowrap px-4 py-4 font-semibold text-slate-800">
                       <span class="mr-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">#{{ item.recordIndex + 1 }}</span>
@@ -1850,66 +1862,87 @@ onMounted(() => {
                       </a>
                       <span v-else class="text-slate-400">-</span>
                     </td>
+                    <td class="w-24 whitespace-nowrap px-4 py-4 text-right">
+                      <button class="whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-[#0b4ea2] shadow-sm hover:bg-sky-50" type="button" @click.stop="editSupplementaryItem(item)">
+                        编辑
+                      </button>
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
-          <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveSupplementaryItem">
-            <div class="flex items-start justify-between gap-3">
-              <div>
-                <h3 class="font-black">{{ editingSupplementaryItemIndex >= 0 ? "编辑单条辅助资料" : "新增单条辅助资料" }}</h3>
-                <p class="mt-1 text-xs text-slate-500">这里改的是 data_json 里的单条记录，保存后会整体提交辅助资料配置。</p>
-              </div>
-              <div class="flex gap-2">
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newSupplementaryItem">
-                  新增
-                </button>
-                <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600 disabled:opacity-40" :disabled="editingSupplementaryItemIndex < 0" type="button" @click="deleteSupplementaryItem">
-                  删除本条
-                </button>
-              </div>
+          <Teleport to="body">
+            <div v-if="supplementaryItemDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+              <form class="flex max-h-[88vh] w-full max-w-[720px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" @submit.prevent="saveSupplementaryItem">
+                <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-5">
+                  <div>
+                    <h3 class="font-black">{{ editingSupplementaryItemIndex >= 0 ? "编辑单条辅助资料" : "新增单条辅助资料" }}</h3>
+                    <p class="mt-1 text-xs text-slate-500">这里改的是 data_json 里的单条记录，保存后会整体提交辅助资料配置。</p>
+                  </div>
+                  <button
+                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+                    type="button"
+                    aria-label="关闭"
+                    @click="closeSupplementaryItemDialog"
+                  >
+                    <X class="h-5 w-5" />
+                  </button>
+                </div>
+                <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                  <div class="grid gap-3">
+                    <label class="block">
+                      <span class="text-sm font-bold">所属章节</span>
+                      <input v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="例如 Chapter 1: Overview of Fintech" />
+                    </label>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <label class="block">
+                        <span class="text-sm font-bold">资料类型</span>
+                        <select v-model="supplementaryItemForm.type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
+                          <option value="Article">Article</option>
+                          <option value="Video">Video</option>
+                          <option value="PDF">PDF</option>
+                          <option value="Link">Link</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </label>
+                      <label class="block">
+                        <span class="text-sm font-bold">时长/备注</span>
+                        <input v-model="supplementaryItemForm.duration" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="可选，例如 5 min" />
+                      </label>
+                    </div>
+                    <label class="block">
+                      <span class="text-sm font-bold">标题</span>
+                      <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="资料标题" />
+                    </label>
+                    <label class="block">
+                      <span class="text-sm font-bold">描述</span>
+                      <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="可选，用户端会展示在标题下方" />
+                    </label>
+                    <label class="block">
+                      <span class="text-sm font-bold">资源链接</span>
+                      <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
+                    </label>
+                  </div>
+                </div>
+                <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                  <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="closeSupplementaryItemDialog">
+                    取消
+                  </button>
+                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" :disabled="editingSupplementaryItemIndex < 0" type="button" @click="deleteSupplementaryItem">
+                    删除本条
+                  </button>
+                  <button class="rounded-xl bg-[#0b4ea2] px-4 py-2 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
+                    {{ savingSupplementaryMaterial ? "保存中..." : "保存本条资料" }}
+                  </button>
+                </div>
+              </form>
             </div>
-            <div class="mt-4 grid gap-3">
-              <label class="block">
-                <span class="text-sm font-bold">所属章节</span>
-                <input v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="例如 Chapter 1: Overview of Fintech" />
-              </label>
-              <div class="grid gap-3 sm:grid-cols-2">
-                <label class="block">
-                  <span class="text-sm font-bold">资料类型</span>
-                  <select v-model="supplementaryItemForm.type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
-                    <option value="Article">Article</option>
-                    <option value="Video">Video</option>
-                    <option value="PDF">PDF</option>
-                    <option value="Link">Link</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </label>
-                <label class="block">
-                  <span class="text-sm font-bold">时长/备注</span>
-                  <input v-model="supplementaryItemForm.duration" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="可选，例如 5 min" />
-                </label>
-              </div>
-              <label class="block">
-                <span class="text-sm font-bold">标题</span>
-                <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="资料标题" />
-              </label>
-              <label class="block">
-                <span class="text-sm font-bold">描述</span>
-                <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="可选，用户端会展示在标题下方" />
-              </label>
-              <label class="block">
-                <span class="text-sm font-bold">资源链接</span>
-                <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
-              </label>
-              <button class="h-10 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
-                {{ savingSupplementaryMaterial ? "保存中..." : "保存本条资料" }}
-              </button>
-            </div>
+          </Teleport>
 
-            <details class="mt-5 border-t border-slate-200 pt-4">
+          <div class="rounded-2xl border border-slate-200 p-4">
+            <details>
               <summary class="cursor-pointer font-black">高级配置：整份辅助资料 JSON</summary>
               <div class="mt-4 grid gap-3">
                 <label class="block">
@@ -1942,7 +1975,7 @@ onMounted(() => {
                 </label>
               </div>
             </div>
-          </form>
+          </div>
         </div>
 
         <div class="border-t border-slate-200 px-5 pt-4">
