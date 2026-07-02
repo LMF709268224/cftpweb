@@ -1230,6 +1230,37 @@ export const zh = {
     cancel: "取消",
     saveAndSubmit: "保存并提交",
   },
+  pdfTemplatesAdmin: {
+    title: "PDF 模板配置",
+    subtitle: "维护证书和证明文件的 HTML 模板。",
+    refresh: "刷新",
+    newTemplate: "新建模板",
+    listTitle: "模板列表",
+    listDescription: "选择模板后查看或编辑。",
+    loading: "正在加载...",
+    noDescription: "暂无描述",
+    empty: "暂无模板",
+    createDescription: "保存后会创建新的 PDF 模板。",
+    fields: {
+      templateId: "Template ID",
+      name: "模板名称",
+      description: "描述",
+      htmlTemplate: "HTML 模板",
+    },
+    saving: "保存中...",
+    saveTemplate: "保存模板",
+    rawFields: "完整字段",
+    rawHint: "系统字段仅用于查看。",
+    preview: "HTML 预览",
+    previewEmpty: "暂无模板内容",
+    unnamed: "未命名模板",
+    toasts: {
+      loadFailed: "PDF 模板加载失败",
+      nameRequired: "模板名称必填",
+      saved: "模板已保存",
+      saveFailed: "保存失败",
+    },
+  },
 }
 
 export type AdminTranslations = typeof zh

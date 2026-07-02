@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
 
 type Mode = "detail" | "create"
@@ -19,15 +20,18 @@ const form = ref({
   description: "",
   html_template: "",
 })
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.pdfTemplatesAdmin)
 
 const selectedFields = computed(() => selected.value || {})
+const previewHtml = computed(() => form.value.html_template || `<p style="color:#64748b">${copy.value.previewEmpty}</p>`)
 
 function templateUlid(template: JsonRecord | null | undefined) {
   return String(pickFirst(template || {}, ["template_ulid", "template_id", "id"]) || "")
 }
 
 function templateName(template: JsonRecord | null | undefined) {
-  return String(pickFirst(template || {}, ["name", "title"]) || "未命名模板")
+  return String(pickFirst(template || {}, ["name", "title"]) || copy.value.unnamed)
 }
 
 function formFromTemplate(template: JsonRecord | null) {
@@ -64,7 +68,7 @@ async function load() {
     }
   } catch (err) {
     console.error(err)
-    toast.error("PDF 模板加载失败")
+    toast.error(copy.value.toasts.loadFailed)
   } finally {
     loading.value = false
   }
@@ -72,7 +76,7 @@ async function load() {
 
 async function save() {
   if (!form.value.name.trim()) {
-    toast.error("模板名称必填")
+    toast.error(copy.value.toasts.nameRequired)
     return
   }
   saving.value = true
@@ -85,11 +89,11 @@ async function save() {
         html_template: form.value.html_template,
       }),
     })
-    toast.success("模板已保存")
+    toast.success(copy.value.toasts.saved)
     await load()
   } catch (err) {
     console.error(err)
-    toast.error("保存失败")
+    toast.error(copy.value.toasts.saveFailed)
   } finally {
     saving.value = false
   }
@@ -102,17 +106,17 @@ onMounted(load)
   <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">PDF 模板配置</h1>
-        <p class="mt-2 text-slate-600">维护证书和证明文件的 HTML 模板。</p>
+        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
-          刷新
+          {{ copy.refresh }}
         </button>
         <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="openCreate">
           <Plus class="h-4 w-4" />
-          新建模板
+          {{ copy.newTemplate }}
         </button>
       </div>
     </header>
@@ -121,14 +125,14 @@ onMounted(load)
       <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 p-5">
           <div>
-            <h2 class="text-xl font-black">模板列表</h2>
-            <p class="mt-1 text-sm text-slate-500">选择模板后查看或编辑。</p>
+            <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ templates.length }}</span>
         </div>
         <div v-if="loading" class="p-12 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          正在加载...
+          {{ copy.loading }}
         </div>
         <button
           v-for="template in templates"
@@ -142,51 +146,51 @@ onMounted(load)
           <div class="flex items-start justify-between gap-4">
             <div>
               <div class="text-lg font-black">{{ templateName(template) }}</div>
-              <div class="mt-2 line-clamp-2 text-sm text-slate-500">{{ template.description || "暂无描述" }}</div>
+              <div class="mt-2 line-clamp-2 text-sm text-slate-500">{{ template.description || copy.noDescription }}</div>
             </div>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">v{{ template.version || 1 }}</span>
           </div>
           <div class="mt-3 break-all text-xs font-semibold text-slate-500">ID: {{ templateUlid(template) || "-" }}</div>
           <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(template.created_at || "")) }}</div>
         </button>
-        <div v-if="!loading && !templates.length" class="p-12 text-center text-slate-500">暂无模板</div>
+        <div v-if="!loading && !templates.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
       </section>
 
       <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="border-b border-slate-200 p-5">
-          <h2 class="text-2xl font-black">{{ mode === "create" ? "新建模板" : templateName(selected) }}</h2>
-          <p class="mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? "保存后会创建新的 PDF 模板。" : templateUlid(selected) }}</p>
+          <h2 class="text-2xl font-black">{{ mode === "create" ? copy.newTemplate : templateName(selected) }}</h2>
+          <p class="mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? copy.createDescription : templateUlid(selected) }}</p>
         </div>
         <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <form class="space-y-4" @submit.prevent="save">
             <label v-if="mode === 'detail'" class="grid gap-2 text-sm font-bold">
-              Template ID
+              {{ copy.fields.templateId }}
               <input v-model="form.template_id" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" />
             </label>
             <label class="grid gap-2 text-sm font-bold">
-              模板名称
+              {{ copy.fields.name }}
               <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
             </label>
             <label class="grid gap-2 text-sm font-bold">
-              描述
+              {{ copy.fields.description }}
               <input v-model="form.description" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="500" />
             </label>
             <label class="grid gap-2 text-sm font-bold">
-              HTML 模板
+              {{ copy.fields.htmlTemplate }}
               <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6" />
             </label>
             <div class="flex justify-end">
               <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="submit" :disabled="saving">
                 <Save class="h-4 w-4" />
-                {{ saving ? "保存中..." : "保存模板" }}
+                {{ saving ? copy.saving : copy.saveTemplate }}
               </button>
             </div>
           </form>
 
           <div class="space-y-4">
             <div v-if="mode === 'detail'" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <h3 class="font-black">完整字段</h3>
-              <p class="mt-1 text-sm text-slate-500">系统字段仅用于查看。</p>
+              <h3 class="font-black">{{ copy.rawFields }}</h3>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.rawHint }}</p>
               <div class="mt-4 grid gap-3">
                 <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
                   {{ key }}
@@ -201,8 +205,8 @@ onMounted(load)
               </div>
             </div>
             <div class="rounded-2xl border border-slate-200 bg-white p-4">
-              <h3 class="font-black">HTML 预览</h3>
-              <iframe class="mt-4 h-[520px] w-full rounded-xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="form.html_template || '<p style=&quot;color:#64748b&quot;>暂无模板内容</p>'" />
+              <h3 class="font-black">{{ copy.preview }}</h3>
+              <iframe class="mt-4 h-[520px] w-full rounded-xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="previewHtml" />
             </div>
           </div>
         </div>
