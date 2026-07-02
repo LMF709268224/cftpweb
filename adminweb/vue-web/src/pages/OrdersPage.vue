@@ -18,7 +18,6 @@ type DetailTab = "summary" | "bundle-detail" | "actions" | "raw"
 type SummaryField = {
   label: string
   value: string
-  wide?: boolean
 }
 
 const orders = ref<JsonRecord[]>([])
@@ -52,7 +51,7 @@ const orderSummaryFields = computed<SummaryField[]>(() => {
   const order = selected.value
   if (!order) return []
   return [
-    { label: "商品名称", value: productName(order), wide: true },
+    { label: "商品名称", value: productName(order) },
     { label: "订单金额", value: amountText(order) },
     { label: "订单状态", value: labelFor(orderStatusOptions, status(order)) },
     { label: "支付状态", value: labelFor(paymentStatusOptions, payStatus(order)) },
@@ -61,9 +60,9 @@ const orderSummaryFields = computed<SummaryField[]>(() => {
     { label: "币种", value: stringValue(pickFirst(order, ["currency_code", "currencyCode", "currency"])) },
     { label: "原始金额", value: stringValue(pickFirst(order, ["amount_minor"])) },
     { label: "候选人", value: candidate(order) },
-    { label: "订单号", value: orderUlid(order), wide: true },
-    { label: "支付订单号", value: stringValue(pickFirst(order, ["pay_order_ulid", "payOrderUlid"])), wide: true },
-    { label: "业务关联 ID", value: bizRef(order) || "-", wide: true },
+    { label: "订单号", value: orderUlid(order) },
+    { label: "支付订单号", value: stringValue(pickFirst(order, ["pay_order_ulid", "payOrderUlid"])) },
+    { label: "业务关联 ID", value: bizRef(order) || "-" },
     { label: "创建时间", value: createdAt(order) },
   ]
 })
@@ -72,7 +71,7 @@ const bundleSummaryFields = computed<SummaryField[]>(() => {
   if (!detail) return []
   const source = bundleDetailSource(detail)
   return [
-    { label: "套餐订单 ID", value: stringValue(pickFirst(source, ["bundle_order_ulid", "order_ulid"]) || bizRef(selected.value)), wide: true },
+    { label: "套餐订单 ID", value: stringValue(pickFirst(source, ["bundle_order_ulid", "order_ulid"]) || bizRef(selected.value)) },
     { label: "套餐 ID", value: stringValue(pickFirst(source, ["bundle_ulid", "bundle_id"])) },
     { label: "候选人", value: stringValue(pickFirst(source, ["candidate_ulid", "candidate_id"]) || candidate(selected.value)) },
     { label: "支付模式", value: stringValue(pickFirst(source, ["payment_mode", "paymentMode"])) },
@@ -426,7 +425,6 @@ onMounted(() => load(1))
                     v-for="field in orderSummaryFields"
                     :key="field.label"
                     class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                    :class="field.wide ? 'md:col-span-2' : ''"
                   >
                     <div class="text-xs font-black uppercase text-slate-400">{{ field.label }}</div>
                     <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
@@ -448,7 +446,6 @@ onMounted(() => load(1))
                       v-for="field in bundleSummaryFields"
                       :key="field.label"
                       class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
-                      :class="field.wide ? 'md:col-span-2' : ''"
                     >
                       <div class="text-xs font-black uppercase text-slate-400">{{ field.label }}</div>
                       <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
