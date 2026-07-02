@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, getDisplayTitle, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 const PAGE_SIZE = 10
@@ -14,6 +15,8 @@ const loading = ref(false)
 const detailOpen = ref(false)
 const page = ref(1)
 const total = ref(0)
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.pdfRequests)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 
@@ -29,26 +32,7 @@ const detailFields = computed(() => {
 })
 
 function fieldLabel(key: string) {
-  const labels: Record<string, string> = {
-    request_ulid: "请求 ID",
-    request_id: "请求 ID",
-    id: "ID",
-    degree_no: "证书编号",
-    status: "状态",
-    candidate_id: "考生 ID",
-    candidate_ulid: "考生 ID",
-    pipeline_cc: "管线实例",
-    pipeline_ulid: "管线实例",
-    cert_ulid: "证书定义",
-    qual_ulid: "资格定义",
-    pdf_template_ulid: "PDF 模板",
-    file_object_key: "文件 Object Key",
-    file_hash: "文件 Hash",
-    error_message: "失败原因",
-    created_at: "创建时间",
-    updated_at: "更新时间",
-  }
-  return labels[key] || humanizeKey(key)
+  return copy.value.fieldLabels[key as keyof typeof copy.value.fieldLabels] || humanizeKey(key)
 }
 
 function requestUlid(request: JsonRecord) {
@@ -57,11 +41,11 @@ function requestUlid(request: JsonRecord) {
 
 function statusLabel(value: unknown) {
   const status = Number(value)
-  if (status === 1) return "待处理"
-  if (status === 2) return "生成中"
-  if (status === 3) return "成功"
-  if (status === 4) return "失败"
-  return String(value || "未知")
+  if (status === 1) return copy.value.statuses.pending
+  if (status === 2) return copy.value.statuses.generating
+  if (status === 3) return copy.value.statuses.success
+  if (status === 4) return copy.value.statuses.failed
+  return String(value || copy.value.statuses.unknown)
 }
 
 function formatFieldValue(key: string, value: unknown) {
@@ -96,7 +80,7 @@ async function load(nextPage = page.value) {
     requests.value = []
     selected.value = null
     detailOpen.value = false
-    toast.error("证书生成流水加载失败")
+    toast.error(copy.value.toasts.loadFailed)
   } finally {
     loading.value = false
   }
@@ -114,35 +98,35 @@ onMounted(() => load(1))
   <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
     <header class="flex items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">证书生成流水</h1>
-        <p class="mt-2 text-slate-600">查看证书 PDF 生成任务及失败原因。</p>
+        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load()">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
-        刷新
+        {{ copy.refresh }}
       </button>
     </header>
 
     <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div class="flex items-center justify-between border-b border-slate-200 p-5">
         <div>
-          <h2 class="text-xl font-black">流水列表</h2>
-          <p class="mt-1 text-sm text-slate-500">每页 10 条；点击查看详情。</p>
+          <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
       <div class="grid grid-cols-[minmax(0,1fr)_160px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
-        <span>流水</span>
-        <span class="text-center">状态</span>
-        <span class="text-right">创建时间</span>
-        <span class="text-right">操作</span>
+        <span>{{ copy.columns.request }}</span>
+        <span class="text-center">{{ copy.columns.status }}</span>
+        <span class="text-right">{{ copy.columns.createdAt }}</span>
+        <span class="text-right">{{ copy.columns.action }}</span>
       </div>
 
       <div v-if="loading" class="p-12 text-center text-slate-500">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-        正在加载...
+        {{ copy.loading }}
       </div>
-      <div v-else-if="!requests.length" class="p-12 text-center text-slate-500">暂无流水</div>
+      <div v-else-if="!requests.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
       <div v-else class="divide-y divide-slate-100">
         <div
           v-for="request in requests"
@@ -164,21 +148,21 @@ onMounted(() => load(1))
               {{ statusLabel(request.status) }}
             </span>
           </div>
-          <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(request.created_at) || "无创建时间" }}</div>
+          <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(request.created_at) || copy.noCreatedAt }}</div>
           <div class="text-right">
             <button
               class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-[#0b4ea2] shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
               type="button"
               @click.stop="openRequest(request)"
             >
-              查看详情
+              {{ copy.viewDetails }}
             </button>
           </div>
         </div>
       </div>
 
       <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-        <span class="text-sm font-bold text-slate-500">第 {{ page }} / {{ totalPages }} 页</span>
+        <span class="text-sm font-bold text-slate-500">{{ copy.pageText(page, totalPages) }}</span>
         <div class="flex gap-3">
           <button
             class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
@@ -187,7 +171,7 @@ onMounted(() => load(1))
             @click="goPage(page - 1)"
           >
             <ChevronLeft class="h-4 w-4" />
-            上一页
+            {{ copy.prev }}
           </button>
           <button
             class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
@@ -195,7 +179,7 @@ onMounted(() => load(1))
             :disabled="page >= totalPages || loading"
             @click="goPage(page + 1)"
           >
-            下一页
+            {{ copy.next }}
             <ChevronRight class="h-4 w-4" />
           </button>
         </div>
@@ -211,13 +195,13 @@ onMounted(() => load(1))
                 <FileBadge class="h-5 w-5" />
               </span>
               <div class="min-w-0">
-                <h2 class="text-2xl font-black text-slate-950">流水详情</h2>
+              <h2 class="text-2xl font-black text-slate-950">{{ copy.detailTitle }}</h2>
               </div>
             </div>
             <button
               class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               type="button"
-              aria-label="关闭"
+              :aria-label="copy.close"
               @click="closeDetail"
             >
               <X class="h-5 w-5" />
@@ -226,7 +210,7 @@ onMounted(() => load(1))
 
           <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
             <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-              <div class="text-sm font-black text-blue-700">当前流水</div>
+              <div class="text-sm font-black text-blue-700">{{ copy.currentRequest }}</div>
               <div class="mt-1 break-all text-lg font-black text-slate-950">{{ requestUlid(selected) || "-" }}</div>
               <div class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(selected.status))">
                 {{ statusLabel(selected.status) }}
@@ -241,7 +225,7 @@ onMounted(() => load(1))
             </div>
 
             <div class="rounded-2xl border border-slate-200">
-              <div class="border-b border-slate-100 px-4 py-3 text-sm font-black">完整原始字段</div>
+              <div class="border-b border-slate-100 px-4 py-3 text-sm font-black">{{ copy.rawFields }}</div>
               <pre class="max-h-[460px] overflow-auto rounded-b-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
             </div>
           </div>

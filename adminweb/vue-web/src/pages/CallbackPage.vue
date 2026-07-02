@@ -1,21 +1,24 @@
 <script setup lang="ts">
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { apiClient } from "@/lib/apiClient"
 import { setAuthSession } from "@/lib/authStorage"
+import { useAdminLanguage } from "@/lib/language"
 
 const route = useRoute()
 const router = useRouter()
 const status = ref<"loading" | "success" | "error">("loading")
 const error = ref("")
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.callback)
 
 onMounted(async () => {
   const code = String(route.query.code || "")
   const state = String(route.query.state || "")
   if (!code || !state) {
     status.value = "error"
-    error.value = "认证回调参数不完整。"
+    error.value = copy.value.missingParams
     setTimeout(() => router.push("/login"), 2500)
     return
   }
@@ -35,7 +38,7 @@ onMounted(async () => {
   } catch (err) {
     console.error(err)
     status.value = "error"
-    error.value = "认证失败，请重新登录。"
+    error.value = copy.value.authFailed
     setTimeout(() => router.push("/login"), 2500)
   }
 })
@@ -50,10 +53,10 @@ onMounted(async () => {
         <ShieldAlert v-else class="h-8 w-8" />
       </div>
       <h1 class="text-2xl font-black">
-        {{ status === "loading" ? "正在完成登录" : status === "success" ? "认证成功" : "认证失败" }}
+        {{ status === "loading" ? copy.loadingTitle : status === "success" ? copy.successTitle : copy.errorTitle }}
       </h1>
       <p class="mt-3 text-sm leading-6 text-slate-300">
-        {{ status === "loading" ? "正在换取后台访问令牌。" : status === "success" ? "正在进入管理后台。" : error }}
+        {{ status === "loading" ? copy.loadingDescription : status === "success" ? copy.successDescription : error }}
       </p>
     </div>
   </div>

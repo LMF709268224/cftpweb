@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 const invoices = ref<JsonRecord[]>([])
@@ -13,6 +14,8 @@ const detailOpen = ref(false)
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.invoices)
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => page.value * pageSize < total.value || invoices.value.length >= pageSize)
@@ -57,7 +60,7 @@ async function load(targetPage = page.value) {
     invoices.value = []
     selected.value = null
     detailOpen.value = false
-    toast.error("发票加载失败")
+    toast.error(copy.value.toasts.loadFailed)
   } finally {
     loading.value = false
   }
@@ -70,33 +73,33 @@ onMounted(() => load(1))
   <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">发票管理</h1>
-        <p class="mt-2 text-slate-600">查看支付发票和收款记录。</p>
+        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
         <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
-        刷新
+        {{ copy.refresh }}
       </button>
     </header>
 
     <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div class="flex items-center justify-between border-b border-slate-200 p-5">
         <div>
-          <h2 class="text-xl font-black">发票列表</h2>
-          <p class="mt-1 text-sm text-slate-500">点击发票查看详情。</p>
+          <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
       <div class="grid grid-cols-[minmax(0,1fr)_120px_240px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
-        <span>发票</span>
-        <span class="text-right">金额</span>
-        <span class="text-center">状态</span>
-        <span class="text-right">创建时间</span>
-        <span class="text-right">操作</span>
+        <span>{{ copy.columns.invoice }}</span>
+        <span class="text-right">{{ copy.columns.amount }}</span>
+        <span class="text-center">{{ copy.columns.status }}</span>
+        <span class="text-right">{{ copy.columns.createdAt }}</span>
+        <span class="text-right">{{ copy.columns.action }}</span>
       </div>
       <div v-if="loading" class="p-12 text-center text-slate-500">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-        正在加载...
+        {{ copy.loading }}
       </div>
       <div v-else-if="invoices.length" class="divide-y divide-slate-100">
         <div
@@ -112,7 +115,7 @@ onMounted(() => load(1))
         >
           <div class="min-w-0">
             <div class="truncate font-black text-slate-950">{{ invoiceId(invoice) || "-" }}</div>
-            <div class="mt-1 break-all text-sm text-slate-500">订单：{{ orderId(invoice) }}</div>
+            <div class="mt-1 break-all text-sm text-slate-500">{{ copy.orderPrefix }}{{ orderId(invoice) }}</div>
           </div>
           <div class="text-right text-sm font-black">{{ amountText(invoice) }}</div>
           <div class="min-w-0 text-center">
@@ -125,17 +128,17 @@ onMounted(() => load(1))
               type="button"
               @click.stop="openInvoice(invoice)"
             >
-              查看详情
+              {{ copy.viewDetails }}
             </button>
           </div>
         </div>
       </div>
-      <div v-else class="p-12 text-center text-slate-500">暂无发票</div>
+      <div v-else class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
       <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-        <span class="text-sm font-bold text-slate-500">第 {{ page }} 页</span>
+        <span class="text-sm font-bold text-slate-500">{{ copy.pageText(page) }}</span>
         <div class="flex gap-3">
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">上一页</button>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">下一页</button>
+          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">{{ copy.prev }}</button>
+          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">{{ copy.next }}</button>
         </div>
       </div>
     </section>
@@ -145,13 +148,13 @@ onMounted(() => load(1))
         <section class="flex max-h-[88vh] w-full max-w-[1120px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
             <div class="min-w-0">
-              <h2 class="text-2xl font-black text-slate-950">发票详情</h2>
+              <h2 class="text-2xl font-black text-slate-950">{{ copy.detailTitle }}</h2>
               <p class="mt-1 break-all text-sm text-slate-500">{{ invoiceId(selected) || "-" }}</p>
             </div>
             <button
               class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               type="button"
-              aria-label="关闭"
+              :aria-label="copy.close"
               @click="closeDetail"
             >
               <X class="h-5 w-5" />
@@ -160,15 +163,15 @@ onMounted(() => load(1))
           <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
             <div class="grid gap-4 md:grid-cols-3">
               <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div class="text-xs font-black uppercase text-slate-400">订单</div>
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.order }}</div>
                 <div class="mt-2 break-all text-sm font-bold">{{ orderId(selected) }}</div>
               </div>
               <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div class="text-xs font-black uppercase text-slate-400">金额</div>
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.amount }}</div>
                 <div class="mt-2 text-sm font-bold">{{ amountText(selected) }}</div>
               </div>
               <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <div class="text-xs font-black uppercase text-slate-400">状态</div>
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.status }}</div>
                 <div class="mt-2">
                   <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(selected.status)">{{ selected.status || "-" }}</span>
                 </div>

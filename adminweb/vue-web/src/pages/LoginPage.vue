@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { Loader2, ShieldCheck } from "lucide-vue-next"
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { apiClient } from "@/lib/apiClient"
+import { useAdminLanguage } from "@/lib/language"
 
 const error = ref("")
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.login)
 
 function reload() {
   window.location.reload()
@@ -17,10 +20,10 @@ onMounted(async () => {
       window.location.href = data.url
       return
     }
-    error.value = "未获取到登录地址，请稍后重试。"
+    error.value = copy.value.missingUrl
   } catch (err) {
     console.error(err)
-    error.value = "登录初始化失败，请检查后台认证服务。"
+    error.value = copy.value.initFailed
   }
 })
 </script>
@@ -32,9 +35,9 @@ onMounted(async () => {
         <ShieldCheck v-if="error" class="h-8 w-8" />
         <Loader2 v-else class="h-8 w-8 animate-spin" />
       </div>
-      <h1 class="text-2xl font-black">{{ error ? "登录遇到问题" : "正在跳转认证中心" }}</h1>
+      <h1 class="text-2xl font-black">{{ error ? copy.errorTitle : copy.loadingTitle }}</h1>
       <p class="mt-3 text-sm leading-6 text-slate-300">
-        {{ error || "正在为你建立安全会话，请不要关闭页面。" }}
+        {{ error || copy.loadingDescription }}
       </p>
       <button
         v-if="error"
@@ -42,7 +45,7 @@ onMounted(async () => {
         type="button"
         @click="reload"
       >
-        重试
+        {{ copy.retry }}
       </button>
     </div>
   </div>
