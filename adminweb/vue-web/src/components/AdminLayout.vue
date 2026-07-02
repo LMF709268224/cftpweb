@@ -18,7 +18,6 @@ import {
   Receipt,
   Settings,
   ShieldCheck,
-  Webhook,
 } from "lucide-vue-next"
 import { computed, onMounted, onUnmounted, ref } from "vue"
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router"
@@ -149,7 +148,6 @@ const navGroups = computed(() => [
     items: [
       { path: "/pdf-templates", label: copy.value.nav.pdfTemplates, icon: FileText },
       { path: "/pdf-requests", label: copy.value.nav.pdfRequests, icon: FileBadge },
-      { path: "/audit/webhooks", label: copy.value.nav.webhooks, icon: Webhook },
     ],
   },
 ])

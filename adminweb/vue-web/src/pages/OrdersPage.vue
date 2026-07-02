@@ -15,6 +15,11 @@ import {
 } from "@/lib/status"
 
 type DetailTab = "summary" | "bundle-detail" | "actions" | "raw"
+type SummaryField = {
+  label: string
+  value: string
+  wide?: boolean
+}
 
 const orders = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
@@ -36,7 +41,6 @@ const paymentStatus = ref("")
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => orders.value.length >= pageSize)
-const selectedFields = computed(() => selected.value || {})
 const isBundlePurchase = computed(() => normalizeStatus(biz(selected.value || {})) === "BUNDLE_PURCHASE")
 const detailTabs = computed(() => [
   { key: "summary" as const, title: "订单摘要", count: selected.value ? 1 : 0 },
@@ -44,6 +48,38 @@ const detailTabs = computed(() => [
   { key: "actions" as const, title: "支持操作", count: isBundlePurchase.value ? 1 : 0 },
   { key: "raw" as const, title: "完整字段", count: 1 },
 ])
+const orderSummaryFields = computed<SummaryField[]>(() => {
+  const order = selected.value
+  if (!order) return []
+  return [
+    { label: "商品名称", value: productName(order), wide: true },
+    { label: "订单金额", value: amountText(order) },
+    { label: "订单状态", value: labelFor(orderStatusOptions, status(order)) },
+    { label: "支付状态", value: labelFor(paymentStatusOptions, payStatus(order)) },
+    { label: "业务类型", value: labelFor(bizTypeOptions, biz(order)) },
+    { label: "业务类型编码", value: stringValue(biz(order)) },
+    { label: "币种", value: stringValue(pickFirst(order, ["currency_code", "currencyCode", "currency"])) },
+    { label: "原始金额", value: stringValue(pickFirst(order, ["amount_minor"])) },
+    { label: "候选人", value: candidate(order) },
+    { label: "订单号", value: orderUlid(order), wide: true },
+    { label: "支付订单号", value: stringValue(pickFirst(order, ["pay_order_ulid", "payOrderUlid"])), wide: true },
+    { label: "业务关联 ID", value: bizRef(order) || "-", wide: true },
+    { label: "创建时间", value: createdAt(order) },
+  ]
+})
+const bundleSummaryFields = computed<SummaryField[]>(() => {
+  const detail = bundleDetail.value
+  if (!detail) return []
+  const source = bundleDetailSource(detail)
+  return [
+    { label: "套餐订单 ID", value: stringValue(pickFirst(source, ["bundle_order_ulid", "order_ulid"]) || bizRef(selected.value)), wide: true },
+    { label: "套餐 ID", value: stringValue(pickFirst(source, ["bundle_ulid", "bundle_id"])) },
+    { label: "候选人", value: stringValue(pickFirst(source, ["candidate_ulid", "candidate_id"]) || candidate(selected.value)) },
+    { label: "支付模式", value: stringValue(pickFirst(source, ["payment_mode", "paymentMode"])) },
+    { label: "订单状态", value: stringValue(pickFirst(source, ["order_status", "orderStatus", "status"])) },
+    { label: "创建时间", value: formatDate(String(pickFirst(source, ["created_at", "createdAt"]) || "")) || "-" },
+  ]
+})
 
 function orderUlid(order: JsonRecord | null | undefined) {
   return String(pickFirst(order || {}, ["order_ulid", "logical_order_ulid", "biz_order_ulid", "order_id"]) || "")
@@ -89,6 +125,23 @@ function createdAt(order: JsonRecord | null | undefined) {
     return formatDate(new Date(ms).toISOString())
   }
   return formatDate(String(value || ""))
+}
+
+function stringValue(value: unknown) {
+  if (value === undefined || value === null || value === "") return "-"
+  return String(value)
+}
+
+function bundleDetailSource(detail: JsonRecord) {
+  const nestedDetail = detail.detail
+  if (nestedDetail && typeof nestedDetail === "object" && !Array.isArray(nestedDetail)) {
+    const summary = (nestedDetail as JsonRecord).summary
+    if (summary && typeof summary === "object" && !Array.isArray(summary)) return summary as JsonRecord
+    return nestedDetail as JsonRecord
+  }
+  const summary = detail.summary
+  if (summary && typeof summary === "object" && !Array.isArray(summary)) return summary as JsonRecord
+  return detail
 }
 
 function canPurge(order: JsonRecord | null | undefined) {
@@ -239,11 +292,10 @@ onMounted(() => load(1))
         </div>
         <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
       </div>
-      <div class="grid grid-cols-[minmax(0,1fr)_140px_130px_130px_170px_112px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+      <div class="grid grid-cols-[minmax(0,1fr)_140px_190px_170px_112px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
         <span>订单</span>
         <span class="text-right">金额</span>
         <span class="text-center">状态</span>
-        <span class="text-center">支付</span>
         <span>创建时间</span>
         <span class="text-right">操作</span>
       </div>
@@ -255,7 +307,7 @@ onMounted(() => load(1))
         <div
           v-for="order in orders"
           :key="orderUlid(order)"
-          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_140px_130px_130px_170px_112px] items-center gap-4 px-5 py-4 transition hover:bg-sky-50"
+          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_140px_190px_170px_112px] items-center gap-4 px-5 py-4 transition hover:bg-sky-50"
           :class="orderUlid(selected) === orderUlid(order) ? 'bg-sky-50' : ''"
           role="button"
           tabindex="0"
@@ -272,12 +324,10 @@ onMounted(() => load(1))
             </div>
           </div>
           <div class="text-right text-sm font-black">{{ amountText(order) }}</div>
-          <div class="text-center">
+          <div class="flex items-center justify-center gap-2">
             <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(order))">
               {{ labelFor(orderStatusOptions, status(order)) }}
             </span>
-          </div>
-          <div class="text-center">
             <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
               {{ labelFor(paymentStatusOptions, payStatus(order)) }}
             </span>
@@ -312,14 +362,22 @@ onMounted(() => load(1))
               <h2 class="truncate text-2xl font-black text-slate-950">{{ productName(selected) }}</h2>
               <p class="mt-1 break-all text-sm text-slate-500">{{ orderUlid(selected) }}</p>
             </div>
-            <button
-              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
-              type="button"
-              aria-label="关闭"
-              @click="closeDetail"
-            >
-              <X class="h-5 w-5" />
-            </button>
+            <div class="flex shrink-0 items-center gap-2">
+              <span class="hidden rounded-full border px-3 py-1 text-xs font-black sm:inline-flex" :class="badgeClass(status(selected))">
+                {{ labelFor(orderStatusOptions, status(selected)) }}
+              </span>
+              <span class="hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600 sm:inline-flex">
+                {{ labelFor(paymentStatusOptions, payStatus(selected)) }}
+              </span>
+              <button
+                class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+                type="button"
+                aria-label="关闭"
+                @click="closeDetail"
+              >
+                <X class="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           <div class="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
@@ -343,27 +401,36 @@ onMounted(() => load(1))
 
             <main class="min-w-0 overflow-y-auto p-5">
               <div v-if="activeTab === 'summary'" class="space-y-5">
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">金额</div>
-                    <div class="mt-2 text-lg font-black">{{ amountText(selected) }}</div>
-                  </div>
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">业务类型</div>
-                    <div class="mt-2 text-lg font-black">{{ labelFor(bizTypeOptions, biz(selected)) }}</div>
+                <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+                  <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div class="min-w-0">
+                      <div class="text-xs font-black text-blue-600">当前订单</div>
+                      <div class="mt-1 truncate text-xl font-black text-slate-950">{{ productName(selected) }}</div>
+                      <div class="mt-2 flex flex-wrap items-center gap-2">
+                        <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(selected))">
+                          {{ labelFor(orderStatusOptions, status(selected)) }}
+                        </span>
+                        <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600">
+                          {{ labelFor(paymentStatusOptions, payStatus(selected)) }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="rounded-2xl border border-blue-100 bg-white px-5 py-4 text-right shadow-sm">
+                      <div class="text-xs font-black text-slate-400">订单金额</div>
+                      <div class="mt-1 text-2xl font-black text-[#0b4ea2]">{{ amountText(selected) }}</div>
+                    </div>
                   </div>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
-                  <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
-                    {{ key }}
-                    <textarea
-                      v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                      class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                      disabled
-                      :value="JSON.stringify(value, null, 2)"
-                    />
-                    <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
-                  </label>
+                  <div
+                    v-for="field in orderSummaryFields"
+                    :key="field.label"
+                    class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    :class="field.wide ? 'md:col-span-2' : ''"
+                  >
+                    <div class="text-xs font-black uppercase text-slate-400">{{ field.label }}</div>
+                    <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
+                  </div>
                 </div>
               </div>
 
@@ -375,16 +442,35 @@ onMounted(() => load(1))
                   <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
                   正在加载套餐订单详情...
                 </div>
-                <pre v-else-if="bundleDetail" class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(bundleDetail, null, 2) }}</pre>
+                <div v-else-if="bundleDetail" class="space-y-4">
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div
+                      v-for="field in bundleSummaryFields"
+                      :key="field.label"
+                      class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                      :class="field.wide ? 'md:col-span-2' : ''"
+                    >
+                      <div class="text-xs font-black uppercase text-slate-400">{{ field.label }}</div>
+                      <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
+                    </div>
+                  </div>
+                  <details class="overflow-hidden rounded-2xl border border-slate-200">
+                    <summary class="cursor-pointer bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">完整套餐字段</summary>
+                    <pre class="max-h-[520px] overflow-auto bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(bundleDetail, null, 2) }}</pre>
+                  </details>
+                </div>
                 <div v-else class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">暂无套餐订单详情</div>
               </div>
 
               <div v-else-if="activeTab === 'actions'" class="space-y-4">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  当前 adminbff 只提供认证套餐订单的测试数据清理接口。其他订单类型只读展示。
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <div class="text-base font-black text-slate-950">支持操作</div>
+                  <p class="mt-2 text-sm text-slate-600">
+                    当前 adminbff 只提供认证套餐订单的测试数据清理接口。其他订单类型只读展示。
+                  </p>
                 </div>
                 <button
-                  class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50"
+                  class="inline-flex h-11 items-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-bold text-white shadow-sm shadow-red-200 disabled:opacity-50"
                   type="button"
                   :disabled="!isBundlePurchase || Boolean(purging)"
                   @click="showPurgeConfirm = true"
