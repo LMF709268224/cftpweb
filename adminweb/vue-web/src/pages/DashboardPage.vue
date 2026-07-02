@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
+import { useAdminLanguage } from "@/lib/language"
 import { badgeClass } from "@/lib/status"
 
 type StageBucket = {
@@ -62,6 +63,137 @@ const data = ref<DashboardData | null>(null)
 const keyword = ref("")
 const roleFilter = ref("all")
 const statusFilter = ref("all")
+const { lang, isZh } = useAdminLanguage()
+
+const copy = computed(() => {
+  if (!isZh.value) {
+    return {
+      eyebrow: "Admin Dashboard",
+      title: "Dashboard",
+      subtitle: "View users, role distribution, pipeline stages, and today's revenue.",
+      auditLogs: "Audit Logs",
+      emailActivity: "Email Activity",
+      refresh: "Refresh",
+      loading: "Loading",
+      loadFailed: "Dashboard failed to load",
+      profileCompletion: "Profile Completion",
+      noRevenue: "No payments today",
+      summary: {
+        totalUsers: "Total Users",
+        activeUsers: "Active Users",
+        inactiveUsers: "Inactive Users",
+        admins: "Admins",
+      },
+      filters: {
+        allRoles: "All Roles",
+        allStatus: "All Status",
+        active: "Active",
+        inactive: "Inactive",
+        deleted: "Deleted",
+        searchPlaceholder: "Search users by name or email...",
+      },
+      userManagement: "User Management",
+      userManagementHint: "Recent users returned directly by the current Casdoor and gmid APIs.",
+      table: {
+        user: "User",
+        email: "Email",
+        location: "Location",
+        role: "Role",
+        status: "Status",
+        emailVerified: "Email Verified",
+        created: "Created",
+      },
+      noUsers: "No users",
+      verified: "Verified",
+      unverified: "Unverified",
+      stageDistribution: "Stage Distribution",
+      stageDistributionHint: "Grouped by current stage and pipeline status.",
+      pipelines: "pipelines",
+      noStageData: "No stage data",
+      unknownStatus: "Unknown status",
+      peoplePipelines: "people / pipelines",
+      businessOverview: "Business Overview",
+      businessOverviewHint: "Operational metrics specific to this system.",
+      candidatesTotal: "Candidates",
+      todayRevenue: "Today's Revenue",
+      paidOrders: (count: number) => `Paid orders: ${count}`,
+      dataRoute: {
+        userStats: "User stats: from the Casdoor user list.",
+        candidates: "Candidates: counted from Casdoor users after mapping to platform ULIDs through gmid.",
+        stages: "Stage distribution: from gprog pipeline instances, grouped by current stage and status.",
+        revenue: "Today's revenue: from gmall orders, only counting orders created today with payment status PAID.",
+      },
+      roles: {
+        student: "student",
+        admin: "admin",
+        member: "member",
+      },
+    }
+  }
+
+  return {
+    eyebrow: "Admin Dashboard",
+    title: "运营看板",
+    subtitle: "查看用户概览、角色分布、阶段状态和今日收款。",
+    auditLogs: "审计日志",
+    emailActivity: "邮件活动",
+    refresh: "刷新",
+    loading: "加载中",
+    loadFailed: "运营看板加载失败",
+    profileCompletion: "资料完整度",
+    noRevenue: "暂无收款",
+    summary: {
+      totalUsers: "用户总数",
+      activeUsers: "活跃用户",
+      inactiveUsers: "停用用户",
+      admins: "管理员",
+    },
+    filters: {
+      allRoles: "全部角色",
+      allStatus: "全部状态",
+      active: "活跃",
+      inactive: "停用",
+      deleted: "已删除",
+      searchPlaceholder: "搜索用户姓名或邮箱...",
+    },
+    userManagement: "用户管理",
+    userManagementHint: "来自 Casdoor 与 gmid 的用户摘要；这里先展示接口已能直接获取到的最近用户。",
+    table: {
+      user: "用户",
+      email: "邮箱",
+      location: "地区",
+      role: "角色",
+      status: "状态",
+      emailVerified: "邮箱验证",
+      created: "创建时间",
+    },
+    noUsers: "暂无用户",
+    verified: "已验证",
+    unverified: "未验证",
+    stageDistribution: "阶段分布",
+    stageDistributionHint: "按当前阶段和管线状态统计。",
+    pipelines: "条管线",
+    noStageData: "暂无阶段数据",
+    unknownStatus: "未知状态",
+    peoplePipelines: "人/管线",
+    businessOverview: "业务概览",
+    businessOverviewHint: "我们系统特有的运营指标。",
+    candidatesTotal: "考生总数",
+    todayRevenue: "今日收款金额",
+    paidOrders: (count: number) => `已支付订单 ${count} 笔`,
+    dataRoute: {
+      userStats: "用户统计：来自 Casdoor 用户列表。",
+      candidates: "考生总数：来自 Casdoor 用户列表，并通过 gmid 映射到平台 ULID 后统计。",
+      stages: "阶段分布：来自 gprog 管线实例列表，按当前阶段和状态聚合。",
+      revenue: "今日收款：来自 gmall 订单列表，只统计今天创建且支付状态为 PAID 的订单。",
+    },
+    roles: {
+      student: "学生",
+      admin: "管理员",
+      member: "会员",
+    },
+  }
+})
 
 const userStats = computed<UserStats>(() => data.value?.user_stats || { total: 0, active: 0, inactive: 0, admins: 0, email_verified: 0 })
 const totalPipelines = computed(() => data.value?.stage_buckets.reduce((sum, item) => sum + Number(item.count || 0), 0) || 0)
@@ -69,12 +201,12 @@ const totalPaidOrders = computed(() => data.value?.today_revenue.reduce((sum, it
 const profileCompletion = computed(() => Math.max(0, Math.min(100, Number(data.value?.profile_completion_percent || 0))))
 const revenueText = computed(() => {
   const items = data.value?.today_revenue || []
-  if (!items.length) return "暂无收款"
+  if (!items.length) return copy.value.noRevenue
   return items.map((item) => `${item.currency} ${(Number(item.amount_minor || 0) / 100).toFixed(2)}`).join(" / ")
 })
 const roleOptions = computed(() => [
-  { value: "all", label: "全部角色" },
-  ...(data.value?.user_role_stats || []).map((item) => ({ value: item.key, label: item.label })),
+  { value: "all", label: copy.value.filters.allRoles },
+  ...(data.value?.user_role_stats || []).map((item) => ({ value: item.key, label: roleLabel(item.label || item.key) })),
 ])
 const filteredUsers = computed(() => {
   const normalizedKeyword = keyword.value.trim().toLowerCase()
@@ -89,10 +221,10 @@ const filteredUsers = computed(() => {
 })
 
 const summaryCards = computed(() => [
-  { label: "Total Users", value: userStats.value.total, tone: "text-slate-950", icon: Users },
-  { label: "Active Users", value: userStats.value.active, tone: "text-emerald-600", icon: UserCheck },
-  { label: "Inactive Users", value: userStats.value.inactive, tone: "text-red-600", icon: UserMinus },
-  { label: "Admins", value: userStats.value.admins, tone: "text-blue-600", icon: Shield },
+  { label: copy.value.summary.totalUsers, value: userStats.value.total, tone: "text-slate-950", icon: Users },
+  { label: copy.value.summary.activeUsers, value: userStats.value.active, tone: "text-emerald-600", icon: UserCheck },
+  { label: copy.value.summary.inactiveUsers, value: userStats.value.inactive, tone: "text-red-600", icon: UserMinus },
+  { label: copy.value.summary.admins, value: userStats.value.admins, tone: "text-blue-600", icon: Shield },
 ])
 
 function stageLabel(stageId: string) {
@@ -106,6 +238,14 @@ function roleBadgeClass(role: string) {
   return "bg-slate-100 text-slate-600"
 }
 
+function roleLabel(role: string) {
+  const normalized = role.toLowerCase()
+  if (normalized.includes("student")) return copy.value.roles.student
+  if (normalized.includes("admin")) return copy.value.roles.admin
+  if (normalized.includes("member")) return copy.value.roles.member
+  return role || "-"
+}
+
 function userStatusClass(status: string) {
   const normalized = status.toLowerCase()
   if (normalized === "active") return "bg-blue-100 text-blue-700"
@@ -113,11 +253,19 @@ function userStatusClass(status: string) {
   return "bg-slate-100 text-slate-600"
 }
 
+function userStatusLabel(status: string) {
+  const normalized = status.toLowerCase()
+  if (normalized === "active") return copy.value.filters.active
+  if (normalized === "inactive") return copy.value.filters.inactive
+  if (normalized === "deleted") return copy.value.filters.deleted
+  return status || "-"
+}
+
 function formatDate(raw: string) {
   if (!raw) return "-"
   const parsed = new Date(raw)
   if (Number.isNaN(parsed.getTime())) return raw.slice(0, 10)
-  return parsed.toLocaleDateString("zh-CN")
+  return parsed.toLocaleDateString(lang.value === "zh" ? "zh-CN" : "en-US")
 }
 
 async function loadDashboard() {
@@ -126,7 +274,7 @@ async function loadDashboard() {
     data.value = await apiClient<DashboardData>("/api/dashboard/ops")
   } catch (err) {
     console.error(err)
-    toast.error("运营看板加载失败")
+    toast.error(copy.value.loadFailed)
   } finally {
     loading.value = false
   }
@@ -139,18 +287,18 @@ onMounted(loadDashboard)
   <main class="mx-auto max-w-[1600px] px-6 py-8">
     <header class="mb-7 flex flex-wrap items-center justify-between gap-4">
       <div>
-        <div class="mb-2 text-sm font-semibold text-slate-500">Admin Dashboard</div>
-        <h1 class="text-4xl font-black tracking-tight">运营看板</h1>
-        <p class="mt-2 text-slate-500">查看用户概览、角色分布、阶段状态和今日收款。</p>
+        <div class="mb-2 text-sm font-semibold text-slate-500">{{ copy.eyebrow }}</div>
+        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-500">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <RouterLink to="/audit/webhooks" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold shadow-sm hover:border-slate-400">
           <Activity class="h-4 w-4" />
-          Audit Logs
+          {{ copy.auditLogs }}
         </RouterLink>
         <RouterLink to="/mails" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold shadow-sm hover:border-slate-400">
           <Mail class="h-4 w-4" />
-          Email Activity
+          {{ copy.emailActivity }}
         </RouterLink>
         <button
           class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3 font-bold shadow-sm transition hover:border-slate-500 disabled:opacity-50"
@@ -160,14 +308,14 @@ onMounted(loadDashboard)
         >
           <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
           <RefreshCw v-else class="h-4 w-4" />
-          刷新
+          {{ copy.refresh }}
         </button>
       </div>
     </header>
 
     <section class="mb-7 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div class="mb-2 flex items-center justify-between text-sm font-semibold text-slate-600">
-        <span>Profile Completion</span>
+        <span>{{ copy.profileCompletion }}</span>
         <span class="text-amber-600">{{ profileCompletion }}%</span>
       </div>
       <div class="h-2 overflow-hidden rounded-full bg-blue-100">
@@ -188,7 +336,7 @@ onMounted(loadDashboard)
     <section class="mb-7 grid gap-4 md:grid-cols-3 2xl:grid-cols-6">
       <article v-for="role in data?.user_role_stats || []" :key="role.key" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="flex items-center justify-between">
-          <p class="text-sm font-bold text-slate-600">{{ role.label }}</p>
+          <p class="text-sm font-bold text-slate-600">{{ roleLabel(role.label || role.key) }}</p>
           <Users class="h-4 w-4 text-slate-400" />
         </div>
         <p class="mt-5 text-3xl font-black text-[#0b579b]">{{ role.count }}</p>
@@ -197,21 +345,21 @@ onMounted(loadDashboard)
 
     <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div class="border-b border-slate-100 p-6">
-        <h2 class="text-xl font-black">User Management</h2>
-        <p class="mt-1 text-sm text-slate-500">来自 Casdoor 与 gmid 的用户摘要；这里先展示接口已能直接获取到的最近用户。</p>
+        <h2 class="text-xl font-black">{{ copy.userManagement }}</h2>
+        <p class="mt-1 text-sm text-slate-500">{{ copy.userManagementHint }}</p>
         <div class="mt-5 flex flex-wrap gap-3">
           <div class="relative min-w-[280px] flex-1">
             <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input v-model="keyword" class="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-4 text-sm outline-none focus:border-[#0b579b]" placeholder="Search users by name or email..." />
+            <input v-model="keyword" class="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-4 text-sm outline-none focus:border-[#0b579b]" :placeholder="copy.filters.searchPlaceholder" />
           </div>
           <select v-model="roleFilter" class="h-11 rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-[#0b579b]">
             <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
           <select v-model="statusFilter" class="h-11 rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-[#0b579b]">
-            <option value="all">全部状态</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="deleted">Deleted</option>
+            <option value="all">{{ copy.filters.allStatus }}</option>
+            <option value="active">{{ copy.filters.active }}</option>
+            <option value="inactive">{{ copy.filters.inactive }}</option>
+            <option value="deleted">{{ copy.filters.deleted }}</option>
           </select>
         </div>
       </div>
@@ -220,24 +368,24 @@ onMounted(loadDashboard)
         <table class="min-w-full text-left text-sm">
           <thead class="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
             <tr>
-              <th class="px-6 py-4">User</th>
-              <th class="px-6 py-4">Email</th>
-              <th class="px-6 py-4">Location</th>
-              <th class="px-6 py-4">Role</th>
-              <th class="px-6 py-4">Status</th>
-              <th class="px-6 py-4">Email Verified</th>
-              <th class="px-6 py-4">Created</th>
+              <th class="px-6 py-4">{{ copy.table.user }}</th>
+              <th class="px-6 py-4">{{ copy.table.email }}</th>
+              <th class="px-6 py-4">{{ copy.table.location }}</th>
+              <th class="px-6 py-4">{{ copy.table.role }}</th>
+              <th class="px-6 py-4">{{ copy.table.status }}</th>
+              <th class="px-6 py-4">{{ copy.table.emailVerified }}</th>
+              <th class="px-6 py-4">{{ copy.table.created }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-if="loading">
               <td colspan="7" class="px-6 py-10 text-center text-slate-400">
                 <Loader2 class="mr-2 inline h-5 w-5 animate-spin" />
-                加载中
+                {{ copy.loading }}
               </td>
             </tr>
             <tr v-else-if="filteredUsers.length === 0">
-              <td colspan="7" class="px-6 py-10 text-center text-slate-400">暂无用户</td>
+              <td colspan="7" class="px-6 py-10 text-center text-slate-400">{{ copy.noUsers }}</td>
             </tr>
             <template v-else>
               <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-slate-50">
@@ -248,14 +396,14 @@ onMounted(loadDashboard)
                 <td class="px-6 py-4 text-slate-700">{{ user.email || "-" }}</td>
                 <td class="px-6 py-4 text-slate-700">{{ user.location || "-" }}</td>
                 <td class="px-6 py-4">
-                  <span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ user.role_label || "-" }}</span>
+                  <span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
                 </td>
                 <td class="px-6 py-4">
-                  <span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ user.status || "-" }}</span>
+                  <span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
                 </td>
                 <td class="px-6 py-4">
                   <span :class="['rounded-full px-2.5 py-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
-                    {{ user.email_verified ? "Verified" : "Unverified" }}
+                    {{ user.email_verified ? copy.verified : copy.unverified }}
                   </span>
                 </td>
                 <td class="px-6 py-4 text-slate-700">{{ formatDate(user.created_at) }}</td>
@@ -270,29 +418,29 @@ onMounted(loadDashboard)
       <article class="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-100 p-6">
           <div>
-            <h2 class="text-xl font-black">阶段分布</h2>
-            <p class="mt-1 text-sm text-slate-500">按当前阶段和管线状态统计。</p>
+            <h2 class="text-xl font-black">{{ copy.stageDistribution }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.stageDistributionHint }}</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalPipelines }} pipelines</span>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalPipelines }} {{ copy.pipelines }}</span>
         </div>
         <div v-if="loading" class="flex h-48 items-center justify-center text-slate-400">
           <Loader2 class="mr-2 h-5 w-5 animate-spin" />
-          加载中
+          {{ copy.loading }}
         </div>
         <div v-else-if="!data?.stage_buckets.length" class="flex h-48 items-center justify-center text-slate-400">
-          暂无阶段数据
+          {{ copy.noStageData }}
         </div>
         <div v-else class="divide-y divide-slate-100">
           <div v-for="item in data.stage_buckets" :key="`${item.stage_id}-${item.status}`" class="flex items-center justify-between gap-4 p-5">
             <div class="min-w-0">
               <p class="break-all text-base font-black">{{ stageLabel(item.stage_id) }}</p>
               <span class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-bold" :class="badgeClass(item.status)">
-                {{ item.status || "未知状态" }}
+                {{ item.status || copy.unknownStatus }}
               </span>
             </div>
             <div class="text-right">
               <p class="text-3xl font-black">{{ item.count }}</p>
-              <p class="text-xs text-slate-500">人/管线</p>
+              <p class="text-xs text-slate-500">{{ copy.peoplePipelines }}</p>
             </div>
           </div>
         </div>
@@ -301,8 +449,8 @@ onMounted(loadDashboard)
       <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex items-center justify-between">
           <div>
-            <h2 class="text-xl font-black">业务概览</h2>
-            <p class="mt-1 text-sm text-slate-500">我们系统特有的运营指标。</p>
+            <h2 class="text-xl font-black">{{ copy.businessOverview }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.businessOverviewHint }}</p>
           </div>
           <BarChart3 class="h-6 w-6 text-slate-400" />
         </div>
@@ -310,24 +458,24 @@ onMounted(loadDashboard)
           <div class="rounded-2xl bg-slate-50 p-5">
             <div class="flex items-center gap-2 text-slate-500">
               <Users class="h-4 w-4" />
-              <span class="text-sm font-bold">考生总数</span>
+              <span class="text-sm font-bold">{{ copy.candidatesTotal }}</span>
             </div>
             <p class="mt-4 text-3xl font-black">{{ data?.candidate_total ?? "-" }}</p>
           </div>
           <div class="rounded-2xl bg-slate-50 p-5">
             <div class="flex items-center gap-2 text-slate-500">
               <CreditCard class="h-4 w-4" />
-              <span class="text-sm font-bold">今日收款金额</span>
+              <span class="text-sm font-bold">{{ copy.todayRevenue }}</span>
             </div>
             <p class="mt-4 text-2xl font-black">{{ revenueText }}</p>
-            <p class="mt-2 text-sm text-slate-500">已支付订单 {{ totalPaidOrders }} 笔</p>
+            <p class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
           </div>
         </div>
         <div class="mt-6 rounded-2xl border border-slate-100 bg-slate-50 p-5 text-sm leading-7 text-slate-600">
-          <p>用户统计：来自 Casdoor 用户列表。</p>
-          <p>考生总数：来自 Casdoor 用户列表，并通过 gmid 映射到平台 ULID 后统计。</p>
-          <p>阶段分布：来自 gprog 管线实例列表，按当前阶段和状态聚合。</p>
-          <p>今日收款：来自 gmall 订单列表，只统计今天创建且支付状态为 PAID 的订单。</p>
+          <p>{{ copy.dataRoute.userStats }}</p>
+          <p>{{ copy.dataRoute.candidates }}</p>
+          <p>{{ copy.dataRoute.stages }}</p>
+          <p>{{ copy.dataRoute.revenue }}</p>
         </div>
       </article>
     </section>

@@ -11,6 +11,7 @@ import {
   FileText,
   GitBranch,
   GraduationCap,
+  Languages,
   LogOut,
   Mail,
   MessageSquare,
@@ -19,67 +20,148 @@ import {
   ShieldCheck,
   Webhook,
 } from "lucide-vue-next"
-import { onMounted, onUnmounted, ref } from "vue"
+import { computed, onMounted, onUnmounted, ref } from "vue"
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { clearAuthSession, getUserName } from "@/lib/authStorage"
+import { useAdminLanguage } from "@/lib/language"
 
 const router = useRouter()
 const route = useRoute()
 const collapsed = ref(false)
 const userMenuOpen = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
+const { lang, setAdminLanguage } = useAdminLanguage()
 
-const navGroups = [
+const copy = computed(() => {
+  if (lang.value === "en") {
+    return {
+      systemName: "Management System",
+      roleName: "Admin",
+      accountSettings: "Account Settings",
+      logout: "Log Out",
+      language: "EN / 中文",
+      groups: {
+        learning: "Courses & Resources",
+        certification: "Certification Flow",
+        commerce: "Commerce & Finance",
+        messages: "Messages",
+        operations: "Operations",
+      },
+      nav: {
+        dashboard: "Dashboard",
+        lms: "Course Config",
+        resourcePacks: "Resource Packs",
+        resourcePackFiles: "Resource Files",
+        pipelines: "Pipeline Config",
+        prog: "Pipeline Management",
+        exams: "Exam Management",
+        credentials: "Credential Definitions",
+        applications: "Review Center",
+        permissions: "Candidate Permissions",
+        bundles: "Product Config",
+        orders: "Orders",
+        invoices: "Invoices",
+        messages: "Messages",
+        mails: "Email Center",
+        pdfTemplates: "PDF Templates",
+        pdfRequests: "Certificate Jobs",
+        webhooks: "Webhook Audit",
+      },
+    }
+  }
+
+  return {
+    systemName: "管理系统",
+    roleName: "Admin",
+    accountSettings: "账户设置",
+    logout: "退出登录",
+    language: "中文 / EN",
+    groups: {
+      learning: "课程与资源",
+      certification: "认证流程",
+      commerce: "商品与财务",
+      messages: "消息通知",
+      operations: "系统运维",
+    },
+    nav: {
+      dashboard: "运营看板",
+      lms: "课程配置",
+      resourcePacks: "资源包配置",
+      resourcePackFiles: "资源文件配置",
+      pipelines: "管线配置",
+      prog: "管线管理",
+      exams: "考试管理",
+      credentials: "资格定义",
+      applications: "审核中心",
+      permissions: "考生权限管理",
+      bundles: "商品配置",
+      orders: "订单管理",
+      invoices: "发票管理",
+      messages: "站内信",
+      mails: "邮件中心",
+      pdfTemplates: "PDF 模板配置",
+      pdfRequests: "证书生成流水",
+      webhooks: "Webhook 审计",
+    },
+  }
+})
+
+const navGroups = computed(() => [
   {
-    label: "课程与资源",
+    label: copy.value.groups.learning,
     items: [
-      { path: "/dashboard", label: "运营看板", icon: BarChart3 },
-      { path: "/lms", label: "课程配置", icon: BookOpen },
-      { path: "/resource-packs", label: "资源包配置", icon: FileText },
-      { path: "/resource-pack-files", label: "资源文件配置", icon: FileText },
+      { path: "/dashboard", label: copy.value.nav.dashboard, icon: BarChart3 },
+      { path: "/lms", label: copy.value.nav.lms, icon: BookOpen },
+      { path: "/resource-packs", label: copy.value.nav.resourcePacks, icon: FileText },
+      { path: "/resource-pack-files", label: copy.value.nav.resourcePackFiles, icon: FileText },
     ],
   },
   {
-    label: "认证流程",
+    label: copy.value.groups.certification,
     items: [
-      { path: "/pipelines", label: "管线配置", icon: FileBadge },
-      { path: "/prog", label: "管线管理", icon: GitBranch },
-      { path: "/credentials", label: "资格定义", icon: ShieldCheck },
-      { path: "/applications", label: "审核中心", icon: ClipboardCheck },
-      { path: "/permissions", label: "考生权限管理", icon: GraduationCap },
+      { path: "/pipelines", label: copy.value.nav.pipelines, icon: FileBadge },
+      { path: "/prog", label: copy.value.nav.prog, icon: GitBranch },
+      { path: "/exams", label: copy.value.nav.exams, icon: ClipboardCheck },
+      { path: "/credentials", label: copy.value.nav.credentials, icon: ShieldCheck },
+      { path: "/applications", label: copy.value.nav.applications, icon: ClipboardCheck },
+      { path: "/permissions", label: copy.value.nav.permissions, icon: GraduationCap },
     ],
   },
   {
-    label: "商品与财务",
+    label: copy.value.groups.commerce,
     items: [
-      { path: "/bundles", label: "商品配置", icon: Boxes },
-      { path: "/orders", label: "订单管理", icon: CreditCard },
-      { path: "/invoices", label: "发票管理", icon: Receipt },
+      { path: "/bundles", label: copy.value.nav.bundles, icon: Boxes },
+      { path: "/orders", label: copy.value.nav.orders, icon: CreditCard },
+      { path: "/invoices", label: copy.value.nav.invoices, icon: Receipt },
     ],
   },
   {
-    label: "消息通知",
+    label: copy.value.groups.messages,
     items: [
-      { path: "/messages", label: "站内信", icon: MessageSquare },
-      { path: "/mails", label: "邮件中心", icon: Mail },
+      { path: "/messages", label: copy.value.nav.messages, icon: MessageSquare },
+      { path: "/mails", label: copy.value.nav.mails, icon: Mail },
     ],
   },
   {
-    label: "系统运维",
+    label: copy.value.groups.operations,
     items: [
-      { path: "/pdf-templates", label: "PDF 模板配置", icon: FileText },
-      { path: "/pdf-requests", label: "证书生成流水", icon: FileBadge },
-      { path: "/audit/webhooks", label: "Webhook 审计", icon: Webhook },
+      { path: "/pdf-templates", label: copy.value.nav.pdfTemplates, icon: FileText },
+      { path: "/pdf-requests", label: copy.value.nav.pdfRequests, icon: FileBadge },
+      { path: "/audit/webhooks", label: copy.value.nav.webhooks, icon: Webhook },
     ],
   },
-]
+])
 
 const userName = ref(getUserName())
 
 function refreshUserName() {
   userName.value = getUserName()
+}
+
+function toggleLanguage() {
+  setAdminLanguage(lang.value === "zh" ? "en" : "zh")
 }
 
 function closeUserMenuOnOutsideClick(event: PointerEvent) {
@@ -125,7 +207,7 @@ onUnmounted(() => {
         </div>
         <div v-if="!collapsed" class="leading-tight">
           <div class="text-lg font-black">CFTP</div>
-          <div class="text-sm text-slate-500">管理系统</div>
+          <div class="text-sm text-slate-500">{{ copy.systemName }}</div>
         </div>
       </div>
 
@@ -166,7 +248,7 @@ onUnmounted(() => {
             </div>
             <div class="min-w-0">
               <div class="truncate text-sm font-bold text-slate-950">{{ userName }}</div>
-              <div class="truncate text-xs text-slate-500">Admin</div>
+              <div class="truncate text-xs text-slate-500">{{ copy.roleName }}</div>
             </div>
           </div>
           <RouterLink
@@ -175,7 +257,7 @@ onUnmounted(() => {
             @click="userMenuOpen = false"
           >
             <Settings class="h-4 w-4 text-slate-500" />
-            账户设置
+            {{ copy.accountSettings }}
           </RouterLink>
           <button
             class="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -183,9 +265,19 @@ onUnmounted(() => {
             @click="logout"
           >
             <LogOut class="h-4 w-4 text-slate-500" />
-            退出登录
+            {{ copy.logout }}
           </button>
         </div>
+
+        <button
+          class="mb-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          type="button"
+          :title="copy.language"
+          @click="toggleLanguage"
+        >
+          <Languages class="h-4 w-4 shrink-0 text-slate-500" />
+          <span v-if="!collapsed">{{ copy.language }}</span>
+        </button>
 
         <button
           class="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-100"
@@ -198,7 +290,7 @@ onUnmounted(() => {
           </div>
           <div v-if="!collapsed" class="min-w-0">
             <div class="truncate text-sm font-bold">{{ userName }}</div>
-            <div class="text-xs text-slate-500">Admin</div>
+            <div class="text-xs text-slate-500">{{ copy.roleName }}</div>
           </div>
           <ChevronDown
             v-if="!collapsed"
