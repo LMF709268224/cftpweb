@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient, ApiError } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 const pageSize = 10
@@ -24,6 +25,8 @@ const resultStatusFilter = ref("")
 const candidateFilter = ref("")
 const confirmationFilter = ref("")
 const courseUnitFilter = ref("")
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.exams)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const canPrev = computed(() => page.value > 1)
@@ -34,20 +37,20 @@ const candidateName = computed(() => {
   return [source.candidate_first_name, source.candidate_middle_name, source.candidate_last_name].filter(Boolean).join(" ") || "-"
 })
 
-const statusOptions = [
-  { value: "", label: "全部流程状态" },
-  { value: "OPEN", label: "开放 / Open" },
-  { value: "SCHEDULED", label: "已预约 / Scheduled" },
-  { value: "DONE", label: "已完成 / Done" },
-  { value: "CANCELLED", label: "已取消 / Cancelled" },
-]
+const statusOptions = computed(() => [
+  { value: "", label: copy.value.statusOptions.allFlow },
+  { value: "OPEN", label: copy.value.statusOptions.open },
+  { value: "SCHEDULED", label: copy.value.statusOptions.scheduled },
+  { value: "DONE", label: copy.value.statusOptions.done },
+  { value: "CANCELLED", label: copy.value.statusOptions.cancelled },
+])
 
-const resultOptions = [
-  { value: "", label: "全部成绩状态" },
-  { value: "PENDING", label: "待出分 / Pending" },
-  { value: "PASS", label: "通过 / Pass" },
-  { value: "FAIL", label: "未通过 / Fail" },
-]
+const resultOptions = computed(() => [
+  { value: "", label: copy.value.statusOptions.allResult },
+  { value: "PENDING", label: copy.value.statusOptions.pending },
+  { value: "PASS", label: copy.value.statusOptions.pass },
+  { value: "FAIL", label: copy.value.statusOptions.fail },
+])
 
 function asArray(value: unknown): JsonRecord[] {
   return Array.isArray(value)
@@ -65,24 +68,24 @@ function label(value: unknown) {
 
 function examStatusLabel(value: unknown) {
   const status = String(value || "").toUpperCase()
-  if (status === "OPEN") return "开放 / Open"
-  if (status === "SCHEDULED") return "已预约 / Scheduled"
-  if (status === "DONE") return "已完成 / Done"
-  if (status === "CANCELLED") return "已取消 / Cancelled"
+  if (status === "OPEN") return copy.value.statusOptions.open
+  if (status === "SCHEDULED") return copy.value.statusOptions.scheduled
+  if (status === "DONE") return copy.value.statusOptions.done
+  if (status === "CANCELLED") return copy.value.statusOptions.cancelled
   return status || "-"
 }
 
 function resultStatusLabel(value: unknown, passed?: unknown) {
   const status = String(value || "").toUpperCase()
-  if (status === "PASS" || passed === true) return "通过 / Pass"
-  if (status === "FAIL" || passed === false && status) return "未通过 / Fail"
-  if (status === "PENDING") return "待出分 / Pending"
+  if (status === "PASS" || passed === true) return copy.value.statusOptions.pass
+  if (status === "FAIL" || (passed === false && status)) return copy.value.statusOptions.fail
+  if (status === "PENDING") return copy.value.statusOptions.pending
   return status || "-"
 }
 
 function candidateDisplay(item: JsonRecord) {
   const name = [item.candidate_first_name, item.candidate_middle_name, item.candidate_last_name].filter(Boolean).join(" ")
-  return name || String(item.candidate_email || item.candidate_ulid || "考生")
+  return name || String(item.candidate_email || item.candidate_ulid || copy.value.defaults.candidate)
 }
 
 function scoreDetails(source: JsonRecord | null) {
@@ -119,7 +122,7 @@ async function loadExams(targetPage = page.value) {
     console.error(err)
     exams.value = []
     total.value = 0
-    toast.error("考试列表加载失败")
+    toast.error(copy.value.toasts.listLoadFailed)
   } finally {
     loading.value = false
   }
@@ -147,7 +150,7 @@ async function loadExamDetail(id: string) {
     transitions.value = asArray(transitionsData.transitions)
   } catch (err) {
     console.error(err)
-    toast.error("考试详情加载失败")
+    toast.error(copy.value.toasts.detailLoadFailed)
   } finally {
     detailLoading.value = false
   }
@@ -168,12 +171,12 @@ async function syncExamResult() {
   actionLoading.value = true
   try {
     result.value = await apiClient<JsonRecord>(`/api/exams/${encodeURIComponent(selectedExamUlid.value)}/sync-result`, { method: "POST" })
-    toast.success("已触发考试结果同步")
+    toast.success(copy.value.toasts.syncSuccess)
     await loadExamDetail(selectedExamUlid.value)
     await loadExams(page.value)
   } catch (err) {
     console.error(err)
-    toast.error("考试结果同步失败")
+    toast.error(copy.value.toasts.syncFailed)
   } finally {
     actionLoading.value = false
   }
@@ -212,17 +215,17 @@ onMounted(() => loadExams(1))
   <section class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">考试管理</h1>
-        <p class="mt-2 text-slate-600">查看考试实例、预约信息、成绩和状态流转；可触发结果同步。</p>
+        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button v-if="selectedSummary" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="clearSelection">
           <ArrowLeft class="h-4 w-4" />
-          返回列表
+          {{ copy.backToList }}
         </button>
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="refreshAll">
           <RefreshCw class="h-4 w-4" :class="loading || detailLoading ? 'animate-spin' : ''" />
-          刷新
+          {{ copy.refresh }}
         </button>
       </div>
     </header>
@@ -230,32 +233,32 @@ onMounted(() => loadExams(1))
     <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div class="grid gap-4 xl:grid-cols-[1fr_1fr_1.2fr_1.2fr_1.2fr_auto]">
         <label class="grid gap-2 text-sm font-bold">
-          流程状态
+          {{ copy.filters.flowStatus }}
           <select v-model="statusFilter" class="h-11 rounded-xl border border-slate-200 px-3">
             <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </label>
         <label class="grid gap-2 text-sm font-bold">
-          成绩状态
+          {{ copy.filters.resultStatus }}
           <select v-model="resultStatusFilter" class="h-11 rounded-xl border border-slate-200 px-3">
             <option v-for="option in resultOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </label>
         <label class="grid gap-2 text-sm font-bold">
-          Candidate ULID
-          <input v-model="candidateFilter" class="h-11 rounded-xl border border-slate-200 px-3" placeholder="按考生筛选" />
+          {{ copy.filters.candidateUlid }}
+          <input v-model="candidateFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.candidatePlaceholder" />
         </label>
         <label class="grid gap-2 text-sm font-bold">
-          确认号
-          <input v-model="confirmationFilter" class="h-11 rounded-xl border border-slate-200 px-3" placeholder="Confirmation Number" />
+          {{ copy.filters.confirmationNumber }}
+          <input v-model="confirmationFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.confirmationPlaceholder" />
         </label>
         <label class="grid gap-2 text-sm font-bold">
-          课程单元 ULID
-          <input v-model="courseUnitFilter" class="h-11 rounded-xl border border-slate-200 px-3" placeholder="Course Unit ULID" />
+          {{ copy.filters.courseUnitUlid }}
+          <input v-model="courseUnitFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.courseUnitPlaceholder" />
         </label>
         <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 text-sm font-black text-white shadow-sm" type="button" @click="search">
           <Search class="h-4 w-4" />
-          查询
+          {{ copy.filters.search }}
         </button>
       </div>
     </section>
@@ -264,17 +267,17 @@ onMounted(() => loadExams(1))
       <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <h2 class="text-xl font-black">考试列表</h2>
-            <p class="mt-1 text-sm text-slate-500">每页 10 条；左侧选择考试，右侧查看详情和状态流转。</p>
+            <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
         </div>
 
         <div v-if="loading" class="px-6 py-14 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          正在加载考试...
+          {{ copy.loadingList }}
         </div>
-        <div v-else-if="!exams.length" class="px-6 py-14 text-center text-slate-500">暂无考试记录</div>
+        <div v-else-if="!exams.length" class="px-6 py-14 text-center text-slate-500">{{ copy.emptyList }}</div>
         <div v-else>
           <button
             v-for="exam in exams"
@@ -294,26 +297,26 @@ onMounted(() => loadExams(1))
               </span>
             </div>
             <div class="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-              <span class="rounded-full bg-slate-100 px-2.5 py-1">成绩：{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1">确认号：{{ label(exam.confirmation_number) }}</span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1">预约：{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</span>
+              <span class="rounded-full bg-slate-100 px-2.5 py-1">{{ copy.badges.result }}{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
+              <span class="rounded-full bg-slate-100 px-2.5 py-1">{{ copy.badges.confirmation }}{{ label(exam.confirmation_number) }}</span>
+              <span class="rounded-full bg-slate-100 px-2.5 py-1">{{ copy.badges.appointment }}{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</span>
             </div>
             <p class="truncate font-mono text-xs font-bold text-blue-700">{{ examUlid(exam) }}</p>
           </button>
         </div>
 
         <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
-          <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="changePage(page - 1)">上一页</button>
-          <span class="text-sm font-bold text-slate-600">第 {{ page }} / {{ totalPages }} 页</span>
-          <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="changePage(page + 1)">下一页</button>
+          <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="changePage(page - 1)">{{ copy.prev }}</button>
+          <span class="text-sm font-bold text-slate-600">{{ copy.pageText(page, totalPages) }}</span>
+          <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="changePage(page + 1)">{{ copy.next }}</button>
         </div>
       </section>
 
       <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <div>
-            <h2 class="text-xl font-black">考试详情</h2>
-            <p class="mt-1 text-sm text-slate-500">展示考试归属、预约、成绩和状态流转。</p>
+            <h2 class="text-xl font-black">{{ copy.detailTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
           </div>
           <button
             v-if="selectedExamUlid"
@@ -323,23 +326,23 @@ onMounted(() => loadExams(1))
             @click="syncExamResult"
           >
             <PlayCircle class="h-4 w-4" :class="actionLoading ? 'animate-spin' : ''" />
-            同步/模拟考试结果
+            {{ copy.syncResult }}
           </button>
         </div>
 
         <div v-if="detailLoading" class="px-6 py-16 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          正在加载详情...
+          {{ copy.loadingDetail }}
         </div>
         <div v-else-if="!selectedSummary" class="px-6 py-16 text-center text-slate-500">
           <ClipboardList class="mx-auto mb-3 h-10 w-10 text-slate-300" />
-          请选择左侧一条考试记录
+          {{ copy.selectExam }}
         </div>
         <div v-else class="space-y-5 p-5">
           <div class="rounded-2xl bg-blue-50 p-5">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p class="text-xs font-black uppercase text-blue-600">当前考试</p>
+                <p class="text-xs font-black uppercase text-blue-600">{{ copy.currentExam }}</p>
                 <h3 class="mt-1 break-all text-2xl font-black">{{ field(detail || selectedSummary, ["exam_code", "exam_ulid"]) }}</h3>
                 <p class="mt-1 break-all font-mono text-sm font-bold text-blue-800">{{ selectedExamUlid }}</p>
               </div>
@@ -351,36 +354,36 @@ onMounted(() => loadExams(1))
 
           <div class="grid gap-4 2xl:grid-cols-2">
             <article class="rounded-2xl border border-slate-200 p-4">
-              <h4 class="mb-4 text-lg font-black">归属关系</h4>
+              <h4 class="mb-4 text-lg font-black">{{ copy.sections.ownership }}</h4>
               <div class="grid gap-3">
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">管线实例 / Pipeline</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.pipeline }}</div>
                   <div class="mt-1 break-all font-mono text-sm font-bold">{{ field(detail, ["pipeline_ulid"]) }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">课程单元 / Course Unit</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.courseUnit }}</div>
                   <div class="mt-1 break-all font-mono text-sm font-bold">{{ field(detail, ["course_unit_ulid"]) }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">认证项目 / Certification</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.certification }}</div>
                   <div class="mt-1 font-bold">{{ field(detail, ["certification_name"]) }}</div>
                 </div>
               </div>
             </article>
 
             <article class="rounded-2xl border border-slate-200 p-4">
-              <h4 class="mb-4 text-lg font-black">考生信息</h4>
+              <h4 class="mb-4 text-lg font-black">{{ copy.sections.candidate }}</h4>
               <div class="grid gap-3 sm:grid-cols-2">
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">姓名</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.name }}</div>
                   <div class="mt-1 font-bold">{{ candidateName }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">邮箱</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.email }}</div>
                   <div class="mt-1 break-all font-bold">{{ field(detail || selectedSummary, ["candidate_email"]) }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3 sm:col-span-2">
-                  <div class="text-xs font-black uppercase text-slate-400">Candidate ULID</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.candidateUlid }}</div>
                   <div class="mt-1 break-all font-mono text-sm font-bold">{{ field(detail || selectedSummary, ["candidate_ulid"]) }}</div>
                 </div>
               </div>
@@ -389,22 +392,22 @@ onMounted(() => loadExams(1))
 
           <div class="grid gap-4 2xl:grid-cols-2">
             <article class="rounded-2xl border border-slate-200 p-4">
-              <h4 class="mb-4 text-lg font-black">预约信息</h4>
+              <h4 class="mb-4 text-lg font-black">{{ copy.sections.appointment }}</h4>
               <div class="grid gap-3 sm:grid-cols-2">
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">确认号</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.confirmationNumber }}</div>
                   <div class="mt-1 break-all font-bold">{{ field(detail || selectedSummary, ["confirmation_number"]) }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">考点</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.site }}</div>
                   <div class="mt-1 font-bold">{{ field(detail || selectedSummary, ["site_name"]) }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">开始时间</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.startTime }}</div>
                   <div class="mt-1 font-bold">{{ formatDate(String((detail || selectedSummary)?.appointment_start_time || "")) || "-" }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">结束时间</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.endTime }}</div>
                   <div class="mt-1 font-bold">{{ formatDate(String((detail || selectedSummary)?.appointment_end_time || "")) || "-" }}</div>
                 </div>
               </div>
@@ -412,21 +415,21 @@ onMounted(() => loadExams(1))
 
             <article class="rounded-2xl border border-slate-200 p-4">
               <h4 class="mb-4 flex items-center gap-2 text-lg font-black">
-                成绩信息
+                {{ copy.sections.result }}
                 <CheckCircle2 v-if="(result || detail)?.is_passed === true" class="h-5 w-5 text-emerald-500" />
               </h4>
               <div class="grid gap-3 sm:grid-cols-3">
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">成绩状态</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.resultStatus }}</div>
                   <div class="mt-1 font-bold">{{ resultStatusLabel((result || detail || selectedSummary)?.result_status, (result || detail || selectedSummary)?.is_passed) }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">总分</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.totalScore }}</div>
                   <div class="mt-1 font-bold">{{ field(result || detail, ["total_score"]) }}</div>
                 </div>
                 <div class="rounded-xl bg-slate-50 p-3">
-                  <div class="text-xs font-black uppercase text-slate-400">是否通过</div>
-                  <div class="mt-1 font-bold">{{ (result || detail)?.is_passed === true ? "是 / Yes" : (result || detail)?.is_passed === false ? "否 / No" : "-" }}</div>
+                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.passed }}</div>
+                  <div class="mt-1 font-bold">{{ (result || detail)?.is_passed === true ? copy.yes : (result || detail)?.is_passed === false ? copy.no : "-" }}</div>
                 </div>
               </div>
               <pre class="mt-3 max-h-52 overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-slate-100">{{ scoreDetails(result || detail) }}</pre>
@@ -435,10 +438,10 @@ onMounted(() => loadExams(1))
 
           <article class="rounded-2xl border border-slate-200">
             <div class="border-b border-slate-200 px-4 py-3">
-              <h4 class="text-lg font-black">状态流转</h4>
-              <p class="mt-1 text-sm text-slate-500">查看考试状态的历史变化。</p>
+              <h4 class="text-lg font-black">{{ copy.sections.transitions }}</h4>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.transitionsDescription }}</p>
             </div>
-            <div v-if="!transitions.length" class="px-4 py-8 text-center text-slate-500">暂无状态流转记录</div>
+            <div v-if="!transitions.length" class="px-4 py-8 text-center text-slate-500">{{ copy.emptyTransitions }}</div>
             <div v-else class="divide-y divide-slate-100">
               <div v-for="transition in transitions" :key="String(transition.msg_fp || transition.transitioned_at)" class="grid gap-3 px-4 py-4 lg:grid-cols-[160px_minmax(0,1fr)_180px]">
                 <div>
@@ -455,7 +458,7 @@ onMounted(() => loadExams(1))
           </article>
 
           <details class="rounded-2xl border border-slate-200 p-4">
-            <summary class="cursor-pointer text-sm font-black text-slate-700">完整字段</summary>
+            <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawFields }}</summary>
             <pre class="mt-4 max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify({ detail: detail || selectedSummary, result, transitions }, null, 2) }}</pre>
           </details>
         </div>
