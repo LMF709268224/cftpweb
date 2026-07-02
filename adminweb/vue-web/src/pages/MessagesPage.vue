@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 type TabKey = "send" | "sent" | "templates"
@@ -37,11 +38,13 @@ const formTitle = ref("")
 const formContent = ref("")
 const formDescription = ref("")
 const formVersion = ref(0)
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.messagesAdmin)
 
 const tabs = computed(() => [
-  { key: "send" as const, label: "发送站内信", icon: Send, count: selectedUserIds.value.length },
-  { key: "sent" as const, label: "发送记录", icon: List, count: total.value },
-  { key: "templates" as const, label: "模板管理", icon: FileText, count: templates.value.length },
+  { key: "send" as const, label: copy.value.tabs.send, icon: Send, count: selectedUserIds.value.length },
+  { key: "sent" as const, label: copy.value.tabs.sent, icon: List, count: total.value },
+  { key: "templates" as const, label: copy.value.tabs.templates, icon: FileText, count: templates.value.length },
 ])
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
@@ -53,7 +56,7 @@ function userId(user: JsonRecord) {
 }
 
 function userLabel(user: JsonRecord) {
-  return String(pickFirst(user, ["name", "nickname", "email", "phone", "id"]) || userId(user) || "用户")
+  return String(pickFirst(user, ["name", "nickname", "email", "phone", "id"]) || userId(user) || copy.value.defaults.user)
 }
 
 function pathOf(template: JsonRecord | null | undefined) {
@@ -61,7 +64,7 @@ function pathOf(template: JsonRecord | null | undefined) {
 }
 
 function titleOf(template: JsonRecord | null | undefined) {
-  return String(pickFirst(template || {}, ["title_tpl", "title", "name", "template_name", "path"]) || pathOf(template) || "模板")
+  return String(pickFirst(template || {}, ["title_tpl", "title", "name", "template_name", "path"]) || pathOf(template) || copy.value.defaults.template)
 }
 
 function messageId(message: JsonRecord | null | undefined) {
@@ -93,12 +96,12 @@ function validatePayload() {
   try {
     const parsed = JSON.parse(payload.value)
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      toast.error("Payload 必须是 JSON 对象")
+      toast.error(copy.value.toasts.payloadObjectRequired)
       return false
     }
     return true
   } catch (err) {
-    toast.error(`Payload JSON 格式错误：${err instanceof Error ? err.message : String(err)}`)
+    toast.error(copy.value.toasts.payloadInvalid(err instanceof Error ? err.message : String(err)))
     return false
   }
 }
@@ -111,7 +114,7 @@ async function loadUsers() {
     users.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
     console.error(err)
-    toast.error("用户列表加载失败")
+    toast.error(copy.value.toasts.usersLoadFailed)
   } finally {
     usersLoading.value = false
   }
@@ -128,7 +131,7 @@ async function loadTemplates() {
     }
   } catch (err) {
     console.error(err)
-    toast.error("站内信模板加载失败")
+    toast.error(copy.value.toasts.templatesLoadFailed)
   } finally {
     templatesLoading.value = false
   }
@@ -147,7 +150,7 @@ async function selectTemplate(template: JsonRecord) {
     if (detail) selectedTemplate.value = { ...template, ...detail }
   } catch (err) {
     console.error(err)
-    toast.error("模板详情加载失败")
+    toast.error(copy.value.toasts.templateDetailLoadFailed)
   }
 }
 
@@ -172,7 +175,7 @@ async function loadSentMessages() {
     messages.value = []
     selectedMessage.value = null
     messageDetailOpen.value = false
-    toast.error("发送记录加载失败")
+    toast.error(copy.value.toasts.sentLoadFailed)
   } finally {
     messagesLoading.value = false
   }
@@ -189,11 +192,11 @@ function closeMessageDetail() {
 
 async function sendMessage() {
   if (!selectedUserIds.value.length) {
-    toast.error("请先选择收件用户")
+    toast.error(copy.value.toasts.recipientsRequired)
     return
   }
   if (!templatePath.value) {
-    toast.error("请先选择站内信模板")
+    toast.error(copy.value.toasts.templateRequired)
     return
   }
   if (!validatePayload()) return
@@ -209,13 +212,13 @@ async function sendMessage() {
         msg_type: msgType.value,
       }),
     })
-    toast.success(`站内信已发送${data.count ? `：${data.count} 条` : ""}`)
+    toast.success(copy.value.toasts.sendSuccess(data.count))
     selectedUserIds.value = []
     templatePath.value = ""
     payload.value = "{\n}"
   } catch (err) {
     console.error(err)
-    toast.error("站内信发送失败")
+    toast.error(copy.value.toasts.sendFailed)
   } finally {
     sending.value = false
   }
@@ -245,7 +248,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
     }
   } catch (err) {
     console.error(err)
-    toast.error("模板详情加载失败")
+    toast.error(copy.value.toasts.templateDetailLoadFailed)
   }
 }
 
@@ -261,7 +264,7 @@ function resetTemplateForm() {
 async function saveTemplate() {
   const path = editingTemplatePath.value || formPath.value.trim()
   if (!path || !formTitle.value.trim() || !formContent.value.trim()) {
-    toast.error("请填写模板路径、标题和内容")
+    toast.error(copy.value.toasts.templateFieldsRequired)
     return
   }
 
@@ -277,12 +280,12 @@ async function saveTemplate() {
         current_version: formVersion.value,
       }),
     })
-    toast.success(editingTemplatePath.value ? "模板已更新" : "模板已创建")
+    toast.success(editingTemplatePath.value ? copy.value.toasts.templateUpdated : copy.value.toasts.templateCreated)
     resetTemplateForm()
     await loadTemplates()
   } catch (err) {
     console.error(err)
-    toast.error("模板保存失败")
+    toast.error(copy.value.toasts.templateSaveFailed)
   } finally {
     templateSaving.value = false
   }
@@ -316,17 +319,17 @@ onMounted(async () => {
   <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">站内信</h1>
-        <p class="mt-2 text-slate-600">发送站内通知、维护模板并查看发送记录。</p>
+        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadUsers">
           <RefreshCw class="h-4 w-4" :class="usersLoading ? 'animate-spin' : ''" />
-          刷新用户
+          {{ copy.refreshUsers }}
         </button>
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadTemplates">
           <RefreshCw class="h-4 w-4" :class="templatesLoading ? 'animate-spin' : ''" />
-          刷新模板
+          {{ copy.refreshTemplates }}
         </button>
       </div>
     </header>
@@ -356,14 +359,14 @@ onMounted(async () => {
 
       <main class="min-w-0">
         <section v-if="activeTab === 'send'" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 class="text-xl font-black">新建站内信</h2>
+          <h2 class="text-xl font-black">{{ copy.send.title }}</h2>
           <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
             <div>
               <div class="mb-2 flex items-center justify-between">
-                <label class="font-bold">收件用户</label>
+                <label class="font-bold">{{ copy.send.recipients }}</label>
                 <div class="flex gap-3 text-sm">
-                  <button class="font-bold text-[#0b7bdc]" type="button" @click="selectedUserIds = users.map(userId).filter(Boolean)">全选</button>
-                  <button class="font-bold text-slate-500" type="button" @click="selectedUserIds = []">清空</button>
+                  <button class="font-bold text-[#0b7bdc]" type="button" @click="selectedUserIds = users.map(userId).filter(Boolean)">{{ copy.send.selectAll }}</button>
+                  <button class="font-bold text-slate-500" type="button" @click="selectedUserIds = []">{{ copy.send.clear }}</button>
                 </div>
               </div>
               <div class="max-h-[520px] overflow-y-auto rounded-2xl border border-slate-200 p-3">
@@ -372,16 +375,16 @@ onMounted(async () => {
                   <span class="font-semibold">{{ userLabel(user) }}</span>
                   <span class="break-all text-xs text-slate-400">{{ userId(user) }}</span>
                 </label>
-                <div v-if="!users.length" class="p-6 text-center text-slate-500">暂无用户</div>
+                <div v-if="!users.length" class="p-6 text-center text-slate-500">{{ copy.send.noUsers }}</div>
               </div>
-              <p class="mt-2 text-sm text-slate-500">已选择 {{ selectedUserIds.length }} 个用户。</p>
+              <p class="mt-2 text-sm text-slate-500">{{ copy.send.selectedUsers(selectedUserIds.length) }}</p>
             </div>
 
             <div class="space-y-4">
               <label class="block">
-                <span class="font-bold">模板</span>
+                <span class="font-bold">{{ copy.send.template }}</span>
                 <select v-model="templatePath" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
-                  <option value="">请选择模板</option>
+                  <option value="">{{ copy.send.selectTemplate }}</option>
                   <option v-for="template in templates" :key="pathOf(template)" :value="pathOf(template)">
                     {{ titleOf(template) }} ({{ pathOf(template) }})
                   </option>
@@ -389,25 +392,25 @@ onMounted(async () => {
               </label>
 
               <label class="block">
-                <span class="font-bold">消息类型</span>
+                <span class="font-bold">{{ copy.send.messageType }}</span>
                 <select v-model.number="msgType" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
-                  <option :value="1">系统通知</option>
-                  <option :value="2">公告</option>
-                  <option :value="3">营销</option>
-                  <option :value="4">支付</option>
-                  <option :value="5">其他</option>
+                  <option :value="1">{{ copy.send.messageTypes.system }}</option>
+                  <option :value="2">{{ copy.send.messageTypes.announcement }}</option>
+                  <option :value="3">{{ copy.send.messageTypes.marketing }}</option>
+                  <option :value="4">{{ copy.send.messageTypes.payment }}</option>
+                  <option :value="5">{{ copy.send.messageTypes.other }}</option>
                 </select>
               </label>
 
               <label class="block">
-                <span class="font-bold">Payload JSON</span>
+                <span class="font-bold">{{ copy.send.payload }}</span>
                 <textarea v-model="payload" class="mt-2 min-h-52 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" />
               </label>
 
               <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="sending" type="button" @click="sendMessage">
                 <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
                 <Send v-else class="h-4 w-4" />
-                {{ sending ? "发送中..." : "发送站内信" }}
+                {{ sending ? copy.send.sending : copy.send.sendButton }}
               </button>
             </div>
           </div>
@@ -416,25 +419,25 @@ onMounted(async () => {
         <section v-else-if="activeTab === 'sent'" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
             <div>
-              <h2 class="text-xl font-black">发送记录</h2>
-              <p class="mt-1 text-sm text-slate-500">每页 {{ pageSize }} 条，总计 {{ total }} 条。</p>
+              <h2 class="text-xl font-black">{{ copy.sent.title }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.sent.summary(pageSize, total) }}</p>
             </div>
             <select v-model="statusFilter" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
-              <option value="">全部状态</option>
-              <option value="1">未读</option>
-              <option value="2">已读</option>
+              <option value="">{{ copy.sent.allStatus }}</option>
+              <option value="1">{{ copy.sent.unread }}</option>
+              <option value="2">{{ copy.sent.read }}</option>
             </select>
           </div>
           <div class="grid grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
-            <span>站内信</span>
-            <span>用户</span>
-            <span class="text-center">状态</span>
-            <span class="text-right">时间</span>
-            <span class="text-right">操作</span>
+            <span>{{ copy.sent.columns.message }}</span>
+            <span>{{ copy.sent.columns.user }}</span>
+            <span class="text-center">{{ copy.sent.columns.status }}</span>
+            <span class="text-right">{{ copy.sent.columns.time }}</span>
+            <span class="text-right">{{ copy.sent.columns.action }}</span>
           </div>
           <div v-if="messagesLoading" class="p-12 text-center text-slate-500">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            正在加载...
+            {{ copy.sent.loading }}
           </div>
           <div v-else-if="messages.length" class="divide-y divide-slate-100">
             <div
@@ -449,8 +452,8 @@ onMounted(async () => {
               @keydown.space.prevent="openMessage(message)"
             >
               <div class="min-w-0">
-                <div class="truncate font-black text-slate-950">{{ pickFirst(message, ["title", "subject", "template_path", "message_id"]) || "站内信" }}</div>
-                <div class="mt-1 break-all text-xs font-semibold text-slate-500">ID：{{ messageId(message) || "-" }}</div>
+                <div class="truncate font-black text-slate-950">{{ pickFirst(message, ["title", "subject", "template_path", "message_id"]) || copy.defaults.message }}</div>
+                <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ copy.sent.idPrefix }}{{ messageId(message) || "-" }}</div>
               </div>
               <div class="min-w-0 break-all text-sm font-semibold text-slate-500">{{ pickFirst(message, ["user_name", "user_id", "candidate_ulid"]) || "-" }}</div>
               <div class="text-center">
@@ -463,17 +466,17 @@ onMounted(async () => {
                   type="button"
                   @click.stop="openMessage(message)"
                 >
-                  查看详情
+                  {{ copy.sent.viewDetails }}
                 </button>
               </div>
             </div>
           </div>
-          <div v-else class="p-12 text-center text-slate-500">暂无发送记录</div>
+          <div v-else class="p-12 text-center text-slate-500">{{ copy.sent.empty }}</div>
           <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-            <span class="text-sm font-bold text-slate-500">第 {{ messagePage }} / {{ totalPages }} 页</span>
+            <span class="text-sm font-bold text-slate-500">{{ copy.sent.pageText(messagePage, totalPages) }}</span>
             <div class="flex gap-3">
-              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage <= 1" @click="messagePage--">上一页</button>
-              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage >= totalPages" @click="messagePage++">下一页</button>
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage <= 1" @click="messagePage--">{{ copy.sent.prev }}</button>
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage >= totalPages" @click="messagePage++">{{ copy.sent.next }}</button>
             </div>
           </div>
         </section>
@@ -481,12 +484,12 @@ onMounted(async () => {
         <section v-else class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
           <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div class="border-b border-slate-200 p-5">
-              <h2 class="text-xl font-black">模板列表</h2>
-              <p class="mt-1 text-sm text-slate-500">可查看、创建和更新模板。</p>
+              <h2 class="text-xl font-black">{{ copy.templates.listTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.templates.listDescription }}</p>
             </div>
             <div v-if="templatesLoading" class="p-12 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-              正在加载...
+              {{ copy.templates.loading }}
             </div>
             <button
               v-for="template in templates"
@@ -500,16 +503,16 @@ onMounted(async () => {
               <div class="font-black">{{ titleOf(template) }}</div>
               <div class="mt-1 break-all text-sm text-slate-500">{{ pathOf(template) }}</div>
             </button>
-            <div v-if="!templatesLoading && !templates.length" class="p-12 text-center text-slate-500">暂无模板</div>
+            <div v-if="!templatesLoading && !templates.length" class="p-12 text-center text-slate-500">{{ copy.templates.empty }}</div>
           </div>
 
           <div class="space-y-6">
             <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
               <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-xl font-black">模板详情</h2>
-                <button class="rounded-xl border px-4 py-2 text-sm font-bold" type="button" @click="editTemplate(selectedTemplate)">编辑当前模板</button>
+                <h2 class="text-xl font-black">{{ copy.templates.detailTitle }}</h2>
+                <button class="rounded-xl border px-4 py-2 text-sm font-bold" type="button" @click="editTemplate(selectedTemplate)">{{ copy.templates.editCurrent }}</button>
               </div>
-              <div v-if="!selectedTemplate" class="p-10 text-center text-slate-500">请选择模板</div>
+              <div v-if="!selectedTemplate" class="p-10 text-center text-slate-500">{{ copy.templates.selectTemplate }}</div>
               <div v-else class="mt-4 grid gap-4 md:grid-cols-2">
                 <label v-for="(value, key) in selectedTemplateFields" :key="key" class="grid gap-2 text-sm font-bold">
                   {{ key }}
@@ -525,28 +528,28 @@ onMounted(async () => {
             </div>
 
             <form class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm" @submit.prevent="saveTemplate">
-              <h2 class="text-xl font-black">{{ editingTemplatePath ? "编辑模板" : "创建模板" }}</h2>
+              <h2 class="text-xl font-black">{{ editingTemplatePath ? copy.templates.editTitle : copy.templates.createTitle }}</h2>
               <label class="mt-4 block">
-                <span class="text-sm font-bold">路径</span>
+                <span class="text-sm font-bold">{{ copy.templates.path }}</span>
                 <input v-model="formPath" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100" :disabled="!!editingTemplatePath" />
               </label>
               <label class="mt-4 block">
-                <span class="text-sm font-bold">标题模板</span>
+                <span class="text-sm font-bold">{{ copy.templates.titleTemplate }}</span>
                 <input v-model="formTitle" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
               </label>
               <label class="mt-4 block">
-                <span class="text-sm font-bold">内容模板</span>
+                <span class="text-sm font-bold">{{ copy.templates.contentTemplate }}</span>
                 <textarea v-model="formContent" class="mt-2 min-h-40 w-full rounded-xl border border-slate-200 p-4" />
               </label>
               <label class="mt-4 block">
-                <span class="text-sm font-bold">描述</span>
+                <span class="text-sm font-bold">{{ copy.templates.description }}</span>
                 <textarea v-model="formDescription" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" />
               </label>
               <div class="mt-5 flex gap-3">
                 <button class="rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="templateSaving" type="submit">
-                  {{ templateSaving ? "保存中..." : "保存模板" }}
+                  {{ templateSaving ? copy.templates.saving : copy.templates.save }}
                 </button>
-                <button class="rounded-xl border px-5 py-3 font-bold" type="button" @click="resetTemplateForm">清空</button>
+                <button class="rounded-xl border px-5 py-3 font-bold" type="button" @click="resetTemplateForm">{{ copy.templates.clear }}</button>
               </div>
             </form>
           </div>
@@ -559,12 +562,12 @@ onMounted(async () => {
         <section class="flex max-h-[88vh] w-full max-w-[1120px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
             <div class="min-w-0">
-              <h2 class="truncate text-2xl font-black text-slate-950">站内信详情</h2>
+              <h2 class="truncate text-2xl font-black text-slate-950">{{ copy.sent.detailTitle }}</h2>
             </div>
             <button
               class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
               type="button"
-              aria-label="关闭"
+              :aria-label="copy.sent.close"
               @click="closeMessageDetail"
             >
               <X class="h-5 w-5" />
