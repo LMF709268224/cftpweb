@@ -268,7 +268,7 @@ onMounted(() => load(1))
               {{ applicationLabel(status(app)) }}
             </span>
             <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(app.created_at || "")) }}</span>
-            <button class="inline-flex h-9 items-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click.stop="selectApplication(app)">
+            <button class="self-center justify-self-end text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click.stop="selectApplication(app)">
               {{ copy.viewDetails }}
             </button>
           </div>

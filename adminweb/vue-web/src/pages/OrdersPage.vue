@@ -351,7 +351,7 @@ onMounted(() => load(1))
           <div class="text-sm font-semibold text-slate-500">{{ createdAt(order) }}</div>
           <div class="text-right">
             <button
-              class="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50"
+              class="text-sm font-bold text-[#1890ff] transition hover:underline"
               type="button"
               @click.stop="selectOrder(order)"
             >

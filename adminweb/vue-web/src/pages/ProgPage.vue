@@ -464,7 +464,7 @@ onMounted(async () => {
               </div>
               <span class="self-center justify-self-center whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(pipeline.status))">{{ statusLabel(pipeline.status) }}</span>
               <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(pipeline.started_at || pipeline.created_at || "")) }}</span>
-              <span class="inline-flex h-9 items-center self-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50">{{ copy.viewDetails }}</span>
+              <span class="self-center justify-self-end text-sm font-bold text-[#1890ff] transition hover:underline">{{ copy.viewDetails }}</span>
             </button>
           </template>
           <div v-else class="px-6 py-10 text-center text-slate-500">{{ copy.empty }}</div>

@@ -425,7 +425,7 @@ onMounted(load)
             <span class="self-center justify-self-center rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(bundle))">{{ bundleStatus(bundle) || "-" }}</span>
             <span class="self-center text-center text-sm font-black text-slate-700">{{ copy.fields.versionPrefix }} {{ bundle.version || 0 }}</span>
             <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</span>
-            <button class="inline-flex h-9 items-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click.stop="selectBundle(bundle)">
+            <button class="self-center justify-self-end text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click.stop="selectBundle(bundle)">
               {{ copy.viewDetails }}
             </button>
           </div>
