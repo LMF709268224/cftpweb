@@ -24,6 +24,7 @@ type UserStats = {
   active: number
   inactive: number
   admins: number
+  members: number
   email_verified: number
 }
 
@@ -72,7 +73,7 @@ let filterReloadTimer: number | undefined
 const { lang, t } = useAdminLanguage()
 const copy = computed(() => t.value.dashboard)
 
-const userStats = computed<UserStats>(() => data.value?.user_stats || { total: 0, active: 0, inactive: 0, admins: 0, email_verified: 0 })
+const userStats = computed<UserStats>(() => data.value?.user_stats || { total: 0, active: 0, inactive: 0, admins: 0, members: 0, email_verified: 0 })
 const totalPipelines = computed(() => data.value?.stage_buckets.reduce((sum, item) => sum + Number(item.count || 0), 0) || 0)
 const totalPaidOrders = computed(() => data.value?.today_revenue.reduce((sum, item) => sum + Number(item.order_count || 0), 0) || 0)
 const profileCompletion = computed(() => Math.max(0, Math.min(100, Number(data.value?.profile_completion_percent || 0))))
@@ -99,6 +100,7 @@ const summaryCards = computed(() => [
   { label: copy.value.summary.activeUsers, value: userStats.value.active, tone: "text-emerald-600", icon: UserCheck },
   { label: copy.value.summary.admins, value: userStats.value.admins, tone: "text-blue-600", icon: Shield },
   { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-[#0b579b]", icon: Users },
+  { label: copy.value.summary.members, value: userStats.value.members, tone: "text-cyan-600", icon: Users },
 ])
 
 function stageLabel(stageId: string) {
@@ -218,7 +220,7 @@ watch([keyword, roleFilter, statusFilter], () => {
       </div>
     </section>
 
-    <section class="mb-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <section class="mb-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       <article v-for="card in summaryCards" :key="card.label" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="flex items-center justify-between">
           <p class="text-sm font-bold text-slate-600">{{ card.label }}</p>

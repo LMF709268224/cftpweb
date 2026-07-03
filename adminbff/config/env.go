@@ -30,6 +30,10 @@ const (
 
 	// ROLE_ADMIN_BASIC 管理员基础角色名，默认为 "role_admin_basic"
 	EnvRoleAdminBasic = "ROLE_ADMIN_BASIC"
+	// ROLE_STUDENT_BASIC 学生基础角色名，默认为 "role_student_basic"
+	EnvRoleStudentBasic = "ROLE_STUDENT_BASIC"
+	// ROLE_MEMBERSHIP_ROLES 会员角色名列表，逗号分隔
+	EnvRoleMembershipRoles = "ROLE_MEMBERSHIP_ROLES"
 
 	// ── 下游微服务 gRPC 地址 ──
 	// 每个变量对应一个下游服务，

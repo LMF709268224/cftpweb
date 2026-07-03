@@ -51,6 +51,7 @@ export const zh = {
       inactiveUsers: "停用用户",
       admins: "管理员",
       students: "学生",
+      members: "会员",
     },
     filters: {
       allRoles: "全部角色",

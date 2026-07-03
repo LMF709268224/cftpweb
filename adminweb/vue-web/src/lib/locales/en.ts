@@ -53,6 +53,7 @@ export const en: AdminTranslations = {
       inactiveUsers: "Inactive Users",
       admins: "Admins",
       students: "Students",
+      members: "Members",
     },
     filters: {
       allRoles: "All Roles",

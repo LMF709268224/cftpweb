@@ -1,11 +1,14 @@
 package handler
 
 import (
+	"log/slog"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
+	"adminbff/config"
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	gmidpb "github.com/afnandelfin620-star/cftptest/cftp/gmid"
 	gprogpb "github.com/afnandelfin620-star/cftptest/cftp/gprog"
@@ -13,6 +16,12 @@ import (
 )
 
 const adminDashboardSampleLimit int32 = 500
+
+const (
+	defaultDashboardAdminRole       = "role_admin_basic"
+	defaultDashboardStudentRole     = "role_student_basic"
+	defaultDashboardMembershipRoles = "role_membership_affiliate,role_membership_associate,role_membership_charterholder"
+)
 
 type opsDashboardResponse struct {
 	CandidateTotal           int64                     `json:"candidate_total"`
@@ -33,6 +42,7 @@ type opsDashboardUserStats struct {
 	Active        int64 `json:"active"`
 	Inactive      int64 `json:"inactive"`
 	Admins        int64 `json:"admins"`
+	Members       int64 `json:"members"`
 	EmailVerified int64 `json:"email_verified"`
 }
 
@@ -68,6 +78,12 @@ type opsDashboardRevenue struct {
 	OrderCount  int64  `json:"order_count"`
 }
 
+type opsDashboardRoleConfig struct {
+	admin       string
+	student     string
+	memberships []string
+}
+
 func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	users, err := casdoorsdk.GetUsers()
 	if err != nil {
@@ -88,9 +104,11 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	candidateByUserID := h.dashboardCandidateULIDs(r, users)
-	filteredUsers := filterOpsDashboardUsers(users, candidateByUserID, opsDashboardUserFilterFromRequest(r))
+	roleConfig := dashboardRoleConfigFromEnv()
+	roleDefinitions := dashboardRoleDefinitions(roleConfig)
+	filteredUsers := filterOpsDashboardUsers(users, candidateByUserID, roleConfig, roleDefinitions, opsDashboardUserFilterFromRequest(r))
 	pageUsers := paginateOpsDashboardUsers(filteredUsers, userPage, userPageSize)
-	userSummary := h.buildOpsUserSummary(users, pageUsers, candidateByUserID)
+	userSummary := h.buildOpsUserSummary(users, pageUsers, candidateByUserID, roleConfig, roleDefinitions)
 
 	pipelines, err := h.Gprog.ListPipelines(r.Context(), &gprogpb.ListPipelinesReq{
 		Limit:  adminDashboardSampleLimit,
@@ -214,7 +232,13 @@ func (h *Handler) dashboardCandidateULIDs(r *http.Request, users []*casdoorsdk.U
 	return candidateByUserID
 }
 
-func filterOpsDashboardUsers(users []*casdoorsdk.User, candidateByUserID map[string]string, filter opsDashboardUserFilter) []*casdoorsdk.User {
+func filterOpsDashboardUsers(
+	users []*casdoorsdk.User,
+	candidateByUserID map[string]string,
+	roleConfig opsDashboardRoleConfig,
+	roleDefinitions map[string]*casdoorsdk.Role,
+	filter opsDashboardUserFilter,
+) []*casdoorsdk.User {
 	filtered := make([]*casdoorsdk.User, 0, len(users))
 	for _, user := range users {
 		if user == nil || strings.TrimSpace(user.Id) == "" {
@@ -222,21 +246,14 @@ func filterOpsDashboardUsers(users []*casdoorsdk.User, candidateByUserID map[str
 		}
 		candidateULID := candidateByUserID[user.Id]
 		roles := roleNames(user)
-		roleLabel := dashboardPrimaryRole(user, roles, candidateULID)
+		roleFlags := dashboardRoleFlags(user, roles, roleConfig, roleDefinitions)
+		roleLabel := dashboardPrimaryRole(roles, roleFlags)
 		status := strings.ToLower(dashboardUserStatus(user))
 		if filter.status != "" && filter.status != "all" && status != filter.status {
 			continue
 		}
 		if filter.role != "" && filter.role != "all" {
-			roleNeedle := strings.TrimSuffix(filter.role, "s")
-			matchesRole := strings.Contains(strings.ToLower(roleLabel), roleNeedle)
-			for _, role := range roles {
-				if strings.Contains(strings.ToLower(role), roleNeedle) {
-					matchesRole = true
-					break
-				}
-			}
-			if !matchesRole {
+			if !roleFlags[strings.ToLower(filter.role)] {
 				continue
 			}
 		}
@@ -278,14 +295,17 @@ func paginateOpsDashboardUsers(users []*casdoorsdk.User, page, pageSize int) []*
 	return users[start:end]
 }
 
-func (h *Handler) buildOpsUserSummary(users []*casdoorsdk.User, pageUsers []*casdoorsdk.User, candidateByUserID map[string]string) opsDashboardUserSummary {
+func (h *Handler) buildOpsUserSummary(
+	users []*casdoorsdk.User,
+	pageUsers []*casdoorsdk.User,
+	candidateByUserID map[string]string,
+	roleConfig opsDashboardRoleConfig,
+	roleDefinitions map[string]*casdoorsdk.Role,
+) opsDashboardUserSummary {
 	roleCounts := map[string]int64{
-		"students":  0,
-		"markers":   0,
-		"marketing": 0,
-		"corporate": 0,
-		"board":     0,
-		"partners":  0,
+		"admin":   0,
+		"student": 0,
+		"member":  0,
 	}
 	stats := opsDashboardUserStats{}
 	var profileScore int64
@@ -303,20 +323,15 @@ func (h *Handler) buildOpsUserSummary(users []*casdoorsdk.User, pageUsers []*cas
 		if user.EmailVerified {
 			stats.EmailVerified++
 		}
-		if IsCftpAdmin(user) {
-			stats.Admins++
-		}
 
 		roles := roleNames(user)
-		for key := range classifyDashboardRoles(roles) {
+		for key := range dashboardRoleFlags(user, roles, roleConfig, roleDefinitions) {
 			roleCounts[key]++
 		}
 		profileScore += int64(profileCompletionPercent(user))
-
-		if candidateByUserID[user.Id] != "" {
-			roleCounts["students"]++
-		}
 	}
+	stats.Admins = roleCounts["admin"]
+	stats.Members = roleCounts["member"]
 
 	pageItems := make([]opsDashboardUser, 0, len(pageUsers))
 	for _, user := range pageUsers {
@@ -325,6 +340,7 @@ func (h *Handler) buildOpsUserSummary(users []*casdoorsdk.User, pageUsers []*cas
 		}
 		roles := roleNames(user)
 		candidateULID := candidateByUserID[user.Id]
+		roleFlags := dashboardRoleFlags(user, roles, roleConfig, roleDefinitions)
 		pageItems = append(pageItems, opsDashboardUser{
 			ID:            user.Id,
 			CandidateULID: candidateULID,
@@ -333,7 +349,7 @@ func (h *Handler) buildOpsUserSummary(users []*casdoorsdk.User, pageUsers []*cas
 			Phone:         strings.TrimSpace(user.Phone),
 			Location:      dashboardLocation(user),
 			Roles:         roles,
-			RoleLabel:     dashboardPrimaryRole(user, roles, candidateULID),
+			RoleLabel:     dashboardPrimaryRole(roles, roleFlags),
 			Status:        dashboardUserStatus(user),
 			EmailVerified: user.EmailVerified,
 			CreatedAt:     user.CreatedTime,
@@ -349,12 +365,9 @@ func (h *Handler) buildOpsUserSummary(users []*casdoorsdk.User, pageUsers []*cas
 		candidateTotal: statsForStudents(roleCounts),
 		stats:          stats,
 		roleStats: []opsDashboardRoleStat{
-			{Key: "students", Label: "Students", Count: roleCounts["students"]},
-			{Key: "markers", Label: "Markers", Count: roleCounts["markers"]},
-			{Key: "marketing", Label: "Marketing", Count: roleCounts["marketing"]},
-			{Key: "corporate", Label: "Corporate", Count: roleCounts["corporate"]},
-			{Key: "board", Label: "Board", Count: roleCounts["board"]},
-			{Key: "partners", Label: "Partners", Count: roleCounts["partners"]},
+			{Key: "admin", Label: "Admin", Count: roleCounts["admin"]},
+			{Key: "student", Label: "Student", Count: roleCounts["student"]},
+			{Key: "member", Label: "Member", Count: roleCounts["member"]},
 		},
 		profileCompletionPercent: completion,
 		users:                    pageItems,
@@ -373,7 +386,7 @@ func (h *Handler) dashboardCandidateULID(r *http.Request, userID string) string 
 }
 
 func statsForStudents(roleCounts map[string]int64) int64 {
-	return roleCounts["students"]
+	return roleCounts["student"]
 }
 
 func roleNames(user *casdoorsdk.User) []string {
@@ -382,9 +395,9 @@ func roleNames(user *casdoorsdk.User) []string {
 		if role == nil {
 			continue
 		}
-		name := strings.TrimSpace(role.DisplayName)
+		name := strings.TrimSpace(role.Name)
 		if name == "" {
-			name = strings.TrimSpace(role.Name)
+			name = strings.TrimSpace(role.DisplayName)
 		}
 		if name != "" {
 			roles = append(roles, name)
@@ -392,26 +405,6 @@ func roleNames(user *casdoorsdk.User) []string {
 	}
 	sort.Strings(roles)
 	return roles
-}
-
-func classifyDashboardRoles(roles []string) map[string]bool {
-	result := make(map[string]bool)
-	for _, role := range roles {
-		normalized := strings.ToLower(role)
-		switch {
-		case strings.Contains(normalized, "marker"):
-			result["markers"] = true
-		case strings.Contains(normalized, "marketing"):
-			result["marketing"] = true
-		case strings.Contains(normalized, "corporate"):
-			result["corporate"] = true
-		case strings.Contains(normalized, "board"):
-			result["board"] = true
-		case strings.Contains(normalized, "partner"):
-			result["partners"] = true
-		}
-	}
-	return result
 }
 
 func dashboardUserName(user *casdoorsdk.User) string {
@@ -442,17 +435,186 @@ func dashboardLocation(user *casdoorsdk.User) string {
 	return strings.Join(parts, ", ")
 }
 
-func dashboardPrimaryRole(user *casdoorsdk.User, roles []string, candidateULID string) string {
-	if IsCftpAdmin(user) {
+func dashboardPrimaryRole(roles []string, roleFlags map[string]bool) string {
+	if roleFlags["admin"] {
 		return "admin"
 	}
-	if candidateULID != "" {
+	if roleFlags["member"] {
+		return "member"
+	}
+	if roleFlags["student"] {
 		return "student"
 	}
 	if len(roles) > 0 {
 		return roles[0]
 	}
 	return "member"
+}
+
+func dashboardRoleConfigFromEnv() opsDashboardRoleConfig {
+	return opsDashboardRoleConfig{
+		admin:       envOrDefault(config.EnvRoleAdminBasic, defaultDashboardAdminRole),
+		student:     envOrDefault(config.EnvRoleStudentBasic, defaultDashboardStudentRole),
+		memberships: splitEnvList(envOrDefault(config.EnvRoleMembershipRoles, defaultDashboardMembershipRoles)),
+	}
+}
+
+func dashboardRoleDefinitions(roleConfig opsDashboardRoleConfig) map[string]*casdoorsdk.Role {
+	roleNames := make([]string, 0, 2+len(roleConfig.memberships))
+	roleNames = append(roleNames, roleConfig.admin, roleConfig.student)
+	roleNames = append(roleNames, roleConfig.memberships...)
+
+	definitions := make(map[string]*casdoorsdk.Role, len(roleNames))
+	seen := make(map[string]bool, len(roleNames))
+	for _, roleName := range roleNames {
+		roleName = strings.TrimSpace(roleName)
+		normalized := strings.ToLower(roleName)
+		if roleName == "" || seen[normalized] {
+			continue
+		}
+		seen[normalized] = true
+
+		role, err := casdoorsdk.GetRole(roleName)
+		if err != nil {
+			slog.Warn("dashboard role definition load failed", "role", roleName, "err", err)
+			continue
+		}
+		if role != nil {
+			definitions[normalized] = role
+		}
+	}
+	return definitions
+}
+
+func dashboardRoleFlags(user *casdoorsdk.User, roles []string, roleConfig opsDashboardRoleConfig, roleDefinitions map[string]*casdoorsdk.Role) map[string]bool {
+	flags := make(map[string]bool, 3)
+	if dashboardUserMatchesRole(user, roles, roleConfig.admin, roleDefinitions) {
+		flags["admin"] = true
+	}
+	if dashboardUserMatchesRole(user, roles, roleConfig.student, roleDefinitions) {
+		flags["student"] = true
+	}
+	for _, roleName := range roleConfig.memberships {
+		if dashboardUserMatchesRole(user, roles, roleName, roleDefinitions) {
+			flags["member"] = true
+			break
+		}
+	}
+	return flags
+}
+
+func dashboardUserMatchesRole(user *casdoorsdk.User, roles []string, roleName string, roleDefinitions map[string]*casdoorsdk.Role) bool {
+	roleName = strings.TrimSpace(roleName)
+	if user == nil || roleName == "" {
+		return false
+	}
+	normalizedRole := strings.ToLower(roleName)
+	for _, role := range roles {
+		if strings.EqualFold(role, roleName) || strings.EqualFold(dashboardRoleNamePart(role), roleName) {
+			return true
+		}
+	}
+
+	roleDefinition := roleDefinitions[normalizedRole]
+	if roleDefinition == nil {
+		return false
+	}
+
+	userKeys := dashboardUserKeys(user)
+	for _, roleUser := range roleDefinition.Users {
+		if userKeys[strings.ToLower(strings.TrimSpace(roleUser))] {
+			return true
+		}
+		if userKeys[strings.ToLower(dashboardRoleNamePart(roleUser))] {
+			return true
+		}
+	}
+
+	groupKeys := dashboardUserGroupKeys(user)
+	for _, roleGroup := range roleDefinition.Groups {
+		if groupKeys[strings.ToLower(strings.TrimSpace(roleGroup))] {
+			return true
+		}
+		if groupKeys[strings.ToLower(dashboardRoleNamePart(roleGroup))] {
+			return true
+		}
+	}
+
+	for _, inheritedRole := range roleDefinition.Roles {
+		for _, userRole := range roles {
+			if strings.EqualFold(userRole, inheritedRole) || strings.EqualFold(dashboardRoleNamePart(userRole), dashboardRoleNamePart(inheritedRole)) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func dashboardUserKeys(user *casdoorsdk.User) map[string]bool {
+	keys := make(map[string]bool)
+	addKey := func(value string) {
+		value = strings.TrimSpace(value)
+		if value != "" {
+			keys[strings.ToLower(value)] = true
+		}
+	}
+	addKey(user.Id)
+	addKey(user.Name)
+	addKey(user.Email)
+	addKey(dashboardCasdoorPath(user.Owner, user.Id))
+	addKey(dashboardCasdoorPath(user.Owner, user.Name))
+	return keys
+}
+
+func dashboardUserGroupKeys(user *casdoorsdk.User) map[string]bool {
+	keys := make(map[string]bool)
+	for _, group := range user.Groups {
+		group = strings.TrimSpace(group)
+		if group == "" {
+			continue
+		}
+		keys[strings.ToLower(group)] = true
+		keys[strings.ToLower(dashboardRoleNamePart(group))] = true
+	}
+	return keys
+}
+
+func dashboardCasdoorPath(owner string, name string) string {
+	owner = strings.TrimSpace(owner)
+	name = strings.TrimSpace(name)
+	if owner == "" || name == "" {
+		return ""
+	}
+	return owner + "/" + name
+}
+
+func dashboardRoleNamePart(value string) string {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return ""
+	}
+	parts := strings.Split(value, "/")
+	return strings.TrimSpace(parts[len(parts)-1])
+}
+
+func envOrDefault(key, fallback string) string {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	return value
+}
+
+func splitEnvList(value string) []string {
+	parts := strings.Split(value, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			result = append(result, part)
+		}
+	}
+	return result
 }
 
 func dashboardUserStatus(user *casdoorsdk.User) string {
