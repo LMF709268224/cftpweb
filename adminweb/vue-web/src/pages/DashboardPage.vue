@@ -241,16 +241,16 @@ onMounted(loadDashboard)
       </div>
 
       <div class="overflow-x-auto">
-        <table class="min-w-full text-left text-sm">
+        <table class="w-full min-w-[1120px] text-left text-sm">
           <thead class="border-b border-slate-100 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
             <tr>
               <th class="px-6 py-4">{{ copy.table.user }}</th>
               <th class="px-6 py-4">{{ copy.table.email }}</th>
               <th class="px-6 py-4">{{ copy.table.location }}</th>
-              <th class="px-6 py-4">{{ copy.table.role }}</th>
-              <th class="px-6 py-4">{{ copy.table.status }}</th>
-              <th class="px-6 py-4">{{ copy.table.emailVerified }}</th>
-              <th class="px-6 py-4">{{ copy.table.created }}</th>
+              <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.role }}</th>
+              <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.status }}</th>
+              <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.emailVerified }}</th>
+              <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.created }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -269,20 +269,20 @@ onMounted(loadDashboard)
                   <div class="font-bold text-slate-950">{{ user.name || "-" }}</div>
                   <div class="text-xs text-slate-500">{{ user.phone || user.candidate_ulid || "-" }}</div>
                 </td>
-                <td class="px-6 py-4 text-slate-700">{{ user.email || "-" }}</td>
+                <td class="whitespace-nowrap px-6 py-4 text-slate-700">{{ user.email || "-" }}</td>
                 <td class="px-6 py-4 text-slate-700">{{ user.location || "-" }}</td>
-                <td class="px-6 py-4">
-                  <span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
+                <td class="w-24 whitespace-nowrap px-6 py-4">
+                  <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
                 </td>
-                <td class="px-6 py-4">
-                  <span class="rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
+                <td class="w-24 whitespace-nowrap px-6 py-4">
+                  <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
                 </td>
-                <td class="px-6 py-4">
-                  <span :class="['rounded-full px-2.5 py-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
+                <td class="w-28 whitespace-nowrap px-6 py-4">
+                  <span :class="['inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
                     {{ user.email_verified ? copy.verified : copy.unverified }}
                   </span>
                 </td>
-                <td class="px-6 py-4 text-slate-700">{{ formatDate(user.created_at) }}</td>
+                <td class="w-28 whitespace-nowrap px-6 py-4 text-slate-700">{{ formatDate(user.created_at) }}</td>
               </tr>
             </template>
           </tbody>
