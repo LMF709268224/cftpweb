@@ -1790,19 +1790,19 @@ onMounted(() => {
             <div class="rounded-xl border border-slate-200 p-3">
               <h3 class="font-black">{{ copy.readonlyFields }}</h3>
               <p class="mt-1 text-xs text-slate-500">{{ copy.readonlyFieldsHint }}</p>
-              <div class="mt-3 max-h-[640px] space-y-2 overflow-y-auto overscroll-contain pr-2">
+              <div class="mt-3 space-y-2 pr-1">
                 <label v-for="entry in recordEntries(selectedCourse)" :key="`course-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">{{ courseReadonlyFieldLabel(entry.key) }}</span>
-                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" readonly />
+                  <pre class="mt-1 mb-0 min-h-10 w-full whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500">{{ entry.value }}</pre>
                 </label>
                 <div v-if="detailLoading || completeLoading" class="text-sm text-slate-500">{{ copy.loadingCompleteCourse }}</div>
                 <label v-for="entry in recordEntries(courseDetail)" :key="`detail-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">{{ courseDetailReadonlyFieldLabel(entry.key) }}</span>
-                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" readonly />
+                  <pre class="mt-1 mb-0 min-h-10 w-full whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500">{{ entry.value }}</pre>
                 </label>
                 <label v-for="entry in recordEntries(completeCourse)" :key="`complete-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">{{ completeCourseReadonlyFieldLabel(entry.key) }}</span>
-                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" readonly />
+                  <pre class="mt-1 mb-0 min-h-10 w-full whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500">{{ entry.value }}</pre>
                 </label>
               </div>
             </div>
