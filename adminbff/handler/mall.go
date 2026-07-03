@@ -86,6 +86,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			OrderULID:     item.GetOrderUlid(),
 			ProductName:   item.GetMeta().GetProductName(),
 			CandidateULID: item.GetCandidateUlid(),
+			CandidateName: h.candidateName(item.GetCandidateUlid()),
 			BizType:       item.GetBizType(),
 			BizRefULID:    item.GetBizRefUlid(),
 			AmountMinor:   item.GetAmountMinor(),
@@ -119,6 +120,7 @@ type adminOrderSummary struct {
 	OrderULID     string `json:"order_ulid"`
 	ProductName   string `json:"product_name,omitempty"`
 	CandidateULID string `json:"candidate_ulid"`
+	CandidateName string `json:"candidate_name,omitempty"`
 	BizType       string `json:"biz_type"`
 	BizRefULID    string `json:"biz_ref_ulid"`
 	AmountMinor   int64  `json:"amount_minor"`

@@ -9,14 +9,15 @@ import (
 )
 
 type InvoiceItem struct {
-	ID        string  `json:"id"`
-	OrderUlid string  `json:"order_id"`
-	Email     string  `json:"email"` // If we fetch user info, else just customer id
-	Amount    float64 `json:"amount"`
-	Currency  string  `json:"currency"`
-	Status    string  `json:"status"`
-	CreatedAt string  `json:"created_at"`
-	PaidAt    string  `json:"paid_at,omitempty"`
+	ID            string  `json:"id"`
+	OrderUlid     string  `json:"order_id"`
+	Email         string  `json:"email"`
+	CandidateName string  `json:"candidate_name,omitempty"`
+	Amount        float64 `json:"amount"`
+	Currency      string  `json:"currency"`
+	Status        string  `json:"status"`
+	CreatedAt     string  `json:"created_at"`
+	PaidAt        string  `json:"paid_at,omitempty"`
 }
 
 type ListInvoicesRsp struct {
@@ -53,13 +54,14 @@ func (h *Handler) ListInvoices(w http.ResponseWriter, r *http.Request) {
 
 	for _, inv := range resp.GetInvoices() {
 		item := InvoiceItem{
-			ID:        inv.GetStripeInvoiceId(),
-			OrderUlid: inv.GetOrderUlid(),
-			Email:     inv.GetCustomerUlid(), // using customer_id as email placeholder for now
-			Amount:    float64(inv.GetAmount()) / 100.0,
-			Currency:  inv.GetCurrency(),
-			Status:    inv.GetStatus().String(),
-			CreatedAt: time.Unix(inv.GetCreatedAt(), 0).Format(time.RFC3339),
+			ID:            inv.GetStripeInvoiceId(),
+			OrderUlid:     inv.GetOrderUlid(),
+			Email:         inv.GetCustomerUlid(),
+			CandidateName: h.candidateName(inv.GetCustomerUlid()),
+			Amount:        float64(inv.GetAmount()) / 100.0,
+			Currency:      inv.GetCurrency(),
+			Status:        inv.GetStatus().String(),
+			CreatedAt:     time.Unix(inv.GetCreatedAt(), 0).Format(time.RFC3339),
 		}
 		if inv.GetPaidAt() > 0 {
 			item.PaidAt = time.Unix(inv.GetPaidAt(), 0).Format(time.RFC3339)

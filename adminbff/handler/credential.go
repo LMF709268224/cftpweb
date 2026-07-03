@@ -148,7 +148,20 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 		res.Total = uint32(len(filtered))
 	}
 
-	WriteJSON(w, http.StatusOK, res)
+	applications := make([]map[string]interface{}, 0, len(res.GetApplications()))
+	for _, app := range res.GetApplications() {
+		if app == nil {
+			continue
+		}
+		item := jsonPayloadObject(app)
+		h.attachCandidateName(item, app.GetCandidateUlid())
+		applications = append(applications, item)
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"applications": applications,
+		"total":        res.GetTotal(),
+	})
 }
 
 // GetApplication 查询考生资格申请详情
@@ -166,10 +179,10 @@ func (h *Handler) GetApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, applicationDetailPayload(res))
+	WriteJSON(w, http.StatusOK, h.applicationDetailPayload(res))
 }
 
-func applicationDetailPayload(app *gcredspb.Application) map[string]interface{} {
+func (h *Handler) applicationDetailPayload(app *gcredspb.Application) map[string]interface{} {
 	if app == nil {
 		return map[string]interface{}{}
 	}
@@ -179,7 +192,7 @@ func applicationDetailPayload(app *gcredspb.Application) map[string]interface{} 
 		files = append(files, credentialFilePayload(file))
 	}
 
-	return map[string]interface{}{
+	payload := map[string]interface{}{
 		"app_ulid":       app.GetAppUlid(),
 		"app_id":         app.GetAppUlid(),
 		"candidate_ulid": app.GetCandidateUlid(),
@@ -193,6 +206,8 @@ func applicationDetailPayload(app *gcredspb.Application) map[string]interface{} 
 		"created_at":     app.GetCreatedAt(),
 		"update_count":   app.GetUpdateCount(),
 	}
+	h.attachCandidateName(payload, app.GetCandidateUlid())
+	return payload
 }
 
 func credentialFilePayload(file *gcredspb.FileInfo) map[string]interface{} {
