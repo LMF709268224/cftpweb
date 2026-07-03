@@ -67,20 +67,24 @@ function label(value: unknown) {
   return value === undefined || value === null || value === "" ? "-" : String(value)
 }
 
+function normalizedStatus(value: unknown) {
+  return String(value || "").trim().toUpperCase()
+}
+
 function examStatusLabel(value: unknown) {
-  const status = String(value || "").toUpperCase()
-  if (status === "OPEN") return copy.value.statusOptions.open
-  if (status === "SCHEDULED") return copy.value.statusOptions.scheduled
-  if (status === "DONE") return copy.value.statusOptions.done
-  if (status === "CANCELLED") return copy.value.statusOptions.cancelled
+  const status = normalizedStatus(value)
+  if (["OPEN", "CREATED", "EXAM_STATUS_OPEN"].includes(status)) return copy.value.statusOptions.open
+  if (["SCHEDULED", "EXAM_STATUS_SCHEDULED"].includes(status)) return copy.value.statusOptions.scheduled
+  if (["DONE", "COMPLETED", "EXAM_STATUS_DONE", "EXAM_STATUS_COMPLETED"].includes(status)) return copy.value.statusOptions.done
+  if (["CANCELLED", "CANCELED", "EXAM_STATUS_CANCELLED", "EXAM_STATUS_CANCELED"].includes(status)) return copy.value.statusOptions.cancelled
   return status || "-"
 }
 
 function resultStatusLabel(value: unknown, passed?: unknown) {
-  const status = String(value || "").toUpperCase()
-  if (status === "PASS" || passed === true) return copy.value.statusOptions.pass
-  if (status === "FAIL" || (passed === false && status)) return copy.value.statusOptions.fail
-  if (status === "PENDING") return copy.value.statusOptions.pending
+  const status = normalizedStatus(value)
+  if (["PASS", "PASSED", "RESULT_STATUS_PASSED", "EXAM_STATUS_PASSED"].includes(status) || passed === true) return copy.value.statusOptions.pass
+  if (["FAIL", "FAILED", "RESULT_STATUS_FAILED", "EXAM_STATUS_FAILED", "NO_SHOW", "RESULT_STATUS_NO_SHOW"].includes(status) || (passed === false && status)) return copy.value.statusOptions.fail
+  if (["PENDING", "RESULT_STATUS_PENDING", "EXAM_STATUS_PENDING"].includes(status)) return copy.value.statusOptions.pending
   return status || "-"
 }
 
@@ -237,27 +241,27 @@ onMounted(() => loadExams(1))
       <div class="grid gap-4 xl:grid-cols-[1fr_1fr_1.2fr_1.2fr_1.2fr_auto]">
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.flowStatus }}
-          <select v-model="statusFilter" class="h-11 rounded-xl border border-slate-200 px-3">
+          <select v-model="statusFilter" class="h-11 rounded-xl border border-slate-200 px-3" @change="search">
             <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.resultStatus }}
-          <select v-model="resultStatusFilter" class="h-11 rounded-xl border border-slate-200 px-3">
+          <select v-model="resultStatusFilter" class="h-11 rounded-xl border border-slate-200 px-3" @change="search">
             <option v-for="option in resultOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.candidateUlid }}
-          <input v-model="candidateFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.candidatePlaceholder" />
+          <input v-model="candidateFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.candidatePlaceholder" @keyup.enter="search" />
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.confirmationNumber }}
-          <input v-model="confirmationFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.confirmationPlaceholder" />
+          <input v-model="confirmationFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.confirmationPlaceholder" @keyup.enter="search" />
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.courseUnitUlid }}
-          <input v-model="courseUnitFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.courseUnitPlaceholder" />
+          <input v-model="courseUnitFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.courseUnitPlaceholder" @keyup.enter="search" />
         </label>
         <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 text-sm font-black text-white shadow-sm" type="button" @click="search">
           <Search class="h-4 w-4" />
