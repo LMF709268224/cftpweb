@@ -50,6 +50,7 @@ export const zh = {
       activeUsers: "活跃用户",
       inactiveUsers: "停用用户",
       admins: "管理员",
+      students: "学生",
     },
     filters: {
       allRoles: "全部角色",
@@ -71,6 +72,10 @@ export const zh = {
       created: "创建时间",
     },
     noUsers: "暂无用户",
+    prev: "上一页",
+    next: "下一页",
+    pageText: (page: number) => `第 ${page} 页`,
+    userPageText: (page: number, total: number) => `第 ${page} 页 / 共 ${total} 人`,
     verified: "已验证",
     unverified: "未验证",
     stageDistribution: "阶段分布",
@@ -283,6 +288,8 @@ export const zh = {
   callback: {
     missingParams: "认证回调参数不完整。",
     authFailed: "认证失败，请重新登录。",
+    notAdmin: "抱歉，当前账号没有管理员权限，无法登录管理后台。请使用管理员账号登录。",
+    wrongApplication: "抱歉，此登录凭证不属于管理后台应用，请从管理后台入口重新登录。",
     loadingTitle: "正在完成登录",
     successTitle: "认证成功",
     errorTitle: "认证失败",

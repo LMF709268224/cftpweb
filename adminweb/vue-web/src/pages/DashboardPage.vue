@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Activity, BarChart3, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, UserMinus, Users } from "lucide-vue-next"
+import { Activity, BarChart3, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
@@ -53,6 +53,9 @@ type DashboardData = {
   user_role_stats: RoleStat[]
   profile_completion_percent: number
   users: DashboardUser[]
+  user_total: number
+  user_page: number
+  user_page_size: number
   stage_buckets: StageBucket[]
   today_revenue: RevenueItem[]
   generated_at: string
@@ -63,6 +66,8 @@ const data = ref<DashboardData | null>(null)
 const keyword = ref("")
 const roleFilter = ref("all")
 const statusFilter = ref("all")
+const userPage = ref(1)
+const userPageSize = 10
 const { lang, t } = useAdminLanguage()
 const copy = computed(() => t.value.dashboard)
 
@@ -70,6 +75,9 @@ const userStats = computed<UserStats>(() => data.value?.user_stats || { total: 0
 const totalPipelines = computed(() => data.value?.stage_buckets.reduce((sum, item) => sum + Number(item.count || 0), 0) || 0)
 const totalPaidOrders = computed(() => data.value?.today_revenue.reduce((sum, item) => sum + Number(item.order_count || 0), 0) || 0)
 const profileCompletion = computed(() => Math.max(0, Math.min(100, Number(data.value?.profile_completion_percent || 0))))
+const userTotal = computed(() => Number(data.value?.user_total || data.value?.users.length || 0))
+const canPrevUsers = computed(() => userPage.value > 1)
+const canNextUsers = computed(() => userPage.value * userPageSize < userTotal.value)
 const revenueText = computed(() => {
   const items = data.value?.today_revenue || []
   if (!items.length) return copy.value.noRevenue
@@ -77,7 +85,9 @@ const revenueText = computed(() => {
 })
 const roleOptions = computed(() => [
   { value: "all", label: copy.value.filters.allRoles },
-  ...(data.value?.user_role_stats || []).map((item) => ({ value: item.key, label: roleLabel(item.label || item.key) })),
+  { value: "admin", label: copy.value.roles.admin },
+  { value: "student", label: copy.value.roles.student },
+  { value: "member", label: copy.value.roles.member },
 ])
 const filteredUsers = computed(() => {
   const normalizedKeyword = keyword.value.trim().toLowerCase()
@@ -94,9 +104,11 @@ const filteredUsers = computed(() => {
 const summaryCards = computed(() => [
   { label: copy.value.summary.totalUsers, value: userStats.value.total, tone: "text-slate-950", icon: Users },
   { label: copy.value.summary.activeUsers, value: userStats.value.active, tone: "text-emerald-600", icon: UserCheck },
-  { label: copy.value.summary.inactiveUsers, value: userStats.value.inactive, tone: "text-red-600", icon: UserMinus },
   { label: copy.value.summary.admins, value: userStats.value.admins, tone: "text-blue-600", icon: Shield },
+  { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-[#0b579b]", icon: Users },
 ])
+
+const visibleRoleStats = computed(() => (data.value?.user_role_stats || []).filter((role) => role.key === "students"))
 
 function stageLabel(stageId: string) {
   return stageId === copy.value.noStage ? copy.value.noStage : stageId
@@ -139,16 +151,22 @@ function formatDate(raw: string) {
   return parsed.toLocaleDateString(lang.value === "zh" ? "zh-CN" : "en-US")
 }
 
-async function loadDashboard() {
+async function loadDashboard(page = userPage.value) {
   loading.value = true
   try {
-    data.value = await apiClient<DashboardData>("/api/dashboard/ops")
+    data.value = await apiClient<DashboardData>(`/api/dashboard/ops?user_page=${page}&user_page_size=${userPageSize}`)
+    userPage.value = Number(data.value.user_page || page)
   } catch (err) {
     console.error(err)
     toast.error(copy.value.loadFailed)
   } finally {
     loading.value = false
   }
+}
+
+function loadUserPage(page: number) {
+  if (page < 1) return
+  void loadDashboard(page)
 }
 
 onMounted(loadDashboard)
@@ -175,7 +193,7 @@ onMounted(loadDashboard)
           class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold shadow-sm transition hover:border-slate-500 disabled:opacity-50"
           type="button"
           :disabled="loading"
-          @click="loadDashboard"
+          @click="loadDashboard(userPage)"
         >
           <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
           <RefreshCw v-else class="h-4 w-4" />
@@ -204,8 +222,8 @@ onMounted(loadDashboard)
       </article>
     </section>
 
-    <section class="mb-6 grid gap-3 md:grid-cols-3 2xl:grid-cols-6">
-      <article v-for="role in data?.user_role_stats || []" :key="role.key" class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+    <section v-if="visibleRoleStats.length" class="mb-6 grid gap-3 md:grid-cols-3 2xl:grid-cols-6">
+      <article v-for="role in visibleRoleStats" :key="role.key" class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
         <div class="flex items-center justify-between">
           <p class="text-sm font-bold text-slate-600">{{ roleLabel(role.label || role.key) }}</p>
           <Users class="h-4 w-4 text-slate-300" />
@@ -221,7 +239,7 @@ onMounted(loadDashboard)
             <h2 class="text-xl font-black text-slate-950">{{ copy.userManagement }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.userManagementHint }}</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ filteredUsers.length }} / {{ data?.users.length || 0 }}</span>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.userPageText(userPage, userTotal) }}</span>
         </div>
         <div class="mt-5 flex flex-wrap gap-3 rounded-2xl bg-slate-50 p-3">
           <div class="relative min-w-[280px] flex-1">
@@ -287,6 +305,15 @@ onMounted(loadDashboard)
             </template>
           </tbody>
         </table>
+      </div>
+      <div class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+        <button class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="loading || !canPrevUsers" @click="loadUserPage(userPage - 1)">
+          {{ copy.prev }}
+        </button>
+        <span class="text-sm font-bold text-slate-500">{{ copy.pageText(userPage) }}</span>
+        <button class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="loading || !canNextUsers" @click="loadUserPage(userPage + 1)">
+          {{ copy.next }}
+        </button>
       </div>
     </section>
 

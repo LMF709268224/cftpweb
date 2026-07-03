@@ -356,8 +356,8 @@ type LineItemInput struct {
 
 type CreatePaymentInput struct {
 	// OrderID    string            `json:"order_id"`
-	LineItems  []LineItemInput   `json:"line_items"`  // 璁㈠崟鍖呭惈鐨勫晢鍝佸垪琛?
-	Metadata   map[string]string `json:"metadata"`    // 鎵╁睍鍏冩暟鎹紝闇€鍖呭惈 pipeline_ulid, stage_ulid 以便回调对账
+	LineItems  []LineItemInput   `json:"line_items"`  // 订单包含的商品列表
+	Metadata   map[string]string `json:"metadata"`    // 扩展元数据，需包含 pipeline_ulid, stage_ulid 以便回调对账
 	SuccessURL string            `json:"success_url"` // 支付成功后的跳转地址
 	CancelURL  string            `json:"cancel_url"`  // 支付取消后的返回地址
 }
@@ -486,7 +486,7 @@ type CertificateInfo struct {
 	CredGuid      string                  `json:"cred_guid,omitempty"`    // 跨版本业务唯一 ID
 	CandidateUlid string                  `json:"candidate_id,omitempty"` // 考生逻辑 ID (ULID)
 	Version       uint32                  `json:"version,omitempty"`      // 版本号[required]
-	Status        gcreds.CredentialStatus `json:"status,omitempty"`       // 璧勬牸状态[required]
+	Status        gcreds.CredentialStatus `json:"status,omitempty"`       // 资格状态[required]
 	Files         []CertificateFileInfo   `json:"files,omitempty"`        // 文件列表 [required]
 	AuditorUlid   string                  `json:"auditor_id,omitempty"`   // 审核人ID ULID [optional]
 	AuditRemark   string                  `json:"audit_remark,omitempty"` // 审核备注 [optional]

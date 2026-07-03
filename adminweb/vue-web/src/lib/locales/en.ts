@@ -52,6 +52,7 @@ export const en: AdminTranslations = {
       activeUsers: "Active Users",
       inactiveUsers: "Inactive Users",
       admins: "Admins",
+      students: "Students",
     },
     filters: {
       allRoles: "All Roles",
@@ -73,6 +74,10 @@ export const en: AdminTranslations = {
       created: "Created",
     },
     noUsers: "No users",
+    prev: "Previous",
+    next: "Next",
+    pageText: (page: number) => `Page ${page}`,
+    userPageText: (page: number, total: number) => `Page ${page} / ${total} users`,
     verified: "Verified",
     unverified: "Unverified",
     stageDistribution: "Stage Distribution",
@@ -285,6 +290,8 @@ export const en: AdminTranslations = {
   callback: {
     missingParams: "Authentication callback parameters are incomplete.",
     authFailed: "Authentication failed. Please log in again.",
+    notAdmin: "Sorry, this account does not have admin access and cannot log in to the admin portal. Please use an administrator account.",
+    wrongApplication: "Sorry, this login credential does not belong to the admin application. Please sign in again from the admin portal.",
     loadingTitle: "Completing Login",
     successTitle: "Authentication Successful",
     errorTitle: "Authentication Failed",
