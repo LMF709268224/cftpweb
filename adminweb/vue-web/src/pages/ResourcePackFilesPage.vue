@@ -292,6 +292,8 @@ async function saveFile() {
     }
 
     await loadFiles()
+    detailOpen.value = false
+    mode.value = "detail"
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.saveFailed)
@@ -544,14 +546,6 @@ onMounted(load)
           </label>
           </div>
 
-        <div v-if="mode !== 'detail'" class="mt-5 flex justify-end border-t border-slate-100 pt-5">
-          <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveFile">
-            <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-            <Save v-else class="h-4 w-4" />
-            {{ mode === "create" ? copy.createFile : copy.saveFile }}
-          </button>
-        </div>
-
         <div v-if="selected && mode === 'detail'" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div class="mb-3 flex items-center gap-2 text-sm font-black">
             <FileText class="h-4 w-4 text-blue-700" />
@@ -571,6 +565,14 @@ onMounted(load)
             </div>
           </div>
         </div>
+        </div>
+
+        <div v-if="mode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+          <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveFile">
+            <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+            <Save v-else class="h-4 w-4" />
+            {{ mode === "create" ? copy.createFile : copy.saveFile }}
+          </button>
         </div>
         </div>
       </section>
