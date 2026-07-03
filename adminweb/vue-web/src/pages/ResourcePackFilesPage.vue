@@ -405,7 +405,7 @@ onMounted(load)
           <span class="h-fit self-center justify-self-end whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
             {{ fileTypeLabel(file.file_type) }}
           </span>
-          <span class="self-center justify-self-end rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-black text-blue-700">{{ copy.viewDetails }}</span>
+          <span class="inline-flex h-9 items-center self-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50">{{ copy.viewDetails }}</span>
         </button>
 
         <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">

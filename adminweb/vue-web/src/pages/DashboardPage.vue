@@ -108,8 +108,6 @@ const summaryCards = computed(() => [
   { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-[#0b579b]", icon: Users },
 ])
 
-const visibleRoleStats = computed(() => (data.value?.user_role_stats || []).filter((role) => role.key === "students"))
-
 function stageLabel(stageId: string) {
   return stageId === copy.value.noStage ? copy.value.noStage : stageId
 }
@@ -219,16 +217,6 @@ onMounted(loadDashboard)
           <component :is="card.icon" class="h-5 w-5 text-slate-300" />
         </div>
         <p class="mt-5 text-4xl font-black" :class="card.tone">{{ card.value }}</p>
-      </article>
-    </section>
-
-    <section v-if="visibleRoleStats.length" class="mb-6 grid gap-3 md:grid-cols-3 2xl:grid-cols-6">
-      <article v-for="role in visibleRoleStats" :key="role.key" class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
-        <div class="flex items-center justify-between">
-          <p class="text-sm font-bold text-slate-600">{{ roleLabel(role.label || role.key) }}</p>
-          <Users class="h-4 w-4 text-slate-300" />
-        </div>
-        <p class="mt-3 text-3xl font-black text-[#0b579b]">{{ role.count }}</p>
       </article>
     </section>
 

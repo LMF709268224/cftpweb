@@ -316,7 +316,7 @@ onMounted(() => loadExams(1))
                 </span>
               </td>
               <td class="w-32 whitespace-nowrap px-5 py-4 text-right">
-                <button class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-black text-blue-700 hover:bg-blue-100" type="button" @click="openExam(exam)">
+                <button class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click="openExam(exam)">
                   {{ copy.viewDetails }}
                 </button>
               </td>

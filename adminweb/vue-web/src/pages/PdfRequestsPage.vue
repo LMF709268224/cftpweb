@@ -131,17 +131,12 @@ onMounted(() => load(1))
         <div
           v-for="request in requests"
           :key="requestUlid(request)"
-          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_160px_180px_112px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
-          :class="requestUlid(selected || {}) === requestUlid(request) ? 'bg-sky-50' : ''"
-          role="button"
-          tabindex="0"
-          @click="openRequest(request)"
-          @keydown.enter.prevent="openRequest(request)"
-          @keydown.space.prevent="openRequest(request)"
+          class="grid grid-cols-[minmax(0,1fr)_160px_180px_112px] items-center gap-5 px-5 py-4"
+          :class="detailOpen && requestUlid(selected || {}) === requestUlid(request) ? 'bg-sky-50' : ''"
         >
           <div class="min-w-0">
             <div class="truncate text-base font-black">{{ getDisplayTitle(request) }}</div>
-            <div class="mt-1 truncate text-sm font-bold text-blue-700">{{ requestUlid(request) || "-" }}</div>
+            <div class="mt-1 truncate text-sm font-bold text-slate-600">{{ requestUlid(request) || "-" }}</div>
           </div>
           <div class="min-w-0 text-center">
             <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(request.status))">
@@ -151,7 +146,7 @@ onMounted(() => load(1))
           <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(request.created_at) || copy.noCreatedAt }}</div>
           <div class="text-right">
             <button
-              class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-[#0b4ea2] shadow-sm transition hover:border-sky-200 hover:bg-sky-50"
+              class="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50"
               type="button"
               @click.stop="openRequest(request)"
             >

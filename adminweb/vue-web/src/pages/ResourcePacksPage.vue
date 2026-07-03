@@ -310,7 +310,7 @@ onMounted(load)
               <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-end">
                 {{ pack.status || "Active" }}
               </span>
-              <span class="justify-self-start rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-black text-blue-700 lg:justify-self-end">{{ copy.viewDetails }}</span>
+              <span class="inline-flex h-9 items-center justify-self-start rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 lg:justify-self-end">{{ copy.viewDetails }}</span>
             </div>
           </button>
         </div>
