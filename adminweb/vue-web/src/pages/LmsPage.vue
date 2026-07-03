@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 type CourseForm = {
@@ -108,6 +109,8 @@ type QuizListItem = {
 }
 
 const pageSize = 20
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.lmsAdmin)
 
 const courses = ref<JsonRecord[]>([])
 const selectedCourse = ref<JsonRecord | null>(null)
@@ -386,11 +389,11 @@ function versionOf(record: JsonRecord | null | undefined) {
 }
 
 function courseTitle(course: JsonRecord | null | undefined) {
-  return String(pickFirst(course || {}, ["title", "name", "course_title"]) || courseId(course) || "课程")
+  return String(pickFirst(course || {}, ["title", "name", "course_title"]) || courseId(course) || copy.value.fallbacks.course)
 }
 
 function chapterTitle(chapter: JsonRecord | null | undefined) {
-  return String(pickFirst(chapter || {}, ["title", "name"]) || chapterId(chapter) || "章节")
+  return String(pickFirst(chapter || {}, ["title", "name"]) || chapterId(chapter) || copy.value.fallbacks.chapter)
 }
 
 function chapterById(id: string) {
@@ -398,61 +401,61 @@ function chapterById(id: string) {
 }
 
 function lessonTitle(lesson: JsonRecord | null | undefined) {
-  return String(pickFirst(lesson || {}, ["title", "name"]) || lessonId(lesson) || "课时")
+  return String(pickFirst(lesson || {}, ["title", "name"]) || lessonId(lesson) || copy.value.fallbacks.lesson)
 }
 
 function materialTitle(material: JsonRecord | null | undefined) {
-  return String(pickFirst(material || {}, ["title", "name"]) || materialId(material) || "资料")
+  return String(pickFirst(material || {}, ["title", "name"]) || materialId(material) || copy.value.fallbacks.material)
 }
 
 function quizTitle(quiz: JsonRecord | null | undefined) {
-  return String(pickFirst(quiz || {}, ["title", "name"]) || quizId(quiz) || "测验")
+  return String(pickFirst(quiz || {}, ["title", "name"]) || quizId(quiz) || copy.value.fallbacks.quiz)
 }
 
 function questionTitle(question: JsonRecord | null | undefined) {
-  return String(pickFirst(question || {}, ["question_text", "title"]) || questionId(question) || "题目")
+  return String(pickFirst(question || {}, ["question_text", "title"]) || questionId(question) || copy.value.fallbacks.question)
 }
 
 function optionTitle(option: JsonRecord | null | undefined) {
-  return String(pickFirst(option || {}, ["option_text", "title"]) || optionId(option) || "选项")
+  return String(pickFirst(option || {}, ["option_text", "title"]) || optionId(option) || copy.value.fallbacks.option)
 }
 
 function questionTypeLabel(value: unknown) {
   const type = Number(value || 0)
-  if (type === 1) return "单选"
-  if (type === 2) return "多选"
-  if (type === 3) return "判断"
-  return "未知"
+  if (type === 1) return copy.value.questionTypes.single
+  if (type === 2) return copy.value.questionTypes.multiple
+  if (type === 3) return copy.value.questionTypes.judgement
+  return copy.value.unknown
 }
 
 function lessonTypeLabel(value: unknown) {
   const type = Number(value || 0)
-  if (type === 1) return "视频"
-  if (type === 2) return "文本"
-  if (type === 3) return "PDF"
-  if (type === 4) return "图片"
-  if (type === 5) return "音频"
-  if (type === 6) return "文件"
-  if (type === 7) return "链接"
-  return "未指定"
+  if (type === 1) return copy.value.lessonTypes.video
+  if (type === 2) return copy.value.lessonTypes.text
+  if (type === 3) return copy.value.lessonTypes.pdf
+  if (type === 4) return copy.value.lessonTypes.image
+  if (type === 5) return copy.value.lessonTypes.audio
+  if (type === 6) return copy.value.lessonTypes.file
+  if (type === 7) return copy.value.lessonTypes.link
+  return copy.value.unspecified
 }
 
 function materialTypeLabel(value: unknown) {
   const type = Number(value || 0)
-  if (type === 1) return "教材/课本"
-  if (type === 2) return "幻灯片/课件"
-  if (type === 3) return "参考资料"
-  if (type === 4) return "其他"
-  return "未指定"
+  if (type === 1) return copy.value.materialTypes.textbook
+  if (type === 2) return copy.value.materialTypes.slides
+  if (type === 3) return copy.value.materialTypes.reference
+  if (type === 4) return copy.value.materialTypes.other
+  return copy.value.unspecified
 }
 
 function supplementaryTypeLabel(type: string) {
   const normalized = type.trim().toLowerCase()
-  if (normalized === "article") return "Article"
-  if (normalized === "video") return "Video"
-  if (normalized === "pdf") return "PDF"
-  if (normalized === "link") return "Link"
-  return type || "Material"
+  if (normalized === "article") return copy.value.supplementaryTypes.article
+  if (normalized === "video") return copy.value.supplementaryTypes.video
+  if (normalized === "pdf") return copy.value.supplementaryTypes.pdf
+  if (normalized === "link") return copy.value.supplementaryTypes.link
+  return type || copy.value.supplementaryTypes.material
 }
 
 function supplementaryTypeClass(type: string) {
@@ -465,15 +468,15 @@ function supplementaryTypeClass(type: string) {
 
 function quizzableTypeLabel(value: unknown) {
   const type = Number(value || 0)
-  if (type === 1) return "课时测验"
-  if (type === 2) return "章节测验"
-  if (type === 3) return "课程测验"
-  return "未知归属"
+  if (type === 1) return copy.value.quizScopes.lesson
+  if (type === 2) return copy.value.quizScopes.chapter
+  if (type === 3) return copy.value.quizScopes.course
+  return copy.value.quizScopes.unknown
 }
 
 function displayValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "-"
-  if (typeof value === "boolean") return value ? "是" : "否"
+  if (typeof value === "boolean") return value ? copy.value.yes : copy.value.no
   if (typeof value === "object") return JSON.stringify(value, null, 2)
   return String(value)
 }
@@ -712,7 +715,7 @@ async function loadCourses(pageToken = "") {
     nextPageToken.value = String(data.next_page_token || "")
   } catch (err) {
     console.error(err)
-    toast.error("课程列表加载失败")
+    toast.error(copy.value.toasts.courseListLoadFailed)
   } finally {
     loading.value = false
   }
@@ -765,11 +768,11 @@ async function loadCompleteCourse() {
 
 async function saveCourse() {
   if (!courseForm.value.title.trim()) {
-    toast.error("请填写课程标题")
+    toast.error(copy.value.toasts.courseTitleRequired)
     return
   }
   if (!courseForm.value.respath.trim()) {
-    toast.error("请填写 Respath")
+    toast.error(copy.value.toasts.respathRequired)
     return
   }
 
@@ -780,14 +783,14 @@ async function saveCourse() {
         method: "PUT",
         body: JSON.stringify(coursePayload(selectedCourse.value?.version)),
       })
-      toast.success("课程已更新")
+      toast.success(copy.value.toasts.courseUpdated)
     } else {
       const created = await apiClient<JsonRecord>("/api/lms/courses", {
         method: "POST",
         body: JSON.stringify(coursePayload()),
       })
       selectedCourse.value = created
-      toast.success("课程已创建")
+      toast.success(copy.value.toasts.courseCreated)
     }
     await loadCourses()
     if (selectedCourseId.value) {
@@ -800,7 +803,7 @@ async function saveCourse() {
     await Promise.all([loadCourseDetail(), loadCompleteCourse(), loadMaterials(), loadSupplementaryMaterial()])
   } catch (err) {
     console.error(err)
-    toast.error("课程保存失败")
+    toast.error(copy.value.toasts.courseSaveFailed)
   } finally {
     savingCourse.value = false
   }
@@ -814,29 +817,29 @@ async function publishCourse() {
       method: "POST",
       body: JSON.stringify({ version: versionOf(selectedCourse.value) }),
     })
-    toast.success("课程已发布")
+    toast.success(copy.value.toasts.coursePublished)
     await loadCourses()
     const refreshed = courses.value.find((item) => courseId(item) === selectedCourseId.value)
     if (refreshed) selectedCourse.value = refreshed
   } catch (err) {
     console.error(err)
-    toast.error("课程发布失败，请确认章节、课时和测验配置完整")
+    toast.error(copy.value.toasts.coursePublishFailed)
   } finally {
     publishing.value = false
   }
 }
 
 async function deleteCourse() {
-  if (!selectedCourseId.value || !window.confirm(`确认删除课程 ${courseTitle(selectedCourse.value)}？`)) return
+  if (!selectedCourseId.value || !window.confirm(copy.value.confirmDeleteCourse(courseTitle(selectedCourse.value)))) return
   try {
     await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}?version=${versionOf(selectedCourse.value)}`, { method: "DELETE" })
-    toast.success("课程已删除")
+    toast.success(copy.value.toasts.courseDeleted)
     newCourse()
     courseView.value = "list"
     await loadCourses()
   } catch (err) {
     console.error(err)
-    toast.error("课程删除失败")
+    toast.error(copy.value.toasts.courseDeleteFailed)
   }
 }
 
@@ -849,7 +852,7 @@ async function loadChapters() {
     chapters.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
     console.error(err)
-    toast.error("章节加载失败")
+    toast.error(copy.value.toasts.chaptersLoadFailed)
   } finally {
     chaptersLoading.value = false
   }
@@ -880,7 +883,7 @@ function newChapter() {
 
 async function saveChapter() {
   if (!selectedCourseId.value || !chapterForm.value.title.trim()) {
-    toast.error("请先选择课程并填写章节标题")
+    toast.error(copy.value.toasts.chapterRequired)
     return
   }
 
@@ -894,16 +897,16 @@ async function saveChapter() {
     })
     if (editingChapterId.value) {
       await apiClient(`/api/lms/chapters/${encodeURIComponent(editingChapterId.value)}`, { method: "PUT", body })
-      toast.success("章节已更新")
+      toast.success(copy.value.toasts.chapterUpdated)
     } else {
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/chapters`, { method: "POST", body })
-      toast.success("章节已创建")
+      toast.success(copy.value.toasts.chapterCreated)
     }
     newChapter()
     await loadChapters()
   } catch (err) {
     console.error(err)
-    toast.error("章节保存失败")
+    toast.error(copy.value.toasts.chapterSaveFailed)
   } finally {
     savingChapter.value = false
   }
@@ -911,15 +914,15 @@ async function saveChapter() {
 
 async function deleteChapter(chapter: JsonRecord) {
   const id = chapterId(chapter)
-  if (!id || !window.confirm(`确认删除章节 ${chapterTitle(chapter)}？`)) return
+  if (!id || !window.confirm(copy.value.confirmDeleteChapter(chapterTitle(chapter)))) return
   try {
     await apiClient(`/api/lms/chapters/${encodeURIComponent(id)}?version=${versionOf(chapter)}`, { method: "DELETE" })
-    toast.success("章节已删除")
+    toast.success(copy.value.toasts.chapterDeleted)
     newChapter()
     await loadChapters()
   } catch (err) {
     console.error(err)
-    toast.error("章节删除失败")
+    toast.error(copy.value.toasts.chapterDeleteFailed)
   }
 }
 
@@ -932,7 +935,7 @@ async function loadLessons() {
     lessons.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
     console.error(err)
-    toast.error("课时加载失败")
+    toast.error(copy.value.toasts.lessonsLoadFailed)
   } finally {
     lessonsLoading.value = false
   }
@@ -968,7 +971,7 @@ function newLesson() {
 async function saveLesson() {
   const targetChapterId = lessonForm.value.chapter_id || selectedChapterId.value
   if (!targetChapterId || !lessonForm.value.title.trim()) {
-    toast.error("请先选择章节并填写课时标题")
+    toast.error(copy.value.toasts.lessonRequired)
     return
   }
 
@@ -988,16 +991,16 @@ async function saveLesson() {
     })
     if (editingLessonId.value) {
       await apiClient(`/api/lms/lessons/${encodeURIComponent(editingLessonId.value)}`, { method: "PUT", body })
-      toast.success("课时已更新")
+      toast.success(copy.value.toasts.lessonUpdated)
     } else {
       await apiClient(`/api/lms/chapters/${encodeURIComponent(targetChapterId)}/lessons`, { method: "POST", body })
-      toast.success("课时已创建")
+      toast.success(copy.value.toasts.lessonCreated)
     }
     newLesson()
     await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
-    toast.error("课时保存失败")
+    toast.error(copy.value.toasts.lessonSaveFailed)
   } finally {
     savingLesson.value = false
   }
@@ -1005,15 +1008,15 @@ async function saveLesson() {
 
 async function deleteLesson(lesson: JsonRecord) {
   const id = lessonId(lesson)
-  if (!id || !window.confirm(`确认删除课时 ${lessonTitle(lesson)}？`)) return
+  if (!id || !window.confirm(copy.value.confirmDeleteLesson(lessonTitle(lesson)))) return
   try {
     await apiClient(`/api/lms/lessons/${encodeURIComponent(id)}?version=${versionOf(lesson)}`, { method: "DELETE" })
-    toast.success("课时已删除")
+    toast.success(copy.value.toasts.lessonDeleted)
     newLesson()
     await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
-    toast.error("课时删除失败")
+    toast.error(copy.value.toasts.lessonDeleteFailed)
   }
 }
 
@@ -1026,7 +1029,7 @@ async function loadMaterials() {
     materials.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
     console.error(err)
-    toast.error("资料加载失败")
+    toast.error(copy.value.toasts.materialsLoadFailed)
   } finally {
     materialsLoading.value = false
   }
@@ -1110,11 +1113,11 @@ function closeSupplementaryItemDialog() {
 async function saveSupplementaryItem() {
   if (!selectedCourseId.value) return
   if (!supplementaryItemForm.value.title.trim()) {
-    toast.error("请填写资料标题")
+    toast.error(copy.value.toasts.materialTitleRequired)
     return
   }
   if (!supplementaryItemForm.value.url.trim()) {
-    toast.error("请填写资料链接")
+    toast.error(copy.value.toasts.materialUrlRequired)
     return
   }
   const records = supplementaryEditableRecords()
@@ -1131,7 +1134,7 @@ async function saveSupplementaryItem() {
 
 async function deleteSupplementaryItem() {
   if (editingSupplementaryItemIndex.value < 0) return
-  if (!window.confirm(`确认删除资料 ${supplementaryItemForm.value.title || ""}？`)) return
+  if (!window.confirm(copy.value.confirmDeleteMaterial(supplementaryItemForm.value.title || ""))) return
   const records = supplementaryEditableRecords()
   records.splice(editingSupplementaryItemIndex.value, 1)
   updateSupplementaryDataJson(records)
@@ -1143,13 +1146,13 @@ async function deleteSupplementaryItem() {
 async function saveSupplementaryMaterial() {
   if (!selectedCourseId.value) return
   if (!supplementaryMaterialForm.value.kind.trim()) {
-    toast.error("请填写辅助资料 kind")
+    toast.error(copy.value.toasts.supplementaryKindRequired)
     return
   }
   try {
     JSON.parse(supplementaryMaterialForm.value.data_json)
   } catch {
-    toast.error("辅助资料 data_json 必须是合法 JSON")
+    toast.error(copy.value.toasts.supplementaryInvalidJson)
     return
   }
 
@@ -1163,15 +1166,15 @@ async function saveSupplementaryMaterial() {
     if (id) {
       body.version = versionOf(supplementaryMaterial.value)
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material/${encodeURIComponent(id)}`, { method: "PUT", body: JSON.stringify(body) })
-      toast.success("辅助资料已更新")
+      toast.success(copy.value.toasts.supplementaryUpdated)
     } else {
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material`, { method: "POST", body: JSON.stringify(body) })
-      toast.success("辅助资料已创建")
+      toast.success(copy.value.toasts.supplementaryCreated)
     }
     await Promise.all([loadSupplementaryMaterial(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
-    toast.error("辅助资料保存失败")
+    toast.error(copy.value.toasts.supplementarySaveFailed)
   } finally {
     savingSupplementaryMaterial.value = false
   }
@@ -1179,20 +1182,20 @@ async function saveSupplementaryMaterial() {
 
 async function deleteSupplementaryMaterial() {
   const id = supplementaryMaterialId(supplementaryMaterial.value)
-  if (!selectedCourseId.value || !id || !window.confirm("确认删除这份候选端辅助资料配置？")) return
+  if (!selectedCourseId.value || !id || !window.confirm(copy.value.confirmDeleteSupplementaryConfig)) return
   try {
     await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material/${encodeURIComponent(id)}?version=${versionOf(supplementaryMaterial.value)}`, { method: "DELETE" })
-    toast.success("辅助资料已删除")
+    toast.success(copy.value.toasts.supplementaryDeleted)
     await Promise.all([loadSupplementaryMaterial(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
-    toast.error("辅助资料删除失败")
+    toast.error(copy.value.toasts.supplementaryDeleteFailed)
   }
 }
 
 async function saveMaterial() {
   if (!selectedCourseId.value || !materialForm.value.title.trim() || !materialForm.value.file_object_key.trim()) {
-    toast.error("请先选择课程，并填写资料标题和文件 Object Key")
+    toast.error(copy.value.toasts.materialFileRequired)
     return
   }
 
@@ -1210,16 +1213,16 @@ async function saveMaterial() {
     if (editingMaterialId.value) {
       body.version = materials.value.find((item) => materialId(item) === editingMaterialId.value)?.version || 0
       await apiClient(`/api/lms/materials/${encodeURIComponent(editingMaterialId.value)}`, { method: "PUT", body: JSON.stringify(body) })
-      toast.success("资料已更新")
+      toast.success(copy.value.toasts.materialUpdated)
     } else {
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/materials`, { method: "POST", body: JSON.stringify(body) })
-      toast.success("资料已创建")
+      toast.success(copy.value.toasts.materialCreated)
     }
     newMaterial()
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
-    toast.error("资料保存失败")
+    toast.error(copy.value.toasts.materialSaveFailed)
   } finally {
     savingMaterial.value = false
   }
@@ -1227,26 +1230,26 @@ async function saveMaterial() {
 
 async function deleteMaterial(material: JsonRecord) {
   const id = materialId(material)
-  if (!id || !window.confirm(`确认删除资料 ${materialTitle(material)}？`)) return
+  if (!id || !window.confirm(copy.value.confirmDeleteMaterial(materialTitle(material)))) return
   try {
     await apiClient(`/api/lms/materials/${encodeURIComponent(id)}?version=${versionOf(material)}`, { method: "DELETE" })
-    toast.success("资料已删除")
+    toast.success(copy.value.toasts.materialDeleted)
     newMaterial()
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
-    toast.error("资料删除失败")
+    toast.error(copy.value.toasts.materialDeleteFailed)
   }
 }
 
 function quizTarget(scope: QuizScope = quizForm.value.scope) {
   if (scope === "course") {
-    return { type: 3, id: selectedCourseId.value, label: "课程", title: courseTitle(selectedCourse.value) }
+    return { type: 3, id: selectedCourseId.value, label: copy.value.fallbacks.course, title: courseTitle(selectedCourse.value) }
   }
   if (scope === "chapter") {
-    return { type: 2, id: selectedChapterId.value, label: "章节", title: chapterTitle(selectedChapter.value) }
+    return { type: 2, id: selectedChapterId.value, label: copy.value.fallbacks.chapter, title: chapterTitle(selectedChapter.value) }
   }
-  return { type: 1, id: editingLessonId.value, label: "课时", title: lessonTitle(selectedLesson.value) }
+  return { type: 1, id: editingLessonId.value, label: copy.value.fallbacks.lesson, title: lessonTitle(selectedLesson.value) }
 }
 
 function clearQuestionState() {
@@ -1262,7 +1265,7 @@ function clearQuestionState() {
 async function loadQuizzes(scope: QuizScope = quizForm.value.scope) {
   const target = quizTarget(scope)
   if (!target.id) {
-    toast.error(`请先选择${target.label}`)
+    toast.error(copy.value.toasts.selectTargetFirst(target.label))
     return
   }
 
@@ -1280,7 +1283,7 @@ async function loadQuizzes(scope: QuizScope = quizForm.value.scope) {
     clearQuestionState()
   } catch (err) {
     console.error(err)
-    toast.error("测验加载失败")
+    toast.error(copy.value.toasts.quizzesLoadFailed)
   } finally {
     quizzesLoading.value = false
   }
@@ -1313,12 +1316,12 @@ function newQuiz(scope: QuizScope = quizForm.value.scope) {
 
 async function saveQuiz() {
   if (!quizForm.value.title.trim()) {
-    toast.error("请填写测验标题")
+    toast.error(copy.value.toasts.quizTitleRequired)
     return
   }
   const target = quizTarget()
   if (!target.id) {
-    toast.error(`请先选择${target.label}`)
+    toast.error(copy.value.toasts.selectTargetFirst(target.label))
     return
   }
 
@@ -1336,17 +1339,17 @@ async function saveQuiz() {
     if (editingQuizId.value) {
       body.version = quizzes.value.find((item) => quizId(item) === editingQuizId.value)?.version || 0
       await apiClient(`/api/lms/quizzes/${encodeURIComponent(editingQuizId.value)}`, { method: "PUT", body: JSON.stringify(body) })
-      toast.success("测验已更新")
+      toast.success(copy.value.toasts.quizUpdated)
     } else {
       await apiClient("/api/lms/quizzes", { method: "POST", body: JSON.stringify(body) })
-      toast.success("测验已创建")
+      toast.success(copy.value.toasts.quizCreated)
     }
     const scope = quizForm.value.scope
     newQuiz(scope)
     await Promise.all([loadQuizzes(scope), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
-    toast.error("测验保存失败")
+    toast.error(copy.value.toasts.quizSaveFailed)
   } finally {
     savingQuiz.value = false
   }
@@ -1354,16 +1357,16 @@ async function saveQuiz() {
 
 async function deleteQuiz(quiz: JsonRecord) {
   const id = quizId(quiz)
-  if (!id || !window.confirm(`确认删除测验 ${quizTitle(quiz)}？`)) return
+  if (!id || !window.confirm(copy.value.confirmDeleteQuiz(quizTitle(quiz)))) return
   try {
     await apiClient(`/api/lms/quizzes/${encodeURIComponent(id)}?version=${versionOf(quiz)}`, { method: "DELETE" })
-    toast.success("测验已删除")
+    toast.success(copy.value.toasts.quizDeleted)
     const scope = quizForm.value.scope
     newQuiz(scope)
     await Promise.all([loadQuizzes(scope), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
-    toast.error("测验删除失败")
+    toast.error(copy.value.toasts.quizDeleteFailed)
   }
 }
 
@@ -1382,7 +1385,7 @@ async function loadQuestions(id = selectedQuizId.value) {
     optionForm.value = emptyOptionForm()
   } catch (err) {
     console.error(err)
-    toast.error("题目加载失败")
+    toast.error(copy.value.toasts.questionsLoadFailed)
   } finally {
     questionsLoading.value = false
   }
@@ -1413,14 +1416,14 @@ function newQuestion() {
 
 async function saveQuestion() {
   if (!selectedQuizId.value || !questionForm.value.question_text.trim()) {
-    toast.error("请先选择测验并填写题干")
+    toast.error(copy.value.toasts.questionRequired)
     return
   }
   const mediaJson = questionForm.value.media_items_json.trim() || "[]"
   try {
     JSON.parse(mediaJson)
   } catch {
-    toast.error("媒体 JSON 格式不正确")
+    toast.error(copy.value.toasts.mediaInvalidJson)
     return
   }
 
@@ -1437,16 +1440,16 @@ async function saveQuestion() {
     if (editingQuestionId.value) {
       body.version = questions.value.find((item) => questionId(item) === editingQuestionId.value)?.version || 0
       await apiClient(`/api/lms/questions/${encodeURIComponent(editingQuestionId.value)}`, { method: "PUT", body: JSON.stringify(body) })
-      toast.success("题目已更新")
+      toast.success(copy.value.toasts.questionUpdated)
     } else {
       await apiClient(`/api/lms/quizzes/${encodeURIComponent(selectedQuizId.value)}/questions`, { method: "POST", body: JSON.stringify(body) })
-      toast.success("题目已创建")
+      toast.success(copy.value.toasts.questionCreated)
     }
     newQuestion()
     await loadQuestions()
   } catch (err) {
     console.error(err)
-    toast.error("题目保存失败")
+    toast.error(copy.value.toasts.questionSaveFailed)
   } finally {
     savingQuestion.value = false
   }
@@ -1454,15 +1457,15 @@ async function saveQuestion() {
 
 async function deleteQuestion(question: JsonRecord) {
   const id = questionId(question)
-  if (!id || !window.confirm(`确认删除题目 ${questionTitle(question)}？`)) return
+  if (!id || !window.confirm(copy.value.confirmDeleteQuestion(questionTitle(question)))) return
   try {
     await apiClient(`/api/lms/questions/${encodeURIComponent(id)}?version=${versionOf(question)}`, { method: "DELETE" })
-    toast.success("题目已删除")
+    toast.success(copy.value.toasts.questionDeleted)
     newQuestion()
     await loadQuestions()
   } catch (err) {
     console.error(err)
-    toast.error("题目删除失败")
+    toast.error(copy.value.toasts.questionDeleteFailed)
   }
 }
 
@@ -1477,7 +1480,7 @@ async function loadOptions(id = selectedQuestionId.value) {
     optionForm.value = emptyOptionForm()
   } catch (err) {
     console.error(err)
-    toast.error("选项加载失败")
+    toast.error(copy.value.toasts.optionsLoadFailed)
   } finally {
     optionsLoading.value = false
   }
@@ -1499,7 +1502,7 @@ function newOption() {
 
 async function saveOption() {
   if (!selectedQuestionId.value || !optionForm.value.option_text.trim()) {
-    toast.error("请先选择题目并填写选项")
+    toast.error(copy.value.toasts.optionRequired)
     return
   }
 
@@ -1513,16 +1516,16 @@ async function saveOption() {
     if (editingOptionId.value) {
       body.version = options.value.find((item) => optionId(item) === editingOptionId.value)?.version || 0
       await apiClient(`/api/lms/options/${encodeURIComponent(editingOptionId.value)}`, { method: "PUT", body: JSON.stringify(body) })
-      toast.success("选项已更新")
+      toast.success(copy.value.toasts.optionUpdated)
     } else {
       await apiClient(`/api/lms/questions/${encodeURIComponent(selectedQuestionId.value)}/options`, { method: "POST", body: JSON.stringify(body) })
-      toast.success("选项已创建")
+      toast.success(copy.value.toasts.optionCreated)
     }
     newOption()
     await loadOptions()
   } catch (err) {
     console.error(err)
-    toast.error("选项保存失败")
+    toast.error(copy.value.toasts.optionSaveFailed)
   } finally {
     savingOption.value = false
   }
@@ -1530,31 +1533,31 @@ async function saveOption() {
 
 async function deleteOption(option: JsonRecord) {
   const id = optionId(option)
-  if (!id || !window.confirm(`确认删除选项 ${optionTitle(option)}？`)) return
+  if (!id || !window.confirm(copy.value.confirmDeleteOption(optionTitle(option)))) return
   try {
     await apiClient(`/api/lms/options/${encodeURIComponent(id)}?version=${versionOf(option)}`, { method: "DELETE" })
-    toast.success("选项已删除")
+    toast.success(copy.value.toasts.optionDeleted)
     newOption()
     await loadOptions()
   } catch (err) {
     console.error(err)
-    toast.error("选项删除失败")
+    toast.error(copy.value.toasts.optionDeleteFailed)
   }
 }
 
 async function importLmsJson() {
   if (!importJson.value.trim()) {
-    toast.error("请粘贴或上传 JSON")
+    toast.error(copy.value.toasts.importJsonRequired)
     return
   }
   try {
     JSON.parse(importJson.value)
   } catch {
-    toast.error("JSON 格式不正确")
+    toast.error(copy.value.toasts.importInvalidJson)
     return
   }
   if (importScope.value === "quiz" && !selectedChapterId.value) {
-    toast.error("导入测验前请先选择章节")
+    toast.error(copy.value.toasts.importQuizNeedsChapter)
     return
   }
 
@@ -1573,14 +1576,14 @@ async function importLmsJson() {
           quiz_json: importJson.value,
         }
     await apiClient("/api/lms/import", { method: "POST", body: JSON.stringify(body) })
-    toast.success("导入完成")
+    toast.success(copy.value.toasts.imported)
     importOpen.value = false
     importJson.value = ""
     await loadCourses()
     if (selectedCourseId.value) await loadChapters()
   } catch (err) {
     console.error(err)
-    toast.error("导入失败")
+    toast.error(copy.value.toasts.importFailed)
   } finally {
     importing.value = false
   }
@@ -1608,48 +1611,48 @@ onMounted(() => {
   <div class="space-y-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">课程配置</h1>
-        <p class="mt-2 text-slate-600">按 GLMS 层级维护课程、资料、章节、课时和测验题库。</p>
+        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm disabled:opacity-60" type="button" :disabled="loading" @click="loadCourses()">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
-          刷新
+          {{ copy.refresh }}
         </button>
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="importOpen = true">
           <FileJson class="h-4 w-4" />
-          导入 JSON
+          {{ copy.importJson }}
         </button>
         <button v-if="courseView === 'detail'" class="rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="backToCourseList">
-          返回列表
+          {{ copy.backToList }}
         </button>
         <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 font-bold text-white shadow-lg shadow-sky-200" type="button" @click="newCourse">
           <Plus class="h-4 w-4" />
-          新建课程
+          {{ copy.newCourse }}
         </button>
       </div>
     </header>
 
     <section v-if="courseView === 'list'" class="rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div class="grid gap-3 border-b border-slate-200 bg-slate-50/60 p-4 lg:grid-cols-[1fr_auto]">
-        <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" placeholder="分类筛选，例如 CFtP/CFtA" />
+        <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" :placeholder="copy.categoryPlaceholder" />
         <label class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm">
           <input v-model="publishedOnly" type="checkbox" />
-          仅看已发布
+          {{ copy.publishedOnly }}
         </label>
       </div>
 
       <div v-if="loading && !courses.length" class="p-12 text-center text-slate-500">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-        正在加载...
+        {{ copy.loading }}
       </div>
-      <div v-else-if="!courses.length" class="p-12 text-center text-slate-500">暂无课程</div>
+      <div v-else-if="!courses.length" class="p-12 text-center text-slate-500">{{ copy.emptyCourses }}</div>
       <div v-else>
         <div class="hidden grid-cols-[minmax(0,1fr)_120px_260px_120px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
-          <span>课程</span>
-          <span>版本</span>
-          <span>更新时间</span>
-          <span class="text-right">状态</span>
+          <span>{{ copy.columns.course }}</span>
+          <span>{{ copy.columns.version }}</span>
+          <span>{{ copy.columns.updatedAt }}</span>
+          <span class="text-right">{{ copy.columns.status }}</span>
         </div>
         <button
           v-for="course in courses"
@@ -1663,25 +1666,25 @@ onMounted(() => {
             <div class="min-w-0">
               <div class="truncate text-base font-black text-slate-950">{{ courseTitle(course) }}</div>
               <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                <span>{{ course.category_tips || "未分类" }}</span>
+                <span>{{ course.category_tips || copy.uncategorized }}</span>
                 <span class="font-mono">ID: {{ courseId(course) || "-" }}</span>
               </div>
             </div>
             <div class="text-sm font-bold text-slate-700">
-              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">版本</span>{{ course.version || 0 }}
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.version }}</span>{{ course.version || 0 }}
             </div>
             <div class="text-sm text-slate-500">
-              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">更新</span>{{ formatDate(String(course.updated_at || course.created_at || "")) }}
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.updatedShort }}</span>{{ formatDate(String(course.updated_at || course.created_at || "")) }}
             </div>
             <span class="justify-self-start rounded-full border px-3 py-1 text-xs font-black lg:justify-self-end" :class="badgeClass(course.is_published ? 'COMPLETED' : 'PENDING')">
-              {{ course.is_published ? "已发布" : "草稿" }}
+              {{ course.is_published ? copy.published : copy.draft }}
             </span>
           </div>
         </button>
       </div>
       <div v-if="nextPageToken" class="border-t border-slate-200 p-4">
         <button class="w-full rounded-xl border px-4 py-3 font-bold transition hover:bg-slate-50 disabled:cursor-default disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400 disabled:opacity-100" type="button" :disabled="!nextPageToken || loading" @click="loadCourses(nextPageToken)">
-          加载更多
+          {{ copy.loadMore }}
         </button>
       </div>
     </section>
@@ -1690,64 +1693,64 @@ onMounted(() => {
       <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
           <div>
-            <h2 class="text-xl font-black">{{ selectedCourseId ? "课程顶层数据" : "新建课程" }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ selectedCourseId || "填写课程基础信息后保存。" }}</p>
+            <h2 class="text-xl font-black">{{ selectedCourseId ? copy.courseTopData : copy.newCourse }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ selectedCourseId || copy.fillCourseHint }}</p>
           </div>
           <span v-if="selectedCourseId" class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(selectedCourseStatus)">
-            {{ selectedCoursePublished ? "已发布" : selectedCourseStatus }}
+            {{ selectedCoursePublished ? copy.published : selectedCourseStatus }}
           </span>
         </div>
 
         <div class="grid gap-4 p-5 2xl:grid-cols-[minmax(0,1fr)_420px]">
           <form class="grid gap-3 lg:grid-cols-2" @submit.prevent="saveCourse">
             <label class="block">
-              <span class="text-sm font-bold">课程标题</span>
+              <span class="text-sm font-bold">{{ copy.courseTitle }}</span>
               <input v-model="courseForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">分类提示</span>
+              <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
               <input v-model="courseForm.category_tips" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="block lg:col-span-2">
-              <span class="text-sm font-bold">描述</span>
+              <span class="text-sm font-bold">{{ copy.description }}</span>
               <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">Respath</span>
+              <span class="text-sm font-bold">{{ copy.respath }}</span>
               <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">时长分钟</span>
+              <span class="text-sm font-bold">{{ copy.durationMin }}</span>
               <input v-model="courseForm.duration_min" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">封面 Object Key</span>
+              <span class="text-sm font-bold">{{ copy.thumbnailObjectKey }}</span>
               <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">封面 File Hash</span>
+              <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
               <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="inline-flex items-center gap-2 text-sm font-bold text-slate-600">
               <input v-model="courseForm.certification_enabled" type="checkbox" />
-              启用证书
+              {{ copy.enableCertificate }}
             </label>
             <label class="block">
-              <span class="text-sm font-bold">证书定义 ID</span>
+              <span class="text-sm font-bold">{{ copy.certificateDefinitionId }}</span>
               <input v-model="courseForm.certification_def_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <div class="flex flex-wrap gap-3 lg:col-span-2">
               <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
-                {{ savingCourse ? "保存中..." : "保存课程" }}
+                {{ savingCourse ? copy.saving : copy.saveCourse }}
               </button>
               <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
-                {{ publishing ? "发布中..." : "发布课程" }}
+                {{ publishing ? copy.publishing : copy.publishCourse }}
               </button>
               <button class="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 px-4 font-bold text-red-600 disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="deleteCourse">
                 <Trash2 class="h-4 w-4" />
-                删除课程
+                {{ copy.deleteCourse }}
               </button>
             </div>
           </form>
@@ -1755,31 +1758,31 @@ onMounted(() => {
           <aside class="space-y-3">
             <div class="grid gap-3 sm:grid-cols-2">
               <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">章节</div>
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.chapters }}</div>
                 <div class="mt-1 text-xl font-black">{{ courseDetail?.chapter_count ?? chapters.length }}</div>
               </div>
               <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">课时</div>
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.lessons }}</div>
                 <div class="mt-1 text-xl font-black">{{ courseDetail?.lesson_count ?? lessons.length }}</div>
               </div>
               <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">测验</div>
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.quizzes }}</div>
                 <div class="mt-1 text-xl font-black">{{ courseDetail?.quiz_count ?? 0 }}</div>
               </div>
               <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">资料</div>
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.materials }}</div>
                 <div class="mt-1 text-xl font-black">{{ courseDetail?.material_count ?? materials.length }}</div>
               </div>
             </div>
             <div class="rounded-xl border border-slate-200 p-3">
-              <h3 class="font-black">不可编辑字段</h3>
-              <p class="mt-1 text-xs text-slate-500">这些系统字段仅展示，不可直接修改。</p>
+              <h3 class="font-black">{{ copy.readonlyFields }}</h3>
+              <p class="mt-1 text-xs text-slate-500">{{ copy.readonlyFieldsHint }}</p>
               <div class="mt-3 max-h-80 space-y-2 overflow-y-auto pr-1">
                 <label v-for="entry in recordEntries(selectedCourse)" :key="`course-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
                   <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
                 </label>
-                <div v-if="detailLoading || completeLoading" class="text-sm text-slate-500">正在加载完整课程数据...</div>
+                <div v-if="detailLoading || completeLoading" class="text-sm text-slate-500">{{ copy.loadingCompleteCourse }}</div>
                 <label v-for="entry in recordEntries(courseDetail)" :key="`detail-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">detail.{{ entry.key }}</span>
                   <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
@@ -1797,8 +1800,8 @@ onMounted(() => {
       <section class="rounded-2xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
         <div class="border-b border-slate-200 px-5 py-4">
           <div>
-            <h2 class="text-xl font-black">课程资料</h2>
-            <p class="mt-1 text-sm text-slate-500">维护候选端看到的 Supplementary Materials；普通文件资料在下方单独维护。</p>
+            <h2 class="text-xl font-black">{{ copy.materialsTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.materialsDescription }}</p>
           </div>
         </div>
 
@@ -1806,36 +1809,36 @@ onMounted(() => {
           <div class="rounded-2xl border border-slate-200">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
               <div>
-                <h3 class="font-black">候选端辅助资料</h3>
-                <p class="mt-1 text-sm text-slate-500">这里对应用户端“课程资料 / Supplementary Materials”列表。</p>
+                <h3 class="font-black">{{ copy.supplementaryTitle }}</h3>
+                <p class="mt-1 text-sm text-slate-500">{{ copy.supplementaryDescription }}</p>
               </div>
               <div class="flex items-center gap-2">
-                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">{{ supplementaryMaterialItems.length }} 条</span>
+                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">{{ copy.countText(supplementaryMaterialItems.length) }}</span>
                 <button class="h-10 rounded-xl border px-4 text-sm font-bold disabled:opacity-40" :disabled="!selectedCourseId || supplementaryMaterialLoading" type="button" @click="loadSupplementaryMaterial">
-                  刷新
+                  {{ copy.refresh }}
                 </button>
                 <button class="h-10 rounded-xl bg-[#0b4ea2] px-4 text-sm font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newSupplementaryItem()">
-                  新增
+                  {{ copy.add }}
                 </button>
               </div>
             </div>
             <div v-if="supplementaryMaterialLoading" class="px-6 py-10 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-              正在加载...
+              {{ copy.loading }}
             </div>
             <div v-else-if="!supplementaryMaterialItems.length" class="px-6 py-10 text-center text-slate-500">
-              暂无候选端辅助资料
-              <div class="mt-2 text-xs">如果用户端有资料，请确认 supplementary_material.data_json 是否已配置。</div>
+              {{ copy.noSupplementaryMaterials }}
+              <div class="mt-2 text-xs">{{ copy.supplementaryEmptyHint }}</div>
             </div>
             <div v-else class="overflow-x-auto">
               <table class="min-w-full text-left text-sm">
                 <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
                   <tr>
-                    <th class="px-4 py-3">Chapter</th>
-                    <th class="px-4 py-3">Type</th>
-                    <th class="px-4 py-3">Title & Description</th>
-                    <th class="px-4 py-3">Resource Link</th>
-                    <th class="w-24 px-4 py-3 text-right">操作</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.chapter }}</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.type }}</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.titleDescription }}</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.resourceLink }}</th>
+                    <th class="w-24 px-4 py-3 text-right">{{ copy.columns.action }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -1864,7 +1867,7 @@ onMounted(() => {
                     </td>
                     <td class="w-24 whitespace-nowrap px-4 py-4 text-right">
                       <button class="whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-[#0b4ea2] shadow-sm hover:bg-sky-50" type="button" @click.stop="editSupplementaryItem(item)">
-                        编辑
+                        {{ copy.edit }}
                       </button>
                     </td>
                   </tr>
@@ -1878,13 +1881,13 @@ onMounted(() => {
               <form class="flex max-h-[88vh] w-full max-w-[720px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" @submit.prevent="saveSupplementaryItem">
                 <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-5">
                   <div>
-                    <h3 class="font-black">{{ editingSupplementaryItemIndex >= 0 ? "编辑单条辅助资料" : "新增单条辅助资料" }}</h3>
-                    <p class="mt-1 text-xs text-slate-500">这里改的是 data_json 里的单条记录，保存后会整体提交辅助资料配置。</p>
+                    <h3 class="font-black">{{ editingSupplementaryItemIndex >= 0 ? copy.editSupplementaryItem : copy.newSupplementaryItem }}</h3>
+                    <p class="mt-1 text-xs text-slate-500">{{ copy.supplementaryItemDescription }}</p>
                   </div>
                   <button
                     class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
                     type="button"
-                    aria-label="关闭"
+                    :aria-label="copy.close"
                     @click="closeSupplementaryItemDialog"
                   >
                     <X class="h-5 w-5" />
@@ -1893,48 +1896,48 @@ onMounted(() => {
                 <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
                   <div class="grid gap-3">
                     <label class="block">
-                      <span class="text-sm font-bold">所属章节</span>
-                      <input v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="例如 Chapter 1: Overview of Fintech" />
+                      <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
+                      <input v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.chapterPlaceholder" />
                     </label>
                     <div class="grid gap-3 sm:grid-cols-2">
                       <label class="block">
-                        <span class="text-sm font-bold">资料类型</span>
+                        <span class="text-sm font-bold">{{ copy.materialType }}</span>
                         <select v-model="supplementaryItemForm.type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
-                          <option value="Article">Article</option>
-                          <option value="Video">Video</option>
-                          <option value="PDF">PDF</option>
-                          <option value="Link">Link</option>
-                          <option value="Other">Other</option>
+                          <option value="Article">{{ copy.supplementaryTypes.article }}</option>
+                          <option value="Video">{{ copy.supplementaryTypes.video }}</option>
+                          <option value="PDF">{{ copy.supplementaryTypes.pdf }}</option>
+                          <option value="Link">{{ copy.supplementaryTypes.link }}</option>
+                          <option value="Other">{{ copy.materialTypes.other }}</option>
                         </select>
                       </label>
                       <label class="block">
-                        <span class="text-sm font-bold">时长/备注</span>
-                        <input v-model="supplementaryItemForm.duration" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="可选，例如 5 min" />
+                        <span class="text-sm font-bold">{{ copy.durationNote }}</span>
+                        <input v-model="supplementaryItemForm.duration" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.durationPlaceholder" />
                       </label>
                     </div>
                     <label class="block">
-                      <span class="text-sm font-bold">标题</span>
-                      <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="资料标题" />
+                      <span class="text-sm font-bold">{{ copy.titleField }}</span>
+                      <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
                     </label>
                     <label class="block">
-                      <span class="text-sm font-bold">描述</span>
-                      <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="可选，用户端会展示在标题下方" />
+                      <span class="text-sm font-bold">{{ copy.description }}</span>
+                      <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.descriptionPlaceholder" />
                     </label>
                     <label class="block">
-                      <span class="text-sm font-bold">资源链接</span>
+                      <span class="text-sm font-bold">{{ copy.resourceLink }}</span>
                       <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
                     </label>
                   </div>
                 </div>
                 <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
                   <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="closeSupplementaryItemDialog">
-                    取消
+                    {{ copy.cancel }}
                   </button>
                   <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" :disabled="editingSupplementaryItemIndex < 0" type="button" @click="deleteSupplementaryItem">
-                    删除本条
+                    {{ copy.deleteThisItem }}
                   </button>
                   <button class="rounded-xl bg-[#0b4ea2] px-4 py-2 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
-                    {{ savingSupplementaryMaterial ? "保存中..." : "保存本条资料" }}
+                    {{ savingSupplementaryMaterial ? copy.saving : copy.saveThisMaterial }}
                   </button>
                 </div>
               </form>
@@ -1943,31 +1946,31 @@ onMounted(() => {
 
           <div class="rounded-2xl border border-slate-200 p-4">
             <details>
-              <summary class="cursor-pointer font-black">高级配置：整份辅助资料 JSON</summary>
+              <summary class="cursor-pointer font-black">{{ copy.supplementaryAdvancedTitle }}</summary>
               <div class="mt-4 grid gap-3">
                 <label class="block">
-                  <span class="text-sm font-bold">kind</span>
+                  <span class="text-sm font-bold">{{ copy.kind }}</span>
                   <input v-model="supplementaryMaterialForm.kind" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="supplementary_materials" />
-                  <span class="mt-1 block text-xs text-slate-500">资料集合类型标识，一般保持默认即可。</span>
+                  <span class="mt-1 block text-xs text-slate-500">{{ copy.kindHint }}</span>
                 </label>
                 <label class="block">
-                  <span class="text-sm font-bold">data_json</span>
-                  <textarea v-model="supplementaryMaterialForm.data_json" class="mt-2 min-h-64 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-5" placeholder='例如 [{"chapter":"Chapter 1","type":"Article","title":"What is fintech?","resource_link":"https://..."}]' />
-                  <span class="mt-1 block text-xs text-slate-500">高级模式会直接保存整份 JSON；常规增删改建议使用上面的单条表单。</span>
+                  <span class="text-sm font-bold">{{ copy.dataJson }}</span>
+                  <textarea v-model="supplementaryMaterialForm.data_json" class="mt-2 min-h-64 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-5" :placeholder="copy.supplementaryJsonPlaceholder" />
+                  <span class="mt-1 block text-xs text-slate-500">{{ copy.supplementaryAdvancedHint }}</span>
                 </label>
                 <div class="grid gap-2 sm:grid-cols-2">
                   <button class="rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="button" @click="saveSupplementaryMaterial">
-                    {{ savingSupplementaryMaterial ? "保存中..." : "保存整份 JSON" }}
+                    {{ savingSupplementaryMaterial ? copy.saving : copy.saveWholeJson }}
                   </button>
                   <button class="rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 disabled:opacity-40" :disabled="!supplementaryMaterialId(supplementaryMaterial)" type="button" @click="deleteSupplementaryMaterial">
-                    删除整份配置
+                    {{ copy.deleteWholeConfig }}
                   </button>
                 </div>
               </div>
             </details>
 
             <div v-if="supplementaryMaterial" class="mt-5 border-t border-slate-200 pt-4">
-              <h4 class="font-black">辅助资料完整字段</h4>
+              <h4 class="font-black">{{ copy.supplementaryRawFields }}</h4>
               <div class="mt-3 max-h-48 space-y-3 overflow-y-auto pr-1">
                 <label v-for="entry in recordEntries(supplementaryMaterial)" :key="`supplementary-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
@@ -1981,69 +1984,69 @@ onMounted(() => {
         <div class="border-t border-slate-200 px-5 pt-4">
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 class="font-black">普通文件资料</h3>
-              <p class="mt-1 text-sm text-slate-500">维护课程文件类资料。</p>
+              <h3 class="font-black">{{ copy.normalMaterialsTitle }}</h3>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.normalMaterialsDescription }}</p>
             </div>
-            <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">新增普通资料</button>
+            <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">{{ copy.newNormalMaterial }}</button>
           </div>
         </div>
         <div class="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_400px]">
           <div class="rounded-2xl border border-slate-200">
             <div v-if="materialsLoading" class="px-6 py-10 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-              正在加载...
+              {{ copy.loading }}
             </div>
-            <div v-else-if="!materials.length" class="px-6 py-10 text-center text-slate-500">暂无资料</div>
+            <div v-else-if="!materials.length" class="px-6 py-10 text-center text-slate-500">{{ copy.emptyMaterials }}</div>
             <div v-else class="divide-y divide-slate-100">
               <div v-for="material in materials" :key="materialId(material)" class="grid gap-3 p-4 lg:grid-cols-[1fr_auto]" :class="materialId(material) === selectedMaterialId ? 'bg-sky-50' : ''">
                 <button class="text-left" type="button" @click="editMaterial(material)">
                   <div class="font-black">{{ materialTitle(material) }}</div>
-                  <div class="mt-1 text-sm text-slate-500">{{ materialTypeLabel(material.material_type) }} · 排序 {{ material.sort_order || 0 }}</div>
+                  <div class="mt-1 text-sm text-slate-500">{{ materialTypeLabel(material.material_type) }} · {{ copy.sortMeta(material.sort_order || 0) }}</div>
                   <div class="mt-1 break-all text-xs text-slate-400">{{ material.file_object_key || "-" }}</div>
                 </button>
-                <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteMaterial(material)">删除</button>
+                <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
               </div>
             </div>
           </div>
           <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveMaterial">
-            <h3 class="font-black">{{ editingMaterialId ? "编辑资料" : "创建资料" }}</h3>
+            <h3 class="font-black">{{ editingMaterialId ? copy.editMaterial : copy.createMaterial }}</h3>
             <div class="mt-4 grid gap-3">
-              <input v-model="materialForm.title" class="h-10 rounded-xl border border-slate-200 px-3" placeholder="资料标题" />
+              <input v-model="materialForm.title" class="h-10 rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
               <select v-model="materialForm.material_type" class="h-10 rounded-xl border border-slate-200 px-3">
-                <option value="1">教材/课本</option>
-                <option value="2">幻灯片/课件</option>
-                <option value="3">参考资料</option>
-                <option value="4">其他</option>
+                <option value="1">{{ copy.materialTypes.textbook }}</option>
+                <option value="2">{{ copy.materialTypes.slides }}</option>
+                <option value="3">{{ copy.materialTypes.reference }}</option>
+                <option value="4">{{ copy.materialTypes.other }}</option>
               </select>
-              <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 px-3 py-2" placeholder="资料描述" />
+              <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.materialDescriptionPlaceholder" />
               <label class="block">
-                <span class="text-sm font-bold">文件 Object Key</span>
-                <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="例如 courses/xxx/materials/file.pdf" />
-                <span class="mt-1 block text-xs text-slate-500">对象存储里的文件路径。一般先在资源/上传流程拿到，不建议手工猜。</span>
+                <span class="text-sm font-bold">{{ copy.fileObjectKey }}</span>
+                <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
+                <span class="mt-1 block text-xs text-slate-500">{{ copy.fileObjectKeyHint }}</span>
               </label>
               <label class="block">
-                <span class="text-sm font-bold">文件 Hash</span>
-                <input v-model="materialForm.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="文件 SHA256 Hash" />
-                <span class="mt-1 block text-xs text-slate-500">用于校验文件内容，通常由上传流程返回。</span>
+                <span class="text-sm font-bold">{{ copy.fileHash }}</span>
+                <input v-model="materialForm.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileHashPlaceholder" />
+                <span class="mt-1 block text-xs text-slate-500">{{ copy.fileHashHint }}</span>
               </label>
               <div class="grid gap-3 sm:grid-cols-2">
                 <label class="block">
-                  <span class="text-sm font-bold">文件大小（字节）</span>
-                  <input v-model="materialForm.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="例如 204800" type="number" min="0" />
-                  <span class="mt-1 block text-xs text-slate-500">不知道时可先填 0。</span>
+                  <span class="text-sm font-bold">{{ copy.fileSizeBytes }}</span>
+                  <input v-model="materialForm.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileSizePlaceholder" type="number" min="0" />
+                  <span class="mt-1 block text-xs text-slate-500">{{ copy.fileSizeHint }}</span>
                 </label>
                 <label class="block">
-                  <span class="text-sm font-bold">排序</span>
+                  <span class="text-sm font-bold">{{ copy.sort }}</span>
                   <input v-model="materialForm.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
-                  <span class="mt-1 block text-xs text-slate-500">数字越小越靠前。</span>
+                  <span class="mt-1 block text-xs text-slate-500">{{ copy.sortHint }}</span>
                 </label>
               </div>
               <button class="h-10 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial" type="submit">
-                {{ savingMaterial ? "保存中..." : "保存资料" }}
+                {{ savingMaterial ? copy.saving : copy.saveMaterial }}
               </button>
             </div>
             <div v-if="selectedMaterialRecord" class="mt-5 border-t border-slate-200 pt-4">
-              <h4 class="font-black">资料完整字段</h4>
+              <h4 class="font-black">{{ copy.materialRawFields }}</h4>
               <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
                 <label v-for="entry in recordEntries(selectedMaterialRecord)" :key="`material-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
@@ -2059,31 +2062,31 @@ onMounted(() => {
         <aside class="rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div class="flex items-center justify-between border-b border-slate-200 p-5">
             <div>
-              <h2 class="text-xl font-black">章节列表</h2>
-              <p class="mt-1 text-sm text-slate-500">左侧选择章节，右侧只处理章节本身。</p>
+              <h2 class="text-xl font-black">{{ copy.chapterListTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.chapterListDescription }}</p>
             </div>
-            <button class="rounded-xl border px-3 py-2 font-bold" :disabled="!selectedCourseId" type="button" @click="newChapter">新章节</button>
+            <button class="rounded-xl border px-3 py-2 font-bold" :disabled="!selectedCourseId" type="button" @click="newChapter">{{ copy.newChapter }}</button>
           </div>
           <div v-if="chaptersLoading" class="p-8 text-center text-slate-500">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            正在加载...
+            {{ copy.loading }}
           </div>
-          <div v-else-if="!chapters.length" class="p-8 text-center text-slate-500">暂无章节</div>
+          <div v-else-if="!chapters.length" class="p-8 text-center text-slate-500">{{ copy.emptyChapters }}</div>
           <div v-else class="max-h-[520px] divide-y divide-slate-100 overflow-y-auto">
             <div v-for="chapter in chapters" :key="chapterId(chapter)" class="flex items-center justify-between gap-3 p-4" :class="chapterId(chapter) === selectedChapterId ? 'bg-sky-50' : ''">
               <button class="flex-1 text-left" type="button" @click="editChapter(chapter)">
                 <div class="font-black">{{ chapterTitle(chapter) }}</div>
-                <div class="mt-1 text-sm text-slate-500">排序 {{ chapter.sort_order || 0 }} · 版本 {{ chapter.version || 0 }}</div>
+                <div class="mt-1 text-sm text-slate-500">{{ copy.sortVersionMeta(chapter.sort_order || 0, chapter.version || 0) }}</div>
               </button>
-              <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteChapter(chapter)">删除</button>
+              <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteChapter(chapter)">{{ copy.delete }}</button>
             </div>
           </div>
           <form class="border-t border-slate-200 p-5" @submit.prevent="saveChapter">
-            <h3 class="font-black">{{ editingChapterId ? "编辑章节" : "创建章节" }}</h3>
-            <input v-model="chapterForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="章节标题" />
-            <input v-model="chapterForm.sort_order" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" min="1" />
+            <h3 class="font-black">{{ editingChapterId ? copy.editChapter : copy.createChapter }}</h3>
+            <input v-model="chapterForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.chapterTitlePlaceholder" />
+            <input v-model="chapterForm.sort_order" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" min="1" />
             <button class="mt-3 rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="submit">
-              {{ savingChapter ? "保存中..." : "保存章节" }}
+              {{ savingChapter ? copy.saving : copy.saveChapter }}
             </button>
           </form>
         </aside>
@@ -2091,15 +2094,15 @@ onMounted(() => {
         <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
             <div>
-              <h2 class="text-xl font-black">章节详情</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ selectedChapterId ? chapterTitle(selectedChapter) : "请选择左侧章节，或点击新章节创建。" }}</p>
+              <h2 class="text-xl font-black">{{ copy.chapterDetailTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ selectedChapterId ? chapterTitle(selectedChapter) : copy.chapterDetailEmptyHint }}</p>
             </div>
           </div>
           <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_360px]">
             <div class="rounded-2xl border border-slate-200 p-4">
-              <h3 class="font-black">章节完整字段</h3>
-              <p class="mt-1 text-xs text-slate-500">系统字段置灰展示，不可直接修改。</p>
-              <div v-if="!selectedChapterId" class="p-8 text-center text-slate-500">暂无选中的章节</div>
+              <h3 class="font-black">{{ copy.chapterRawFields }}</h3>
+              <p class="mt-1 text-xs text-slate-500">{{ copy.systemReadonlyHint }}</p>
+              <div v-if="!selectedChapterId" class="p-8 text-center text-slate-500">{{ copy.noSelectedChapter }}</div>
               <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
                 <label v-for="entry in recordEntries(selectedChapter)" :key="`chapter-${entry.key}`" class="block">
                   <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
@@ -2108,11 +2111,11 @@ onMounted(() => {
               </div>
             </div>
             <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveChapter">
-              <h3 class="font-black">{{ editingChapterId ? "编辑章节" : "创建章节" }}</h3>
-              <input v-model="chapterForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="章节标题" />
-              <input v-model="chapterForm.sort_order" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" min="1" />
+              <h3 class="font-black">{{ editingChapterId ? copy.editChapter : copy.createChapter }}</h3>
+              <input v-model="chapterForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.chapterTitlePlaceholder" />
+              <input v-model="chapterForm.sort_order" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" min="1" />
               <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="submit">
-                {{ savingChapter ? "保存中..." : "保存章节" }}
+                {{ savingChapter ? copy.saving : copy.saveChapter }}
               </button>
             </form>
           </div>
@@ -2123,24 +2126,24 @@ onMounted(() => {
         <aside class="rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div class="flex items-center justify-between border-b border-slate-200 p-5">
             <div>
-              <h2 class="text-xl font-black">课时列表</h2>
-              <p class="mt-1 text-sm text-slate-500">课时独立维护，详情里显示所属章节。</p>
+              <h2 class="text-xl font-black">{{ copy.lessonListTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.lessonListDescription }}</p>
             </div>
-            <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-40" :disabled="!selectedChapterId" type="button" @click="newLesson">新课时</button>
+            <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-40" :disabled="!selectedChapterId" type="button" @click="newLesson">{{ copy.newLesson }}</button>
           </div>
           <div v-if="completeLoading || lessonsLoading" class="p-8 text-center text-slate-500">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            正在加载...
+            {{ copy.loading }}
           </div>
-          <div v-else-if="!allLessonItems.length" class="p-8 text-center text-slate-500">暂无课时</div>
+          <div v-else-if="!allLessonItems.length" class="p-8 text-center text-slate-500">{{ copy.emptyLessons }}</div>
           <div v-else class="max-h-[520px] divide-y divide-slate-100 overflow-y-auto">
             <div v-for="item in allLessonItems" :key="lessonId(item.lesson)" class="grid gap-3 p-4 lg:grid-cols-[1fr_auto]" :class="lessonId(item.lesson) === editingLessonId ? 'bg-sky-50' : ''">
               <button class="text-left" type="button" @click="editLesson(item.lesson)">
                 <div class="font-black">{{ lessonTitle(item.lesson) }}</div>
-                <div class="mt-1 text-sm text-slate-500">属于章节：{{ chapterTitle(item.chapter) }}</div>
-                <div class="mt-1 text-xs text-slate-500">排序 {{ item.lesson.sort_order || 0 }} · {{ lessonTypeLabel(item.lesson.lesson_type) }}</div>
+                <div class="mt-1 text-sm text-slate-500">{{ copy.belongsToChapter }}{{ chapterTitle(item.chapter) }}</div>
+                <div class="mt-1 text-xs text-slate-500">{{ copy.sortMeta(item.lesson.sort_order || 0) }} · {{ lessonTypeLabel(item.lesson.lesson_type) }}</div>
               </button>
-              <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteLesson(item.lesson)">删除</button>
+              <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteLesson(item.lesson)">{{ copy.delete }}</button>
             </div>
           </div>
         </aside>
@@ -2148,23 +2151,23 @@ onMounted(() => {
         <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
           <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
             <div>
-              <h2 class="text-xl font-black">课时详情</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ editingLessonId ? lessonTitle(selectedLesson) : "选择课时编辑，或先选择章节后新建课时。" }}</p>
+              <h2 class="text-xl font-black">{{ copy.lessonDetailTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ editingLessonId ? lessonTitle(selectedLesson) : copy.lessonDetailEmptyHint }}</p>
             </div>
           </div>
           <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
             <div class="space-y-6">
               <div class="grid gap-3">
                 <div class="rounded-2xl bg-blue-50 p-4">
-                  <div class="text-xs font-black text-blue-600">所属章节</div>
-                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedLessonOwnerChapter ? chapterTitle(selectedLessonOwnerChapter) : (selectedChapterId ? chapterTitle(selectedChapter) : "未选择章节") }}</div>
+                  <div class="text-xs font-black text-blue-600">{{ copy.ownerChapter }}</div>
+                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedLessonOwnerChapter ? chapterTitle(selectedLessonOwnerChapter) : (selectedChapterId ? chapterTitle(selectedChapter) : copy.unselectedChapter) }}</div>
                   <div class="mt-2 break-all font-mono text-sm font-bold text-blue-900">ID: {{ selectedLessonOwnerChapter ? chapterId(selectedLessonOwnerChapter) : (selectedChapterId || "-") }}</div>
                 </div>
               </div>
               <div class="rounded-2xl border border-slate-200 p-4">
-                <h3 class="font-black">课时完整字段</h3>
-                <p class="mt-1 text-xs text-slate-500">系统字段置灰展示，不可直接修改。</p>
-                <div v-if="!selectedLesson" class="p-8 text-center text-slate-500">暂无选中的课时</div>
+                <h3 class="font-black">{{ copy.readonlyFields }}</h3>
+                <p class="mt-1 text-xs text-slate-500">{{ copy.systemReadonlyHint }}</p>
+                <div v-if="!selectedLesson" class="p-8 text-center text-slate-500">{{ copy.noSelectedLesson }}</div>
                 <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
                   <label v-for="entry in recordEntries(selectedLesson)" :key="`lesson-${entry.key}`" class="block">
                     <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
@@ -2174,43 +2177,43 @@ onMounted(() => {
               </div>
             </div>
             <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveLesson">
-              <h3 class="font-black">{{ editingLessonId ? "编辑课时" : "创建课时" }}</h3>
+              <h3 class="font-black">{{ editingLessonId ? copy.editLesson : copy.createLesson }}</h3>
               <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-                保存后属于章节：{{ lessonForm.chapter_id ? chapterTitle(chapterById(lessonForm.chapter_id)) : "请选择章节" }}
+                {{ copy.saveBelongsToChapter }}{{ lessonForm.chapter_id ? chapterTitle(chapterById(lessonForm.chapter_id)) : copy.selectChapter }}
               </div>
               <label class="mt-3 block">
-                <span class="text-sm font-bold">所属章节</span>
+                <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
                 <select v-model="lessonForm.chapter_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
-                  <option value="">请选择章节</option>
+                  <option value="">{{ copy.selectChapter }}</option>
                   <option v-for="chapter in chapters" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
                 </select>
               </label>
-              <input v-model="lessonForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="课时标题" />
+              <input v-model="lessonForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.lessonTitlePlaceholder" />
               <div class="mt-3 grid gap-3 sm:grid-cols-2">
                 <label class="block">
-                  <span class="text-sm font-bold">排序</span>
-                  <input v-model="lessonForm.sort_order" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="例如 1" type="number" min="1" />
-                  <span class="mt-1 block text-xs text-slate-500">当前章节内的展示顺序，数字越小越靠前。</span>
+                  <span class="text-sm font-bold">{{ copy.sort }}</span>
+                  <input v-model="lessonForm.sort_order" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="1" type="number" min="1" />
+                  <span class="mt-1 block text-xs text-slate-500">{{ copy.sortOrderHint }}</span>
                 </label>
                 <select v-model="lessonForm.lesson_type" class="rounded-xl border border-slate-200 px-4 py-3">
-                  <option value="1">视频</option>
-                  <option value="2">文本</option>
-                  <option value="3">PDF</option>
-                  <option value="4">图片</option>
-                  <option value="5">音频</option>
-                  <option value="6">文件</option>
-                  <option value="7">链接</option>
+                  <option value="1">{{ copy.lessonTypes.video }}</option>
+                  <option value="2">{{ copy.lessonTypes.text }}</option>
+                  <option value="3">{{ copy.lessonTypes.pdf }}</option>
+                  <option value="4">{{ copy.lessonTypes.image }}</option>
+                  <option value="5">{{ copy.lessonTypes.audio }}</option>
+                  <option value="6">{{ copy.lessonTypes.file }}</option>
+                  <option value="7">{{ copy.lessonTypes.link }}</option>
                 </select>
               </div>
-              <textarea v-model="lessonForm.body" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="正文 / 链接说明" />
-              <input v-model="lessonForm.asset_object_key" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="资产 Object Key 或外部链接" />
+              <textarea v-model="lessonForm.body" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.lessonBodyPlaceholder" />
+              <input v-model="lessonForm.asset_object_key" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetObjectKeyPlaceholder" />
               <label class="mt-3 block">
-                <span class="text-sm font-bold">资产 File Hash</span>
-                <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" title="文件内容的 SHA256 Hash，通常由上传流程返回；文本/外链课时通常可以留空。">?</span>
-                <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="文件 Hash，可为空" />
+                <span class="text-sm font-bold">{{ copy.assetFileHash }}</span>
+                <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" :title="copy.assetHashHint">?</span>
+                <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetFileHashPlaceholder" />
               </label>
               <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedChapterId || savingLesson" type="submit">
-                {{ savingLesson ? "保存中..." : "保存课时" }}
+                {{ savingLesson ? copy.saving : copy.saveLesson }}
               </button>
             </form>
           </div>
@@ -2220,14 +2223,14 @@ onMounted(() => {
       <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
         <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
           <div>
-            <h2 class="text-xl font-black">测验题库</h2>
-            <p class="mt-1 text-sm text-slate-500">测验可挂在课程、章节或课时下；左侧列表选择测验，右侧详情展示归属和题目选项。</p>
+            <h2 class="text-xl font-black">{{ copy.quizBankTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.quizBankDescription }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
             <select v-model="quizForm.scope" class="rounded-xl border border-slate-200 px-4 py-2 font-bold" @change="newQuiz(quizForm.scope)">
-              <option value="course">课程测验</option>
-              <option value="chapter">章节测验</option>
-              <option value="lesson">课时测验</option>
+              <option value="course">{{ copy.quizScopes.course }}</option>
+              <option value="chapter">{{ copy.quizScopes.chapter }}</option>
+              <option value="lesson">{{ copy.quizScopes.lesson }}</option>
             </select>
             <button
               class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40"
@@ -2235,7 +2238,7 @@ onMounted(() => {
               type="button"
               @click="loadQuizzes()"
             >
-              加载测验
+              {{ copy.loadQuizzes }}
             </button>
             <button
               class="rounded-xl bg-[#0b4ea2] px-4 py-2 font-bold text-white disabled:opacity-40"
@@ -2243,7 +2246,7 @@ onMounted(() => {
               type="button"
               @click="newQuiz(quizForm.scope)"
             >
-              新测验
+              {{ copy.newQuiz }}
             </button>
           </div>
         </div>
@@ -2251,26 +2254,26 @@ onMounted(() => {
         <div class="grid gap-6 p-5 2xl:grid-cols-[390px_minmax(0,1fr)]">
           <div class="rounded-2xl border border-slate-200">
             <div class="border-b border-slate-200 p-4">
-              <h3 class="font-black">测验列表</h3>
-              <p class="mt-1 text-xs text-slate-500">左侧只负责选择测验，右侧展示详情。</p>
+              <h3 class="font-black">{{ copy.quizListTitle }}</h3>
+              <p class="mt-1 text-xs text-slate-500">{{ copy.quizListDescription }}</p>
             </div>
             <div v-if="quizzesLoading" class="p-6 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
-              正在加载...
+              {{ copy.loading }}
             </div>
-            <div v-else-if="!allQuizItems.length" class="p-6 text-center text-slate-500">暂无测验</div>
+            <div v-else-if="!allQuizItems.length" class="p-6 text-center text-slate-500">{{ copy.emptyQuizzes }}</div>
             <div v-else class="max-h-96 divide-y divide-slate-100 overflow-y-auto">
               <div v-for="item in allQuizItems" :key="quizId(item.quiz)" class="flex items-center justify-between gap-3 p-4" :class="quizId(item.quiz) === selectedQuizId ? 'bg-sky-50' : ''">
                 <button class="flex-1 text-left" type="button" @click="editQuiz(item.quiz)">
                   <div class="font-black">{{ quizTitle(item.quiz) }}</div>
-                  <div class="mt-1 text-xs text-slate-500">通过分 {{ item.quiz.passing_score || 0 }} · 题目 {{ item.quiz.question_count || 0 }}</div>
+                  <div class="mt-1 text-xs text-slate-500">{{ copy.quizMeta(item.quiz.passing_score || 0, item.quiz.question_count || 0) }}</div>
                   <div class="mt-2 inline-flex max-w-full items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">
                     <span>{{ quizzableTypeLabel(item.ownerType) }}</span>
-                    <span class="truncate">属于：{{ quizItemOwnerTitle(item) }}</span>
+                    <span class="truncate">{{ copy.belongsTo }}{{ quizItemOwnerTitle(item) }}</span>
                   </div>
-                  <div class="mt-1 break-all font-mono text-[11px] text-slate-400">归属 ID: {{ quizItemOwnerId(item) || "-" }}</div>
+                  <div class="mt-1 break-all font-mono text-[11px] text-slate-400">{{ copy.ownerIdPrefix }}{{ quizItemOwnerId(item) || "-" }}</div>
                 </button>
-                <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuiz(item.quiz)">删除</button>
+                <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuiz(item.quiz)">{{ copy.delete }}</button>
               </div>
             </div>
           </div>
@@ -2278,40 +2281,40 @@ onMounted(() => {
           <div class="space-y-6">
             <section class="rounded-2xl border border-slate-200">
               <div class="border-b border-slate-200 p-4">
-                <h3 class="font-black">测验详情</h3>
-                <p class="mt-1 text-xs text-slate-500">{{ selectedQuizId ? quizTitle(selectedQuiz) : "选择测验查看详情，或按当前归属创建测验。" }}</p>
+                <h3 class="font-black">{{ copy.quizDetailTitle }}</h3>
+                <p class="mt-1 text-xs text-slate-500">{{ selectedQuizId ? quizTitle(selectedQuiz) : copy.quizDetailEmptyHint }}</p>
               </div>
               <div class="grid gap-4 p-4 lg:grid-cols-3">
                 <div class="rounded-2xl bg-blue-50 p-4">
-                  <div class="text-xs font-black text-blue-600">属于</div>
-                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem ? quizzableTypeLabel(selectedQuizItem.ownerType) : `${quizTarget().label}级测验` }}</div>
+                  <div class="text-xs font-black text-blue-600">{{ copy.owner }}</div>
+                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem ? quizzableTypeLabel(selectedQuizItem.ownerType) : copy.ownerLevelQuiz(quizTarget().label) }}</div>
                 </div>
                 <div class="rounded-2xl bg-slate-50 p-4">
-                  <div class="text-xs font-black text-slate-500">所属章节</div>
+                  <div class="text-xs font-black text-slate-500">{{ copy.ownerChapterLabel }}</div>
                   <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem?.chapter ? chapterTitle(selectedQuizItem.chapter) : (quizForm.scope === "chapter" ? chapterTitle(selectedChapter) : "-") }}</div>
                 </div>
                 <div class="rounded-2xl bg-slate-50 p-4">
-                  <div class="text-xs font-black text-slate-500">所属课时</div>
+                  <div class="text-xs font-black text-slate-500">{{ copy.ownerLessonLabel }}</div>
                   <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem?.lesson ? lessonTitle(selectedQuizItem.lesson) : (quizForm.scope === "lesson" ? lessonTitle(selectedLesson) : "-") }}</div>
                 </div>
               </div>
             <form class="border-t border-slate-200 p-4" @submit.prevent="saveQuiz">
-              <h4 class="font-black">{{ editingQuizId ? "编辑测验" : "创建测验" }}</h4>
+              <h4 class="font-black">{{ editingQuizId ? copy.editQuiz : copy.createQuiz }}</h4>
               <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-                保存后归属：{{ quizTarget().label }} · {{ quizTarget().id ? quizTarget().title : `未选择${quizTarget().label}` }}
+                {{ copy.saveQuizOwner }}{{ quizTarget().label }} · {{ quizTarget().id ? quizTarget().title : copy.unselectedTarget(quizTarget().label) }}
               </div>
-              <input v-model="quizForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="测验标题" />
-              <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4" placeholder="描述" />
+              <input v-model="quizForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.quizTitlePlaceholder" />
+              <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.description" />
               <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                <input v-model="quizForm.passing_score" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="通过分" type="number" />
-                <input v-model="quizForm.time_limit" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="限时分钟，0 不限制" type="number" />
+                <input v-model="quizForm.passing_score" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.passingScorePlaceholder" type="number" />
+                <input v-model="quizForm.time_limit" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.timeLimitPlaceholder" type="number" />
               </div>
               <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
                 <input v-model="quizForm.randomize_questions" type="checkbox" />
-                随机题目
+                {{ copy.randomizeQuestions }}
               </label>
               <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="savingQuiz" type="submit">
-                {{ savingQuiz ? "保存中..." : "保存测验" }}
+                {{ savingQuiz ? copy.saving : copy.saveQuiz }}
               </button>
             </form>
             </section>
@@ -2320,23 +2323,23 @@ onMounted(() => {
             <aside class="rounded-2xl border border-slate-200">
               <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                 <div>
-                  <h3 class="font-black">题目列表</h3>
-                  <p class="mt-1 text-xs text-slate-500">题目属于当前选中的测验。</p>
+                  <h3 class="font-black">{{ copy.questionListTitle }}</h3>
+                  <p class="mt-1 text-xs text-slate-500">{{ copy.questionListDescription }}</p>
                 </div>
-                <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuizId" type="button" @click="newQuestion">新题目</button>
+                <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuizId" type="button" @click="newQuestion">{{ copy.newQuestion }}</button>
               </div>
               <div v-if="questionsLoading" class="p-6 text-center text-slate-500">
                 <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
-                正在加载...
+                {{ copy.loading }}
               </div>
-              <div v-else-if="!questions.length" class="p-6 text-center text-slate-500">暂无题目</div>
+              <div v-else-if="!questions.length" class="p-6 text-center text-slate-500">{{ copy.emptyQuestions }}</div>
               <div v-else class="max-h-96 divide-y divide-slate-100 overflow-y-auto">
                 <div v-for="question in questions" :key="questionId(question)" class="flex items-center justify-between gap-3 p-4" :class="questionId(question) === selectedQuestionId ? 'bg-sky-50' : ''">
                   <button class="flex-1 text-left" type="button" @click="editQuestion(question)">
                     <div class="line-clamp-2 font-black">{{ questionTitle(question) }}</div>
-                    <div class="mt-1 text-xs text-slate-500">{{ questionTypeLabel(question.question_type) }} · {{ question.points || 0 }} 分</div>
+                    <div class="mt-1 text-xs text-slate-500">{{ copy.questionMeta(questionTypeLabel(question.question_type), question.points || 0) }}</div>
                   </button>
-                  <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuestion(question)">删除</button>
+                  <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteQuestion(question)">{{ copy.delete }}</button>
                 </div>
               </div>
             </aside>
@@ -2344,83 +2347,83 @@ onMounted(() => {
             <div class="space-y-6">
               <section class="rounded-2xl border border-slate-200">
                 <div class="border-b border-slate-200 p-4">
-                  <h3 class="font-black">题目详情</h3>
-                  <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? questionTitle(selectedQuestion) : "选择题目编辑，或点击新题目创建。" }}</p>
+                  <h3 class="font-black">{{ copy.questionDetailTitle }}</h3>
+                  <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? questionTitle(selectedQuestion) : copy.questionDetailEmptyHint }}</p>
                 </div>
                 <div class="grid gap-3 p-4 sm:grid-cols-2">
                   <div class="rounded-2xl bg-blue-50 p-4">
-                    <div class="text-xs font-black text-blue-600">所属测验</div>
-                    <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizId ? quizTitle(selectedQuiz) : "未选择测验" }}</div>
+                    <div class="text-xs font-black text-blue-600">{{ copy.ownerQuiz }}</div>
+                    <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizId ? quizTitle(selectedQuiz) : copy.unselectedQuiz }}</div>
                     <div class="mt-2 break-all font-mono text-sm font-bold text-blue-900">ID: {{ selectedQuizId || "-" }}</div>
                   </div>
                   <div class="rounded-2xl bg-slate-50 p-4">
-                    <div class="text-xs font-black text-slate-500">题目类型/分值</div>
-                    <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuestion ? questionTypeLabel(selectedQuestion.question_type) : questionTypeLabel(questionForm.question_type) }} · {{ selectedQuestion?.points || questionForm.points || 0 }} 分</div>
+                    <div class="text-xs font-black text-slate-500">{{ copy.questionTypePoints }}</div>
+                    <div class="mt-1 text-lg font-black text-slate-900">{{ copy.questionMeta(selectedQuestion ? questionTypeLabel(selectedQuestion.question_type) : questionTypeLabel(questionForm.question_type), selectedQuestion?.points || questionForm.points || 0) }}</div>
                   </div>
                 </div>
                 <form class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
-                  <h4 class="font-black">{{ editingQuestionId ? "编辑题目" : "创建题目" }}</h4>
-                  <textarea v-model="questionForm.question_text" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" placeholder="题干" />
+                  <h4 class="font-black">{{ editingQuestionId ? copy.editQuestion : copy.createQuestion }}</h4>
+                  <textarea v-model="questionForm.question_text" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.questionTextPlaceholder" />
                   <div class="mt-3 grid gap-3 sm:grid-cols-3">
                     <select v-model="questionForm.question_type" class="rounded-xl border border-slate-200 px-4 py-3">
-                      <option value="1">单选</option>
-                      <option value="2">多选</option>
-                      <option value="3">判断</option>
+                      <option value="1">{{ copy.questionTypes.single }}</option>
+                      <option value="2">{{ copy.questionTypes.multiple }}</option>
+                      <option value="3">{{ copy.questionTypes.judgement }}</option>
                     </select>
-                    <input v-model="questionForm.points" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="分值" type="number" />
-                    <input v-model="questionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" />
+                    <input v-model="questionForm.points" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.pointsPlaceholder" type="number" />
+                    <input v-model="questionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
                   </div>
                   <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
                     <input v-model="questionForm.is_required" type="checkbox" />
-                    必答
+                    {{ copy.required }}
                   </label>
-                  <textarea v-model="questionForm.media_items_json" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs" placeholder="媒体 JSON，默认 []" />
+                  <textarea v-model="questionForm.media_items_json" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs" :placeholder="copy.mediaJsonPlaceholder" />
                   <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
-                    {{ savingQuestion ? "保存中..." : "保存题目" }}
+                    {{ savingQuestion ? copy.saving : copy.saveQuestion }}
                   </button>
                 </form>
               </section>
 
               <section class="rounded-2xl border border-slate-200">
                 <div class="border-b border-slate-200 p-4">
-                  <h3 class="font-black">选项</h3>
-                  <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? "选项属于当前题目。" : "请先选择题目。" }}</p>
+                  <h3 class="font-black">{{ copy.optionsTitle }}</h3>
+                  <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? copy.optionsSelectedHint : copy.optionsNeedQuestionHint }}</p>
                 </div>
                 <div v-if="optionsLoading" class="p-6 text-center text-slate-500">
                   <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
-                  正在加载...
+                  {{ copy.loading }}
                 </div>
-                <div v-else-if="!options.length" class="p-6 text-center text-slate-500">暂无选项</div>
+                <div v-else-if="!options.length" class="p-6 text-center text-slate-500">{{ copy.emptyOptions }}</div>
                 <div v-else class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
                   <div v-for="option in options" :key="optionId(option)" class="flex items-center justify-between gap-3 p-4" :class="optionId(option) === editingOptionId ? 'bg-sky-50' : ''">
                     <button class="flex-1 text-left" type="button" @click="editOption(option)">
                       <div class="font-black">{{ optionTitle(option) }}</div>
                       <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
-                        {{ option.is_correct ? "正确答案" : "普通选项" }} · 排序 {{ option.sort_order || 0 }}
+                        {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} · {{ copy.sortMeta(option.sort_order || 0) }}
                       </div>
                     </button>
-                    <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteOption(option)">删除</button>
+                    <button class="rounded-xl border border-red-200 px-3 py-2 text-xs font-bold text-red-600" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
                   </div>
                 </div>
                 <form class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
                   <div class="flex items-center justify-between gap-3">
-                    <h4 class="font-black">{{ editingOptionId ? "编辑选项" : "创建选项" }}</h4>
-                    <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuestionId" type="button" @click="newOption">新选项</button>
+                    <h4 class="font-black">{{ editingOptionId ? copy.editOption : copy.createOption }}</h4>
+                    <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuestionId" type="button" @click="newOption">{{ copy.newOption }}</button>
                   </div>
-                  <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="选项内容" />
+                  <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.optionTextPlaceholder" />
                   <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                    <input v-model="optionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" placeholder="排序" type="number" />
+                    <input v-model="optionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
                     <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
                       <input v-model="optionForm.is_correct" type="checkbox" />
-                      正确答案
+                      {{ copy.correctAnswer }}
                     </label>
                   </div>
                   <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuestionId || savingOption" type="submit">
-                    {{ savingOption ? "保存中..." : "保存选项" }}
+                    {{ savingOption ? copy.saving : copy.saveOption }}
                   </button>
                 </form>
                 <div v-if="selectedQuiz || selectedQuestion" class="border-t border-slate-200 p-4">
-                  <h4 class="font-black">测验/题目只读字段</h4>
+                  <h4 class="font-black">{{ copy.quizReadonlyFields }}</h4>
                   <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
                     <label v-for="entry in recordEntries(selectedQuiz)" :key="`quiz-${entry.key}`" class="block">
                       <span class="text-xs font-black text-slate-500">quiz.{{ entry.key }}</span>
@@ -2443,31 +2446,31 @@ onMounted(() => {
     <div v-if="importOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-6" @click.self="importOpen = false">
       <div class="w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl">
         <div class="mb-5 flex items-center justify-between">
-          <h2 class="text-2xl font-black">导入 LMS JSON</h2>
-          <button class="rounded-xl border px-3 py-2 font-bold" type="button" @click="importOpen = false">关闭</button>
+          <h2 class="text-2xl font-black">{{ copy.importTitle }}</h2>
+          <button class="rounded-xl border px-3 py-2 font-bold" type="button" @click="importOpen = false">{{ copy.close }}</button>
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <label>
-            <span class="text-sm font-bold">导入类型</span>
+            <span class="text-sm font-bold">{{ copy.importType }}</span>
             <select v-model="importScope" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
-              <option value="course">课程</option>
-              <option value="quiz">章节测验</option>
+              <option value="course">{{ copy.importCourse }}</option>
+              <option value="quiz">{{ copy.importChapterQuiz }}</option>
             </select>
           </label>
           <label>
-            <span class="text-sm font-bold">分类提示</span>
-            <input v-model="importCategoryTips" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="导入课程时使用" />
+            <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
+            <input v-model="importCategoryTips" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.importCategoryPlaceholder" />
           </label>
         </div>
         <label class="mt-4 block">
-          <span class="text-sm font-bold">JSON 文件</span>
+          <span class="text-sm font-bold">{{ copy.jsonFile }}</span>
           <input class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" type="file" accept=".json,application/json" @change="loadImportFile" />
         </label>
-        <textarea v-model="importJson" class="mt-4 min-h-80 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" placeholder="也可以直接粘贴 JSON" />
+        <textarea v-model="importJson" class="mt-4 min-h-80 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" :placeholder="copy.pasteJsonPlaceholder" />
         <button class="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="importing" type="button" @click="importLmsJson">
           <Loader2 v-if="importing" class="h-4 w-4 animate-spin" />
           <UploadCloud v-else class="h-4 w-4" />
-          {{ importing ? "导入中..." : "开始导入" }}
+          {{ importing ? copy.importing : copy.startImport }}
         </button>
       </div>
     </div>

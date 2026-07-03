@@ -68,7 +68,7 @@ const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
   { key: "meta" as const, title: copy.value.tabs.meta, count: 1 },
   { key: "pricing" as const, title: copy.value.tabs.pricing, count: 2 },
-  { key: "schema" as const, title: "Schema", count: schemas.value ? 1 : 0 },
+  { key: "schema" as const, title: copy.value.tabs.schema, count: schemas.value ? 1 : 0 },
   { key: "actions" as const, title: copy.value.tabs.actions, count: 3 },
   { key: "raw" as const, title: copy.value.tabs.raw, count: 1 },
 ])
@@ -386,9 +386,9 @@ onMounted(load)
           </div>
           <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">
             <option value="">{{ copy.allStatus }}</option>
-            <option value="Draft">Draft</option>
-            <option value="Active">Active</option>
-            <option value="Deprecated">Deprecated</option>
+            <option value="Draft">{{ copy.statusOptions.Draft }}</option>
+            <option value="Active">{{ copy.statusOptions.Active }}</option>
+            <option value="Deprecated">{{ copy.statusOptions.Deprecated }}</option>
           </select>
         </div>
         <div v-if="loading" class="p-12 text-center text-slate-500">
@@ -419,11 +419,11 @@ onMounted(load)
               <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ bundle.description || copy.noDescription }}</div>
               <div class="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
                 <span class="rounded-full bg-slate-100 px-2 py-1">{{ copy.displayPricePrefix }}{{ displayPrice(bundle) }}</span>
-                <span class="rounded-full bg-slate-100 px-2 py-1">ID: {{ bundleUlid(bundle) || "-" }}</span>
+                <span class="rounded-full bg-slate-100 px-2 py-1">{{ copy.fields.idPrefix }}{{ bundleUlid(bundle) || "-" }}</span>
               </div>
             </div>
             <span class="self-center justify-self-center rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(bundle))">{{ bundleStatus(bundle) || "-" }}</span>
-            <span class="self-center text-center text-sm font-black text-slate-700">v{{ bundle.version || 0 }}</span>
+            <span class="self-center text-center text-sm font-black text-slate-700">{{ copy.fields.versionPrefix }} {{ bundle.version || 0 }}</span>
             <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</span>
             <button class="inline-flex h-9 items-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click.stop="selectBundle(bundle)">
               {{ copy.viewDetails }}
@@ -453,11 +453,11 @@ onMounted(load)
           <div class="space-y-5 overflow-y-auto p-5">
             <div class="grid gap-4 md:grid-cols-2">
               <label class="grid gap-2 text-sm font-bold">
-                Bundle ULID
+                {{ copy.fields.bundleUlid }}
                 <input v-model="form.bundle_ulid" class="rounded-xl border border-slate-200 px-4 py-3" />
               </label>
               <label class="grid gap-2 text-sm font-bold">
-                Bundle GPath
+                {{ copy.fields.bundleGpath }}
                 <input v-model="form.bundle_gpath" class="rounded-xl border border-slate-200 px-4 py-3" />
               </label>
               <label class="grid gap-2 text-sm font-bold">
@@ -473,17 +473,17 @@ onMounted(load)
                 <textarea v-model="form.description" class="min-h-24 rounded-xl border border-slate-200 p-4" maxlength="1200" />
               </label>
               <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                Thumbnail File Hash
+                {{ copy.fields.thumbnailFileHash }}
                 <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" />
               </label>
             </div>
             <div class="grid gap-4 xl:grid-cols-2">
               <label class="grid gap-2 text-sm font-bold">
-                items_json
+                {{ copy.fields.itemsJson }}
                 <textarea v-model="form.items_json" class="min-h-[260px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
               </label>
               <label class="grid gap-2 text-sm font-bold">
-                pricing_json
+                {{ copy.fields.pricingJson }}
                 <textarea v-model="form.pricing_json" class="min-h-[260px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
               </label>
             </div>
@@ -568,11 +568,11 @@ onMounted(load)
               <div v-else-if="activeTab === 'meta'" class="space-y-5">
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
-                    Bundle ULID
+                    {{ copy.fields.bundleUlid }}
                     <input v-model="form.bundle_ulid" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    Bundle GPath
+                    {{ copy.fields.bundleGpath }}
                     <input v-model="form.bundle_gpath" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
@@ -588,7 +588,7 @@ onMounted(load)
                     <textarea v-model="form.description" class="min-h-28 rounded-xl border border-slate-200 p-4" maxlength="1200" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    Thumbnail File Hash
+                    {{ copy.fields.thumbnailFileHash }}
                     <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" />
                   </label>
                 </div>
@@ -606,11 +606,11 @@ onMounted(load)
                 </div>
                 <div class="grid gap-4 xl:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
-                    items_json
+                    {{ copy.fields.itemsJson }}
                     <textarea v-model="form.items_json" class="min-h-[420px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    pricing_json
+                    {{ copy.fields.pricingJson }}
                     <textarea v-model="form.pricing_json" class="min-h-[420px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
                   </label>
                 </div>

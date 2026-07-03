@@ -4,6 +4,7 @@ import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 type PipelineForm = {
@@ -54,6 +55,8 @@ const selectedCertIndex = ref(0)
 const selectedUnlockQualIndex = ref(0)
 const selectedCertQualIndex = ref(0)
 const limit = 20
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.pipelineConfigAdmin)
 
 const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => pipelines.value.length >= limit)
@@ -92,13 +95,13 @@ const selectedUnlockQual = computed(() => unlockQuals.value[selectedUnlockQualIn
 const selectedCertQual = computed(() => certQuals.value[selectedCertQualIndex.value] || null)
 
 const layerItems = computed(() => [
-  { key: "overview" as const, title: "管线基础", desc: "顶层字段、版本和发布状态", count: selected.value ? 1 : 0 },
-  { key: "stages" as const, title: "阶段", desc: "Stage 列表和排序", count: stages.value.length },
-  { key: "units" as const, title: "课程单元", desc: "属于某个阶段的单元", count: units.value.length },
-  { key: "certs" as const, title: "证书", desc: "完成后可签发的证书", count: certs.value.length },
-  { key: "unlock_quals" as const, title: "解锁资格", desc: "进入管线前置资格", count: unlockQuals.value.length },
-  { key: "certs_quals" as const, title: "结业资格", desc: "证书/结业资格要求", count: certQuals.value.length },
-  { key: "raw" as const, title: "完整结构 JSON", desc: "高级编辑", count: 1 },
+  { key: "overview" as const, title: copy.value.layers.overview.title, desc: copy.value.layers.overview.desc, count: selected.value ? 1 : 0 },
+  { key: "stages" as const, title: copy.value.layers.stages.title, desc: copy.value.layers.stages.desc, count: stages.value.length },
+  { key: "units" as const, title: copy.value.layers.units.title, desc: copy.value.layers.units.desc, count: units.value.length },
+  { key: "certs" as const, title: copy.value.layers.certs.title, desc: copy.value.layers.certs.desc, count: certs.value.length },
+  { key: "unlock_quals" as const, title: copy.value.layers.unlockQuals.title, desc: copy.value.layers.unlockQuals.desc, count: unlockQuals.value.length },
+  { key: "certs_quals" as const, title: copy.value.layers.certQuals.title, desc: copy.value.layers.certQuals.desc, count: certQuals.value.length },
+  { key: "raw" as const, title: copy.value.layers.raw.title, desc: copy.value.layers.raw.desc, count: 1 },
 ])
 
 function asArray(value: unknown): JsonRecord[] {
@@ -121,7 +124,7 @@ function pipelineUlid(pipeline: JsonRecord) {
 }
 
 function pipelineName(pipeline: JsonRecord) {
-  return String(pickFirst(pipeline, ["name", "title"]) || "未命名管线")
+  return String(pickFirst(pipeline, ["name", "title"]) || copy.value.unnamedPipeline)
 }
 
 function pipelineStatus(pipeline: JsonRecord) {
@@ -132,17 +135,17 @@ function pipelineStatusLabel(value: unknown) {
   const raw = String(value || "").trim()
   const normalized = raw.toUpperCase().replace(/^PIPELINE_STATUS_/, "")
   const labels: Record<string, string> = {
-    ACTIVE: "已发布 / Active",
-    PUBLISHED: "已发布 / Published",
-    DRAFT: "草稿 / Draft",
-    DEPRECATED: "已下架 / Deprecated",
-    INACTIVE: "未启用 / Inactive",
-    ARCHIVED: "已归档 / Archived",
-    PENDING: "待处理 / Pending",
-    PENDING_CREATE: "等待创建 / Pending Create",
-    COMPLETED: "已完成 / Completed",
-    CANCELLED: "已取消 / Cancelled",
-    FAILED: "失败 / Failed",
+    ACTIVE: copy.value.status.active,
+    PUBLISHED: copy.value.status.published,
+    DRAFT: copy.value.status.draft,
+    DEPRECATED: copy.value.status.deprecated,
+    INACTIVE: copy.value.status.inactive,
+    ARCHIVED: copy.value.status.archived,
+    PENDING: copy.value.status.pending,
+    PENDING_CREATE: copy.value.status.pendingCreate,
+    COMPLETED: copy.value.status.completed,
+    CANCELLED: copy.value.status.cancelled,
+    FAILED: copy.value.status.failed,
   }
   return labels[normalized] || raw || "-"
 }
@@ -204,12 +207,12 @@ function parseStructure() {
   try {
     const parsed = JSON.parse(form.value.structure_json || "{}")
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      toast.error("structure_json 必须是对象")
+      toast.error(copy.value.toasts.structureMustObject)
       return null
     }
     return parsed as JsonRecord
   } catch {
-    toast.error("structure_json 不是合法 JSON")
+    toast.error(copy.value.toasts.structureInvalidJson)
     return null
   }
 }
@@ -218,7 +221,7 @@ function applyRawStructure() {
   const parsed = parseStructure()
   if (!parsed) return
   setStructure(parsed)
-  toast.success("已应用到分层视图，保存后才会生效")
+  toast.success(copy.value.toasts.rawApplied)
 }
 
 function eventValue(event: Event) {
@@ -265,14 +268,14 @@ function setJsonField(item: JsonRecord | null | undefined, key: string, value: s
     item[key] = JSON.parse(value || "[]")
     syncStructureJson()
   } catch {
-    toast.error(`${key} 不是合法 JSON`)
+    toast.error(copy.value.toasts.fieldInvalidJson(key))
   }
 }
 
 function addStage() {
   if (isStructureLocked()) return
   const list = asMutableArray(structure.value, "stages")
-  list.push({ stage_ulid: "", name: "New Stage", sort_order: list.length + 1, units: [] })
+  list.push({ stage_ulid: "", name: copy.value.defaults.stageName, sort_order: list.length + 1, units: [] })
   selectedStageIndex.value = list.length - 1
   activeLayer.value = "stages"
   syncStructureJson()
@@ -290,7 +293,7 @@ function addUnit(stageIndex = selectedStageIndex.value) {
   if (!stages.value.length) addStage()
   const stage = stages.value[stageIndex] || stages.value[0]
   const list = asMutableArray(stage, "units")
-  list.push({ unit_ulid: "", name: "New Unit", sort_order: list.length + 1 })
+  list.push({ unit_ulid: "", name: copy.value.defaults.unitName, sort_order: list.length + 1 })
   selectedUnitPath.value = `${Math.max(0, stageIndex)}:${list.length - 1}`
   activeLayer.value = "units"
   syncStructureJson()
@@ -318,17 +321,17 @@ function moveSelectedUnit(targetStageIndex: number) {
 }
 
 function addCert() {
-  addGenericItem("certs", { qual_ulid: "", name_hint: "New Certificate", pdf_template_ulid: "" }, "certs")
+  addGenericItem("certs", { qual_ulid: "", name_hint: copy.value.defaults.certificateName, pdf_template_ulid: "" }, "certs")
   selectedCertIndex.value = certs.value.length - 1
 }
 
 function addUnlockQual() {
-  addGenericItem("unlock_quals", { qual_ulid: "", name_hint: "New Unlock Qualification" }, "unlock_quals")
+  addGenericItem("unlock_quals", { qual_ulid: "", name_hint: copy.value.defaults.unlockQualName }, "unlock_quals")
   selectedUnlockQualIndex.value = unlockQuals.value.length - 1
 }
 
 function addCertQual() {
-  addGenericItem("certs_quals", { qual_ulid: "", name_hint: "New Completion Qualification" }, "certs_quals")
+  addGenericItem("certs_quals", { qual_ulid: "", name_hint: copy.value.defaults.certQualName }, "certs_quals")
   selectedCertQualIndex.value = certQuals.value.length - 1
 }
 
@@ -361,7 +364,7 @@ async function load() {
   } catch (err) {
     console.error(err)
     pipelines.value = []
-    toast.error("管线配置加载失败")
+    toast.error(copy.value.toasts.loadFailed)
   } finally {
     loading.value = false
   }
@@ -403,7 +406,7 @@ function back() {
 
 async function createPipeline() {
   if (!form.value.name.trim() || !form.value.category_tips.trim() || !form.value.respath.trim()) {
-    toast.error("请填写名称、分类提示和 respath")
+    toast.error(copy.value.toasts.requiredCreateFields)
     return
   }
   saving.value = true
@@ -416,7 +419,7 @@ async function createPipeline() {
         respath: form.value.respath.trim(),
       }),
     })
-    toast.success("管线草稿已创建")
+    toast.success(copy.value.toasts.created)
     creating.value = false
     await load()
     const id = pipelineUlid(data)
@@ -424,7 +427,7 @@ async function createPipeline() {
     if (created) await selectPipeline(created)
   } catch (err) {
     console.error(err)
-    toast.error("创建失败")
+    toast.error(copy.value.toasts.createFailed)
   } finally {
     saving.value = false
   }
@@ -433,7 +436,7 @@ async function createPipeline() {
 async function saveMetadata() {
   if (!selectedId.value) return
   if (!form.value.name.trim()) {
-    toast.error("请填写名称")
+    toast.error(copy.value.toasts.nameRequired)
     return
   }
   saving.value = true
@@ -442,11 +445,11 @@ async function saveMetadata() {
       method: "PUT",
       body: JSON.stringify({ new_name: form.value.name.trim() }),
     })
-    toast.success("基础信息已保存")
+    toast.success(copy.value.toasts.metadataSaved)
     await load()
   } catch (err) {
     console.error(err)
-    toast.error("保存失败")
+    toast.error(copy.value.toasts.saveFailed)
   } finally {
     saving.value = false
   }
@@ -455,7 +458,7 @@ async function saveMetadata() {
 async function saveStructure() {
   if (!selectedId.value) return
   if (published.value) {
-    toast.error("已发布管线不建议直接修改结构，请先创建新版本")
+    toast.error(copy.value.toasts.publishedStructureLocked)
     return
   }
   const parsed = parseStructure()
@@ -466,14 +469,14 @@ async function saveStructure() {
       method: "PUT",
       body: JSON.stringify(parsed),
     })
-    toast.success("管线结构已保存")
+    toast.success(copy.value.toasts.structureSaved)
     selected.value = data
     form.value = formFromPipeline(data)
     setStructure(structureFromPipeline(data))
     await load()
   } catch (err) {
     console.error(err)
-    toast.error("结构保存失败")
+    toast.error(copy.value.toasts.structureSaveFailed)
   } finally {
     saving.value = false
   }
@@ -489,11 +492,11 @@ async function publish() {
       method: "POST",
       body: JSON.stringify({}),
     })
-    toast.success("管线已发布")
+    toast.success(copy.value.toasts.published)
     await load()
   } catch (err) {
     console.error(err)
-    toast.error("发布失败")
+    toast.error(copy.value.toasts.publishFailed)
   } finally {
     saving.value = false
   }
@@ -501,24 +504,24 @@ async function publish() {
 
 async function deprecate() {
   if (!selectedId.value) return
-  if (!window.confirm("确认下架这个管线版本？")) return
+  if (!window.confirm(copy.value.confirmDeprecate)) return
   await apiClient(`/api/pipelines/${encodeURIComponent(selectedId.value)}/deprecate`, {
     method: "POST",
     body: JSON.stringify({}),
   })
-  toast.success("管线已下架")
+  toast.success(copy.value.toasts.deprecated)
   await load()
 }
 
 async function removePipeline() {
   if (!selectedId.value) return
   if (published.value) {
-    toast.error("已发布管线不能删除，请先下架或创建新版本")
+    toast.error(copy.value.toasts.publishedDeleteBlocked)
     return
   }
-  if (!window.confirm("确认删除这个管线草稿？")) return
+  if (!window.confirm(copy.value.confirmDeleteDraft)) return
   await apiClient(`/api/pipelines/${encodeURIComponent(selectedId.value)}`, { method: "DELETE" })
-  toast.success("管线已删除")
+  toast.success(copy.value.toasts.deleted)
   back()
   await load()
 }
@@ -528,7 +531,7 @@ async function clonePipeline() {
   const id = selectedId.value
   if (!id) return
   if (!form.value.respath.trim()) {
-    toast.error("请填写 respath")
+    toast.error(copy.value.toasts.respathRequired)
     return
   }
   saving.value = true
@@ -536,21 +539,21 @@ async function clonePipeline() {
     const data = await apiClient<JsonRecord>("/api/pipelines", {
       method: "POST",
       body: JSON.stringify({
-        name: `${form.value.name.trim()} (Copy)`,
+        name: copy.value.copyName(form.value.name.trim()),
         category_tips: form.value.category_tips.trim(),
         respath: form.value.respath.trim(),
         from_pipeline_guid: selected.value.pipeline_guid,
         from_pipeline_id: id,
       }),
     })
-    toast.success("管线副本已创建")
+    toast.success(copy.value.toasts.cloned)
     await load()
     const newId = pipelineUlid(data)
     const created = pipelines.value.find((item) => pipelineUlid(item) === newId)
     if (created) await selectPipeline(created)
   } catch (err) {
     console.error(err)
-    toast.error("克隆失败")
+    toast.error(copy.value.toasts.cloneFailed)
   } finally {
     saving.value = false
   }
@@ -564,17 +567,17 @@ onMounted(load)
   <section class="mx-auto flex min-h-screen w-full max-w-[1520px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">管线配置</h1>
-        <p class="mt-2 text-slate-600">维护认证管线、阶段、课程单元、证书和资格要求。</p>
+        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
         <button v-if="!creating" class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newPipeline">
           <Plus class="h-4 w-4" />
-          新建管线
+          {{ copy.newPipeline }}
         </button>
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
-          刷新
+          {{ copy.refresh }}
         </button>
       </div>
     </header>
@@ -582,29 +585,29 @@ onMounted(load)
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
         <div>
-          <h2 class="text-xl font-black">管线列表</h2>
-          <p class="mt-1 text-sm text-slate-500">进入详情后按层级维护完整配置。</p>
+          <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-          <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 px-3 text-sm" placeholder="分类提示，例如 CFtP/CFtP" />
+          <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 px-3 text-sm" :placeholder="copy.categoryPlaceholder" />
           <label class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-bold">
             <input v-model="onlyCurrent" type="checkbox" />
-            仅当前版本
+            {{ copy.onlyCurrent }}
           </label>
         </div>
       </div>
       <div v-if="loading" class="px-6 py-10 text-center text-slate-500">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-        正在加载...
+        {{ copy.loading }}
       </div>
-      <div v-else-if="!pipelines.length" class="px-6 py-10 text-center text-slate-500">暂无管线</div>
+      <div v-else-if="!pipelines.length" class="px-6 py-10 text-center text-slate-500">{{ copy.empty }}</div>
       <template v-else>
         <div class="grid grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
-          <span>管线</span>
-          <span class="text-center">状态</span>
-          <span class="text-center">版本</span>
-          <span class="text-right">更新时间</span>
-          <span class="text-right">操作</span>
+          <span>{{ copy.columns.pipeline }}</span>
+          <span class="text-center">{{ copy.columns.status }}</span>
+          <span class="text-center">{{ copy.columns.version }}</span>
+          <span class="text-right">{{ copy.columns.updatedAt }}</span>
+          <span class="text-right">{{ copy.columns.action }}</span>
         </div>
         <div
           v-for="pipeline in pipelines"
@@ -618,7 +621,7 @@ onMounted(load)
         >
           <div class="min-w-0">
             <div class="truncate text-lg font-black">{{ pipelineName(pipeline) }}</div>
-            <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pipeline.description || "暂无描述" }}</div>
+            <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pipeline.description || copy.noDescription }}</div>
             <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
               <span class="rounded-full bg-slate-100 px-2 py-1 text-slate-600">{{ pipeline.category_tips || "-" }}</span>
               <span class="break-all text-slate-400">ID: {{ pipelineUlid(pipeline) || "-" }}</span>
@@ -628,13 +631,13 @@ onMounted(load)
           <span class="self-center text-center text-sm font-black text-slate-700">v{{ pipeline.version || 0 }}</span>
           <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(pipeline.updated_at || pipeline.created_at || "")) }}</span>
           <button class="inline-flex h-9 items-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click.stop="selectPipeline(pipeline)">
-            查看详情
+            {{ copy.viewDetails }}
           </button>
         </div>
       </template>
       <div class="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
-        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - limit)">上一页</button>
-        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += limit">下一页</button>
+        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - limit)">{{ copy.prev }}</button>
+        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += limit">{{ copy.next }}</button>
       </div>
     </section>
 
@@ -643,10 +646,10 @@ onMounted(load)
         <div class="flex max-h-[88vh] w-full max-w-[1320px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
           <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
             <div class="min-w-0">
-              <h2 class="truncate text-2xl font-black">{{ creating ? "新建管线" : form.name || "管线详情" }}</h2>
-              <p class="mt-1 text-sm text-slate-500">维护管线基础信息、结构层级和完整详情。</p>
+              <h2 class="truncate text-2xl font-black">{{ creating ? copy.newPipeline : form.name || copy.detailTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
             </div>
-            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="back">
+            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="back">
               <X class="h-5 w-5" />
             </button>
           </div>
@@ -655,29 +658,29 @@ onMounted(load)
       <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 class="text-2xl font-black">基础信息</h2>
-            <p class="mt-1 text-sm text-slate-500">维护顶层信息、阶段、课程单元、证书和资格要求。</p>
+            <h2 class="text-2xl font-black">{{ copy.basicTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.basicDescription }}</p>
           </div>
           <div v-if="!creating" class="flex flex-wrap gap-2">
             <button class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 font-bold" type="button" @click="clonePipeline">
               <Copy class="h-4 w-4" />
-              克隆版本
+              {{ copy.cloneVersion }}
             </button>
-            <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">发布</button>
-            <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="deprecate">下架</button>
+            <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">{{ copy.publish }}</button>
+            <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="deprecate">{{ copy.deprecate }}</button>
             <button class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 font-bold text-white" type="button" @click="removePipeline">
               <Trash2 class="h-4 w-4" />
-              删除
+              {{ copy.delete }}
             </button>
           </div>
         </div>
         <div class="grid gap-4 md:grid-cols-2">
           <label class="grid gap-2 text-sm font-bold">
-            名称
+            {{ copy.fields.name }}
             <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" />
           </label>
           <label class="grid gap-2 text-sm font-bold">
-            分类提示
+            {{ copy.fields.categoryTips }}
             <input v-model="form.category_tips" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
           </label>
           <label class="grid gap-2 text-sm font-bold md:col-span-2">
@@ -688,11 +691,11 @@ onMounted(load)
         <div class="mt-5 flex justify-end gap-3">
           <button v-if="creating" class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="createPipeline">
             <Plus class="h-4 w-4" />
-            创建草稿
+            {{ copy.createDraft }}
           </button>
           <button v-else class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveMetadata">
             <Save class="h-4 w-4" />
-            保存基础信息
+            {{ copy.saveBasic }}
           </button>
         </div>
       </div>
@@ -700,8 +703,8 @@ onMounted(load)
       <div v-if="!creating" class="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside class="space-y-4">
           <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 class="text-lg font-black">配置层级</h3>
-            <p class="mt-1 text-sm text-slate-500">左侧选择层级，右侧查看和维护详情。</p>
+            <h3 class="text-lg font-black">{{ copy.layerTitle }}</h3>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.layerDescription }}</p>
             <div class="mt-4 space-y-2">
               <button
                 v-for="layer in layerItems"
@@ -721,7 +724,7 @@ onMounted(load)
           </div>
 
           <div v-if="structureLocked" class="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            当前结构不可编辑：新建时请先创建草稿；已发布版本请先克隆新版本再修改。
+            {{ copy.structureLockedHint }}
           </div>
         </aside>
 
@@ -733,27 +736,27 @@ onMounted(load)
 
           <div v-if="activeLayer === 'overview'" class="grid gap-5 p-5 lg:grid-cols-2">
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">Pipeline ID</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineId }}</div>
               <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selectedId || "-" }}</div>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">Pipeline GUID</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineGuid }}</div>
               <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected?.pipeline_guid || "-" }}</div>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">状态</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.status }}</div>
               <div class="mt-2"><span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(selected || {}))">{{ pipelineStatusLabel(pipelineStatus(selected || {})) }}</span></div>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">版本</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.version }}</div>
               <div class="mt-2 text-sm font-bold text-slate-950">v{{ selected?.version || 0 }}</div>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">创建时间</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.createdAt }}</div>
               <div class="mt-2 text-sm font-bold text-slate-950">{{ formatDate(String(selected?.created_at || "")) }}</div>
             </div>
             <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">更新时间</div>
+              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.updatedAt }}</div>
               <div class="mt-2 text-sm font-bold text-slate-950">{{ formatDate(String(selected?.updated_at || "")) }}</div>
             </div>
           </div>
@@ -762,10 +765,10 @@ onMounted(load)
             <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
               <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                 <div>
-                  <div class="font-black">阶段列表</div>
-                  <div class="text-xs text-slate-500">选择阶段查看详情</div>
+                  <div class="font-black">{{ copy.stageListTitle }}</div>
+                  <div class="text-xs text-slate-500">{{ copy.stageListDescription }}</div>
                 </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addStage">新阶段</button>
+                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addStage">{{ copy.newStage }}</button>
               </div>
               <button
                 v-for="(stage, index) in stages"
@@ -775,20 +778,20 @@ onMounted(load)
                 type="button"
                 @click="selectedStageIndex = index"
               >
-                <div class="font-black">{{ itemTitle(stage, `阶段 ${index + 1}`) }}</div>
-                <div class="mt-1 text-sm text-slate-500">排序 {{ stage.sort_order ?? index + 1 }} · 单元 {{ asArray(stage.units).length }}</div>
+                <div class="font-black">{{ itemTitle(stage, copy.stageFallback(index + 1)) }}</div>
+                <div class="mt-1 text-sm text-slate-500">{{ copy.stageMeta(stage.sort_order ?? index + 1, asArray(stage.units).length) }}</div>
                 <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(stage, ['stage_ulid']) || "-" }}</div>
               </button>
-              <div v-if="!stages.length" class="p-8 text-center text-sm text-slate-500">暂无阶段</div>
+              <div v-if="!stages.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noStages }}</div>
             </div>
             <div class="space-y-5 p-5">
               <template v-if="selectedStage">
                 <div class="flex items-center justify-between gap-3">
                   <div>
-                    <h4 class="text-lg font-black">阶段详情</h4>
-                    <p class="text-sm text-slate-500">阶段只属于当前管线。</p>
+                    <h4 class="text-lg font-black">{{ copy.stageDetailTitle }}</h4>
+                    <p class="text-sm text-slate-500">{{ copy.stageDetailDescription }}</p>
                   </div>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeStage()">删除阶段</button>
+                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeStage()">{{ copy.deleteStage }}</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
@@ -796,17 +799,17 @@ onMounted(load)
                     <input :value="fieldValue(selectedStage, 'stage_ulid')" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    排序
+                    {{ copy.fields.sortOrder }}
                     <input :value="numberValue(selectedStage, 'sort_order')" :disabled="isStructureLocked()" type="number" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'sort_order', eventNumber($event))" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    名称
+                    {{ copy.fields.name }}
                     <input :value="fieldValue(selectedStage, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'name', eventValue($event))" />
                   </label>
                 </div>
                 <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selectedStage, null, 2) }}</pre>
               </template>
-              <div v-else class="p-12 text-center text-slate-500">请选择或新增阶段</div>
+              <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddStage }}</div>
             </div>
           </div>
 
@@ -814,10 +817,10 @@ onMounted(load)
             <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
               <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                 <div>
-                  <div class="font-black">课程单元列表</div>
-                  <div class="text-xs text-slate-500">每个单元显示所属阶段</div>
+                  <div class="font-black">{{ copy.unitListTitle }}</div>
+                  <div class="text-xs text-slate-500">{{ copy.unitListDescription }}</div>
                 </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addUnit()">新单元</button>
+                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addUnit()">{{ copy.newUnit }}</button>
               </div>
               <button
                 v-for="item in units"
@@ -827,26 +830,26 @@ onMounted(load)
                 type="button"
                 @click="selectedUnitPath = item.path"
               >
-                <div class="font-black">{{ itemTitle(item.unit, `课程单元 ${item.unitIndex + 1}`) }}</div>
-                <div class="mt-1 text-sm text-slate-500">所属阶段：{{ itemTitle(item.stage, `阶段 ${item.stageIndex + 1}`) }}</div>
+                <div class="font-black">{{ itemTitle(item.unit, copy.unitFallback(item.unitIndex + 1)) }}</div>
+                <div class="mt-1 text-sm text-slate-500">{{ copy.parentStagePrefix }}{{ itemTitle(item.stage, copy.stageFallback(item.stageIndex + 1)) }}</div>
                 <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(item.unit, ['unit_ulid']) || "-" }}</div>
               </button>
-              <div v-if="!units.length" class="p-8 text-center text-sm text-slate-500">暂无课程单元</div>
+              <div v-if="!units.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noUnits }}</div>
             </div>
             <div class="space-y-5 p-5">
               <template v-if="selectedUnitItem">
                 <div class="flex items-center justify-between gap-3">
                   <div>
-                    <h4 class="text-lg font-black">课程单元详情</h4>
-                    <p class="text-sm text-slate-500">右侧可调整所属阶段，保存后生效。</p>
+                    <h4 class="text-lg font-black">{{ copy.unitDetailTitle }}</h4>
+                    <p class="text-sm text-slate-500">{{ copy.unitDetailDescription }}</p>
                   </div>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeSelectedUnit">删除单元</button>
+                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeSelectedUnit">{{ copy.deleteUnit }}</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
-                    所属阶段
+                    {{ copy.fields.parentStage }}
                     <select :value="selectedUnitItem.stageIndex" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="moveSelectedUnit(eventNumber($event))">
-                      <option v-for="(stage, index) in stages" :key="index" :value="index">{{ itemTitle(stage, `阶段 ${index + 1}`) }}（{{ itemId(stage, ['stage_ulid']) || '无 ID' }}）</option>
+                      <option v-for="(stage, index) in stages" :key="index" :value="index">{{ itemTitle(stage, copy.stageFallback(index + 1)) }}{{ copy.stageOptionId(itemId(stage, ['stage_ulid'])) }}</option>
                     </select>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
@@ -854,11 +857,11 @@ onMounted(load)
                     <input :value="fieldValue(selectedUnitItem.unit, 'unit_ulid')" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    名称
+                    {{ copy.fields.name }}
                     <input :value="fieldValue(selectedUnitItem.unit, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'name', eventValue($event))" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    排序
+                    {{ copy.fields.sortOrder }}
                     <input :value="numberValue(selectedUnitItem.unit, 'sort_order')" :disabled="isStructureLocked()" type="number" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'sort_order', eventNumber($event))" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
@@ -879,11 +882,11 @@ onMounted(load)
                   </label>
                   <label class="inline-flex items-center gap-2 text-sm font-bold">
                     <input :checked="boolValue(selectedUnitItem.unit, 'allow_retake')" :disabled="isStructureLocked()" type="checkbox" @change="setField(selectedUnitItem?.unit, 'allow_retake', eventChecked($event))" />
-                    允许重考
+                    {{ copy.fields.allowRetake }}
                   </label>
                   <label class="inline-flex items-center gap-2 text-sm font-bold">
                     <input :checked="boolValue(selectedUnitItem.unit, 'allow_exemption')" :disabled="isStructureLocked()" type="checkbox" @change="setField(selectedUnitItem?.unit, 'allow_exemption', eventChecked($event))" />
-                    允许免考
+                    {{ copy.fields.allowExemption }}
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     exemption_quals JSON
@@ -892,7 +895,7 @@ onMounted(load)
                 </div>
                 <pre class="max-h-[300px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selectedUnitItem.unit, null, 2) }}</pre>
               </template>
-              <div v-else class="p-12 text-center text-slate-500">请选择或新增课程单元</div>
+              <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddUnit }}</div>
             </div>
           </div>
 
@@ -900,22 +903,22 @@ onMounted(load)
             <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
               <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                 <div>
-                  <div class="font-black">证书列表</div>
-                  <div class="text-xs text-slate-500">管线完成后签发</div>
+                  <div class="font-black">{{ copy.certListTitle }}</div>
+                  <div class="text-xs text-slate-500">{{ copy.certListDescription }}</div>
                 </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addCert">新证书</button>
+                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addCert">{{ copy.newCert }}</button>
               </div>
               <button v-for="(cert, index) in certs" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedCertIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedCertIndex = index">
-                <div class="font-black">{{ itemTitle(cert, `证书 ${index + 1}`) }}</div>
-                <div class="mt-2 break-all text-xs font-semibold text-slate-500">资格 ID: {{ itemId(cert, ['qual_ulid']) || "-" }}</div>
+                <div class="font-black">{{ itemTitle(cert, copy.certFallback(index + 1)) }}</div>
+                <div class="mt-2 break-all text-xs font-semibold text-slate-500">{{ copy.qualIdPrefix }}{{ itemId(cert, ['qual_ulid']) || "-" }}</div>
               </button>
-              <div v-if="!certs.length" class="p-8 text-center text-sm text-slate-500">暂无证书</div>
+              <div v-if="!certs.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noCerts }}</div>
             </div>
             <div class="space-y-5 p-5">
               <template v-if="selectedCert">
                 <div class="flex items-center justify-between gap-3">
-                  <h4 class="text-lg font-black">证书详情</h4>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeGenericItem('certs', selectedCertIndex)">删除证书</button>
+                  <h4 class="text-lg font-black">{{ copy.certDetailTitle }}</h4>
+                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeGenericItem('certs', selectedCertIndex)">{{ copy.deleteCert }}</button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
@@ -933,7 +936,7 @@ onMounted(load)
                 </div>
                 <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selectedCert, null, 2) }}</pre>
               </template>
-              <div v-else class="p-12 text-center text-slate-500">请选择或新增证书</div>
+              <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddCert }}</div>
             </div>
           </div>
 
@@ -941,37 +944,37 @@ onMounted(load)
             <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
               <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                 <div>
-                  <div class="font-black">{{ activeLayer === 'unlock_quals' ? '解锁资格列表' : '结业资格列表' }}</div>
-                  <div class="text-xs text-slate-500">维护当前管线的资格要求</div>
+                  <div class="font-black">{{ activeLayer === 'unlock_quals' ? copy.unlockQualListTitle : copy.certQualListTitle }}</div>
+                  <div class="text-xs text-slate-500">{{ copy.qualListDescription }}</div>
                 </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="activeLayer === 'unlock_quals' ? addUnlockQual() : addCertQual()">新增</button>
+                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="activeLayer === 'unlock_quals' ? addUnlockQual() : addCertQual()">{{ copy.add }}</button>
               </div>
               <template v-if="activeLayer === 'unlock_quals'">
                 <button v-for="(qual, index) in unlockQuals" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedUnlockQualIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedUnlockQualIndex = index">
-                  <div class="font-black">{{ itemTitle(qual, `解锁资格 ${index + 1}`) }}</div>
+                  <div class="font-black">{{ itemTitle(qual, copy.unlockQualFallback(index + 1)) }}</div>
                   <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
                 </button>
-                <div v-if="!unlockQuals.length" class="p-8 text-center text-sm text-slate-500">暂无解锁资格</div>
+                <div v-if="!unlockQuals.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noUnlockQuals }}</div>
               </template>
               <template v-else>
                 <button v-for="(qual, index) in certQuals" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedCertQualIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedCertQualIndex = index">
-                  <div class="font-black">{{ itemTitle(qual, `结业资格 ${index + 1}`) }}</div>
+                  <div class="font-black">{{ itemTitle(qual, copy.certQualFallback(index + 1)) }}</div>
                   <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
                 </button>
-                <div v-if="!certQuals.length" class="p-8 text-center text-sm text-slate-500">暂无结业资格</div>
+                <div v-if="!certQuals.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noCertQuals }}</div>
               </template>
             </div>
             <div class="space-y-5 p-5">
               <template v-if="activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual">
                 <div class="flex items-center justify-between gap-3">
-                  <h4 class="text-lg font-black">资格详情</h4>
+                  <h4 class="text-lg font-black">{{ copy.qualDetailTitle }}</h4>
                   <button
                     class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40"
                     type="button"
                     :disabled="isStructureLocked()"
                     @click="activeLayer === 'unlock_quals' ? removeGenericItem('unlock_quals', selectedUnlockQualIndex) : removeGenericItem('certs_quals', selectedCertQualIndex)"
                   >
-                    删除资格
+                    {{ copy.deleteQual }}
                   </button>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
@@ -996,20 +999,20 @@ onMounted(load)
                 </div>
                 <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, null, 2) }}</pre>
               </template>
-              <div v-else class="p-12 text-center text-slate-500">请选择或新增资格</div>
+              <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddQual }}</div>
             </div>
           </div>
 
           <div v-else-if="activeLayer === 'raw'" class="space-y-5 p-5">
             <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              高级编辑区用于补充暂未单独建表单的字段。点击“应用到分层视图”只更新页面状态，点击“保存结构”才会生效。
+              {{ copy.rawHint }}
             </div>
             <textarea v-model="form.structure_json" :disabled="isStructureLocked()" class="min-h-[560px] w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6 disabled:bg-slate-100 disabled:text-slate-500" />
             <div class="flex flex-wrap justify-end gap-3">
-              <button class="rounded-xl border px-5 py-3 font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="applyRawStructure">应用到分层视图</button>
+              <button class="rounded-xl border px-5 py-3 font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="applyRawStructure">{{ copy.applyRaw }}</button>
               <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
                 <Send class="h-4 w-4" />
-                保存结构
+                {{ copy.saveStructure }}
               </button>
             </div>
           </div>
@@ -1017,14 +1020,14 @@ onMounted(load)
           <div v-if="activeLayer !== 'raw'" class="flex justify-end gap-3 border-t border-slate-200 p-5">
             <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
               <Send class="h-4 w-4" />
-              保存结构
+              {{ copy.saveStructure }}
             </button>
           </div>
         </main>
       </div>
 
       <div v-if="selected" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h3 class="mb-4 text-xl font-black">完整详情</h3>
+        <h3 class="mb-4 text-xl font-black">{{ copy.fullDetails }}</h3>
         <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
       </div>
           </section>

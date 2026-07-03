@@ -4,55 +4,55 @@ export type LabelOption = {
 }
 
 export const bizTypeOptions: LabelOption[] = [
-  { value: "PIPELINE_PAYMENT", label: "管线订单" },
-  { value: "STAGE_PAYMENT", label: "阶段订单" },
-  { value: "COURSE_RETAKE_PAYMENT", label: "重考订单" },
-  { value: "PIPELINE_UNLOCK", label: "管线解锁订单" },
-  { value: "CREDENTIAL_APPLICATION", label: "资格申请订单" },
-  { value: "BUNDLE_PURCHASE", label: "认证套餐订单" },
+  { value: "PIPELINE_PAYMENT", label: "PIPELINE_PAYMENT" },
+  { value: "STAGE_PAYMENT", label: "STAGE_PAYMENT" },
+  { value: "COURSE_RETAKE_PAYMENT", label: "COURSE_RETAKE_PAYMENT" },
+  { value: "PIPELINE_UNLOCK", label: "PIPELINE_UNLOCK" },
+  { value: "CREDENTIAL_APPLICATION", label: "CREDENTIAL_APPLICATION" },
+  { value: "BUNDLE_PURCHASE", label: "BUNDLE_PURCHASE" },
 ]
 
 export const orderStatusOptions: LabelOption[] = [
-  { value: "PENDING", label: "待处理" },
-  { value: "WAIT_PAYMENT", label: "待支付" },
-  { value: "WAIT_BUNDLE_PAYMENT", label: "等待套餐支付" },
-  { value: "WAIT_PIPELINE_PAYMENT", label: "等待管线支付" },
-  { value: "WAIT_PIPELINE_INSTANTIATE", label: "管线创建中" },
-  { value: "WAIT_EXEMPTION_SELECTION", label: "等待选择免考" },
-  { value: "WAIT_EXEMPTION_REVIEW", label: "等待免考审核" },
-  { value: "WAIT_STAGE_PAYMENT", label: "等待阶段支付" },
-  { value: "WAIT_REVIEW_FEE_PAYMENT", label: "等待审核费支付" },
-  { value: "WAIT_RETAKE_PAYMENT", label: "等待重考支付" },
-  { value: "WAIT_UNLOCK_PAYMENT", label: "等待解锁支付" },
-  { value: "UPLOAD_READY", label: "可上传材料" },
-  { value: "UNDER_REVIEW", label: "审核中" },
-  { value: "RESOLVED", label: "已处理" },
-  { value: "PAID", label: "已支付" },
-  { value: "COMPLETED", label: "已完成" },
-  { value: "CANCELLED", label: "已取消" },
-  { value: "FAILED", label: "失败" },
-  { value: "EXPIRED", label: "已过期" },
-  { value: "PENDING_CREATE", label: "等待创建" },
-  { value: "PENDING_PAYMENT", label: "等待支付" },
+  { value: "PENDING", label: "PENDING" },
+  { value: "WAIT_PAYMENT", label: "WAIT_PAYMENT" },
+  { value: "WAIT_BUNDLE_PAYMENT", label: "WAIT_BUNDLE_PAYMENT" },
+  { value: "WAIT_PIPELINE_PAYMENT", label: "WAIT_PIPELINE_PAYMENT" },
+  { value: "WAIT_PIPELINE_INSTANTIATE", label: "WAIT_PIPELINE_INSTANTIATE" },
+  { value: "WAIT_EXEMPTION_SELECTION", label: "WAIT_EXEMPTION_SELECTION" },
+  { value: "WAIT_EXEMPTION_REVIEW", label: "WAIT_EXEMPTION_REVIEW" },
+  { value: "WAIT_STAGE_PAYMENT", label: "WAIT_STAGE_PAYMENT" },
+  { value: "WAIT_REVIEW_FEE_PAYMENT", label: "WAIT_REVIEW_FEE_PAYMENT" },
+  { value: "WAIT_RETAKE_PAYMENT", label: "WAIT_RETAKE_PAYMENT" },
+  { value: "WAIT_UNLOCK_PAYMENT", label: "WAIT_UNLOCK_PAYMENT" },
+  { value: "UPLOAD_READY", label: "UPLOAD_READY" },
+  { value: "UNDER_REVIEW", label: "UNDER_REVIEW" },
+  { value: "RESOLVED", label: "RESOLVED" },
+  { value: "PAID", label: "PAID" },
+  { value: "COMPLETED", label: "COMPLETED" },
+  { value: "CANCELLED", label: "CANCELLED" },
+  { value: "FAILED", label: "FAILED" },
+  { value: "EXPIRED", label: "EXPIRED" },
+  { value: "PENDING_CREATE", label: "PENDING_CREATE" },
+  { value: "PENDING_PAYMENT", label: "PENDING_PAYMENT" },
 ]
 
 export const paymentStatusOptions: LabelOption[] = [
-  { value: "WAIT_PAY", label: "待支付" },
-  { value: "WAIT_PAYMENT", label: "待支付" },
-  { value: "UNPAID", label: "待支付" },
-  { value: "PAID", label: "已支付" },
-  { value: "COMPLETED", label: "已支付" },
-  { value: "FAILED", label: "支付失败" },
-  { value: "REFUNDED", label: "已退款" },
-  { value: "CANCELLED", label: "已取消" },
+  { value: "WAIT_PAY", label: "WAIT_PAY" },
+  { value: "WAIT_PAYMENT", label: "WAIT_PAYMENT" },
+  { value: "UNPAID", label: "UNPAID" },
+  { value: "PAID", label: "PAID" },
+  { value: "COMPLETED", label: "COMPLETED" },
+  { value: "FAILED", label: "FAILED" },
+  { value: "REFUNDED", label: "REFUNDED" },
+  { value: "CANCELLED", label: "CANCELLED" },
 ]
 
 export const applicationStatusOptions: LabelOption[] = [
-  { value: "0", label: "全部" },
-  { value: "1", label: "待审核" },
-  { value: "2", label: "已通过" },
-  { value: "3", label: "已拒绝" },
-  { value: "4", label: "需补交" },
+  { value: "0", label: "ALL" },
+  { value: "1", label: "PENDING" },
+  { value: "2", label: "APPROVED" },
+  { value: "3", label: "REJECTED" },
+  { value: "4", label: "RESUBMIT_REQUIRED" },
 ]
 
 export function normalizeStatus(value: unknown) {
@@ -66,10 +66,10 @@ export function labelFor(options: LabelOption[], value: unknown) {
 
 export function applicationStatusLabel(value: unknown) {
   const status = normalizeStatus(value)
-  if (status.includes("APPROVED") || status === "2") return "已通过"
-  if (status.includes("REJECTED") || status === "3") return "已拒绝"
-  if (status.includes("RESUBMIT") || status.includes("REUPLOAD") || status === "4") return "需补交"
-  if (status.includes("PENDING") || status === "1") return "待审核"
+  if (status.includes("APPROVED") || status === "2") return "APPROVED"
+  if (status.includes("REJECTED") || status === "3") return "REJECTED"
+  if (status.includes("RESUBMIT") || status.includes("REUPLOAD") || status === "4") return "RESUBMIT_REQUIRED"
+  if (status.includes("PENDING") || status === "1") return "PENDING"
   return status || "-"
 }
 
