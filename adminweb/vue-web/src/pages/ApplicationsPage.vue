@@ -109,6 +109,11 @@ function mergeApplicationDetail(appID: string, detail: JsonRecord) {
   const index = applications.value.findIndex((app) => appUlid(app) === appID)
   const base = index >= 0 ? applications.value[index] : selected.value || {}
   const merged = { ...base, ...detail }
+  for (const key of ["audit_remark", "auditor_ulid", "audit_at"]) {
+    if (Object.prototype.hasOwnProperty.call(base, key)) {
+      merged[key] = base[key]
+    }
+  }
   if (index >= 0) {
     applications.value.splice(index, 1, merged)
   }
