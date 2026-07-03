@@ -146,7 +146,7 @@ onMounted(() => load(1))
           <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(request.created_at) || copy.noCreatedAt }}</div>
           <div class="text-right">
             <button
-              class="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-black text-blue-700 transition hover:border-blue-200 hover:bg-blue-100"
+              class="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50"
               type="button"
               @click.stop="openRequest(request)"
             >
