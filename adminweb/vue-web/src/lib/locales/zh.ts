@@ -1247,6 +1247,7 @@ export const zh = {
       detailLoadFailed: "资源包详情加载失败",
       listLoadFailed: "资源包列表加载失败",
       titleRequired: "资源包标题不能为空",
+      respathRequired: "资源包 Respath 不能为空",
       updateRequiresVersion: "更新资源包需要有效的 pack_id 和 version",
       created: "资源包已创建",
       saved: "资源包已保存",

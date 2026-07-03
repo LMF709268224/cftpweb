@@ -1249,6 +1249,7 @@ export const en: AdminTranslations = {
       detailLoadFailed: "Failed to load resource pack details",
       listLoadFailed: "Failed to load resource packs",
       titleRequired: "Resource pack title is required",
+      respathRequired: "Resource pack Respath is required",
       updateRequiresVersion: "Updating a resource pack requires a valid pack_id and version",
       created: "Resource pack created",
       saved: "Resource pack saved",
