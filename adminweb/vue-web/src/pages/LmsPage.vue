@@ -2157,14 +2157,6 @@ onMounted(() => {
               <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteChapter(chapter)">{{ copy.delete }}</button>
             </div>
           </div>
-          <form class="border-t border-slate-200 p-5" @submit.prevent="saveChapter">
-            <h3 class="font-black">{{ editingChapterId ? copy.editChapter : copy.createChapter }}</h3>
-            <input v-model="chapterForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.chapterTitlePlaceholder" />
-            <input v-model="chapterForm.sort_order" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" min="1" />
-            <button class="mt-3 rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="submit">
-              {{ savingChapter ? copy.saving : copy.saveChapter }}
-            </button>
-          </form>
         </aside>
 
         <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
