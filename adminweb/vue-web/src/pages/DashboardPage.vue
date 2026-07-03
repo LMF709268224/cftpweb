@@ -156,23 +156,23 @@ onMounted(loadDashboard)
 
 <template>
   <main class="mx-auto max-w-[1600px] px-6 py-8">
-    <header class="mb-7 flex flex-wrap items-center justify-between gap-4">
+    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div>
-        <div class="mb-2 text-sm font-semibold text-slate-500">{{ copy.eyebrow }}</div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-500">{{ copy.subtitle }}</p>
+        <div class="mb-2 text-xs font-black uppercase tracking-wide text-slate-400">{{ copy.eyebrow }}</div>
+        <h1 class="text-4xl font-black tracking-tight text-slate-950">{{ copy.title }}</h1>
+        <p class="mt-2 text-sm text-slate-500">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <RouterLink to="/audit/webhooks" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold shadow-sm hover:border-slate-400">
+        <RouterLink to="/audit/webhooks" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
           <Activity class="h-4 w-4" />
           {{ copy.auditLogs }}
         </RouterLink>
-        <RouterLink to="/mails" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold shadow-sm hover:border-slate-400">
+        <RouterLink to="/mails" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
           <Mail class="h-4 w-4" />
           {{ copy.emailActivity }}
         </RouterLink>
         <button
-          class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3 font-bold shadow-sm transition hover:border-slate-500 disabled:opacity-50"
+          class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold shadow-sm transition hover:border-slate-500 disabled:opacity-50"
           type="button"
           :disabled="loading"
           @click="loadDashboard"
@@ -184,49 +184,54 @@ onMounted(loadDashboard)
       </div>
     </header>
 
-    <section class="mb-7 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="mb-2 flex items-center justify-between text-sm font-semibold text-slate-600">
+    <section class="mb-5 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+      <div class="mb-2 flex items-center justify-between text-sm font-black text-slate-700">
         <span>{{ copy.profileCompletion }}</span>
-        <span class="text-amber-600">{{ profileCompletion }}%</span>
+        <span class="text-[#0b579b]">{{ profileCompletion }}%</span>
       </div>
-      <div class="h-2 overflow-hidden rounded-full bg-blue-100">
+      <div class="h-2 overflow-hidden rounded-full bg-slate-100">
         <div class="h-full rounded-full bg-[#0b579b] transition-all" :style="{ width: `${profileCompletion}%` }" />
       </div>
     </section>
 
-    <section class="mb-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-      <article v-for="card in summaryCards" :key="card.label" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <section class="mb-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <article v-for="card in summaryCards" :key="card.label" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="flex items-center justify-between">
           <p class="text-sm font-bold text-slate-600">{{ card.label }}</p>
-          <component :is="card.icon" class="h-5 w-5 text-slate-400" />
+          <component :is="card.icon" class="h-5 w-5 text-slate-300" />
         </div>
-        <p class="mt-7 text-4xl font-black" :class="card.tone">{{ card.value }}</p>
+        <p class="mt-5 text-4xl font-black" :class="card.tone">{{ card.value }}</p>
       </article>
     </section>
 
-    <section class="mb-7 grid gap-4 md:grid-cols-3 2xl:grid-cols-6">
-      <article v-for="role in data?.user_role_stats || []" :key="role.key" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section class="mb-6 grid gap-3 md:grid-cols-3 2xl:grid-cols-6">
+      <article v-for="role in data?.user_role_stats || []" :key="role.key" class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
         <div class="flex items-center justify-between">
           <p class="text-sm font-bold text-slate-600">{{ roleLabel(role.label || role.key) }}</p>
-          <Users class="h-4 w-4 text-slate-400" />
+          <Users class="h-4 w-4 text-slate-300" />
         </div>
-        <p class="mt-5 text-3xl font-black text-[#0b579b]">{{ role.count }}</p>
+        <p class="mt-3 text-3xl font-black text-[#0b579b]">{{ role.count }}</p>
       </article>
     </section>
 
-    <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="border-b border-slate-100 p-6">
-        <h2 class="text-xl font-black">{{ copy.userManagement }}</h2>
-        <p class="mt-1 text-sm text-slate-500">{{ copy.userManagementHint }}</p>
-        <div class="mt-5 flex flex-wrap gap-3">
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div class="border-b border-slate-100 px-6 py-5">
+        <div class="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h2 class="text-xl font-black text-slate-950">{{ copy.userManagement }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.userManagementHint }}</p>
+          </div>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ filteredUsers.length }} / {{ data?.users.length || 0 }}</span>
+        </div>
+        <div class="mt-5 flex flex-wrap gap-3 rounded-2xl bg-slate-50 p-3">
           <div class="relative min-w-[280px] flex-1">
             <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input v-model="keyword" class="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-4 text-sm outline-none focus:border-[#0b579b]" :placeholder="copy.filters.searchPlaceholder" />
+            <input v-model="keyword" class="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-[#0b579b]" :placeholder="copy.filters.searchPlaceholder" />
           </div>
-          <select v-model="roleFilter" class="h-11 rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-[#0b579b]">
+          <select v-model="roleFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b579b]">
             <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
-          <select v-model="statusFilter" class="h-11 rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-[#0b579b]">
+          <select v-model="statusFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b579b]">
             <option value="all">{{ copy.filters.allStatus }}</option>
             <option value="active">{{ copy.filters.active }}</option>
             <option value="inactive">{{ copy.filters.inactive }}</option>
@@ -237,7 +242,7 @@ onMounted(loadDashboard)
 
       <div class="overflow-x-auto">
         <table class="min-w-full text-left text-sm">
-          <thead class="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-500">
+          <thead class="border-b border-slate-100 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
             <tr>
               <th class="px-6 py-4">{{ copy.table.user }}</th>
               <th class="px-6 py-4">{{ copy.table.email }}</th>
@@ -259,7 +264,7 @@ onMounted(loadDashboard)
               <td colspan="7" class="px-6 py-10 text-center text-slate-400">{{ copy.noUsers }}</td>
             </tr>
             <template v-else>
-              <tr v-for="user in filteredUsers" :key="user.id" class="hover:bg-slate-50">
+              <tr v-for="user in filteredUsers" :key="user.id" class="transition hover:bg-sky-50/60">
                 <td class="px-6 py-4">
                   <div class="font-bold text-slate-950">{{ user.name || "-" }}</div>
                   <div class="text-xs text-slate-500">{{ user.phone || user.candidate_ulid || "-" }}</div>
