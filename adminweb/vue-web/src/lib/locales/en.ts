@@ -1687,6 +1687,9 @@ export const en: AdminTranslations = {
     readonlyCourseFieldLabels: {
       course_id: "Course ID",
       course_ulid: "Course Unique ID",
+      course: "Course",
+      detail: "Detail",
+      complete_course: "Complete Course",
       ulid: "Unique ID",
       id: "Internal ID",
       category_tips: "Course Category",

@@ -1685,6 +1685,9 @@ export const zh = {
     readonlyCourseFieldLabels: {
       course_id: "课程 ID",
       course_ulid: "课程唯一编号",
+      course: "课程",
+      detail: "详情",
+      complete_course: "完整课程",
       ulid: "唯一编号",
       id: "内部 ID",
       category_tips: "课程分类",
