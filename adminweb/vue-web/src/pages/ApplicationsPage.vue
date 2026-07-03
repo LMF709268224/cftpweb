@@ -28,21 +28,35 @@ const copy = computed(() => t.value.applications)
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => applications.value.length >= pageSize)
 const applicationFieldLabels = computed<Record<string, string>>(() => copy.value.fieldLabels || {})
-const selectedFields = computed(() =>
-  Object.entries(selected.value || {}).map(([key, value]) => ({
-    key,
-    label: applicationFieldLabels.value[key] || key.replace(/_/g, " "),
-    value,
-    displayValue: key === "status" || key === "application_status" ? applicationLabel(value) : key.endsWith("_at") || key.endsWith("_time") ? formatDate(String(value || "")) : String(value ?? "-"),
-  })),
-)
+const selectedFields = computed(() => {
+  const current = selected.value || {}
+  const hasDuplicateCredentialName =
+    "cred_def_name" in current &&
+    "credential_name" in current &&
+    String(current.cred_def_name ?? "") === String(current.credential_name ?? "")
+
+  return Object.entries(current)
+    .filter(([key]) => !(hasDuplicateCredentialName && key === "credential_name"))
+    .map(([key, value]) => ({
+      key,
+      label: applicationFieldLabels.value[key] || key.replace(/_/g, " "),
+      value,
+      displayValue: key === "status" || key === "application_status" ? applicationLabel(value) : key.endsWith("_at") || key.endsWith("_time") ? formatDate(String(value || "")) : String(value ?? "-"),
+    }))
+})
 const selectedFiles = computed(() => files(selected.value || {}))
-const detailTabs = computed(() => [
-  { key: "overview" as const, title: copy.value.tabs.overview, count: selected.value ? 1 : 0 },
-  { key: "files" as const, title: copy.value.tabs.files, count: selectedFiles.value.length },
-  { key: "audit" as const, title: copy.value.tabs.audit, count: 3 },
-  { key: "raw" as const, title: copy.value.tabs.raw, count: 1 },
-])
+const isApprovedSelected = computed(() => isApprovedApplication(selected.value))
+const detailTabs = computed(() => {
+  const tabs: Array<{ key: DetailTab; title: string; count: number }> = [
+    { key: "overview" as const, title: copy.value.tabs.overview, count: selected.value ? 1 : 0 },
+    { key: "files" as const, title: copy.value.tabs.files, count: selectedFiles.value.length },
+  ]
+  if (!isApprovedSelected.value) {
+    tabs.push({ key: "audit" as const, title: copy.value.tabs.audit, count: 3 })
+  }
+  tabs.push({ key: "raw" as const, title: copy.value.tabs.raw, count: 1 })
+  return tabs
+})
 const statusOptions = computed(() => [
   { value: "0", label: copy.value.statusOptions.all },
   { value: "1", label: copy.value.statusOptions.pending },
@@ -93,6 +107,10 @@ function applicationLabel(value: unknown) {
   return normalized || "-"
 }
 
+function isApprovedApplication(app: JsonRecord | null | undefined) {
+  return applicationLabel(status(app)) === copy.value.statusOptions.approved
+}
+
 function fileHash(file: JsonRecord) {
   return String(file.file_hash || "")
 }
@@ -119,6 +137,9 @@ function mergeApplicationDetail(appID: string, detail: JsonRecord) {
   }
   if (selected.value && appUlid(selected.value) === appID) {
     selected.value = merged
+    if (isApprovedApplication(merged) && activeTab.value === "audit") {
+      activeTab.value = "overview"
+    }
   }
 }
 

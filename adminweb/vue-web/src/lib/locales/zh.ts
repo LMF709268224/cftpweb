@@ -682,7 +682,7 @@ export const zh = {
       resubmit: "需补交",
     },
     tabs: {
-      overview: "概览",
+      overview: "详情",
       files: "申请材料",
       audit: "审核操作",
       raw: "完整字段",
