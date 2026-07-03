@@ -243,7 +243,7 @@ onMounted(load)
           >
             {{ item.status || item.raw_status || item.payment_status }}
           </span>
-          <span v-else class="inline-flex h-9 items-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50">{{ copy.viewDetails }}</span>
+          <span v-else class="text-sm font-bold text-[#1890ff] transition hover:underline">{{ copy.viewDetails }}</span>
         </button>
       </div>
 
