@@ -1729,6 +1729,11 @@ export const zh = {
     updatedShort: "更新",
     published: "已发布",
     draft: "草稿",
+    courseStatuses: {
+      published: "已发布",
+      draft: "草稿",
+      deprecated: "已弃用",
+    },
     loadMore: "加载更多",
     courseTopData: "课程顶层数据",
     fillCourseHint: "填写课程基础信息后保存。",

@@ -186,17 +186,22 @@ const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() => p
 }), "Chapter"))
 const selectedQuizId = computed(() => quizId(selectedQuiz.value))
 const selectedQuestionId = computed(() => questionId(selectedQuestion.value))
-const selectedCoursePublished = computed(() => Boolean(selectedCourse.value?.is_published))
-const selectedCourseStatus = computed(() => selectedCourse.value?.status || (selectedCoursePublished.value ? "Published" : "Draft"))
+const selectedCourseStatusBadge = computed(() => courseStatusBadgeValue(selectedCourse.value))
 const selectedLesson = computed(() => lessons.value.find((item) => lessonId(item) === editingLessonId.value) || null)
 const selectedMaterialRecord = computed(() => materials.value.find((item) => materialId(item) === selectedMaterialId.value) || selectedMaterial.value)
 const completeCourseRecord = computed(() => {
   const value = completeCourse.value?.complete_course
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : completeCourse.value
 })
-const allLessonItems = computed<LessonListItem[]>(() => {
+const completeChapterRecords = computed(() => {
   const chapterDetails = Array.isArray(completeCourseRecord.value?.chapters) ? completeCourseRecord.value.chapters : []
+  return chapterDetails
+    .filter(isJsonRecord)
+    .map((record) => record.chapter && isJsonRecord(record.chapter) ? record.chapter : record)
+})
+const allLessonItems = computed<LessonListItem[]>(() => {
   const items: LessonListItem[] = []
+  const chapterDetails = Array.isArray(completeCourseRecord.value?.chapters) ? completeCourseRecord.value.chapters : []
   for (const detail of chapterDetails) {
     if (!detail || typeof detail !== "object" || Array.isArray(detail)) continue
     const record = detail as JsonRecord
@@ -262,6 +267,10 @@ const allQuizItems = computed<QuizListItem[]>(() => {
   return items
 })
 const selectedQuizItem = computed(() => allQuizItems.value.find((item) => quizId(item.quiz) === selectedQuizId.value) || null)
+const courseChapterCount = computed(() => completeCourse.value ? completeChapterRecords.value.length : Math.max(chapters.value.length, positiveCount(courseDetail.value?.chapter_count)))
+const courseLessonCount = computed(() => completeCourse.value ? allLessonItems.value.length : Math.max(lessons.value.length, positiveCount(courseDetail.value?.lesson_count)))
+const courseQuizCount = computed(() => completeCourse.value ? allQuizItems.value.length : Math.max(quizzes.value.length, positiveCount(courseDetail.value?.quiz_count)))
+const courseMaterialCount = computed(() => Math.max(materials.value.length + supplementaryMaterialItems.value.length, positiveCount(courseDetail.value?.material_count)))
 
 function emptyCourseForm(): CourseForm {
   return {
@@ -389,8 +398,43 @@ function versionOf(record: JsonRecord | null | undefined) {
   return Number(record?.version || 0)
 }
 
+function positiveCount(value: unknown) {
+  const count = Number(value || 0)
+  return Number.isFinite(count) && count > 0 ? count : 0
+}
+
 function courseTitle(course: JsonRecord | null | undefined) {
   return String(pickFirst(course || {}, ["title", "name", "course_title"]) || courseId(course) || copy.value.fallbacks.course)
+}
+
+function courseDescription(course: JsonRecord | null | undefined) {
+  return String(pickFirst(course || {}, ["description", "desc", "summary", "course_description"]) || "")
+}
+
+function courseStatusValue(course: JsonRecord | null | undefined) {
+  const status = String(pickFirst(course || {}, ["status", "raw_status"]) || "").trim()
+  if (status) return status
+  return course?.is_published ? "Published" : "Draft"
+}
+
+function courseStatusKey(course: JsonRecord | null | undefined) {
+  const normalized = courseStatusValue(course).trim().toLowerCase()
+  if (normalized === "active" || normalized === "published") return "published"
+  if (normalized === "deprecated" || normalized === "deprecate") return "deprecated"
+  if (normalized === "draft" || normalized === "inactive") return "draft"
+  return normalized || "draft"
+}
+
+function courseStatusLabel(course: JsonRecord | null | undefined) {
+  const key = courseStatusKey(course)
+  return copy.value.courseStatuses[key as keyof typeof copy.value.courseStatuses] || courseStatusValue(course) || copy.value.unknown
+}
+
+function courseStatusBadgeValue(course: JsonRecord | null | undefined) {
+  const key = courseStatusKey(course)
+  if (key === "published") return "COMPLETED"
+  if (key === "deprecated") return "DEPRECATED"
+  return "PENDING"
 }
 
 function chapterTitle(chapter: JsonRecord | null | undefined) {
@@ -658,7 +702,7 @@ function courseFormFrom(course: JsonRecord): CourseForm {
   return {
     category_tips: String(course.category_tips || ""),
     title: String(course.title || ""),
-    description: String(course.description || ""),
+    description: courseDescription(course),
     thumbnail_object_key: String(course.thumbnail_object_key || ""),
     thumbnail_file_hash: String(course.thumbnail_file_hash || ""),
     duration_min: String(course.duration_min || 0),
@@ -682,6 +726,22 @@ function coursePayload(version?: unknown) {
   }
   if (version !== undefined) payload.version = Number(version || 0)
   return payload
+}
+
+function extractCourseRecord(record: JsonRecord | null | undefined) {
+  if (!record) return null
+  for (const key of ["course", "course_detail", "detail", "summary"]) {
+    const value = record[key]
+    if (isJsonRecord(value)) return value
+  }
+  return record
+}
+
+function mergeSelectedCourse(record: JsonRecord | null | undefined) {
+  const course = extractCourseRecord(record)
+  if (!course || !selectedCourse.value) return
+  selectedCourse.value = { ...selectedCourse.value, ...course }
+  courseForm.value = courseFormFrom(selectedCourse.value)
 }
 
 function resetContent() {
@@ -759,6 +819,7 @@ async function loadCourseDetail() {
   detailLoading.value = true
   try {
     courseDetail.value = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/detail`)
+    mergeSelectedCourse(courseDetail.value)
   } catch (err) {
     console.error(err)
     courseDetail.value = null
@@ -772,6 +833,7 @@ async function loadCompleteCourse() {
   completeLoading.value = true
   try {
     completeCourse.value = await apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/complete`)
+    mergeSelectedCourse(extractCourseRecord(completeCourseRecord.value))
   } catch (err) {
     console.error(err)
     completeCourse.value = null
@@ -1690,8 +1752,8 @@ onMounted(() => {
             <div class="text-sm text-slate-500">
               <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.updatedShort }}</span>{{ formatDate(String(course.updated_at || course.created_at || "")) }}
             </div>
-            <span class="justify-self-start rounded-full border px-3 py-1 text-xs font-black lg:justify-self-end" :class="badgeClass(course.is_published ? 'COMPLETED' : 'PENDING')">
-              {{ course.is_published ? copy.published : copy.draft }}
+            <span class="justify-self-start rounded-full border px-3 py-1 text-xs font-black lg:justify-self-end" :class="badgeClass(courseStatusBadgeValue(course))">
+              {{ courseStatusLabel(course) }}
             </span>
           </div>
         </button>
@@ -1710,8 +1772,8 @@ onMounted(() => {
             <h2 class="text-xl font-black">{{ selectedCourseId ? copy.courseTopData : copy.newCourse }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ selectedCourseId || copy.fillCourseHint }}</p>
           </div>
-          <span v-if="selectedCourseId" class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(selectedCourseStatus)">
-            {{ selectedCoursePublished ? copy.published : selectedCourseStatus }}
+          <span v-if="selectedCourseId" class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(selectedCourseStatusBadge)">
+            {{ courseStatusLabel(selectedCourse) }}
           </span>
         </div>
 
@@ -1773,19 +1835,19 @@ onMounted(() => {
             <div class="grid gap-3 sm:grid-cols-2">
               <div class="rounded-xl bg-slate-50 p-3">
                 <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.chapters }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseDetail?.chapter_count ?? chapters.length }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseChapterCount }}</div>
               </div>
               <div class="rounded-xl bg-slate-50 p-3">
                 <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.lessons }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseDetail?.lesson_count ?? lessons.length }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseLessonCount }}</div>
               </div>
               <div class="rounded-xl bg-slate-50 p-3">
                 <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.quizzes }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseDetail?.quiz_count ?? 0 }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseQuizCount }}</div>
               </div>
               <div class="rounded-xl bg-slate-50 p-3">
                 <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.materials }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseDetail?.material_count ?? materials.length }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseMaterialCount }}</div>
               </div>
             </div>
             <div class="rounded-xl border border-slate-200 p-3">
