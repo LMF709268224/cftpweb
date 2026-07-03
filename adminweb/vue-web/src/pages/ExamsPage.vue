@@ -358,16 +358,6 @@ onMounted(() => loadExams(1))
             </div>
             <div class="flex shrink-0 items-center gap-2">
               <button
-                v-if="selectedExamUlid"
-                class="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0b4ea2] px-4 text-sm font-black text-white shadow-sm disabled:opacity-50"
-                type="button"
-                :disabled="actionLoading"
-                @click="syncExamResult"
-              >
-                <PlayCircle class="h-4 w-4" :class="actionLoading ? 'animate-spin' : ''" />
-                {{ copy.syncResult }}
-              </button>
-              <button
                 class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
                 type="button"
                 :aria-label="copy.close"
@@ -507,6 +497,18 @@ onMounted(() => loadExams(1))
             <pre class="mt-4 max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify({ detail: detail || selectedSummary, result, transitions }, null, 2) }}</pre>
           </details>
             </div>
+          </div>
+
+          <div v-if="selectedExamUlid" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-6 py-4">
+            <button
+              class="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0b4ea2] px-4 text-sm font-black text-white shadow-sm disabled:opacity-50"
+              type="button"
+              :disabled="actionLoading"
+              @click="syncExamResult"
+            >
+              <PlayCircle class="h-4 w-4" :class="actionLoading ? 'animate-spin' : ''" />
+              {{ copy.syncResult }}
+            </button>
           </div>
         </section>
       </div>
