@@ -1,9 +1,12 @@
 package handler
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"adminbff/config"
@@ -81,6 +84,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !IsExpectedCasdoorApplication(token.AccessToken, claims, h.CasdoorClientId, h.CasdoorAppName) {
+		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "token was not issued for the admin application")
+		return
+	}
+
 	if !IsCftpAdmin(&claims.User) {
 		WriteError(w, http.StatusForbidden, ErrAuthFailed, "only cftp admins are allowed to login")
 		return
@@ -121,6 +129,11 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	claims, err := casdoorsdk.ParseJwtToken(token.AccessToken)
 	if err != nil {
 		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "failed to parse token: "+err.Error())
+		return
+	}
+
+	if !IsExpectedCasdoorApplication(token.AccessToken, claims, h.CasdoorClientId, h.CasdoorAppName) {
+		WriteError(w, http.StatusUnauthorized, ErrInvalidToken, "token was not issued for the admin application")
 		return
 	}
 
@@ -185,4 +198,80 @@ func IsCftpAdmin(user *casdoorsdk.User) bool {
 		}
 	}
 	return false
+}
+
+func IsExpectedCasdoorApplication(tokenStr string, claims *casdoorsdk.Claims, expectedClientID, expectedAppName string) bool {
+	expected := expectedCasdoorAudiences(expectedClientID, expectedAppName)
+	if len(expected) == 0 {
+		return false
+	}
+
+	for _, aud := range tokenAudiences(tokenStr, claims) {
+		if _, ok := expected[strings.ToLower(strings.TrimSpace(aud))]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func expectedCasdoorAudiences(expectedClientID, expectedAppName string) map[string]struct{} {
+	expected := make(map[string]struct{}, 2)
+	for _, value := range []string{expectedClientID, expectedAppName} {
+		value = strings.ToLower(strings.TrimSpace(value))
+		if value != "" {
+			expected[value] = struct{}{}
+		}
+	}
+	return expected
+}
+
+func tokenAudiences(tokenStr string, claims *casdoorsdk.Claims) []string {
+	audiences := make([]string, 0, 4)
+	if claims != nil {
+		for _, aud := range claims.RegisteredClaims.Audience {
+			audiences = append(audiences, aud)
+		}
+	}
+
+	payload, ok := decodeJWTPayload(tokenStr)
+	if !ok {
+		return audiences
+	}
+
+	for _, key := range []string{"aud", "azp", "client_id", "clientId", "application", "app", "appName"} {
+		audiences = appendJSONClaimValues(audiences, payload[key])
+	}
+	return audiences
+}
+
+func decodeJWTPayload(tokenStr string) (map[string]interface{}, bool) {
+	parts := strings.Split(tokenStr, ".")
+	if len(parts) < 2 {
+		return nil, false
+	}
+
+	raw, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return nil, false
+	}
+
+	var payload map[string]interface{}
+	if err := json.Unmarshal(raw, &payload); err != nil {
+		return nil, false
+	}
+	return payload, true
+}
+
+func appendJSONClaimValues(values []string, raw interface{}) []string {
+	switch v := raw.(type) {
+	case string:
+		return append(values, v)
+	case []interface{}:
+		for _, item := range v {
+			if s, ok := item.(string); ok {
+				values = append(values, s)
+			}
+		}
+	}
+	return values
 }

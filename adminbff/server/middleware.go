@@ -105,6 +105,13 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		casdoorCfg := s.config.SecretConfig.Casdoor
+		if !handler.IsExpectedCasdoorApplication(tokenStr, claims, casdoorCfg.ClientID, casdoorCfg.AppName) {
+			slog.Warn("authMiddleware: token was not issued for admin application", "casdoor_user_id", claims.User.Id, "path", r.URL.Path)
+			handler.WriteError(w, http.StatusUnauthorized, handler.ErrInvalidToken, "token was not issued for the admin application")
+			return
+		}
+
 		// 验证是否是管理员
 		if !handler.IsCftpAdmin(&claims.User) {
 			slog.Warn("authMiddleware: user is not an admin", "casdoor_user_id", claims.User.Id)

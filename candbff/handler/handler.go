@@ -43,6 +43,7 @@ type Handler struct {
 	CasdoorEndpoint     string
 	CasdoorClientId     string
 	CasdoorClientSecret string
+	CasdoorAppName      string
 }
 
 func New(
@@ -59,6 +60,7 @@ func New(
 	casdoorEndpoint string,
 	casdoorClientId string,
 	casdoorClientSecret string,
+	casdoorAppName string,
 ) *Handler {
 	return &Handler{
 		Lms:                 lms,
@@ -74,6 +76,7 @@ func New(
 		CasdoorEndpoint:     casdoorEndpoint,
 		CasdoorClientId:     casdoorClientId,
 		CasdoorClientSecret: casdoorClientSecret,
+		CasdoorAppName:      casdoorAppName,
 	}
 }
 

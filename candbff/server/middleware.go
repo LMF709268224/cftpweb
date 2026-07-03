@@ -105,6 +105,19 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
+		casdoorCfg := s.config.SecretConfig.Casdoor
+		if !handler.IsExpectedCasdoorApplication(tokenStr, claims, casdoorCfg.ClientID, casdoorCfg.AppName) {
+			slog.Warn("authMiddleware: token was not issued for candidate application", "casdoor_user_id", claims.User.Id, "path", r.URL.Path)
+			handler.WriteError(w, http.StatusUnauthorized, handler.ErrInvalidToken, "token was not issued for the candidate application")
+			return
+		}
+
+		if !handler.IsCftpStudent(&claims.User) {
+			slog.Warn("authMiddleware: user is not a student", "casdoor_user_id", claims.User.Id, "path", r.URL.Path)
+			handler.WriteError(w, http.StatusForbidden, handler.ErrNotStudent, "student privileges required")
+			return
+		}
+
 		// 调用 gmid 服务进行 UID 解析
 		resp, err := s.grpcPool.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{
 			UserUuid: claims.User.Id,
