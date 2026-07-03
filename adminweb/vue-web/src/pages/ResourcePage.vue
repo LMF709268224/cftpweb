@@ -13,6 +13,7 @@ import {
   humanizeKey,
   type JsonRecord,
 } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 import type { ResourceRouteMeta } from "@/router"
 
 type PageData = JsonRecord | JsonRecord[]
@@ -24,10 +25,12 @@ const rawData = ref<PageData | null>(null)
 const items = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const pageSize = 20
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.resourceAdmin)
 
 const meta = computed(() => route.meta as ResourceRouteMeta)
 
-const selectedTitle = computed(() => (selected.value ? getDisplayTitle(selected.value) : "请选择一条记录"))
+const selectedTitle = computed(() => (selected.value ? getDisplayTitle(selected.value) : copy.value.selectRecord))
 const selectedEntries = computed(() => Object.entries(selected.value || {}))
 const hasNext = computed(() => items.value.length >= pageSize)
 const hasPrevious = computed(() => page.value > 1)
@@ -81,7 +84,7 @@ async function load() {
     console.error(err)
     items.value = []
     selected.value = null
-    toast.error("加载数据失败，请稍后重试。")
+    toast.error(copy.value.loadFailed)
   } finally {
     loading.value = false
   }
@@ -133,7 +136,7 @@ async function saveEdit() {
     }
     
     if (!idValue) {
-      toast.error("无法找到资源的 ID 字段，无法保存")
+      toast.error(copy.value.missingId)
       return
     }
 
@@ -144,12 +147,12 @@ async function saveEdit() {
       body: JSON.stringify(parsed)
     })
     
-    toast.success("保存成功")
+    toast.success(copy.value.saveSuccess)
     isEditing.value = false
     load()
   } catch (err: any) {
     console.error(err)
-    toast.error("保存失败：" + (err.message || String(err)))
+    toast.error(copy.value.saveFailed(err.message || String(err)))
   } finally {
     loading.value = false
   }
@@ -183,29 +186,29 @@ onMounted(load)
       >
         <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
         <RefreshCw v-else class="h-4 w-4" />
-        刷新
+        {{ copy.refresh }}
       </button>
     </header>
 
     <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
       <div class="flex items-center justify-between gap-4">
         <div>
-          <h2 class="text-xl font-black">列表</h2>
-          <p class="mt-1 text-sm text-slate-500">每页 20 条，列表隐藏 ULID；点进详情后可查看完整字段。</p>
+          <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
         <div class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">
-          第 {{ page }} 页 / {{ items.length }} 条
+          {{ copy.pageSummary(page, items.length) }}
         </div>
       </div>
 
       <div v-if="loading" class="mt-6 flex min-h-[320px] items-center justify-center rounded-2xl border border-dashed border-slate-200 text-slate-500">
         <Loader2 class="mr-2 h-5 w-5 animate-spin" />
-        正在加载...
+        {{ copy.loading }}
       </div>
 
       <div v-else-if="!items.length" class="mt-6 flex min-h-[320px] flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 text-slate-500">
         <FileSearch class="mb-3 h-10 w-10 text-slate-300" />
-        暂无数据
+        {{ copy.empty }}
       </div>
 
       <div v-else class="mt-6 overflow-hidden rounded-2xl border border-slate-200">
@@ -239,7 +242,7 @@ onMounted(load)
           >
             {{ item.status || item.raw_status || item.payment_status }}
           </span>
-          <span v-else class="text-sm font-bold text-slate-400">查看详情</span>
+          <span v-else class="text-sm font-bold text-slate-400">{{ copy.viewDetails }}</span>
         </button>
       </div>
 
@@ -251,7 +254,7 @@ onMounted(load)
           @click="previousPage"
         >
           <ArrowLeft class="h-4 w-4" />
-          上一页
+          {{ copy.prev }}
         </button>
         <button
           class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
@@ -259,7 +262,7 @@ onMounted(load)
           :disabled="!hasNext || loading"
           @click="nextPage"
         >
-          下一页
+          {{ copy.next }}
           <ArrowRight class="h-4 w-4" />
         </button>
       </div>
@@ -269,12 +272,12 @@ onMounted(load)
       <div class="mb-5 flex items-center justify-between gap-4">
         <div>
           <h2 class="text-xl font-black">{{ selectedTitle }}</h2>
-          <p class="mt-1 text-sm text-slate-500">详情区域展示资源配置字段。</p>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
         </div>
       </div>
 
       <div v-if="!selected" class="rounded-2xl border border-dashed border-slate-200 p-12 text-center text-slate-500">
-        请先在列表中选择一条记录。
+        {{ copy.selectFromList }}
       </div>
 
       <div v-else class="grid gap-5 xl:grid-cols-[1fr_1.1fr]">
@@ -292,13 +295,13 @@ onMounted(load)
         </div>
         <div class="flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-slate-700">ԭʼ JSON</h3>
+            <h3 class="text-sm font-bold text-slate-700">{{ copy.rawJson }}</h3>
             <div v-if="!isEditing" class="flex gap-2">
-              <button class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800" @click="startEdit">编辑原始 JSON</button>
+              <button class="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-bold text-white hover:bg-slate-800" @click="startEdit">{{ copy.editRawJson }}</button>
             </div>
             <div v-else class="flex gap-2">
-              <button class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50" @click="cancelEdit">取消</button>
-              <button class="rounded-lg bg-[#0b7bdc] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0966b8]" @click="saveEdit">保存并提交</button>
+              <button class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50" @click="cancelEdit">{{ copy.cancel }}</button>
+              <button class="rounded-lg bg-[#0b7bdc] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0966b8]" @click="saveEdit">{{ copy.saveAndSubmit }}</button>
             </div>
           </div>
           <pre v-if="!isEditing" class="max-h-[720px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>

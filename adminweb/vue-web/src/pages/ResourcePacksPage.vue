@@ -4,6 +4,7 @@ import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
+import { useAdminLanguage } from "@/lib/language"
 
 const pageSize = 10
 
@@ -19,6 +20,8 @@ const nextPageToken = ref("")
 const previousTokens = ref<string[]>([])
 const currentPage = ref(1)
 let detailRequestId = 0
+const { t } = useAdminLanguage()
+const copy = computed(() => t.value.resourcePacksAdmin)
 
 const form = ref({
   pack_id: "",
@@ -46,7 +49,7 @@ function packId(pack: JsonRecord | null) {
 }
 
 function packTitle(pack: JsonRecord | null) {
-  return String(pack?.title || pack?.pack_id || "未命名资源包")
+  return String(pack?.title || pack?.pack_id || copy.value.unnamed)
 }
 
 function packVersion(pack: JsonRecord | null) {
@@ -97,7 +100,7 @@ async function loadPackDetail(pack: JsonRecord | null) {
   } catch (err) {
     console.error(err)
     if (requestId === detailRequestId) {
-      toast.error("资源包详情加载失败")
+      toast.error(copy.value.toasts.detailLoadFailed)
     }
   } finally {
     if (requestId === detailRequestId) {
@@ -123,7 +126,7 @@ async function load() {
     packs.value = []
     selected.value = null
     fillForm(null)
-    toast.error("资源包列表加载失败")
+    toast.error(copy.value.toasts.listLoadFailed)
   } finally {
     loading.value = false
   }
@@ -156,11 +159,11 @@ function startCreate() {
 
 async function savePack() {
   if (!form.value.title.trim()) {
-    toast.error("资源包标题不能为空")
+    toast.error(copy.value.toasts.titleRequired)
     return
   }
   if (mode.value === "edit" && (!form.value.pack_id || form.value.version <= 0)) {
-    toast.error("更新资源包需要有效的 pack_id 和 version")
+    toast.error(copy.value.toasts.updateRequiresVersion)
     return
   }
 
@@ -182,7 +185,7 @@ async function savePack() {
         method: "POST",
         body: JSON.stringify(body),
       })
-      toast.success("资源包已创建")
+      toast.success(copy.value.toasts.created)
     } else {
       body.status = form.value.status
       body.version = form.value.version
@@ -190,13 +193,13 @@ async function savePack() {
         method: "PUT",
         body: JSON.stringify(body),
       })
-      toast.success("资源包已保存")
+      toast.success(copy.value.toasts.saved)
     }
 
     await load()
   } catch (err) {
     console.error(err)
-    toast.error("资源包保存失败")
+    toast.error(copy.value.toasts.saveFailed)
   } finally {
     saving.value = false
   }
@@ -207,21 +210,21 @@ async function deletePack() {
   const id = packId(selected.value)
   const version = packVersion(selected.value)
   if (!id || version <= 0) {
-    toast.error("删除资源包需要有效的 pack_id 和 version")
+    toast.error(copy.value.toasts.deleteRequiresVersion)
     return
   }
-  if (!window.confirm(`确定删除资源包「${packTitle(selected.value)}」吗？`)) return
+  if (!window.confirm(copy.value.confirmDelete(packTitle(selected.value)))) return
 
   saving.value = true
   try {
     await apiClient(`/api/lms/resource-packs/${encodeURIComponent(id)}?version=${version}`, {
       method: "DELETE",
     })
-    toast.success("资源包已删除")
+    toast.success(copy.value.toasts.deleted)
     await load()
   } catch (err) {
     console.error(err)
-    toast.error("资源包删除失败")
+    toast.error(copy.value.toasts.deleteFailed)
   } finally {
     saving.value = false
   }
@@ -249,18 +252,18 @@ onMounted(load)
   <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight text-slate-950">资源包配置</h1>
-        <p class="mt-2 text-slate-600">维护资源包信息、封面和状态。</p>
+        <h1 class="text-4xl font-black tracking-tight text-slate-950">{{ copy.title }}</h1>
+        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" :disabled="loading" @click="load">
           <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
           <RefreshCw v-else class="h-4 w-4" />
-          刷新
+          {{ copy.refresh }}
         </button>
         <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="startCreate">
           <Plus class="h-4 w-4" />
-          新增资源包
+          {{ copy.newPack }}
         </button>
       </div>
     </header>
@@ -269,23 +272,23 @@ onMounted(load)
       <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 p-5">
           <div>
-            <h2 class="text-xl font-black">资源包列表</h2>
-            <p class="mt-1 text-sm text-slate-500">选择资源包后通过弹框查看详情并编辑。</p>
+            <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">本页 {{ packs.length }} / {{ pageSize }} 条</span>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">{{ copy.pageSizeText(packs.length, pageSize) }}</span>
         </div>
 
         <div v-if="loading" class="p-12 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          正在加载...
+          {{ copy.loading }}
         </div>
-        <div v-else-if="!packs.length" class="p-12 text-center text-slate-500">暂无资源包</div>
+        <div v-else-if="!packs.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
         <div v-else>
           <div class="hidden grid-cols-[minmax(0,1fr)_84px_96px_110px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
-            <span>资源包</span>
-            <span>版本</span>
-            <span class="text-right">状态</span>
-            <span class="text-right">操作</span>
+            <span>{{ copy.columns.pack }}</span>
+            <span>{{ copy.columns.version }}</span>
+            <span class="text-right">{{ copy.columns.status }}</span>
+            <span class="text-right">{{ copy.columns.action }}</span>
           </div>
           <button
             v-for="pack in packs"
@@ -307,15 +310,15 @@ onMounted(load)
               <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-end">
                 {{ pack.status || "Active" }}
               </span>
-              <span class="justify-self-start rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-black text-blue-700 lg:justify-self-end">查看详情</span>
+              <span class="justify-self-start rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-black text-blue-700 lg:justify-self-end">{{ copy.viewDetails }}</span>
             </div>
           </button>
         </div>
 
         <div class="flex items-center justify-end gap-3 border-t border-slate-200 p-5">
-          <span class="mr-auto text-sm font-bold text-slate-500">第 {{ currentPage }} 页</span>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevious || loading" @click="previousPage">上一页</button>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext || loading" @click="nextPage">下一页</button>
+          <span class="mr-auto text-sm font-bold text-slate-500">{{ copy.pageText(currentPage) }}</span>
+          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
+          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
         </div>
       </section>
 
@@ -323,72 +326,72 @@ onMounted(load)
         <div class="flex max-h-[88vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
           <div>
-            <h2 class="text-xl font-black">{{ mode === "create" ? "新增资源包" : "资源包详情" }}</h2>
-            <p class="mt-1 text-sm text-slate-500">系统字段仅用于查看，不可直接修改。</p>
+            <h2 class="text-xl font-black">{{ mode === "create" ? copy.createTitle : copy.detailTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.readonlyHint }}</p>
             <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
               <Loader2 class="h-3.5 w-3.5 animate-spin" />
-              正在加载详情...
+              {{ copy.detailLoading }}
             </p>
           </div>
-          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" aria-label="关闭" @click="closePackDetail">
+          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closePackDetail">
             <X class="h-5 w-5" />
           </button>
         </div>
 
         <div class="flex-1 space-y-5 overflow-y-auto p-5">
           <div>
-            <div class="mb-3 text-sm font-black text-slate-950">基础信息</div>
+            <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.basic }}</div>
             <div class="grid gap-4 md:grid-cols-2">
               <label class="text-sm font-bold">
-                标题
-                <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="资源包标题" />
+                {{ copy.fields.title }}
+                <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.title" />
               </label>
               <label class="text-sm font-bold">
-                Category
-                <input v-model="form.category" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="public / member / ..." />
+                {{ copy.fields.category }}
+                <input v-model="form.category" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.category" />
               </label>
               <label class="text-sm font-bold">
-                Icon
-                <input v-model="form.icon" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="FileBarChart" />
+                {{ copy.fields.icon }}
+                <input v-model="form.icon" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.icon" />
               </label>
               <label class="md:col-span-2 text-sm font-bold">
-                描述
-                <textarea v-model="form.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="资源包描述" />
+                {{ copy.fields.description }}
+                <textarea v-model="form.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.description" />
               </label>
             </div>
           </div>
 
           <div class="border-t border-slate-100 pt-5">
-            <div class="mb-3 text-sm font-black text-slate-950">路径与封面</div>
+            <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.pathThumbnail }}</div>
             <div class="grid gap-4 md:grid-cols-2">
               <label class="text-sm font-bold">
-                Respath
-                <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="/res-packages/..." />
+                {{ copy.fields.respath }}
+                <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.respath" />
               </label>
               <label class="text-sm font-bold">
-                封面 Object Key
-                <input v-model="form.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="resource-packs/.../thumbnail.jpg" />
+                {{ copy.fields.thumbnailObjectKey }}
+                <input v-model="form.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
               </label>
               <label class="md:col-span-2 text-sm font-bold">
-                封面 File Hash
-                <input v-model="form.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" placeholder="SHA256 Hash" />
+                {{ copy.fields.thumbnailFileHash }}
+                <input v-model="form.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailFileHash" />
               </label>
             </div>
           </div>
 
           <div class="border-t border-slate-100 pt-5">
-            <div class="mb-3 text-sm font-black text-slate-950">系统信息</div>
+            <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.system }}</div>
             <div class="grid gap-4 md:grid-cols-3">
               <label class="text-sm font-bold">
-                Pack ID
-                <input v-model="form.pack_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'" placeholder="留空则由后台生成" />
+                {{ copy.fields.packId }}
+                <input v-model="form.pack_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'" :placeholder="copy.placeholders.packId" />
               </label>
               <label class="text-sm font-bold">
-                状态
-                <input v-model="form.status" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :disabled="mode === 'create'" placeholder="Active" />
+                {{ copy.fields.status }}
+                <input v-model="form.status" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :disabled="mode === 'create'" :placeholder="copy.placeholders.status" />
               </label>
               <label class="text-sm font-bold">
-                Version
+                {{ copy.fields.version }}
                 <input v-model.number="form.version" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
               </label>
             </div>
@@ -403,20 +406,20 @@ onMounted(load)
               @click="deletePack"
             >
               <Trash2 class="h-4 w-4" />
-              删除资源包
+              {{ copy.deletePack }}
             </button>
             <span v-else class="hidden sm:block"></span>
             <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePack">
               <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
               <Save v-else class="h-4 w-4" />
-              {{ mode === "create" ? "创建资源包" : "保存资源包" }}
+              {{ mode === "create" ? copy.createPack : copy.savePack }}
             </button>
           </div>
 
           <div v-if="selected" class="rounded-2xl border border-slate-200 bg-slate-50">
             <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-black">
               <FileBox class="h-4 w-4 text-blue-700" />
-              完整字段
+              {{ copy.sections.raw }}
             </div>
             <div class="divide-y divide-slate-200 px-4">
               <div v-for="[key, value] in selectedEntries" :key="key" class="grid gap-2 py-2.5 text-sm md:grid-cols-[170px_1fr]">
