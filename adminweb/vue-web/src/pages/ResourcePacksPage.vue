@@ -181,26 +181,35 @@ function startCreate() {
   detailOpen.value = true
 }
 
-async function savePack() {
+function validatePackForm() {
   if (!form.value.title.trim()) {
     toast.error(copy.value.toasts.titleRequired)
-    return
+    return false
+  }
+  if (!form.value.respath.trim()) {
+    toast.error(copy.value.toasts.respathRequired)
+    return false
   }
   if (mode.value === "edit" && (!form.value.pack_id || form.value.version <= 0)) {
     toast.error(copy.value.toasts.updateRequiresVersion)
-    return
+    return false
   }
+  return true
+}
+
+async function savePack() {
+  if (!validatePackForm()) return
 
   saving.value = true
   try {
     const body: JsonRecord = {
       title: form.value.title.trim(),
-      description: form.value.description,
-      thumbnail_object_key: form.value.thumbnail_object_key,
-      thumbnail_file_hash: form.value.thumbnail_file_hash,
-      respath: form.value.respath,
-      icon: form.value.icon,
-      category: form.value.category,
+      description: form.value.description.trim(),
+      thumbnail_object_key: form.value.thumbnail_object_key.trim(),
+      thumbnail_file_hash: form.value.thumbnail_file_hash.trim(),
+      respath: form.value.respath.trim(),
+      icon: form.value.icon.trim(),
+      category: form.value.category.trim(),
     }
 
     if (mode.value === "create") {
@@ -438,7 +447,7 @@ onMounted(load)
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="text-sm font-bold">
                     {{ copy.fields.title }}
-                    <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.title" />
+                    <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.title" required />
                   </label>
                   <label class="text-sm font-bold">
                     {{ copy.fields.category }}
@@ -460,7 +469,7 @@ onMounted(load)
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="text-sm font-bold">
                     {{ copy.fields.respath }}
-                    <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.respath" />
+                    <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.respath" required />
                   </label>
                   <label class="text-sm font-bold">
                     {{ copy.fields.thumbnailObjectKey }}
