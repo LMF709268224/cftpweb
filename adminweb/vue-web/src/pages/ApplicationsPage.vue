@@ -27,7 +27,15 @@ const copy = computed(() => t.value.applications)
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => applications.value.length >= pageSize)
-const selectedFields = computed(() => selected.value || {})
+const applicationFieldLabels = computed<Record<string, string>>(() => copy.value.fieldLabels || {})
+const selectedFields = computed(() =>
+  Object.entries(selected.value || {}).map(([key, value]) => ({
+    key,
+    label: applicationFieldLabels.value[key] || key.replace(/_/g, " "),
+    value,
+    displayValue: key === "status" || key === "application_status" ? applicationLabel(value) : key.endsWith("_at") || key.endsWith("_time") ? formatDate(String(value || "")) : String(value ?? "-"),
+  })),
+)
 const selectedFiles = computed(() => files(selected.value || {}))
 const detailTabs = computed(() => [
   { key: "overview" as const, title: copy.value.tabs.overview, count: selected.value ? 1 : 0 },
@@ -300,40 +308,37 @@ onMounted(() => load(1))
             </div>
           </div>
 
-          <div class="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[240px_minmax(0,1fr)]">
-            <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
-              <div class="space-y-2">
+          <div class="border-b border-slate-200 px-5 py-4">
+            <div class="flex gap-2 overflow-x-auto">
                 <button
                   v-for="tab in detailTabs"
                   :key="tab.key"
-                  class="w-full rounded-2xl border px-4 py-3 text-left"
+                  class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-left text-sm font-black transition"
                   :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
                   type="button"
                   @click="activeTab = tab.key"
                 >
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="font-black">{{ tab.title }}</span>
-                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
-                  </div>
+                  <span>{{ tab.title }}</span>
+                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
                 </button>
-              </div>
-            </aside>
+            </div>
+          </div>
 
-            <main class="min-w-0 overflow-y-auto p-5">
+          <main class="h-[60vh] min-h-[360px] max-h-[620px] min-w-0 overflow-y-auto p-5">
               <div v-if="activeTab === 'overview'" class="grid gap-4 md:grid-cols-2">
-                <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
-                  {{ key }}
+                <label v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold">
+                  {{ field.label }}
                   <textarea
-                    v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                    v-if="Array.isArray(field.value) || (field.value && typeof field.value === 'object')"
                     class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
                     disabled
-                    :value="JSON.stringify(value, null, 2)"
+                    :value="JSON.stringify(field.value, null, 2)"
                   />
                   <input
                     v-else
                     class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
                     disabled
-                    :value="key === 'status' ? applicationLabel(value) : String(value ?? '-')"
+                    :value="field.displayValue"
                   />
                 </label>
               </div>
@@ -346,24 +351,24 @@ onMounted(() => load(1))
                 <div v-else-if="!selectedFiles.length" class="rounded-xl border border-dashed border-slate-200 bg-white p-5 text-sm text-slate-500">
                   {{ copy.noFiles }}
                 </div>
-                <div v-for="file in selectedFiles" v-else :key="String(file.file_hash || file.file_name || file.name)" class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div class="flex items-start justify-between gap-4">
+                <div v-for="file in selectedFiles" v-else :key="String(file.file_hash || file.file_name || file.name)" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                  <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div class="min-w-0">
-                      <div class="flex items-center gap-2 font-black text-slate-900">
+                      <div class="flex items-center gap-2 text-sm font-black text-slate-900">
                         <FileText class="h-4 w-4 shrink-0 text-blue-600" />
                         <span class="truncate">{{ fileName(file) }}</span>
                       </div>
-                      <div class="mt-2 flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-                        <span class="rounded-full bg-slate-100 px-2 py-1">{{ copy.fileMeta.usage }}{{ fileUsage(file) }}</span>
-                        <span v-if="fileSize(file)" class="rounded-full bg-slate-100 px-2 py-1">{{ copy.fileMeta.size }}{{ fileSize(file) }}</span>
-                        <span v-if="file.file_ext" class="rounded-full bg-slate-100 px-2 py-1">{{ copy.fileMeta.ext }}{{ file.file_ext }}</span>
+                      <div class="mt-3 grid gap-2 text-xs font-bold text-slate-600 sm:grid-cols-3 lg:max-w-2xl">
+                        <span class="min-w-0 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">{{ copy.fileMeta.usage }}{{ fileUsage(file) }}</span>
+                        <span v-if="fileSize(file)" class="min-w-0 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">{{ copy.fileMeta.size }}{{ fileSize(file) }}</span>
+                        <span v-if="file.file_ext" class="min-w-0 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">{{ copy.fileMeta.ext }}{{ file.file_ext }}</span>
                       </div>
-                      <div v-if="fileHash(file)" class="mt-2 break-all text-xs text-slate-400">{{ copy.fileMeta.sha256 }}{{ fileHash(file) }}</div>
+                      <div v-if="fileHash(file)" class="mt-3 break-all rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-400">{{ copy.fileMeta.sha256 }}{{ fileHash(file) }}</div>
                     </div>
-                    <div class="flex shrink-0 gap-2">
+                    <div class="flex shrink-0 flex-wrap gap-2 sm:justify-end">
                       <a
                         v-if="fileUrl(file)"
-                        class="inline-flex items-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-black text-blue-700 hover:bg-blue-100"
+                        class="inline-flex h-9 items-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-black text-blue-700 hover:bg-blue-100"
                         :href="fileUrl(file)"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -373,7 +378,7 @@ onMounted(() => load(1))
                       </a>
                       <a
                         v-if="fileUrl(file)"
-                        class="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50"
+                        class="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700 hover:bg-slate-50"
                         :href="fileUrl(file)"
                         :download="fileName(file)"
                       >
@@ -417,8 +422,7 @@ onMounted(() => load(1))
                 </div>
                 <pre class="max-h-[560px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
               </div>
-            </main>
-          </div>
+          </main>
         </template>
         </section>
       </div>
