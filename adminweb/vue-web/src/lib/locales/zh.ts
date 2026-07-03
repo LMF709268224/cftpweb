@@ -1251,6 +1251,8 @@ export const zh = {
       updateRequiresVersion: "更新资源包需要有效的 pack_id 和 version",
       created: "资源包已创建",
       saved: "资源包已保存",
+      duplicatePack: "该资源包已存在，请更换 Pack ID，或在列表中编辑已有资源包。",
+      invalidRequest: "提交内容不符合要求，请检查必填项和格式后再保存。",
       saveFailed: "资源包保存失败",
       deleteRequiresVersion: "删除资源包需要有效的 pack_id 和 version",
       deleted: "资源包已删除",

@@ -1253,6 +1253,8 @@ export const en: AdminTranslations = {
       updateRequiresVersion: "Updating a resource pack requires a valid pack_id and version",
       created: "Resource pack created",
       saved: "Resource pack saved",
+      duplicatePack: "This resource pack already exists. Please use another Pack ID or edit the existing resource pack.",
+      invalidRequest: "The submitted content is invalid. Please check required fields and formats before saving.",
       saveFailed: "Failed to save resource pack",
       deleteRequiresVersion: "Deleting a resource pack requires a valid pack_id and version",
       deleted: "Resource pack deleted",

@@ -514,7 +514,6 @@ onMounted(load)
                 <p class="mt-1 break-all text-sm text-slate-500">{{ selectedId }}</p>
               </div>
               <div class="flex items-center gap-3">
-                <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(selected))">{{ bundleStatus(selected) || "-" }}</span>
                 <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
                   <X class="h-5 w-5" />
                 </button>

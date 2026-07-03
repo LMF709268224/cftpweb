@@ -2,7 +2,7 @@
 import { FileBox, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import { apiClient } from "@/lib/apiClient"
+import { ApiError, apiClient } from "@/lib/apiClient"
 import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 
@@ -197,6 +197,19 @@ function validatePackForm() {
   return true
 }
 
+function packSaveErrorMessage(err: unknown) {
+  if (!(err instanceof ApiError)) return copy.value.toasts.saveFailed
+
+  const message = String(err.message || "").toLowerCase()
+  if (err.status === 409 || (message.includes("resource pack") && message.includes("already exists"))) {
+    return copy.value.toasts.duplicatePack
+  }
+  if (err.status === 400 || message.includes("invalid_request")) {
+    return copy.value.toasts.invalidRequest
+  }
+  return copy.value.toasts.saveFailed
+}
+
 async function savePack() {
   if (!validatePackForm()) return
 
@@ -232,7 +245,7 @@ async function savePack() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.saveFailed)
+    toast.error(packSaveErrorMessage(err))
   } finally {
     saving.value = false
   }
