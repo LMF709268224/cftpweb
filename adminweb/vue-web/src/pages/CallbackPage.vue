@@ -2,7 +2,7 @@
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
-import { apiClient } from "@/lib/apiClient"
+import { ApiError, apiClient } from "@/lib/apiClient"
 import { setAuthSession } from "@/lib/authStorage"
 import { useAdminLanguage } from "@/lib/language"
 
@@ -12,6 +12,22 @@ const status = ref<"loading" | "success" | "error">("loading")
 const error = ref("")
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.callback)
+
+function friendlyAuthError(err: unknown) {
+  if (err instanceof ApiError) {
+    const payload = err.payload as { error_code?: string; message?: string } | null
+    const code = String(payload?.error_code || "").toUpperCase()
+    const message = String(payload?.message || err.message || "")
+    if (code === "AUTH_FAILED" || message.toLowerCase().includes("admin")) {
+      return copy.value.notAdmin
+    }
+    if (code === "INVALID_TOKEN" || message.toLowerCase().includes("application")) {
+      return copy.value.wrongApplication
+    }
+    return message || copy.value.authFailed
+  }
+  return err instanceof Error && err.message ? err.message : copy.value.authFailed
+}
 
 onMounted(async () => {
   const code = String(route.query.code || "")
@@ -38,7 +54,7 @@ onMounted(async () => {
   } catch (err) {
     console.error(err)
     status.value = "error"
-    error.value = copy.value.authFailed
+    error.value = friendlyAuthError(err)
     setTimeout(() => router.push("/login"), 2500)
   }
 })

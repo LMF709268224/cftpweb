@@ -20,6 +20,9 @@ type opsDashboardResponse struct {
 	UserRoleStats            []opsDashboardRoleStat    `json:"user_role_stats"`
 	ProfileCompletionPercent int64                     `json:"profile_completion_percent"`
 	Users                    []opsDashboardUser        `json:"users"`
+	UserTotal                int                       `json:"user_total"`
+	UserPage                 int                       `json:"user_page"`
+	UserPageSize             int                       `json:"user_page_size"`
 	StageBuckets             []opsDashboardStageBucket `json:"stage_buckets"`
 	TodayRevenue             []opsDashboardRevenue     `json:"today_revenue"`
 	GeneratedAt              string                    `json:"generated_at"`
@@ -71,7 +74,25 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to count candidates")
 		return
 	}
-	userSummary := h.buildOpsUserSummary(r, users)
+
+	userPage := int(int32Query(r, "user_page", 1))
+	if userPage < 1 {
+		userPage = 1
+	}
+	userPageSize := int(int32Query(r, "user_page_size", 10))
+	if userPageSize < 1 {
+		userPageSize = 10
+	}
+	if userPageSize > 100 {
+		userPageSize = 100
+	}
+	pageUsers, userTotal, err := casdoorsdk.GetPaginationUsers(userPage, userPageSize, map[string]string{})
+	if err != nil {
+		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to load dashboard users")
+		return
+	}
+
+	userSummary := h.buildOpsUserSummary(r, users, pageUsers)
 
 	pipelines, err := h.Gprog.ListPipelines(r.Context(), &gprogpb.ListPipelinesReq{
 		Limit:  adminDashboardSampleLimit,
@@ -150,6 +171,9 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		UserRoleStats:            userSummary.roleStats,
 		ProfileCompletionPercent: userSummary.profileCompletionPercent,
 		Users:                    userSummary.users,
+		UserTotal:                userTotal,
+		UserPage:                 userPage,
+		UserPageSize:             userPageSize,
 		StageBuckets:             stageBuckets,
 		TodayRevenue:             revenue,
 		GeneratedAt:              now.Format(time.RFC3339),
@@ -164,7 +188,7 @@ type opsDashboardUserSummary struct {
 	users                    []opsDashboardUser
 }
 
-func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User) opsDashboardUserSummary {
+func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User, pageUsers []*casdoorsdk.User) opsDashboardUserSummary {
 	roleCounts := map[string]int64{
 		"students":  0,
 		"markers":   0,
@@ -175,7 +199,7 @@ func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User)
 	}
 	stats := opsDashboardUserStats{}
 	var profileScore int64
-	preview := make([]opsDashboardUser, 0, 10)
+	candidateByUserID := make(map[string]string, len(users))
 
 	for _, user := range users {
 		if user == nil || user.Id == "" {
@@ -200,28 +224,36 @@ func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User)
 		}
 		profileScore += int64(profileCompletionPercent(user))
 
-		candidateULID := ""
-		resp, err := h.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{UserUuid: user.Id})
-		if err == nil && strings.TrimSpace(resp.GetUserUlid()) != "" {
-			candidateULID = strings.TrimSpace(resp.GetUserUlid())
+		candidateULID := h.dashboardCandidateULID(r, user.Id)
+		if candidateULID != "" {
+			candidateByUserID[user.Id] = candidateULID
 			roleCounts["students"]++
 		}
+	}
 
-		if len(preview) < 10 {
-			preview = append(preview, opsDashboardUser{
-				ID:            user.Id,
-				CandidateULID: candidateULID,
-				Name:          dashboardUserName(user),
-				Email:         strings.TrimSpace(user.Email),
-				Phone:         strings.TrimSpace(user.Phone),
-				Location:      dashboardLocation(user),
-				Roles:         roles,
-				RoleLabel:     dashboardPrimaryRole(user, roles, candidateULID),
-				Status:        dashboardUserStatus(user),
-				EmailVerified: user.EmailVerified,
-				CreatedAt:     user.CreatedTime,
-			})
+	pageItems := make([]opsDashboardUser, 0, len(pageUsers))
+	for _, user := range pageUsers {
+		if user == nil || user.Id == "" {
+			continue
 		}
+		roles := roleNames(user)
+		candidateULID := candidateByUserID[user.Id]
+		if candidateULID == "" {
+			candidateULID = h.dashboardCandidateULID(r, user.Id)
+		}
+		pageItems = append(pageItems, opsDashboardUser{
+			ID:            user.Id,
+			CandidateULID: candidateULID,
+			Name:          dashboardUserName(user),
+			Email:         strings.TrimSpace(user.Email),
+			Phone:         strings.TrimSpace(user.Phone),
+			Location:      dashboardLocation(user),
+			Roles:         roles,
+			RoleLabel:     dashboardPrimaryRole(user, roles, candidateULID),
+			Status:        dashboardUserStatus(user),
+			EmailVerified: user.EmailVerified,
+			CreatedAt:     user.CreatedTime,
+		})
 	}
 
 	var completion int64
@@ -241,8 +273,19 @@ func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User)
 			{Key: "partners", Label: "Partners", Count: roleCounts["partners"]},
 		},
 		profileCompletionPercent: completion,
-		users:                    preview,
+		users:                    pageItems,
 	}
+}
+
+func (h *Handler) dashboardCandidateULID(r *http.Request, userID string) string {
+	if strings.TrimSpace(userID) == "" {
+		return ""
+	}
+	resp, err := h.Gmid.GetUlidByUUID(r.Context(), &gmidpb.GetUlidByUUIDRequest{UserUuid: userID})
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(resp.GetUserUlid())
 }
 
 func statsForStudents(roleCounts map[string]int64) int64 {

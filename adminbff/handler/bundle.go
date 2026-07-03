@@ -122,11 +122,16 @@ func (h *Handler) GetBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
-	resp, err := h.Mall.ListBundlesAdmin(r.Context(), &mallpb.ListBundlesAdminRequest{
+	req := &mallpb.ListBundlesAdminRequest{
 		Limit:  int32Query(r, "limit", 20),
 		Offset: int32Query(r, "offset", 0),
 		Status: strings.TrimSpace(r.URL.Query().Get("status")),
-	})
+	}
+	if _, ok := r.URL.Query()["is_current_only"]; ok {
+		isCurrentOnly := parseBoolQuery(r, "is_current_only")
+		req.IsCurrentOnly = &isCurrentOnly
+	}
+	resp, err := h.Mall.ListBundlesAdmin(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return

@@ -148,12 +148,17 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 		res.Total = uint32(len(filtered))
 	}
 
+	credentialNames := h.credentialDefinitionNames(r)
 	applications := make([]map[string]interface{}, 0, len(res.GetApplications()))
 	for _, app := range res.GetApplications() {
 		if app == nil {
 			continue
 		}
 		item := jsonPayloadObject(app)
+		if name := credentialNames[app.GetCredDefUlid()]; name != "" {
+			item["cred_def_name"] = name
+			item["credential_name"] = name
+		}
 		h.attachCandidateName(item, app.GetCandidateUlid())
 		applications = append(applications, item)
 	}
@@ -179,10 +184,10 @@ func (h *Handler) GetApplication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, h.applicationDetailPayload(res))
+	WriteJSON(w, http.StatusOK, h.applicationDetailPayload(r, res))
 }
 
-func (h *Handler) applicationDetailPayload(app *gcredspb.Application) map[string]interface{} {
+func (h *Handler) applicationDetailPayload(r *http.Request, app *gcredspb.Application) map[string]interface{} {
 	if app == nil {
 		return map[string]interface{}{}
 	}
@@ -206,8 +211,45 @@ func (h *Handler) applicationDetailPayload(app *gcredspb.Application) map[string
 		"created_at":     app.GetCreatedAt(),
 		"update_count":   app.GetUpdateCount(),
 	}
+	if name := h.credentialDefinitionNameByID(r, app.GetCredDefUlid()); name != "" {
+		payload["cred_def_name"] = name
+		payload["credential_name"] = name
+	}
 	h.attachCandidateName(payload, app.GetCandidateUlid())
 	return payload
+}
+
+func (h *Handler) credentialDefinitionNames(r *http.Request) map[string]string {
+	res, err := h.Creds.ListCredentialDefinitions(r.Context(), &gcredspb.ListCredentialDefinitionsRequest{})
+	if err != nil {
+		return map[string]string{}
+	}
+	names := make(map[string]string, len(res.GetDefinitions()))
+	for _, def := range res.GetDefinitions() {
+		if def == nil {
+			continue
+		}
+		id := strings.TrimSpace(def.GetCredDefUlid())
+		name := strings.TrimSpace(def.GetName())
+		if id != "" && name != "" {
+			names[id] = name
+		}
+	}
+	return names
+}
+
+func (h *Handler) credentialDefinitionNameByID(r *http.Request, credDefULID string) string {
+	credDefULID = strings.TrimSpace(credDefULID)
+	if credDefULID == "" {
+		return ""
+	}
+	res, err := h.Creds.GetCredentialDefinitionDetail(r.Context(), &gcredspb.GetCredentialDefinitionDetailRequest{
+		CredDefUlid: credDefULID,
+	})
+	if err != nil || res == nil {
+		return ""
+	}
+	return strings.TrimSpace(res.GetName())
 }
 
 func credentialFilePayload(file *gcredspb.FileInfo) map[string]interface{} {

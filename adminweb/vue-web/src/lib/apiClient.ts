@@ -28,14 +28,17 @@ export async function apiClient<T = unknown>(input: string, init: RequestInit = 
     headers,
   })
 
-  if (response.status === 401) {
-    clearAuthSession()
-    window.location.href = "/login"
-    throw new ApiError("Unauthorized", response.status, null)
-  }
-
   const text = await response.text()
   const payload = text ? JSON.parse(text) : null
+
+  if (response.status === 401) {
+    const message = payload?.message || payload?.error || "Unauthorized"
+    clearAuthSession()
+    if (!input.includes("/api/auth/login")) {
+      window.location.href = "/login"
+    }
+    throw new ApiError(message, response.status, payload)
+  }
 
   if (!response.ok) {
     const message = payload?.message || payload?.error || response.statusText || "Request failed"
