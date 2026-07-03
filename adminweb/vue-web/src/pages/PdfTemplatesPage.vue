@@ -26,6 +26,10 @@ const copy = computed(() => t.value.pdfTemplatesAdmin)
 const selectedFields = computed(() => selected.value || {})
 const previewHtml = computed(() => form.value.html_template || `<p style="color:#64748b">${copy.value.previewEmpty}</p>`)
 
+function fieldLabel(key: string) {
+  return copy.value.fieldLabels?.[key as keyof typeof copy.value.fieldLabels] || key.replaceAll("_", " ")
+}
+
 function templateUlid(template: JsonRecord | null | undefined) {
   return String(pickFirst(template || {}, ["template_ulid", "template_id", "id"]) || "")
 }
@@ -193,7 +197,7 @@ onMounted(load)
               <p class="mt-1 text-sm text-slate-500">{{ copy.rawHint }}</p>
               <div class="mt-4 grid gap-3">
                 <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
-                  {{ key }}
+                  {{ fieldLabel(String(key)) }}
                   <textarea
                     v-if="Array.isArray(value) || (value && typeof value === 'object')"
                     class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
