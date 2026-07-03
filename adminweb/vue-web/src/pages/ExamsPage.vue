@@ -48,9 +48,12 @@ const statusOptions = computed(() => [
 
 const resultOptions = computed(() => [
   { value: "", label: copy.value.statusOptions.allResult },
-  { value: "PENDING", label: copy.value.statusOptions.pending },
-  { value: "PASS", label: copy.value.statusOptions.pass },
-  { value: "FAIL", label: copy.value.statusOptions.fail },
+  { value: "NONE", label: copy.value.statusOptions.none },
+  { value: "AVAILABLE", label: copy.value.statusOptions.available },
+  { value: "FETCHED", label: copy.value.statusOptions.fetched },
+  { value: "CANCELLED", label: copy.value.statusOptions.cancelled },
+  { value: "NO_SHOW", label: copy.value.statusOptions.noShow },
+  { value: "BYPASSED", label: copy.value.statusOptions.bypassed },
 ])
 
 function asArray(value: unknown): JsonRecord[] {
@@ -71,6 +74,10 @@ function normalizedStatus(value: unknown) {
   return String(value || "").trim().toUpperCase()
 }
 
+function normalizedResultStatus(value: unknown) {
+  return normalizedStatus(value).replace(/^RESULT_STATUS_/, "")
+}
+
 function examStatusLabel(value: unknown) {
   const status = normalizedStatus(value)
   if (["OPEN", "CREATED", "EXAM_STATUS_OPEN"].includes(status)) return copy.value.statusOptions.open
@@ -81,10 +88,15 @@ function examStatusLabel(value: unknown) {
 }
 
 function resultStatusLabel(value: unknown, passed?: unknown) {
-  const status = normalizedStatus(value)
-  if (["PASS", "PASSED", "RESULT_STATUS_PASSED", "EXAM_STATUS_PASSED"].includes(status) || passed === true) return copy.value.statusOptions.pass
-  if (["FAIL", "FAILED", "RESULT_STATUS_FAILED", "EXAM_STATUS_FAILED", "NO_SHOW", "RESULT_STATUS_NO_SHOW"].includes(status) || (passed === false && status)) return copy.value.statusOptions.fail
-  if (["PENDING", "RESULT_STATUS_PENDING", "EXAM_STATUS_PENDING"].includes(status)) return copy.value.statusOptions.pending
+  const status = normalizedResultStatus(value)
+  if (status === "NONE") return copy.value.statusOptions.none
+  if (status === "AVAILABLE") return copy.value.statusOptions.available
+  if (status === "FETCHED") return copy.value.statusOptions.fetched
+  if (status === "CANCELLED" || status === "CANCELED") return copy.value.statusOptions.cancelled
+  if (status === "NO_SHOW") return copy.value.statusOptions.noShow
+  if (status === "BYPASSED") return copy.value.statusOptions.bypassed
+  if (!status && passed === true) return copy.value.statusOptions.fetched
+  if (!status && passed === false) return copy.value.statusOptions.available
   return status || "-"
 }
 

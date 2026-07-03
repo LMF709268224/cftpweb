@@ -62,6 +62,7 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
 const selectedUsers = computed(() => users.value.filter((user) => selectedUserIds.value.includes(userId(user))))
 const selectedMailHtml = computed(() => String(mailDetail.value?.html_body || mailDetail.value?.plain_body || selectedMail.value?.html_body || selectedMail.value?.plain_body || ""))
 const selectedMailRecord = computed(() => mailDetail.value || selectedMail.value || {})
+const selectedMailCanCancel = computed(() => isSchedulingMail(mailStatusDetail.value) || isSchedulingMail(mailDetail.value) || isSchedulingMail(selectedMail.value))
 const selectedTemplateFields = computed(() => selectedTemplate.value || {})
 const statsCards = computed(() => {
   const counts = stats.value?.status_counts
@@ -110,6 +111,10 @@ function mailId(mail: JsonRecord | null | undefined) {
 
 function mailStatus(mail: JsonRecord | null | undefined) {
   return pickFirst(mail || {}, ["status", "raw_status"]) || "-"
+}
+
+function isSchedulingMail(mail: JsonRecord | null | undefined) {
+  return String(mailStatus(mail)).toUpperCase() === "SCHEDULING"
 }
 
 function mailStatusLabel(status: unknown) {
@@ -371,6 +376,10 @@ function closeMailDetail() {
 async function cancelMail() {
   const id = mailId(selectedMail.value)
   if (!id) return
+  if (!selectedMailCanCancel.value) {
+    toast.error(copy.value.toasts.cancelNotAllowed)
+    return
+  }
   canceling.value = true
   try {
     await apiClient("/api/mails/cancel", { method: "POST", body: JSON.stringify({ mail_id: id }) })
@@ -669,6 +678,7 @@ onMounted(async () => {
             </div>
             <div class="flex shrink-0 items-center gap-3">
               <button
+                v-if="selectedMailCanCancel"
                 class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
                 type="button"
                 :disabled="!selectedMail || canceling"
