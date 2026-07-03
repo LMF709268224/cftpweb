@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, Plus, RefreshCw, Save } from "lucide-vue-next"
+import { Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -7,12 +7,13 @@ import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
 
-type Mode = "detail" | "create"
+type Mode = "detail" | "edit" | "create"
 
 const templates = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const saving = ref(false)
+const dialogOpen = ref(false)
 const mode = ref<Mode>("detail")
 const form = ref({
   template_id: "",
@@ -25,6 +26,7 @@ const copy = computed(() => t.value.pdfTemplatesAdmin)
 
 const selectedFields = computed(() => selected.value || {})
 const previewHtml = computed(() => form.value.html_template || `<p style="color:#64748b">${copy.value.previewEmpty}</p>`)
+const readonlyMode = computed(() => mode.value === "detail")
 
 function fieldLabel(key: string) {
   return copy.value.fieldLabels?.[key as keyof typeof copy.value.fieldLabels] || key.replaceAll("_", " ")
@@ -51,12 +53,25 @@ function openCreate() {
   mode.value = "create"
   selected.value = null
   form.value = { template_id: "", name: "", description: "", html_template: "" }
+  dialogOpen.value = true
 }
 
-function openTemplate(template: JsonRecord) {
+function openTemplateDetail(template: JsonRecord) {
   selected.value = template
   mode.value = "detail"
   form.value = formFromTemplate(template)
+  dialogOpen.value = true
+}
+
+function openTemplateEditor(template: JsonRecord) {
+  selected.value = template
+  mode.value = "edit"
+  form.value = formFromTemplate(template)
+  dialogOpen.value = true
+}
+
+function closeDialog() {
+  dialogOpen.value = false
 }
 
 async function load() {
@@ -65,10 +80,19 @@ async function load() {
     const data = await apiClient<JsonRecord>("/api/pdf-templates")
     const list = Array.isArray(data.templates) ? data.templates : []
     templates.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
-    if (!selected.value || !templates.value.some((item) => templateUlid(item) === templateUlid(selected.value))) {
-      selected.value = templates.value[0] || null
-      mode.value = selected.value ? "detail" : "create"
-      form.value = formFromTemplate(selected.value)
+    if (selected.value) {
+      const refreshed = templates.value.find((item) => templateUlid(item) === templateUlid(selected.value))
+      if (refreshed) {
+        selected.value = refreshed
+        if (mode.value !== "create") {
+          form.value = formFromTemplate(refreshed)
+        }
+      } else {
+        selected.value = null
+        if (mode.value !== "create") {
+          dialogOpen.value = false
+        }
+      }
     }
   } catch (err) {
     console.error(err)
@@ -86,8 +110,8 @@ async function save() {
   saving.value = true
   try {
     await apiClient("/api/pdf-templates", {
-      method: mode.value === "detail" ? "PUT" : "POST",
-      body: JSON.stringify(mode.value === "detail" ? form.value : {
+      method: mode.value === "edit" ? "PUT" : "POST",
+      body: JSON.stringify(mode.value === "edit" ? form.value : {
         name: form.value.name,
         description: form.value.description,
         html_template: form.value.html_template,
@@ -95,6 +119,7 @@ async function save() {
     })
     toast.success(copy.value.toasts.saved)
     await load()
+    dialogOpen.value = false
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.saveFailed)
@@ -125,8 +150,8 @@ onMounted(load)
       </div>
     </header>
 
-    <div class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="grid gap-6">
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 p-5">
           <div>
             <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
@@ -138,83 +163,111 @@ onMounted(load)
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
           {{ copy.loading }}
         </div>
-        <button
-          v-for="template in templates"
-          v-else
-          :key="templateUlid(template)"
-          class="w-full border-b border-slate-100 px-5 py-5 text-left last:border-b-0 hover:bg-sky-50"
-          :class="mode === 'detail' && templateUlid(selected) === templateUlid(template) ? 'bg-sky-50' : ''"
-          type="button"
-          @click="openTemplate(template)"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <div class="text-lg font-black">{{ templateName(template) }}</div>
-              <div class="mt-2 line-clamp-2 text-sm text-slate-500">{{ template.description || copy.noDescription }}</div>
-            </div>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">v{{ template.version || 1 }}</span>
+        <div v-else-if="!templates.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
+        <div v-else>
+          <div class="hidden grid-cols-[minmax(0,1fr)_96px_150px_150px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+            <span>{{ copy.columns.template }}</span>
+            <span>{{ copy.columns.version }}</span>
+            <span>{{ copy.columns.createdAt }}</span>
+            <span class="text-center">{{ copy.columns.action }}</span>
           </div>
-          <div class="mt-3 break-all text-xs font-semibold text-slate-500">ID: {{ templateUlid(template) || "-" }}</div>
-          <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(template.created_at || "")) }}</div>
-        </button>
-        <div v-if="!loading && !templates.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
-      </section>
-
-      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 p-5">
-          <h2 class="text-2xl font-black">{{ mode === "create" ? copy.newTemplate : templateName(selected) }}</h2>
-          <p class="mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? copy.createDescription : templateUlid(selected) }}</p>
-        </div>
-        <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <form class="space-y-4" @submit.prevent="save">
-            <label v-if="mode === 'detail'" class="grid gap-2 text-sm font-bold">
-              {{ copy.fields.templateId }}
-              <input v-model="form.template_id" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" />
-            </label>
-            <label class="grid gap-2 text-sm font-bold">
-              {{ copy.fields.name }}
-              <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
-            </label>
-            <label class="grid gap-2 text-sm font-bold">
-              {{ copy.fields.description }}
-              <input v-model="form.description" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="500" />
-            </label>
-            <label class="grid gap-2 text-sm font-bold">
-              {{ copy.fields.htmlTemplate }}
-              <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6" />
-            </label>
-            <div class="flex justify-end">
-              <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="submit" :disabled="saving">
-                <Save class="h-4 w-4" />
-                {{ saving ? copy.saving : copy.saveTemplate }}
+          <div
+            v-for="template in templates"
+            :key="templateUlid(template)"
+            class="grid w-full gap-3 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_96px_150px_150px] lg:items-center lg:gap-6"
+            :class="templateUlid(selected) === templateUlid(template) ? 'bg-sky-50/70' : ''"
+          >
+            <div class="min-w-0">
+              <div class="truncate text-lg font-black text-slate-950">{{ templateName(template) }}</div>
+              <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ template.description || copy.noDescription }}</div>
+              <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ templateUlid(template) || "-" }}</div>
+            </div>
+            <div class="text-sm font-bold text-slate-700">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.version }}</span>v{{ template.version || 1 }}
+            </div>
+            <div class="text-sm font-bold text-slate-500">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.createdAt }}</span>{{ formatDate(String(template.created_at || "")) }}
+            </div>
+            <div class="flex items-center justify-start gap-4 lg:justify-center">
+              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openTemplateDetail(template)">
+                {{ copy.viewDetails }}
+              </button>
+              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openTemplateEditor(template)">
+                {{ copy.edit }}
               </button>
             </div>
-          </form>
-
-          <div class="space-y-4">
-            <div v-if="mode === 'detail'" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <h3 class="font-black">{{ copy.rawFields }}</h3>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.rawHint }}</p>
-              <div class="mt-4 grid gap-3">
-                <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
-                  {{ fieldLabel(String(key)) }}
-                  <textarea
-                    v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                    class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                    disabled
-                    :value="JSON.stringify(value, null, 2)"
-                  />
-                  <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
-                </label>
-              </div>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-white p-4">
-              <h3 class="font-black">{{ copy.preview }}</h3>
-              <iframe class="mt-4 h-[520px] w-full rounded-xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="previewHtml" />
-            </div>
           </div>
         </div>
       </section>
+
+      <Teleport to="body">
+        <section v-if="dialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+          <div class="flex max-h-[88vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <h2 class="text-xl font-black">
+                  {{ mode === "create" ? copy.newTemplate : mode === "edit" ? copy.editTitle : copy.detailTitle }}
+                </h2>
+                <p class="mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? copy.createDescription : templateUlid(selected) }}</p>
+              </div>
+              <button class="rounded-full border border-slate-200 p-2 text-slate-500 shadow-sm transition hover:bg-slate-50" type="button" :aria-label="copy.close" @click="closeDialog">
+                <X class="h-5 w-5" />
+              </button>
+            </div>
+            <div class="overflow-y-auto p-5">
+              <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <form class="space-y-4" @submit.prevent="save">
+                  <label v-if="mode !== 'create'" class="grid gap-2 text-sm font-bold">
+                    {{ copy.fields.templateId }}
+                    <input v-model="form.template_id" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold">
+                    {{ copy.fields.name }}
+                    <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-600" :disabled="readonlyMode" maxlength="160" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold">
+                    {{ copy.fields.description }}
+                    <input v-model="form.description" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-600" :disabled="readonlyMode" maxlength="500" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold">
+                    {{ copy.fields.htmlTemplate }}
+                    <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6 disabled:bg-slate-100 disabled:text-slate-600" :disabled="readonlyMode" />
+                  </label>
+                  <div v-if="!readonlyMode" class="flex justify-end">
+                    <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="submit" :disabled="saving">
+                      <Save class="h-4 w-4" />
+                      {{ saving ? copy.saving : copy.saveTemplate }}
+                    </button>
+                  </div>
+                </form>
+
+                <div class="space-y-4">
+                  <div v-if="mode === 'detail'" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <h3 class="font-black">{{ copy.rawFields }}</h3>
+                    <p class="mt-1 text-sm text-slate-500">{{ copy.rawHint }}</p>
+                    <div class="mt-4 grid gap-3">
+                      <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
+                        {{ fieldLabel(String(key)) }}
+                        <textarea
+                          v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                          class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                          disabled
+                          :value="JSON.stringify(value, null, 2)"
+                        />
+                        <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
+                      </label>
+                    </div>
+                  </div>
+                  <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                    <h3 class="font-black">{{ copy.preview }}</h3>
+                    <iframe class="mt-4 h-[520px] w-full rounded-xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="previewHtml" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </Teleport>
     </div>
   </section>
 </template>
