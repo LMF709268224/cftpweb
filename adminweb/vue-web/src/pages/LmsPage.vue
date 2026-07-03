@@ -176,6 +176,7 @@ const importCategoryTips = ref("")
 const importJson = ref("")
 
 const selectedCourseId = computed(() => courseId(selectedCourse.value))
+const isCreatingCourse = computed(() => courseView.value === "detail" && !selectedCourseId.value)
 const selectedChapterId = computed(() => chapterId(selectedChapter.value))
 const selectedMaterialId = computed(() => materialId(selectedMaterial.value))
 const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() => parseSupplementaryMaterialItems(normalizeSupplementaryMaterials({
@@ -1628,18 +1629,18 @@ onMounted(() => {
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm disabled:opacity-60" type="button" :disabled="loading" @click="loadCourses()">
+        <button v-if="!isCreatingCourse" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm disabled:opacity-60" type="button" :disabled="loading" @click="loadCourses()">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="importOpen = true">
+        <button v-if="!isCreatingCourse" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="importOpen = true">
           <FileJson class="h-4 w-4" />
           {{ copy.importJson }}
         </button>
         <button v-if="courseView === 'detail'" class="rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="backToCourseList">
           {{ copy.backToList }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 font-bold text-white shadow-lg shadow-sky-200" type="button" @click="newCourse">
+        <button v-if="!isCreatingCourse" class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 font-bold text-white shadow-lg shadow-sky-200" type="button" @click="newCourse">
           <Plus class="h-4 w-4" />
           {{ copy.newCourse }}
         </button>
