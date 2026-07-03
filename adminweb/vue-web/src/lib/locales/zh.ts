@@ -143,7 +143,7 @@ export const zh = {
       bizTypeCode: "业务类型编码",
       currency: "币种",
       rawAmount: "原始金额",
-      candidate: "候选人",
+      candidate: "考生",
       orderId: "订单号",
       payOrderId: "支付订单号",
       bizRefId: "业务关联 ID",
