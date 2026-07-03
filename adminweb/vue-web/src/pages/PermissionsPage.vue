@@ -111,7 +111,7 @@ async function check() {
   }
 }
 
-async function runAction(action: (typeof actions)[number]) {
+async function runAction(action: { key: PermissionAction; endpoint: string }) {
   if (!canCheck.value) {
     toast.error(copy.value.toasts.actionRequired)
     return
