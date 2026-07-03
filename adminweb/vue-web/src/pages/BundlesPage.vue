@@ -29,6 +29,31 @@ type DetailField = {
   label: string
   value: unknown
 }
+type LinkedItemView = {
+  type: string
+  ref: string
+}
+type PriceRefView = {
+  label: string
+  priceId: string
+  productId: string
+}
+type UnitPricingView = {
+  unitId: string
+  prices: PriceRefView[]
+}
+type UnlockPricingView = {
+  targetId: string
+  priceId: string
+  productId: string
+}
+type PricingPreviewView = {
+  units: UnitPricingView[]
+  unlocks: UnlockPricingView[]
+  packageCoupon: string
+  memberships: number
+  qualReviews: number
+}
 
 const emptyForm: BundleForm = {
   bundle_ulid: "",
@@ -80,6 +105,48 @@ const summaryFields = computed<SummaryField[]>(() => {
     { label: copy.value.summary.version, value: String(bundle.version ?? "-") },
   ]
 })
+const linkedItemsPreview = computed<LinkedItemView[]>(() => {
+  const parsed = parseJsonSilently(form.value.items_json)
+  if (!Array.isArray(parsed)) return []
+  return parsed
+    .filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    .map((item) => ({
+      type: String(pickFirst(item, ["item_type", "type"]) || "-"),
+      ref: String(pickFirst(item, ["ref_ulid", "ref_id", "ulid", "id"]) || "-"),
+    }))
+})
+const pricingPreview = computed<PricingPreviewView | null>(() => {
+  const parsed = asRecord(parseJsonSilently(form.value.pricing_json))
+  if (!parsed) return null
+  const units = Array.isArray(parsed.units)
+    ? parsed.units.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)).map((unit) => {
+      const prices = [
+        priceRef(copy.value.pricingPreview.access, unit.access),
+        priceRef(copy.value.pricingPreview.retake, unit.retake),
+        priceRef(copy.value.pricingPreview.exemption, unit.exemption),
+      ].filter((item): item is PriceRefView => !!item)
+      return {
+        unitId: String(unit.unit_id || "-"),
+        prices,
+      }
+    })
+    : []
+  const unlocks = Object.entries(asRecord(parsed.unlocks) || {}).map(([targetId, value]) => {
+    const ref = asRecord(value)
+    return {
+      targetId,
+      priceId: String(ref?.stripe_price_id || "-"),
+      productId: String(ref?.stripe_product_id || "-"),
+    }
+  })
+  return {
+    units,
+    unlocks,
+    packageCoupon: String(parsed.package_coupon || "-"),
+    memberships: Array.isArray(parsed.memberships) ? parsed.memberships.length : 0,
+    qualReviews: Array.isArray(parsed.qual_reviews) ? parsed.qual_reviews.length : 0,
+  }
+})
 const selectedFields = computed<DetailField[]>(() => {
   if (!selected.value) return []
   return Object.entries(selected.value)
@@ -112,6 +179,28 @@ function displayPrice(bundle: JsonRecord | null | undefined) {
   return `${currency} ${min.toFixed(2)} - ${max.toFixed(2)}`
 }
 
+function parseJsonSilently(value: string) {
+  try {
+    return JSON.parse(value || "")
+  } catch {
+    return null
+  }
+}
+
+function asRecord(value: unknown): JsonRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null
+}
+
+function priceRef(label: string, value: unknown): PriceRefView | null {
+  const ref = asRecord(value)
+  if (!ref) return null
+  return {
+    label,
+    priceId: String(ref.stripe_price_id || "-"),
+    productId: String(ref.stripe_product_id || "-"),
+  }
+}
+
 function parseJson(value: string, field: string) {
   try {
     return JSON.parse(value || "")
@@ -119,6 +208,74 @@ function parseJson(value: string, field: string) {
     toast.error(copy.value.jsonInvalid(field))
     return null
   }
+}
+
+function isBlank(value: unknown) {
+  return String(value ?? "").trim() === ""
+}
+
+function validateItemsJson() {
+  const parsed = parseJson(form.value.items_json, "items_json")
+  if (parsed === null) return false
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    toast.error(copy.value.toasts.itemsRequired)
+    return false
+  }
+
+  for (const [index, item] of parsed.entries()) {
+    const record = asRecord(item)
+    if (!record || isBlank(record.item_type) || isBlank(record.ref_ulid)) {
+      toast.error(copy.value.toasts.itemRequired(index + 1))
+      return false
+    }
+  }
+  return true
+}
+
+function validatePriceObject(value: unknown, label: string) {
+  if (value === undefined || value === null || value === "") return true
+  const record = asRecord(value)
+  if (!record || isBlank(record.stripe_price_id) || isBlank(record.stripe_product_id)) {
+    toast.error(copy.value.toasts.priceRefRequired(label))
+    return false
+  }
+  return true
+}
+
+function validatePricingJson() {
+  const parsed = parseJson(form.value.pricing_json, "pricing_json")
+  if (parsed === null) return false
+  const pricing = asRecord(parsed)
+  if (!pricing) {
+    toast.error(copy.value.toasts.pricingObjectRequired)
+    return false
+  }
+
+  if (Array.isArray(pricing.units)) {
+    for (const [index, value] of pricing.units.entries()) {
+      const unit = asRecord(value)
+      if (!unit || isBlank(unit.unit_id)) {
+        toast.error(copy.value.toasts.unitIdRequired(index + 1))
+        return false
+      }
+      if (!validatePriceObject(unit.access, copy.value.pricingPreview.access)) return false
+      if (!validatePriceObject(unit.retake, copy.value.pricingPreview.retake)) return false
+      if (!validatePriceObject(unit.exemption, copy.value.pricingPreview.exemption)) return false
+    }
+  }
+
+  const unlocks = asRecord(pricing.unlocks)
+  if (unlocks) {
+    for (const [targetId, value] of Object.entries(unlocks)) {
+      if (!validatePriceObject(value, copy.value.toasts.unlockPriceLabel(targetId))) return false
+    }
+  }
+
+  return true
+}
+
+function validateStructureJson() {
+  return validateItemsJson() && validatePricingJson()
 }
 
 function formFromBundle(bundle: JsonRecord | null): BundleForm {
@@ -196,9 +353,7 @@ async function createBundle() {
     toast.error(copy.value.toasts.createRequired)
     return
   }
-  if (parseJson(form.value.items_json, "items_json") === null || parseJson(form.value.pricing_json, "pricing_json") === null) {
-    return
-  }
+  if (!validateStructureJson()) return
 
   saving.value = true
   try {
@@ -253,9 +408,7 @@ async function saveMeta() {
 
 async function savePricing() {
   if (!selectedId.value) return
-  if (parseJson(form.value.items_json, "items_json") === null || parseJson(form.value.pricing_json, "pricing_json") === null) {
-    return
-  }
+  if (!validateStructureJson()) return
   saving.value = true
   try {
     const data = await apiClient<JsonRecord>("/api/mall/bundles/pricing", {
@@ -604,6 +757,103 @@ onMounted(load)
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   {{ copy.jsonValidateHint }}
                 </div>
+                <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 class="text-lg font-black text-slate-950">{{ copy.pricingPreview.title }}</h3>
+                      <p class="mt-1 text-sm text-slate-500">{{ copy.pricingPreview.description }}</p>
+                    </div>
+                    <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600">
+                      {{ copy.summary.displayPrice }}: {{ selected ? displayPrice(selected) : "-" }}
+                    </span>
+                  </div>
+
+                  <div class="mt-5 grid gap-4 xl:grid-cols-2">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                      <h4 class="font-black text-slate-900">{{ copy.pricingPreview.linkedItems }}</h4>
+                      <div v-if="linkedItemsPreview.length" class="mt-3 grid gap-2">
+                        <div v-for="item in linkedItemsPreview" :key="`${item.type}-${item.ref}`" class="rounded-xl bg-slate-50 p-3 text-sm">
+                          <div class="font-bold text-slate-600">{{ copy.pricingPreview.itemType }}: {{ item.type }}</div>
+                          <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ copy.pricingPreview.itemRef }}: {{ item.ref }}</div>
+                        </div>
+                      </div>
+                      <div v-else class="mt-3 rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+                        {{ copy.pricingPreview.emptyJson }}
+                      </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                      <h4 class="font-black text-slate-900">{{ copy.pricingPreview.otherConfig }}</h4>
+                      <div v-if="pricingPreview" class="mt-3 grid gap-2 text-sm">
+                        <div class="rounded-xl bg-slate-50 p-3">
+                          <span class="font-bold text-slate-500">{{ copy.pricingPreview.packageCoupon }}</span>
+                          <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ pricingPreview.packageCoupon }}</div>
+                        </div>
+                        <div class="grid gap-2 sm:grid-cols-2">
+                          <div class="rounded-xl bg-slate-50 p-3">
+                            <span class="font-bold text-slate-500">{{ copy.pricingPreview.memberships }}</span>
+                            <div class="mt-1 text-lg font-black">{{ pricingPreview.memberships }}</div>
+                          </div>
+                          <div class="rounded-xl bg-slate-50 p-3">
+                            <span class="font-bold text-slate-500">{{ copy.pricingPreview.qualReviews }}</span>
+                            <div class="mt-1 text-lg font-black">{{ pricingPreview.qualReviews }}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="mt-3 rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+                        {{ copy.pricingPreview.invalidJson }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-if="pricingPreview" class="mt-4 grid gap-4">
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                      <div class="border-b border-slate-200 px-4 py-3 font-black">{{ copy.pricingPreview.unitsTitle }}</div>
+                      <div v-if="pricingPreview.units.length" class="divide-y divide-slate-100">
+                        <div v-for="unit in pricingPreview.units" :key="unit.unitId" class="grid gap-3 p-4 xl:grid-cols-[240px_1fr]">
+                          <div>
+                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.unitId }}</div>
+                            <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ unit.unitId }}</div>
+                          </div>
+                          <div v-if="unit.prices.length" class="grid gap-3 lg:grid-cols-3">
+                            <div v-for="price in unit.prices" :key="`${unit.unitId}-${price.label}`" class="rounded-xl bg-slate-50 p-3">
+                              <div class="font-black text-slate-900">{{ price.label }}</div>
+                              <div class="mt-2 text-xs font-bold text-slate-500">{{ copy.pricingPreview.priceId }}</div>
+                              <div class="break-all font-mono text-xs text-blue-700">{{ price.priceId }}</div>
+                              <div class="mt-2 text-xs font-bold text-slate-500">{{ copy.pricingPreview.productId }}</div>
+                              <div class="break-all font-mono text-xs text-slate-600">{{ price.productId }}</div>
+                            </div>
+                          </div>
+                          <div v-else class="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
+                            {{ copy.pricingPreview.notConfigured }}
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="p-5 text-center text-sm text-slate-500">{{ copy.pricingPreview.notConfigured }}</div>
+                    </div>
+
+                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                      <div class="border-b border-slate-200 px-4 py-3 font-black">{{ copy.pricingPreview.unlocksTitle }}</div>
+                      <div v-if="pricingPreview.unlocks.length" class="divide-y divide-slate-100">
+                        <div v-for="unlock in pricingPreview.unlocks" :key="unlock.targetId" class="grid gap-3 p-4 md:grid-cols-3">
+                          <div>
+                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.unlockTarget }}</div>
+                            <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ unlock.targetId }}</div>
+                          </div>
+                          <div>
+                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.priceId }}</div>
+                            <div class="mt-1 break-all font-mono text-xs text-blue-700">{{ unlock.priceId }}</div>
+                          </div>
+                          <div>
+                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.productId }}</div>
+                            <div class="mt-1 break-all font-mono text-xs text-slate-600">{{ unlock.productId }}</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div v-else class="p-5 text-center text-sm text-slate-500">{{ copy.pricingPreview.notConfigured }}</div>
+                    </div>
+                  </div>
+                </section>
                 <div class="grid gap-4 xl:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.itemsJson }}
