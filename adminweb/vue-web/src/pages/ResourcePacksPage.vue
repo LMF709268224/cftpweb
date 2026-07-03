@@ -243,6 +243,8 @@ async function savePack() {
     }
 
     await load()
+    detailOpen.value = false
+    mode.value = "detail"
   } catch (err) {
     console.error(err)
     toast.error(packSaveErrorMessage(err))
@@ -511,13 +513,6 @@ onMounted(load)
                 </div>
               </div>
 
-              <div class="flex justify-end border-t border-slate-100 pt-5">
-                <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePack">
-                  <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-                  <Save v-else class="h-4 w-4" />
-                  {{ mode === "create" ? copy.createPack : copy.savePack }}
-                </button>
-              </div>
             </template>
 
             <div v-if="selected && mode === 'detail'" class="rounded-2xl border border-slate-200 bg-slate-50">
@@ -533,6 +528,14 @@ onMounted(load)
                 </div>
               </div>
             </div>
+          </div>
+
+          <div v-if="mode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+            <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePack">
+              <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+              <Save v-else class="h-4 w-4" />
+              {{ mode === "create" ? copy.createPack : copy.savePack }}
+            </button>
           </div>
         </div>
       </section>
