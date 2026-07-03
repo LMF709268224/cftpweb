@@ -310,8 +310,9 @@ onMounted(() => load(1))
         </div>
         <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalPrefix }} {{ total }} {{ copy.totalSuffix }}</span>
       </div>
-      <div class="grid grid-cols-[minmax(0,1fr)_140px_190px_170px_112px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+      <div class="grid grid-cols-[minmax(0,1fr)_160px_140px_150px_170px_112px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
         <span>{{ copy.columns.order }}</span>
+        <span>{{ copy.columns.candidate }}</span>
         <span class="text-right">{{ copy.columns.amount }}</span>
         <span class="text-center">{{ copy.columns.status }}</span>
         <span>{{ copy.columns.createdAt }}</span>
@@ -325,7 +326,7 @@ onMounted(() => load(1))
         <div
           v-for="order in orders"
           :key="orderUlid(order)"
-          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_140px_190px_170px_112px] items-center gap-4 px-5 py-4 transition hover:bg-sky-50"
+          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_160px_140px_150px_170px_112px] items-center gap-4 px-5 py-4 transition hover:bg-sky-50"
           :class="orderUlid(selected) === orderUlid(order) ? 'bg-sky-50' : ''"
           role="button"
           tabindex="0"
@@ -338,16 +339,13 @@ onMounted(() => load(1))
             <div class="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
               <span>{{ localizedLabelFor("bizTypes", biz(order), bizTypeOptions) }}</span>
               <span class="break-all rounded-full bg-slate-100 px-2 py-1">{{ copy.orderPrefix }} {{ orderUlid(order) || "-" }}</span>
-              <span class="break-all rounded-full bg-slate-100 px-2 py-1">{{ candidate(order) }}</span>
             </div>
           </div>
+          <div class="min-w-0 break-all text-sm font-semibold text-slate-600">{{ candidate(order) }}</div>
           <div class="text-right text-sm font-black">{{ amountText(order) }}</div>
           <div class="flex items-center justify-center gap-2">
             <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(order))">
               {{ localizedLabelFor("orderStatuses", status(order), orderStatusOptions) }}
-            </span>
-            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-              {{ localizedLabelFor("paymentStatuses", payStatus(order), paymentStatusOptions) }}
             </span>
           </div>
           <div class="text-sm font-semibold text-slate-500">{{ createdAt(order) }}</div>

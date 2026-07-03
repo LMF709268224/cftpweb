@@ -111,6 +111,7 @@ export const zh = {
     totalSuffix: "条",
     columns: {
       order: "订单",
+      candidate: "考生",
       amount: "金额",
       status: "状态",
       createdAt: "创建时间",
@@ -733,6 +734,7 @@ export const zh = {
     loading: "正在加载...",
     empty: "暂无申请",
     appIdPrefix: "申请 ID：",
+    candidatePrefix: "考生：",
     viewDetails: "查看详情",
     prev: "上一页",
     next: "下一页",
@@ -1461,6 +1463,7 @@ export const zh = {
     },
     listTitle: "管线实例",
     listDescription: "选择实例后查看运行详情。",
+    candidatePrefix: "考生：",
     loading: "正在加载...",
     loadingDetails: "正在加载详情...",
     columns: {

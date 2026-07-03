@@ -5,7 +5,7 @@ import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
-import { badgeClass, pickFirst } from "@/lib/status"
+import { pickFirst } from "@/lib/status"
 
 type TabKey = "send" | "sent" | "templates"
 
@@ -82,10 +82,6 @@ function titleOf(template: JsonRecord | null | undefined) {
 
 function messageId(message: JsonRecord | null | undefined) {
   return String(pickFirst(message || {}, ["message_id", "msg_id", "id"]) || "")
-}
-
-function messageStatus(message: JsonRecord | null | undefined) {
-  return pickFirst(message || {}, ["status", "raw_status"]) || "-"
 }
 
 function extractPayloadTemplate(...texts: unknown[]) {
@@ -463,10 +459,8 @@ onMounted(async () => {
               <option value="2">{{ copy.sent.read }}</option>
             </select>
           </div>
-          <div class="grid grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+          <div class="grid grid-cols-[minmax(0,1fr)_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
             <span>{{ copy.sent.columns.message }}</span>
-            <span>{{ copy.sent.columns.user }}</span>
-            <span class="text-center">{{ copy.sent.columns.status }}</span>
             <span class="text-right">{{ copy.sent.columns.time }}</span>
             <span class="text-right">{{ copy.sent.columns.action }}</span>
           </div>
@@ -478,7 +472,7 @@ onMounted(async () => {
             <div
               v-for="message in messages"
               :key="messageId(message)"
-              class="grid cursor-pointer grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
+              class="grid cursor-pointer grid-cols-[minmax(0,1fr)_180px_112px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
               :class="messageId(selectedMessage) === messageId(message) ? 'bg-sky-50' : ''"
               role="button"
               tabindex="0"
@@ -489,10 +483,6 @@ onMounted(async () => {
               <div class="min-w-0">
                 <div class="truncate font-black text-slate-950">{{ pickFirst(message, ["title", "subject", "template_path", "message_id"]) || copy.defaults.message }}</div>
                 <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ copy.sent.idPrefix }}{{ messageId(message) || "-" }}</div>
-              </div>
-              <div class="min-w-0 break-all text-sm font-semibold text-slate-500">{{ pickFirst(message, ["user_name", "user_id", "candidate_ulid"]) || "-" }}</div>
-              <div class="text-center">
-                <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(messageStatus(message))">{{ messageStatus(message) }}</span>
               </div>
               <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(message, ["created_at", "sent_at", "updated_at"]) || "")) }}</div>
               <div class="text-right">

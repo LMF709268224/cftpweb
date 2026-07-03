@@ -113,6 +113,7 @@ export const en: AdminTranslations = {
     totalSuffix: "items",
     columns: {
       order: "Order",
+      candidate: "Candidate",
       amount: "Amount",
       status: "Status",
       createdAt: "Created At",
@@ -735,6 +736,7 @@ export const en: AdminTranslations = {
     loading: "Loading...",
     empty: "No applications",
     appIdPrefix: "Application ID: ",
+    candidatePrefix: "Candidate: ",
     viewDetails: "View Details",
     prev: "Previous",
     next: "Next",
@@ -1463,6 +1465,7 @@ export const en: AdminTranslations = {
     },
     listTitle: "Pipeline Instances",
     listDescription: "Select an instance to view runtime details.",
+    candidatePrefix: "Candidate: ",
     loading: "Loading...",
     loadingDetails: "Loading details...",
     columns: {

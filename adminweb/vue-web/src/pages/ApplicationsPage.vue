@@ -261,7 +261,7 @@ onMounted(() => load(1))
           >
             <div class="min-w-0">
               <div class="truncate text-lg font-black text-slate-950">{{ credential(app) }}</div>
-              <div class="mt-1 break-all text-sm text-slate-500">{{ candidate(app) }}</div>
+              <div class="mt-1 break-all text-sm text-slate-500">{{ copy.candidatePrefix }}{{ candidate(app) }}</div>
               <div class="mt-2 break-all text-xs font-semibold text-slate-500">{{ copy.appIdPrefix }}{{ appUlid(app) || "-" }}</div>
             </div>
             <span class="self-center justify-self-center rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(app))">
