@@ -1723,6 +1723,11 @@ export const en: AdminTranslations = {
     updatedShort: "Updated",
     published: "Published",
     draft: "Draft",
+    courseStatuses: {
+      published: "Published",
+      draft: "Draft",
+      deprecated: "Deprecated",
+    },
     loadMore: "Load More",
     courseTopData: "Course Top-Level Data",
     fillCourseHint: "Fill in the course basics, then save.",
