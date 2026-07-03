@@ -684,7 +684,7 @@ export const en: AdminTranslations = {
       resubmit: "Resubmission Required",
     },
     tabs: {
-      overview: "Overview",
+      overview: "Details",
       files: "Application Files",
       audit: "Audit Actions",
       raw: "Complete Fields",
