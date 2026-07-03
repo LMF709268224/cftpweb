@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Activity, BarChart3, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -68,6 +68,7 @@ const roleFilter = ref("all")
 const statusFilter = ref("all")
 const userPage = ref(1)
 const userPageSize = 10
+let filterReloadTimer: ReturnType<typeof window.setTimeout> | undefined
 const { lang, t } = useAdminLanguage()
 const copy = computed(() => t.value.dashboard)
 
@@ -90,15 +91,7 @@ const roleOptions = computed(() => [
   { value: "member", label: copy.value.roles.member },
 ])
 const filteredUsers = computed(() => {
-  const normalizedKeyword = keyword.value.trim().toLowerCase()
-  return (data.value?.users || []).filter((user) => {
-    const text = [user.name, user.email, user.phone, user.location, user.role_label, ...(user.roles || [])].join(" ").toLowerCase()
-    const matchesKeyword = !normalizedKeyword || text.includes(normalizedKeyword)
-    const roleNeedle = roleFilter.value.replace(/s$/, "")
-    const matchesRole = roleFilter.value === "all" || user.role_label.toLowerCase().includes(roleNeedle) || user.roles.some((role) => role.toLowerCase().includes(roleNeedle))
-    const matchesStatus = statusFilter.value === "all" || user.status.toLowerCase() === statusFilter.value
-    return matchesKeyword && matchesRole && matchesStatus
-  })
+  return data.value?.users || []
 })
 
 const summaryCards = computed(() => [
@@ -152,7 +145,15 @@ function formatDate(raw: string) {
 async function loadDashboard(page = userPage.value) {
   loading.value = true
   try {
-    data.value = await apiClient<DashboardData>(`/api/dashboard/ops?user_page=${page}&user_page_size=${userPageSize}`)
+    const params = new URLSearchParams({
+      user_page: String(page),
+      user_page_size: String(userPageSize),
+    })
+    const normalizedKeyword = keyword.value.trim()
+    if (normalizedKeyword) params.set("user_keyword", normalizedKeyword)
+    if (roleFilter.value !== "all") params.set("user_role", roleFilter.value)
+    if (statusFilter.value !== "all") params.set("user_status", statusFilter.value)
+    data.value = await apiClient<DashboardData>(`/api/dashboard/ops?${params}`)
     userPage.value = Number(data.value.user_page || page)
   } catch (err) {
     console.error(err)
@@ -168,6 +169,13 @@ function loadUserPage(page: number) {
 }
 
 onMounted(loadDashboard)
+
+watch([keyword, roleFilter, statusFilter], () => {
+  if (filterReloadTimer) window.clearTimeout(filterReloadTimer)
+  filterReloadTimer = window.setTimeout(() => {
+    void loadDashboard(1)
+  }, 250)
+})
 </script>
 
 <template>

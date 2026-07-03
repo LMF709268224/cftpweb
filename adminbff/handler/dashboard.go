@@ -86,13 +86,11 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	if userPageSize > 100 {
 		userPageSize = 100
 	}
-	pageUsers, userTotal, err := casdoorsdk.GetPaginationUsers(userPage, userPageSize, map[string]string{})
-	if err != nil {
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to load dashboard users")
-		return
-	}
 
-	userSummary := h.buildOpsUserSummary(r, users, pageUsers)
+	candidateByUserID := h.dashboardCandidateULIDs(r, users)
+	filteredUsers := filterOpsDashboardUsers(users, candidateByUserID, opsDashboardUserFilterFromRequest(r))
+	pageUsers := paginateOpsDashboardUsers(filteredUsers, userPage, userPageSize)
+	userSummary := h.buildOpsUserSummary(users, pageUsers, candidateByUserID)
 
 	pipelines, err := h.Gprog.ListPipelines(r.Context(), &gprogpb.ListPipelinesReq{
 		Limit:  adminDashboardSampleLimit,
@@ -171,7 +169,7 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		UserRoleStats:            userSummary.roleStats,
 		ProfileCompletionPercent: userSummary.profileCompletionPercent,
 		Users:                    userSummary.users,
-		UserTotal:                userTotal,
+		UserTotal:                len(filteredUsers),
 		UserPage:                 userPage,
 		UserPageSize:             userPageSize,
 		StageBuckets:             stageBuckets,
@@ -188,7 +186,99 @@ type opsDashboardUserSummary struct {
 	users                    []opsDashboardUser
 }
 
-func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User, pageUsers []*casdoorsdk.User) opsDashboardUserSummary {
+type opsDashboardUserFilter struct {
+	keyword string
+	role    string
+	status  string
+}
+
+func opsDashboardUserFilterFromRequest(r *http.Request) opsDashboardUserFilter {
+	return opsDashboardUserFilter{
+		keyword: strings.ToLower(strings.TrimSpace(r.URL.Query().Get("user_keyword"))),
+		role:    strings.ToLower(strings.TrimSpace(r.URL.Query().Get("user_role"))),
+		status:  strings.ToLower(strings.TrimSpace(r.URL.Query().Get("user_status"))),
+	}
+}
+
+func (h *Handler) dashboardCandidateULIDs(r *http.Request, users []*casdoorsdk.User) map[string]string {
+	candidateByUserID := make(map[string]string, len(users))
+	for _, user := range users {
+		if user == nil || strings.TrimSpace(user.Id) == "" {
+			continue
+		}
+		candidateULID := h.dashboardCandidateULID(r, user.Id)
+		if candidateULID != "" {
+			candidateByUserID[user.Id] = candidateULID
+		}
+	}
+	return candidateByUserID
+}
+
+func filterOpsDashboardUsers(users []*casdoorsdk.User, candidateByUserID map[string]string, filter opsDashboardUserFilter) []*casdoorsdk.User {
+	filtered := make([]*casdoorsdk.User, 0, len(users))
+	for _, user := range users {
+		if user == nil || strings.TrimSpace(user.Id) == "" {
+			continue
+		}
+		candidateULID := candidateByUserID[user.Id]
+		roles := roleNames(user)
+		roleLabel := dashboardPrimaryRole(user, roles, candidateULID)
+		status := strings.ToLower(dashboardUserStatus(user))
+		if filter.status != "" && filter.status != "all" && status != filter.status {
+			continue
+		}
+		if filter.role != "" && filter.role != "all" {
+			roleNeedle := strings.TrimSuffix(filter.role, "s")
+			matchesRole := strings.Contains(strings.ToLower(roleLabel), roleNeedle)
+			for _, role := range roles {
+				if strings.Contains(strings.ToLower(role), roleNeedle) {
+					matchesRole = true
+					break
+				}
+			}
+			if !matchesRole {
+				continue
+			}
+		}
+		if filter.keyword != "" {
+			haystack := strings.ToLower(strings.Join([]string{
+				dashboardUserName(user),
+				user.Email,
+				user.Phone,
+				dashboardLocation(user),
+				roleLabel,
+				strings.Join(roles, " "),
+				candidateULID,
+				user.Id,
+			}, " "))
+			if !strings.Contains(haystack, filter.keyword) {
+				continue
+			}
+		}
+		filtered = append(filtered, user)
+	}
+	return filtered
+}
+
+func paginateOpsDashboardUsers(users []*casdoorsdk.User, page, pageSize int) []*casdoorsdk.User {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	start := (page - 1) * pageSize
+	if start >= len(users) {
+		return []*casdoorsdk.User{}
+	}
+	end := start + pageSize
+	if end > len(users) {
+		end = len(users)
+	}
+	return users[start:end]
+}
+
+func (h *Handler) buildOpsUserSummary(users []*casdoorsdk.User, pageUsers []*casdoorsdk.User, candidateByUserID map[string]string) opsDashboardUserSummary {
 	roleCounts := map[string]int64{
 		"students":  0,
 		"markers":   0,
@@ -199,7 +289,6 @@ func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User,
 	}
 	stats := opsDashboardUserStats{}
 	var profileScore int64
-	candidateByUserID := make(map[string]string, len(users))
 
 	for _, user := range users {
 		if user == nil || user.Id == "" {
@@ -224,9 +313,7 @@ func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User,
 		}
 		profileScore += int64(profileCompletionPercent(user))
 
-		candidateULID := h.dashboardCandidateULID(r, user.Id)
-		if candidateULID != "" {
-			candidateByUserID[user.Id] = candidateULID
+		if candidateByUserID[user.Id] != "" {
 			roleCounts["students"]++
 		}
 	}
@@ -238,9 +325,6 @@ func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User,
 		}
 		roles := roleNames(user)
 		candidateULID := candidateByUserID[user.Id]
-		if candidateULID == "" {
-			candidateULID = h.dashboardCandidateULID(r, user.Id)
-		}
 		pageItems = append(pageItems, opsDashboardUser{
 			ID:            user.Id,
 			CandidateULID: candidateULID,
