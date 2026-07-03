@@ -53,7 +53,9 @@ func (h *Handler) GetAdminExamDetail(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	payload := jsonPayloadObject(resp)
+	h.attachCandidateName(payload, resp.GetCandidateUlid())
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 func (h *Handler) GetAdminExamResult(w http.ResponseWriter, r *http.Request) {

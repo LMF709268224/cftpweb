@@ -63,6 +63,8 @@ func (s *Server) Run(ctx context.Context) error {
 		s.config.SecretConfig.Casdoor.ClientSecret,
 		s.config.SecretConfig.Casdoor.AppName,
 	)
+	h.StartCandidateProfileCache(ctx)
+
 	serverErr := s.serveHTTP(s.buildRouter(h))
 
 	select {

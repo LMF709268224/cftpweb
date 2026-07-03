@@ -42,6 +42,7 @@ type Handler struct {
 	Gmail               gmailpb.MailServiceClient
 	Gpay                gpaypb.PayServiceClient
 	Gmbr                gmbrpb.GmbrServiceClient
+	CandidateProfiles   *CandidateProfileCache
 	CasdoorEndpoint     string
 	CasdoorClientId     string
 	CasdoorClientSecret string
@@ -77,6 +78,7 @@ func New(
 		Gmail:               gmail,
 		Gpay:                gpay,
 		Gmbr:                gmbr,
+		CandidateProfiles:   NewCandidateProfileCache(gmid),
 		CasdoorEndpoint:     casdoorEndpoint,
 		CasdoorClientId:     casdoorClientId,
 		CasdoorClientSecret: casdoorClientSecret,

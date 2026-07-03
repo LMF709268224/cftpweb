@@ -25,7 +25,20 @@ func (h *Handler) ListProgPipelines(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, resp)
+	items := make([]map[string]interface{}, 0, len(resp.GetPipelines()))
+	for _, pipeline := range resp.GetPipelines() {
+		if pipeline == nil {
+			continue
+		}
+		item := jsonPayloadObject(pipeline)
+		h.attachCandidateName(item, pipeline.GetCandidateUlid())
+		items = append(items, item)
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"pipelines": items,
+		"total":     resp.GetTotal(),
+	})
 }
 
 func (h *Handler) GetProgPipelineDetail(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +55,13 @@ func (h *Handler) GetProgPipelineDetail(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, resp)
+	payload := jsonPayloadObject(resp)
+	if pipeline := resp.GetPipeline(); pipeline != nil {
+		pipelinePayload := jsonPayloadObject(pipeline)
+		h.attachCandidateName(pipelinePayload, pipeline.GetCandidateUlid())
+		payload["pipeline"] = pipelinePayload
+	}
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 func (h *Handler) AdminTriggerProgNextStage(w http.ResponseWriter, r *http.Request) {
