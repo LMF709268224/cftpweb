@@ -190,7 +190,7 @@ func (h *Handler) buildOpsUserSummary(r *http.Request, users []*casdoorsdk.User)
 		if user.EmailVerified {
 			stats.EmailVerified++
 		}
-		if IsCftpAdmin(user) || user.IsAdmin {
+		if IsCftpAdmin(user) {
 			stats.Admins++
 		}
 
@@ -316,7 +316,7 @@ func dashboardLocation(user *casdoorsdk.User) string {
 }
 
 func dashboardPrimaryRole(user *casdoorsdk.User, roles []string, candidateULID string) string {
-	if IsCftpAdmin(user) || user.IsAdmin {
+	if IsCftpAdmin(user) {
 		return "admin"
 	}
 	if candidateULID != "" {

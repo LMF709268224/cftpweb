@@ -61,6 +61,7 @@ func (s *Server) Run(ctx context.Context) error {
 		os.Getenv(config.EnvCasdoorPublicEndpoint),
 		s.config.SecretConfig.Casdoor.ClientID,
 		s.config.SecretConfig.Casdoor.ClientSecret,
+		s.config.SecretConfig.Casdoor.AppName,
 	)
 	serverErr := s.serveHTTP(s.buildRouter(h))
 
