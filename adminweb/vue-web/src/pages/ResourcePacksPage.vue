@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileBox, Loader2, Plus, RefreshCw, Save, Trash2, X } from "lucide-vue-next"
+import { FileBox, Loader2, Pencil, Plus, RefreshCw, Save, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -14,7 +14,8 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const saving = ref(false)
 const detailOpen = ref(false)
-const mode = ref<"create" | "edit">("edit")
+const deleteConfirmOpen = ref(false)
+const mode = ref<"create" | "edit" | "detail">("detail")
 const pageToken = ref("")
 const nextPageToken = ref("")
 const previousTokens = ref<string[]>([])
@@ -134,7 +135,7 @@ async function load() {
 
 function selectPack(pack: JsonRecord | null, openDetail = false) {
   selected.value = pack
-  mode.value = pack ? "edit" : "create"
+  mode.value = openDetail ? "detail" : pack ? "edit" : "create"
   fillForm(pack)
   void loadPackDetail(pack)
   if (openDetail) detailOpen.value = true
@@ -144,8 +145,31 @@ function openPackDetail(pack: JsonRecord) {
   selectPack(pack, true)
 }
 
+function openPackEditor(pack: JsonRecord) {
+  selectPack(pack)
+  mode.value = "edit"
+  detailOpen.value = true
+}
+
 function closePackDetail() {
   detailOpen.value = false
+}
+
+function requestDeletePack(pack: JsonRecord | null = selected.value) {
+  if (!pack) return
+  selected.value = pack
+  fillForm(pack)
+  const id = packId(pack)
+  const version = packVersion(pack)
+  if (!id || version <= 0) {
+    toast.error(copy.value.toasts.deleteRequiresVersion)
+    return
+  }
+  deleteConfirmOpen.value = true
+}
+
+function closeDeleteConfirm() {
+  deleteConfirmOpen.value = false
 }
 
 function startCreate() {
@@ -213,7 +237,6 @@ async function deletePack() {
     toast.error(copy.value.toasts.deleteRequiresVersion)
     return
   }
-  if (!window.confirm(copy.value.confirmDelete(packTitle(selected.value)))) return
 
   saving.value = true
   try {
@@ -221,6 +244,8 @@ async function deletePack() {
       method: "DELETE",
     })
     toast.success(copy.value.toasts.deleted)
+    deleteConfirmOpen.value = false
+    detailOpen.value = false
     await load()
   } catch (err) {
     console.error(err)
@@ -284,35 +309,43 @@ onMounted(load)
         </div>
         <div v-else-if="!packs.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
         <div v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_84px_96px_110px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+          <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_152px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
             <span>{{ copy.columns.pack }}</span>
             <span>{{ copy.columns.version }}</span>
-            <span class="text-right">{{ copy.columns.status }}</span>
-            <span class="text-right">{{ copy.columns.action }}</span>
+            <span class="text-center">{{ copy.columns.status }}</span>
+            <span class="border-l border-slate-200 pl-5 text-center">{{ copy.columns.action }}</span>
           </div>
-          <button
+          <div
             v-for="pack in packs"
             :key="packId(pack)"
-            class="block w-full border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
+            class="grid w-full gap-3 border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_84px_120px_152px] lg:items-center lg:gap-6"
             :class="packId(selected) === packId(pack) ? 'bg-sky-50/70' : ''"
-            type="button"
-            @click="openPackDetail(pack)"
           >
-            <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_84px_96px_110px] lg:items-center lg:gap-4">
-              <div class="min-w-0">
-                <div class="truncate text-base font-black text-slate-950">{{ packTitle(pack) }}</div>
-                <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pack.description || "-" }}</div>
-                <div class="mt-1 truncate font-mono text-xs text-slate-500">{{ copy.fields.idPrefix }}{{ pack.pack_id }}</div>
-              </div>
-              <div class="text-sm font-bold text-slate-700">
-                <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.fields.version }}</span>{{ pack.version || 0 }}
-              </div>
-              <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-end">
-                {{ pack.status || "Active" }}
-              </span>
-              <span class="inline-flex h-9 items-center justify-self-start rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 lg:justify-self-end">{{ copy.viewDetails }}</span>
+            <button class="min-w-0 text-left" type="button" @click="openPackDetail(pack)">
+              <div class="truncate text-base font-black text-slate-950">{{ packTitle(pack) }}</div>
+              <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pack.description || "-" }}</div>
+              <div class="mt-1 truncate font-mono text-xs text-slate-500">{{ copy.fields.idPrefix }}{{ pack.pack_id }}</div>
+            </button>
+            <div class="text-sm font-bold text-slate-700">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.fields.version }}</span>{{ pack.version || 0 }}
             </div>
-          </button>
+            <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-center">
+              {{ pack.status || "Active" }}
+            </span>
+            <div class="flex flex-col items-start gap-2 lg:items-end lg:border-l lg:border-slate-100 lg:pl-5">
+              <button class="inline-flex h-9 w-32 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click="openPackDetail(pack)">
+                {{ copy.viewDetails }}
+              </button>
+              <button class="inline-flex h-9 w-32 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50" type="button" @click="openPackEditor(pack)">
+                <Pencil class="h-3.5 w-3.5" />
+                {{ copy.editPack }}
+              </button>
+              <button class="inline-flex h-9 w-32 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 text-sm font-bold text-red-700 shadow-sm transition hover:bg-red-100" type="button" @click="requestDeletePack(pack)">
+                <Trash2 class="h-3.5 w-3.5" />
+                {{ copy.deletePack }}
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="flex items-center justify-end gap-3 border-t border-slate-200 p-5">
@@ -324,114 +357,184 @@ onMounted(load)
 
       <section v-if="detailOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
         <div class="flex max-h-[88vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
-          <div>
-            <h2 class="text-xl font-black">{{ mode === "create" ? copy.createTitle : copy.detailTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.readonlyHint }}</p>
-            <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
-              <Loader2 class="h-3.5 w-3.5 animate-spin" />
-              {{ copy.detailLoading }}
-            </p>
-          </div>
-          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closePackDetail">
-            <X class="h-5 w-5" />
-          </button>
-        </div>
-
-        <div class="flex-1 space-y-5 overflow-y-auto p-5">
-          <div>
-            <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.basic }}</div>
-            <div class="grid gap-4 md:grid-cols-2">
-              <label class="text-sm font-bold">
-                {{ copy.fields.title }}
-                <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.title" />
-              </label>
-              <label class="text-sm font-bold">
-                {{ copy.fields.category }}
-                <input v-model="form.category" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.category" />
-              </label>
-              <label class="text-sm font-bold">
-                {{ copy.fields.icon }}
-                <input v-model="form.icon" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.icon" />
-              </label>
-              <label class="md:col-span-2 text-sm font-bold">
-                {{ copy.fields.description }}
-                <textarea v-model="form.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.description" />
-              </label>
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-xl font-black">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ mode === "detail" ? copy.readonlyHint : mode === "create" ? copy.createHint : copy.editHint }}</p>
+              <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
+                <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                {{ copy.detailLoading }}
+              </p>
             </div>
-          </div>
-
-          <div class="border-t border-slate-100 pt-5">
-            <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.pathThumbnail }}</div>
-            <div class="grid gap-4 md:grid-cols-2">
-              <label class="text-sm font-bold">
-                {{ copy.fields.respath }}
-                <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.respath" />
-              </label>
-              <label class="text-sm font-bold">
-                {{ copy.fields.thumbnailObjectKey }}
-                <input v-model="form.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
-              </label>
-              <label class="md:col-span-2 text-sm font-bold">
-                {{ copy.fields.thumbnailFileHash }}
-                <input v-model="form.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailFileHash" />
-              </label>
-            </div>
-          </div>
-
-          <div class="border-t border-slate-100 pt-5">
-            <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.system }}</div>
-            <div class="grid gap-4 md:grid-cols-3">
-              <label class="text-sm font-bold">
-                {{ copy.fields.packId }}
-                <input v-model="form.pack_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'" :placeholder="copy.placeholders.packId" />
-              </label>
-              <label class="text-sm font-bold">
-                {{ copy.fields.status }}
-                <input v-model="form.status" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :disabled="mode === 'create'" :placeholder="copy.placeholders.status" />
-              </label>
-              <label class="text-sm font-bold">
-                {{ copy.fields.version }}
-                <input v-model.number="form.version" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
-              </label>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
-            <button
-              v-if="mode === 'edit'"
-              class="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 disabled:opacity-50"
-              type="button"
-              :disabled="saving"
-              @click="deletePack"
-            >
-              <Trash2 class="h-4 w-4" />
-              {{ copy.deletePack }}
-            </button>
-            <span v-else class="hidden sm:block"></span>
-            <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePack">
-              <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-              <Save v-else class="h-4 w-4" />
-              {{ mode === "create" ? copy.createPack : copy.savePack }}
+            <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closePackDetail">
+              <X class="h-5 w-5" />
             </button>
           </div>
 
-          <div v-if="selected" class="rounded-2xl border border-slate-200 bg-slate-50">
-            <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-black">
-              <FileBox class="h-4 w-4 text-blue-700" />
-              {{ copy.sections.raw }}
-            </div>
-            <div class="divide-y divide-slate-200 px-4">
-              <div v-for="[key, value] in selectedEntries" :key="key" class="grid gap-2 py-2.5 text-sm md:grid-cols-[170px_1fr]">
-                <div class="text-[11px] font-black uppercase text-slate-400">{{ humanizeKey(key) }}</div>
-                <div v-if="typeof value === 'string' && key.endsWith('_at')" class="break-words font-semibold text-slate-700">{{ formatDate(value) }}</div>
-                <div v-else class="break-words font-semibold text-slate-700">{{ value ?? "-" }}</div>
+          <div class="flex-1 space-y-5 overflow-y-auto p-5">
+            <template v-if="mode === 'detail'">
+              <div>
+                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.basic }}</div>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.title }}
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.title || "-" }}</div>
+                  </div>
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.category }}
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.category || "-" }}</div>
+                  </div>
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.icon }}
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.icon || "-" }}</div>
+                  </div>
+                  <div class="text-sm font-bold md:col-span-2">
+                    {{ copy.fields.description }}
+                    <div class="mt-2 min-h-24 whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.description || "-" }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-5">
+                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.pathThumbnail }}</div>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.respath }}
+                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.respath || "-" }}</div>
+                  </div>
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.thumbnailObjectKey }}
+                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.thumbnail_object_key || "-" }}</div>
+                  </div>
+                  <div class="text-sm font-bold md:col-span-2">
+                    {{ copy.fields.thumbnailFileHash }}
+                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.thumbnail_file_hash || "-" }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-5">
+                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.system }}</div>
+                <div class="grid gap-4 md:grid-cols-3">
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.packId }}
+                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.pack_id || "-" }}</div>
+                  </div>
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.status }}
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.status || "-" }}</div>
+                  </div>
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.version }}
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.version || 0 }}</div>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template v-else>
+              <div>
+                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.basic }}</div>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <label class="text-sm font-bold">
+                    {{ copy.fields.title }}
+                    <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.title" />
+                  </label>
+                  <label class="text-sm font-bold">
+                    {{ copy.fields.category }}
+                    <input v-model="form.category" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.category" />
+                  </label>
+                  <label class="text-sm font-bold">
+                    {{ copy.fields.icon }}
+                    <input v-model="form.icon" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.icon" />
+                  </label>
+                  <label class="text-sm font-bold md:col-span-2">
+                    {{ copy.fields.description }}
+                    <textarea v-model="form.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.description" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-5">
+                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.pathThumbnail }}</div>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <label class="text-sm font-bold">
+                    {{ copy.fields.respath }}
+                    <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.respath" />
+                  </label>
+                  <label class="text-sm font-bold">
+                    {{ copy.fields.thumbnailObjectKey }}
+                    <input v-model="form.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
+                  </label>
+                  <label class="text-sm font-bold md:col-span-2">
+                    {{ copy.fields.thumbnailFileHash }}
+                    <input v-model="form.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailFileHash" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="border-t border-slate-100 pt-5">
+                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.system }}</div>
+                <div class="grid gap-4 md:grid-cols-3">
+                  <label class="text-sm font-bold">
+                    {{ copy.fields.packId }}
+                    <input v-model="form.pack_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'" :placeholder="copy.placeholders.packId" />
+                  </label>
+                  <label class="text-sm font-bold">
+                    {{ copy.fields.status }}
+                    <input v-model="form.status" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :disabled="mode === 'create'" :placeholder="copy.placeholders.status" />
+                  </label>
+                  <label class="text-sm font-bold">
+                    {{ copy.fields.version }}
+                    <input v-model.number="form.version" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="flex justify-end border-t border-slate-100 pt-5">
+                <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePack">
+                  <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+                  <Save v-else class="h-4 w-4" />
+                  {{ mode === "create" ? copy.createPack : copy.savePack }}
+                </button>
+              </div>
+            </template>
+
+            <div v-if="selected && mode === 'detail'" class="rounded-2xl border border-slate-200 bg-slate-50">
+              <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-black">
+                <FileBox class="h-4 w-4 text-blue-700" />
+                {{ copy.sections.raw }}
+              </div>
+              <div class="divide-y divide-slate-200 px-4">
+                <div v-for="[key, value] in selectedEntries" :key="key" class="grid gap-2 py-2.5 text-sm md:grid-cols-[170px_1fr]">
+                  <div class="text-[11px] font-black uppercase text-slate-400">{{ humanizeKey(key) }}</div>
+                  <div v-if="typeof value === 'string' && key.endsWith('_at')" class="break-words font-semibold text-slate-700">{{ formatDate(value) }}</div>
+                  <div v-else class="break-words font-semibold text-slate-700">{{ value ?? "-" }}</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-        </div>
       </section>
+
+      <Teleport to="body">
+        <div v-if="deleteConfirmOpen && selected" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+          <section class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
+            <h2 class="text-2xl font-black text-slate-950">{{ copy.deleteConfirmTitle }}</h2>
+            <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="break-words font-black text-slate-950">{{ packTitle(selected) }}</div>
+              <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ packId(selected) }}</div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="saving" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="deletePack">
+                {{ saving ? copy.deleting : copy.confirmDeleteAction }}
+              </button>
+            </div>
+          </section>
+        </div>
+      </Teleport>
     </div>
   </section>
 </template>

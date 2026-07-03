@@ -68,7 +68,7 @@ const roleFilter = ref("all")
 const statusFilter = ref("all")
 const userPage = ref(1)
 const userPageSize = 10
-let filterReloadTimer: ReturnType<typeof window.setTimeout> | undefined
+let filterReloadTimer: number | undefined
 const { lang, t } = useAdminLanguage()
 const copy = computed(() => t.value.dashboard)
 
