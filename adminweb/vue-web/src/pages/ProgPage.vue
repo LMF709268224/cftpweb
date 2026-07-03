@@ -520,31 +520,27 @@ onMounted(async () => {
         </section>
 
         <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div class="grid lg:grid-cols-[260px_minmax(0,1fr)]">
-            <aside class="border-b border-slate-200 p-4 lg:border-b-0 lg:border-r">
+            <div class="border-b border-slate-200 p-4">
               <h3 class="text-lg font-black">{{ copy.levelTitle }}</h3>
               <p class="mt-1 text-sm text-slate-500">{{ copy.levelDescription }}</p>
-              <div class="mt-4 space-y-2">
+              <div class="mt-4 flex gap-2 overflow-x-auto pb-1">
                 <button
                   v-for="tab in detailTabs"
                   :key="tab.key"
-                  class="w-full rounded-xl border px-3 py-2.5 text-left"
-                  :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
+                  class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-sm font-black transition"
+                  :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 text-slate-950' : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'"
                   type="button"
                   @click="activeTab = tab.key"
                 >
-                  <div class="flex items-center justify-between gap-3">
-                    <span class="font-black">{{ tab.title }}</span>
+                    <span>{{ tab.title }}</span>
                     <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
-                  </div>
-                  <p class="mt-1 text-xs text-slate-500">{{ tab.desc }}</p>
                 </button>
               </div>
 
-              <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
                 <h4 class="font-black">{{ copy.manualActionsTitle }}</h4>
                 <p class="mt-1 text-xs text-slate-500">{{ copy.manualActionsDescription }}</p>
-                <div class="mt-3 grid gap-2">
+                <div class="mt-3 flex flex-wrap gap-2">
                   <button
                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
                     type="button"
@@ -574,9 +570,9 @@ onMounted(async () => {
                   </button>
                 </div>
               </div>
-            </aside>
+            </div>
 
-            <section class="min-h-[640px] min-w-0">
+            <section class="h-[60vh] min-h-[360px] max-h-[620px] min-w-0 overflow-y-auto">
               <div v-if="detailLoading" class="px-6 py-10 text-center text-slate-500">
                 <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
                 {{ copy.loadingDetails }}
@@ -746,7 +742,6 @@ onMounted(async () => {
                 <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify({ detail, logs }, null, 2) }}</pre>
               </div>
             </section>
-          </div>
         </section>
           </main>
         </div>

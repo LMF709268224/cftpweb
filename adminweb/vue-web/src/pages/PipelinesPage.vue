@@ -654,7 +654,7 @@ onMounted(load)
             </button>
           </div>
 
-          <section class="grid gap-6 overflow-y-auto p-6">
+          <section class="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
       <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -700,35 +700,32 @@ onMounted(load)
         </div>
       </div>
 
-      <div v-if="!creating" class="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside class="space-y-4">
-          <div class="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div v-if="!creating" class="min-h-0 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-200 px-5 py-4">
+          <div>
             <h3 class="text-lg font-black">{{ copy.layerTitle }}</h3>
             <p class="mt-1 text-sm text-slate-500">{{ copy.layerDescription }}</p>
-            <div class="mt-4 space-y-2">
+          </div>
+          <div class="mt-4 flex gap-2 overflow-x-auto pb-1">
               <button
                 v-for="layer in layerItems"
                 :key="layer.key"
-                class="w-full rounded-2xl border px-4 py-3 text-left transition"
-                :class="activeLayer === layer.key ? 'border-sky-200 bg-sky-50 shadow-sm' : 'border-slate-100 bg-white hover:bg-slate-50'"
+                class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-sm font-black transition"
+                :class="activeLayer === layer.key ? 'border-sky-200 bg-sky-50 text-slate-950' : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'"
                 type="button"
                 @click="activeLayer = layer.key"
               >
-                <div class="flex items-center justify-between gap-3">
-                  <span class="font-black text-slate-950">{{ layer.title }}</span>
+                  <span>{{ layer.title }}</span>
                   <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ layer.count }}</span>
-                </div>
-                <p class="mt-1 text-xs text-slate-500">{{ layer.desc }}</p>
               </button>
-            </div>
           </div>
+        </div>
 
-          <div v-if="structureLocked" class="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div v-if="structureLocked" class="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900">
             {{ copy.structureLockedHint }}
           </div>
-        </aside>
 
-        <main class="min-w-0 rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <main class="h-[60vh] min-h-[360px] max-h-[620px] min-w-0 overflow-y-auto">
           <div class="border-b border-slate-200 p-5">
             <h3 class="text-xl font-black">{{ layerItems.find((layer) => layer.key === activeLayer)?.title }}</h3>
             <p class="mt-1 text-sm text-slate-500">{{ layerItems.find((layer) => layer.key === activeLayer)?.desc }}</p>
