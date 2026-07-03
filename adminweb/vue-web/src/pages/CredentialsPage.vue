@@ -222,7 +222,7 @@ onMounted(load)
             <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ definitionUlid(definition) || "-" }}</div>
           </div>
           <span class="self-center justify-self-center rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">{{ definition.category || "-" }}</span>
-          <button class="inline-flex h-9 items-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click.stop="selectDefinition(definition)">
+          <button class="self-center justify-self-end text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click.stop="selectDefinition(definition)">
             {{ copy.viewDetails }}
           </button>
         </div>
