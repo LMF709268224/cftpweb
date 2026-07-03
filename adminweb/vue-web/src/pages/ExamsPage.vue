@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, CheckCircle2, ClipboardList, Loader2, PlayCircle, RefreshCw, Search } from "lucide-vue-next"
+import { CheckCircle2, Loader2, PlayCircle, RefreshCw, Search, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient, ApiError } from "@/lib/apiClient"
@@ -17,6 +17,7 @@ const transitions = ref<JsonRecord[]>([])
 const loading = ref(false)
 const detailLoading = ref(false)
 const actionLoading = ref(false)
+const detailDialogOpen = ref(false)
 const page = ref(1)
 const total = ref(0)
 
@@ -133,6 +134,7 @@ async function openExam(item: JsonRecord) {
   detail.value = null
   result.value = null
   transitions.value = []
+  detailDialogOpen.value = true
   await loadExamDetail(examUlid(item))
 }
 
@@ -193,10 +195,15 @@ async function refreshAll() {
 }
 
 function clearSelection() {
+  detailDialogOpen.value = false
   selectedSummary.value = null
   detail.value = null
   result.value = null
   transitions.value = []
+}
+
+function closeDetailDialog() {
+  clearSelection()
 }
 
 function changePage(nextPage: number) {
@@ -219,10 +226,6 @@ onMounted(() => loadExams(1))
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button v-if="selectedSummary" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="clearSelection">
-          <ArrowLeft class="h-4 w-4" />
-          {{ copy.backToList }}
-        </button>
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="refreshAll">
           <RefreshCw class="h-4 w-4" :class="loading || detailLoading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
@@ -263,82 +266,108 @@ onMounted(() => loadExams(1))
       </div>
     </section>
 
-    <div class="grid gap-6 xl:grid-cols-[540px_minmax(0,1fr)]">
-      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
-            <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
-          </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+        <div>
+          <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
+        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+      </div>
 
-        <div v-if="loading" class="px-6 py-14 text-center text-slate-500">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          {{ copy.loadingList }}
-        </div>
-        <div v-else-if="!exams.length" class="px-6 py-14 text-center text-slate-500">{{ copy.emptyList }}</div>
-        <div v-else>
-          <button
-            v-for="exam in exams"
-            :key="examUlid(exam)"
-            class="grid w-full gap-3 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
-            :class="examUlid(exam) === selectedExamUlid ? 'bg-sky-50' : ''"
-            type="button"
-            @click="openExam(exam)"
-          >
-            <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <h3 class="truncate text-lg font-black">{{ field(exam, ["exam_code", "program_code", "exam_ulid"]) }}</h3>
-                <p class="mt-1 truncate text-sm text-slate-500">{{ candidateDisplay(exam) }}</p>
-              </div>
-              <span class="shrink-0 rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(exam.exam_status)">
-                {{ examStatusLabel(exam.exam_status) }}
-              </span>
+      <div v-if="loading" class="px-6 py-14 text-center text-slate-500">
+        <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+        {{ copy.loadingList }}
+      </div>
+      <div v-else-if="!exams.length" class="px-6 py-14 text-center text-slate-500">{{ copy.emptyList }}</div>
+      <div v-else class="overflow-x-auto">
+        <table class="min-w-full text-left text-sm">
+          <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+            <tr>
+              <th class="px-5 py-3">{{ copy.columns.exam }}</th>
+              <th class="px-5 py-3">{{ copy.columns.candidate }}</th>
+              <th class="px-5 py-3">{{ copy.columns.result }}</th>
+              <th class="px-5 py-3">{{ copy.columns.confirmation }}</th>
+              <th class="px-5 py-3">{{ copy.columns.appointment }}</th>
+              <th class="px-5 py-3">{{ copy.columns.status }}</th>
+              <th class="w-32 whitespace-nowrap px-5 py-3 text-right">{{ copy.columns.action }}</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            <tr v-for="exam in exams" :key="examUlid(exam)" class="transition hover:bg-sky-50" :class="examUlid(exam) === selectedExamUlid ? 'bg-sky-50' : ''">
+              <td class="px-5 py-4">
+                <div class="font-black text-slate-950">{{ field(exam, ["exam_code", "program_code", "exam_ulid"]) }}</div>
+                <div class="mt-1 max-w-[220px] truncate font-mono text-xs font-bold text-blue-700">{{ examUlid(exam) }}</div>
+              </td>
+              <td class="px-5 py-4">
+                <div class="font-semibold text-slate-800">{{ candidateDisplay(exam) }}</div>
+                <div class="mt-1 max-w-[220px] truncate font-mono text-xs text-slate-400">{{ label(exam.candidate_ulid) }}</div>
+              </td>
+              <td class="px-5 py-4">
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
+              </td>
+              <td class="px-5 py-4">
+                <span class="break-all font-mono text-xs font-bold text-slate-600">{{ label(exam.confirmation_number) }}</span>
+              </td>
+              <td class="whitespace-nowrap px-5 py-4 font-semibold text-slate-700">{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</td>
+              <td class="px-5 py-4">
+                <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(exam.exam_status)">
+                  {{ examStatusLabel(exam.exam_status) }}
+                </span>
+              </td>
+              <td class="w-32 whitespace-nowrap px-5 py-4 text-right">
+                <button class="inline-flex h-9 items-center justify-center whitespace-nowrap rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-black text-blue-700 hover:bg-blue-100" type="button" @click="openExam(exam)">
+                  {{ copy.viewDetails }}
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
+        <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="changePage(page - 1)">{{ copy.prev }}</button>
+        <span class="text-sm font-bold text-slate-600">{{ copy.pageText(page, totalPages) }}</span>
+        <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="changePage(page + 1)">{{ copy.next }}</button>
+      </div>
+    </section>
+
+    <Teleport to="body">
+      <div v-if="detailDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+        <section class="flex max-h-[88vh] w-full max-w-[1180px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-5">
+            <div>
+              <h2 class="text-xl font-black">{{ copy.detailTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
             </div>
-            <div class="flex flex-wrap gap-2 text-xs font-bold text-slate-500">
-              <span class="rounded-full bg-slate-100 px-2.5 py-1">{{ copy.badges.result }}{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1">{{ copy.badges.confirmation }}{{ label(exam.confirmation_number) }}</span>
-              <span class="rounded-full bg-slate-100 px-2.5 py-1">{{ copy.badges.appointment }}{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</span>
+            <div class="flex shrink-0 items-center gap-2">
+              <button
+                v-if="selectedExamUlid"
+                class="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0b4ea2] px-4 text-sm font-black text-white shadow-sm disabled:opacity-50"
+                type="button"
+                :disabled="actionLoading"
+                @click="syncExamResult"
+              >
+                <PlayCircle class="h-4 w-4" :class="actionLoading ? 'animate-spin' : ''" />
+                {{ copy.syncResult }}
+              </button>
+              <button
+                class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+                type="button"
+                :aria-label="copy.close"
+                @click="closeDetailDialog"
+              >
+                <X class="h-5 w-5" />
+              </button>
             </div>
-            <p class="truncate font-mono text-xs font-bold text-blue-700">{{ examUlid(exam) }}</p>
-          </button>
-        </div>
-
-        <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
-          <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="changePage(page - 1)">{{ copy.prev }}</button>
-          <span class="text-sm font-bold text-slate-600">{{ copy.pageText(page, totalPages) }}</span>
-          <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="changePage(page + 1)">{{ copy.next }}</button>
-        </div>
-      </section>
-
-      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
-            <h2 class="text-xl font-black">{{ copy.detailTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
           </div>
-          <button
-            v-if="selectedExamUlid"
-            class="inline-flex items-center gap-2 rounded-xl bg-[#0b4ea2] px-4 py-2.5 text-sm font-black text-white shadow-sm disabled:opacity-50"
-            type="button"
-            :disabled="actionLoading"
-            @click="syncExamResult"
-          >
-            <PlayCircle class="h-4 w-4" :class="actionLoading ? 'animate-spin' : ''" />
-            {{ copy.syncResult }}
-          </button>
-        </div>
 
-        <div v-if="detailLoading" class="px-6 py-16 text-center text-slate-500">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          {{ copy.loadingDetail }}
-        </div>
-        <div v-else-if="!selectedSummary" class="px-6 py-16 text-center text-slate-500">
-          <ClipboardList class="mx-auto mb-3 h-10 w-10 text-slate-300" />
-          {{ copy.selectExam }}
-        </div>
-        <div v-else class="space-y-5 p-5">
+          <div class="min-h-0 flex-1 overflow-y-auto">
+            <div v-if="detailLoading" class="px-6 py-16 text-center text-slate-500">
+              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+              {{ copy.loadingDetail }}
+            </div>
+            <div v-else-if="selectedSummary" class="space-y-5 p-5">
           <div class="rounded-2xl bg-blue-50 p-5">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -461,8 +490,10 @@ onMounted(() => loadExams(1))
             <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawFields }}</summary>
             <pre class="mt-4 max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify({ detail: detail || selectedSummary, result, transitions }, null, 2) }}</pre>
           </details>
-        </div>
-      </section>
-    </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </section>
 </template>
