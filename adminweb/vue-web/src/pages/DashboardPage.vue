@@ -285,7 +285,7 @@ onMounted(loadDashboard)
       </div>
     </section>
 
-    <section class="mt-7 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+    <section class="mt-7 hidden gap-6 xl:grid-cols-[1.1fr_0.9fr]">
       <article class="rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-100 p-6">
           <div>
