@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, Loader2, Plus, RefreshCw, Save, Trash2, X } from "lucide-vue-next"
+import { FileText, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -15,7 +15,8 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const saving = ref(false)
 const detailOpen = ref(false)
-const mode = ref<"create" | "edit">("edit")
+const deleteConfirmOpen = ref(false)
+const mode = ref<"create" | "edit" | "detail">("detail")
 const pageToken = ref("")
 const nextPageToken = ref("")
 const previousTokens = ref<string[]>([])
@@ -194,7 +195,7 @@ async function load() {
 
 function selectFile(file: JsonRecord | null, openDetail = false) {
   selected.value = file
-  mode.value = file ? "edit" : "create"
+  mode.value = openDetail ? "detail" : file ? "edit" : "create"
   fillForm(file)
   void loadFileDetail(file)
   if (openDetail) detailOpen.value = true
@@ -204,8 +205,31 @@ function openFileDetail(file: JsonRecord) {
   selectFile(file, true)
 }
 
+function openFileEditor(file: JsonRecord) {
+  selectFile(file)
+  mode.value = "edit"
+  detailOpen.value = true
+}
+
 function closeFileDetail() {
   detailOpen.value = false
+}
+
+function requestDeleteFile(file: JsonRecord | null = selected.value) {
+  if (!file) return
+  selected.value = file
+  fillForm(file)
+  const id = fileId(file)
+  const version = fileVersion(file)
+  if (!id || version <= 0) {
+    toast.error(copy.value.toasts.deleteRequiresVersion)
+    return
+  }
+  deleteConfirmOpen.value = true
+}
+
+function closeDeleteConfirm() {
+  deleteConfirmOpen.value = false
 }
 
 function startCreate() {
@@ -284,7 +308,6 @@ async function deleteFile() {
     toast.error(copy.value.toasts.deleteRequiresVersion)
     return
   }
-  if (!window.confirm(copy.value.confirmDelete(fileTitle(selected.value)))) return
 
   saving.value = true
   try {
@@ -292,6 +315,8 @@ async function deleteFile() {
       method: "DELETE",
     })
     toast.success(copy.value.toasts.deleted)
+    deleteConfirmOpen.value = false
+    detailOpen.value = false
     await loadFiles()
   } catch (err) {
     console.error(err)
@@ -379,34 +404,42 @@ onMounted(load)
           {{ copy.loading }}
         </div>
         <div v-else-if="!files.length" class="px-6 py-10 text-center text-slate-500">{{ copy.empty }}</div>
-        <div v-else class="grid grid-cols-[minmax(0,1fr)_88px_92px_110px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+        <div v-else class="grid grid-cols-[minmax(0,1fr)_88px_120px_200px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
           <span>{{ copy.columns.file }}</span>
           <span class="text-center">{{ copy.columns.sort }}</span>
-          <span class="text-right">{{ copy.columns.type }}</span>
-          <span class="text-right">{{ copy.columns.action }}</span>
+          <span class="text-center">{{ copy.columns.type }}</span>
+          <span class="text-center">{{ copy.columns.action }}</span>
         </div>
-        <button
+        <div
           v-for="file in files"
           :key="fileId(file)"
-          class="grid w-full grid-cols-[minmax(0,1fr)_88px_92px_110px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
+          class="grid w-full grid-cols-[minmax(0,1fr)_88px_120px_200px] gap-6 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
           :class="fileId(selected) === fileId(file) ? 'bg-sky-50' : ''"
-          type="button"
-          @click="openFileDetail(file)"
         >
-          <div class="min-w-0">
+          <button class="min-w-0 text-left" type="button" @click="openFileDetail(file)">
             <div class="truncate text-lg font-black text-slate-950">{{ fileTitle(file) }}</div>
             <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ file.description || "-" }}</div>
             <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
               <span class="max-w-full truncate rounded-full bg-blue-50 px-2 py-1 text-blue-700">{{ copy.ownerPrefix }}{{ ownerText(file) }}</span>
               <span class="rounded-full bg-slate-100 px-2 py-1">Version: {{ file.version || 0 }}</span>
             </div>
-          </div>
+          </button>
           <span class="self-center text-center text-sm font-black text-slate-700">{{ file.sort_order || 0 }}</span>
-          <span class="h-fit self-center justify-self-end whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
+          <span class="h-fit self-center justify-self-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
             {{ fileTypeLabel(file.file_type) }}
           </span>
-          <span class="inline-flex h-9 items-center self-center justify-self-end rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50">{{ copy.viewDetails }}</span>
-        </button>
+          <div class="flex items-center justify-start gap-4 lg:justify-center">
+            <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openFileDetail(file)">
+              {{ copy.viewDetails }}
+            </button>
+            <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openFileEditor(file)">
+              {{ copy.editFile }}
+            </button>
+            <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="requestDeleteFile(file)">
+              {{ copy.deleteFile }}
+            </button>
+          </div>
+        </div>
 
         <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
           <span class="mr-auto text-sm font-bold text-slate-500">{{ copy.pageText(currentPage) }}</span>
@@ -419,8 +452,8 @@ onMounted(load)
         <div class="flex max-h-[88vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
         <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
-            <h2 class="text-xl font-black">{{ mode === "create" ? copy.createTitle : copy.detailTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
+            <h2 class="text-xl font-black">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ mode === "detail" ? copy.readonlyHint : mode === "create" ? copy.createHint : copy.editHint }}</p>
             <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
               <Loader2 class="h-3.5 w-3.5 animate-spin" />
               {{ copy.detailLoading }}
@@ -442,28 +475,28 @@ onMounted(load)
           <div class="grid gap-3 md:grid-cols-2">
           <label class="text-sm font-bold">
             {{ copy.fields.fileId }}
-            <input v-model="form.file_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'" :placeholder="copy.placeholders.fileId" />
+            <input v-model="form.file_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail' || mode === 'edit'" :placeholder="copy.placeholders.fileId" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.pack }}
-            <select v-model="form.pack_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'">
+            <select v-model="form.pack_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail' || mode === 'edit'">
               <option value="">{{ copy.selectPack }}</option>
               <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
             </select>
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.title }}
-            <input v-model="form.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.title" />
+            <input v-model="form.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.title" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileType }}
-            <select v-model.number="form.file_type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
+            <select v-model.number="form.file_type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'">
               <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
           <label class="md:col-span-2 text-sm font-bold">
             {{ copy.fields.description }}
-            <textarea v-model="form.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.description" />
+            <textarea v-model="form.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.description" />
           </label>
           </div>
 
@@ -471,27 +504,27 @@ onMounted(load)
           <div class="grid gap-3 md:grid-cols-2">
           <label class="text-sm font-bold">
             {{ copy.fields.fileName }}
-            <input v-model="form.file_name" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileName" />
+            <input v-model="form.file_name" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.fileName" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileSize }}
-            <input v-model.number="form.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
+            <input v-model.number="form.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" type="number" min="0" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileObjectKey }}
-            <input v-model="form.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileObjectKey" />
+            <input v-model="form.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.fileObjectKey" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileHash }}
-            <input v-model="form.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileHash" />
+            <input v-model="form.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.fileHash" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.thumbnailObjectKey }}
-            <input v-model="form.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.thumbnailObjectKey" />
+            <input v-model="form.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.thumbnailObjectKey" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.thumbnailHash }}
-            <input v-model="form.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.thumbnailHash" />
+            <input v-model="form.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.thumbnailHash" />
           </label>
           </div>
 
@@ -499,30 +532,19 @@ onMounted(load)
           <div class="grid gap-3 md:grid-cols-3">
           <label class="text-sm font-bold">
             {{ copy.fields.videoStreamUid }}
-            <input v-model="form.video_stream_uid" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.videoStreamUid" />
+            <input v-model="form.video_stream_uid" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.videoStreamUid" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.sort }}
-            <input v-model.number="form.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
+            <input v-model.number="form.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" type="number" min="0" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.version }}
-            <input v-model.number="form.version" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
+            <input v-model.number="form.version" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'detail' || mode === 'create'" />
           </label>
           </div>
 
-        <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
-          <button
-            v-if="mode === 'edit'"
-            class="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-bold text-red-700 disabled:opacity-50"
-            type="button"
-            :disabled="saving"
-            @click="deleteFile"
-          >
-            <Trash2 class="h-4 w-4" />
-            {{ copy.deleteFile }}
-          </button>
-          <span v-else class="hidden sm:block"></span>
+        <div v-if="mode !== 'detail'" class="mt-5 flex justify-end border-t border-slate-100 pt-5">
           <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveFile">
             <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
             <Save v-else class="h-4 w-4" />
@@ -530,7 +552,7 @@ onMounted(load)
           </button>
         </div>
 
-        <div v-if="selected" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+        <div v-if="selected && mode === 'detail'" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div class="mb-3 flex items-center gap-2 text-sm font-black">
             <FileText class="h-4 w-4 text-blue-700" />
             {{ copy.sections.raw }}
@@ -552,6 +574,25 @@ onMounted(load)
         </div>
         </div>
       </section>
+
+      <Teleport to="body">
+        <div v-if="deleteConfirmOpen && selected" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+          <section class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
+            <h2 class="text-2xl font-black text-slate-950">{{ copy.deleteConfirmTitle }}</h2>
+            <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="break-words font-black text-slate-950">{{ fileTitle(selected) }}</div>
+              <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ fileId(selected) }}</div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="saving" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="deleteFile">
+                {{ saving ? copy.deleting : copy.confirmDeleteAction }}
+              </button>
+            </div>
+          </section>
+        </div>
+      </Teleport>
     </div>
   </section>
 </template>

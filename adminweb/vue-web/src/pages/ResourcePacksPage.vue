@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileBox, Loader2, Pencil, Plus, RefreshCw, Save, Trash2, X } from "lucide-vue-next"
+import { FileBox, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -318,16 +318,16 @@ onMounted(load)
         </div>
         <div v-else-if="!packs.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
         <div v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_152px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+          <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_200px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
             <span>{{ copy.columns.pack }}</span>
             <span>{{ copy.columns.version }}</span>
             <span class="text-center">{{ copy.columns.status }}</span>
-            <span class="border-l border-slate-200 pl-5 text-center">{{ copy.columns.action }}</span>
+            <span class="text-center">{{ copy.columns.action }}</span>
           </div>
           <div
             v-for="pack in packs"
             :key="packId(pack)"
-            class="grid w-full gap-3 border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_84px_120px_152px] lg:items-center lg:gap-6"
+            class="grid w-full gap-3 border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_84px_120px_200px] lg:items-center lg:gap-6"
             :class="packId(selected) === packId(pack) ? 'bg-sky-50/70' : ''"
           >
             <button class="min-w-0 text-left" type="button" @click="openPackDetail(pack)">
@@ -341,16 +341,14 @@ onMounted(load)
             <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-center">
               {{ pack.status || "Active" }}
             </span>
-            <div class="flex flex-col items-start gap-2 lg:items-end lg:border-l lg:border-slate-100 lg:pl-5">
-              <button class="inline-flex h-9 w-32 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-blue-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50" type="button" @click="openPackDetail(pack)">
+            <div class="flex items-center justify-start gap-4 lg:justify-center">
+              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openPackDetail(pack)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="inline-flex h-9 w-32 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50" type="button" @click="openPackEditor(pack)">
-                <Pencil class="h-3.5 w-3.5" />
+              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openPackEditor(pack)">
                 {{ copy.editPack }}
               </button>
-              <button class="inline-flex h-9 w-32 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 text-sm font-bold text-red-700 shadow-sm transition hover:bg-red-100" type="button" @click="requestDeletePack(pack)">
-                <Trash2 class="h-3.5 w-3.5" />
+              <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="requestDeletePack(pack)">
                 {{ copy.deletePack }}
               </button>
             </div>
