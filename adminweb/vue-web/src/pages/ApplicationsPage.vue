@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
+import { CheckCircle2, Copy, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -20,6 +20,7 @@ const total = ref(0)
 const statusFilter = ref("0")
 const auditRemark = ref("")
 const activeTab = ref<DetailTab>("overview")
+const copiedRawJson = ref(false)
 const pageSize = 20
 let detailRequestId = 0
 const { t } = useAdminLanguage()
@@ -45,6 +46,7 @@ const selectedFields = computed(() => {
     }))
 })
 const selectedFiles = computed(() => files(selected.value || {}))
+const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const isApprovedSelected = computed(() => isApprovedApplication(selected.value))
 const detailTabs = computed(() => {
   const tabs: Array<{ key: DetailTab; title: string; count: number }> = [
@@ -121,6 +123,45 @@ function fileSize(file: JsonRecord) {
   if (size < 1024) return `${size} B`
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
   return `${(size / 1024 / 1024).toFixed(1)} MB`
+}
+
+function isStructuredValue(value: unknown) {
+  return Array.isArray(value) || (!!value && typeof value === "object")
+}
+
+function jsonText(value: unknown) {
+  return JSON.stringify(value ?? {}, null, 2)
+}
+
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = text
+  textarea.setAttribute("readonly", "")
+  textarea.style.position = "fixed"
+  textarea.style.opacity = "0"
+  document.body.appendChild(textarea)
+  textarea.select()
+  document.execCommand("copy")
+  document.body.removeChild(textarea)
+}
+
+async function copyRawJson() {
+  try {
+    await writeClipboard(selectedJson.value)
+    copiedRawJson.value = true
+    toast.success(copy.value.toasts.jsonCopied)
+    window.setTimeout(() => {
+      copiedRawJson.value = false
+    }, 1600)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.jsonCopyFailed)
+  }
 }
 
 function mergeApplicationDetail(appID: string, detail: JsonRecord) {
@@ -352,21 +393,16 @@ onMounted(() => load(1))
 
           <main class="h-[60vh] min-h-[360px] max-h-[620px] min-w-0 overflow-y-auto p-5">
               <div v-if="activeTab === 'overview'" class="grid gap-4 md:grid-cols-2">
-                <label v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold">
-                  {{ field.label }}
-                  <textarea
-                    v-if="Array.isArray(field.value) || (field.value && typeof field.value === 'object')"
-                    class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                    disabled
-                    :value="JSON.stringify(field.value, null, 2)"
-                  />
-                  <input
-                    v-else
-                    class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                    disabled
-                    :value="field.displayValue"
-                  />
-                </label>
+                <div v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
+                  <span class="text-xs font-black uppercase text-slate-400">{{ field.label }}</span>
+                  <pre
+                    v-if="isStructuredValue(field.value)"
+                    class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
+                  >{{ jsonText(field.value) }}</pre>
+                  <div v-else class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
+                    {{ field.displayValue }}
+                  </div>
+                </div>
               </div>
 
               <div v-else-if="activeTab === 'files'" class="space-y-4">
@@ -389,7 +425,10 @@ onMounted(() => load(1))
                         <span v-if="fileSize(file)" class="min-w-0 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">{{ copy.fileMeta.size }}{{ fileSize(file) }}</span>
                         <span v-if="file.file_ext" class="min-w-0 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">{{ copy.fileMeta.ext }}{{ file.file_ext }}</span>
                       </div>
-                      <div v-if="fileHash(file)" class="mt-3 break-all rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-400">{{ copy.fileMeta.sha256 }}{{ fileHash(file) }}</div>
+                      <div v-if="fileHash(file)" class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                        <div class="text-[11px] font-black uppercase text-slate-400">{{ copy.fileMeta.sha256 }}</div>
+                        <div class="mt-1 break-all font-mono text-xs leading-5 text-slate-600">{{ fileHash(file) }}</div>
+                      </div>
                     </div>
                     <div class="flex shrink-0 flex-wrap gap-2 sm:justify-end">
                       <a
@@ -446,7 +485,20 @@ onMounted(() => load(1))
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   {{ copy.rawHint }}
                 </div>
-                <pre class="max-h-[560px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+                <details class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
+                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
+                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
+                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyRawJson">
+                        <CheckCircle2 v-if="copiedRawJson" class="h-3.5 w-3.5" />
+                        <Copy v-else class="h-3.5 w-3.5" />
+                        {{ copiedRawJson ? copy.copiedJson : copy.copyJson }}
+                      </button>
+                    </div>
+                    <pre class="max-h-[520px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
+                  </div>
+                </details>
               </div>
           </main>
         </template>

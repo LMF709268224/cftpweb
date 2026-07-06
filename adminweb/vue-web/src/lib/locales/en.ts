@@ -733,6 +733,8 @@ export const en: AdminTranslations = {
       remarkRequired: "Audit remark is required when rejecting or requesting resubmission",
       auditSubmitted: "Audit submitted",
       auditSubmitFailed: "Failed to submit audit",
+      jsonCopied: "JSON copied",
+      jsonCopyFailed: "Copy failed",
     },
     columns: {
       application: "Application",
@@ -767,6 +769,9 @@ export const en: AdminTranslations = {
     resubmit: "Request Resubmission",
     reject: "Final Reject",
     rawHint: "System fields are read-only.",
+    rawJson: "Raw JSON",
+    copyJson: "Copy JSON",
+    copiedJson: "Copied",
   },
   auditLogs: {
     eyebrow: "Audit Logs",
@@ -1913,6 +1918,9 @@ export const en: AdminTranslations = {
     applyRaw: "Apply to Layered View",
     saveStructure: "Save Structure",
     fullDetails: "Complete Details",
+    jsonPreview: "JSON Preview",
+    copyJson: "Copy JSON",
+    copiedJson: "Copied",
     defaults: {
       stageName: "New Stage",
       unitName: "New Unit",
@@ -1946,6 +1954,8 @@ export const en: AdminTranslations = {
       respathRequired: "Please fill in respath",
       cloned: "Pipeline copy created",
       cloneFailed: "Clone failed",
+      jsonCopied: "JSON copied",
+      jsonCopyFailed: "Copy failed",
     },
   },
   lmsAdmin: {

@@ -731,6 +731,8 @@ export const zh = {
       remarkRequired: "拒绝或要求补交时需要填写审核备注",
       auditSubmitted: "审核已提交",
       auditSubmitFailed: "审核提交失败",
+      jsonCopied: "JSON 已复制",
+      jsonCopyFailed: "复制失败",
     },
     columns: {
       application: "申请",
@@ -765,6 +767,9 @@ export const zh = {
     resubmit: "打回重提",
     reject: "最终拒绝",
     rawHint: "系统字段仅用于查看。",
+    rawJson: "原始 JSON",
+    copyJson: "复制 JSON",
+    copiedJson: "已复制",
   },
   auditLogs: {
     eyebrow: "Audit Logs",
@@ -1911,6 +1916,9 @@ export const zh = {
     applyRaw: "应用到分层视图",
     saveStructure: "保存结构",
     fullDetails: "完整详情",
+    jsonPreview: "JSON 预览",
+    copyJson: "复制 JSON",
+    copiedJson: "已复制",
     defaults: {
       stageName: "New Stage",
       unitName: "New Unit",
@@ -1944,6 +1952,8 @@ export const zh = {
       respathRequired: "请填写 respath",
       cloned: "管线副本已创建",
       cloneFailed: "克隆失败",
+      jsonCopied: "JSON 已复制",
+      jsonCopyFailed: "复制失败",
     },
   },
   lmsAdmin: {
