@@ -36,6 +36,7 @@ type LessonForm = {
 
 type QuizScope = "course" | "chapter" | "lesson"
 type ChapterDialogMode = "detail" | "edit" | "create"
+type LessonDialogMode = "detail" | "edit" | "create"
 
 type QuizForm = {
   scope: QuizScope
@@ -155,6 +156,11 @@ const chapterDialogMode = ref<ChapterDialogMode>("detail")
 const chapterDeleteConfirmOpen = ref(false)
 const pendingDeleteChapter = ref<JsonRecord | null>(null)
 const deletingChapter = ref(false)
+const lessonDialogOpen = ref(false)
+const lessonDialogMode = ref<LessonDialogMode>("detail")
+const lessonDeleteConfirmOpen = ref(false)
+const pendingDeleteLesson = ref<JsonRecord | null>(null)
+const deletingLesson = ref(false)
 
 const categoryFilter = ref("")
 const publishedOnly = ref(false)
@@ -226,6 +232,7 @@ const allLessonItems = computed<LessonListItem[]>(() => {
   }
   return items
 })
+const selectedLessonRecord = computed(() => allLessonItems.value.find((item) => lessonId(item.lesson) === editingLessonId.value)?.lesson || selectedLesson.value)
 const selectedLessonOwnerChapter = computed(() => allLessonItems.value.find((item) => lessonId(item.lesson) === editingLessonId.value)?.chapter || selectedChapter.value)
 const allQuizItems = computed<QuizListItem[]>(() => {
   const items: QuizListItem[] = []
@@ -558,6 +565,25 @@ function chapterRecordEntries(record: JsonRecord | null | undefined) {
     key,
     label: chapterReadonlyFieldLabel(key),
     value: displayReadonlyValue(key, value),
+  }))
+}
+
+function lessonReadonlyFieldLabel(key: string) {
+  const labels: Record<string, string> = copy.value.lessonFieldLabels
+  return labels[key] || chapterReadonlyFieldLabel(key)
+}
+
+function lessonReadonlyValue(key: string, value: unknown) {
+  if (key === "lesson_type") return lessonTypeLabel(value)
+  return displayReadonlyValue(key, value)
+}
+
+function lessonRecordEntries(record: JsonRecord | null | undefined) {
+  if (!record) return []
+  return Object.entries(record).map(([key, value]) => ({
+    key,
+    label: lessonReadonlyFieldLabel(key),
+    value: lessonReadonlyValue(key, value),
   }))
 }
 
@@ -1082,7 +1108,7 @@ async function loadLessons() {
   }
 }
 
-function editLesson(lesson: JsonRecord) {
+function editLesson(lesson: JsonRecord, openDialog = true) {
   editingLessonId.value = lessonId(lesson)
   const ownerChapter = allLessonItems.value.find((item) => lessonId(item.lesson) === editingLessonId.value)?.chapter
   if (ownerChapter && chapterId(ownerChapter) !== selectedChapterId.value) {
@@ -1101,12 +1127,32 @@ function editLesson(lesson: JsonRecord) {
     newQuiz("lesson")
     void loadQuizzes("lesson")
   }
+  if (openDialog) {
+    lessonDialogMode.value = "edit"
+    lessonDialogOpen.value = true
+  }
 }
 
 function newLesson() {
   editingLessonId.value = ""
   lessonForm.value = emptyLessonForm()
   lessonForm.value.chapter_id = selectedChapterId.value
+}
+
+function openLessonDetail(lesson: JsonRecord) {
+  editLesson(lesson, false)
+  lessonDialogMode.value = "detail"
+  lessonDialogOpen.value = true
+}
+
+function openNewLesson() {
+  newLesson()
+  lessonDialogMode.value = "create"
+  lessonDialogOpen.value = true
+}
+
+function closeLessonDialog() {
+  lessonDialogOpen.value = false
 }
 
 async function saveLesson() {
@@ -1138,6 +1184,7 @@ async function saveLesson() {
       toast.success(copy.value.toasts.lessonCreated)
     }
     newLesson()
+    closeLessonDialog()
     await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
@@ -1147,17 +1194,34 @@ async function saveLesson() {
   }
 }
 
-async function deleteLesson(lesson: JsonRecord) {
+function deleteLesson(lesson: JsonRecord) {
+  pendingDeleteLesson.value = lesson
+  lessonDeleteConfirmOpen.value = true
+}
+
+function closeLessonDeleteConfirm() {
+  if (deletingLesson.value) return
+  lessonDeleteConfirmOpen.value = false
+  pendingDeleteLesson.value = null
+}
+
+async function confirmDeletePendingLesson() {
+  const lesson = pendingDeleteLesson.value
   const id = lessonId(lesson)
-  if (!id || !window.confirm(copy.value.confirmDeleteLesson(lessonTitle(lesson)))) return
+  if (!lesson || !id) return
+  deletingLesson.value = true
   try {
     await apiClient(`/api/lms/lessons/${encodeURIComponent(id)}?version=${versionOf(lesson)}`, { method: "DELETE" })
     toast.success(copy.value.toasts.lessonDeleted)
+    lessonDeleteConfirmOpen.value = false
+    pendingDeleteLesson.value = null
     newLesson()
     await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.lessonDeleteFailed)
+  } finally {
+    deletingLesson.value = false
   }
 }
 
@@ -1434,7 +1498,7 @@ function editQuiz(quiz: JsonRecord) {
   const item = allQuizItems.value.find((entry) => quizId(entry.quiz) === quizId(quiz))
   const scope = scopeFromQuizzableType(item?.ownerType || quiz.quizzable_type || quizForm.value.scope)
   if (item?.chapter) selectedChapter.value = item.chapter
-  if (item?.lesson) editLesson(item.lesson)
+  if (item?.lesson) editLesson(item.lesson, false)
   selectedQuiz.value = quiz
   editingQuizId.value = quizId(quiz)
   quizForm.value = {
@@ -2318,103 +2382,166 @@ onMounted(() => {
         </section>
       </Teleport>
 
-      <section class="grid gap-6 2xl:grid-cols-[390px_minmax(0,1fr)]" :class="!selectedCourseId ? 'opacity-50' : ''">
-        <aside class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex items-center justify-between border-b border-slate-200 p-5">
-            <div>
-              <h2 class="text-xl font-black">{{ copy.lessonListTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.lessonListDescription }}</p>
+      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
+        <div class="flex items-center justify-between border-b border-slate-200 p-5">
+          <div>
+            <h2 class="text-xl font-black">{{ copy.lessonListTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.lessonListDescription }}</p>
+          </div>
+          <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-40" :disabled="!selectedChapterId" type="button" @click="openNewLesson">{{ copy.newLesson }}</button>
+        </div>
+        <div v-if="completeLoading || lessonsLoading" class="p-8 text-center text-slate-500">
+          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+          {{ copy.loading }}
+        </div>
+        <div v-else-if="!allLessonItems.length" class="p-8 text-center text-slate-500">{{ copy.emptyLessons }}</div>
+        <div v-else>
+          <div class="hidden grid-cols-[minmax(0,1fr)_220px_100px_100px_240px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+            <span>{{ copy.lessonColumns.lesson }}</span>
+            <span>{{ copy.lessonColumns.chapter }}</span>
+            <span class="text-center">{{ copy.lessonColumns.sort }}</span>
+            <span class="text-center">{{ copy.lessonColumns.type }}</span>
+            <span class="text-center">{{ copy.lessonColumns.action }}</span>
+          </div>
+          <div
+            v-for="item in allLessonItems"
+            :key="lessonId(item.lesson)"
+            class="grid w-full gap-3 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_220px_100px_100px_240px] lg:items-center lg:gap-6"
+            :class="lessonId(item.lesson) === editingLessonId ? 'bg-sky-50/70' : ''"
+          >
+            <div class="min-w-0">
+              <div class="truncate text-lg font-black text-slate-950">{{ lessonTitle(item.lesson) }}</div>
+              <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ lessonId(item.lesson) || "-" }}</div>
             </div>
-            <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-40" :disabled="!selectedChapterId" type="button" @click="newLesson">{{ copy.newLesson }}</button>
-          </div>
-          <div v-if="completeLoading || lessonsLoading" class="p-8 text-center text-slate-500">
-            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            {{ copy.loading }}
-          </div>
-          <div v-else-if="!allLessonItems.length" class="p-8 text-center text-slate-500">{{ copy.emptyLessons }}</div>
-          <div v-else class="max-h-[520px] divide-y divide-slate-100 overflow-y-auto">
-            <div v-for="item in allLessonItems" :key="lessonId(item.lesson)" class="grid gap-3 p-4 lg:grid-cols-[1fr_auto]" :class="lessonId(item.lesson) === editingLessonId ? 'bg-sky-50' : ''">
-              <button class="text-left" type="button" @click="editLesson(item.lesson)">
-                <div class="font-black">{{ lessonTitle(item.lesson) }}</div>
-                <div class="mt-1 text-sm text-slate-500">{{ copy.belongsToChapter }}{{ chapterTitle(item.chapter) }}</div>
-                <div class="mt-1 text-xs text-slate-500">{{ copy.sortMeta(item.lesson.sort_order || 0) }} · {{ lessonTypeLabel(item.lesson.lesson_type) }}</div>
+            <div class="min-w-0 text-sm font-bold text-slate-700">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.lessonColumns.chapter }}</span>
+              <span class="truncate">{{ chapterTitle(item.chapter) }}</span>
+            </div>
+            <div class="text-sm font-bold text-slate-700 lg:text-center">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.lessonColumns.sort }}</span>{{ item.lesson.sort_order || 0 }}
+            </div>
+            <div class="text-sm font-bold text-slate-700 lg:text-center">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.lessonColumns.type }}</span>{{ lessonTypeLabel(item.lesson.lesson_type) }}
+            </div>
+            <div class="flex items-center justify-start gap-4 lg:justify-center">
+              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openLessonDetail(item.lesson)">
+                {{ copy.viewDetails }}
               </button>
-              <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteLesson(item.lesson)">{{ copy.delete }}</button>
+              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="editLesson(item.lesson)">
+                {{ copy.editLesson }}
+              </button>
+              <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteLesson(item.lesson)">
+                {{ copy.delete }}
+              </button>
             </div>
           </div>
-        </aside>
+        </div>
+      </section>
 
-        <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
-            <div>
-              <h2 class="text-xl font-black">{{ copy.lessonDetailTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ editingLessonId ? lessonTitle(selectedLesson) : copy.lessonDetailEmptyHint }}</p>
+      <Teleport to="body">
+        <section v-if="lessonDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+          <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <h2 class="text-xl font-black">{{ lessonDialogMode === "create" ? copy.createLesson : lessonDialogMode === "edit" ? copy.editLesson : copy.lessonDetailTitle }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ lessonDialogMode === "detail" ? lessonTitle(selectedLessonRecord) : copy.lessonDetailEmptyHint }}</p>
+              </div>
+              <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeLessonDialog">
+                <X class="h-5 w-5" />
+              </button>
             </div>
-          </div>
-          <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-            <div class="space-y-6">
-              <div class="grid gap-3">
+
+            <div class="flex-1 overflow-y-auto p-5">
+              <div v-if="lessonDialogMode === 'detail'" class="space-y-5">
                 <div class="rounded-2xl bg-blue-50 p-4">
                   <div class="text-xs font-black text-blue-600">{{ copy.ownerChapter }}</div>
                   <div class="mt-1 text-lg font-black text-slate-900">{{ selectedLessonOwnerChapter ? chapterTitle(selectedLessonOwnerChapter) : (selectedChapterId ? chapterTitle(selectedChapter) : copy.unselectedChapter) }}</div>
                   <div class="mt-2 break-all font-mono text-sm font-bold text-blue-900">ID: {{ selectedLessonOwnerChapter ? chapterId(selectedLessonOwnerChapter) : (selectedChapterId || "-") }}</div>
                 </div>
-              </div>
-              <div class="rounded-2xl border border-slate-200 p-4">
-                <h3 class="font-black">{{ copy.readonlyFields }}</h3>
-                <p class="mt-1 text-xs text-slate-500">{{ copy.systemReadonlyHint }}</p>
-                <div v-if="!selectedLesson" class="p-8 text-center text-slate-500">{{ copy.noSelectedLesson }}</div>
-                <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
-                  <label v-for="entry in recordEntries(selectedLesson)" :key="`lesson-${entry.key}`" class="block">
-                    <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
-                    <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                  </label>
+                <div class="rounded-2xl border border-slate-200 p-4">
+                  <h3 class="font-black">{{ copy.readonlyFields }}</h3>
+                  <p class="mt-1 text-xs text-slate-500">{{ copy.systemReadonlyHint }}</p>
+                  <div v-if="!selectedLessonRecord" class="p-8 text-center text-slate-500">{{ copy.noSelectedLesson }}</div>
+                  <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
+                    <label v-for="entry in lessonRecordEntries(selectedLessonRecord)" :key="`lesson-dialog-${entry.key}`" class="block">
+                      <span class="text-xs font-black text-slate-500">{{ entry.label }}</span>
+                      <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
+                    </label>
+                  </div>
                 </div>
               </div>
-            </div>
-            <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveLesson">
-              <h3 class="font-black">{{ editingLessonId ? copy.editLesson : copy.createLesson }}</h3>
-              <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-                {{ copy.saveBelongsToChapter }}{{ lessonForm.chapter_id ? chapterTitle(chapterById(lessonForm.chapter_id)) : copy.selectChapter }}
-              </div>
-              <label class="mt-3 block">
-                <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
-                <select v-model="lessonForm.chapter_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
-                  <option value="">{{ copy.selectChapter }}</option>
-                  <option v-for="chapter in chapters" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
-                </select>
-              </label>
-              <input v-model="lessonForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.lessonTitlePlaceholder" />
-              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+
+              <form v-else class="space-y-4" @submit.prevent="saveLesson">
+                <div class="rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+                  {{ copy.saveBelongsToChapter }}{{ lessonForm.chapter_id ? chapterTitle(chapterById(lessonForm.chapter_id)) : copy.selectChapter }}
+                </div>
                 <label class="block">
-                  <span class="text-sm font-bold">{{ copy.sort }}</span>
-                  <input v-model="lessonForm.sort_order" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="1" type="number" min="1" />
-                  <span class="mt-1 block text-xs text-slate-500">{{ copy.sortOrderHint }}</span>
+                  <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
+                  <select v-model="lessonForm.chapter_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                    <option value="">{{ copy.selectChapter }}</option>
+                    <option v-for="chapter in chapters" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
+                  </select>
                 </label>
-                <select v-model="lessonForm.lesson_type" class="rounded-xl border border-slate-200 px-4 py-3">
-                  <option value="1">{{ copy.lessonTypes.video }}</option>
-                  <option value="2">{{ copy.lessonTypes.text }}</option>
-                  <option value="3">{{ copy.lessonTypes.pdf }}</option>
-                  <option value="4">{{ copy.lessonTypes.image }}</option>
-                  <option value="5">{{ copy.lessonTypes.audio }}</option>
-                  <option value="6">{{ copy.lessonTypes.file }}</option>
-                  <option value="7">{{ copy.lessonTypes.link }}</option>
-                </select>
-              </div>
-              <textarea v-model="lessonForm.body" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.lessonBodyPlaceholder" />
-              <input v-model="lessonForm.asset_object_key" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetObjectKeyPlaceholder" />
-              <label class="mt-3 block">
-                <span class="text-sm font-bold">{{ copy.assetFileHash }}</span>
-                <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" :title="copy.assetHashHint">?</span>
-                <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetFileHashPlaceholder" />
-              </label>
-              <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedChapterId || savingLesson" type="submit">
+                <input v-model="lessonForm.title" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.lessonTitlePlaceholder" />
+                <div class="grid items-start gap-3 sm:grid-cols-2">
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.sort }}</span>
+                    <input v-model="lessonForm.sort_order" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="1" type="number" min="1" />
+                    <span class="mt-1 block text-xs text-slate-500">{{ copy.sortOrderHint }}</span>
+                  </label>
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.lessonColumns.type }}</span>
+                    <select v-model="lessonForm.lesson_type" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                      <option value="1">{{ copy.lessonTypes.video }}</option>
+                      <option value="2">{{ copy.lessonTypes.text }}</option>
+                      <option value="3">{{ copy.lessonTypes.pdf }}</option>
+                      <option value="4">{{ copy.lessonTypes.image }}</option>
+                      <option value="5">{{ copy.lessonTypes.audio }}</option>
+                      <option value="6">{{ copy.lessonTypes.file }}</option>
+                      <option value="7">{{ copy.lessonTypes.link }}</option>
+                    </select>
+                    <span class="mt-1 block text-xs text-transparent select-none">{{ copy.sortOrderHint }}</span>
+                  </label>
+                </div>
+                <textarea v-model="lessonForm.body" class="min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.lessonBodyPlaceholder" />
+                <input v-model="lessonForm.asset_object_key" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetObjectKeyPlaceholder" />
+                <label class="block">
+                  <span class="text-sm font-bold">{{ copy.assetFileHash }}</span>
+                  <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" :title="copy.assetHashHint">?</span>
+                  <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetFileHashPlaceholder" />
+                </label>
+              </form>
+            </div>
+
+            <div v-if="lessonDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedChapterId || savingLesson" type="button" @click="saveLesson">
+                <Loader2 v-if="savingLesson" class="h-4 w-4 animate-spin" />
+                <Save v-else class="h-4 w-4" />
                 {{ savingLesson ? copy.saving : copy.saveLesson }}
               </button>
-            </form>
+            </div>
           </div>
         </section>
-      </section>
+      </Teleport>
+
+      <Teleport to="body">
+        <section v-if="lessonDeleteConfirmOpen && pendingDeleteLesson" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+          <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
+            <h2 class="text-2xl font-black text-slate-950">{{ copy.lessonDeleteConfirmTitle }}</h2>
+            <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.lessonDeleteConfirmDescription }}</p>
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="break-words font-black text-slate-950">{{ lessonTitle(pendingDeleteLesson) }}</div>
+              <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ lessonId(pendingDeleteLesson) }}</div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingLesson" @click="closeLessonDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingLesson" @click="confirmDeletePendingLesson">
+                {{ deletingLesson ? copy.deleting : copy.confirmDeleteAction }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </Teleport>
 
       <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
         <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
