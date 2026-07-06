@@ -35,6 +35,7 @@ type LessonForm = {
 }
 
 type QuizScope = "course" | "chapter" | "lesson"
+type ChapterDialogMode = "detail" | "edit" | "create"
 
 type QuizForm = {
   scope: QuizScope
@@ -149,6 +150,11 @@ const savingOption = ref(false)
 const publishing = ref(false)
 const importing = ref(false)
 const courseView = ref<"list" | "detail">("list")
+const chapterDialogOpen = ref(false)
+const chapterDialogMode = ref<ChapterDialogMode>("detail")
+const chapterDeleteConfirmOpen = ref(false)
+const pendingDeleteChapter = ref<JsonRecord | null>(null)
+const deletingChapter = ref(false)
 
 const categoryFilter = ref("")
 const publishedOnly = ref(false)
@@ -531,9 +537,28 @@ function recordEntries(record: JsonRecord | null | undefined) {
   return Object.entries(record).map(([key, value]) => ({ key, value: displayValue(value) }))
 }
 
+function displayReadonlyValue(key: string, value: unknown) {
+  if (key.endsWith("_at") || key.endsWith("_time")) return formatDate(value) || displayValue(value)
+  return displayValue(value)
+}
+
 function courseReadonlyFieldLabel(key: string) {
   const labels: Record<string, string> = copy.value.readonlyCourseFieldLabels
   return labels[key] || key
+}
+
+function chapterReadonlyFieldLabel(key: string) {
+  const labels: Record<string, string> = copy.value.chapterFieldLabels
+  return labels[key] || courseReadonlyFieldLabel(key)
+}
+
+function chapterRecordEntries(record: JsonRecord | null | undefined) {
+  if (!record) return []
+  return Object.entries(record).map(([key, value]) => ({
+    key,
+    label: chapterReadonlyFieldLabel(key),
+    value: displayReadonlyValue(key, value),
+  }))
 }
 
 function courseDetailReadonlyFieldLabel(key: string) {
@@ -934,9 +959,9 @@ async function loadChapters() {
   }
 }
 
-function editChapter(chapter: JsonRecord) {
+function selectChapterForContext(chapter: JsonRecord, editing = false) {
   selectedChapter.value = chapter
-  editingChapterId.value = chapterId(chapter)
+  editingChapterId.value = editing ? chapterId(chapter) : ""
   chapterForm.value = {
     title: String(chapter.title || ""),
     sort_order: String(chapter.sort_order || 1),
@@ -946,7 +971,7 @@ function editChapter(chapter: JsonRecord) {
   void loadQuizzes("chapter")
 }
 
-function newChapter() {
+function resetChapterState() {
   selectedChapter.value = null
   editingChapterId.value = ""
   chapterForm.value = emptyChapterForm()
@@ -955,6 +980,28 @@ function newChapter() {
   lessonForm.value = emptyLessonForm()
   newQuiz("chapter")
   quizzes.value = []
+}
+
+function openChapterDetail(chapter: JsonRecord) {
+  selectChapterForContext(chapter)
+  chapterDialogMode.value = "detail"
+  chapterDialogOpen.value = true
+}
+
+function editChapter(chapter: JsonRecord) {
+  selectChapterForContext(chapter, true)
+  chapterDialogMode.value = "edit"
+  chapterDialogOpen.value = true
+}
+
+function newChapter() {
+  resetChapterState()
+  chapterDialogMode.value = "create"
+  chapterDialogOpen.value = true
+}
+
+function closeChapterDialog() {
+  chapterDialogOpen.value = false
 }
 
 async function saveChapter() {
@@ -978,8 +1025,9 @@ async function saveChapter() {
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/chapters`, { method: "POST", body })
       toast.success(copy.value.toasts.chapterCreated)
     }
-    newChapter()
     await loadChapters()
+    resetChapterState()
+    closeChapterDialog()
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.chapterSaveFailed)
@@ -988,17 +1036,34 @@ async function saveChapter() {
   }
 }
 
-async function deleteChapter(chapter: JsonRecord) {
+function deleteChapter(chapter: JsonRecord) {
+  pendingDeleteChapter.value = chapter
+  chapterDeleteConfirmOpen.value = true
+}
+
+function closeChapterDeleteConfirm() {
+  if (deletingChapter.value) return
+  chapterDeleteConfirmOpen.value = false
+  pendingDeleteChapter.value = null
+}
+
+async function confirmDeleteChapter() {
+  const chapter = pendingDeleteChapter.value
   const id = chapterId(chapter)
-  if (!id || !window.confirm(copy.value.confirmDeleteChapter(chapterTitle(chapter)))) return
+  if (!chapter || !id) return
+  deletingChapter.value = true
   try {
     await apiClient(`/api/lms/chapters/${encodeURIComponent(id)}?version=${versionOf(chapter)}`, { method: "DELETE" })
     toast.success(copy.value.toasts.chapterDeleted)
-    newChapter()
+    chapterDeleteConfirmOpen.value = false
+    pendingDeleteChapter.value = null
+    resetChapterState()
     await loadChapters()
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.chapterDeleteFailed)
+  } finally {
+    deletingChapter.value = false
   }
 }
 
@@ -2134,61 +2199,124 @@ onMounted(() => {
         </div>
       </section>
 
-      <section class="grid gap-6 2xl:grid-cols-[390px_minmax(0,1fr)]" :class="!selectedCourseId ? 'opacity-50' : ''">
-        <aside class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex items-center justify-between border-b border-slate-200 p-5">
-            <div>
-              <h2 class="text-xl font-black">{{ copy.chapterListTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.chapterListDescription }}</p>
+      <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
+        <div class="flex items-center justify-between border-b border-slate-200 p-5">
+          <div>
+            <h2 class="text-xl font-black">{{ copy.chapterListTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.chapterListDescription }}</p>
+          </div>
+          <button class="rounded-xl border px-3 py-2 font-bold" :disabled="!selectedCourseId" type="button" @click="newChapter">{{ copy.newChapter }}</button>
+        </div>
+        <div v-if="chaptersLoading" class="p-8 text-center text-slate-500">
+          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+          {{ copy.loading }}
+        </div>
+        <div v-else-if="!chapters.length" class="p-8 text-center text-slate-500">{{ copy.emptyChapters }}</div>
+        <div v-else>
+          <div class="hidden grid-cols-[minmax(0,1fr)_110px_110px_240px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+            <span>{{ copy.chapterColumns.chapter }}</span>
+            <span class="text-center">{{ copy.chapterColumns.sort }}</span>
+            <span class="text-center">{{ copy.chapterColumns.version }}</span>
+            <span class="text-center">{{ copy.chapterColumns.action }}</span>
+          </div>
+          <div
+            v-for="chapter in chapters"
+            :key="chapterId(chapter)"
+            class="grid w-full gap-3 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_110px_110px_240px] lg:items-center lg:gap-6"
+            :class="chapterId(chapter) === selectedChapterId ? 'bg-sky-50/70' : ''"
+          >
+            <div class="min-w-0">
+              <div class="truncate text-lg font-black text-slate-950">{{ chapterTitle(chapter) }}</div>
+              <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ chapterId(chapter) || "-" }}</div>
             </div>
-            <button class="rounded-xl border px-3 py-2 font-bold" :disabled="!selectedCourseId" type="button" @click="newChapter">{{ copy.newChapter }}</button>
-          </div>
-          <div v-if="chaptersLoading" class="p-8 text-center text-slate-500">
-            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            {{ copy.loading }}
-          </div>
-          <div v-else-if="!chapters.length" class="p-8 text-center text-slate-500">{{ copy.emptyChapters }}</div>
-          <div v-else class="max-h-[520px] divide-y divide-slate-100 overflow-y-auto">
-            <div v-for="chapter in chapters" :key="chapterId(chapter)" class="flex items-center justify-between gap-3 p-4" :class="chapterId(chapter) === selectedChapterId ? 'bg-sky-50' : ''">
-              <button class="flex-1 text-left" type="button" @click="editChapter(chapter)">
-                <div class="font-black">{{ chapterTitle(chapter) }}</div>
-                <div class="mt-1 text-sm text-slate-500">{{ copy.sortVersionMeta(chapter.sort_order || 0, chapter.version || 0) }}</div>
+            <div class="text-sm font-bold text-slate-700 lg:text-center">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.chapterColumns.sort }}</span>{{ chapter.sort_order || 0 }}
+            </div>
+            <div class="text-sm font-bold text-slate-700 lg:text-center">
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.chapterColumns.version }}</span>{{ chapter.version || 0 }}
+            </div>
+            <div class="flex items-center justify-start gap-4 lg:justify-center">
+              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openChapterDetail(chapter)">
+                {{ copy.viewDetails }}
               </button>
-              <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteChapter(chapter)">{{ copy.delete }}</button>
+              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="editChapter(chapter)">
+                {{ copy.editChapter }}
+              </button>
+              <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteChapter(chapter)">
+                {{ copy.delete }}
+              </button>
             </div>
           </div>
-        </aside>
+        </div>
+      </section>
 
-        <section class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
-            <div>
-              <h2 class="text-xl font-black">{{ copy.chapterDetailTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ selectedChapterId ? chapterTitle(selectedChapter) : copy.chapterDetailEmptyHint }}</p>
-            </div>
-          </div>
-          <div class="grid gap-6 p-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <div class="rounded-2xl border border-slate-200 p-4">
-              <h3 class="font-black">{{ copy.chapterRawFields }}</h3>
-              <p class="mt-1 text-xs text-slate-500">{{ copy.systemReadonlyHint }}</p>
-              <div v-if="!selectedChapterId" class="p-8 text-center text-slate-500">{{ copy.noSelectedChapter }}</div>
-              <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
-                <label v-for="entry in recordEntries(selectedChapter)" :key="`chapter-${entry.key}`" class="block">
-                  <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
-                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                </label>
+      <Teleport to="body">
+        <section v-if="chapterDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+          <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <h2 class="text-xl font-black">{{ chapterDialogMode === "create" ? copy.createChapter : chapterDialogMode === "edit" ? copy.editChapter : copy.chapterDetailTitle }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ chapterDialogMode === "detail" ? chapterTitle(selectedChapter) : copy.chapterDetailEmptyHint }}</p>
               </div>
+              <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeChapterDialog">
+                <X class="h-5 w-5" />
+              </button>
             </div>
-            <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveChapter">
-              <h3 class="font-black">{{ editingChapterId ? copy.editChapter : copy.createChapter }}</h3>
-              <input v-model="chapterForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.chapterTitlePlaceholder" />
-              <input v-model="chapterForm.sort_order" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" min="1" />
-              <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="submit">
+
+            <div class="flex-1 overflow-y-auto p-5">
+              <div v-if="chapterDialogMode === 'detail'" class="rounded-2xl border border-slate-200 p-4">
+                <h3 class="font-black">{{ copy.chapterRawFields }}</h3>
+                <p class="mt-1 text-xs text-slate-500">{{ copy.systemReadonlyHint }}</p>
+                <div v-if="!selectedChapterId" class="p-8 text-center text-slate-500">{{ copy.noSelectedChapter }}</div>
+                <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
+                  <label v-for="entry in chapterRecordEntries(selectedChapter)" :key="`chapter-dialog-${entry.key}`" class="block">
+                    <span class="text-xs font-black text-slate-500">{{ entry.label }}</span>
+                    <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
+                  </label>
+                </div>
+              </div>
+
+              <form v-else class="space-y-4" @submit.prevent="saveChapter">
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.chapterTitlePlaceholder }}
+                  <input v-model="chapterForm.title" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.chapterTitlePlaceholder" />
+                </label>
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.sort }}
+                  <input v-model="chapterForm.sort_order" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" min="1" />
+                </label>
+              </form>
+            </div>
+
+            <div v-if="chapterDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="button" @click="saveChapter">
+                <Loader2 v-if="savingChapter" class="h-4 w-4 animate-spin" />
+                <Save v-else class="h-4 w-4" />
                 {{ savingChapter ? copy.saving : copy.saveChapter }}
               </button>
-            </form>
+            </div>
           </div>
         </section>
-      </section>
+      </Teleport>
+
+      <Teleport to="body">
+        <section v-if="chapterDeleteConfirmOpen && pendingDeleteChapter" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+          <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
+            <h2 class="text-2xl font-black text-slate-950">{{ copy.chapterDeleteConfirmTitle }}</h2>
+            <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.chapterDeleteConfirmDescription }}</p>
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="break-words font-black text-slate-950">{{ chapterTitle(pendingDeleteChapter) }}</div>
+              <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ chapterId(pendingDeleteChapter) }}</div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingChapter" @click="closeChapterDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingChapter" @click="confirmDeleteChapter">
+                {{ deletingChapter ? copy.deleting : copy.confirmDeleteAction }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </Teleport>
 
       <section class="grid gap-6 2xl:grid-cols-[390px_minmax(0,1fr)]" :class="!selectedCourseId ? 'opacity-50' : ''">
         <aside class="rounded-3xl border border-slate-200 bg-white shadow-sm">
