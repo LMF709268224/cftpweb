@@ -101,6 +101,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Get("/{course_id}/complete", h.GetCompleteLmsCourse)
 				r.Get("/{course_id}/detail", h.GetLmsCourseDetail)
 				r.Post("/{course_id}/publish", h.PublishLmsCourse)
+				r.Post("/{course_id}/cleanup-assets", h.CleanUpDeprecatedCourseAssets)
 				r.Get("/{course_id}/enrollments", h.ListLmsCourseEnrollmentsForAdmin)
 				r.Get("/{course_id}/candidates/{candidate_id}/progress", h.GetLmsCandidateProgressForAdmin)
 				r.Post("/{course_id}/progress/sync", h.SyncLmsCourseProgress)
@@ -184,6 +185,10 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Post("/", h.CreateLmsResourcePack)
 				r.Get("/{pack_id}", h.GetLmsResourcePack)
 				r.Put("/{pack_id}", h.UpdateLmsResourcePack)
+				r.Post("/{pack_id}/publish", h.PublishLmsResourcePack)
+				r.Post("/{pack_id}/deprecate", h.DeprecateLmsResourcePack)
+				r.Post("/{pack_id}/revert-to-draft", h.RevertLmsResourcePackToDraft)
+				r.Post("/{pack_id}/cleanup-assets", h.CleanUpDeprecatedResourcePackAssets)
 				r.Delete("/{pack_id}", h.DeleteLmsResourcePack)
 				r.Get("/{pack_id}/files", h.ListLmsResourcePackFiles)
 				r.Post("/{pack_id}/files", h.CreateLmsResourcePackFile)
@@ -321,10 +326,16 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		})
 
 		// ===== Webhook Audit =====
-		r.Route("/audit/webhooks", func(r chi.Router) {
-			r.Get("/", h.ListWebhookMessages)
-			r.Get("/detail", h.GetWebhookMessageDetail)
-			r.Post("/reprocess", h.ReprocessWebhookMessage)
+		r.Route("/audit", func(r chi.Router) {
+			r.Route("/logs", func(r chi.Router) {
+				r.Get("/", h.ListAuditLogs)
+				r.Get("/{audit_ulid}", h.GetAuditLogDetail)
+			})
+			r.Route("/webhooks", func(r chi.Router) {
+				r.Get("/", h.ListWebhookMessages)
+				r.Get("/detail", h.GetWebhookMessageDetail)
+				r.Post("/reprocess", h.ReprocessWebhookMessage)
+			})
 		})
 
 		// ===== 权限管理 (Permissions) =====

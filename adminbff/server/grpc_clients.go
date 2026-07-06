@@ -6,6 +6,7 @@ import (
 
 	"adminbff/config"
 
+	gauditpb "github.com/afnandelfin620-star/cftptest/cftp/gaudit"
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
@@ -25,17 +26,18 @@ import (
 // GrpcClientPool 管理到所有下游微服务的 gRPC 连接
 type GrpcClientPool struct {
 	// gRPC 连接
-	mallConn  *grpc.ClientConn
-	lmsConn   *grpc.ClientConn
-	gccConn   *grpc.ClientConn
-	gprogConn *grpc.ClientConn
-	gmsgConn  *grpc.ClientConn
-	credsConn *grpc.ClientConn
-	gexamConn *grpc.ClientConn
-	gmidConn  *grpc.ClientConn
-	gmailConn *grpc.ClientConn
-	gpayConn  *grpc.ClientConn
-	gmbrConn  *grpc.ClientConn
+	mallConn   *grpc.ClientConn
+	lmsConn    *grpc.ClientConn
+	gccConn    *grpc.ClientConn
+	gprogConn  *grpc.ClientConn
+	gmsgConn   *grpc.ClientConn
+	credsConn  *grpc.ClientConn
+	gexamConn  *grpc.ClientConn
+	gmidConn   *grpc.ClientConn
+	gmailConn  *grpc.ClientConn
+	gpayConn   *grpc.ClientConn
+	gmbrConn   *grpc.ClientConn
+	gauditConn *grpc.ClientConn
 
 	// gRPC 客户端
 	Mall  mallpb.MallServiceClient
@@ -49,6 +51,7 @@ type GrpcClientPool struct {
 	Gmail gmailpb.MailServiceClient
 	Gpay  gpaypb.PayServiceClient
 	Gmbr  gmbrpb.GmbrServiceClient
+	Audit gauditpb.AuditServiceClient
 }
 
 // dialGrpc 建立 gRPC 连接
@@ -173,6 +176,15 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 	}
 	pool.Gmbr = gmbrpb.NewGmbrServiceClient(pool.gmbrConn)
 
+	// --- gaudit ---
+	addr = grpcAddr(config.EnvGauditGrpcAddr, "gaudit")
+	pool.gauditConn, err = dialGrpc(addr, creds)
+	if err != nil {
+		slog.Error("Failed to create gRPC client", "service", "gaudit", "addr", addr, "error", err)
+		return nil, err
+	}
+	pool.Audit = gauditpb.NewAuditServiceClient(pool.gauditConn)
+
 	return pool, nil
 }
 
@@ -180,7 +192,7 @@ func NewGrpcClientPool(creds credentials.TransportCredentials) (*GrpcClientPool,
 func (p *GrpcClientPool) Close() {
 	conns := []*grpc.ClientConn{
 		p.mallConn, p.lmsConn, p.gccConn, p.gprogConn, p.gmsgConn,
-		p.credsConn, p.gexamConn, p.gmidConn, p.gmailConn, p.gpayConn, p.gmbrConn,
+		p.credsConn, p.gexamConn, p.gmidConn, p.gmailConn, p.gpayConn, p.gmbrConn, p.gauditConn,
 	}
 	for _, c := range conns {
 		if c != nil {

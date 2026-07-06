@@ -92,6 +92,84 @@ func (h *Handler) UpdateLmsResourcePack(w http.ResponseWriter, r *http.Request) 
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+// PublishLmsResourcePack POST /api/lms/resource-packs/{pack_id}/publish
+func (h *Handler) PublishLmsResourcePack(w http.ResponseWriter, r *http.Request) {
+	packID, ok := requiredURLParam(w, r, "pack_id")
+	if !ok {
+		return
+	}
+	var body versionOnlyReq
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if !requirePositiveVersion(w, body.Version) {
+		return
+	}
+
+	resp, err := h.Lms.PublishResourcePackAdmin(r.Context(), &lmspb.PublishResourcePackRequest{
+		PackId:  packID,
+		Version: body.Version,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// DeprecateLmsResourcePack POST /api/lms/resource-packs/{pack_id}/deprecate
+func (h *Handler) DeprecateLmsResourcePack(w http.ResponseWriter, r *http.Request) {
+	packID, ok := requiredURLParam(w, r, "pack_id")
+	if !ok {
+		return
+	}
+	var body versionOnlyReq
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if !requirePositiveVersion(w, body.Version) {
+		return
+	}
+
+	resp, err := h.Lms.DeprecateResourcePackAdmin(r.Context(), &lmspb.DeprecateResourcePackRequest{
+		PackId:  packID,
+		Version: body.Version,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// RevertLmsResourcePackToDraft POST /api/lms/resource-packs/{pack_id}/revert-to-draft
+func (h *Handler) RevertLmsResourcePackToDraft(w http.ResponseWriter, r *http.Request) {
+	packID, ok := requiredURLParam(w, r, "pack_id")
+	if !ok {
+		return
+	}
+	var body versionOnlyReq
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if !requirePositiveVersion(w, body.Version) {
+		return
+	}
+
+	resp, err := h.Lms.RevertResourcePackToDraftAdmin(r.Context(), &lmspb.RevertResourcePackToDraftRequest{
+		PackId:  packID,
+		Version: body.Version,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 // DeleteLmsResourcePack DELETE /api/lms/resource-packs/{pack_id}
 func (h *Handler) DeleteLmsResourcePack(w http.ResponseWriter, r *http.Request) {
 	packID, ok := requiredURLParam(w, r, "pack_id")
@@ -110,6 +188,23 @@ func (h *Handler) DeleteLmsResourcePack(w http.ResponseWriter, r *http.Request) 
 	resp, err := h.Lms.DeleteResourcePackAdmin(r.Context(), &lmspb.DeleteResourcePackRequest{
 		PackId:  packID,
 		Version: version,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// CleanUpDeprecatedResourcePackAssets POST /api/lms/resource-packs/{pack_id}/cleanup-assets
+func (h *Handler) CleanUpDeprecatedResourcePackAssets(w http.ResponseWriter, r *http.Request) {
+	packID, ok := requiredURLParam(w, r, "pack_id")
+	if !ok {
+		return
+	}
+
+	resp, err := h.Lms.CleanUpDeprecatedResourcePackAssetsAdmin(r.Context(), &lmspb.CleanUpDeprecatedResourcePackAssetsRequest{
+		PackId: packID,
 	})
 	if err != nil {
 		writeLmsError(w, err)

@@ -58,6 +58,7 @@ func (s *Server) Run(ctx context.Context) error {
 		pool.Gmail,
 		pool.Gpay,
 		pool.Gmbr,
+		pool.Audit,
 		os.Getenv(config.EnvCasdoorPublicEndpoint),
 		s.config.SecretConfig.Casdoor.ClientID,
 		s.config.SecretConfig.Casdoor.ClientSecret,
