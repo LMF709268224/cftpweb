@@ -41,6 +41,7 @@ type QuizDialogMode = "detail" | "edit" | "create"
 
 type QuizForm = {
   scope: QuizScope
+  owner_id: string
   title: string
   description: string
   passing_score: string
@@ -283,6 +284,8 @@ const allQuizItems = computed<QuizListItem[]>(() => {
   return items
 })
 const selectedQuizItem = computed(() => allQuizItems.value.find((item) => quizId(item.quiz) === selectedQuizId.value) || null)
+const quizChapterOptions = computed(() => chapters.value.length ? chapters.value : completeChapterRecords.value)
+const quizLessonOptions = computed(() => allLessonItems.value)
 const courseChapterCount = computed(() => completeCourse.value ? completeChapterRecords.value.length : Math.max(chapters.value.length, positiveCount(courseDetail.value?.chapter_count)))
 const courseLessonCount = computed(() => completeCourse.value ? allLessonItems.value.length : Math.max(lessons.value.length, positiveCount(courseDetail.value?.lesson_count)))
 const courseQuizCount = computed(() => completeCourse.value ? allQuizItems.value.length : Math.max(quizzes.value.length, positiveCount(courseDetail.value?.quiz_count)))
@@ -351,6 +354,7 @@ function emptySupplementaryItemForm(): SupplementaryItemForm {
 function emptyQuizForm(): QuizForm {
   return {
     scope: "chapter",
+    owner_id: "",
     title: "",
     description: "",
     passing_score: "70",
@@ -461,8 +465,16 @@ function chapterById(id: string) {
   return chapters.value.find((item) => chapterId(item) === id) || null
 }
 
+function chapterOptionById(id: string) {
+  return quizChapterOptions.value.find((item) => chapterId(item) === id) || null
+}
+
 function lessonTitle(lesson: JsonRecord | null | undefined) {
   return String(pickFirst(lesson || {}, ["title", "name"]) || lessonId(lesson) || copy.value.fallbacks.lesson)
+}
+
+function lessonItemById(id: string) {
+  return allLessonItems.value.find((item) => lessonId(item.lesson) === id) || null
 }
 
 function materialTitle(material: JsonRecord | null | undefined) {
@@ -1022,6 +1034,8 @@ async function loadChapters() {
 function selectChapterForContext(chapter: JsonRecord, editing = false) {
   selectedChapter.value = chapter
   editingChapterId.value = editing ? chapterId(chapter) : ""
+  editingLessonId.value = ""
+  lessonForm.value = emptyLessonForm()
   chapterForm.value = {
     title: String(chapter.title || ""),
     sort_order: String(chapter.sort_order || 1),
@@ -1190,7 +1204,7 @@ function closeLessonDialog() {
 }
 
 async function saveLesson() {
-  const targetChapterId = lessonForm.value.chapter_id || selectedChapterId.value
+  const targetChapterId = lessonForm.value.chapter_id
   if (!targetChapterId || !lessonForm.value.title.trim()) {
     toast.error(copy.value.toasts.lessonRequired)
     return
@@ -1481,14 +1495,39 @@ async function deleteMaterial(material: JsonRecord) {
   }
 }
 
-function quizTarget(scope: QuizScope = quizForm.value.scope) {
+function defaultQuizOwnerId(scope: QuizScope) {
+  if (scope === "course") return selectedCourseId.value
+  if (scope === "chapter") {
+    const current = selectedChapterId.value
+    return current && quizChapterOptions.value.some((chapter) => chapterId(chapter) === current) ? current : ""
+  }
+  const current = editingLessonId.value
+  return current && quizLessonOptions.value.some((item) => lessonId(item.lesson) === current) ? current : ""
+}
+
+function quizTarget(scope: QuizScope = quizForm.value.scope, ownerId = quizForm.value.owner_id) {
   if (scope === "course") {
     return { type: 3, id: selectedCourseId.value, label: copy.value.fallbacks.course, title: courseTitle(selectedCourse.value) }
   }
   if (scope === "chapter") {
-    return { type: 2, id: selectedChapterId.value, label: copy.value.fallbacks.chapter, title: chapterTitle(selectedChapter.value) }
+    const chapter = chapterOptionById(ownerId)
+    return { type: 2, id: ownerId, label: copy.value.fallbacks.chapter, title: chapterTitle(chapter) }
   }
-  return { type: 1, id: editingLessonId.value, label: copy.value.fallbacks.lesson, title: lessonTitle(selectedLesson.value) }
+  const lessonItem = lessonItemById(ownerId)
+  return { type: 1, id: ownerId, label: copy.value.fallbacks.lesson, title: lessonTitle(lessonItem?.lesson) }
+}
+
+function quizTargetChapterTitle() {
+  if (selectedQuizItem.value?.chapter) return chapterTitle(selectedQuizItem.value.chapter)
+  if (quizForm.value.scope === "chapter") return chapterTitle(chapterOptionById(quizForm.value.owner_id))
+  if (quizForm.value.scope === "lesson") return chapterTitle(lessonItemById(quizForm.value.owner_id)?.chapter)
+  return "-"
+}
+
+function quizTargetLessonTitle() {
+  if (selectedQuizItem.value?.lesson) return lessonTitle(selectedQuizItem.value.lesson)
+  if (quizForm.value.scope === "lesson") return lessonTitle(lessonItemById(quizForm.value.owner_id)?.lesson)
+  return "-"
 }
 
 function clearQuestionState() {
@@ -1537,6 +1576,7 @@ function editQuiz(quiz: JsonRecord, openDialog = true) {
   editingQuizId.value = quizId(quiz)
   quizForm.value = {
     scope,
+    owner_id: String(quiz.quizzable_ulid || quiz.quizzable_id || (scope === "course" ? selectedCourseId.value : scope === "chapter" ? chapterId(item?.chapter) : lessonId(item?.lesson)) || ""),
     title: String(quiz.title || ""),
     description: String(quiz.description || ""),
     passing_score: String(quiz.passing_score || 70),
@@ -1553,7 +1593,7 @@ function editQuiz(quiz: JsonRecord, openDialog = true) {
 function newQuiz(scope: QuizScope = quizForm.value.scope) {
   selectedQuiz.value = null
   editingQuizId.value = ""
-  quizForm.value = { ...emptyQuizForm(), scope }
+  quizForm.value = { ...emptyQuizForm(), scope, owner_id: defaultQuizOwnerId(scope) }
   clearQuestionState()
 }
 
@@ -1567,6 +1607,14 @@ function openNewQuiz() {
   newQuiz(quizForm.value.scope)
   quizDialogMode.value = "create"
   quizDialogOpen.value = true
+}
+
+function changeQuizScope() {
+  newQuiz(quizForm.value.scope)
+}
+
+function changeQuizFormScope() {
+  quizForm.value.owner_id = defaultQuizOwnerId(quizForm.value.scope)
 }
 
 function closeQuizDialog() {
@@ -2455,7 +2503,7 @@ onMounted(() => {
             <h2 class="text-xl font-black">{{ copy.lessonListTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.lessonListDescription }}</p>
           </div>
-          <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-40" :disabled="!selectedChapterId" type="button" @click="openNewLesson">{{ copy.newLesson }}</button>
+          <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="openNewLesson">{{ copy.newLesson }}</button>
         </div>
         <div v-if="completeLoading || lessonsLoading" class="p-8 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
@@ -2548,6 +2596,7 @@ onMounted(() => {
                     <option value="">{{ copy.selectChapter }}</option>
                     <option v-for="chapter in chapters" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
                   </select>
+                  <span v-if="!chapters.length" class="mt-2 block text-xs font-semibold text-amber-600">{{ copy.noChapterOwnerOptions }}</span>
                 </label>
                 <input v-model="lessonForm.title" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.lessonTitlePlaceholder" />
                 <div class="grid items-start gap-3 sm:grid-cols-2">
@@ -2581,7 +2630,7 @@ onMounted(() => {
             </div>
 
             <div v-if="lessonDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
-              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedChapterId || savingLesson" type="button" @click="saveLesson">
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="savingLesson || !lessonForm.chapter_id" type="button" @click="saveLesson">
                 <Loader2 v-if="savingLesson" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingLesson ? copy.saving : copy.saveLesson }}
@@ -2617,14 +2666,14 @@ onMounted(() => {
             <p class="mt-1 text-sm text-slate-500">{{ copy.quizBankDescription }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <select v-model="quizForm.scope" class="rounded-xl border border-slate-200 px-4 py-2 font-bold" @change="newQuiz(quizForm.scope)">
+            <select v-model="quizForm.scope" class="rounded-xl border border-slate-200 px-4 py-2 font-bold" @change="changeQuizScope">
               <option value="course">{{ copy.quizScopes.course }}</option>
               <option value="chapter">{{ copy.quizScopes.chapter }}</option>
               <option value="lesson">{{ copy.quizScopes.lesson }}</option>
             </select>
             <button
               class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40"
-              :disabled="!selectedCourseId || (quizForm.scope === 'chapter' && !selectedChapterId) || (quizForm.scope === 'lesson' && !editingLessonId)"
+              :disabled="!selectedCourseId"
               type="button"
               @click="loadQuizzes()"
             >
@@ -2632,7 +2681,7 @@ onMounted(() => {
             </button>
             <button
               class="rounded-xl bg-[#0b4ea2] px-4 py-2 font-bold text-white disabled:opacity-40"
-              :disabled="!selectedCourseId || (quizForm.scope === 'chapter' && !selectedChapterId) || (quizForm.scope === 'lesson' && !editingLessonId)"
+              :disabled="!selectedCourseId"
               type="button"
               @click="openNewQuiz"
             >
@@ -2713,11 +2762,11 @@ onMounted(() => {
                 </div>
                 <div class="rounded-2xl bg-slate-50 p-4">
                   <div class="text-xs font-black text-slate-500">{{ copy.ownerChapterLabel }}</div>
-                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem?.chapter ? chapterTitle(selectedQuizItem.chapter) : (quizForm.scope === "chapter" ? chapterTitle(selectedChapter) : "-") }}</div>
+                  <div class="mt-1 text-lg font-black text-slate-900">{{ quizTargetChapterTitle() }}</div>
                 </div>
                 <div class="rounded-2xl bg-slate-50 p-4">
                   <div class="text-xs font-black text-slate-500">{{ copy.ownerLessonLabel }}</div>
-                  <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem?.lesson ? lessonTitle(selectedQuizItem.lesson) : (quizForm.scope === "lesson" ? lessonTitle(selectedLesson) : "-") }}</div>
+                  <div class="mt-1 text-lg font-black text-slate-900">{{ quizTargetLessonTitle() }}</div>
                 </div>
               </div>
 
@@ -2736,6 +2785,40 @@ onMounted(() => {
                 <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
                   {{ copy.saveQuizOwner }}{{ quizTarget().label }} · {{ quizTarget().id ? quizTarget().title : copy.unselectedTarget(quizTarget().label) }}
                 </div>
+                <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.quizOwnerType }}</span>
+                    <select v-model="quizForm.scope" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" @change="changeQuizFormScope">
+                      <option value="course">{{ copy.quizScopes.course }}</option>
+                      <option value="chapter">{{ copy.quizScopes.chapter }}</option>
+                      <option value="lesson">{{ copy.quizScopes.lesson }}</option>
+                    </select>
+                  </label>
+                  <label v-if="quizForm.scope === 'chapter'" class="block">
+                    <span class="text-sm font-bold">{{ copy.quizOwnerObject }}</span>
+                    <select v-model="quizForm.owner_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                      <option value="">{{ copy.selectChapter }}</option>
+                      <option v-for="chapter in quizChapterOptions" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
+                    </select>
+                  </label>
+                  <label v-else-if="quizForm.scope === 'lesson'" class="block">
+                    <span class="text-sm font-bold">{{ copy.quizOwnerObject }}</span>
+                    <select v-model="quizForm.owner_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                      <option value="">{{ copy.selectLesson }}</option>
+                      <option v-for="item in quizLessonOptions" :key="lessonId(item.lesson)" :value="lessonId(item.lesson)">{{ chapterTitle(item.chapter) }} · {{ lessonTitle(item.lesson) }}</option>
+                    </select>
+                  </label>
+                  <div v-else class="block">
+                    <span class="text-sm font-bold">{{ copy.quizOwnerObject }}</span>
+                    <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold text-slate-700">{{ courseTitle(selectedCourse) }}</div>
+                  </div>
+                </div>
+                <p v-if="quizForm.scope === 'chapter' && !quizChapterOptions.length" class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                  {{ copy.noChapterOwnerOptions }}
+                </p>
+                <p v-if="quizForm.scope === 'lesson' && !quizLessonOptions.length" class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                  {{ copy.noLessonOwnerOptions }}
+                </p>
                 <input v-model="quizForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.quizTitlePlaceholder" />
                 <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.description" />
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
@@ -2869,7 +2952,7 @@ onMounted(() => {
             </div>
 
             <div v-if="quizDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
-              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="savingQuiz" type="button" @click="saveQuiz">
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="savingQuiz || !quizTarget().id" type="button" @click="saveQuiz">
                 <Loader2 v-if="savingQuiz" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingQuiz ? copy.saving : quizDialogMode === "create" ? copy.saveQuizAndAddQuestions : copy.saveQuiz }}
