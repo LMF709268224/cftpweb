@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
+import { Check, Copy as CopyIcon, Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -21,6 +21,7 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const detailOpen = ref(false)
 const creating = ref(false)
+const copiedJson = ref(false)
 const mode = ref<DetailMode>("detail")
 const name = ref("")
 const category = ref("")
@@ -40,6 +41,7 @@ const fileTypes = computed(() => [
 ])
 
 const selectedFields = computed(() => selected.value || {})
+const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 
 function definitionUlid(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
@@ -60,6 +62,43 @@ function fileTypeLabel(type: unknown) {
 
 function isStructuredField(value: unknown) {
   return Array.isArray(value) || (!!value && typeof value === "object")
+}
+
+function detailFieldText(key: string, value: unknown) {
+  if (key === "name") return definitionName(selected.value)
+  const text = String(value ?? "").trim()
+  return text || "-"
+}
+
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = text
+  textarea.setAttribute("readonly", "")
+  textarea.style.position = "fixed"
+  textarea.style.opacity = "0"
+  document.body.appendChild(textarea)
+  textarea.select()
+  document.execCommand("copy")
+  document.body.removeChild(textarea)
+}
+
+async function copySelectedJson() {
+  try {
+    await writeClipboard(selectedJson.value)
+    copiedJson.value = true
+    toast.success(copy.value.toasts.jsonCopied)
+    window.setTimeout(() => {
+      copiedJson.value = false
+    }, 1600)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.jsonCopyFailed)
+  }
 }
 
 function resetForm() {
@@ -344,25 +383,37 @@ onMounted(load)
                 <details class="rounded-2xl border border-slate-200 bg-white p-4">
                   <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.labels.completeFields }}</summary>
                   <div class="mt-4 grid items-start gap-4 md:grid-cols-2">
-                    <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold" :class="isStructuredField(value) ? 'md:col-span-2' : ''">
-                      {{ key }}
-                      <textarea
+                    <div v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold" :class="isStructuredField(value) ? 'md:col-span-2' : ''">
+                      <span class="text-xs font-black uppercase text-slate-400">{{ key }}</span>
+                      <pre
                         v-if="isStructuredField(value)"
-                        class="min-h-32 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 font-mono text-xs leading-5 text-slate-600"
-                        disabled
-                        :value="JSON.stringify(value, null, 2)"
-                      />
-                      <input
-                        v-else
-                        class="h-11 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 text-slate-600"
-                        disabled
-                        :value="key === 'name' ? definitionName(selected) : String(value ?? '-')"
-                      />
-                    </label>
+                        class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
+                      >{{ JSON.stringify(value, null, 2) }}</pre>
+                      <div v-else class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
+                        {{ detailFieldText(String(key), value) }}
+                      </div>
+                    </div>
                   </div>
                 </details>
 
-                <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+                <details class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.labels.rawJson }}</summary>
+                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
+                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.labels.rawJson }}</span>
+                      <button
+                        class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10"
+                        type="button"
+                        @click="copySelectedJson"
+                      >
+                        <Check v-if="copiedJson" class="h-3.5 w-3.5" />
+                        <CopyIcon v-else class="h-3.5 w-3.5" />
+                        {{ copiedJson ? copy.copiedJson : copy.copyJson }}
+                      </button>
+                    </div>
+                    <pre class="max-h-[360px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
+                  </div>
+                </details>
               </div>
             </template>
           </section>

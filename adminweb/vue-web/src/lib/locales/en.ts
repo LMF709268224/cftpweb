@@ -248,6 +248,7 @@ export const en: AdminTranslations = {
       fileConstraints: "File Requirements",
       requiredFiles: "Required Files",
       completeFields: "Complete Fields",
+      rawJson: "Raw JSON",
     },
     placeholders: {
       name: "Credential name",
@@ -266,6 +267,8 @@ export const en: AdminTranslations = {
     cancel: "Cancel",
     create: "Create",
     creating: "Creating...",
+    copyJson: "Copy JSON",
+    copiedJson: "Copied",
     fileTypePrefix: "Type:",
     fileTypes: {
       any: "Any",
@@ -280,6 +283,8 @@ export const en: AdminTranslations = {
       nameCategoryRequired: "Name and category are required",
       createSuccess: "Credential definition created",
       createFailed: "Create failed",
+      jsonCopied: "JSON copied",
+      jsonCopyFailed: "Copy failed",
     },
   },
   login: {

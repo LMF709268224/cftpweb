@@ -246,6 +246,7 @@ export const zh = {
       fileConstraints: "文件约束",
       requiredFiles: "所需文件",
       completeFields: "完整字段",
+      rawJson: "原始 JSON",
     },
     placeholders: {
       name: "资格名称",
@@ -264,6 +265,8 @@ export const zh = {
     cancel: "取消",
     create: "创建",
     creating: "创建中...",
+    copyJson: "复制 JSON",
+    copiedJson: "已复制",
     fileTypePrefix: "类型：",
     fileTypes: {
       any: "不限 / Any",
@@ -278,6 +281,8 @@ export const zh = {
       nameCategoryRequired: "名称和分类必填",
       createSuccess: "资格定义已创建",
       createFailed: "创建失败",
+      jsonCopied: "JSON 已复制",
+      jsonCopyFailed: "复制失败",
     },
   },
   login: {
