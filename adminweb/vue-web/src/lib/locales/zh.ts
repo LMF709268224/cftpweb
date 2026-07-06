@@ -960,7 +960,7 @@ export const zh = {
     },
     statusOptions: {
       allFlow: "全部流程状态",
-      open: "开放",
+      open: "待预约",
       scheduled: "已预约",
       done: "已完成",
       cancelled: "已取消",

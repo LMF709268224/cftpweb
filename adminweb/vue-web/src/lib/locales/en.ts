@@ -962,7 +962,7 @@ export const en: AdminTranslations = {
     },
     statusOptions: {
       allFlow: "All Flow Statuses",
-      open: "Open",
+      open: "Pending Scheduling",
       scheduled: "Scheduled",
       done: "Done",
       cancelled: "Cancelled",
