@@ -1573,6 +1573,7 @@ export const zh = {
         running: "运行中",
         waitingFinalQualification: "等待最终资格",
         completed: "已完成",
+        issuingCertificate: "证书发放中",
         terminated: "已终止",
       },
       stage: {

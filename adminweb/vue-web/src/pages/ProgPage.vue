@@ -100,7 +100,7 @@ const canNext = computed(() => pipelines.value.length >= pageSize)
 const canPrevLogs = computed(() => logOffset.value > 0)
 const canNextLogs = computed(() => logs.value.length >= logPageSize)
 const canViewCertificate = computed(() => Boolean(selectedPipelineUlid.value && selectedCandidateUlid.value))
-const canTerminatePipeline = computed(() => Boolean(selectedPipelineUlid.value && !["3", "4"].includes(String(selectedStatus.value ?? ""))))
+const canTerminatePipeline = computed(() => Boolean(selectedPipelineUlid.value && !["3", "COMPLETED"].includes(normalizedPipelineStatus(selectedStatus.value))))
 const canTriggerNextStage = computed(() => {
   const currentStageUlid = String(detailPipelineRecord.value.current_stage_ulid || "")
   const currentStage = stages.value.find((stage) => stageUlid(stage) === currentStageUlid) || stages.value[0]
@@ -121,7 +121,7 @@ const statusOptions = computed(() => [
   { value: "1", label: copy.value.status.pipeline.running },
   { value: "2", label: copy.value.status.pipeline.waitingFinalQualification },
   { value: "3", label: copy.value.status.pipeline.completed },
-  { value: "4", label: copy.value.status.pipeline.terminated },
+  { value: "4", label: copy.value.status.pipeline.issuingCertificate },
 ])
 
 function pipelineUlid(pipeline: JsonRecord | null | undefined) {
@@ -141,13 +141,17 @@ function pipelineDisplayName(pipeline: JsonRecord | null | undefined) {
   return pipelineNameByCc.value[cc] || String(pickFirst(pipeline || {}, ["name", "pipeline_name"]) || pipelineUlid(pipeline) || "Pipeline")
 }
 
+function normalizedPipelineStatus(value: unknown) {
+  return String(value ?? "").trim().toUpperCase().replace(/^PIPELINE_STATUS_/, "")
+}
+
 function statusLabel(value: unknown, scope: "pipeline" | "stage" | "unit" = "pipeline") {
-  const normalized = String(value ?? "")
+  const normalized = scope === "pipeline" ? normalizedPipelineStatus(value) : String(value ?? "")
   if (scope === "pipeline") {
-    if (normalized === "1") return copy.value.status.pipeline.running
-    if (normalized === "2") return copy.value.status.pipeline.waitingFinalQualification
-    if (normalized === "3") return copy.value.status.pipeline.completed
-    if (normalized === "4") return copy.value.status.pipeline.terminated
+    if (normalized === "1" || normalized === "RUNNING") return copy.value.status.pipeline.running
+    if (normalized === "2" || normalized === "WAIT_FINAL_ELIG") return copy.value.status.pipeline.waitingFinalQualification
+    if (normalized === "3" || normalized === "COMPLETED") return copy.value.status.pipeline.completed
+    if (normalized === "4" || normalized === "ISSUING_CERT") return copy.value.status.pipeline.issuingCertificate
   }
   if (scope === "stage") {
     if (normalized === "1") return copy.value.status.stage.waitingCandidate
