@@ -103,12 +103,13 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		userPageSize = 100
 	}
 
-	candidateByUserID := h.dashboardCandidateULIDs(r, users)
 	roleConfig := dashboardRoleConfigFromEnv()
 	roleDefinitions := dashboardRoleDefinitions(roleConfig)
-	filteredUsers := filterOpsDashboardUsers(users, candidateByUserID, roleConfig, roleDefinitions, opsDashboardUserFilterFromRequest(r))
+	cftpUsers := filterCFTPDashboardUsers(users, roleConfig, roleDefinitions)
+	candidateByUserID := h.dashboardCandidateULIDs(r, cftpUsers)
+	filteredUsers := filterOpsDashboardUsers(cftpUsers, candidateByUserID, roleConfig, roleDefinitions, opsDashboardUserFilterFromRequest(r))
 	pageUsers := paginateOpsDashboardUsers(filteredUsers, userPage, userPageSize)
-	userSummary := h.buildOpsUserSummary(users, pageUsers, candidateByUserID, roleConfig, roleDefinitions)
+	userSummary := h.buildOpsUserSummary(cftpUsers, pageUsers, candidateByUserID, roleConfig, roleDefinitions)
 
 	pipelines, err := h.Gprog.ListPipelines(r.Context(), &gprogpb.ListPipelinesReq{
 		Limit:  adminDashboardSampleLimit,
@@ -230,6 +231,25 @@ func (h *Handler) dashboardCandidateULIDs(r *http.Request, users []*casdoorsdk.U
 		}
 	}
 	return candidateByUserID
+}
+
+func filterCFTPDashboardUsers(
+	users []*casdoorsdk.User,
+	roleConfig opsDashboardRoleConfig,
+	roleDefinitions map[string]*casdoorsdk.Role,
+) []*casdoorsdk.User {
+	filtered := make([]*casdoorsdk.User, 0, len(users))
+	for _, user := range users {
+		if user == nil || strings.TrimSpace(user.Id) == "" {
+			continue
+		}
+		roles := roleNames(user)
+		roleFlags := dashboardRoleFlags(user, roles, roleConfig, roleDefinitions)
+		if roleFlags["admin"] || roleFlags["student"] {
+			filtered = append(filtered, user)
+		}
+	}
+	return filtered
 }
 
 func filterOpsDashboardUsers(
