@@ -4,7 +4,7 @@ import { toast } from "vue-sonner"
 import { AlertCircle, Building2, Check, CreditCard, Lock, Loader2, ShoppingCart, X } from "lucide-vue-next"
 import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
-import { apiClient } from "@/lib/apiClient"
+import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
 type PaymentMethod = "stripe" | "bank"
@@ -769,7 +769,7 @@ async function createCredentialApplicationOrder(unit: ExemptionUnit, qual: Exemp
         }),
       })
     } catch (error) {
-      const message = error instanceof Error ? error.message : ""
+      const message = error instanceof ApiClientError ? error.rawMessage || error.errorCode || "" : error instanceof Error ? error.message : ""
       if (message.includes("in-progress credential application") || message.includes("进行中") || message.includes("请先处理")) {
         toast.info(copy.value.qualificationUnderReview)
         window.setTimeout(() => goToCredentialUpload(), 300)

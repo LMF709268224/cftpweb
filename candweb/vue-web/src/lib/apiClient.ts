@@ -11,6 +11,26 @@ const DEFAULT_API_TIMEOUT_MS = 60000
 const UNAUTHORIZED_TOAST_ID = "candidate-session-expired"
 const isSilentResourceEndpoint = (endpoint: string) => /\/thumbnail-url(?:[/?#]|$)/.test(endpoint)
 
+type ApiClientErrorMeta = {
+  errorCode?: string
+  rawMessage?: string
+  status?: number
+}
+
+export class ApiClientError extends Error {
+  errorCode?: string
+  rawMessage?: string
+  status?: number
+
+  constructor(message: string, meta: ApiClientErrorMeta = {}) {
+    super(message)
+    this.name = "ApiClientError"
+    this.errorCode = meta.errorCode
+    this.rawMessage = meta.rawMessage
+    this.status = meta.status
+  }
+}
+
 export async function apiClient(endpoint: string, options: ApiClientOptions = {}) {
   const {
     timeoutMs = DEFAULT_API_TIMEOUT_MS,
@@ -52,7 +72,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     const isAbort = err instanceof DOMException && err.name === "AbortError"
     const errorMsg = getErrorMessage(isAbort ? "REQUEST_TIMEOUT" : "NETWORK_ERROR", currentLang)
     showErrorToast(errorMsg)
-    throw new Error(errorMsg)
+    throw new ApiClientError(errorMsg, { errorCode: isAbort ? "REQUEST_TIMEOUT" : "NETWORK_ERROR" })
   } finally {
     window.clearTimeout(timeoutId)
   }
@@ -65,7 +85,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     setTimeout(() => {
       window.location.href = "/login"
     }, 1500)
-    throw new Error("401 Unauthorized")
+    throw new ApiClientError(getErrorMessage("UNAUTHORIZED", currentLang), { errorCode: "UNAUTHORIZED", status: res.status })
   }
 
   let data: any
@@ -75,7 +95,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     if (!res.ok) {
       const errorMsg = getErrorMessage("UNKNOWN_ERROR", currentLang)
       showErrorToast(errorMsg)
-      throw new Error(errorMsg)
+      throw new ApiClientError(errorMsg, { errorCode: "UNKNOWN_ERROR", status: res.status })
     }
     return res
   }
@@ -85,7 +105,11 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
       ? localizeApiErrorMessage(data.error_code, data.message, currentLang)
       : getErrorMessage(data.error_code, currentLang)
     showErrorToast(errorMsg)
-    throw new Error(errorMsg)
+    throw new ApiClientError(errorMsg, {
+      errorCode: data.error_code,
+      rawMessage: typeof data.message === "string" ? data.message : undefined,
+      status: res.status,
+    })
   }
 
   return data.data
