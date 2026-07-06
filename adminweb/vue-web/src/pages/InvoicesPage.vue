@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, RefreshCw, X } from "lucide-vue-next"
+import { Check, Copy as CopyIcon, Loader2, RefreshCw, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -11,6 +11,7 @@ const invoices = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailOpen = ref(false)
+const copiedJson = ref(false)
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
@@ -19,6 +20,7 @@ const copy = computed(() => t.value.invoices)
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => page.value * pageSize < total.value || invoices.value.length >= pageSize)
+const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const selectedFields = computed(() =>
   Object.entries(selected.value || {}).map(([key, value]) => ({
     key,
@@ -39,6 +41,50 @@ function orderId(invoice: JsonRecord | null | undefined) {
 function amountText(invoice: JsonRecord | null | undefined) {
   const amount = Number(invoice?.amount || 0)
   return `${Number.isFinite(amount) ? amount.toFixed(2) : "0.00"} ${invoice?.currency || ""}`.trim()
+}
+
+function isStructuredValue(value: unknown) {
+  return Array.isArray(value) || (!!value && typeof value === "object")
+}
+
+function jsonText(value: unknown) {
+  return JSON.stringify(value ?? {}, null, 2)
+}
+
+function detailFieldText(value: unknown) {
+  const text = String(value ?? "").trim()
+  return text || "-"
+}
+
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = text
+  textarea.setAttribute("readonly", "")
+  textarea.style.position = "fixed"
+  textarea.style.opacity = "0"
+  document.body.appendChild(textarea)
+  textarea.select()
+  document.execCommand("copy")
+  document.body.removeChild(textarea)
+}
+
+async function copySelectedJson() {
+  try {
+    await writeClipboard(selectedJson.value)
+    copiedJson.value = true
+    toast.success(copy.value.toasts.jsonCopied)
+    window.setTimeout(() => {
+      copiedJson.value = false
+    }, 1600)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.jsonCopyFailed)
+  }
 }
 
 function openInvoice(invoice: JsonRecord | null, open = true) {
@@ -185,18 +231,31 @@ onMounted(() => load(1))
               </div>
             </div>
             <div class="grid gap-4 md:grid-cols-2">
-              <label v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold">
-                {{ field.label }}
-                <textarea
-                  v-if="Array.isArray(field.value) || (field.value && typeof field.value === 'object')"
-                  class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                  disabled
-                  :value="JSON.stringify(field.value, null, 2)"
-                />
-                <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="field.displayValue" />
-              </label>
+              <div v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
+                <span class="text-xs font-black uppercase text-slate-400">{{ field.label }}</span>
+                <pre
+                  v-if="isStructuredValue(field.value)"
+                  class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
+                >{{ jsonText(field.value) }}</pre>
+                <div v-else class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
+                  {{ detailFieldText(field.displayValue) }}
+                </div>
+              </div>
             </div>
-            <pre class="max-h-[520px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+            <details class="rounded-2xl border border-slate-200 bg-white p-4">
+              <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
+              <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
+                <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                  <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
+                  <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copySelectedJson">
+                    <Check v-if="copiedJson" class="h-3.5 w-3.5" />
+                    <CopyIcon v-else class="h-3.5 w-3.5" />
+                    {{ copiedJson ? copy.copiedJson : copy.copyJson }}
+                  </button>
+                </div>
+                <pre class="max-h-[520px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
+              </div>
+            </details>
           </div>
         </section>
       </div>
