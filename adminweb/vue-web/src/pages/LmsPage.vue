@@ -1599,14 +1599,26 @@ async function saveQuiz() {
       body.version = quizzes.value.find((item) => quizId(item) === editingQuizId.value)?.version || 0
       await apiClient(`/api/lms/quizzes/${encodeURIComponent(editingQuizId.value)}`, { method: "PUT", body: JSON.stringify(body) })
       toast.success(copy.value.toasts.quizUpdated)
+      const scope = quizForm.value.scope
+      newQuiz(scope)
+      closeQuizDialog()
+      await Promise.all([loadQuizzes(scope), loadCourseDetail(), loadCompleteCourse()])
     } else {
-      await apiClient("/api/lms/quizzes", { method: "POST", body: JSON.stringify(body) })
-      toast.success(copy.value.toasts.quizCreated)
+      const created = await apiClient<JsonRecord>("/api/lms/quizzes", { method: "POST", body: JSON.stringify(body) })
+      const createdId = quizId(created)
+      const scope = quizForm.value.scope
+      await Promise.all([loadQuizzes(scope), loadCourseDetail(), loadCompleteCourse()])
+      const createdQuiz = allQuizItems.value.find((item) => quizId(item.quiz) === createdId)?.quiz
+        || quizzes.value.find((item) => quizId(item) === createdId)
+        || { ...body, quiz_id: createdId, quiz_ulid: createdId, version: 1 }
+      selectedQuiz.value = createdQuiz
+      editingQuizId.value = createdId
+      quizDialogMode.value = "edit"
+      quizDialogOpen.value = true
+      await loadQuestions(createdId)
+      newQuestion()
+      toast.success(copy.value.toasts.quizCreatedAddQuestions)
     }
-    const scope = quizForm.value.scope
-    newQuiz(scope)
-    closeQuizDialog()
-    await Promise.all([loadQuizzes(scope), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.quizSaveFailed)
@@ -2734,6 +2746,9 @@ onMounted(() => {
                   <input v-model="quizForm.randomize_questions" type="checkbox" />
                   {{ copy.randomizeQuestions }}
                 </label>
+                <p v-if="quizDialogMode === 'create'" class="mt-3 rounded-2xl border border-dashed border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800">
+                  {{ copy.quizQuestionsAfterSaveHint }}
+                </p>
               </form>
 
               <section v-if="selectedQuizId && quizDialogMode !== 'create'" class="grid gap-6 2xl:grid-cols-[360px_minmax(0,1fr)]">
@@ -2857,7 +2872,7 @@ onMounted(() => {
               <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="savingQuiz" type="button" @click="saveQuiz">
                 <Loader2 v-if="savingQuiz" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
-                {{ savingQuiz ? copy.saving : copy.saveQuiz }}
+                {{ savingQuiz ? copy.saving : quizDialogMode === "create" ? copy.saveQuizAndAddQuestions : copy.saveQuiz }}
               </button>
             </div>
           </div>
