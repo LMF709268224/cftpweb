@@ -1475,6 +1475,7 @@ export const zh = {
       applications: { title: "审核中心", subtitle: "审核考生提交的资格申请" },
       pdfTemplates: { title: "PDF 模板配置", subtitle: "维护证书和证明文件模板" },
       pdfRequests: { title: "证书生成流水", subtitle: "查看证书 PDF 生成任务" },
+      auditLogs: { title: "审计日志", subtitle: "查询各微服务上报的操作审计记录" },
       webhooks: { title: "Webhook 审计", subtitle: "查看支付和外部系统回调审计" },
       permissions: { title: "考生权限管理", subtitle: "查看和调整考生访问权限" },
       settings: { title: "账户设置", subtitle: "维护管理员个人资料和登录密码" },

@@ -1477,6 +1477,7 @@ export const en: AdminTranslations = {
       applications: { title: "Review Center", subtitle: "Review candidate credential applications" },
       pdfTemplates: { title: "PDF Template Config", subtitle: "Maintain certificate and proof document templates" },
       pdfRequests: { title: "Certificate Generation Jobs", subtitle: "View certificate PDF generation jobs" },
+      auditLogs: { title: "Audit Logs", subtitle: "Query operation audit records reported by downstream services" },
       webhooks: { title: "Webhook Audit", subtitle: "View payment and external system callback audits" },
       permissions: { title: "Candidate Permission Management", subtitle: "View and adjust candidate access permissions" },
       settings: { title: "Account Settings", subtitle: "Maintain admin profile and login password" },
