@@ -1956,7 +1956,7 @@ onMounted(() => {
         <button v-if="courseView === 'detail'" class="rounded-xl border bg-white px-4 py-3 font-bold shadow-sm" type="button" @click="backToCourseList">
           {{ copy.backToList }}
         </button>
-        <button v-if="!isCreatingCourse" class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 font-bold text-white shadow-lg shadow-sky-200" type="button" @click="newCourse">
+        <button v-if="!isCreatingCourse" class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 font-bold text-white shadow-sm" type="button" @click="newCourse">
           <Plus class="h-4 w-4" />
           {{ copy.newCourse }}
         </button>
@@ -2147,7 +2147,8 @@ onMounted(() => {
                 <button class="h-10 rounded-xl border px-4 text-sm font-bold disabled:opacity-40" :disabled="!selectedCourseId || supplementaryMaterialLoading" type="button" @click="loadSupplementaryMaterial">
                   {{ copy.refresh }}
                 </button>
-                <button class="h-10 rounded-xl bg-[#0b4ea2] px-4 text-sm font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newSupplementaryItem()">
+                <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newSupplementaryItem()">
+                  <Plus class="h-4 w-4" />
                   {{ copy.add }}
                 </button>
               </div>
@@ -2317,7 +2318,10 @@ onMounted(() => {
               <h3 class="font-black">{{ copy.normalMaterialsTitle }}</h3>
               <p class="mt-1 text-sm text-slate-500">{{ copy.normalMaterialsDescription }}</p>
             </div>
-            <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">{{ copy.newNormalMaterial }}</button>
+            <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">
+              <Plus class="h-4 w-4" />
+              {{ copy.newNormalMaterial }}
+            </button>
           </div>
         </div>
         <div class="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_400px]">
@@ -2394,7 +2398,10 @@ onMounted(() => {
             <h2 class="text-xl font-black">{{ copy.chapterListTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.chapterListDescription }}</p>
           </div>
-          <button class="rounded-xl border px-3 py-2 font-bold" :disabled="!selectedCourseId" type="button" @click="newChapter">{{ copy.newChapter }}</button>
+          <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newChapter">
+            <Plus class="h-4 w-4" />
+            {{ copy.newChapter }}
+          </button>
         </div>
         <div v-if="chaptersLoading" class="p-8 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
@@ -2513,7 +2520,10 @@ onMounted(() => {
             <h2 class="text-xl font-black">{{ copy.lessonListTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.lessonListDescription }}</p>
           </div>
-          <button class="rounded-xl border px-3 py-2 font-bold disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="openNewLesson">{{ copy.newLesson }}</button>
+          <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="openNewLesson">
+            <Plus class="h-4 w-4" />
+            {{ copy.newLesson }}
+          </button>
         </div>
         <div v-if="completeLoading || lessonsLoading" class="p-8 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
@@ -2685,11 +2695,12 @@ onMounted(() => {
               {{ copy.loadQuizzes }}
             </button>
             <button
-              class="rounded-xl bg-[#0b4ea2] px-4 py-2 font-bold text-white disabled:opacity-40"
+              class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40"
               :disabled="!selectedCourseId"
               type="button"
               @click="openNewQuiz"
             >
+              <Plus class="h-4 w-4" />
               {{ copy.newQuiz }}
             </button>
           </div>
@@ -2846,7 +2857,10 @@ onMounted(() => {
                       <h3 class="font-black">{{ copy.questionListTitle }}</h3>
                       <p class="mt-1 text-xs text-slate-500">{{ copy.questionListDescription }}</p>
                     </div>
-                    <button v-if="quizDialogMode !== 'detail'" class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuizId" type="button" @click="newQuestion">{{ copy.newQuestion }}</button>
+                    <button v-if="quizDialogMode !== 'detail'" class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuizId" type="button" @click="newQuestion">
+                      <Plus class="h-3.5 w-3.5" />
+                      {{ copy.newQuestion }}
+                    </button>
                   </div>
                   <div v-if="questionsLoading" class="p-6 text-center text-slate-500">
                     <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
@@ -2928,7 +2942,10 @@ onMounted(() => {
                     <form v-if="quizDialogMode !== 'detail'" class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
                       <div class="flex items-center justify-between gap-3">
                         <h4 class="font-black">{{ editingOptionId ? copy.editOption : copy.createOption }}</h4>
-                        <button class="rounded-xl border px-3 py-2 text-xs font-bold" :disabled="!selectedQuestionId" type="button" @click="newOption">{{ copy.newOption }}</button>
+                        <button class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuestionId" type="button" @click="newOption">
+                          <Plus class="h-3.5 w-3.5" />
+                          {{ copy.newOption }}
+                        </button>
                       </div>
                       <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.optionTextPlaceholder" />
                       <div class="mt-3 grid gap-3 sm:grid-cols-2">
