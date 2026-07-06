@@ -1685,6 +1685,9 @@ export const en: AdminTranslations = {
     noLogs: "No logs",
     logDetailTitle: "Log Detail",
     rawHint: "System fields are read-only. Use the left-side action buttons for runtime changes.",
+    rawJson: "Raw JSON",
+    copyJson: "Copy JSON",
+    copiedJson: "Copied",
     yes: "Yes",
     no: "No",
     entityTypes: {
@@ -1798,6 +1801,8 @@ export const en: AdminTranslations = {
       certificateTaskDetailLoadFailed: "Failed to load certificate task details",
       certificateTaskRetried: "Certificate task retry submitted",
       certificateTaskRetryFailed: "Failed to retry certificate task",
+      jsonCopied: "JSON copied",
+      jsonCopyFailed: "Copy failed",
     },
   },
   pipelineConfigAdmin: {

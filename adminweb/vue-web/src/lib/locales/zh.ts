@@ -1683,6 +1683,9 @@ export const zh = {
     noLogs: "暂无日志",
     logDetailTitle: "日志详情",
     rawHint: "系统字段仅用于查看；运行态修改请使用左侧操作按钮。",
+    rawJson: "原始 JSON",
+    copyJson: "复制 JSON",
+    copiedJson: "已复制",
     yes: "是",
     no: "否",
     entityTypes: {
@@ -1796,6 +1799,8 @@ export const zh = {
       certificateTaskDetailLoadFailed: "证书任务详情加载失败",
       certificateTaskRetried: "证书任务已提交重试",
       certificateTaskRetryFailed: "证书任务重试失败",
+      jsonCopied: "JSON 已复制",
+      jsonCopyFailed: "复制失败",
     },
   },
   pipelineConfigAdmin: {
