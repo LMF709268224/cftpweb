@@ -1375,8 +1375,11 @@ func buildPipelineNextStep(runtime *gprogpb.GetPipelineDetailRsp, config *gccpb.
 		fillFinalEligibilityNextStep(&out, issuesCertificate)
 		return out
 	}
-	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED.String() ||
-		out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_ISSUING_CERT.String() {
+	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_ISSUING_CERT.String() {
+		fillIssuingCertificateNextStep(&out)
+		return out
+	}
+	if out.PipelineStatus == gprogpb.PipelineStatus_PIPELINE_STATUS_COMPLETED.String() {
 		fillCompletedPipelineNextStep(&out, issuesCertificate)
 		return out
 	}
@@ -1551,6 +1554,15 @@ func fillCompletedPipelineNextStep(out *PipelineNextStep, issuesCertificate bool
 	}
 	out.Action = "completed"
 	out.Message = "pipeline completed"
+}
+
+func fillIssuingCertificateNextStep(out *PipelineNextStep) {
+	if out == nil {
+		return
+	}
+	out.PipelineStatus = gprogpb.PipelineStatus_PIPELINE_STATUS_ISSUING_CERT.String()
+	out.Action = "issuing_certificate"
+	out.Message = "certificate is being issued"
 }
 
 func fillFinalEligibilityNextStep(out *PipelineNextStep, issuesCertificate bool) {

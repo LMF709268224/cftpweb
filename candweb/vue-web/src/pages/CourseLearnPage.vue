@@ -644,7 +644,7 @@ const selectedMaterial = computed(() => {
 
 function pipelineIsTerminal(status?: string | number | null) {
   const normalized = String(status ?? "").trim()
-  return normalized.includes("COMPLETED") || normalized.includes("ISSUING_CERT")
+  return normalized.includes("COMPLETED")
 }
 
 function nextStepDisplayFromAction(action?: string) {
@@ -665,6 +665,8 @@ function nextStepDisplayFromAction(action?: string) {
       return { action, label: t.value.learning.actionViewExamResult, desc: t.value.learning.nextStepGoToExamsDesc }
     case "view_certificate":
       return { action, label: t.value.learning.actionViewCertificate, desc: t.value.learning.nextStepViewCertificateDesc }
+    case "issuing_certificate":
+      return { action, label: t.value.learning.certificationCertificateIssuingTag, desc: t.value.learning.certificateIssuingDesc }
     case "final_qualification":
       return { action, label: t.value.learning.finalQualificationSubmitButton, desc: t.value.learning.finalQualificationDesc }
     case "completed":

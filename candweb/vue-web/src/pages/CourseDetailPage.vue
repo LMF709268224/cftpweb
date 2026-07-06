@@ -194,16 +194,22 @@ const finalQualificationRequired = computed(() =>
   finalQualificationIds.value.length > 0 &&
   (pipelineWaitsFinalEligibility.value || nextStepAction.value === "final_qualification"),
 )
+const pipelineIssuingCertificate = computed(() => {
+  const raw = String(pipelineStatus.value ?? "").trim().toUpperCase()
+  return raw === "4" || raw.includes("ISSUING_CERT") || nextStepAction.value === "issuing_certificate"
+})
 const certificateAvailable = computed(() =>
   purchased.value &&
   Boolean(instancePipelineId.value) &&
-  (nextStepAction.value === "view_certificate" || isPipelineTerminal.value),
+  nextStepAction.value === "view_certificate" &&
+  !pipelineIssuingCertificate.value,
 )
 const certificateDescription = computed(() => {
   if (certificateAvailable.value) {
     const name = pipeline.value?.name || t.value.common.unknownCourse
     return t.value.learning.certificateCongratulationsDesc.replace(/\{\{name\}\}/g, name)
   }
+  if (pipelineIssuingCertificate.value) return t.value.learning.certificateIssuingDesc
   if (finalQualificationRequired.value) return t.value.learning.finalQualificationDesc
   return t.value.learning.certificateUnavailableDesc
 })
@@ -244,7 +250,7 @@ const activeStageIndex = computed(() => {
 
 function pipelineIsTerminal(status?: string | number | null) {
   const normalized = String(status ?? "").trim().toUpperCase()
-  return normalized === "3" || normalized === "4" || normalized.includes("COMPLETED") || normalized.includes("ISSUING_CERT")
+  return normalized === "3" || normalized.includes("COMPLETED")
 }
 
 function firstString(...values: unknown[]) {
@@ -474,12 +480,18 @@ async function loadFirstCourseThumbnail() {
 }
 
 async function openCertificate() {
-  if (!instancePipelineId.value) return
+  if (!instancePipelineId.value || !certificateAvailable.value) {
+    toast.error(t.value.learning.certificateIssuingDesc)
+    return
+  }
   certificateLoading.value = true
   try {
     const res = await apiClient(`/api/pipeline/${instancePipelineId.value}/certificate-url`)
     if (res?.view_url) window.open(res.view_url, "_blank", "noopener,noreferrer")
     else toast.error(t.value.common.error)
+  } catch (err) {
+    console.error(err)
+    toast.error(t.value.learning.certificateUnavailableDesc)
   } finally {
     certificateLoading.value = false
   }
@@ -799,7 +811,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
               <div class="rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
                 <p class="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{{ t.learning.currentStageStatusLabel }}</p>
                 <p class="mt-1 text-sm font-medium text-foreground">
-                  {{ certificateAvailable ? t.learning.certificationCertificateAvailableTag : finalQualificationRequired ? t.learning.certificationFinalQualRequiredTag : t.learning.certificationCertificateAfterExamTag }}
+                  {{ certificateAvailable ? t.learning.certificationCertificateAvailableTag : pipelineIssuingCertificate ? t.learning.certificationCertificateIssuingTag : finalQualificationRequired ? t.learning.certificationFinalQualRequiredTag : t.learning.certificationCertificateAfterExamTag }}
                 </p>
               </div>
             </div>

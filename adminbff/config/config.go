@@ -6,12 +6,13 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	cfgservepb "github.com/afnandelfin620-star/cftptest/cftp/cfgserver"
 	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	cfgservepb "github.com/afnandelfin620-star/cftptest/cftp/cfgserver"
 
 	"github.com/afnandelfin620-star/cftptest/cftp/util"
 
@@ -25,7 +26,7 @@ type CasdoorConfig struct {
 	ClientID     string `json:"ClientID"`     // Casdoor 应用 Client ID
 	ClientSecret string `json:"ClientSecret"` // Casdoor 应用 Client Secret
 	OrgName      string `json:"OrgName"`      // Casdoor 组织名
-	AppName      string `json:"AppName"`      // Casdoor 应用鍚?
+	AppName      string `json:"AppName"`      // Casdoor 应用
 	Certificate  string `json:"Certificate"`  // Casdoor 服务端 JWT 公钥证书 (PEM)
 }
 
