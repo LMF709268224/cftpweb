@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, Eye, Loader2, RefreshCw, Search, ShieldX, StepForward, X } from "lucide-vue-next"
+import { ArrowLeft, Eye, Loader2, RefreshCw, RotateCcw, Search, ShieldX, StepForward, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -8,7 +8,7 @@ import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 type ActionKind = "trigger-next-stage" | "terminate-pipeline" | "force-completed" | "force-signup-exam"
-type DetailTab = "overview" | "stages" | "units" | "logs" | "raw"
+type DetailTab = "overview" | "stages" | "units" | "certificateTasks" | "logs" | "raw"
 
 type PendingAction = {
   kind: ActionKind
@@ -36,13 +36,19 @@ const detail = ref<JsonRecord | null>(null)
 const logs = ref<JsonRecord[]>([])
 const selectedLog = ref<JsonRecord | null>(null)
 const logDetail = ref<JsonRecord | null>(null)
+const certificateTasks = ref<JsonRecord[]>([])
+const selectedCertificateTask = ref<JsonRecord | null>(null)
+const certificateTaskDetail = ref<JsonRecord | null>(null)
 
 const loading = ref(false)
 const detailLoading = ref(false)
 const logsLoading = ref(false)
 const logDetailLoading = ref(false)
+const certificateTasksLoading = ref(false)
+const certificateTaskDetailLoading = ref(false)
 const actionLoading = ref(false)
 const certificateLoading = ref(false)
+const retryingCertificateTask = ref("")
 
 const candidateFilter = ref("")
 const statusFilter = ref("all")
@@ -105,6 +111,7 @@ const detailTabs = computed(() => [
   { key: "overview" as const, title: copy.value.tabs.overview.title, desc: copy.value.tabs.overview.desc, count: selectedSummary.value ? 1 : 0 },
   { key: "stages" as const, title: copy.value.tabs.stages.title, desc: copy.value.tabs.stages.desc, count: stages.value.length },
   { key: "units" as const, title: copy.value.tabs.units.title, desc: copy.value.tabs.units.desc, count: units.value.length },
+  { key: "certificateTasks" as const, title: copy.value.tabs.certificateTasks.title, desc: copy.value.tabs.certificateTasks.desc, count: certificateTasks.value.length },
   { key: "logs" as const, title: copy.value.tabs.logs.title, desc: copy.value.tabs.logs.desc, count: logs.value.length },
   { key: "raw" as const, title: copy.value.tabs.raw.title, desc: copy.value.tabs.raw.desc, count: 1 },
 ])
@@ -123,6 +130,10 @@ function pipelineUlid(pipeline: JsonRecord | null | undefined) {
 
 function pipelineCcUlid(pipeline: JsonRecord | null | undefined) {
   return String(pickFirst(pipeline || {}, ["pipeline_cc_ulid", "pipeline_config_ulid"]) || "")
+}
+
+function certificateTaskUlid(task: JsonRecord | null | undefined) {
+  return String(pickFirst(task || {}, ["task_ulid", "task_id", "id"]) || "")
 }
 
 function pipelineDisplayName(pipeline: JsonRecord | null | undefined) {
@@ -164,6 +175,10 @@ function entityStatusLabel(entityType: unknown, value: unknown) {
   if (normalizedType === "STAGE") return statusLabel(value, "stage")
   if (normalizedType === "COURSE_UNIT") return statusLabel(value, "unit")
   return statusLabel(value, "pipeline")
+}
+
+function certificateTaskStatusLabel(value: unknown) {
+  return String(value || copy.value.certificateTasks.unknownStatus)
 }
 
 function entityTypeLabel(value: unknown) {
@@ -296,11 +311,14 @@ async function openPipeline(pipeline: JsonRecord) {
   logs.value = []
   selectedLog.value = null
   logDetail.value = null
+  certificateTasks.value = []
+  selectedCertificateTask.value = null
+  certificateTaskDetail.value = null
   activeTab.value = "overview"
   selectedStageIndex.value = 0
   selectedUnitKey.value = ""
   await loadDetail(pipelineUlid(pipeline))
-  await loadLogs(pipelineUlid(pipeline), 0)
+  await Promise.all([loadLogs(pipelineUlid(pipeline), 0), loadCertificateTasks()])
 }
 
 async function loadDetail(pipelineId: string) {
@@ -359,11 +377,70 @@ async function loadLogDetail(transitionUlid: string) {
   }
 }
 
+async function loadCertificateTasks() {
+  if (!selectedCandidateUlid.value) return
+  certificateTasksLoading.value = true
+  try {
+    const params = new URLSearchParams({
+      candidate_ulid: selectedCandidateUlid.value,
+      limit: "20",
+      offset: "0",
+    })
+    if (selectedPipelineUlid.value) params.set("pipeline_ulid", selectedPipelineUlid.value)
+    const data = await apiClient<JsonRecord>(`/api/prog/certificate-tasks?${params}`)
+    const list = Array.isArray(data.tasks) ? data.tasks : []
+    certificateTasks.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    selectedCertificateTask.value = certificateTasks.value[0] || null
+    if (selectedCertificateTask.value) await loadCertificateTaskDetail(certificateTaskUlid(selectedCertificateTask.value))
+  } catch (err) {
+    console.error(err)
+    certificateTasks.value = []
+    selectedCertificateTask.value = null
+    certificateTaskDetail.value = null
+    toast.error(copy.value.toasts.certificateTasksLoadFailed)
+  } finally {
+    certificateTasksLoading.value = false
+  }
+}
+
+async function loadCertificateTaskDetail(taskUlid: string) {
+  if (!taskUlid) {
+    certificateTaskDetail.value = null
+    return
+  }
+  certificateTaskDetailLoading.value = true
+  try {
+    certificateTaskDetail.value = await apiClient<JsonRecord>(`/api/prog/certificate-tasks/${encodeURIComponent(taskUlid)}`)
+  } catch (err) {
+    console.error(err)
+    certificateTaskDetail.value = null
+    toast.error(copy.value.toasts.certificateTaskDetailLoadFailed)
+  } finally {
+    certificateTaskDetailLoading.value = false
+  }
+}
+
+async function retryCertificateTask(task: JsonRecord) {
+  const taskUlid = certificateTaskUlid(task)
+  if (!taskUlid) return
+  retryingCertificateTask.value = taskUlid
+  try {
+    const data = await apiClient<JsonRecord>(`/api/prog/certificate-tasks/${encodeURIComponent(taskUlid)}/retry`, { method: "POST" })
+    toast.success(String(data.message || copy.value.toasts.certificateTaskRetried))
+    await reloadSelected()
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.certificateTaskRetryFailed)
+  } finally {
+    retryingCertificateTask.value = ""
+  }
+}
+
 async function reloadSelected() {
   await loadPipelines()
   if (selectedPipelineUlid.value) {
     await loadDetail(selectedPipelineUlid.value)
-    await loadLogs(selectedPipelineUlid.value, logOffset.value)
+    await Promise.all([loadLogs(selectedPipelineUlid.value, logOffset.value), loadCertificateTasks()])
   }
 }
 
@@ -432,6 +509,9 @@ function backToList() {
   logs.value = []
   selectedLog.value = null
   logDetail.value = null
+  certificateTasks.value = []
+  selectedCertificateTask.value = null
+  certificateTaskDetail.value = null
   activeTab.value = "overview"
 }
 
@@ -732,6 +812,81 @@ onMounted(async () => {
                 </div>
               </div>
 
+              <div v-else-if="activeTab === 'certificateTasks'" class="grid min-h-[640px] lg:grid-cols-[380px_minmax(0,1fr)]">
+                <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
+                  <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+                    <div>
+                      <div class="font-black">{{ copy.certificateTasks.listTitle }}</div>
+                      <div class="text-xs text-slate-500">{{ copy.certificateTasks.listDescription }}</div>
+                    </div>
+                    <button class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="loadCertificateTasks">{{ copy.load }}</button>
+                  </div>
+                  <div v-if="certificateTasksLoading" class="p-10 text-center text-slate-500">
+                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+                    {{ copy.loading }}
+                  </div>
+                  <button
+                    v-for="task in certificateTasks"
+                    v-else
+                    :key="certificateTaskUlid(task)"
+                    class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
+                    :class="certificateTaskUlid(selectedCertificateTask) === certificateTaskUlid(task) ? 'bg-sky-50' : ''"
+                    type="button"
+                    @click="selectedCertificateTask = task; loadCertificateTaskDetail(certificateTaskUlid(task))"
+                  >
+                    <div class="font-black">{{ task.degree_no || certificateTaskUlid(task) || copy.certificateTasks.taskFallback }}</div>
+                    <div class="mt-1 break-all text-sm text-slate-500">{{ certificateTaskUlid(task) || "-" }}</div>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                      <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(certificateTaskStatusLabel(task.status))">
+                        {{ certificateTaskStatusLabel(task.status) }}
+                      </span>
+                      <span class="text-xs text-slate-400">{{ formatDate(String(task.created_at || "")) }}</span>
+                    </div>
+                  </button>
+                  <div v-if="!certificateTasksLoading && !certificateTasks.length" class="p-10 text-center text-slate-500">{{ copy.certificateTasks.empty }}</div>
+                </div>
+                <div class="space-y-5 p-5">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h4 class="text-lg font-black">{{ copy.certificateTasks.detailTitle }}</h4>
+                      <p class="mt-1 break-all text-sm text-slate-500">{{ certificateTaskUlid(selectedCertificateTask) || "-" }}</p>
+                    </div>
+                    <button
+                      class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
+                      type="button"
+                      :disabled="!selectedCertificateTask || retryingCertificateTask === certificateTaskUlid(selectedCertificateTask)"
+                      @click="selectedCertificateTask && retryCertificateTask(selectedCertificateTask)"
+                    >
+                      <Loader2 v-if="retryingCertificateTask === certificateTaskUlid(selectedCertificateTask)" class="h-4 w-4 animate-spin" />
+                      <RotateCcw v-else class="h-4 w-4" />
+                      {{ retryingCertificateTask === certificateTaskUlid(selectedCertificateTask) ? copy.certificateTasks.retrying : copy.certificateTasks.retry }}
+                    </button>
+                  </div>
+                  <div v-if="certificateTaskDetailLoading" class="p-10 text-center text-slate-500">
+                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+                    {{ copy.loadingDetails }}
+                  </div>
+                  <template v-else-if="selectedCertificateTask">
+                    <div class="grid gap-4 md:grid-cols-2">
+                      <div v-for="(value, key) in asRecord((certificateTaskDetail || {}).summary || selectedCertificateTask)" :key="key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
+                        <div class="mt-2 break-all text-sm font-bold">{{ key === 'status' ? certificateTaskStatusLabel(value) : (value || '-') }}</div>
+                      </div>
+                    </div>
+                    <div v-if="certificateTaskDetail?.error_message" class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
+                      <div class="text-xs font-black uppercase text-red-400">{{ copy.certificateTasks.errorMessage }}</div>
+                      <div class="mt-2 whitespace-pre-wrap break-words">{{ certificateTaskDetail.error_message }}</div>
+                    </div>
+                    <div v-if="certificateTaskDetail?.template_params" class="rounded-2xl border border-slate-200">
+                      <div class="border-b border-slate-100 px-4 py-3 text-sm font-black">{{ copy.certificateTasks.templateParams }}</div>
+                      <pre class="max-h-[260px] overflow-auto rounded-b-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ certificateTaskDetail.template_params }}</pre>
+                    </div>
+                    <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(certificateTaskDetail || selectedCertificateTask || {}, null, 2) }}</pre>
+                  </template>
+                  <div v-else class="p-12 text-center text-slate-500">{{ copy.certificateTasks.selectTask }}</div>
+                </div>
+              </div>
+
               <div v-else-if="activeTab === 'logs'" class="grid min-h-[640px] lg:grid-cols-[380px_minmax(0,1fr)]">
                 <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
                   <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
@@ -786,7 +941,7 @@ onMounted(async () => {
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   {{ copy.rawHint }}
                 </div>
-                <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify({ detail, logs }, null, 2) }}</pre>
+                <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify({ detail, certificateTasks, certificateTaskDetail, logs }, null, 2) }}</pre>
               </div>
             </section>
         </section>
