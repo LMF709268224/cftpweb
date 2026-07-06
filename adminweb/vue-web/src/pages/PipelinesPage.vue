@@ -164,23 +164,26 @@ function itemId(item: JsonRecord | null | undefined, keys: string[]) {
   return String(pickFirst(item, keys) || "")
 }
 
-function structureFromPipeline(pipeline: JsonRecord | null) {
-  if (!pipeline) return emptyStructure()
+function normalizeStructureShape(value: JsonRecord | null | undefined) {
+  const next = value || {}
   return {
-    unlock_quals: Array.isArray(pipeline.unlock_quals) ? pipeline.unlock_quals : [],
-    certs: Array.isArray(pipeline.certs) ? pipeline.certs : [],
-    certs_quals: Array.isArray(pipeline.certs_quals) ? pipeline.certs_quals : [],
-    stages: Array.isArray(pipeline.stages) ? pipeline.stages : [],
+    unlock_quals: asArray(next.unlock_quals),
+    certs: asArray(next.certs),
+    certs_quals: asArray(next.certs_quals),
+    stages: asArray(next.stages).map((stage) => ({
+      ...stage,
+      units: asArray(stage.units),
+    })),
   }
 }
 
+function structureFromPipeline(pipeline: JsonRecord | null) {
+  if (!pipeline) return emptyStructure()
+  return normalizeStructureShape(pipeline)
+}
+
 function setStructure(next: JsonRecord) {
-  structure.value = {
-    unlock_quals: Array.isArray(next.unlock_quals) ? next.unlock_quals : [],
-    certs: Array.isArray(next.certs) ? next.certs : [],
-    certs_quals: Array.isArray(next.certs_quals) ? next.certs_quals : [],
-    stages: Array.isArray(next.stages) ? next.stages : [],
-  }
+  structure.value = normalizeStructureShape(next)
   syncStructureJson()
   ensureSelections()
 }
@@ -214,11 +217,42 @@ function parseStructure() {
       toast.error(copy.value.toasts.structureMustObject)
       return null
     }
-    return parsed as JsonRecord
+    return normalizeStructureShape(parsed as JsonRecord)
   } catch {
     toast.error(copy.value.toasts.structureInvalidJson)
     return null
   }
+}
+
+function validateStructureForSave(next: JsonRecord) {
+  const stageList = asArray(next.stages)
+  if (!stageList.length) {
+    toast.error(copy.value.toasts.structureStagesRequired)
+    return false
+  }
+  for (const [stageIndex, stage] of stageList.entries()) {
+    if (!String(stage.name || "").trim()) {
+      toast.error(copy.value.toasts.structureStageNameRequired(stageIndex + 1))
+      return false
+    }
+    const unitList = asArray(stage.units)
+    if (!unitList.length) {
+      toast.error(copy.value.toasts.structureStageUnitsRequired(stageIndex + 1))
+      selectedStageIndex.value = stageIndex
+      activeLayer.value = "units"
+      return false
+    }
+    for (const [unitIndex, unit] of unitList.entries()) {
+      if (!String(unit.glms_course_id || "").trim()) {
+        toast.error(copy.value.toasts.structureUnitCourseRequired(stageIndex + 1, unitIndex + 1))
+        selectedStageIndex.value = stageIndex
+        selectedUnitPath.value = `${stageIndex}:${unitIndex}`
+        activeLayer.value = "units"
+        return false
+      }
+    }
+  }
+  return true
 }
 
 function applyRawStructure() {
@@ -318,6 +352,7 @@ function addStage() {
   selectedStageIndex.value = list.length - 1
   activeLayer.value = "stages"
   syncStructureJson()
+  toast.info(copy.value.toasts.stageAddedNeedsUnit)
 }
 
 function removeStage(index = selectedStageIndex.value) {
@@ -502,6 +537,10 @@ async function saveStructure() {
   }
   const parsed = parseStructure()
   if (!parsed) return
+  if (!validateStructureForSave(parsed)) {
+    setStructure(parsed)
+    return
+  }
   saving.value = true
   try {
     const data = await apiClient<JsonRecord>(`/api/pipelines/${encodeURIComponent(selectedId.value)}/structure`, {
@@ -525,6 +564,10 @@ async function publish() {
   if (!selectedId.value) return
   const parsed = parseStructure()
   if (!parsed) return
+  if (!validateStructureForSave(parsed)) {
+    setStructure(parsed)
+    return
+  }
   saving.value = true
   try {
     await apiClient(`/api/pipelines/${encodeURIComponent(selectedId.value)}/publish`, {

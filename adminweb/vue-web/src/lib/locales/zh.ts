@@ -1942,6 +1942,11 @@ export const zh = {
     toasts: {
       structureMustObject: "structure_json 必须是对象",
       structureInvalidJson: "structure_json 不是合法 JSON",
+      structureStagesRequired: "管线至少需要 1 个阶段",
+      structureStageNameRequired: (stageIndex: number) => `阶段 ${stageIndex} 请填写名称`,
+      structureStageUnitsRequired: (stageIndex: number) => `阶段 ${stageIndex} 至少需要添加 1 个课程单元`,
+      structureUnitCourseRequired: (stageIndex: number, unitIndex: number) => `阶段 ${stageIndex} 的课程单元 ${unitIndex} 请填写 GLMS Course ID`,
+      stageAddedNeedsUnit: "已新增阶段。保存前请为该阶段添加至少 1 个课程单元，并填写 GLMS Course ID",
       rawApplied: "已应用到分层视图，保存后才会生效",
       fieldInvalidJson: (key: string) => `${key} 不是合法 JSON`,
       loadFailed: "管线配置加载失败",

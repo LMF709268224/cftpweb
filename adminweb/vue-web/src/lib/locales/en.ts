@@ -1944,6 +1944,11 @@ export const en: AdminTranslations = {
     toasts: {
       structureMustObject: "structure_json must be an object",
       structureInvalidJson: "structure_json is not valid JSON",
+      structureStagesRequired: "The pipeline needs at least 1 stage",
+      structureStageNameRequired: (stageIndex: number) => `Please fill in the name for stage ${stageIndex}`,
+      structureStageUnitsRequired: (stageIndex: number) => `Stage ${stageIndex} needs at least 1 course unit`,
+      structureUnitCourseRequired: (stageIndex: number, unitIndex: number) => `Please fill in GLMS Course ID for stage ${stageIndex}, course unit ${unitIndex}`,
+      stageAddedNeedsUnit: "Stage added. Add at least 1 course unit and fill in GLMS Course ID before saving.",
       rawApplied: "Applied to the layered view. Save to persist changes.",
       fieldInvalidJson: (key: string) => `${key} is not valid JSON`,
       loadFailed: "Failed to load pipeline config",
