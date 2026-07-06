@@ -513,7 +513,7 @@ onMounted(load)
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newBundle">
+        <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newBundle">
           <Plus class="h-4 w-4" />
           {{ copy.newBundle }}
         </button>
@@ -603,7 +603,7 @@ onMounted(load)
               <X class="h-5 w-5" />
             </button>
           </div>
-          <div class="space-y-5 overflow-y-auto p-5">
+          <div class="flex-1 space-y-5 overflow-y-auto p-5">
             <div class="grid gap-4 md:grid-cols-2">
               <label class="grid gap-2 text-sm font-bold">
                 {{ copy.fields.bundleUlid }}
@@ -640,12 +640,12 @@ onMounted(load)
                 <textarea v-model="form.pricing_json" class="min-h-[260px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
               </label>
             </div>
-            <div class="flex justify-end">
-              <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="createBundle">
-                <Plus class="h-4 w-4" />
-                {{ copy.createDraft }}
-              </button>
-            </div>
+          </div>
+          <div class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+            <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="createBundle">
+              <Plus class="h-4 w-4" />
+              {{ copy.createDraft }}
+            </button>
           </div>
         </template>
 
