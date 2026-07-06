@@ -198,10 +198,13 @@ const pipelineIssuingCertificate = computed(() => {
   const raw = String(pipelineStatus.value ?? "").trim().toUpperCase()
   return raw === "4" || raw.includes("ISSUING_CERT") || nextStepAction.value === "issuing_certificate"
 })
+const pipelineCompleted = computed(() =>
+  pipelineIsTerminal(pipelineStatus.value) || nextStepAction.value === "completed",
+)
 const certificateAvailable = computed(() =>
   purchased.value &&
   Boolean(instancePipelineId.value) &&
-  nextStepAction.value === "view_certificate" &&
+  (nextStepAction.value === "view_certificate" || pipelineCompleted.value) &&
   !pipelineIssuingCertificate.value,
 )
 const certificateDescription = computed(() => {
