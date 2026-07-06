@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	gauditpb "github.com/afnandelfin620-star/cftptest/cftp/gaudit"
 	gccpb "github.com/afnandelfin620-star/cftptest/cftp/gcc"
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
@@ -42,6 +43,7 @@ type Handler struct {
 	Gmail               gmailpb.MailServiceClient
 	Gpay                gpaypb.PayServiceClient
 	Gmbr                gmbrpb.GmbrServiceClient
+	Audit               gauditpb.AuditServiceClient
 	CandidateProfiles   *CandidateProfileCache
 	CasdoorEndpoint     string
 	CasdoorClientId     string
@@ -61,6 +63,7 @@ func New(
 	gmail gmailpb.MailServiceClient,
 	gpay gpaypb.PayServiceClient,
 	gmbr gmbrpb.GmbrServiceClient,
+	audit gauditpb.AuditServiceClient,
 	casdoorEndpoint string,
 	casdoorClientId string,
 	casdoorClientSecret string,
@@ -78,6 +81,7 @@ func New(
 		Gmail:               gmail,
 		Gpay:                gpay,
 		Gmbr:                gmbr,
+		Audit:               audit,
 		CandidateProfiles:   NewCandidateProfileCache(gmid),
 		CasdoorEndpoint:     casdoorEndpoint,
 		CasdoorClientId:     casdoorClientId,

@@ -61,6 +61,8 @@ const (
 	EnvGpayGrpcAddr = "GPAY_GRPC_ADDR"
 	// GMBR_GRPC_ADDR gmbr membership service address
 	EnvGmbrGrpcAddr = "GMBR_GRPC_ADDR"
+	// GAUDIT_GRPC_ADDR gaudit audit log service address
+	EnvGauditGrpcAddr = "GAUDIT_GRPC_ADDR"
 
 	// ── CORS ──
 	// CORS_ALLOWED_ORIGINS  允许的跨域来源，逗号分隔，默认 "*" 允许所有

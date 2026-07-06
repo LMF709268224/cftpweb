@@ -326,10 +326,16 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		})
 
 		// ===== Webhook Audit =====
-		r.Route("/audit/webhooks", func(r chi.Router) {
-			r.Get("/", h.ListWebhookMessages)
-			r.Get("/detail", h.GetWebhookMessageDetail)
-			r.Post("/reprocess", h.ReprocessWebhookMessage)
+		r.Route("/audit", func(r chi.Router) {
+			r.Route("/logs", func(r chi.Router) {
+				r.Get("/", h.ListAuditLogs)
+				r.Get("/{audit_ulid}", h.GetAuditLogDetail)
+			})
+			r.Route("/webhooks", func(r chi.Router) {
+				r.Get("/", h.ListWebhookMessages)
+				r.Get("/detail", h.GetWebhookMessageDetail)
+				r.Post("/reprocess", h.ReprocessWebhookMessage)
+			})
 		})
 
 		// ===== 权限管理 (Permissions) =====

@@ -189,7 +189,7 @@ watch([keyword, roleFilter, statusFilter], () => {
         <p class="mt-2 text-sm text-slate-500">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <RouterLink to="/audit/webhooks" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
+        <RouterLink to="/audit/logs" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
           <Activity class="h-4 w-4" />
           {{ copy.auditLogs }}
         </RouterLink>

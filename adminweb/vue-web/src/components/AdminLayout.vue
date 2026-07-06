@@ -73,6 +73,7 @@ const navGroups = computed(() => [
   {
     label: copy.value.groups.operations,
     items: [
+      { path: "/audit/logs", label: copy.value.nav.auditLogs, icon: ShieldCheck },
       { path: "/pdf-templates", label: copy.value.nav.pdfTemplates, icon: FileText },
       { path: "/pdf-requests", label: copy.value.nav.pdfRequests, icon: FileBadge },
     ],
