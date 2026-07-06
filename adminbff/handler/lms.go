@@ -1571,6 +1571,23 @@ func (h *Handler) ListLmsBrokenAssets(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+// CleanUpDeprecatedCourseAssets POST /api/lms/courses/{course_id}/cleanup-assets
+func (h *Handler) CleanUpDeprecatedCourseAssets(w http.ResponseWriter, r *http.Request) {
+	courseID, ok := requiredURLParam(w, r, "course_id")
+	if !ok {
+		return
+	}
+
+	resp, err := h.Lms.CleanUpDeprecatedCourseAssetsAdmin(r.Context(), &lmspb.CleanUpDeprecatedCourseAssetsRequest{
+		CourseId: courseID,
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 // CreateLmsCourseSupplementaryMaterial POST /api/lms/courses/{course_id}/supplementary-material
 func (h *Handler) CreateLmsCourseSupplementaryMaterial(w http.ResponseWriter, r *http.Request) {
 	courseID, ok := requiredURLParam(w, r, "course_id")

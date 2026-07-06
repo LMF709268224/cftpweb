@@ -57,6 +57,23 @@ function packVersion(pack: JsonRecord | null) {
   return Number(pack?.version || 0)
 }
 
+function packStatusKey(pack: JsonRecord | null) {
+  return String(pack?.status || "").trim().toUpperCase()
+}
+
+function canPublishPack(pack: JsonRecord | null) {
+  return packStatusKey(pack).includes("DRAFT")
+}
+
+function canRevertPack(pack: JsonRecord | null) {
+  const status = packStatusKey(pack)
+  return status.includes("ACTIVE") || status.includes("PUBLISHED")
+}
+
+function canDeprecatePack(pack: JsonRecord | null) {
+  return !!pack && !packStatusKey(pack).includes("DEPRECATED")
+}
+
 function fillForm(pack: JsonRecord | null) {
   form.value = {
     pack_id: String(pack?.pack_id || ""),
@@ -233,7 +250,6 @@ async function savePack() {
       })
       toast.success(copy.value.toasts.created)
     } else {
-      body.status = form.value.status
       body.version = form.value.version
       await apiClient(`/api/lms/resource-packs/${encodeURIComponent(form.value.pack_id)}`, {
         method: "PUT",
@@ -248,6 +264,32 @@ async function savePack() {
   } catch (err) {
     console.error(err)
     toast.error(packSaveErrorMessage(err))
+  } finally {
+    saving.value = false
+  }
+}
+
+async function runPackAction(pack: JsonRecord | null, action: "publish" | "deprecate" | "revert-to-draft") {
+  const id = packId(pack)
+  const version = packVersion(pack)
+  if (!id || version <= 0) {
+    toast.error(copy.value.toasts.actionRequiresVersion)
+    return
+  }
+
+  saving.value = true
+  try {
+    await apiClient(`/api/lms/resource-packs/${encodeURIComponent(id)}/${action}`, {
+      method: "POST",
+      body: JSON.stringify({ version }),
+    })
+    if (action === "publish") toast.success(copy.value.toasts.published)
+    if (action === "deprecate") toast.success(copy.value.toasts.deprecated)
+    if (action === "revert-to-draft") toast.success(copy.value.toasts.reverted)
+    await load()
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.actionFailed)
   } finally {
     saving.value = false
   }
@@ -333,7 +375,7 @@ onMounted(load)
         </div>
         <div v-else-if="!packs.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
         <div v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_200px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+          <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_300px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
             <span>{{ copy.columns.pack }}</span>
             <span>{{ copy.columns.version }}</span>
             <span class="text-center">{{ copy.columns.status }}</span>
@@ -342,7 +384,7 @@ onMounted(load)
           <div
             v-for="pack in packs"
             :key="packId(pack)"
-            class="grid w-full gap-3 border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_84px_120px_200px] lg:items-center lg:gap-6"
+            class="grid w-full gap-3 border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_84px_120px_300px] lg:items-center lg:gap-6"
             :class="packId(selected) === packId(pack) ? 'bg-sky-50/70' : ''"
           >
             <button class="min-w-0 text-left" type="button" @click="openPackDetail(pack)">
@@ -356,12 +398,21 @@ onMounted(load)
             <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-center">
               {{ pack.status || "Active" }}
             </span>
-            <div class="flex items-center justify-start gap-4 lg:justify-center">
+            <div class="flex flex-wrap items-center justify-start gap-3 lg:justify-center">
               <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openPackDetail(pack)">
                 {{ copy.viewDetails }}
               </button>
               <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openPackEditor(pack)">
                 {{ copy.editPack }}
+              </button>
+              <button v-if="canPublishPack(pack)" class="text-sm font-bold text-emerald-700 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'publish')">
+                {{ copy.publishPack }}
+              </button>
+              <button v-if="canRevertPack(pack)" class="text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'revert-to-draft')">
+                {{ copy.revertPack }}
+              </button>
+              <button v-if="canDeprecatePack(pack)" class="text-sm font-bold text-orange-600 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'deprecate')">
+                {{ copy.deprecatePack }}
               </button>
               <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="requestDeletePack(pack)">
                 {{ copy.deletePack }}
@@ -502,10 +553,10 @@ onMounted(load)
                     {{ copy.fields.packId }}
                     <input v-model="form.pack_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'" :placeholder="copy.placeholders.packId" />
                   </label>
-                  <label class="text-sm font-bold">
+                  <div class="text-sm font-bold">
                     {{ copy.fields.status }}
-                    <input v-model="form.status" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :disabled="mode === 'create'" :placeholder="copy.placeholders.status" />
-                  </label>
+                    <div class="mt-2 min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.status || "-" }}</div>
+                  </div>
                   <label class="text-sm font-bold">
                     {{ copy.fields.version }}
                     <input v-model.number="form.version" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
