@@ -39,10 +39,12 @@ const emptyForm: PipelineForm = {
 }
 
 const pipelines = ref<JsonRecord[]>([])
+const courseOptions = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const form = ref<PipelineForm>({ ...emptyForm })
 const structure = ref<JsonRecord>(emptyStructure())
 const loading = ref(false)
+const courseOptionsLoading = ref(false)
 const saving = ref(false)
 const creating = ref(false)
 const categoryFilter = ref("")
@@ -166,23 +168,80 @@ function itemId(item: JsonRecord | null | undefined, keys: string[]) {
   return String(pickFirst(item, keys) || "")
 }
 
-function structureFromPipeline(pipeline: JsonRecord | null) {
-  if (!pipeline) return emptyStructure()
+function courseId(course: JsonRecord | null | undefined) {
+  return String(pickFirst(course || {}, ["course_ulid", "course_id"]) || "")
+}
+
+function courseTitle(course: JsonRecord | null | undefined) {
+  return String(pickFirst(course || {}, ["title", "name", "course_title"]) || courseId(course) || copy.value.fields.glmsCourse)
+}
+
+function courseOptionLabel(course: JsonRecord) {
+  const id = courseId(course)
+  const status = String(pickFirst(course, ["status", "raw_status"]) || "").trim()
+  const version = course.version ? `v${course.version}` : ""
+  return [courseTitle(course), version, status, id].filter(Boolean).join(" · ")
+}
+
+function courseById(id: string) {
+  return courseOptions.value.find((course) => courseId(course) === id) || null
+}
+
+function unitCourseId(unit: JsonRecord | null | undefined) {
+  return String(pickFirst(unit || {}, ["glms_course_ulid", "glms_course_id"]) || "")
+}
+
+function normalizeStructureShape(value: JsonRecord | null | undefined) {
+  const next = value || {}
   return {
-    unlock_quals: Array.isArray(pipeline.unlock_quals) ? pipeline.unlock_quals : [],
-    certs: Array.isArray(pipeline.certs) ? pipeline.certs : [],
-    certs_quals: Array.isArray(pipeline.certs_quals) ? pipeline.certs_quals : [],
-    stages: Array.isArray(pipeline.stages) ? pipeline.stages : [],
+    unlock_quals: asArray(next.unlock_quals).map(normalizeQualificationShape),
+    certs: asArray(next.certs).map(normalizeQualificationShape),
+    certs_quals: asArray(next.certs_quals).map(normalizeQualificationShape),
+    stages: asArray(next.stages).map((stage) => ({
+      ...stage,
+      stage_ulid: String(pickFirst(stage, ["stage_ulid", "stage_id"]) || ""),
+      units: asArray(stage.units).map(normalizeUnitShape),
+    })),
   }
 }
 
+function normalizeQualificationShape(qual: JsonRecord) {
+  const next = { ...qual }
+  next.qual_ulid = String(pickFirst(next, ["qual_ulid", "qual_id"]) || "")
+  next.pdf_template_ulid = String(pickFirst(next, ["pdf_template_ulid", "pdf_template_id"]) || "")
+  delete next.qual_id
+  delete next.pdf_template_id
+  return next
+}
+
+function normalizeUnitShape(unit: JsonRecord) {
+  const next = { ...unit }
+  next.unit_ulid = String(pickFirst(next, ["unit_ulid", "unit_id"]) || "")
+  next.glms_course_ulid = String(pickFirst(next, ["glms_course_ulid", "glms_course_id"]) || "")
+  next.exam_ulid = String(pickFirst(next, ["exam_ulid", "exam_id"]) || "")
+  next.cert_qual_ulid = String(pickFirst(next, ["cert_qual_ulid", "cert_qual_id"]) || "")
+  next.cert_pdf_template_ulid = String(pickFirst(next, ["cert_pdf_template_ulid", "cert_pdf_template_id"]) || "")
+  next.exemption_quals = Array.isArray(next.exemption_quals) ? next.exemption_quals : []
+  delete next.unit_id
+  delete next.glms_course_id
+  delete next.exam_id
+  delete next.cert_qual_id
+  delete next.cert_pdf_template_id
+  delete next.allow_retake
+  delete next.learning_minutes
+  delete next.base_fee
+  delete next.retake_fee
+  delete next.exemption_audit_fee
+  return next
+}
+
+function structureFromPipeline(pipeline: JsonRecord | null) {
+  if (!pipeline) return emptyStructure()
+  return normalizeStructureShape(pipeline)
+}
+
 function setStructure(next: JsonRecord) {
-  structure.value = {
-    unlock_quals: Array.isArray(next.unlock_quals) ? next.unlock_quals : [],
-    certs: Array.isArray(next.certs) ? next.certs : [],
-    certs_quals: Array.isArray(next.certs_quals) ? next.certs_quals : [],
-    stages: Array.isArray(next.stages) ? next.stages : [],
-  }
+  structure.value = normalizeStructureShape(next)
   syncStructureJson()
   ensureSelections()
 }
@@ -216,11 +275,42 @@ function parseStructure() {
       toast.error(copy.value.toasts.structureMustObject)
       return null
     }
-    return parsed as JsonRecord
+    return normalizeStructureShape(parsed as JsonRecord)
   } catch {
     toast.error(copy.value.toasts.structureInvalidJson)
     return null
   }
+}
+
+function validateStructureForSave(next: JsonRecord) {
+  const stageList = asArray(next.stages)
+  if (!stageList.length) {
+    toast.error(copy.value.toasts.structureStagesRequired)
+    return false
+  }
+  for (const [stageIndex, stage] of stageList.entries()) {
+    if (!String(stage.name || "").trim()) {
+      toast.error(copy.value.toasts.structureStageNameRequired(stageIndex + 1))
+      return false
+    }
+    const unitList = asArray(stage.units)
+    if (!unitList.length) {
+      toast.error(copy.value.toasts.structureStageUnitsRequired(stageIndex + 1))
+      selectedStageIndex.value = stageIndex
+      activeLayer.value = "units"
+      return false
+    }
+    for (const [unitIndex, unit] of unitList.entries()) {
+      if (!unitCourseId(unit).trim()) {
+        toast.error(copy.value.toasts.structureUnitCourseRequired(stageIndex + 1, unitIndex + 1))
+        selectedStageIndex.value = stageIndex
+        selectedUnitPath.value = `${stageIndex}:${unitIndex}`
+        activeLayer.value = "units"
+        return false
+      }
+    }
+  }
+  return true
 }
 
 function applyRawStructure() {
@@ -320,6 +410,7 @@ function addStage() {
   selectedStageIndex.value = list.length - 1
   activeLayer.value = "stages"
   syncStructureJson()
+  toast.info(copy.value.toasts.stageAddedNeedsUnit)
 }
 
 function removeStage(index = selectedStageIndex.value) {
@@ -334,7 +425,7 @@ function addUnit(stageIndex = selectedStageIndex.value) {
   if (!stages.value.length) addStage()
   const stage = stages.value[stageIndex] || stages.value[0]
   const list = asMutableArray(stage, "units")
-  list.push({ unit_ulid: "", name: copy.value.defaults.unitName, sort_order: list.length + 1 })
+  list.push({ unit_ulid: "", name: copy.value.defaults.unitName, sort_order: list.length + 1, glms_course_ulid: "", exemption_quals: [], allow_exemption: false })
   selectedUnitPath.value = `${Math.max(0, stageIndex)}:${list.length - 1}`
   activeLayer.value = "units"
   syncStructureJson()
@@ -390,6 +481,18 @@ function removeGenericItem(key: "certs" | "unlock_quals" | "certs_quals", index:
   syncStructureJson()
 }
 
+function applyUnitCourse(unit: JsonRecord | null | undefined, courseUlid: string) {
+  if (!unit || isStructureLocked()) return
+  unit.glms_course_ulid = courseUlid
+  delete unit.glms_course_id
+  const course = courseById(courseUlid)
+  const currentName = String(unit.name || "").trim()
+  if (course && (!currentName || currentName === copy.value.defaults.unitName)) {
+    unit.name = courseTitle(course)
+  }
+  syncStructureJson()
+}
+
 async function load() {
   loading.value = true
   try {
@@ -408,6 +511,21 @@ async function load() {
     toast.error(copy.value.toasts.loadFailed)
   } finally {
     loading.value = false
+  }
+}
+
+async function loadCourseOptions() {
+  courseOptionsLoading.value = true
+  try {
+    const data = await apiClient<JsonRecord>("/api/lms/courses?page_size=1000")
+    const list = Array.isArray(data.courses) ? data.courses : []
+    courseOptions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+  } catch (err) {
+    console.error(err)
+    courseOptions.value = []
+    toast.error(copy.value.toasts.courseOptionsLoadFailed)
+  } finally {
+    courseOptionsLoading.value = false
   }
 }
 
@@ -504,6 +622,10 @@ async function saveStructure() {
   }
   const parsed = parseStructure()
   if (!parsed) return
+  if (!validateStructureForSave(parsed)) {
+    setStructure(parsed)
+    return
+  }
   saving.value = true
   try {
     const data = await apiClient<JsonRecord>(`/api/pipelines/${encodeURIComponent(selectedId.value)}/structure`, {
@@ -527,6 +649,10 @@ async function publish() {
   if (!selectedId.value) return
   const parsed = parseStructure()
   if (!parsed) return
+  if (!validateStructureForSave(parsed)) {
+    setStructure(parsed)
+    return
+  }
   saving.value = true
   try {
     await apiClient(`/api/pipelines/${encodeURIComponent(selectedId.value)}/publish`, {
@@ -636,7 +762,10 @@ async function clonePipeline() {
 }
 
 watch([categoryFilter, onlyCurrent, offset], () => load())
-onMounted(load)
+onMounted(() => {
+  void load()
+  void loadCourseOptions()
+})
 </script>
 
 <template>
@@ -940,29 +1069,40 @@ onMounted(load)
                     {{ copy.fields.sortOrder }}
                     <input :value="numberValue(selectedUnitItem.unit, 'sort_order')" :disabled="isStructureLocked()" type="number" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'sort_order', eventNumber($event))" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    GLMS Course ID
-                    <input :value="fieldValue(selectedUnitItem.unit, 'glms_course_id')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'glms_course_id', eventValue($event))" />
+                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                    {{ copy.fields.glmsCourse }}
+                    <select :value="unitCourseId(selectedUnitItem.unit)" :disabled="isStructureLocked() || courseOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCourse(selectedUnitItem?.unit, eventValue($event))">
+                      <option value="">{{ courseOptionsLoading ? copy.loadingCourses : copy.selectCourse }}</option>
+                      <option v-if="unitCourseId(selectedUnitItem.unit) && !courseById(unitCourseId(selectedUnitItem.unit))" :value="unitCourseId(selectedUnitItem.unit)">
+                        {{ unitCourseId(selectedUnitItem.unit) }}
+                      </option>
+                      <option v-for="course in courseOptions" :key="courseId(course)" :value="courseId(course)">{{ courseOptionLabel(course) }}</option>
+                    </select>
+                    <p class="text-xs font-semibold text-slate-500">{{ copy.glmsCourseHint }}</p>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     Program
                     <input :value="fieldValue(selectedUnitItem.unit, 'program')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'program', eventValue($event))" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    Exam ID
-                    <input :value="fieldValue(selectedUnitItem.unit, 'exam_id')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'exam_id', eventValue($event))" />
+                    Exam ULID
+                    <input :value="fieldValue(selectedUnitItem.unit, 'exam_ulid')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'exam_ulid', eventValue($event))" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     Form Code
                     <input :value="fieldValue(selectedUnitItem.unit, 'form_code')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'form_code', eventValue($event))" />
                   </label>
                   <label class="inline-flex items-center gap-2 text-sm font-bold">
-                    <input :checked="boolValue(selectedUnitItem.unit, 'allow_retake')" :disabled="isStructureLocked()" type="checkbox" @change="setField(selectedUnitItem?.unit, 'allow_retake', eventChecked($event))" />
-                    {{ copy.fields.allowRetake }}
-                  </label>
-                  <label class="inline-flex items-center gap-2 text-sm font-bold">
                     <input :checked="boolValue(selectedUnitItem.unit, 'allow_exemption')" :disabled="isStructureLocked()" type="checkbox" @change="setField(selectedUnitItem?.unit, 'allow_exemption', eventChecked($event))" />
                     {{ copy.fields.allowExemption }}
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold">
+                    cert_qual_ulid
+                    <input :value="fieldValue(selectedUnitItem.unit, 'cert_qual_ulid')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'cert_qual_ulid', eventValue($event))" />
+                  </label>
+                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                    cert_pdf_template_ulid
+                    <input :value="fieldValue(selectedUnitItem.unit, 'cert_pdf_template_ulid')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'cert_pdf_template_ulid', eventValue($event))" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     exemption_quals JSON
