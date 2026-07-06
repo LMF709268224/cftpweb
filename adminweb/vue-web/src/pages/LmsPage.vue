@@ -353,7 +353,7 @@ function emptySupplementaryItemForm(): SupplementaryItemForm {
 
 function emptyQuizForm(): QuizForm {
   return {
-    scope: "chapter",
+    scope: "course",
     owner_id: "",
     title: "",
     description: "",
@@ -1567,6 +1567,20 @@ async function loadQuizzes(scope: QuizScope = quizForm.value.scope) {
   }
 }
 
+async function refreshQuizBank() {
+  if (!selectedCourseId.value) return
+  quizzesLoading.value = true
+  try {
+    quizzes.value = []
+    selectedQuiz.value = null
+    editingQuizId.value = ""
+    clearQuestionState()
+    await loadCompleteCourse()
+  } finally {
+    quizzesLoading.value = false
+  }
+}
+
 function editQuiz(quiz: JsonRecord, openDialog = true) {
   const item = allQuizItems.value.find((entry) => quizId(entry.quiz) === quizId(quiz))
   const scope = scopeFromQuizzableType(item?.ownerType || quiz.quizzable_type || quizForm.value.scope)
@@ -1590,7 +1604,7 @@ function editQuiz(quiz: JsonRecord, openDialog = true) {
   }
 }
 
-function newQuiz(scope: QuizScope = quizForm.value.scope) {
+function newQuiz(scope: QuizScope = "course") {
   selectedQuiz.value = null
   editingQuizId.value = ""
   quizForm.value = { ...emptyQuizForm(), scope, owner_id: defaultQuizOwnerId(scope) }
@@ -1604,13 +1618,9 @@ function openQuizDetail(quiz: JsonRecord) {
 }
 
 function openNewQuiz() {
-  newQuiz(quizForm.value.scope)
+  newQuiz()
   quizDialogMode.value = "create"
   quizDialogOpen.value = true
-}
-
-function changeQuizScope() {
-  newQuiz(quizForm.value.scope)
 }
 
 function changeQuizFormScope() {
@@ -2666,16 +2676,11 @@ onMounted(() => {
             <p class="mt-1 text-sm text-slate-500">{{ copy.quizBankDescription }}</p>
           </div>
           <div class="flex flex-wrap gap-2">
-            <select v-model="quizForm.scope" class="rounded-xl border border-slate-200 px-4 py-2 font-bold" @change="changeQuizScope">
-              <option value="course">{{ copy.quizScopes.course }}</option>
-              <option value="chapter">{{ copy.quizScopes.chapter }}</option>
-              <option value="lesson">{{ copy.quizScopes.lesson }}</option>
-            </select>
             <button
               class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40"
               :disabled="!selectedCourseId"
               type="button"
-              @click="loadQuizzes()"
+              @click="refreshQuizBank"
             >
               {{ copy.loadQuizzes }}
             </button>
