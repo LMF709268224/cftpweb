@@ -143,7 +143,7 @@ onMounted(load)
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="openCreate">
+        <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="openCreate">
           <Plus class="h-4 w-4" />
           {{ copy.newTemplate }}
         </button>
@@ -214,9 +214,9 @@ onMounted(load)
                 <X class="h-5 w-5" />
               </button>
             </div>
-            <div class="overflow-y-auto p-5">
+            <div class="flex-1 overflow-y-auto p-5">
               <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                <form class="space-y-4" @submit.prevent="save">
+                <form id="pdf-template-form" class="space-y-4" @submit.prevent="save">
                   <label v-if="mode !== 'create'" class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.templateId }}
                     <input v-model="form.template_id" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" />
@@ -233,12 +233,6 @@ onMounted(load)
                     {{ copy.fields.htmlTemplate }}
                     <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6 disabled:bg-slate-100 disabled:text-slate-600" :disabled="readonlyMode" />
                   </label>
-                  <div v-if="!readonlyMode" class="flex justify-end">
-                    <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="submit" :disabled="saving">
-                      <Save class="h-4 w-4" />
-                      {{ saving ? copy.saving : copy.saveTemplate }}
-                    </button>
-                  </div>
                 </form>
 
                 <div class="space-y-4">
@@ -264,6 +258,12 @@ onMounted(load)
                   </div>
                 </div>
               </div>
+            </div>
+            <div v-if="!readonlyMode" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="submit" form="pdf-template-form" :disabled="saving">
+                <Save class="h-4 w-4" />
+                {{ saving ? copy.saving : copy.saveTemplate }}
+              </button>
             </div>
           </div>
         </section>
