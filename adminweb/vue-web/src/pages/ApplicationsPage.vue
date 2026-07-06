@@ -3,6 +3,7 @@ import { CheckCircle2, Copy, Download, Eye, FileText, Loader2, RefreshCw, Rotate
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
+import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -133,26 +134,9 @@ function jsonText(value: unknown) {
   return JSON.stringify(value ?? {}, null, 2)
 }
 
-async function writeClipboard(text: string) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text)
-    return
-  }
-
-  const textarea = document.createElement("textarea")
-  textarea.value = text
-  textarea.setAttribute("readonly", "")
-  textarea.style.position = "fixed"
-  textarea.style.opacity = "0"
-  document.body.appendChild(textarea)
-  textarea.select()
-  document.execCommand("copy")
-  document.body.removeChild(textarea)
-}
-
 async function copyRawJson() {
   try {
-    await writeClipboard(selectedJson.value)
+    await copyTextToClipboard(selectedJson.value)
     copiedRawJson.value = true
     toast.success(copy.value.toasts.jsonCopied)
     window.setTimeout(() => {

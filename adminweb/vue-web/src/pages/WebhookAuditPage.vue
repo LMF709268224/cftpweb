@@ -3,6 +3,7 @@ import { Check, ChevronLeft, ChevronRight, Copy as CopyIcon, Loader2, RefreshCw,
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
+import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -136,26 +137,9 @@ function formatFieldValue(key: string, value: unknown) {
   return String(value)
 }
 
-async function writeClipboard(text: string) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text)
-    return
-  }
-
-  const textarea = document.createElement("textarea")
-  textarea.value = text
-  textarea.setAttribute("readonly", "")
-  textarea.style.position = "fixed"
-  textarea.style.opacity = "0"
-  document.body.appendChild(textarea)
-  textarea.select()
-  document.execCommand("copy")
-  document.body.removeChild(textarea)
-}
-
 async function copyActiveDetailJson() {
   try {
-    await writeClipboard(activeDetailJson.value)
+    await copyTextToClipboard(activeDetailJson.value)
     copiedJson.value = true
     toast.success(copy.value.toasts.jsonCopied)
     window.setTimeout(() => {

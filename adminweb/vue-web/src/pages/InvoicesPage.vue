@@ -3,6 +3,7 @@ import { Check, Copy as CopyIcon, Loader2, RefreshCw, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
+import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -56,26 +57,9 @@ function detailFieldText(value: unknown) {
   return text || "-"
 }
 
-async function writeClipboard(text: string) {
-  if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text)
-    return
-  }
-
-  const textarea = document.createElement("textarea")
-  textarea.value = text
-  textarea.setAttribute("readonly", "")
-  textarea.style.position = "fixed"
-  textarea.style.opacity = "0"
-  document.body.appendChild(textarea)
-  textarea.select()
-  document.execCommand("copy")
-  document.body.removeChild(textarea)
-}
-
 async function copySelectedJson() {
   try {
-    await writeClipboard(selectedJson.value)
+    await copyTextToClipboard(selectedJson.value)
     copiedJson.value = true
     toast.success(copy.value.toasts.jsonCopied)
     window.setTimeout(() => {
