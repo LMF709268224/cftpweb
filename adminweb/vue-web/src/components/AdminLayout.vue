@@ -167,6 +167,16 @@ onUnmounted(() => {
       </nav>
 
       <div ref="userMenuRef" class="border-t border-slate-200 p-4">
+        <button
+          class="mb-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          type="button"
+          :title="copy.language"
+          @click="toggleLanguage"
+        >
+          <Languages class="h-4 w-4 shrink-0 text-slate-500" />
+          <span v-if="!collapsed">{{ copy.language }}</span>
+        </button>
+
         <div v-if="!collapsed && userMenuOpen" class="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60">
           <div class="flex items-center gap-3 px-4 py-4">
             <div class="flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-700">
@@ -194,16 +204,6 @@ onUnmounted(() => {
             {{ copy.logout }}
           </button>
         </div>
-
-        <button
-          class="mb-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
-          type="button"
-          :title="copy.language"
-          @click="toggleLanguage"
-        >
-          <Languages class="h-4 w-4 shrink-0 text-slate-500" />
-          <span v-if="!collapsed">{{ copy.language }}</span>
-        </button>
 
         <button
           class="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-100"

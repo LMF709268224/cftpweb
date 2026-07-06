@@ -166,6 +166,55 @@ function entityStatusLabel(entityType: unknown, value: unknown) {
   return statusLabel(value, "pipeline")
 }
 
+function entityTypeLabel(value: unknown) {
+  const normalizedType = String(value || "").toUpperCase()
+  const labels = copy.value.entityTypes as Record<string, string>
+  return labels[normalizedType] || String(value || "-")
+}
+
+function isDateField(key: string) {
+  return key.endsWith("_at") || key.endsWith("_time") || key === "created_at" || key === "updated_at"
+}
+
+function fieldLabel(group: "overview" | "stage" | "unit" | "log", key: string) {
+  const labels: Record<string, string> = copy.value.fieldLabels
+  const groupLabels = {
+    overview: copy.value.overviewFieldLabels,
+    stage: copy.value.stageFieldLabels,
+    unit: copy.value.unitFieldLabels,
+    log: copy.value.logFieldLabels,
+  }[group] as Record<string, string>
+  return groupLabels[key] || labels[key] || key
+}
+
+function readableValue(value: unknown) {
+  if (value === null || value === undefined || value === "") return "-"
+  if (typeof value === "boolean") return value ? copy.value.yes : copy.value.no
+  if (typeof value === "object") return JSON.stringify(value, null, 2)
+  return String(value)
+}
+
+function detailFieldValue(group: "overview" | "stage" | "unit" | "log", key: string, value: unknown, record?: JsonRecord) {
+  if (key === "status") {
+    if (group === "stage") return statusLabel(value, "stage")
+    if (group === "unit") return statusLabel(value, "unit")
+    return statusLabel(value, "pipeline")
+  }
+  if (key === "from_status" || key === "to_status") return entityStatusLabel(record?.entity_type, value)
+  if (key === "entity_type") return entityTypeLabel(value)
+  if (isDateField(key)) return formatDate(value) || readableValue(value)
+  return readableValue(value)
+}
+
+function detailEntries(group: "overview" | "stage" | "unit" | "log", record: JsonRecord | null | undefined) {
+  if (!record) return []
+  return Object.entries(record).map(([key, value]) => ({
+    key,
+    label: fieldLabel(group, key),
+    value: detailFieldValue(group, key, value, record),
+  }))
+}
+
 function stageRecord(stage: JsonRecord | null | undefined) {
   return asRecord(stage?.stage)
 }
@@ -580,9 +629,9 @@ onMounted(async () => {
 
               <div v-else-if="activeTab === 'overview'" class="space-y-4 p-5">
                 <div class="grid gap-3 md:grid-cols-2">
-                  <div v-for="(value, key) in detailPipelineRecord" :key="key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                    <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
-                    <div class="mt-1 break-all text-sm font-bold">{{ key === 'status' ? statusLabel(value) : (value || '-') }}</div>
+                  <div v-for="entry in detailEntries('overview', detailPipelineRecord)" :key="entry.key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                    <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
+                    <div class="mt-1 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
                   </div>
                 </div>
               </div>
@@ -613,9 +662,9 @@ onMounted(async () => {
                 <div class="space-y-5 p-5">
                   <template v-if="selectedStage">
                     <div class="grid gap-3 md:grid-cols-2">
-                      <div v-for="(value, key) in stageRecord(selectedStage)" :key="key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                        <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
-                        <div class="mt-1 break-all text-sm font-bold">{{ key === 'status' ? statusLabel(value, 'stage') : (value || '-') }}</div>
+                      <div v-for="entry in detailEntries('stage', stageRecord(selectedStage))" :key="entry.key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                        <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
+                        <div class="mt-1 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
                       </div>
                     </div>
                     <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selectedStage, null, 2) }}</pre>
@@ -654,9 +703,9 @@ onMounted(async () => {
                       <div class="mt-1 break-all text-sm font-bold">{{ stageName(selectedUnit.stage) }} · {{ stageUlid(selectedUnit.stage) || "-" }}</div>
                     </div>
                     <div class="grid gap-3 md:grid-cols-2">
-                      <div v-for="(value, key) in selectedUnit.unit" :key="key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                        <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
-                        <div class="mt-1 break-all text-sm font-bold">{{ key === 'status' ? statusLabel(value, 'unit') : (value ?? '-') }}</div>
+                      <div v-for="entry in detailEntries('unit', selectedUnit.unit)" :key="entry.key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                        <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
+                        <div class="mt-1 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
                       </div>
                     </div>
                     <div class="flex flex-wrap gap-3">
@@ -706,7 +755,7 @@ onMounted(async () => {
                     @click="selectedLog = log; loadLogDetail(String(log.transition_ulid || ''))"
                   >
                     <div class="font-black">{{ entityStatusLabel(log.entity_type, log.from_status) }} -> {{ entityStatusLabel(log.entity_type, log.to_status) }}</div>
-                    <div class="mt-1 text-sm text-slate-500">{{ log.entity_type || "-" }} · {{ log.entity_ulid || "-" }}</div>
+                    <div class="mt-1 text-sm text-slate-500">{{ entityTypeLabel(log.entity_type) }} · {{ log.entity_ulid || "-" }}</div>
                     <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</div>
                   </button>
                   <div v-if="!logsLoading && !logs.length" class="p-10 text-center text-slate-500">{{ copy.noLogs }}</div>
@@ -723,11 +772,9 @@ onMounted(async () => {
                   </div>
                   <template v-else>
                     <div v-if="selectedLog" class="grid gap-4 md:grid-cols-2">
-                      <div v-for="(value, key) in asRecord((logDetail || selectedLog).summary || selectedLog)" :key="key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                        <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
-                        <div class="mt-2 break-all text-sm font-bold">
-                          {{ key === 'from_status' || key === 'to_status' ? entityStatusLabel(asRecord((logDetail || selectedLog).summary || selectedLog).entity_type, value) : (value || '-') }}
-                        </div>
+                      <div v-for="entry in detailEntries('log', asRecord((logDetail || selectedLog).summary || selectedLog))" :key="entry.key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
+                        <div class="mt-2 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
                       </div>
                     </div>
                     <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(logDetail || selectedLog || {}, null, 2) }}</pre>
