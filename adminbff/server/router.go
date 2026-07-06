@@ -72,6 +72,12 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/{pipeline_ulid}/certificate-url", h.GetProgPipelineCertificateViewURL)
 		})
 
+		r.Route("/prog/certificate-tasks", func(r chi.Router) {
+			r.Get("/", h.ListProgCertificateTasks)
+			r.Get("/{task_ulid}", h.GetProgCertificateTaskDetail)
+			r.Post("/{task_ulid}/retry", h.RetryProgCertificateTask)
+		})
+
 		r.Route("/prog/course-units", func(r chi.Router) {
 			r.Post("/{course_unit_ulid}/force-completed", h.AdminForceCourseCompleted)
 			r.Post("/{course_unit_ulid}/force-signup-exam", h.AdminForceCourseSignupExam)

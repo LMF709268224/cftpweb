@@ -229,6 +229,67 @@ func (h *Handler) GetProgPipelineCertificateViewURL(w http.ResponseWriter, r *ht
 	WriteJSON(w, http.StatusOK, map[string]string{"view_url": resp.GetViewUrl()})
 }
 
+func (h *Handler) ListProgCertificateTasks(w http.ResponseWriter, r *http.Request) {
+	candidateULID := strings.TrimSpace(r.URL.Query().Get("candidate_ulid"))
+	if !requireRequestField(w, candidateULID, "candidate_ulid") {
+		return
+	}
+
+	req := &gprogpb.ListCertificateTasksReq{
+		CandidateUlid: candidateULID,
+		PipelineUlid:  strings.TrimSpace(r.URL.Query().Get("pipeline_ulid")),
+		Limit:         int32(parseUint32Query(r, "limit")),
+		Offset:        int32(parseUint32Query(r, "offset")),
+	}
+
+	resp, err := h.Gprog.ListCertificateTasks(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GetProgCertificateTaskDetail(w http.ResponseWriter, r *http.Request) {
+	taskULID := strings.TrimSpace(chi.URLParam(r, "task_ulid"))
+	if !requireRequestField(w, taskULID, "task_ulid") {
+		return
+	}
+
+	resp, err := h.Gprog.GetCertificateTaskDetail(r.Context(), &gprogpb.GetCertificateTaskDetailReq{
+		TaskUlid: taskULID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) RetryProgCertificateTask(w http.ResponseWriter, r *http.Request) {
+	taskULID := strings.TrimSpace(chi.URLParam(r, "task_ulid"))
+	adminID := AdminID(r)
+	if adminID == "" {
+		adminID = "adminserver"
+	}
+	if !requireRequestFields(w, taskULID, "task_ulid", adminID, "admin_ulid") {
+		return
+	}
+
+	resp, err := h.Gprog.RetryCertificateTask(r.Context(), &gprogpb.RetryCertificateTaskReq{
+		TaskUlid:  taskULID,
+		AdminUlid: adminID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 func (h *Handler) AdminForceCourseCompleted(w http.ResponseWriter, r *http.Request) {
 	courseUnitULID := strings.TrimSpace(chi.URLParam(r, "course_unit_ulid"))
 	if !requireRequestField(w, courseUnitULID, "course_unit_ulid") {
