@@ -164,6 +164,9 @@ export const en: AdminTranslations = {
     actionsDescription: "Certification bundle orders can purge related test data; other order types are view-only.",
     purgeAction: "Purge Certification Test Data",
     rawNote: "System fields are for viewing only.",
+    rawJson: "Raw JSON",
+    copyJson: "Copy JSON",
+    copiedJson: "Copied",
     confirmTitle: "Confirm Test Data Purge",
     confirmDescription: "This will clean test data associated with the certification bundle order.",
     cancel: "Cancel",
@@ -175,6 +178,8 @@ export const en: AdminTranslations = {
       purgeMissing: "Missing candidate_ulid or bundle_order_ulid; unable to purge",
       purgeSuccess: "Certification test data has been purged",
       purgeFailed: "Purge failed",
+      jsonCopied: "JSON copied",
+      jsonCopyFailed: "Copy failed",
     },
     bizTypes: {
       PIPELINE_PAYMENT: "Pipeline Order",

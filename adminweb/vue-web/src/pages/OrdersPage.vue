@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, RefreshCw, Search, Trash2, X } from "lucide-vue-next"
+import { Check, Copy as CopyIcon, Loader2, RefreshCw, Search, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -33,6 +33,7 @@ const detailLoading = ref(false)
 const detailOpen = ref(false)
 const purging = ref("")
 const showPurgeConfirm = ref(false)
+const copiedJsonKey = ref("")
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
@@ -49,6 +50,7 @@ const isBundlePurchase = computed(() => normalizeStatus(biz(selected.value || {}
 const localizedBizTypeOptions = computed(() => localizeOptions(bizTypeOptions, "bizTypes"))
 const localizedOrderStatusOptions = computed(() => localizeOptions(orderStatusOptions, "orderStatuses"))
 const localizedPaymentStatusOptions = computed(() => localizeOptions(paymentStatusOptions, "paymentStatuses"))
+const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
   { key: "bundle-detail" as const, title: copy.value.tabs.bundleDetail, count: bundleDetail.value ? 1 : 0 },
@@ -151,6 +153,41 @@ function createdAt(order: JsonRecord | null | undefined) {
 function stringValue(value: unknown) {
   if (value === undefined || value === null || value === "") return "-"
   return String(value)
+}
+
+function jsonText(value: unknown) {
+  return JSON.stringify(value ?? {}, null, 2)
+}
+
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = text
+  textarea.setAttribute("readonly", "")
+  textarea.style.position = "fixed"
+  textarea.style.opacity = "0"
+  document.body.appendChild(textarea)
+  textarea.select()
+  document.execCommand("copy")
+  document.body.removeChild(textarea)
+}
+
+async function copyJsonBlock(key: string, value: unknown) {
+  try {
+    await writeClipboard(jsonText(value))
+    copiedJsonKey.value = key
+    toast.success(copy.value.toasts.jsonCopied)
+    window.setTimeout(() => {
+      if (copiedJsonKey.value === key) copiedJsonKey.value = ""
+    }, 1600)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.jsonCopyFailed)
+  }
 }
 
 function bundleDetailSource(detail: JsonRecord) {
@@ -459,9 +496,19 @@ onMounted(() => load(1))
                       <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
                     </div>
                   </div>
-                  <details class="overflow-hidden rounded-2xl border border-slate-200">
-                    <summary class="cursor-pointer bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">{{ copy.bundleRaw }}</summary>
-                    <pre class="max-h-[520px] overflow-auto bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(bundleDetail, null, 2) }}</pre>
+                  <details class="rounded-2xl border border-slate-200 bg-white p-4">
+                    <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.bundleRaw }}</summary>
+                    <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
+                      <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                        <span class="text-xs font-black uppercase text-slate-400">{{ copy.bundleRaw }}</span>
+                        <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('bundle-detail', bundleDetail)">
+                          <Check v-if="copiedJsonKey === 'bundle-detail'" class="h-3.5 w-3.5" />
+                          <CopyIcon v-else class="h-3.5 w-3.5" />
+                          {{ copiedJsonKey === 'bundle-detail' ? copy.copiedJson : copy.copyJson }}
+                        </button>
+                      </div>
+                      <pre class="max-h-[520px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ jsonText(bundleDetail) }}</pre>
+                    </div>
                   </details>
                 </div>
                 <div v-else class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">{{ copy.bundleEmpty }}</div>
@@ -489,7 +536,20 @@ onMounted(() => load(1))
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   {{ copy.rawNote }}
                 </div>
-                <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+                <details class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
+                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
+                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
+                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('order-raw', selected)">
+                        <Check v-if="copiedJsonKey === 'order-raw'" class="h-3.5 w-3.5" />
+                        <CopyIcon v-else class="h-3.5 w-3.5" />
+                        {{ copiedJsonKey === 'order-raw' ? copy.copiedJson : copy.copyJson }}
+                      </button>
+                    </div>
+                    <pre class="max-h-[620px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
+                  </div>
+                </details>
               </div>
           </main>
         </section>

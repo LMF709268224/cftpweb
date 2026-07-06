@@ -162,6 +162,9 @@ export const zh = {
     actionsDescription: "认证套餐订单可清理关联测试数据；其他订单类型仅查看。",
     purgeAction: "清理认证测试数据",
     rawNote: "系统字段仅用于查看。",
+    rawJson: "原始 JSON",
+    copyJson: "复制 JSON",
+    copiedJson: "已复制",
     confirmTitle: "确认清理认证测试数据",
     confirmDescription: "该操作会清理认证套餐订单关联的测试数据。",
     cancel: "取消",
@@ -173,6 +176,8 @@ export const zh = {
       purgeMissing: "缺少 candidate_ulid 或 bundle_order_ulid，无法清理",
       purgeSuccess: "认证测试数据已清理",
       purgeFailed: "清理失败",
+      jsonCopied: "JSON 已复制",
+      jsonCopyFailed: "复制失败",
     },
     bizTypes: {
       PIPELINE_PAYMENT: "管线订单",
