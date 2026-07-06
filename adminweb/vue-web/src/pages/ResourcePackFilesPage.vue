@@ -53,6 +53,18 @@ const canPrevious = computed(() => previousTokens.value.length > 0)
 const canNext = computed(() => !!nextPageToken.value)
 const selectedPack = computed(() => packById(form.value.pack_id))
 
+function displayValue(value: unknown) {
+  const text = String(value ?? "").trim()
+  return text || "-"
+}
+
+function packFieldText(id: unknown) {
+  const value = String(id || "")
+  if (!value) return copy.value.selectPack
+  const pack = packById(value)
+  return copy.value.ownerText(pack ? packTitle(pack) : copy.value.unknownPack, value)
+}
+
 function asRecordList(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
 }
@@ -477,28 +489,33 @@ onMounted(load)
           <div class="grid gap-3 md:grid-cols-2">
           <label class="text-sm font-bold">
             {{ copy.fields.fileId }}
-            <input v-model="form.file_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail' || mode === 'edit'" :placeholder="copy.placeholders.fileId" />
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.file_id) }}</div>
+            <input v-else v-model="form.file_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'" :placeholder="copy.placeholders.fileId" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.pack }}
-            <select v-model="form.pack_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail' || mode === 'edit'">
+            <div v-if="mode === 'detail'" class="readonly-field">{{ packFieldText(form.pack_id) }}</div>
+            <select v-else v-model="form.pack_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'">
               <option value="">{{ copy.selectPack }}</option>
               <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
             </select>
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.title }}
-            <input v-model="form.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.title" />
+            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.title) }}</div>
+            <input v-else v-model="form.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.title" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileType }}
-            <select v-model.number="form.file_type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'">
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ fileTypeLabel(form.file_type) }}</div>
+            <select v-else v-model.number="form.file_type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
               <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
           <label class="md:col-span-2 text-sm font-bold">
             {{ copy.fields.description }}
-            <textarea v-model="form.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.description" />
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--textarea">{{ displayValue(form.description) }}</div>
+            <textarea v-else v-model="form.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.description" />
           </label>
           </div>
 
@@ -506,27 +523,33 @@ onMounted(load)
           <div class="grid gap-3 md:grid-cols-2">
           <label class="text-sm font-bold">
             {{ copy.fields.fileName }}
-            <input v-model="form.file_name" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.fileName" />
+            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_name) }}</div>
+            <input v-else v-model="form.file_name" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileName" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileSize }}
-            <input v-model.number="form.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" type="number" min="0" />
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.file_size) }}</div>
+            <input v-else v-model.number="form.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileObjectKey }}
-            <input v-model="form.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.fileObjectKey" />
+            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_object_key) }}</div>
+            <input v-else v-model="form.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileObjectKey" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileHash }}
-            <input v-model="form.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.fileHash" />
+            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_hash) }}</div>
+            <input v-else v-model="form.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileHash" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.thumbnailObjectKey }}
-            <input v-model="form.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.thumbnailObjectKey" />
+            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.thumbnail_object_key) }}</div>
+            <input v-else v-model="form.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.thumbnailObjectKey" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.thumbnailHash }}
-            <input v-model="form.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.thumbnailHash" />
+            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.thumbnail_file_hash) }}</div>
+            <input v-else v-model="form.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.thumbnailHash" />
           </label>
           </div>
 
@@ -534,15 +557,18 @@ onMounted(load)
           <div class="grid gap-3 md:grid-cols-3">
           <label class="text-sm font-bold">
             {{ copy.fields.videoStreamUid }}
-            <input v-model="form.video_stream_uid" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" :placeholder="copy.placeholders.videoStreamUid" />
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.video_stream_uid) }}</div>
+            <input v-else v-model="form.video_stream_uid" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.videoStreamUid" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.sort }}
-            <input v-model.number="form.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'detail'" type="number" min="0" />
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.sort_order) }}</div>
+            <input v-else v-model.number="form.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.version }}
-            <input v-model.number="form.version" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'detail' || mode === 'create'" />
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.version) }}</div>
+            <input v-else v-model.number="form.version" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
           </label>
           </div>
 
@@ -598,3 +624,29 @@ onMounted(load)
     </div>
   </section>
 </template>
+
+<style scoped>
+.readonly-field {
+  min-height: 2.5rem;
+  margin-top: 0.5rem;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #f1f5f9;
+  padding: 0.625rem 0.75rem;
+  color: #0f172a;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.readonly-field--compact {
+  display: flex;
+  align-items: center;
+}
+
+.readonly-field--textarea {
+  min-height: 5rem;
+}
+</style>

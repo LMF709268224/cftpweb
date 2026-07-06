@@ -387,11 +387,11 @@ onMounted(load)
             class="grid w-full gap-3 border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_84px_120px_300px] lg:items-center lg:gap-6"
             :class="packId(selected) === packId(pack) ? 'bg-sky-50/70' : ''"
           >
-            <button class="min-w-0 text-left" type="button" @click="openPackDetail(pack)">
+            <div class="min-w-0">
               <div class="truncate text-base font-black text-slate-950">{{ packTitle(pack) }}</div>
               <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pack.description || "-" }}</div>
               <div class="mt-1 truncate font-mono text-xs text-slate-500">{{ copy.fields.idPrefix }}{{ pack.pack_id }}</div>
-            </button>
+            </div>
             <div class="text-sm font-bold text-slate-700">
               <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.fields.version }}</span>{{ pack.version || 0 }}
             </div>
