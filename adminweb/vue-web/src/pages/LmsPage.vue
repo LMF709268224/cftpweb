@@ -64,6 +64,17 @@ type OptionForm = {
   sort_order: string
 }
 
+type DetailDeleteKind = "supplementaryItem" | "supplementaryConfig" | "material" | "quiz" | "question" | "option"
+
+type PendingDetailDelete = {
+  kind: DetailDeleteKind
+  title: string
+  description: string
+  id?: string
+  version?: number
+  index?: number
+}
+
 type MaterialForm = {
   title: string
   material_type: string
@@ -166,6 +177,9 @@ const lessonDialogMode = ref<LessonDialogMode>("detail")
 const lessonDeleteConfirmOpen = ref(false)
 const pendingDeleteLesson = ref<JsonRecord | null>(null)
 const deletingLesson = ref(false)
+const detailDeleteConfirmOpen = ref(false)
+const pendingDetailDelete = ref<PendingDetailDelete | null>(null)
+const deletingDetail = ref(false)
 const quizDialogOpen = ref(false)
 const quizDialogMode = ref<QuizDialogMode>("detail")
 
@@ -1385,6 +1399,17 @@ function closeSupplementaryItemDialog() {
   supplementaryItemDialogOpen.value = false
 }
 
+function openDetailDeleteConfirm(deleteInfo: PendingDetailDelete) {
+  pendingDetailDelete.value = deleteInfo
+  detailDeleteConfirmOpen.value = true
+}
+
+function closeDetailDeleteConfirm() {
+  if (deletingDetail.value) return
+  detailDeleteConfirmOpen.value = false
+  pendingDetailDelete.value = null
+}
+
 async function saveSupplementaryItem() {
   if (!selectedCourseId.value) return
   if (!supplementaryItemForm.value.title.trim()) {
@@ -1407,11 +1432,21 @@ async function saveSupplementaryItem() {
   supplementaryItemDialogOpen.value = false
 }
 
-async function deleteSupplementaryItem() {
+function deleteSupplementaryItem() {
   if (editingSupplementaryItemIndex.value < 0) return
-  if (!window.confirm(copy.value.confirmDeleteMaterial(supplementaryItemForm.value.title || ""))) return
+  const title = supplementaryItemForm.value.title || copy.value.fallbacks.material
+  openDetailDeleteConfirm({
+    kind: "supplementaryItem",
+    title,
+    description: copy.value.confirmDeleteMaterial(title),
+    index: editingSupplementaryItemIndex.value,
+  })
+}
+
+async function confirmDeleteSupplementaryItem(deleteInfo: PendingDetailDelete) {
+  if (typeof deleteInfo.index !== "number" || deleteInfo.index < 0) return
   const records = supplementaryEditableRecords()
-  records.splice(editingSupplementaryItemIndex.value, 1)
+  records.splice(deleteInfo.index, 1)
   updateSupplementaryDataJson(records)
   newSupplementaryItem(false)
   await saveSupplementaryMaterial()
@@ -1455,16 +1490,28 @@ async function saveSupplementaryMaterial() {
   }
 }
 
-async function deleteSupplementaryMaterial() {
+function deleteSupplementaryMaterial() {
   const id = supplementaryMaterialId(supplementaryMaterial.value)
-  if (!selectedCourseId.value || !id || !window.confirm(copy.value.confirmDeleteSupplementaryConfig)) return
+  if (!selectedCourseId.value || !id) return
+  openDetailDeleteConfirm({
+    kind: "supplementaryConfig",
+    title: supplementaryMaterialForm.value.kind || copy.value.supplementaryTitle,
+    description: copy.value.confirmDeleteSupplementaryConfig,
+    id,
+    version: versionOf(supplementaryMaterial.value),
+  })
+}
+
+async function confirmDeleteSupplementaryMaterial(deleteInfo: PendingDetailDelete) {
+  if (!selectedCourseId.value || !deleteInfo.id) return
   try {
-    await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material/${encodeURIComponent(id)}?version=${versionOf(supplementaryMaterial.value)}`, { method: "DELETE" })
+    await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/supplementary-material/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.supplementaryDeleted)
     await Promise.all([loadSupplementaryMaterial(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.supplementaryDeleteFailed)
+    throw err
   }
 }
 
@@ -1503,17 +1550,30 @@ async function saveMaterial() {
   }
 }
 
-async function deleteMaterial(material: JsonRecord) {
+function deleteMaterial(material: JsonRecord) {
   const id = materialId(material)
-  if (!id || !window.confirm(copy.value.confirmDeleteMaterial(materialTitle(material)))) return
+  if (!id) return
+  const title = materialTitle(material)
+  openDetailDeleteConfirm({
+    kind: "material",
+    title,
+    description: copy.value.confirmDeleteMaterial(title),
+    id,
+    version: versionOf(material),
+  })
+}
+
+async function confirmDeleteMaterial(deleteInfo: PendingDetailDelete) {
+  if (!deleteInfo.id) return
   try {
-    await apiClient(`/api/lms/materials/${encodeURIComponent(id)}?version=${versionOf(material)}`, { method: "DELETE" })
+    await apiClient(`/api/lms/materials/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.materialDeleted)
     newMaterial()
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.materialDeleteFailed)
+    throw err
   }
 }
 
@@ -1707,11 +1767,23 @@ async function saveQuiz() {
   }
 }
 
-async function deleteQuiz(quiz: JsonRecord) {
+function deleteQuiz(quiz: JsonRecord) {
   const id = quizId(quiz)
-  if (!id || !window.confirm(copy.value.confirmDeleteQuiz(quizTitle(quiz)))) return
+  if (!id) return
+  const title = quizTitle(quiz)
+  openDetailDeleteConfirm({
+    kind: "quiz",
+    title,
+    description: copy.value.confirmDeleteQuiz(title),
+    id,
+    version: versionOf(quiz),
+  })
+}
+
+async function confirmDeleteQuiz(deleteInfo: PendingDetailDelete) {
+  if (!deleteInfo.id) return
   try {
-    await apiClient(`/api/lms/quizzes/${encodeURIComponent(id)}?version=${versionOf(quiz)}`, { method: "DELETE" })
+    await apiClient(`/api/lms/quizzes/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.quizDeleted)
     const scope = quizForm.value.scope
     newQuiz(scope)
@@ -1719,6 +1791,7 @@ async function deleteQuiz(quiz: JsonRecord) {
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.quizDeleteFailed)
+    throw err
   }
 }
 
@@ -1807,17 +1880,30 @@ async function saveQuestion() {
   }
 }
 
-async function deleteQuestion(question: JsonRecord) {
+function deleteQuestion(question: JsonRecord) {
   const id = questionId(question)
-  if (!id || !window.confirm(copy.value.confirmDeleteQuestion(questionTitle(question)))) return
+  if (!id) return
+  const title = questionTitle(question)
+  openDetailDeleteConfirm({
+    kind: "question",
+    title,
+    description: copy.value.confirmDeleteQuestion(title),
+    id,
+    version: versionOf(question),
+  })
+}
+
+async function confirmDeleteQuestion(deleteInfo: PendingDetailDelete) {
+  if (!deleteInfo.id) return
   try {
-    await apiClient(`/api/lms/questions/${encodeURIComponent(id)}?version=${versionOf(question)}`, { method: "DELETE" })
+    await apiClient(`/api/lms/questions/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.questionDeleted)
     newQuestion()
     await loadQuestions()
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.questionDeleteFailed)
+    throw err
   }
 }
 
@@ -1883,17 +1969,50 @@ async function saveOption() {
   }
 }
 
-async function deleteOption(option: JsonRecord) {
+function deleteOption(option: JsonRecord) {
   const id = optionId(option)
-  if (!id || !window.confirm(copy.value.confirmDeleteOption(optionTitle(option)))) return
+  if (!id) return
+  const title = optionTitle(option)
+  openDetailDeleteConfirm({
+    kind: "option",
+    title,
+    description: copy.value.confirmDeleteOption(title),
+    id,
+    version: versionOf(option),
+  })
+}
+
+async function confirmDeleteOption(deleteInfo: PendingDetailDelete) {
+  if (!deleteInfo.id) return
   try {
-    await apiClient(`/api/lms/options/${encodeURIComponent(id)}?version=${versionOf(option)}`, { method: "DELETE" })
+    await apiClient(`/api/lms/options/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.optionDeleted)
     newOption()
     await loadOptions()
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.optionDeleteFailed)
+    throw err
+  }
+}
+
+async function confirmDetailDelete() {
+  const deleteInfo = pendingDetailDelete.value
+  if (!deleteInfo) return
+  deletingDetail.value = true
+  try {
+    if (deleteInfo.kind === "supplementaryItem") await confirmDeleteSupplementaryItem(deleteInfo)
+    else if (deleteInfo.kind === "supplementaryConfig") await confirmDeleteSupplementaryMaterial(deleteInfo)
+    else if (deleteInfo.kind === "material") await confirmDeleteMaterial(deleteInfo)
+    else if (deleteInfo.kind === "quiz") await confirmDeleteQuiz(deleteInfo)
+    else if (deleteInfo.kind === "question") await confirmDeleteQuestion(deleteInfo)
+    else if (deleteInfo.kind === "option") await confirmDeleteOption(deleteInfo)
+    detailDeleteConfirmOpen.value = false
+    pendingDetailDelete.value = null
+  } catch {
+    // Each delete helper shows its own toast and keeps the confirmation open.
+  } finally {
+    deletingDetail.value = false
   }
 }
 
@@ -2163,6 +2282,26 @@ onMounted(() => {
               <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="closeCourseDeleteConfirm">{{ copy.cancel }}</button>
               <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="confirmDeleteCourse">
                 {{ deletingCourse ? copy.deleting : copy.confirmDeleteAction }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </Teleport>
+
+      <Teleport to="body">
+        <section v-if="detailDeleteConfirmOpen && pendingDetailDelete" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-6">
+          <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
+            <h2 class="text-2xl font-black text-slate-950">{{ copy.confirmDeleteAction }}</h2>
+            <p class="mt-3 text-sm font-semibold text-slate-500">{{ pendingDetailDelete.description }}</p>
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="break-words font-black text-slate-950">{{ pendingDetailDelete.title }}</div>
+              <div v-if="pendingDetailDelete.id" class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pendingDetailDelete.id }}</div>
+              <div v-if="pendingDetailDelete.version !== undefined" class="mt-1 text-sm font-semibold text-slate-500">{{ copy.readonlyCourseFieldLabels.version }}: {{ pendingDetailDelete.version }}</div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingDetail" @click="closeDetailDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingDetail" @click="confirmDetailDelete">
+                {{ deletingDetail ? copy.deleting : copy.confirmDeleteAction }}
               </button>
             </div>
           </div>
