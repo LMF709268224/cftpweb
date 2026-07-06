@@ -100,8 +100,19 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
+	var raw map[string]any
+	if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	normalizePipelineStructureAliases(raw)
 	var req gccpb.UpdatePipelineStructureRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	normalizedBody, err := json.Marshal(raw)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if err := json.Unmarshal(normalizedBody, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
@@ -125,7 +136,7 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 			if unit.UnitUlid == "" {
 				unit.UnitUlid = newLmsID()
 			}
-			if !requireRequestField(w, unit.GlmsCourseUlid, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"].glms_course_id") {
+			if !requireRequestField(w, unit.GlmsCourseUlid, "stages["+strconv.Itoa(i)+"].units["+strconv.Itoa(j)+"].glms_course_ulid") {
 				return
 			}
 		}
@@ -138,6 +149,62 @@ func (h *Handler) UpdatePipelineStructure(w http.ResponseWriter, r *http.Request
 	}
 
 	WriteJSON(w, http.StatusOK, resp)
+}
+
+func normalizePipelineStructureAliases(raw map[string]any) {
+	for _, key := range []string{"unlock_quals", "certs_quals", "certs"} {
+		normalizeQualificationAliases(raw[key])
+	}
+
+	stages, _ := raw["stages"].([]any)
+	for _, stageValue := range stages {
+		stage, ok := stageValue.(map[string]any)
+		if !ok {
+			continue
+		}
+		copyAlias(stage, "stage_ulid", "stage_id")
+		units, _ := stage["units"].([]any)
+		for _, unitValue := range units {
+			unit, ok := unitValue.(map[string]any)
+			if !ok {
+				continue
+			}
+			copyAlias(unit, "unit_ulid", "unit_id")
+			copyAlias(unit, "glms_course_ulid", "glms_course_id")
+			copyAlias(unit, "exam_ulid", "exam_id")
+			copyAlias(unit, "cert_qual_ulid", "cert_qual_id")
+			copyAlias(unit, "cert_pdf_template_ulid", "cert_pdf_template_id")
+		}
+	}
+}
+
+func normalizeQualificationAliases(value any) {
+	items, _ := value.([]any)
+	for _, itemValue := range items {
+		item, ok := itemValue.(map[string]any)
+		if !ok {
+			continue
+		}
+		copyAlias(item, "qual_ulid", "qual_id")
+		copyAlias(item, "pdf_template_ulid", "pdf_template_id")
+	}
+}
+
+func copyAlias(record map[string]any, canonical string, legacy string) {
+	if hasJSONValue(record[canonical]) || !hasJSONValue(record[legacy]) {
+		return
+	}
+	record[canonical] = record[legacy]
+}
+
+func hasJSONValue(value any) bool {
+	if value == nil {
+		return false
+	}
+	if text, ok := value.(string); ok {
+		return strings.TrimSpace(text) != ""
+	}
+	return true
 }
 
 // PublishPipeline POST /api/pipelines/{pipeline_id}/publish
