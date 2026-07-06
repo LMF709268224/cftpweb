@@ -54,6 +54,9 @@ const selectedUnitPath = ref("")
 const selectedCertIndex = ref(0)
 const selectedUnlockQualIndex = ref(0)
 const selectedCertQualIndex = ref(0)
+const deleteConfirmOpen = ref(false)
+const pendingDeletePipeline = ref<JsonRecord | null>(null)
+const deletingPipeline = ref(false)
 const limit = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pipelineConfigAdmin)
@@ -513,17 +516,37 @@ async function deprecate() {
   await load()
 }
 
-async function removePipeline() {
+function removePipeline() {
   if (!selectedId.value) return
   if (published.value) {
     toast.error(copy.value.toasts.publishedDeleteBlocked)
     return
   }
-  if (!window.confirm(copy.value.confirmDeleteDraft)) return
-  await apiClient(`/api/pipelines/${encodeURIComponent(selectedId.value)}`, { method: "DELETE" })
-  toast.success(copy.value.toasts.deleted)
-  back()
-  await load()
+  pendingDeletePipeline.value = selected.value
+  deleteConfirmOpen.value = true
+}
+
+function closeDeleteConfirm() {
+  if (deletingPipeline.value) return
+  deleteConfirmOpen.value = false
+  pendingDeletePipeline.value = null
+}
+
+async function confirmDeletePipeline() {
+  const pipeline = pendingDeletePipeline.value
+  const id = pipeline ? pipelineUlid(pipeline) : ""
+  if (!pipeline || !id) return
+  deletingPipeline.value = true
+  try {
+    await apiClient(`/api/pipelines/${encodeURIComponent(id)}`, { method: "DELETE" })
+    toast.success(copy.value.toasts.deleted)
+    deleteConfirmOpen.value = false
+    pendingDeletePipeline.value = null
+    back()
+    await load()
+  } finally {
+    deletingPipeline.value = false
+  }
 }
 
 async function clonePipeline() {
@@ -1030,6 +1053,26 @@ onMounted(load)
             </button>
           </div>
         </div>
+      </div>
+    </Teleport>
+
+    <Teleport to="body">
+      <div v-if="deleteConfirmOpen && pendingDeletePipeline" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-6">
+        <section class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
+          <h2 class="text-2xl font-black text-slate-950">{{ copy.deleteConfirmTitle }}</h2>
+          <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
+          <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+            <div class="break-words font-black text-slate-950">{{ pipelineName(pendingDeletePipeline) }}</div>
+            <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pipelineUlid(pendingDeletePipeline) }}</div>
+            <div class="mt-1 text-sm font-semibold text-slate-500">{{ copy.fields.version }}: v{{ pendingDeletePipeline.version || 0 }}</div>
+          </div>
+          <div class="mt-6 flex justify-end gap-3">
+            <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingPipeline" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
+            <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingPipeline" @click="confirmDeletePipeline">
+              {{ deletingPipeline ? copy.deleting : copy.confirmDeleteAction }}
+            </button>
+          </div>
+        </section>
       </div>
     </Teleport>
   </section>

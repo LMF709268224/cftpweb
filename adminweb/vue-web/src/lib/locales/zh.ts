@@ -1814,6 +1814,11 @@ export const zh = {
     publish: "发布",
     deprecate: "下架",
     delete: "删除",
+    deleteConfirmTitle: "确认删除管线草稿",
+    deleteConfirmDescription: "该操作会删除当前管线草稿，请确认后继续。",
+    cancel: "取消",
+    confirmDeleteAction: "确认删除",
+    deleting: "删除中...",
     fields: {
       pipelineId: "管线 ID",
       pipelineGuid: "管线 GUID",
@@ -1980,6 +1985,8 @@ export const zh = {
     publishing: "发布中...",
     publishCourse: "发布课程",
     deleteCourse: "删除课程",
+    courseDeleteConfirmTitle: "确认删除课程",
+    courseDeleteConfirmDescription: "该操作会删除当前课程配置，请确认后继续。",
     stats: {
       chapters: "章节",
       lessons: "课时",

@@ -1816,6 +1816,11 @@ export const en: AdminTranslations = {
     publish: "Publish",
     deprecate: "Deprecate",
     delete: "Delete",
+    deleteConfirmTitle: "Delete Pipeline Draft?",
+    deleteConfirmDescription: "This will delete the current pipeline draft. Confirm to continue.",
+    cancel: "Cancel",
+    confirmDeleteAction: "Delete",
+    deleting: "Deleting...",
     fields: {
       pipelineId: "Pipeline ID",
       pipelineGuid: "Pipeline GUID",
@@ -1982,6 +1987,8 @@ export const en: AdminTranslations = {
     publishing: "Publishing...",
     publishCourse: "Publish Course",
     deleteCourse: "Delete Course",
+    courseDeleteConfirmTitle: "Delete Course?",
+    courseDeleteConfirmDescription: "This will delete the current course configuration. Confirm to continue.",
     stats: {
       chapters: "Chapters",
       lessons: "Lessons",

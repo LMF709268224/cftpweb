@@ -153,6 +153,9 @@ const savingOption = ref(false)
 const publishing = ref(false)
 const importing = ref(false)
 const courseView = ref<"list" | "detail">("list")
+const courseDeleteConfirmOpen = ref(false)
+const pendingDeleteCourse = ref<JsonRecord | null>(null)
+const deletingCourse = ref(false)
 const chapterDialogOpen = ref(false)
 const chapterDialogMode = ref<ChapterDialogMode>("detail")
 const chapterDeleteConfirmOpen = ref(false)
@@ -1002,17 +1005,36 @@ async function publishCourse() {
   }
 }
 
-async function deleteCourse() {
-  if (!selectedCourseId.value || !window.confirm(copy.value.confirmDeleteCourse(courseTitle(selectedCourse.value)))) return
+function deleteCourse() {
+  if (!selectedCourseId.value || !selectedCourse.value) return
+  pendingDeleteCourse.value = selectedCourse.value
+  courseDeleteConfirmOpen.value = true
+}
+
+function closeCourseDeleteConfirm() {
+  if (deletingCourse.value) return
+  courseDeleteConfirmOpen.value = false
+  pendingDeleteCourse.value = null
+}
+
+async function confirmDeleteCourse() {
+  const course = pendingDeleteCourse.value
+  const id = courseId(course)
+  if (!course || !id) return
+  deletingCourse.value = true
   try {
-    await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}?version=${versionOf(selectedCourse.value)}`, { method: "DELETE" })
+    await apiClient(`/api/lms/courses/${encodeURIComponent(id)}?version=${versionOf(course)}`, { method: "DELETE" })
     toast.success(copy.value.toasts.courseDeleted)
+    courseDeleteConfirmOpen.value = false
+    pendingDeleteCourse.value = null
     newCourse()
     courseView.value = "list"
     await loadCourses()
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.courseDeleteFailed)
+  } finally {
+    deletingCourse.value = false
   }
 }
 
@@ -2126,6 +2148,26 @@ onMounted(() => {
           </aside>
         </div>
       </section>
+
+      <Teleport to="body">
+        <section v-if="courseDeleteConfirmOpen && pendingDeleteCourse" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+          <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
+            <h2 class="text-2xl font-black text-slate-950">{{ copy.courseDeleteConfirmTitle }}</h2>
+            <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.courseDeleteConfirmDescription }}</p>
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="break-words font-black text-slate-950">{{ courseTitle(pendingDeleteCourse) }}</div>
+              <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ courseId(pendingDeleteCourse) }}</div>
+              <div class="mt-1 text-sm font-semibold text-slate-500">{{ copy.readonlyCourseFieldLabels.version }}: {{ versionOf(pendingDeleteCourse) }}</div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="closeCourseDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="confirmDeleteCourse">
+                {{ deletingCourse ? copy.deleting : copy.confirmDeleteAction }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </Teleport>
 
       <section class="rounded-2xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
         <div class="border-b border-slate-200 px-5 py-4">
