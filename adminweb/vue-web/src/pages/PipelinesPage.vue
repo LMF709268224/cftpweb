@@ -174,9 +174,18 @@ function courseTitle(course: JsonRecord | null | undefined) {
   return String(pickFirst(course || {}, ["title", "name", "course_title"]) || courseId(course) || copy.value.fields.glmsCourse)
 }
 
+function courseStatusValue(course: JsonRecord | null | undefined) {
+  return String(pickFirst(course || {}, ["status", "raw_status"]) || "").trim()
+}
+
+function courseCanBeConfigured(course: JsonRecord) {
+  const normalized = courseStatusValue(course).toUpperCase()
+  return normalized === "ACTIVE" || normalized === "PUBLISHED" || course.is_published === true
+}
+
 function courseOptionLabel(course: JsonRecord) {
   const id = courseId(course)
-  const status = String(pickFirst(course, ["status", "raw_status"]) || "").trim()
+  const status = courseStatusValue(course)
   const version = course.version ? `v${course.version}` : ""
   return [courseTitle(course), version, status, id].filter(Boolean).join(" · ")
 }
@@ -301,6 +310,13 @@ function validateStructureForSave(next: JsonRecord) {
     for (const [unitIndex, unit] of unitList.entries()) {
       if (!unitCourseId(unit).trim()) {
         toast.error(copy.value.toasts.structureUnitCourseRequired(stageIndex + 1, unitIndex + 1))
+        selectedStageIndex.value = stageIndex
+        selectedUnitPath.value = `${stageIndex}:${unitIndex}`
+        activeLayer.value = "units"
+        return false
+      }
+      if (courseOptions.value.length && !courseById(unitCourseId(unit))) {
+        toast.error(copy.value.toasts.structureUnitCourseUnavailable(stageIndex + 1, unitIndex + 1))
         selectedStageIndex.value = stageIndex
         selectedUnitPath.value = `${stageIndex}:${unitIndex}`
         activeLayer.value = "units"
@@ -517,7 +533,9 @@ async function loadCourseOptions() {
   try {
     const data = await apiClient<JsonRecord>("/api/lms/courses?page_size=1000")
     const list = Array.isArray(data.courses) ? data.courses : []
-    courseOptions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    courseOptions.value = list
+      .filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+      .filter(courseCanBeConfigured)
   } catch (err) {
     console.error(err)
     courseOptions.value = []
@@ -1056,9 +1074,6 @@ onMounted(() => {
                     {{ copy.fields.glmsCourse }}
                     <select :value="unitCourseId(selectedUnitItem.unit)" :disabled="isStructureLocked() || courseOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCourse(selectedUnitItem?.unit, eventValue($event))">
                       <option value="">{{ courseOptionsLoading ? copy.loadingCourses : copy.selectCourse }}</option>
-                      <option v-if="unitCourseId(selectedUnitItem.unit) && !courseById(unitCourseId(selectedUnitItem.unit))" :value="unitCourseId(selectedUnitItem.unit)">
-                        {{ unitCourseId(selectedUnitItem.unit) }}
-                      </option>
                       <option v-for="course in courseOptions" :key="courseId(course)" :value="courseId(course)">{{ courseOptionLabel(course) }}</option>
                     </select>
                     <p class="text-xs font-semibold text-slate-500">{{ copy.glmsCourseHint }}</p>
