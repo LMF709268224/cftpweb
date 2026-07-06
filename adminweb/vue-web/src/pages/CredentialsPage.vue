@@ -58,6 +58,10 @@ function fileTypeLabel(type: unknown) {
   return fileTypes.value.find((item) => item.value === Number(type))?.label || String(type || "-")
 }
 
+function isStructuredField(value: unknown) {
+  return Array.isArray(value) || (!!value && typeof value === "object")
+}
+
 function resetForm() {
   name.value = ""
   category.value = ""
@@ -241,7 +245,6 @@ onMounted(load)
             </div>
             <div class="flex items-center gap-3">
               <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
-              <span v-if="mode === 'detail'" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">{{ copy.readonly }}</span>
               <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
                 <X class="h-5 w-5" />
               </button>
@@ -340,18 +343,18 @@ onMounted(load)
 
                 <details class="rounded-2xl border border-slate-200 bg-white p-4">
                   <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.labels.completeFields }}</summary>
-                  <div class="mt-4 grid gap-4 md:grid-cols-2">
-                    <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
+                  <div class="mt-4 grid items-start gap-4 md:grid-cols-2">
+                    <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold" :class="isStructuredField(value) ? 'md:col-span-2' : ''">
                       {{ key }}
                       <textarea
-                        v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                        class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                        v-if="isStructuredField(value)"
+                        class="min-h-32 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 font-mono text-xs leading-5 text-slate-600"
                         disabled
                         :value="JSON.stringify(value, null, 2)"
                       />
                       <input
                         v-else
-                        class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
+                        class="h-11 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 text-slate-600"
                         disabled
                         :value="key === 'name' ? definitionName(selected) : String(value ?? '-')"
                       />
