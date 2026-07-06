@@ -41,11 +41,15 @@ const emptyForm: PipelineForm = {
 
 const pipelines = ref<JsonRecord[]>([])
 const courseOptions = ref<JsonRecord[]>([])
+const credentialOptions = ref<JsonRecord[]>([])
+const pdfTemplateOptions = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const form = ref<PipelineForm>({ ...emptyForm })
 const structure = ref<JsonRecord>(emptyStructure())
 const loading = ref(false)
 const courseOptionsLoading = ref(false)
+const credentialOptionsLoading = ref(false)
+const pdfTemplateOptionsLoading = ref(false)
 const saving = ref(false)
 const creating = ref(false)
 const categoryFilter = ref("")
@@ -201,6 +205,46 @@ function unitCourseId(unit: JsonRecord | null | undefined) {
   return String(pickFirst(unit || {}, ["glms_course_ulid", "glms_course_id"]) || "")
 }
 
+function credentialId(definition: JsonRecord | null | undefined) {
+  return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid", "qual_id", "id"]) || "")
+}
+
+function credentialName(definition: JsonRecord | null | undefined) {
+  return String(pickFirst(definition || {}, ["name", "name_hint", "title"]) || credentialId(definition) || copy.value.unnamedQualification)
+}
+
+function credentialOptionLabel(definition: JsonRecord) {
+  const id = credentialId(definition)
+  const category = String(pickFirst(definition, ["category", "type"]) || "")
+  return [credentialName(definition), category, id].filter(Boolean).join(" · ")
+}
+
+function credentialById(id: string) {
+  return credentialOptions.value.find((definition) => credentialId(definition) === id) || null
+}
+
+function qualificationId(qualification: JsonRecord | null | undefined) {
+  return String(pickFirst(qualification || {}, ["qual_ulid", "qual_id"]) || "")
+}
+
+function pdfTemplateId(template: JsonRecord | null | undefined) {
+  return String(pickFirst(template || {}, ["template_ulid", "template_id", "id"]) || "")
+}
+
+function pdfTemplateName(template: JsonRecord | null | undefined) {
+  return String(pickFirst(template || {}, ["name", "title"]) || pdfTemplateId(template) || copy.value.unnamedPdfTemplate)
+}
+
+function pdfTemplateOptionLabel(template: JsonRecord) {
+  const id = pdfTemplateId(template)
+  const version = template.version ? `v${template.version}` : ""
+  return [pdfTemplateName(template), version, id].filter(Boolean).join(" · ")
+}
+
+function pdfTemplateById(id: string) {
+  return pdfTemplateOptions.value.find((template) => pdfTemplateId(template) === id) || null
+}
+
 function normalizeStructureShape(value: JsonRecord | null | undefined) {
   const next = value || {}
   return {
@@ -293,6 +337,68 @@ function parseStructure() {
 }
 
 function validateStructureForSave(next: JsonRecord) {
+  const certList = asArray(next.certs)
+  for (const [certIndex, cert] of certList.entries()) {
+    const certQualId = qualificationId(cert)
+    const templateId = String(cert.pdf_template_ulid || "")
+    if (!certQualId.trim()) {
+      toast.error(copy.value.toasts.structureCertQualificationRequired(certIndex + 1))
+      selectedCertIndex.value = certIndex
+      activeLayer.value = "certs"
+      return false
+    }
+    if (credentialOptions.value.length && !credentialById(certQualId)) {
+      toast.error(copy.value.toasts.structureCertQualificationUnavailable(certIndex + 1))
+      selectedCertIndex.value = certIndex
+      activeLayer.value = "certs"
+      return false
+    }
+    if (!templateId.trim()) {
+      toast.error(copy.value.toasts.structureCertPdfTemplateRequired(certIndex + 1))
+      selectedCertIndex.value = certIndex
+      activeLayer.value = "certs"
+      return false
+    }
+    if (pdfTemplateOptions.value.length && !pdfTemplateById(templateId)) {
+      toast.error(copy.value.toasts.structureCertPdfTemplateUnavailable(certIndex + 1))
+      selectedCertIndex.value = certIndex
+      activeLayer.value = "certs"
+      return false
+    }
+  }
+
+  for (const [qualIndex, qual] of asArray(next.unlock_quals).entries()) {
+    const qualId = qualificationId(qual)
+    if (!qualId.trim()) {
+      toast.error(copy.value.toasts.structureUnlockQualificationRequired(qualIndex + 1))
+      selectedUnlockQualIndex.value = qualIndex
+      activeLayer.value = "unlock_quals"
+      return false
+    }
+    if (credentialOptions.value.length && !credentialById(qualId)) {
+      toast.error(copy.value.toasts.structureUnlockQualificationUnavailable(qualIndex + 1))
+      selectedUnlockQualIndex.value = qualIndex
+      activeLayer.value = "unlock_quals"
+      return false
+    }
+  }
+
+  for (const [qualIndex, qual] of asArray(next.certs_quals).entries()) {
+    const qualId = qualificationId(qual)
+    if (!qualId.trim()) {
+      toast.error(copy.value.toasts.structureCompletionQualificationRequired(qualIndex + 1))
+      selectedCertQualIndex.value = qualIndex
+      activeLayer.value = "certs_quals"
+      return false
+    }
+    if (credentialOptions.value.length && !credentialById(qualId)) {
+      toast.error(copy.value.toasts.structureCompletionQualificationUnavailable(qualIndex + 1))
+      selectedCertQualIndex.value = qualIndex
+      activeLayer.value = "certs_quals"
+      return false
+    }
+  }
+
   const stageList = asArray(next.stages)
   if (!stageList.length) {
     toast.error(copy.value.toasts.structureStagesRequired)
@@ -493,6 +599,30 @@ function applyUnitCourse(unit: JsonRecord | null | undefined, courseUlid: string
   syncStructureJson()
 }
 
+function applyQualification(item: JsonRecord | null | undefined, qualUlid: string) {
+  if (!item || isStructureLocked()) return
+  item.qual_ulid = qualUlid
+  delete item.qual_id
+  const definition = credentialById(qualUlid)
+  if (definition) item.name_hint = credentialName(definition)
+  syncStructureJson()
+}
+
+function applyUnitCertificateQualification(unit: JsonRecord | null | undefined, qualUlid: string) {
+  if (!unit || isStructureLocked()) return
+  unit.cert_qual_ulid = qualUlid
+  delete unit.cert_qual_id
+  syncStructureJson()
+}
+
+function applyPdfTemplate(item: JsonRecord | null | undefined, key: "pdf_template_ulid" | "cert_pdf_template_ulid", templateUlid: string) {
+  if (!item || isStructureLocked()) return
+  item[key] = templateUlid
+  if (key === "pdf_template_ulid") delete item.pdf_template_id
+  if (key === "cert_pdf_template_ulid") delete item.cert_pdf_template_id
+  syncStructureJson()
+}
+
 async function load() {
   loading.value = true
   try {
@@ -528,6 +658,36 @@ async function loadCourseOptions() {
     toast.error(copy.value.toasts.courseOptionsLoadFailed)
   } finally {
     courseOptionsLoading.value = false
+  }
+}
+
+async function loadCredentialOptions() {
+  credentialOptionsLoading.value = true
+  try {
+    const data = await apiClient<JsonRecord>("/api/credentials/definitions")
+    const list = Array.isArray(data.definitions) ? data.definitions : []
+    credentialOptions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+  } catch (err) {
+    console.error(err)
+    credentialOptions.value = []
+    toast.error(copy.value.toasts.credentialOptionsLoadFailed)
+  } finally {
+    credentialOptionsLoading.value = false
+  }
+}
+
+async function loadPdfTemplateOptions() {
+  pdfTemplateOptionsLoading.value = true
+  try {
+    const data = await apiClient<JsonRecord>("/api/pdf-templates")
+    const list = Array.isArray(data.templates) ? data.templates : []
+    pdfTemplateOptions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+  } catch (err) {
+    console.error(err)
+    pdfTemplateOptions.value = []
+    toast.error(copy.value.toasts.pdfTemplateOptionsLoadFailed)
+  } finally {
+    pdfTemplateOptionsLoading.value = false
   }
 }
 
@@ -767,6 +927,8 @@ watch([categoryFilter, onlyCurrent, offset], () => load())
 onMounted(() => {
   void load()
   void loadCourseOptions()
+  void loadCredentialOptions()
+  void loadPdfTemplateOptions()
 })
 </script>
 
@@ -1097,11 +1259,17 @@ onMounted(() => {
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     cert_qual_ulid
-                    <input :value="fieldValue(selectedUnitItem.unit, 'cert_qual_ulid')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'cert_qual_ulid', eventValue($event))" />
+                    <select :value="fieldValue(selectedUnitItem.unit, 'cert_qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCertificateQualification(selectedUnitItem?.unit, eventValue($event))">
+                      <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
+                      <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
+                    </select>
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     cert_pdf_template_ulid
-                    <input :value="fieldValue(selectedUnitItem.unit, 'cert_pdf_template_ulid')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'cert_pdf_template_ulid', eventValue($event))" />
+                    <select :value="fieldValue(selectedUnitItem.unit, 'cert_pdf_template_ulid')" :disabled="isStructureLocked() || pdfTemplateOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyPdfTemplate(selectedUnitItem?.unit, 'cert_pdf_template_ulid', eventValue($event))">
+                      <option value="">{{ pdfTemplateOptionsLoading ? copy.loadingPdfTemplates : copy.selectPdfTemplate }}</option>
+                      <option v-for="template in pdfTemplateOptions" :key="pdfTemplateId(template)" :value="pdfTemplateId(template)">{{ pdfTemplateOptionLabel(template) }}</option>
+                    </select>
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     exemption_quals JSON
@@ -1151,11 +1319,19 @@ onMounted(() => {
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
                     qual_ulid
-                    <input :value="fieldValue(selectedCert, 'qual_ulid')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedCert, 'qual_ulid', eventValue($event))" />
+                    <select :value="fieldValue(selectedCert, 'qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyQualification(selectedCert, eventValue($event))">
+                      <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
+                      <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
+                    </select>
+                    <p class="text-xs font-semibold text-slate-500">{{ copy.qualificationSelectHint }}</p>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     pdf_template_ulid
-                    <input :value="fieldValue(selectedCert, 'pdf_template_ulid')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedCert, 'pdf_template_ulid', eventValue($event))" />
+                    <select :value="fieldValue(selectedCert, 'pdf_template_ulid')" :disabled="isStructureLocked() || pdfTemplateOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyPdfTemplate(selectedCert, 'pdf_template_ulid', eventValue($event))">
+                      <option value="">{{ pdfTemplateOptionsLoading ? copy.loadingPdfTemplates : copy.selectPdfTemplate }}</option>
+                      <option v-for="template in pdfTemplateOptions" :key="pdfTemplateId(template)" :value="pdfTemplateId(template)">{{ pdfTemplateOptionLabel(template) }}</option>
+                    </select>
+                    <p class="text-xs font-semibold text-slate-500">{{ copy.pdfTemplateSelectHint }}</p>
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     name_hint
@@ -1221,12 +1397,16 @@ onMounted(() => {
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
                     qual_ulid / qual_id
-                    <input
-                      :value="fieldValue(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, 'qual_ulid') || fieldValue(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, 'qual_id')"
-                      :disabled="isStructureLocked()"
+                    <select
+                      :value="qualificationId(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual)"
+                      :disabled="isStructureLocked() || credentialOptionsLoading"
                       class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500"
-                      @input="setField(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, 'qual_ulid', eventValue($event))"
-                    />
+                      @change="applyQualification(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, eventValue($event))"
+                    >
+                      <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
+                      <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
+                    </select>
+                    <p class="text-xs font-semibold text-slate-500">{{ copy.qualificationSelectHint }}</p>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     name_hint
