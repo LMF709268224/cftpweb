@@ -570,14 +570,14 @@ onMounted(load)
         <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
-      <div class="flex flex-wrap gap-3">
-        <button v-if="!creating" class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newPipeline">
-          <Plus class="h-4 w-4" />
-          {{ copy.newPipeline }}
-        </button>
+      <div class="flex gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
+        </button>
+        <button v-if="!creating" class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newPipeline">
+          <Plus class="h-4 w-4" />
+          {{ copy.newPipeline }}
         </button>
       </div>
     </header>
@@ -687,16 +687,6 @@ onMounted(load)
             Respath
             <input v-model="form.respath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
           </label>
-        </div>
-        <div class="mt-5 flex justify-end gap-3">
-          <button v-if="creating" class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="createPipeline">
-            <Plus class="h-4 w-4" />
-            {{ copy.createDraft }}
-          </button>
-          <button v-else class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveMetadata">
-            <Save class="h-4 w-4" />
-            {{ copy.saveBasic }}
-          </button>
         </div>
       </div>
 
@@ -1028,6 +1018,17 @@ onMounted(load)
         <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
       </div>
           </section>
+
+          <div v-if="activeLayer === 'overview' || creating" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+            <button v-if="creating" class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="createPipeline">
+              <Plus class="h-4 w-4" />
+              {{ copy.createDraft }}
+            </button>
+            <button v-else class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveMetadata">
+              <Save class="h-4 w-4" />
+              {{ copy.saveBasic }}
+            </button>
+          </div>
         </div>
       </div>
     </Teleport>

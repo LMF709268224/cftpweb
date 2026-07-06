@@ -180,7 +180,7 @@ onMounted(load)
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="startCreate">
+        <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="startCreate">
           <Plus class="h-4 w-4" />
           {{ copy.newCredential }}
         </button>
@@ -248,7 +248,7 @@ onMounted(load)
             </div>
           </div>
 
-          <section class="overflow-y-auto p-6">
+          <section class="flex-1 overflow-y-auto p-6">
             <template v-if="mode === 'create'">
               <div class="grid gap-5">
                 <div class="grid gap-4 md:grid-cols-2">
@@ -298,12 +298,6 @@ onMounted(load)
                     </button>
                   </div>
                   <div v-if="!constraints.length" class="text-sm text-slate-500">{{ copy.noFileConstraints }}</div>
-                </div>
-                <div class="flex justify-end gap-3">
-                  <button class="rounded-xl border px-5 py-3 font-bold" type="button" @click="closeDetail">{{ copy.cancel }}</button>
-                  <button class="rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="creating" @click="createDefinition">
-                    {{ creating ? copy.creating : copy.create }}
-                  </button>
                 </div>
               </div>
             </template>
@@ -369,6 +363,13 @@ onMounted(load)
               </div>
             </template>
           </section>
+
+          <div v-if="mode === 'create'" class="flex shrink-0 justify-end gap-3 border-t border-slate-200 bg-white px-5 py-4">
+            <button class="h-10 rounded-xl border border-slate-900 px-5 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="creating" @click="closeDetail">{{ copy.cancel }}</button>
+            <button class="inline-flex h-10 min-w-[180px] items-center justify-center rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="creating" @click="createDefinition">
+              {{ creating ? copy.creating : copy.create }}
+            </button>
+          </div>
         </div>
       </div>
     </Teleport>
