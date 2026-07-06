@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, ArrowRight, FileSearch, Loader2, RefreshCw } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, Check, Copy as CopyIcon, FileSearch, Loader2, RefreshCw } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
@@ -24,6 +24,7 @@ const page = ref(1)
 const rawData = ref<PageData | null>(null)
 const items = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
+const copiedJson = ref(false)
 const pageSize = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.resourceAdmin)
@@ -33,6 +34,7 @@ const routeCopy = computed(() => copy.value.routes[meta.value.copyKey])
 
 const selectedTitle = computed(() => (selected.value ? getDisplayTitle(selected.value, copy.value.fallbackTitle) : copy.value.selectRecord))
 const selectedEntries = computed(() => Object.entries(selected.value || {}))
+const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const hasNext = computed(() => items.value.length >= pageSize)
 const hasPrevious = computed(() => page.value > 1)
 
@@ -72,6 +74,41 @@ function normalizeItems(data: PageData | null) {
 
 function isRecord(value: unknown): value is JsonRecord {
   return !!value && typeof value === "object" && !Array.isArray(value)
+}
+
+function jsonText(value: unknown) {
+  return JSON.stringify(value ?? {}, null, 2)
+}
+
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = text
+  textarea.setAttribute("readonly", "")
+  textarea.style.position = "fixed"
+  textarea.style.opacity = "0"
+  document.body.appendChild(textarea)
+  textarea.select()
+  document.execCommand("copy")
+  document.body.removeChild(textarea)
+}
+
+async function copySelectedJson() {
+  try {
+    await writeClipboard(selectedJson.value)
+    copiedJson.value = true
+    toast.success(copy.value.jsonCopied)
+    window.setTimeout(() => {
+      copiedJson.value = false
+    }, 1600)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.jsonCopyFailed)
+  }
 }
 
 async function load() {
@@ -291,7 +328,7 @@ onMounted(load)
             <div v-else-if="typeof value !== 'object' || value === null" class="break-words text-sm font-semibold text-slate-800">
               {{ value ?? "-" }}
             </div>
-            <pre v-else class="max-h-44 overflow-auto text-xs leading-5 text-slate-700">{{ JSON.stringify(value, null, 2) }}</pre>
+            <pre v-else class="max-h-44 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-white p-3 font-mono text-xs leading-5 text-slate-700">{{ jsonText(value) }}</pre>
           </div>
         </div>
         <div class="flex flex-col gap-3">
@@ -305,7 +342,20 @@ onMounted(load)
               <button class="rounded-lg bg-[#0b7bdc] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0966b8]" @click="saveEdit">{{ copy.saveAndSubmit }}</button>
             </div>
           </div>
-          <pre v-if="!isEditing" class="max-h-[720px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+          <details v-if="!isEditing" class="rounded-2xl border border-slate-200 bg-white p-4">
+            <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
+            <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
+              <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
+                <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copySelectedJson">
+                  <Check v-if="copiedJson" class="h-3.5 w-3.5" />
+                  <CopyIcon v-else class="h-3.5 w-3.5" />
+                  {{ copiedJson ? copy.copiedJson : copy.copyJson }}
+                </button>
+              </div>
+              <pre class="max-h-[720px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
+            </div>
+          </details>
           <textarea v-else v-model="draftJson" class="min-h-[500px] w-full rounded-2xl bg-slate-950 p-5 font-mono text-xs leading-6 text-slate-100 outline-none focus:ring-2 focus:ring-[#0b7bdc]"></textarea>
         </div>
       </div>

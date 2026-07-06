@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
+import { Check, Copy as CopyIcon, FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -81,6 +81,7 @@ const schemas = ref<JsonRecord | null>(null)
 const activeTab = ref<DetailTab>("summary")
 const mode = ref<Mode>("detail")
 const showDeleteConfirm = ref(false)
+const copiedJsonKey = ref("")
 const limit = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.bundlesAdmin)
@@ -89,6 +90,8 @@ const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => bundles.value.length >= limit)
 const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
+const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
+const schemasJson = computed(() => JSON.stringify(schemas.value || {}, null, 2))
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
   { key: "meta" as const, title: copy.value.tabs.meta, count: 1 },
@@ -177,6 +180,50 @@ function displayPrice(bundle: JsonRecord | null | undefined) {
   if (!currency || (!min && !max)) return "-"
   if (min === max) return `${currency} ${min.toFixed(2)}`
   return `${currency} ${min.toFixed(2)} - ${max.toFixed(2)}`
+}
+
+function isStructuredValue(value: unknown) {
+  return Array.isArray(value) || (!!value && typeof value === "object")
+}
+
+function jsonText(value: unknown) {
+  return JSON.stringify(value ?? {}, null, 2)
+}
+
+function detailFieldText(value: unknown) {
+  const text = String(value ?? "").trim()
+  return text || "-"
+}
+
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = text
+  textarea.setAttribute("readonly", "")
+  textarea.style.position = "fixed"
+  textarea.style.opacity = "0"
+  document.body.appendChild(textarea)
+  textarea.select()
+  document.execCommand("copy")
+  document.body.removeChild(textarea)
+}
+
+async function copyJsonBlock(key: string, text: string) {
+  try {
+    await writeClipboard(text)
+    copiedJsonKey.value = key
+    toast.success(copy.value.toasts.jsonCopied)
+    window.setTimeout(() => {
+      if (copiedJsonKey.value === key) copiedJsonKey.value = ""
+    }, 1600)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.jsonCopyFailed)
+  }
 }
 
 function parseJsonSilently(value: string) {
@@ -704,16 +751,16 @@ onMounted(load)
                   <p class="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">{{ form.description || "-" }}</p>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
-                  <label v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold">
-                    {{ field.label }}
-                    <textarea
-                      v-if="Array.isArray(field.value) || (field.value && typeof field.value === 'object')"
-                      class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                      disabled
-                      :value="JSON.stringify(field.value, null, 2)"
-                    />
-                    <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(field.value ?? '-')" />
-                  </label>
+                  <div v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
+                    <span class="text-xs font-black uppercase text-slate-400">{{ field.label }}</span>
+                    <pre
+                      v-if="isStructuredValue(field.value)"
+                      class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
+                    >{{ jsonText(field.value) }}</pre>
+                    <div v-else class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
+                      {{ detailFieldText(field.value) }}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -876,7 +923,20 @@ onMounted(load)
                   <FileJson class="h-4 w-4" />
                   {{ copy.loadSchema }}
                 </button>
-                <pre v-if="schemas" class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(schemas, null, 2) }}</pre>
+                <details v-if="schemas" class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.schemaJson }}</summary>
+                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
+                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.schemaJson }}</span>
+                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('schema', schemasJson)">
+                        <Check v-if="copiedJsonKey === 'schema'" class="h-3.5 w-3.5" />
+                        <CopyIcon v-else class="h-3.5 w-3.5" />
+                        {{ copiedJsonKey === 'schema' ? copy.copiedJson : copy.copyJson }}
+                      </button>
+                    </div>
+                    <pre class="max-h-[620px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ schemasJson }}</pre>
+                  </div>
+                </details>
                 <div v-else class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">{{ copy.emptySchema }}</div>
               </div>
 
@@ -906,7 +966,20 @@ onMounted(load)
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   {{ copy.rawReadonlyHint }}
                 </div>
-                <pre class="max-h-[620px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
+                <details class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
+                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
+                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
+                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('raw', selectedJson)">
+                        <Check v-if="copiedJsonKey === 'raw'" class="h-3.5 w-3.5" />
+                        <CopyIcon v-else class="h-3.5 w-3.5" />
+                        {{ copiedJsonKey === 'raw' ? copy.copiedJson : copy.copyJson }}
+                      </button>
+                    </div>
+                    <pre class="max-h-[620px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
+                  </div>
+                </details>
               </div>
             </main>
           </div>

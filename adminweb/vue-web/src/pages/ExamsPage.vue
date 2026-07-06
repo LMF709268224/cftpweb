@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, Loader2, PlayCircle, RefreshCw, Search, X } from "lucide-vue-next"
+import { Check, CheckCircle2, Copy as CopyIcon, Loader2, PlayCircle, RefreshCw, Search, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient, ApiError } from "@/lib/apiClient"
@@ -18,6 +18,7 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const actionLoading = ref(false)
 const detailDialogOpen = ref(false)
+const copiedJson = ref(false)
 const page = ref(1)
 const total = ref(0)
 
@@ -33,6 +34,7 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => page.value < totalPages.value)
 const selectedExamUlid = computed(() => examUlid(detail.value || selectedSummary.value))
+const rawDetailJson = computed(() => JSON.stringify({ detail: detail.value || selectedSummary.value, result: result.value, transitions: transitions.value }, null, 2))
 const candidateName = computed(() => {
   const source = detail.value || selectedSummary.value || {}
   return [source.candidate_first_name, source.candidate_middle_name, source.candidate_last_name].filter(Boolean).join(" ") || "-"
@@ -112,6 +114,37 @@ function scoreDetails(source: JsonRecord | null) {
     return JSON.stringify(JSON.parse(raw), null, 2)
   } catch {
     return raw
+  }
+}
+
+async function writeClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text)
+    return
+  }
+
+  const textarea = document.createElement("textarea")
+  textarea.value = text
+  textarea.setAttribute("readonly", "")
+  textarea.style.position = "fixed"
+  textarea.style.opacity = "0"
+  document.body.appendChild(textarea)
+  textarea.select()
+  document.execCommand("copy")
+  document.body.removeChild(textarea)
+}
+
+async function copyRawDetailJson() {
+  try {
+    await writeClipboard(rawDetailJson.value)
+    copiedJson.value = true
+    toast.success(copy.value.toasts.jsonCopied)
+    window.setTimeout(() => {
+      copiedJson.value = false
+    }, 1600)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.jsonCopyFailed)
   }
 }
 
@@ -494,7 +527,17 @@ onMounted(() => loadExams(1))
 
           <details class="rounded-2xl border border-slate-200 p-4">
             <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawFields }}</summary>
-            <pre class="mt-4 max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify({ detail: detail || selectedSummary, result, transitions }, null, 2) }}</pre>
+            <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
+              <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+                <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawFields }}</span>
+                <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyRawDetailJson">
+                  <Check v-if="copiedJson" class="h-3.5 w-3.5" />
+                  <CopyIcon v-else class="h-3.5 w-3.5" />
+                  {{ copiedJson ? copy.copiedJson : copy.copyJson }}
+                </button>
+              </div>
+              <pre class="max-h-96 overflow-auto p-4 text-xs text-slate-100">{{ rawDetailJson }}</pre>
+            </div>
           </details>
             </div>
           </div>
