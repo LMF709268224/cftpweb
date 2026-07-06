@@ -1257,7 +1257,7 @@ onMounted(() => {
                     <input :checked="boolValue(selectedUnitItem.unit, 'allow_exemption')" :disabled="isStructureLocked()" type="checkbox" @change="setField(selectedUnitItem?.unit, 'allow_exemption', eventChecked($event))" />
                     {{ copy.fields.allowExemption }}
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
+                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     cert_qual_ulid
                     <select :value="fieldValue(selectedUnitItem.unit, 'cert_qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCertificateQualification(selectedUnitItem?.unit, eventValue($event))">
                       <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
@@ -1316,7 +1316,7 @@ onMounted(() => {
                   <h4 class="text-lg font-black">{{ copy.certDetailTitle }}</h4>
                   <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeGenericItem('certs', selectedCertIndex)">{{ copy.deleteCert }}</button>
                 </div>
-                <div class="grid gap-4 md:grid-cols-2">
+                <div class="grid gap-4">
                   <label class="grid gap-2 text-sm font-bold">
                     qual_ulid
                     <select :value="fieldValue(selectedCert, 'qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyQualification(selectedCert, eventValue($event))">
@@ -1394,7 +1394,7 @@ onMounted(() => {
                     {{ copy.deleteQual }}
                   </button>
                 </div>
-                <div class="grid gap-4 md:grid-cols-2">
+                <div class="grid gap-4">
                   <label class="grid gap-2 text-sm font-bold">
                     qual_ulid / qual_id
                     <select
