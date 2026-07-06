@@ -188,46 +188,52 @@ export function localizeApiErrorMessage(
   lang: "zh" | "en" = "zh"
 ): string {
   if (!message) return getErrorMessage(errorCode, lang)
-  if (lang === "en") return message
 
   let match = message.match(/^(.+) is required$/)
   if (match) {
-    return `请填写${getFieldLabel(match[1], lang)}`
+    return lang === "zh" ? `请填写${getFieldLabel(match[1], lang)}` : `${getFieldLabel(match[1], lang)} is required.`
   }
 
   match = message.match(/^(.+) are required$/)
   if (match) {
-    return `请填写${match[1].split(/\s+and\s+/).map((field) => getFieldLabel(field, lang)).join("和")}`
+    const fields = match[1].split(/\s+and\s+/).map((field) => getFieldLabel(field, lang))
+    return lang === "zh" ? `请填写${fields.join("和")}` : `${fields.join(" and ")} are required.`
   }
 
   match = message.match(/^(.+) must be greater than 0$/)
   if (match) {
-    return `${getFieldLabel(match[1], lang)}必须大于 0`
+    return lang === "zh" ? `${getFieldLabel(match[1], lang)}必须大于 0` : `${getFieldLabel(match[1], lang)} must be greater than 0.`
   }
 
   match = message.match(/^(.+) is invalid$/)
   if (match) {
-    return `${getFieldLabel(match[1], lang)}无效`
+    return lang === "zh" ? `${getFieldLabel(match[1], lang)}无效` : `${getFieldLabel(match[1], lang)} is invalid.`
   }
 
   match = message.match(/^course "([^"]+)" must contain at least one chapter before publishing$/)
   if (match) {
-    return `课程 ${match[1]} 发布前至少需要创建 1 个章节`
+    return lang === "zh"
+      ? `课程 ${match[1]} 发布前至少需要创建 1 个章节`
+      : `Course ${match[1]} must contain at least one chapter before publishing.`
   }
 
   match = message.match(/^chapter "([^"]+)" must contain at least one lesson or quiz before publishing$/)
   if (match) {
-    return `章节 ${match[1]} 发布前至少需要包含 1 个课时或测验`
+    return lang === "zh"
+      ? `章节 ${match[1]} 发布前至少需要包含 1 个课时或测验`
+      : `Chapter ${match[1]} must contain at least one lesson or quiz before publishing.`
   }
 
   match = message.match(/^published course "([^"]+)" cannot be modified$/)
   if (match) {
-    return `已发布课程 ${match[1]} 不能直接修改，请创建新版本或编辑草稿版本`
+    return lang === "zh"
+      ? `已发布课程 ${match[1]} 不能直接修改，请创建新版本或编辑草稿版本`
+      : `Published course ${match[1]} cannot be modified. Please create a new version or edit a draft version.`
   }
 
   if (errorCode && ErrorMessages[errorCode]) {
     return getErrorMessage(errorCode, lang)
   }
 
-  return message
+  return getErrorMessage("UNKNOWN_ERROR", lang)
 }

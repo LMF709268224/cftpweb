@@ -3,7 +3,7 @@ import { onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
 import { getErrorMessage } from "@/lib/errorCodes"
-import { apiClient } from "@/lib/apiClient"
+import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { setAccessToken } from "@/lib/authStorage"
 import { useTranslation } from "@/lib/language"
 
@@ -37,7 +37,7 @@ onMounted(async () => {
     setTimeout(() => router.push("/"), 1000)
   } catch (err: any) {
     status.value = "error"
-    errorMsg.value = getErrorMessage(err?.message || "AUTH_FAILED", currentLang)
+    errorMsg.value = getErrorMessage(err instanceof ApiClientError ? err.errorCode || "AUTH_FAILED" : err?.message || "AUTH_FAILED", currentLang)
     setTimeout(() => router.push("/login"), 3000)
   }
 })

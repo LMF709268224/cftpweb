@@ -199,7 +199,7 @@ async function startPayment() {
     throw new Error("unsupported payment key")
   } catch (error: any) {
     console.error(error)
-    fail(error?.message)
+    fail(copy.value.failed)
   }
 }
 
