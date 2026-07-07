@@ -1202,6 +1202,7 @@ export const en: AdminTranslations = {
     viewDetails: "View Details",
     prev: "Previous",
     next: "Next",
+    pageText: (page: number, totalPages: number, total: number) => `Page ${page} / ${totalPages} · ${total} total`,
     createTitle: "New Product",
     createDescription: "Choose what this product sells, then fill in display information. System fields are generated automatically.",
     createSections: {

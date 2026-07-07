@@ -1200,6 +1200,7 @@ export const zh = {
     viewDetails: "查看详情",
     prev: "上一页",
     next: "下一页",
+    pageText: (page: number, totalPages: number, total: number) => `第 ${page} / ${totalPages} 页 · 共 ${total} 条`,
     createTitle: "新建商品",
     createDescription: "先选择商品要售卖的内容，再填写展示信息；系统字段会自动生成。",
     createSections: {

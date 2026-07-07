@@ -92,17 +92,20 @@ const duplicating = ref(false)
 const detailOpen = ref(false)
 const statusFilter = ref("")
 const offset = ref(0)
+const total = ref(0)
 const schemas = ref<JsonRecord | null>(null)
 const activeTab = ref<DetailTab>("summary")
 const mode = ref<Mode>("detail")
 const showDeleteConfirm = ref(false)
 const replacementPipelineId = ref("")
-const limit = 20
+const limit = 10
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.bundlesAdmin)
 
+const currentPage = computed(() => Math.floor(offset.value / limit) + 1)
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)))
 const canPrev = computed(() => offset.value > 0)
-const canNext = computed(() => bundles.value.length >= limit)
+const canNext = computed(() => offset.value + bundles.value.length < total.value)
 const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value || duplicating.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
 const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
@@ -559,16 +562,27 @@ async function load() {
     const data = await apiClient<JsonRecord>(`/api/mall/bundles?${params}`)
     const list = Array.isArray(data.bundles) ? data.bundles : []
     bundles.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    total.value = Number(data.total || 0)
     if (!selected.value && bundles.value.length) {
       await selectBundle(bundles.value[0], false)
     }
   } catch (err) {
     console.error(err)
     bundles.value = []
+    total.value = 0
     toast.error(copy.value.toasts.loadFailed)
   } finally {
     loading.value = false
   }
+}
+
+function prevPage() {
+  offset.value = Math.max(0, offset.value - limit)
+}
+
+function nextPage() {
+  if (!canNext.value) return
+  offset.value += limit
 }
 
 function recordList(value: unknown) {
@@ -952,7 +966,15 @@ async function loadSchemas() {
   activeTab.value = "schema"
 }
 
-watch([statusFilter, offset], () => {
+watch(statusFilter, () => {
+  selected.value = null
+  if (offset.value !== 0) {
+    offset.value = 0
+    return
+  }
+  void load()
+})
+watch(offset, () => {
   selected.value = null
   void load()
 })
@@ -998,7 +1020,7 @@ onMounted(load)
               <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
             </div>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ bundles.length }}</span>
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ total }}</span>
           </div>
           <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">
             <option value="">{{ copy.allStatus }}</option>
@@ -1048,9 +1070,12 @@ onMounted(load)
           </div>
         </template>
         <div v-if="!loading && !bundles.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
-        <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - limit)">{{ copy.prev }}</button>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += limit">{{ copy.next }}</button>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 p-5">
+          <span class="text-sm font-bold text-slate-500">{{ copy.pageText(currentPage, totalPages, total) }}</span>
+          <div class="flex gap-3">
+            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="prevPage">{{ copy.prev }}</button>
+            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="nextPage">{{ copy.next }}</button>
+          </div>
         </div>
     </section>
 
