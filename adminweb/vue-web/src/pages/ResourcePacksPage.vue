@@ -473,15 +473,15 @@ onMounted(load)
                 <div class="grid gap-4 md:grid-cols-2">
                   <div class="text-sm font-bold">
                     {{ copy.fields.respath }}
-                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.respath || "-" }}</div>
+                    <div class="readonly-long-field">{{ form.respath || "-" }}</div>
                   </div>
                   <div class="text-sm font-bold">
                     {{ copy.fields.thumbnailObjectKey }}
-                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.thumbnail_object_key || "-" }}</div>
+                    <div class="readonly-long-field">{{ form.thumbnail_object_key || "-" }}</div>
                   </div>
                   <div class="text-sm font-bold md:col-span-2">
                     {{ copy.fields.thumbnailFileHash }}
-                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.thumbnail_file_hash || "-" }}</div>
+                    <div class="readonly-long-field">{{ form.thumbnail_file_hash || "-" }}</div>
                   </div>
                 </div>
               </div>
@@ -612,3 +612,23 @@ onMounted(load)
     </div>
   </section>
 </template>
+
+<style scoped>
+.readonly-long-field {
+  min-height: 4.75rem;
+  margin-top: 0.5rem;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  padding: 0.625rem 0.75rem;
+  color: #334155;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+</style>

@@ -533,22 +533,22 @@ onMounted(load)
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileObjectKey }}
-            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_object_key) }}</div>
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_object_key) }}</div>
             <input v-else v-model="form.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileObjectKey" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.fileHash }}
-            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_hash) }}</div>
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_hash) }}</div>
             <input v-else v-model="form.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileHash" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.thumbnailObjectKey }}
-            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.thumbnail_object_key) }}</div>
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.thumbnail_object_key) }}</div>
             <input v-else v-model="form.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.thumbnailObjectKey" />
           </label>
           <label class="text-sm font-bold">
             {{ copy.fields.thumbnailHash }}
-            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.thumbnail_file_hash) }}</div>
+            <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.thumbnail_file_hash) }}</div>
             <input v-else v-model="form.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.thumbnailHash" />
           </label>
           </div>
@@ -644,6 +644,14 @@ onMounted(load)
 .readonly-field--compact {
   display: flex;
   align-items: center;
+}
+
+.readonly-field--long {
+  min-height: 4.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  word-break: break-all;
 }
 
 .readonly-field--textarea {
