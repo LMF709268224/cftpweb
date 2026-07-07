@@ -3,6 +3,7 @@ import { FileText, List, Loader2, Mail, RefreshCw, Send, X, XCircle } from "luci
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import ReadonlyField from "@/components/ReadonlyField.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -623,16 +624,14 @@ onMounted(async () => {
               </div>
               <div v-if="!selectedTemplate" class="p-10 text-center text-slate-500">{{ copy.selectTemplate }}</div>
               <div v-else class="mt-4 grid gap-4 md:grid-cols-2">
-                <label v-for="(value, key) in selectedTemplateFields" :key="key" class="grid gap-2 text-sm font-bold">
-                  {{ key }}
-                  <textarea
-                    v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                    class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                    disabled
-                    :value="JSON.stringify(value, null, 2)"
-                  />
-                  <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
-                </label>
+                <ReadonlyField
+                  v-for="(value, key) in selectedTemplateFields"
+                  :key="key"
+                  :label="String(key)"
+                  :value="value"
+                  :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
+                  :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
+                />
               </div>
             </div>
 

@@ -2,6 +2,7 @@
 import { Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import ReadonlyField from "@/components/ReadonlyField.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -217,21 +218,25 @@ onMounted(load)
             <div class="flex-1 overflow-y-auto p-5">
               <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <form id="pdf-template-form" class="space-y-4" @submit.prevent="save">
-                  <label v-if="mode !== 'create'" class="grid gap-2 text-sm font-bold">
+                  <ReadonlyField v-if="readonlyMode" :label="copy.fields.templateId" :value="form.template_id" />
+                  <label v-else-if="mode !== 'create'" class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.templateId }}
                     <input v-model="form.template_id" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
+                  <ReadonlyField v-if="readonlyMode" :label="copy.fields.name" :value="form.name" />
+                  <label v-else class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.name }}
-                    <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-600" :disabled="readonlyMode" maxlength="160" />
+                    <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
+                  <ReadonlyField v-if="readonlyMode" :label="copy.fields.description" :value="form.description" />
+                  <label v-else class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.description }}
-                    <input v-model="form.description" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-600" :disabled="readonlyMode" maxlength="500" />
+                    <input v-model="form.description" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="500" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
+                  <ReadonlyField v-if="readonlyMode" :label="copy.fields.htmlTemplate" :value="form.html_template" mono min-height="460px" max-height="460px" />
+                  <label v-else class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.htmlTemplate }}
-                    <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6 disabled:bg-slate-100 disabled:text-slate-600" :disabled="readonlyMode" />
+                    <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6" />
                   </label>
                 </form>
 
@@ -240,16 +245,14 @@ onMounted(load)
                     <h3 class="font-black">{{ copy.rawFields }}</h3>
                     <p class="mt-1 text-sm text-slate-500">{{ copy.rawHint }}</p>
                     <div class="mt-4 grid gap-3">
-                      <label v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold">
-                        {{ fieldLabel(String(key)) }}
-                        <textarea
-                          v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                          class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                          disabled
-                          :value="JSON.stringify(value, null, 2)"
-                        />
-                        <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
-                      </label>
+                      <ReadonlyField
+                        v-for="(value, key) in selectedFields"
+                        :key="key"
+                        :label="fieldLabel(String(key))"
+                        :value="value"
+                        :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
+                        :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
+                      />
                     </div>
                   </div>
                   <div class="rounded-2xl border border-slate-200 bg-white p-4">

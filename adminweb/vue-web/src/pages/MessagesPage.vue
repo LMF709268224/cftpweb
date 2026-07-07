@@ -3,6 +3,7 @@ import { FileText, List, Loader2, RefreshCw, Send, X } from "lucide-vue-next"
 import { computed, nextTick, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import ReadonlyField from "@/components/ReadonlyField.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -614,16 +615,14 @@ onMounted(async () => {
 
           <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
             <div class="grid gap-4 md:grid-cols-2">
-              <label v-for="(value, key) in selectedMessageFields" :key="key" class="grid gap-2 text-sm font-bold">
-                {{ messageFieldLabel(String(key)) }}
-                <textarea
-                  v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                  class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                  disabled
-                  :value="JSON.stringify(value, null, 2)"
-                />
-                <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
-              </label>
+              <ReadonlyField
+                v-for="(value, key) in selectedMessageFields"
+                :key="key"
+                :label="messageFieldLabel(String(key))"
+                :value="value"
+                :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
+                :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
+              />
             </div>
             <JsonPreview
               :title="copy.rawJson"
@@ -658,16 +657,14 @@ onMounted(async () => {
 
           <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
             <div class="grid gap-4 md:grid-cols-2">
-              <label v-for="(value, key) in selectedTemplateFields" :key="key" class="grid gap-2 text-sm font-bold">
-                {{ templateFieldLabel(String(key)) }}
-                <textarea
-                  v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                  class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                  disabled
-                  :value="JSON.stringify(value, null, 2)"
-                />
-                <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
-              </label>
+              <ReadonlyField
+                v-for="(value, key) in selectedTemplateFields"
+                :key="key"
+                :label="templateFieldLabel(String(key))"
+                :value="value"
+                :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
+                :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
+              />
             </div>
           </div>
         </section>

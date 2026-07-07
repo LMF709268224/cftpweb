@@ -2,6 +2,7 @@
 import { FileJson, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import ReadonlyField from "@/components/ReadonlyField.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -2249,19 +2250,10 @@ onMounted(() => {
               <h3 class="font-black">{{ copy.readonlyFields }}</h3>
               <p class="mt-1 text-xs text-slate-500">{{ copy.readonlyFieldsHint }}</p>
               <div class="mt-3 max-h-[420px] space-y-2 overflow-y-auto overscroll-contain pr-2">
-                <label v-for="entry in recordEntries(selectedCourse)" :key="`course-${entry.key}`" class="block">
-                  <span class="text-xs font-black text-slate-500">{{ courseReadonlyFieldLabel(entry.key) }}</span>
-                  <textarea class="mt-1 min-h-12 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" readonly />
-                </label>
+                <ReadonlyField v-for="entry in recordEntries(selectedCourse)" :key="`course-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
                 <div v-if="detailLoading || completeLoading" class="text-sm text-slate-500">{{ copy.loadingCompleteCourse }}</div>
-                <label v-for="entry in recordEntries(courseDetail)" :key="`detail-${entry.key}`" class="block">
-                  <span class="text-xs font-black text-slate-500">{{ courseDetailReadonlyFieldLabel(entry.key) }}</span>
-                  <textarea class="mt-1 min-h-12 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" readonly />
-                </label>
-                <label v-for="entry in recordEntries(completeCourse)" :key="`complete-${entry.key}`" class="block">
-                  <span class="text-xs font-black text-slate-500">{{ completeCourseReadonlyFieldLabel(entry.key) }}</span>
-                  <textarea class="mt-1 min-h-12 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" readonly />
-                </label>
+                <ReadonlyField v-for="entry in recordEntries(courseDetail)" :key="`detail-${entry.key}`" :label="courseDetailReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
+                <ReadonlyField v-for="entry in recordEntries(completeCourse)" :key="`complete-${entry.key}`" :label="completeCourseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
               </div>
             </div>
           </aside>
@@ -2484,10 +2476,7 @@ onMounted(() => {
             <div v-if="supplementaryMaterial" class="mt-5 border-t border-slate-200 pt-4">
               <h4 class="font-black">{{ copy.supplementaryRawFields }}</h4>
               <div class="mt-3 max-h-48 space-y-3 overflow-y-auto pr-1">
-                <label v-for="entry in recordEntries(supplementaryMaterial)" :key="`supplementary-${entry.key}`" class="block">
-                  <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
-                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                </label>
+                <ReadonlyField v-for="entry in recordEntries(supplementaryMaterial)" :key="`supplementary-${entry.key}`" :label="entry.key" :text="entry.value" />
               </div>
             </div>
           </div>
@@ -2563,10 +2552,7 @@ onMounted(() => {
             <div v-if="selectedMaterialRecord" class="mt-5 border-t border-slate-200 pt-4">
               <h4 class="font-black">{{ copy.materialRawFields }}</h4>
               <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
-                <label v-for="entry in recordEntries(selectedMaterialRecord)" :key="`material-${entry.key}`" class="block">
-                  <span class="text-xs font-black text-slate-500">{{ entry.key }}</span>
-                  <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                </label>
+                <ReadonlyField v-for="entry in recordEntries(selectedMaterialRecord)" :key="`material-${entry.key}`" :label="entry.key" :text="entry.value" />
               </div>
             </div>
           </form>
@@ -2646,10 +2632,7 @@ onMounted(() => {
                 <p class="mt-1 text-xs text-slate-500">{{ copy.systemReadonlyHint }}</p>
                 <div v-if="!selectedChapterId" class="p-8 text-center text-slate-500">{{ copy.noSelectedChapter }}</div>
                 <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
-                  <label v-for="entry in chapterRecordEntries(selectedChapter)" :key="`chapter-dialog-${entry.key}`" class="block">
-                    <span class="text-xs font-black text-slate-500">{{ entry.label }}</span>
-                    <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                  </label>
+                  <ReadonlyField v-for="entry in chapterRecordEntries(selectedChapter)" :key="`chapter-dialog-${entry.key}`" :label="entry.label" :text="entry.value" />
                 </div>
               </div>
 
@@ -2779,10 +2762,7 @@ onMounted(() => {
                   <p class="mt-1 text-xs text-slate-500">{{ copy.systemReadonlyHint }}</p>
                   <div v-if="!selectedLessonRecord" class="p-8 text-center text-slate-500">{{ copy.noSelectedLesson }}</div>
                   <div v-else class="mt-3 grid gap-3 md:grid-cols-2">
-                    <label v-for="entry in lessonRecordEntries(selectedLessonRecord)" :key="`lesson-dialog-${entry.key}`" class="block">
-                      <span class="text-xs font-black text-slate-500">{{ entry.label }}</span>
-                      <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                    </label>
+                    <ReadonlyField v-for="entry in lessonRecordEntries(selectedLessonRecord)" :key="`lesson-dialog-${entry.key}`" :label="entry.label" :text="entry.value" />
                   </div>
                 </div>
               </div>
@@ -2970,10 +2950,7 @@ onMounted(() => {
               <section v-if="quizDialogMode === 'detail'" class="rounded-2xl border border-slate-200 p-4">
                 <h3 class="font-black">{{ copy.quizReadonlyFields }}</h3>
                 <div class="mt-3 grid gap-3 md:grid-cols-2">
-                  <label v-for="entry in quizRecordEntries(selectedQuiz)" :key="`quiz-detail-${entry.key}`" class="block">
-                    <span class="text-xs font-black text-slate-500">{{ entry.label }}</span>
-                    <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                  </label>
+                  <ReadonlyField v-for="entry in quizRecordEntries(selectedQuiz)" :key="`quiz-detail-${entry.key}`" :label="entry.label" :text="entry.value" />
                 </div>
               </section>
 
@@ -3143,10 +3120,7 @@ onMounted(() => {
                     <div v-if="selectedQuestion" class="border-t border-slate-200 p-4">
                       <h4 class="font-black">{{ copy.quizReadonlyFields }}</h4>
                       <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
-                        <label v-for="entry in questionRecordEntries(selectedQuestion)" :key="`question-${entry.key}`" class="block">
-                          <span class="text-xs font-black text-slate-500">{{ entry.label }}</span>
-                          <textarea class="mt-1 min-h-10 w-full resize-y rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 text-sm text-slate-500" :value="entry.value" disabled />
-                        </label>
+                        <ReadonlyField v-for="entry in questionRecordEntries(selectedQuestion)" :key="`question-${entry.key}`" :label="entry.label" :text="entry.value" />
                       </div>
                     </div>
                   </section>
