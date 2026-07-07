@@ -1255,7 +1255,6 @@ export const en: AdminTranslations = {
       relinkInvalidJson: "Product structure JSON is invalid. Check items_json and pricing_json first.",
       relinkNoChange: "No old certification reference was found, or the old and new certification are the same.",
       relinkUnitMapFailed: "Failed to replace certification: could not read course units from the old/new certification. Check both certifications' stages and units first.",
-      publishUnlockPriceNoSource: "Publish failed: the service requires a package price for certification products, but pricing_json has no reusable Stripe price.",
       saveFailed: "Failed to save",
       published: "Product published",
       publishFailed: "Failed to publish",

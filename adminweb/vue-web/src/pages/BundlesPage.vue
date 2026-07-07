@@ -460,66 +460,6 @@ function validateStructureJson() {
   return validateItemsJson() && validatePricingJson()
 }
 
-function cloneJsonRecord(record: JsonRecord) {
-  return JSON.parse(JSON.stringify(record)) as JsonRecord
-}
-
-function validPriceRecord(value: unknown) {
-  const record = asRecord(value)
-  if (!record || isBlank(record.stripe_price_id) || isBlank(record.stripe_product_id)) return null
-  return record
-}
-
-function firstReusablePipelinePrice(pricing: JsonRecord) {
-  const unlocks = asRecord(pricing.unlocks)
-  if (unlocks) {
-    for (const value of Object.values(unlocks)) {
-      const price = validPriceRecord(value)
-      if (price) return cloneJsonRecord(price)
-    }
-  }
-
-  if (Array.isArray(pricing.units)) {
-    for (const value of pricing.units) {
-      const unit = asRecord(value)
-      const accessPrice = validPriceRecord(unit?.access)
-      if (accessPrice) return cloneJsonRecord(accessPrice)
-    }
-  }
-
-  return null
-}
-
-function ensurePipelineUnlockPricesForPublish(targetIds = currentPipelineRefs.value) {
-  const uniqueTargetIds = Array.from(new Set(targetIds.map((id) => id.trim()).filter(Boolean)))
-  if (!uniqueTargetIds.length) return false
-
-  const pricing = parseJson(form.value.pricing_json, "pricing_json")
-  const pricingRecord = asRecord(pricing)
-  if (!pricingRecord) {
-    toast.error(copy.value.toasts.relinkInvalidJson)
-    return false
-  }
-
-  const unlocks = asRecord(pricingRecord.unlocks) || {}
-  const missingTargetIds = uniqueTargetIds.filter((id) => !Object.prototype.hasOwnProperty.call(unlocks, id))
-  if (!missingTargetIds.length) return false
-
-  const reusablePrice = firstReusablePipelinePrice(pricingRecord)
-  if (!reusablePrice) {
-    toast.error(copy.value.toasts.publishUnlockPriceNoSource)
-    activeTab.value = "pricing"
-    return null
-  }
-
-  for (const targetId of missingTargetIds) {
-    unlocks[targetId] = cloneJsonRecord(reusablePrice)
-  }
-  pricingRecord.unlocks = unlocks
-  form.value.pricing_json = JSON.stringify(pricingRecord, null, 2)
-  return true
-}
-
 function formFromBundle(bundle: JsonRecord | null): BundleForm {
   if (!bundle) return { ...emptyForm }
   return {
@@ -870,9 +810,6 @@ async function publish() {
   if (!selectedId.value) return
   if (statusActionBusy.value) return
   if (!validateStructureJson()) return
-  const ensuredUnlockPrices = ensurePipelineUnlockPricesForPublish()
-  if (ensuredUnlockPrices === null) return
-  if (ensuredUnlockPrices && !await persistPricing(false)) return
   publishing.value = true
   try {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/publish`, { method: "POST" })

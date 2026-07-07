@@ -1253,7 +1253,6 @@ export const zh = {
       relinkInvalidJson: "商品结构 JSON 不合法，请先检查 items_json 和 pricing_json",
       relinkNoChange: "没有找到可替换的旧认证引用，或新旧认证相同",
       relinkUnitMapFailed: "替换认证失败：无法读取旧/新认证的课程单元，请先检查两个认证的阶段和课程单元配置",
-      publishUnlockPriceNoSource: "发布失败：微服务要求认证商品必须配置整包价格，但当前 pricing_json 里没有可复用的 Stripe 价格",
       saveFailed: "保存失败",
       published: "商品已发布",
       publishFailed: "发布失败",
