@@ -242,6 +242,30 @@ function pipelineRefsFromItemsJson(value: string) {
   return Array.from(refs)
 }
 
+function pipelineConfigRecord(value: unknown) {
+  const record = asRecord(value)
+  if (!record) return null
+  const pipeline = asRecord(record.pipeline)
+  if (pipeline) return asRecord(pipeline.config) || pipeline
+  return asRecord(record.config) || record
+}
+
+function pipelineUnitIds(value: unknown) {
+  const config = pipelineConfigRecord(value)
+  const stages = Array.isArray(config?.stages) ? config.stages : []
+  const unitIds: string[] = []
+  for (const stage of stages) {
+    const stageRecord = asRecord(stage)
+    if (!Array.isArray(stageRecord?.units)) continue
+    for (const item of stageRecord.units) {
+      const unit = asRecord(item)
+      const unitId = String(pickFirst(unit || {}, ["unit_ulid", "unit_id"]) || "").trim()
+      if (unitId) unitIds.push(unitId)
+    }
+  }
+  return unitIds
+}
+
 function bundleTargetSummary(bundle: JsonRecord | null | undefined) {
   const directPipelineId = String(pickFirst(bundle || {}, ["pipeline_id", "pipeline_cc_ulid"]) || "")
   if (directPipelineId) return `${copy.value.createItemTypes.pipeline} · ${directPipelineId}`
@@ -800,27 +824,8 @@ async function replacePipelineBindingInForm() {
           apiClient<JsonRecord>(`/api/pipelines/${fromId}`),
           apiClient<JsonRecord>(`/api/pipelines/${toId}`)
         ])
-        const getUnits = (res: JsonRecord) => {
-          const config = asRecord(res.config)
-          const stages = Array.isArray(config?.stages) ? config?.stages : []
-          const unitIds: string[] = []
-          for (const stage of stages) {
-            const s = asRecord(stage)
-            if (Array.isArray(s?.units)) {
-              for (const u of s?.units) {
-                const unit = asRecord(u)
-                if (unit) {
-                  const uid = String(unit.unit_id || unit.unit_ulid || "").trim()
-                  if (uid) unitIds.push(uid)
-                }
-              }
-            }
-          }
-          return unitIds
-        }
-        
-        const oldUnits = getUnits(oldRes)
-        const newUnits = getUnits(newRes)
+        const oldUnits = pipelineUnitIds(oldRes)
+        const newUnits = pipelineUnitIds(newRes)
         
         if (oldUnits.length > 0 && newUnits.length > 0) {
           const mapping = new Map<string, string>()
@@ -834,9 +839,14 @@ async function replacePipelineBindingInForm() {
               changed = true
             }
           }
+        } else {
+          toast.error(copy.value.toasts.relinkUnitMapFailed)
+          return false
         }
       } catch (err) {
         console.error("Failed to auto-map units:", err)
+        toast.error(copy.value.toasts.relinkUnitMapFailed)
+        return false
       }
     }
 

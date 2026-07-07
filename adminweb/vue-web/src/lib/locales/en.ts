@@ -1253,6 +1253,7 @@ export const en: AdminTranslations = {
       relinkRequiresTarget: "Select the new certification version first",
       relinkInvalidJson: "Product structure JSON is invalid. Check items_json and pricing_json first.",
       relinkNoChange: "No old certification reference was found, or the old and new certification are the same.",
+      relinkUnitMapFailed: "Failed to replace certification: could not read course units from the old/new certification. Check both certifications' stages and units first.",
       unlockPriceMissing: (targetId: string) => `The linked certification is missing a bundle unlock price: ${targetId}. Complete it in Structure & Pricing before publishing.`,
       unlockPriceNoMissing: "There are no missing bundle unlock prices",
       unlockPriceNoSource: "No reusable Stripe price was found. Configure a course access price or enter a bundle unlock price manually first.",

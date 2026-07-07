@@ -1251,6 +1251,7 @@ export const zh = {
       relinkRequiresTarget: "请先选择要替换的新认证版本",
       relinkInvalidJson: "商品结构 JSON 不合法，请先检查 items_json 和 pricing_json",
       relinkNoChange: "没有找到可替换的旧认证引用，或新旧认证相同",
+      relinkUnitMapFailed: "替换认证失败：无法读取旧/新认证的课程单元，请先检查两个认证的阶段和课程单元配置",
       unlockPriceMissing: (targetId: string) => `当前商品绑定的认证缺少整包解锁价格：${targetId}。请在“结构与价格”里补齐后再发布。`,
       unlockPriceNoMissing: "当前没有需要补齐的整包解锁价格",
       unlockPriceNoSource: "没有可复用的 Stripe 价格，请先配置课程准入价格或手动填写整包解锁价格",
