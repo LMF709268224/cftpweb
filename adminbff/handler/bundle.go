@@ -128,6 +128,46 @@ func (h *Handler) GetBundle(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+func (h *Handler) DuplicateBundle(w http.ResponseWriter, r *http.Request) {
+	fromBundleULID := strings.TrimSpace(chi.URLParam(r, "bundle_ulid"))
+	if !requireRequestField(w, fromBundleULID, "bundle_ulid") {
+		return
+	}
+	var body struct {
+		Name string `json:"name"`
+	}
+	if err := ReadJSON(r, &body); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
+		return
+	}
+	name := strings.TrimSpace(body.Name)
+	if name == "" {
+		getResp, err := h.Mall.AdminGetBundle(r.Context(), &mallpb.AdminGetBundleRequest{
+			Query: &mallpb.AdminGetBundleRequest_BundleUlid{BundleUlid: fromBundleULID},
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
+		}
+		name = strings.TrimSpace(getResp.GetBundle().GetName())
+		if name == "" {
+			name = fromBundleULID
+		}
+		name += " (Copy)"
+	}
+
+	resp, err := h.Mall.DuplicateBundleDraft(r.Context(), &mallpb.DuplicateBundleDraftRequest{
+		FromBundleUlid: fromBundleULID,
+		BundleUlid:     ulid.Make().String(),
+		Name:           name,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusCreated, resp)
+}
+
 func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 	req := &mallpb.ListBundlesAdminRequest{
 		Limit:  int32Query(r, "limit", 20),

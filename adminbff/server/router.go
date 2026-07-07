@@ -293,6 +293,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Get("/schemas", h.GetBundleJsonSchemas)
 				r.Post("/sync-display-pricing", h.AdminSyncBundleDisplayPricing)
 				r.Get("/{bundle_ulid}", h.GetBundle)
+				r.Post("/{bundle_ulid}/duplicate", h.DuplicateBundle)
 				r.Put("/{bundle_ulid}/meta", h.UpdateBundleMeta)
 				r.Put("/pricing", h.UpdateBundlePricing)
 				r.Post("/{bundle_ulid}/publish", h.PublishBundle)

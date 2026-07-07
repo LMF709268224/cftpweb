@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
+import { Copy, FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -88,6 +88,7 @@ const saving = ref(false)
 const publishing = ref(false)
 const deprecating = ref(false)
 const deleting = ref(false)
+const duplicating = ref(false)
 const detailOpen = ref(false)
 const statusFilter = ref("")
 const offset = ref(0)
@@ -95,13 +96,14 @@ const schemas = ref<JsonRecord | null>(null)
 const activeTab = ref<DetailTab>("summary")
 const mode = ref<Mode>("detail")
 const showDeleteConfirm = ref(false)
+const replacementPipelineId = ref("")
 const limit = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.bundlesAdmin)
 
 const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => bundles.value.length >= limit)
-const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value)
+const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value || duplicating.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
 const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const schemasJson = computed(() => JSON.stringify(schemas.value || {}, null, 2))
@@ -115,6 +117,7 @@ const createTargetOptions = computed<TargetOption[]>(() => {
   if (createItemType.value === "resource_pack") return resourcePackOptions.value.map(resourcePackTargetOption).filter(hasTargetId)
   return pipelineOptions.value.map(pipelineTargetOption).filter(hasTargetId)
 })
+const replacementPipelineOptions = computed<TargetOption[]>(() => pipelineOptions.value.map(pipelineTargetOption).filter(hasTargetId))
 const selectedCreateTarget = computed(() => createTargetOptions.value.find((option) => option.id === createItemRef.value) || null)
 const createItemsJson = computed(() => {
   if (!createItemRef.value.trim()) return "[]"
@@ -130,7 +133,7 @@ const detailTabs = computed(() => [
   { key: "meta" as const, title: copy.value.tabs.meta, count: 1 },
   { key: "pricing" as const, title: copy.value.tabs.pricing, count: 2 },
   { key: "schema" as const, title: copy.value.tabs.schema, count: schemas.value ? 1 : 0 },
-  { key: "actions" as const, title: copy.value.tabs.actions, count: 3 },
+  { key: "actions" as const, title: copy.value.tabs.actions, count: 4 },
   { key: "raw" as const, title: copy.value.tabs.raw, count: 1 },
 ])
 const summaryFields = computed<SummaryField[]>(() => {
@@ -151,6 +154,8 @@ const linkedItemsPreview = computed<LinkedItemView[]>(() => {
       ref: String(pickFirst(item, ["ref_ulid", "ref_id", "ulid", "id"]) || "-"),
     }))
 })
+const currentPipelineRefs = computed(() => pipelineRefsFromItemsJson(form.value.items_json))
+const currentPipelineRef = computed(() => currentPipelineRefs.value[0] || "")
 const pricingPreview = computed<PricingPreviewView | null>(() => {
   const parsed = asRecord(parseJsonSilently(form.value.pricing_json))
   if (!parsed) return null
@@ -204,6 +209,32 @@ function bundleName(bundle: JsonRecord | null | undefined) {
 
 function bundleStatus(bundle: JsonRecord | null | undefined) {
   return pickFirst(bundle || {}, ["status", "raw_status"])
+}
+
+function normalizeItemType(value: unknown) {
+  return String(value || "").trim().toLowerCase().replace(/-/g, "_")
+}
+
+function itemReference(record: JsonRecord) {
+  return String(pickFirst(record, ["ref_ulid", "ref_id", "ulid", "id", "item_id", "pipeline_id", "pipeline_cc_ulid", "membership_id", "resource_pack_id"]) || "").trim()
+}
+
+function isPipelineItem(record: JsonRecord) {
+  const type = normalizeItemType(pickFirst(record, ["item_type", "type", "itemType", "kind"]))
+  return type.includes("pipeline") || !!String(pickFirst(record, ["pipeline_id", "pipeline_cc_ulid"]) || "").trim()
+}
+
+function pipelineRefsFromItemsJson(value: string) {
+  const parsed = parseJsonSilently(value)
+  const items = Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" ? [parsed] : []
+  const refs = new Set<string>()
+  for (const item of items) {
+    const record = asRecord(item)
+    if (!record || !isPipelineItem(record)) continue
+    const ref = itemReference(record)
+    if (ref) refs.add(ref)
+  }
+  return Array.from(refs)
 }
 
 function bundleTargetSummary(bundle: JsonRecord | null | undefined) {
@@ -485,6 +516,7 @@ async function selectBundle(bundle: JsonRecord, open = true) {
   mode.value = "detail"
   activeTab.value = "summary"
   showDeleteConfirm.value = false
+  replacementPipelineId.value = ""
   form.value = formFromBundle(bundle)
   if (!id) return
   try {
@@ -602,6 +634,93 @@ async function savePricing() {
   }
 }
 
+async function duplicateBundle() {
+  if (!selected.value || !selectedId.value || statusActionBusy.value) return
+  duplicating.value = true
+  try {
+    const data = await apiClient<JsonRecord>(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/duplicate`, {
+      method: "POST",
+      body: JSON.stringify({ name: copy.value.duplicateName(bundleName(selected.value)) }),
+    })
+    toast.success(copy.value.toasts.duplicated)
+    await load()
+    const actualBundle = (data.bundle && typeof data.bundle === "object" ? data.bundle : data) as JsonRecord
+    const id = String(pickFirst(actualBundle, ["bundle_ulid", "bundle_id"]) || "")
+    const created = bundles.value.find((item) => bundleUlid(item) === id) || actualBundle
+    await selectBundle(created)
+    activeTab.value = "pricing"
+    await loadCreateTargetOptions()
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts.duplicateFailed))
+  } finally {
+    duplicating.value = false
+  }
+}
+
+function replacePipelineBindingInForm() {
+  const fromId = currentPipelineRef.value.trim()
+  const toId = replacementPipelineId.value.trim()
+  if (!fromId || !toId) {
+    toast.error(copy.value.toasts.relinkRequiresTarget)
+    return false
+  }
+  if (fromId === toId) {
+    toast.error(copy.value.toasts.relinkNoChange)
+    return false
+  }
+
+  const items = parseJson(form.value.items_json, "items_json")
+  const pricing = parseJson(form.value.pricing_json, "pricing_json")
+  if (!Array.isArray(items) || pricing === null) {
+    toast.error(copy.value.toasts.relinkInvalidJson)
+    return false
+  }
+  const pricingRecord = asRecord(pricing)
+  if (!pricingRecord) {
+    toast.error(copy.value.toasts.relinkInvalidJson)
+    return false
+  }
+
+  let changed = false
+  const refKeys = ["ref_ulid", "ref_id", "ulid", "id", "item_id", "pipeline_id", "pipeline_cc_ulid"]
+  for (const item of items) {
+    const record = asRecord(item)
+    if (!record) continue
+    if (!isPipelineItem(record) && !refKeys.some((key) => String(record[key] || "").trim() === fromId)) continue
+    for (const key of refKeys) {
+      if (String(record[key] || "").trim() === fromId) {
+        record[key] = toId
+        changed = true
+      }
+    }
+  }
+
+  const unlocks = asRecord(pricingRecord.unlocks)
+  if (unlocks && Object.prototype.hasOwnProperty.call(unlocks, fromId)) {
+    if (!Object.prototype.hasOwnProperty.call(unlocks, toId)) {
+      unlocks[toId] = unlocks[fromId]
+    }
+    delete unlocks[fromId]
+    changed = true
+  }
+
+  if (!changed) {
+    toast.error(copy.value.toasts.relinkNoChange)
+    return false
+  }
+
+  form.value.items_json = JSON.stringify(items, null, 2)
+  form.value.pricing_json = JSON.stringify(pricingRecord, null, 2)
+  toast.success(copy.value.toasts.relinkApplied)
+  return true
+}
+
+async function replaceAndSavePipelineBinding() {
+  if (!replacePipelineBindingInForm()) return
+  await savePricing()
+}
+
 async function publish() {
   if (!selectedId.value) return
   if (statusActionBusy.value) return
@@ -677,6 +796,9 @@ watch(createItemType, () => {
 })
 watch(createItemsJson, (value) => {
   if (mode.value === "create") form.value.items_json = value
+})
+watch(activeTab, (tab) => {
+  if (tab === "pricing" && !pipelineOptions.value.length) void loadCreateTargetOptions()
 })
 onMounted(load)
 </script>
@@ -973,6 +1095,43 @@ onMounted(load)
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   {{ copy.jsonValidateHint }}
                 </div>
+                <section class="rounded-2xl border border-sky-200 bg-sky-50 p-5">
+                  <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <h3 class="text-lg font-black text-slate-950">{{ copy.relink.title }}</h3>
+                      <p class="mt-1 text-sm font-semibold text-slate-600">{{ copy.relink.description }}</p>
+                    </div>
+                    <button class="rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-50" type="button" :disabled="targetOptionsLoading" @click="loadCreateTargetOptions">
+                      <Loader2 v-if="targetOptionsLoading" class="mr-2 inline h-4 w-4 animate-spin" />
+                      {{ copy.relink.reloadTargets }}
+                    </button>
+                  </div>
+                  <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto]">
+                    <div class="rounded-xl bg-white p-4">
+                      <div class="text-xs font-black uppercase text-slate-400">{{ copy.relink.currentPipeline }}</div>
+                      <div v-if="currentPipelineRef" class="mt-2 break-all font-mono text-xs font-bold text-blue-700">{{ currentPipelineRef }}</div>
+                      <div v-else class="mt-2 text-sm font-semibold text-slate-500">{{ copy.relink.noPipelineBinding }}</div>
+                    </div>
+                    <label class="grid gap-2 text-sm font-bold">
+                      {{ copy.relink.newPipeline }}
+                      <select v-model="replacementPipelineId" class="h-12 rounded-xl border border-slate-200 bg-white px-4" :disabled="!currentPipelineRef || targetOptionsLoading">
+                        <option value="">{{ copy.relink.selectNewPipeline }}</option>
+                        <option v-for="option in replacementPipelineOptions" :key="option.id" :value="option.id">
+                          {{ option.title }} · {{ option.subtitle }}
+                        </option>
+                      </select>
+                    </label>
+                    <div class="flex flex-wrap items-end gap-2">
+                      <button class="h-12 rounded-xl border bg-white px-4 text-sm font-bold disabled:opacity-50" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replacePipelineBindingInForm">
+                        {{ copy.relink.apply }}
+                      </button>
+                      <button class="h-12 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replaceAndSavePipelineBinding">
+                        <Loader2 v-if="saving" class="mr-2 inline h-4 w-4 animate-spin" />
+                        {{ copy.relink.save }}
+                      </button>
+                    </div>
+                  </div>
+                </section>
                 <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                   <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -1111,6 +1270,11 @@ onMounted(load)
                   <h3 class="font-black">{{ copy.actionsTitle }}</h3>
                   <p class="mt-1 text-sm text-slate-500">{{ copy.actionsDescription }}</p>
                   <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="duplicateBundle">
+                      <Loader2 v-if="duplicating" class="h-4 w-4 animate-spin" />
+                      <Copy v-else class="h-4 w-4" />
+                      {{ duplicating ? copy.duplicating : copy.duplicateDraft }}
+                    </button>
                     <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="publish">
                       <Loader2 v-if="publishing" class="h-4 w-4 animate-spin" />
                       {{ publishing ? copy.publishing : copy.publish }}
