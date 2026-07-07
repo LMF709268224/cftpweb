@@ -44,6 +44,7 @@ const categoryOptions = computed(() => [
   { value: "Exemption", label: copy.value.categoryOptions.exemption },
   { value: "Qualification", label: copy.value.categoryOptions.qualification },
 ])
+const categoryValues = computed(() => new Set(categoryOptions.value.map((option) => option.value)))
 
 const selectedFields = computed(() => selected.value || {})
 
@@ -148,7 +149,7 @@ function addConstraint() {
 }
 
 async function createDefinition() {
-  if (!name.value.trim() || !category.value.trim()) {
+  if (!name.value.trim() || !categoryValues.value.has(category.value.trim())) {
     toast.error(copy.value.toasts.nameCategoryRequired)
     return
   }
@@ -274,7 +275,7 @@ onMounted(load)
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.labels.category }}
                     <select v-model="category" class="rounded-xl border border-slate-200 px-4 py-3">
-                      <option value="">{{ copy.placeholders.category }}</option>
+                      <option value="" disabled>{{ copy.placeholders.category }}</option>
                       <option v-for="option in categoryOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>

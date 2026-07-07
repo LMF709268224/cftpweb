@@ -255,7 +255,7 @@ export const zh = {
     },
     placeholders: {
       name: "资格名称",
-      category: "Certification / Exemption / Qualification",
+      category: "请选择资格分类",
       optional: "可选",
       description: "描述",
       filePurpose: "文件用途，例如 Employment Certificate",
@@ -288,7 +288,7 @@ export const zh = {
     toasts: {
       detailLoadFailed: "资格定义详情加载失败",
       listLoadFailed: "资格定义加载失败",
-      nameCategoryRequired: "名称和分类必填",
+      nameCategoryRequired: "请填写名称，并选择一个具体分类",
       createSuccess: "资格定义已创建",
       createFailed: "创建失败",
       jsonCopied: "JSON 已复制",

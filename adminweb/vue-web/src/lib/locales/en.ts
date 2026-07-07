@@ -257,7 +257,7 @@ export const en: AdminTranslations = {
     },
     placeholders: {
       name: "Credential name",
-      category: "Certification / Exemption / Qualification",
+      category: "Select a credential category",
       optional: "Optional",
       description: "Description",
       filePurpose: "File purpose, for example Employment Certificate",
@@ -290,7 +290,7 @@ export const en: AdminTranslations = {
     toasts: {
       detailLoadFailed: "Failed to load credential definition details",
       listLoadFailed: "Failed to load credential definitions",
-      nameCategoryRequired: "Name and category are required",
+      nameCategoryRequired: "Please enter a name and select a specific category",
       createSuccess: "Credential definition created",
       createFailed: "Create failed",
       jsonCopied: "JSON copied",
