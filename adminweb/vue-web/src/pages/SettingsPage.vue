@@ -191,17 +191,14 @@ onMounted(() => {
       </button>
     </header>
 
-    <div class="grid gap-6 xl:grid-cols-[0.75fr_1.25fr]">
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-100 px-5 py-4">
-          <h2 class="text-xl font-black">{{ copy.menuTitle }}</h2>
-          <p class="mt-1 text-sm text-slate-500">{{ copy.menuDescription }}</p>
-        </div>
+    <div class="flex flex-col gap-6">
+      <section class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div class="grid gap-3 md:grid-cols-2">
         <button
           v-for="section in sections"
           :key="section.key"
-          class="grid w-full grid-cols-[1fr_auto] gap-4 border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
-          :class="activeSection === section.key ? 'bg-sky-50' : ''"
+          class="grid min-h-20 w-full grid-cols-[1fr_auto] items-center gap-4 rounded-2xl border border-transparent px-5 py-4 text-left transition hover:bg-sky-50"
+          :class="activeSection === section.key ? 'border-sky-200 bg-sky-50 shadow-sm shadow-sky-100' : ''"
           type="button"
           @click="activeSection = section.key"
         >
@@ -211,6 +208,7 @@ onMounted(() => {
           </div>
           <span class="h-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ section.count }}</span>
         </button>
+        </div>
       </section>
 
       <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -286,20 +284,22 @@ onMounted(() => {
           </button>
         </form>
 
-        <form v-else class="max-w-2xl space-y-4 p-5" @submit.prevent="savePassword">
-          <label class="block">
-            <span class="text-sm font-bold">{{ copy.labels.oldPassword }}</span>
-            <input v-model="oldPassword" autocomplete="current-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" required type="password" />
-          </label>
-          <label class="block">
-            <span class="text-sm font-bold">{{ copy.labels.newPassword }}</span>
-            <input v-model="newPassword" autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" minlength="8" required type="password" />
-            <span class="mt-1 block text-xs text-slate-400">{{ copy.passwordHint }}</span>
-          </label>
-          <label class="block">
-            <span class="text-sm font-bold">{{ copy.labels.confirmPassword }}</span>
-            <input v-model="confirmPassword" autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" minlength="8" required type="password" />
-          </label>
+        <form v-else class="space-y-6 p-5" @submit.prevent="savePassword">
+          <div class="grid gap-4 md:grid-cols-2">
+            <label class="block">
+              <span class="text-sm font-bold">{{ copy.labels.oldPassword }}</span>
+              <input v-model="oldPassword" autocomplete="current-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" required type="password" />
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold">{{ copy.labels.newPassword }}</span>
+              <input v-model="newPassword" autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" minlength="8" required type="password" />
+              <span class="mt-1 block text-xs text-slate-400">{{ copy.passwordHint }}</span>
+            </label>
+            <label class="block md:col-span-2">
+              <span class="text-sm font-bold">{{ copy.labels.confirmPassword }}</span>
+              <input v-model="confirmPassword" autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" minlength="8" required type="password" />
+            </label>
+          </div>
 
           <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="passwordSaving" type="submit">
             <Loader2 v-if="passwordSaving" class="h-4 w-4 animate-spin" />
