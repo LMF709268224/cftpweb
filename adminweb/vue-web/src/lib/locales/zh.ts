@@ -1140,6 +1140,11 @@ export const zh = {
       time: "时间",
       action: "操作",
     },
+    templateColumns: {
+      version: "版本",
+      updatedAt: "更新时间",
+      action: "操作",
+    },
     loading: "正在加载...",
     mailIdPrefix: "ID：",
     viewDetails: "查看详情",
