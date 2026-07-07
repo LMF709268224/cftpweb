@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { FileBox, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
+import { Copy, FileBox, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { ApiError, apiClient } from "@/lib/apiClient"
 import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -80,16 +79,12 @@ function packStatusClass(pack: JsonRecord | null) {
 
 function canPublishPack(pack: JsonRecord | null) {
   const status = packStatusKey(pack)
-  return status.includes("DRAFT") || status.includes("DEPRECATED")
+  return status.includes("DRAFT")
 }
 
 function canRevertPack(pack: JsonRecord | null) {
   const status = packStatusKey(pack)
   return status.includes("ACTIVE") || status.includes("PUBLISHED")
-}
-
-function canDeprecatePack(pack: JsonRecord | null) {
-  return !!pack && !packStatusKey(pack).includes("DEPRECATED")
 }
 
 function fillForm(pack: JsonRecord | null) {
@@ -233,7 +228,7 @@ function validatePackForm() {
 }
 
 function packSaveErrorMessage(err: unknown) {
-  if (!(err instanceof ApiError)) return apiErrorMessage(err, copy.value.toasts.saveFailed)
+  if (!(err instanceof ApiError)) return copy.value.toasts.saveFailed
 
   const message = String(err.message || "").toLowerCase()
   if (err.status === 409 || (message.includes("resource pack") && message.includes("already exists"))) {
@@ -242,11 +237,11 @@ function packSaveErrorMessage(err: unknown) {
   if (err.status === 400 || message.includes("invalid_request")) {
     return copy.value.toasts.invalidRequest
   }
-  return apiErrorMessage(err, copy.value.toasts.saveFailed)
+  return copy.value.toasts.saveFailed
 }
 
-function packActionErrorMessage(err: unknown, action: "publish" | "deprecate" | "revert-to-draft") {
-  if (!(err instanceof ApiError)) return apiErrorMessage(err, copy.value.toasts.actionFailed)
+function packActionErrorMessage(err: unknown, action: "publish" | "revert-to-draft") {
+  if (!(err instanceof ApiError)) return copy.value.toasts.actionFailed
 
   const message = String(err.message || "").toLowerCase()
   if (action === "publish" && message.includes("thumbnail")) {
@@ -258,7 +253,20 @@ function packActionErrorMessage(err: unknown, action: "publish" | "deprecate" | 
   if (err.status === 400 || message.includes("invalid_request")) {
     return copy.value.toasts.invalidRequest
   }
-  return apiErrorMessage(err, copy.value.toasts.actionFailed)
+  return copy.value.toasts.actionFailed
+}
+
+function packDuplicateErrorMessage(err: unknown) {
+  if (!(err instanceof ApiError)) return copy.value.toasts.duplicateFailed
+
+  const message = String(err.message || "").toLowerCase()
+  if (err.status === 409 || message.includes("already exists")) {
+    return copy.value.toasts.duplicatePack
+  }
+  if (err.status === 400 || message.includes("invalid_request")) {
+    return copy.value.toasts.invalidRequest
+  }
+  return copy.value.toasts.duplicateFailed
 }
 
 async function savePack() {
@@ -302,7 +310,7 @@ async function savePack() {
   }
 }
 
-async function runPackAction(pack: JsonRecord | null, action: "publish" | "deprecate" | "revert-to-draft") {
+async function runPackAction(pack: JsonRecord | null, action: "publish" | "revert-to-draft") {
   const id = packId(pack)
   const version = packVersion(pack)
   if (!id || version <= 0) {
@@ -317,12 +325,34 @@ async function runPackAction(pack: JsonRecord | null, action: "publish" | "depre
       body: JSON.stringify({ version }),
     })
     if (action === "publish") toast.success(copy.value.toasts.published)
-    if (action === "deprecate") toast.success(copy.value.toasts.deprecated)
     if (action === "revert-to-draft") toast.success(copy.value.toasts.reverted)
     await load()
   } catch (err) {
     console.error(err)
     toast.error(packActionErrorMessage(err, action))
+  } finally {
+    saving.value = false
+  }
+}
+
+async function duplicatePack(pack: JsonRecord | null) {
+  const id = packId(pack)
+  if (!id) {
+    toast.error(copy.value.toasts.duplicateRequiresId)
+    return
+  }
+
+  saving.value = true
+  try {
+    await apiClient(`/api/lms/resource-packs/${encodeURIComponent(id)}/duplicate`, {
+      method: "POST",
+      body: JSON.stringify({ title: copy.value.duplicateTitle(packTitle(pack)) }),
+    })
+    toast.success(copy.value.toasts.duplicated)
+    await load()
+  } catch (err) {
+    console.error(err)
+    toast.error(packDuplicateErrorMessage(err))
   } finally {
     saving.value = false
   }
@@ -348,7 +378,7 @@ async function deletePack() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, copy.value.toasts.deleteFailed))
+    toast.error(copy.value.toasts.deleteFailed)
   } finally {
     saving.value = false
   }
@@ -438,14 +468,15 @@ onMounted(load)
               <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openPackEditor(pack)">
                 {{ copy.editPack }}
               </button>
+              <button class="inline-flex items-center gap-1 text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="duplicatePack(pack)">
+                <Copy class="size-4" />
+                {{ copy.copyPack }}
+              </button>
               <button v-if="canPublishPack(pack)" class="text-sm font-bold text-emerald-700 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'publish')">
                 {{ copy.publishPack }}
               </button>
               <button v-if="canRevertPack(pack)" class="text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'revert-to-draft')">
                 {{ copy.revertPack }}
-              </button>
-              <button v-if="canDeprecatePack(pack)" class="text-sm font-bold text-orange-600 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'deprecate')">
-                {{ copy.deprecatePack }}
               </button>
               <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="requestDeletePack(pack)">
                 {{ copy.deletePack }}
