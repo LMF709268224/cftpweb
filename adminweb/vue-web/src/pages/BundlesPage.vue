@@ -1414,22 +1414,24 @@ onMounted(load)
       </div>
     </Teleport>
 
-    <div v-if="showDeleteConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
-      <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-        <h2 class="text-2xl font-black">{{ copy.deleteConfirmTitle }}</h2>
-        <p class="mt-3 text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
-        <div class="mt-5 rounded-2xl bg-slate-50 p-4">
-          <div class="font-black">{{ bundleName(selected) }}</div>
-          <div class="mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
-        </div>
-        <div class="mt-6 flex justify-end gap-3">
-          <button class="rounded-xl border px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="showDeleteConfirm = false">{{ copy.cancel }}</button>
-          <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="removeBundle">
-            <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
-            {{ deleting ? copy.deleting : copy.confirmDelete }}
-          </button>
+    <Teleport to="body">
+      <div v-if="showDeleteConfirm" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-6">
+        <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+          <h2 class="text-2xl font-black">{{ copy.deleteConfirmTitle }}</h2>
+          <p class="mt-3 text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
+          <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+            <div class="font-black">{{ bundleName(selected) }}</div>
+            <div class="mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
+          </div>
+          <div class="mt-6 flex justify-end gap-3">
+            <button class="rounded-xl border px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="showDeleteConfirm = false">{{ copy.cancel }}</button>
+            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="removeBundle">
+              <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
+              {{ deleting ? copy.deleting : copy.confirmDelete }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </section>
 </template>
