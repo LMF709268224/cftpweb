@@ -62,7 +62,8 @@ function packStatusKey(pack: JsonRecord | null) {
 }
 
 function canPublishPack(pack: JsonRecord | null) {
-  return packStatusKey(pack).includes("DRAFT")
+  const status = packStatusKey(pack)
+  return status.includes("DRAFT") || status.includes("DEPRECATED")
 }
 
 function canRevertPack(pack: JsonRecord | null) {
@@ -243,7 +244,6 @@ async function savePack() {
     }
 
     if (mode.value === "create") {
-      if (form.value.pack_id.trim()) body.pack_id = form.value.pack_id.trim()
       await apiClient("/api/lms/resource-packs", {
         method: "POST",
         body: JSON.stringify(body),
@@ -549,10 +549,10 @@ onMounted(load)
               <div class="border-t border-slate-100 pt-5">
                 <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.system }}</div>
                 <div class="grid gap-4 md:grid-cols-3">
-                  <label class="text-sm font-bold">
+                  <div v-if="mode !== 'create'" class="text-sm font-bold">
                     {{ copy.fields.packId }}
-                    <input v-model="form.pack_id" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" :disabled="mode === 'edit'" :placeholder="copy.placeholders.packId" />
-                  </label>
+                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.pack_id || "-" }}</div>
+                  </div>
                   <div class="text-sm font-bold">
                     {{ copy.fields.status }}
                     <div class="mt-2 min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.status || "-" }}</div>

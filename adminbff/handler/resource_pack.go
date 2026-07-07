@@ -39,9 +39,7 @@ func (h *Handler) CreateLmsResourcePack(w http.ResponseWriter, r *http.Request) 
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
 		return
 	}
-	if strings.TrimSpace(req.PackId) == "" {
-		req.PackId = newLmsID()
-	}
+	req.PackId = newLmsID()
 	if !requireRequestField(w, req.Title, "title") {
 		return
 	}
@@ -243,9 +241,7 @@ func (h *Handler) CreateLmsResourcePackFile(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	req.PackId = packID
-	if strings.TrimSpace(req.FileId) == "" {
-		req.FileId = newLmsID()
-	}
+	req.FileId = newLmsID()
 	if !validateResourcePackFilePayload(w, req.Title, req.FileType) {
 		return
 	}

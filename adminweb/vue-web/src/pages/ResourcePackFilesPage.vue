@@ -288,7 +288,6 @@ async function saveFile() {
     }
 
     if (mode.value === "create") {
-      if (form.value.file_id.trim()) body.file_id = form.value.file_id.trim()
       await apiClient(`/api/lms/resource-packs/${encodeURIComponent(form.value.pack_id)}/files`, {
         method: "POST",
         body: JSON.stringify(body),
@@ -487,11 +486,10 @@ onMounted(load)
 
           <div class="mb-3 text-sm font-black text-slate-700">{{ copy.sections.basic }}</div>
           <div class="grid gap-3 md:grid-cols-2">
-          <label class="text-sm font-bold">
+          <div v-if="mode !== 'create'" class="text-sm font-bold">
             {{ copy.fields.fileId }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.file_id) }}</div>
-            <input v-else v-model="form.file_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'" :placeholder="copy.placeholders.fileId" />
-          </label>
+            <div class="readonly-field readonly-field--compact">{{ displayValue(form.file_id) }}</div>
+          </div>
           <label class="text-sm font-bold">
             {{ copy.fields.pack }}
             <div v-if="mode === 'detail'" class="readonly-field">{{ packFieldText(form.pack_id) }}</div>
