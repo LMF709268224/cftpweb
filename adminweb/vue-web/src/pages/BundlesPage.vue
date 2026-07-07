@@ -690,19 +690,22 @@ async function savePricing() {
   if (!validateStructureJson()) return
   saving.value = true
   try {
+    const bundleId = selectedId.value
     const data = await apiClient<JsonRecord>("/api/mall/bundles/pricing", {
       method: "PUT",
       body: JSON.stringify({
-        bundle_ulid: selectedId.value,
+        bundle_ulid: bundleId,
         items_json: form.value.items_json.trim(),
         pricing_json: form.value.pricing_json.trim(),
       }),
     })
-    toast.success(copy.value.toasts.pricingSaved)
     const actualBundle = (data.bundle && typeof data.bundle === "object" ? data.bundle : data) as JsonRecord
     selected.value = actualBundle
     form.value = formFromBundle(actualBundle)
+    await syncBundleDisplayPricing(bundleId)
     await load()
+    await refreshSelectedBundleDetail(bundleId)
+    toast.success(copy.value.toasts.pricingSaved)
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.saveFailed))
@@ -844,7 +847,6 @@ async function replacePipelineBindingInForm() {
 
     form.value.items_json = JSON.stringify(items, null, 2)
     form.value.pricing_json = JSON.stringify(pricingRecord, null, 2)
-    toast.success(copy.value.toasts.relinkApplied)
     return true
   } finally {
     saving.value = false
@@ -909,13 +911,30 @@ async function removeBundle() {
   }
 }
 
-async function syncDisplayPricing() {
+async function refreshSelectedBundleDetail(bundleId = selectedId.value) {
+  if (!bundleId) return
+  try {
+    const detail = await apiClient<JsonRecord>(`/api/mall/bundles/${encodeURIComponent(bundleId)}`)
+    const actualBundle = (detail.bundle && typeof detail.bundle === "object" ? detail.bundle : detail) as JsonRecord
+    selected.value = actualBundle
+    form.value = formFromBundle(actualBundle)
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+async function syncBundleDisplayPricing(bundleId = selectedId.value) {
   await apiClient("/api/mall/bundles/sync-display-pricing", {
     method: "POST",
-    body: JSON.stringify({ bundle_ulid: selectedId.value || undefined }),
+    body: JSON.stringify({ bundle_ulid: bundleId || undefined }),
   })
+}
+
+async function syncDisplayPricing() {
+  await syncBundleDisplayPricing()
   toast.success(copy.value.toasts.displayPricingSynced)
   await load()
+  await refreshSelectedBundleDetail()
 }
 
 async function loadSchemas() {
@@ -1257,11 +1276,8 @@ onMounted(load)
                         </option>
                       </select>
                     </label>
-                    <div class="flex flex-wrap items-end gap-2">
-                      <button class="h-12 rounded-xl border bg-white px-4 text-sm font-bold disabled:opacity-50" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replacePipelineBindingInForm">
-                        {{ copy.relink.apply }}
-                      </button>
-                      <button class="h-12 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replaceAndSavePipelineBinding">
+                    <div class="flex flex-wrap items-end">
+                      <button class="h-12 rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replaceAndSavePipelineBinding">
                         <Loader2 v-if="saving" class="mr-2 inline h-4 w-4 animate-spin" />
                         {{ copy.relink.save }}
                       </button>
@@ -1466,7 +1482,7 @@ onMounted(load)
     </Teleport>
 
     <Teleport to="body">
-      <div v-if="showDeleteConfirm" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-6">
+      <div v-if="showDeleteConfirm" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-6">
         <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
           <h2 class="text-2xl font-black">{{ copy.deleteConfirmTitle }}</h2>
           <p class="mt-3 text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
