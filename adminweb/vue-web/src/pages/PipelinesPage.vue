@@ -79,6 +79,7 @@ const published = computed(() => {
   const status = String(selected.value?.status || "").toLowerCase()
   return status === "active" || (selected.value?.is_current && status !== "deprecated")
 })
+const canDeleteSelectedPipeline = computed(() => !!selectedId.value && pipelineStatusKey(selected.value) !== "DEPRECATED" && !published.value)
 const structureLocked = computed(() => creating.value || published.value || !selectedId.value)
 
 const stages = computed(() => asArray(structure.value.stages))
@@ -142,6 +143,10 @@ function pipelineName(pipeline: JsonRecord) {
 
 function pipelineStatus(pipeline: JsonRecord) {
   return pickFirst(pipeline, ["status", "raw_status"])
+}
+
+function pipelineStatusKey(pipeline: JsonRecord | null | undefined) {
+  return String(pipeline ? pipelineStatus(pipeline) : "").trim().toUpperCase().replace(/^PIPELINE_STATUS_/, "")
 }
 
 function pipelineStatusLabel(value: unknown) {
@@ -844,6 +849,7 @@ async function confirmDeprecate() {
 
 function removePipeline() {
   if (!selectedId.value) return
+  if (pipelineStatusKey(selected.value) === "DEPRECATED") return
   if (published.value) {
     toast.error(copy.value.toasts.publishedDeleteBlocked)
     return
@@ -1025,7 +1031,7 @@ onMounted(() => {
             </button>
             <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">{{ copy.publish }}</button>
             <button class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
-            <button class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 font-bold text-white" type="button" @click="removePipeline">
+            <button v-if="canDeleteSelectedPipeline" class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 font-bold text-white" type="button" @click="removePipeline">
               <Trash2 class="h-4 w-4" />
               {{ copy.delete }}
             </button>

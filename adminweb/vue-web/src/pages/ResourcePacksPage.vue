@@ -87,6 +87,10 @@ function canRevertPack(pack: JsonRecord | null) {
   return status.includes("ACTIVE") || status.includes("PUBLISHED")
 }
 
+function canDeletePack(pack: JsonRecord | null) {
+  return !!pack && !packStatusKey(pack).includes("DEPRECATED")
+}
+
 function fillForm(pack: JsonRecord | null) {
   form.value = {
     pack_id: String(pack?.pack_id || ""),
@@ -187,6 +191,7 @@ function closePackDetail() {
 
 function requestDeletePack(pack: JsonRecord | null = selected.value) {
   if (!pack) return
+  if (!canDeletePack(pack)) return
   selected.value = pack
   fillForm(pack)
   const id = packId(pack)
@@ -478,7 +483,7 @@ onMounted(load)
               <button v-if="canRevertPack(pack)" class="text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'revert-to-draft')">
                 {{ copy.revertPack }}
               </button>
-              <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="requestDeletePack(pack)">
+              <button v-if="canDeletePack(pack)" class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="requestDeletePack(pack)">
                 {{ copy.deletePack }}
               </button>
             </div>
