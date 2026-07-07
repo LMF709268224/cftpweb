@@ -735,7 +735,7 @@ async function duplicateBundle() {
   }
 }
 
-function replacePipelineBindingInForm() {
+async function replacePipelineBindingInForm() {
   const fromId = currentPipelineRef.value.trim()
   const toId = replacementPipelineId.value.trim()
   if (!fromId || !toId) {
@@ -759,49 +759,100 @@ function replacePipelineBindingInForm() {
     return false
   }
 
-  let changed = false
-  const refKeys = ["ref_ulid", "ref_id", "ulid", "id", "item_id", "pipeline_id", "pipeline_cc_ulid"]
-  for (const item of items) {
-    const record = asRecord(item)
-    if (!record) continue
-    if (!isPipelineItem(record) && !refKeys.some((key) => String(record[key] || "").trim() === fromId)) continue
-    for (const key of refKeys) {
-      if (String(record[key] || "").trim() === fromId) {
-        record[key] = toId
-        changed = true
+  saving.value = true
+  try {
+    let changed = false
+    const refKeys = ["ref_ulid", "ref_id", "ulid", "id", "item_id", "pipeline_id", "pipeline_cc_ulid"]
+    for (const item of items) {
+      const record = asRecord(item)
+      if (!record) continue
+      if (!isPipelineItem(record) && !refKeys.some((key) => String(record[key] || "").trim() === fromId)) continue
+      for (const key of refKeys) {
+        if (String(record[key] || "").trim() === fromId) {
+          record[key] = toId
+          changed = true
+        }
       }
     }
-  }
 
-  const unlocks = asRecord(pricingRecord.unlocks)
-  if (unlocks && Object.prototype.hasOwnProperty.call(unlocks, fromId)) {
-    if (!Object.prototype.hasOwnProperty.call(unlocks, toId)) {
-      unlocks[toId] = unlocks[fromId]
+    const unlocks = asRecord(pricingRecord.unlocks)
+    if (unlocks && Object.prototype.hasOwnProperty.call(unlocks, fromId)) {
+      if (!Object.prototype.hasOwnProperty.call(unlocks, toId)) {
+        unlocks[toId] = unlocks[fromId]
+      }
+      delete unlocks[fromId]
+      changed = true
+    } else if (changed) {
+      const fallbackPrice = firstUsableUnlockPrice(pricingRecord)
+      if (fallbackPrice) {
+        const nextUnlocks = unlocks || {}
+        nextUnlocks[toId] = fallbackPrice
+        pricingRecord.unlocks = nextUnlocks
+      }
     }
-    delete unlocks[fromId]
-    changed = true
-  } else if (changed) {
-    const fallbackPrice = firstUsableUnlockPrice(pricingRecord)
-    if (fallbackPrice) {
-      const nextUnlocks = unlocks || {}
-      nextUnlocks[toId] = fallbackPrice
-      pricingRecord.unlocks = nextUnlocks
+
+    if (Array.isArray(pricingRecord.units) && pricingRecord.units.length > 0) {
+      try {
+        const [oldRes, newRes] = await Promise.all([
+          apiClient<JsonRecord>(`/api/pipelines/${fromId}`),
+          apiClient<JsonRecord>(`/api/pipelines/${toId}`)
+        ])
+        const getUnits = (res: JsonRecord) => {
+          const config = asRecord(res.config)
+          const stages = Array.isArray(config?.stages) ? config?.stages : []
+          const unitIds: string[] = []
+          for (const stage of stages) {
+            const s = asRecord(stage)
+            if (Array.isArray(s?.units)) {
+              for (const u of s?.units) {
+                const unit = asRecord(u)
+                if (unit) {
+                  const uid = String(unit.unit_id || unit.unit_ulid || "").trim()
+                  if (uid) unitIds.push(uid)
+                }
+              }
+            }
+          }
+          return unitIds
+        }
+        
+        const oldUnits = getUnits(oldRes)
+        const newUnits = getUnits(newRes)
+        
+        if (oldUnits.length > 0 && newUnits.length > 0) {
+          const mapping = new Map<string, string>()
+          for (let i = 0; i < Math.min(oldUnits.length, newUnits.length); i++) {
+            mapping.set(oldUnits[i], newUnits[i])
+          }
+          for (const value of pricingRecord.units) {
+            const u = asRecord(value)
+            if (u && typeof u.unit_id === "string" && mapping.has(u.unit_id)) {
+              u.unit_id = mapping.get(u.unit_id)
+              changed = true
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to auto-map units:", err)
+      }
     }
-  }
 
-  if (!changed) {
-    toast.error(copy.value.toasts.relinkNoChange)
-    return false
-  }
+    if (!changed) {
+      toast.error(copy.value.toasts.relinkNoChange)
+      return false
+    }
 
-  form.value.items_json = JSON.stringify(items, null, 2)
-  form.value.pricing_json = JSON.stringify(pricingRecord, null, 2)
-  toast.success(copy.value.toasts.relinkApplied)
-  return true
+    form.value.items_json = JSON.stringify(items, null, 2)
+    form.value.pricing_json = JSON.stringify(pricingRecord, null, 2)
+    toast.success(copy.value.toasts.relinkApplied)
+    return true
+  } finally {
+    saving.value = false
+  }
 }
 
 async function replaceAndSavePipelineBinding() {
-  if (!replacePipelineBindingInForm()) return
+  if (!await replacePipelineBindingInForm()) return
   await savePricing()
 }
 
