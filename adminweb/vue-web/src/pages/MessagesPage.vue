@@ -2,6 +2,7 @@
 import { FileText, List, Loader2, RefreshCw, Send, X } from "lucide-vue-next"
 import { computed, nextTick, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -622,7 +623,14 @@ onMounted(async () => {
                 <input v-else class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" disabled :value="String(value ?? '-')" />
               </label>
             </div>
-            <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify(selectedMessage, null, 2) }}</pre>
+            <JsonPreview
+              :title="copy.rawJson"
+              :value="selectedMessage"
+              :copy-label="copy.copyJson"
+              :copied-label="copy.copiedJson"
+              :copied-message="copy.toasts.jsonCopied"
+              :copy-error-message="copy.toasts.jsonCopyFailed"
+            />
           </div>
         </section>
       </div>

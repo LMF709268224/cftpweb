@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Check, Copy as CopyIcon, Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
+import { Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
-import { copyTextToClipboard } from "@/lib/clipboard"
 import { type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
@@ -22,7 +22,6 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const detailOpen = ref(false)
 const creating = ref(false)
-const copiedJson = ref(false)
 const mode = ref<DetailMode>("detail")
 const name = ref("")
 const category = ref("")
@@ -47,7 +46,6 @@ const categoryOptions = computed(() => [
 ])
 
 const selectedFields = computed(() => selected.value || {})
-const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 
 function definitionUlid(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
@@ -74,20 +72,6 @@ function detailFieldText(key: string, value: unknown) {
   if (key === "name") return definitionName(selected.value)
   const text = String(value ?? "").trim()
   return text || "-"
-}
-
-async function copySelectedJson() {
-  try {
-    await copyTextToClipboard(selectedJson.value)
-    copiedJson.value = true
-    toast.success(copy.value.toasts.jsonCopied)
-    window.setTimeout(() => {
-      copiedJson.value = false
-    }, 1600)
-  } catch (err) {
-    console.error(err)
-    toast.error(copy.value.toasts.jsonCopyFailed)
-  }
 }
 
 function resetForm() {
@@ -376,36 +360,35 @@ onMounted(load)
                   <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.labels.completeFields }}</summary>
                   <div class="mt-4 grid items-start gap-4 md:grid-cols-2">
                     <div v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold" :class="isStructuredField(value) ? 'md:col-span-2' : ''">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ key }}</span>
-                      <pre
+                      <JsonPreview
                         v-if="isStructuredField(value)"
-                        class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
-                      >{{ JSON.stringify(value, null, 2) }}</pre>
-                      <div v-else class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
-                        {{ detailFieldText(String(key), value) }}
-                      </div>
+                        :title="String(key)"
+                        :value="value"
+                        :copy-label="copy.copyJson"
+                        :copied-label="copy.copiedJson"
+                        :copied-message="copy.toasts.jsonCopied"
+                        :copy-error-message="copy.toasts.jsonCopyFailed"
+                        max-height="256px"
+                      />
+                      <template v-else>
+                        <span class="text-xs font-black uppercase text-slate-400">{{ key }}</span>
+                        <div class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
+                          {{ detailFieldText(String(key), value) }}
+                        </div>
+                      </template>
                     </div>
                   </div>
                 </details>
 
-                <details class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.labels.rawJson }}</summary>
-                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.labels.rawJson }}</span>
-                      <button
-                        class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10"
-                        type="button"
-                        @click="copySelectedJson"
-                      >
-                        <Check v-if="copiedJson" class="h-3.5 w-3.5" />
-                        <CopyIcon v-else class="h-3.5 w-3.5" />
-                        {{ copiedJson ? copy.copiedJson : copy.copyJson }}
-                      </button>
-                    </div>
-                    <pre class="max-h-[360px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
-                  </div>
-                </details>
+                <JsonPreview
+                  :title="copy.labels.rawJson"
+                  :value="selected"
+                  :copy-label="copy.copyJson"
+                  :copied-label="copy.copiedJson"
+                  :copied-message="copy.toasts.jsonCopied"
+                  :copy-error-message="copy.toasts.jsonCopyFailed"
+                  max-height="360px"
+                />
               </div>
             </template>
           </section>

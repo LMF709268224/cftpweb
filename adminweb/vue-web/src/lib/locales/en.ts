@@ -393,6 +393,8 @@ export const en: AdminTranslations = {
     currentRequest: "Current Job",
     close: "Close",
     rawFields: "Complete Raw Fields",
+    copyJson: "Copy JSON",
+    copiedJson: "Copied",
     fieldLabels: {
       request_ulid: "Request ID",
       request_id: "Request ID",
@@ -437,6 +439,8 @@ export const en: AdminTranslations = {
     },
     toasts: {
       loadFailed: "Failed to load certificate jobs",
+      jsonCopied: "JSON copied",
+      jsonCopyFailed: "Copy failed",
     },
   },
   settings: {
@@ -521,6 +525,9 @@ export const en: AdminTranslations = {
     candidate: "Candidate",
     credentialDefinition: "Credential Definition",
     resultTitle: "Check Result",
+    rawJson: "Raw JSON",
+    copyJson: "Copy JSON",
+    copiedJson: "Copied",
     emptyResult: "No result. Select a credential definition and check a candidate first.",
     actionTitle: "Admin Actions",
     actionDescription: "Select a candidate and credential definition before running an action.",
@@ -552,6 +559,8 @@ export const en: AdminTranslations = {
       reasonRequired: "Please enter an action reason",
       actionSuccess: "Action completed",
       actionFailed: "Action failed",
+      jsonCopied: "JSON copied",
+      jsonCopyFailed: "Copy failed",
     },
   },
   messagesAdmin: {
@@ -559,6 +568,9 @@ export const en: AdminTranslations = {
     subtitle: "Send in-app notifications, maintain templates, and review send history.",
     refreshUsers: "Refresh Users",
     refreshTemplates: "Refresh Templates",
+    rawJson: "Raw JSON",
+    copyJson: "Copy JSON",
+    copiedJson: "Copied",
     tabs: {
       send: "Send Message",
       sent: "Send History",
@@ -689,6 +701,8 @@ export const en: AdminTranslations = {
       templateUpdated: "Template updated",
       templateCreated: "Template created",
       templateSaveFailed: "Failed to save template",
+      jsonCopied: "JSON copied",
+      jsonCopyFailed: "Copy failed",
     },
   },
   applications: {
@@ -1102,6 +1116,8 @@ export const en: AdminTranslations = {
       mailCancelled: "Email cancelled",
       cancelFailed: "Failed to cancel",
       cancelNotAllowed: "Only scheduling emails can be cancelled",
+      jsonCopied: "JSON copied",
+      jsonCopyFailed: "Copy failed",
     },
     sendTitle: "New Email",
     recipients: "Recipients",
@@ -1153,6 +1169,10 @@ export const en: AdminTranslations = {
     reset: "Clear",
     detailTitle: "Email Details",
     cancelMail: "Cancel Email",
+    statusDetail: "Status Details",
+    rawJson: "Raw JSON",
+    copyJson: "Copy JSON",
+    copiedJson: "Copied",
     close: "Close",
   },
   bundlesAdmin: {
