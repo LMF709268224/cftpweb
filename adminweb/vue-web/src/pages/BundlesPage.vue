@@ -156,6 +156,11 @@ const linkedItemsPreview = computed<LinkedItemView[]>(() => {
 })
 const currentPipelineRefs = computed(() => pipelineRefsFromItemsJson(form.value.items_json))
 const currentPipelineRef = computed(() => currentPipelineRefs.value[0] || "")
+const missingUnlockPipelineRefs = computed(() => {
+  const pricing = asRecord(parseJsonSilently(form.value.pricing_json))
+  const unlocks = asRecord(pricing?.unlocks)
+  return currentPipelineRefs.value.filter((id) => !unlocks || !Object.prototype.hasOwnProperty.call(unlocks, id))
+})
 const pricingPreview = computed<PricingPreviewView | null>(() => {
   const parsed = asRecord(parseJsonSilently(form.value.pricing_json))
   if (!parsed) return null
@@ -433,6 +438,78 @@ function validateStructureJson() {
   return validateItemsJson() && validatePricingJson()
 }
 
+function cloneJsonRecord(record: JsonRecord) {
+  return JSON.parse(JSON.stringify(record)) as JsonRecord
+}
+
+function validPriceRecord(value: unknown) {
+  const record = asRecord(value)
+  if (!record || isBlank(record.stripe_price_id) || isBlank(record.stripe_product_id)) return null
+  return record
+}
+
+function firstUsableUnlockPrice(pricing: JsonRecord) {
+  const unlocks = asRecord(pricing.unlocks)
+  if (unlocks) {
+    for (const value of Object.values(unlocks)) {
+      const price = validPriceRecord(value)
+      if (price) return cloneJsonRecord(price)
+    }
+  }
+
+  if (Array.isArray(pricing.units)) {
+    for (const value of pricing.units) {
+      const unit = asRecord(value)
+      const accessPrice = validPriceRecord(unit?.access)
+      if (accessPrice) return cloneJsonRecord(accessPrice)
+    }
+  }
+
+  return null
+}
+
+function ensurePipelineUnlocksInForm(targetIds = missingUnlockPipelineRefs.value) {
+  const uniqueTargetIds = Array.from(new Set(targetIds.map((id) => id.trim()).filter(Boolean)))
+  if (!uniqueTargetIds.length) {
+    toast.error(copy.value.toasts.unlockPriceNoMissing)
+    return false
+  }
+
+  const pricing = parseJson(form.value.pricing_json, "pricing_json")
+  const pricingRecord = asRecord(pricing)
+  if (!pricingRecord) {
+    toast.error(copy.value.toasts.relinkInvalidJson)
+    return false
+  }
+
+  const fallbackPrice = firstUsableUnlockPrice(pricingRecord)
+  if (!fallbackPrice) {
+    toast.error(copy.value.toasts.unlockPriceNoSource)
+    return false
+  }
+
+  const unlocks = asRecord(pricingRecord.unlocks) || {}
+  for (const targetId of uniqueTargetIds) {
+    if (!Object.prototype.hasOwnProperty.call(unlocks, targetId)) {
+      unlocks[targetId] = cloneJsonRecord(fallbackPrice)
+    }
+  }
+  pricingRecord.unlocks = unlocks
+  form.value.pricing_json = JSON.stringify(pricingRecord, null, 2)
+  toast.success(copy.value.toasts.unlockPriceFilled(uniqueTargetIds.length))
+  return true
+}
+
+function validatePublishPricing() {
+  if (!validateStructureJson()) return false
+  if (missingUnlockPipelineRefs.value.length) {
+    toast.error(copy.value.toasts.unlockPriceMissing(missingUnlockPipelineRefs.value.join(", ")))
+    activeTab.value = "pricing"
+    return false
+  }
+  return true
+}
+
 function formFromBundle(bundle: JsonRecord | null): BundleForm {
   if (!bundle) return { ...emptyForm }
   return {
@@ -703,6 +780,13 @@ function replacePipelineBindingInForm() {
     }
     delete unlocks[fromId]
     changed = true
+  } else if (changed) {
+    const fallbackPrice = firstUsableUnlockPrice(pricingRecord)
+    if (fallbackPrice) {
+      const nextUnlocks = unlocks || {}
+      nextUnlocks[toId] = fallbackPrice
+      pricingRecord.unlocks = nextUnlocks
+    }
   }
 
   if (!changed) {
@@ -724,6 +808,7 @@ async function replaceAndSavePipelineBinding() {
 async function publish() {
   if (!selectedId.value) return
   if (statusActionBusy.value) return
+  if (!validatePublishPricing()) return
   publishing.value = true
   try {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/publish`, { method: "POST" })
@@ -1129,6 +1214,22 @@ onMounted(load)
                         <Loader2 v-if="saving" class="mr-2 inline h-4 w-4 animate-spin" />
                         {{ copy.relink.save }}
                       </button>
+                    </div>
+                  </div>
+                  <div v-if="missingUnlockPipelineRefs.length" class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h4 class="font-black text-amber-950">{{ copy.relink.unlockMissingTitle }}</h4>
+                        <p class="mt-1 text-sm font-semibold text-amber-800">{{ copy.relink.unlockMissingDescription }}</p>
+                      </div>
+                      <button class="rounded-xl bg-amber-600 px-4 py-2 text-sm font-black text-white disabled:opacity-50" type="button" :disabled="saving" @click="ensurePipelineUnlocksInForm()">
+                        {{ copy.relink.fillUnlockPrice }}
+                      </button>
+                    </div>
+                    <div class="mt-3 grid gap-2">
+                      <div v-for="id in missingUnlockPipelineRefs" :key="id" class="break-all rounded-xl bg-white px-3 py-2 font-mono text-xs font-bold text-amber-900">
+                        {{ id }}
+                      </div>
                     </div>
                   </div>
                 </section>
