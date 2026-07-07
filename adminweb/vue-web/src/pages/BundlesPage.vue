@@ -460,29 +460,62 @@ function validateStructureJson() {
   return validateItemsJson() && validatePricingJson()
 }
 
-function removePipelineUnlockPrices(pricingRecord: JsonRecord, pipelineIds: string[]) {
-  const unlocks = asRecord(pricingRecord.unlocks)
-  if (!unlocks) return false
+function cloneJsonRecord(record: JsonRecord) {
+  return JSON.parse(JSON.stringify(record)) as JsonRecord
+}
 
-  let changed = false
-  for (const pipelineId of Array.from(new Set(pipelineIds.map((id) => id.trim()).filter(Boolean)))) {
-    if (Object.prototype.hasOwnProperty.call(unlocks, pipelineId)) {
-      delete unlocks[pipelineId]
-      changed = true
+function validPriceRecord(value: unknown) {
+  const record = asRecord(value)
+  if (!record || isBlank(record.stripe_price_id) || isBlank(record.stripe_product_id)) return null
+  return record
+}
+
+function firstReusablePipelinePrice(pricing: JsonRecord) {
+  const unlocks = asRecord(pricing.unlocks)
+  if (unlocks) {
+    for (const value of Object.values(unlocks)) {
+      const price = validPriceRecord(value)
+      if (price) return cloneJsonRecord(price)
     }
   }
 
-  if (!changed) return false
-  pricingRecord.unlocks = unlocks
-  return true
+  if (Array.isArray(pricing.units)) {
+    for (const value of pricing.units) {
+      const unit = asRecord(value)
+      const accessPrice = validPriceRecord(unit?.access)
+      if (accessPrice) return cloneJsonRecord(accessPrice)
+    }
+  }
+
+  return null
 }
 
-function normalizePipelinePurchasePricingInForm() {
+function ensurePipelineUnlockPricesForPublish(targetIds = currentPipelineRefs.value) {
+  const uniqueTargetIds = Array.from(new Set(targetIds.map((id) => id.trim()).filter(Boolean)))
+  if (!uniqueTargetIds.length) return false
+
   const pricing = parseJson(form.value.pricing_json, "pricing_json")
   const pricingRecord = asRecord(pricing)
-  if (!pricingRecord) return false
+  if (!pricingRecord) {
+    toast.error(copy.value.toasts.relinkInvalidJson)
+    return false
+  }
 
-  if (!removePipelineUnlockPrices(pricingRecord, currentPipelineRefs.value)) return false
+  const unlocks = asRecord(pricingRecord.unlocks) || {}
+  const missingTargetIds = uniqueTargetIds.filter((id) => !Object.prototype.hasOwnProperty.call(unlocks, id))
+  if (!missingTargetIds.length) return false
+
+  const reusablePrice = firstReusablePipelinePrice(pricingRecord)
+  if (!reusablePrice) {
+    toast.error(copy.value.toasts.publishUnlockPriceNoSource)
+    activeTab.value = "pricing"
+    return null
+  }
+
+  for (const targetId of missingTargetIds) {
+    unlocks[targetId] = cloneJsonRecord(reusablePrice)
+  }
+  pricingRecord.unlocks = unlocks
   form.value.pricing_json = JSON.stringify(pricingRecord, null, 2)
   return true
 }
@@ -706,7 +739,6 @@ async function persistPricing(showToast = true) {
 async function savePricing() {
   if (!selectedId.value) return
   if (!validateStructureJson()) return
-  normalizePipelinePurchasePricingInForm()
   await persistPricing()
 }
 
@@ -774,7 +806,15 @@ async function replacePipelineBindingInForm() {
       }
     }
 
-    changed = removePipelineUnlockPrices(pricingRecord, [fromId, toId]) || changed
+    const unlocks = asRecord(pricingRecord.unlocks)
+    if (unlocks && Object.prototype.hasOwnProperty.call(unlocks, fromId)) {
+      if (!Object.prototype.hasOwnProperty.call(unlocks, toId)) {
+        unlocks[toId] = unlocks[fromId]
+      }
+      delete unlocks[fromId]
+      pricingRecord.unlocks = unlocks
+      changed = true
+    }
 
     if (Array.isArray(pricingRecord.units) && pricingRecord.units.length > 0) {
       try {
@@ -830,7 +870,9 @@ async function publish() {
   if (!selectedId.value) return
   if (statusActionBusy.value) return
   if (!validateStructureJson()) return
-  if (normalizePipelinePurchasePricingInForm() && !await persistPricing(false)) return
+  const ensuredUnlockPrices = ensurePipelineUnlockPricesForPublish()
+  if (ensuredUnlockPrices === null) return
+  if (ensuredUnlockPrices && !await persistPricing(false)) return
   publishing.value = true
   try {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/publish`, { method: "POST" })
