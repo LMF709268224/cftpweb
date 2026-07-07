@@ -21,6 +21,7 @@ type BundleForm = {
 
 type DetailTab = "summary" | "meta" | "pricing" | "schema" | "actions" | "raw"
 type Mode = "detail" | "create"
+type BundleItemType = "pipeline" | "membership" | "resource_pack"
 type SummaryField = {
   label: string
   value: string
@@ -55,6 +56,11 @@ type PricingPreviewView = {
   memberships: number
   qualReviews: number
 }
+type TargetOption = {
+  id: string
+  title: string
+  subtitle: string
+}
 
 const emptyForm: BundleForm = {
   bundle_ulid: "",
@@ -67,35 +73,15 @@ const emptyForm: BundleForm = {
   thumbnail_file_hash: "",
 }
 
-const ulidAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
-
-function encodeUlidTime(time: number) {
-  let value = Math.floor(time)
-  let output = ""
-  for (let index = 0; index < 10; index += 1) {
-    output = ulidAlphabet[value % 32] + output
-    value = Math.floor(value / 32)
-  }
-  return output
-}
-
-function encodeUlidRandom() {
-  const bytes = new Uint8Array(16)
-  crypto.getRandomValues(bytes)
-  let output = ""
-  for (let index = 0; index < 16; index += 1) {
-    output += ulidAlphabet[bytes[index] % 32]
-  }
-  return output
-}
-
-function generateUlid() {
-  return `${encodeUlidTime(Date.now())}${encodeUlidRandom()}`
-}
-
 const bundles = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const form = ref<BundleForm>({ ...emptyForm })
+const createItemType = ref<BundleItemType>("pipeline")
+const createItemRef = ref("")
+const pipelineOptions = ref<JsonRecord[]>([])
+const membershipOptions = ref<JsonRecord[]>([])
+const resourcePackOptions = ref<JsonRecord[]>([])
+const targetOptionsLoading = ref(false)
 const loading = ref(false)
 const saving = ref(false)
 const publishing = ref(false)
@@ -118,6 +104,26 @@ const statusActionBusy = computed(() => publishing.value || deprecating.value ||
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
 const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const schemasJson = computed(() => JSON.stringify(schemas.value || {}, null, 2))
+const createItemTypeOptions = computed(() => [
+  { value: "pipeline" as const, label: copy.value.createItemTypes.pipeline },
+  { value: "membership" as const, label: copy.value.createItemTypes.membership },
+  { value: "resource_pack" as const, label: copy.value.createItemTypes.resourcePack },
+])
+const createTargetOptions = computed<TargetOption[]>(() => {
+  if (createItemType.value === "membership") return membershipOptions.value.map(membershipTargetOption).filter(hasTargetId)
+  if (createItemType.value === "resource_pack") return resourcePackOptions.value.map(resourcePackTargetOption).filter(hasTargetId)
+  return pipelineOptions.value.map(pipelineTargetOption).filter(hasTargetId)
+})
+const selectedCreateTarget = computed(() => createTargetOptions.value.find((option) => option.id === createItemRef.value) || null)
+const createItemsJson = computed(() => {
+  if (!createItemRef.value.trim()) return "[]"
+  return JSON.stringify([
+    {
+      item_type: createItemType.value,
+      ref_ulid: createItemRef.value.trim(),
+    },
+  ], null, 2)
+})
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
   { key: "meta" as const, title: copy.value.tabs.meta, count: 1 },
@@ -206,6 +212,58 @@ function displayPrice(bundle: JsonRecord | null | undefined) {
   if (!currency || (!min && !max)) return "-"
   if (min === max) return `${currency} ${min.toFixed(2)}`
   return `${currency} ${min.toFixed(2)} - ${max.toFixed(2)}`
+}
+
+function targetStatusText(target: JsonRecord | null | undefined) {
+  return String(pickFirst(target || {}, ["status", "raw_status", "runtime_status"]) || "")
+}
+
+function targetVersionText(target: JsonRecord | null | undefined) {
+  const version = pickFirst(target || {}, ["version", "revision"])
+  return version === undefined || version === null || version === "" ? "" : `v${version}`
+}
+
+function targetUsable(target: JsonRecord | null | undefined) {
+  const status = targetStatusText(target).toLowerCase()
+  return !status.includes("deprecated") && !status.includes("deleted")
+}
+
+function hasTargetId(option: TargetOption) {
+  return !!option.id
+}
+
+function targetSubtitle(parts: string[]) {
+  return parts.filter(Boolean).join(" · ")
+}
+
+function pipelineTargetOption(target: JsonRecord): TargetOption {
+  const id = String(pickFirst(target, ["pipeline_ulid", "pipeline_id"]) || "")
+  const title = String(pickFirst(target, ["name", "title", "category_tips"]) || id || copy.value.unnamedTarget)
+  return {
+    id,
+    title,
+    subtitle: targetSubtitle([String(pickFirst(target, ["category_tips", "program"]) || ""), targetVersionText(target), targetStatusText(target), id]),
+  }
+}
+
+function membershipTargetOption(target: JsonRecord): TargetOption {
+  const id = String(pickFirst(target, ["membership_ulid", "membership_id"]) || "")
+  const title = String(pickFirst(target, ["name", "title", "membership_gpath"]) || id || copy.value.unnamedTarget)
+  return {
+    id,
+    title,
+    subtitle: targetSubtitle([String(pickFirst(target, ["membership_gpath", "level", "tier"]) || ""), targetVersionText(target), targetStatusText(target), id]),
+  }
+}
+
+function resourcePackTargetOption(target: JsonRecord): TargetOption {
+  const id = String(pickFirst(target, ["pack_id", "resource_pack_ulid", "resource_pack_id"]) || "")
+  const title = String(pickFirst(target, ["title", "name", "respath"]) || id || copy.value.unnamedTarget)
+  return {
+    id,
+    title,
+    subtitle: targetSubtitle([String(pickFirst(target, ["category", "respath"]) || ""), targetVersionText(target), targetStatusText(target), id]),
+  }
 }
 
 function isStructuredValue(value: unknown) {
@@ -357,6 +415,50 @@ async function load() {
   }
 }
 
+function recordList(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
+}
+
+async function loadCreateTargetOptions() {
+  targetOptionsLoading.value = true
+  const failures: string[] = []
+  const loadRecords = async (label: string, request: Promise<JsonRecord>, keys: string[]) => {
+    try {
+      const data = await request
+      for (const key of keys) {
+        const list = recordList(data[key])
+        if (list.length) return list
+      }
+      return []
+    } catch (err) {
+      console.error(err)
+      failures.push(label)
+      return []
+    }
+  }
+  try {
+    const [pipelines, memberships, packs] = await Promise.all([
+      loadRecords("pipelines", apiClient<JsonRecord>("/api/pipelines?limit=200&offset=0&only_current=true"), ["pipelines", "items"]),
+      loadRecords("memberships", apiClient<JsonRecord>("/api/memberships?page=1&page_size=200"), ["memberships", "membership_configs", "items"]),
+      loadRecords("resource-packs", apiClient<JsonRecord>("/api/lms/resource-packs?page_size=200"), ["packs", "items"]),
+    ])
+    pipelineOptions.value = pipelines.filter(targetUsable)
+    membershipOptions.value = memberships.filter(targetUsable)
+    resourcePackOptions.value = packs.filter(targetUsable)
+  } finally {
+    if (failures.length) {
+      console.warn("Some product target options failed to load", failures)
+      toast.error(copy.value.toasts.targetOptionsLoadFailed)
+    }
+    targetOptionsLoading.value = false
+  }
+}
+    toast.error(copy.value.toasts.targetOptionsLoadFailed)
+  } finally {
+    targetOptionsLoading.value = false
+  }
+}
+
 async function selectBundle(bundle: JsonRecord, open = true) {
   const id = bundleUlid(bundle)
   selected.value = bundle
@@ -382,7 +484,10 @@ function newBundle() {
   mode.value = "create"
   activeTab.value = "meta"
   showDeleteConfirm.value = false
-  form.value = { ...emptyForm, bundle_ulid: generateUlid() }
+  createItemType.value = "pipeline"
+  createItemRef.value = ""
+  form.value = { ...emptyForm }
+  void loadCreateTargetOptions()
 }
 
 function closeDetail() {
@@ -391,8 +496,13 @@ function closeDetail() {
 }
 
 async function createBundle() {
-  if (!form.value.bundle_ulid.trim() || !form.value.bundle_gpath.trim() || !form.value.name.trim()) {
+  form.value.items_json = createItemsJson.value
+  if (!form.value.bundle_gpath.trim() || !form.value.name.trim()) {
     toast.error(copy.value.toasts.createRequired)
+    return
+  }
+  if (!createItemRef.value.trim()) {
+    toast.error(copy.value.toasts.targetRequired)
     return
   }
   if (!validateStructureJson()) return
@@ -402,7 +512,6 @@ async function createBundle() {
     const data = await apiClient<JsonRecord>("/api/mall/bundles", {
       method: "POST",
       body: JSON.stringify({
-        bundle_ulid: form.value.bundle_ulid.trim(),
         bundle_gpath: form.value.bundle_gpath.trim(),
         name: form.value.name.trim(),
         description: form.value.description.trim(),
@@ -414,7 +523,7 @@ async function createBundle() {
     })
     toast.success(copy.value.toasts.created)
     await load()
-    const id = String(data.bundle_ulid || form.value.bundle_ulid)
+    const id = String(pickFirst(data, ["bundle_ulid", "bundle_id"]) || "")
     const created = bundles.value.find((item) => bundleUlid(item) === id)
     if (created) await selectBundle(created)
   } catch (err) {
@@ -544,6 +653,12 @@ watch([statusFilter, offset], () => {
   selected.value = null
   void load()
 })
+watch(createItemType, () => {
+  createItemRef.value = ""
+})
+watch(createItemsJson, (value) => {
+  if (mode.value === "create") form.value.items_json = value
+})
 onMounted(load)
 </script>
 
@@ -646,46 +761,82 @@ onMounted(load)
             </button>
           </div>
           <div class="flex-1 space-y-5 overflow-y-auto p-5">
-            <div class="grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2 text-sm font-bold">
-                {{ copy.fields.bundleUlid }}
-                <div class="flex gap-2">
-                  <input v-model="form.bundle_ulid" readonly class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" />
-                  <button class="shrink-0 rounded-xl border px-4 py-3 font-bold" type="button" @click="form.bundle_ulid = generateUlid()">{{ copy.regenerateUlid }}</button>
+            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-black text-slate-950">{{ copy.createSections.linkTarget }}</h3>
+                  <p class="mt-1 text-sm text-slate-500">{{ copy.createSections.linkTargetDesc }}</p>
                 </div>
-                <p class="text-xs font-semibold text-slate-500">{{ copy.bundleUlidHint }}</p>
-              </label>
-              <label class="grid gap-2 text-sm font-bold">
-                {{ copy.fields.bundleGpath }}
-                <input v-model="form.bundle_gpath" class="rounded-xl border border-slate-200 px-4 py-3" />
-              </label>
-              <label class="grid gap-2 text-sm font-bold">
-                {{ copy.fields.name }}
-                <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
-              </label>
-              <label class="grid gap-2 text-sm font-bold">
-                {{ copy.fields.thumbnailObjectKey }}
-                <input v-model="form.thumbnail_object_key" class="rounded-xl border border-slate-200 px-4 py-3" />
-              </label>
-              <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                {{ copy.fields.description }}
-                <textarea v-model="form.description" class="min-h-24 rounded-xl border border-slate-200 p-4" maxlength="1200" />
-              </label>
-              <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                {{ copy.fields.thumbnailFileHash }}
-                <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" />
-              </label>
-            </div>
-            <div class="grid gap-4 xl:grid-cols-2">
-              <label class="grid gap-2 text-sm font-bold">
-                {{ copy.fields.itemsJson }}
-                <textarea v-model="form.items_json" class="min-h-[260px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
-              </label>
-              <label class="grid gap-2 text-sm font-bold">
-                {{ copy.fields.pricingJson }}
-                <textarea v-model="form.pricing_json" class="min-h-[260px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
-              </label>
-            </div>
+                <Loader2 v-if="targetOptionsLoading" class="h-5 w-5 animate-spin text-slate-400" />
+              </div>
+              <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.fields.itemType }}
+                  <select v-model="createItemType" class="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                    <option v-for="option in createItemTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </select>
+                  <p class="text-xs font-semibold text-slate-500">{{ copy.itemTypeHint }}</p>
+                </label>
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.fields.linkedTarget }}
+                  <select v-model="createItemRef" class="rounded-xl border border-slate-200 bg-white px-4 py-3" :disabled="targetOptionsLoading || !createTargetOptions.length">
+                    <option value="" disabled>{{ targetOptionsLoading ? copy.loadingTargets : copy.selectLinkedTarget }}</option>
+                    <option v-for="option in createTargetOptions" :key="option.id" :value="option.id">{{ option.title }} · {{ option.subtitle }}</option>
+                  </select>
+                  <p class="text-xs font-semibold text-slate-500">{{ createTargetOptions.length ? copy.linkedTargetHint : copy.noLinkedTargets }}</p>
+                </label>
+              </div>
+              <div v-if="selectedCreateTarget" class="mt-4 rounded-2xl border border-sky-100 bg-white p-4">
+                <div class="text-xs font-black uppercase tracking-wide text-slate-400">{{ copy.selectedTarget }}</div>
+                <div class="mt-2 text-base font-black text-slate-950">{{ selectedCreateTarget.title }}</div>
+                <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ selectedCreateTarget.subtitle }}</div>
+              </div>
+            </section>
+
+            <section class="rounded-2xl border border-slate-200 p-5">
+              <h3 class="text-lg font-black text-slate-950">{{ copy.createSections.basicInfo }}</h3>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.createSections.basicInfoDesc }}</p>
+              <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.fields.bundleGpath }}
+                  <input v-model="form.bundle_gpath" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.bundleGpath" />
+                  <p class="text-xs font-semibold text-slate-500">{{ copy.bundleGpathHint }}</p>
+                </label>
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.fields.name }}
+                  <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" :placeholder="copy.placeholders.name" />
+                </label>
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.fields.thumbnailObjectKey }}
+                  <input v-model="form.thumbnail_object_key" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.thumbnailObjectKey" />
+                  <p class="text-xs font-semibold text-slate-500">{{ copy.optionalImageHint }}</p>
+                </label>
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.fields.thumbnailFileHash }}
+                  <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.thumbnailFileHash" />
+                </label>
+                <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                  {{ copy.fields.description }}
+                  <textarea v-model="form.description" class="min-h-24 rounded-xl border border-slate-200 p-4" maxlength="1200" :placeholder="copy.placeholders.description" />
+                </label>
+              </div>
+            </section>
+
+            <details class="rounded-2xl border border-slate-200 bg-white p-5">
+              <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.advancedJsonTitle }}</summary>
+              <p class="mt-2 text-sm text-slate-500">{{ copy.advancedJsonHint }}</p>
+              <div class="mt-4 grid gap-4 xl:grid-cols-2">
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.fields.itemsJson }}
+                  <textarea :value="createItemsJson" readonly class="min-h-[180px] rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-6 text-slate-600" />
+                </label>
+                <label class="grid gap-2 text-sm font-bold">
+                  {{ copy.fields.pricingJson }}
+                  <textarea v-model="form.pricing_json" class="min-h-[180px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
+                  <p class="text-xs font-semibold text-slate-500">{{ copy.pricingJsonCreateHint }}</p>
+                </label>
+              </div>
+            </details>
           </div>
           <div class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
             <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="createBundle">

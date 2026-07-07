@@ -6,6 +6,7 @@ import (
 
 	mallpb "github.com/afnandelfin620-star/cftptest/cftp/gmall"
 	"github.com/go-chi/chi/v5"
+	"github.com/oklog/ulid/v2"
 )
 
 func (h *Handler) CreateBundle(w http.ResponseWriter, r *http.Request) {
@@ -14,7 +15,13 @@ func (h *Handler) CreateBundle(w http.ResponseWriter, r *http.Request) {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	if !requireRequestFields(w, req.BundleUlid, "bundle_ulid", req.BundleGpath, "bundle_gpath", req.Name, "name") {
+	req.BundleUlid = strings.TrimSpace(req.BundleUlid)
+	req.BundleGpath = strings.TrimSpace(req.BundleGpath)
+	req.Name = strings.TrimSpace(req.Name)
+	if req.BundleUlid == "" {
+		req.BundleUlid = ulid.Make().String()
+	}
+	if !requireRequestFields(w, req.BundleGpath, "bundle_gpath", req.Name, "name") {
 		return
 	}
 	resp, err := h.Mall.CreateBundleDraft(r.Context(), &req)
