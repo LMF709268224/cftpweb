@@ -61,6 +61,22 @@ function packStatusKey(pack: JsonRecord | null) {
   return String(pack?.status || "").trim().toUpperCase()
 }
 
+function packStatusLabel(pack: JsonRecord | null) {
+  const status = packStatusKey(pack)
+  if (status.includes("DRAFT")) return copy.value.statusLabels.draft
+  if (status.includes("DEPRECATED")) return copy.value.statusLabels.deprecated
+  if (status.includes("ACTIVE") || status.includes("PUBLISHED")) return copy.value.statusLabels.active
+  return String(pack?.status || copy.value.statusLabels.unknown)
+}
+
+function packStatusClass(pack: JsonRecord | null) {
+  const status = packStatusKey(pack)
+  if (status.includes("DRAFT")) return "border-amber-200 bg-amber-50 text-amber-700"
+  if (status.includes("DEPRECATED")) return "border-slate-200 bg-slate-100 text-slate-600"
+  if (status.includes("ACTIVE") || status.includes("PUBLISHED")) return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  return "border-slate-200 bg-white text-slate-600"
+}
+
 function canPublishPack(pack: JsonRecord | null) {
   const status = packStatusKey(pack)
   return status.includes("DRAFT") || status.includes("DEPRECATED")
@@ -228,6 +244,22 @@ function packSaveErrorMessage(err: unknown) {
   return copy.value.toasts.saveFailed
 }
 
+function packActionErrorMessage(err: unknown, action: "publish" | "deprecate" | "revert-to-draft") {
+  if (!(err instanceof ApiError)) return copy.value.toasts.actionFailed
+
+  const message = String(err.message || "").toLowerCase()
+  if (action === "publish" && message.includes("thumbnail")) {
+    return copy.value.toasts.publishThumbnailRequired
+  }
+  if (message.includes("precondition") || err.status === 409 || err.status === 412) {
+    return copy.value.toasts.preconditionFailed
+  }
+  if (err.status === 400 || message.includes("invalid_request")) {
+    return copy.value.toasts.invalidRequest
+  }
+  return copy.value.toasts.actionFailed
+}
+
 async function savePack() {
   if (!validatePackForm()) return
 
@@ -289,7 +321,7 @@ async function runPackAction(pack: JsonRecord | null, action: "publish" | "depre
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.actionFailed)
+    toast.error(packActionErrorMessage(err, action))
   } finally {
     saving.value = false
   }
@@ -395,8 +427,8 @@ onMounted(load)
             <div class="text-sm font-bold text-slate-700">
               <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.fields.version }}</span>{{ pack.version || 0 }}
             </div>
-            <span class="justify-self-start rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 lg:justify-self-center">
-              {{ pack.status || "Active" }}
+            <span class="justify-self-start rounded-full border px-3 py-1 text-xs font-black lg:justify-self-center" :class="packStatusClass(pack)" :title="String(pack.status || '')">
+              {{ packStatusLabel(pack) }}
             </span>
             <div class="flex flex-wrap items-center justify-start gap-3 lg:justify-center">
               <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openPackDetail(pack)">
