@@ -282,6 +282,11 @@ export const en: AdminTranslations = {
       video: "Video",
       text: "Text",
     },
+    categoryOptions: {
+      certification: "Certification",
+      exemption: "Exemption",
+      qualification: "Qualification",
+    },
     toasts: {
       detailLoadFailed: "Failed to load credential definition details",
       listLoadFailed: "Failed to load credential definitions",
@@ -1193,6 +1198,8 @@ export const en: AdminTranslations = {
     next: "Next",
     createTitle: "New Product",
     createDescription: "Draft creation requires bundle_ulid, bundle_gpath, name, and valid JSON.",
+    regenerateUlid: "Regenerate",
+    bundleUlidHint: "The system generates the product ULID automatically. Admins usually do not need to fill it manually.",
     close: "Close",
     createDraft: "Create Draft",
     detailTitle: "Product Details",

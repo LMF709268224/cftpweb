@@ -1,6 +1,10 @@
 package handler
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"net/http"
+	"strconv"
+)
 
 func jsonPayloadObject(v interface{}) map[string]interface{} {
 	raw, err := json.Marshal(v)
@@ -13,4 +17,16 @@ func jsonPayloadObject(v interface{}) map[string]interface{} {
 		return map[string]interface{}{}
 	}
 	return out
+}
+
+func parsePositiveIntQuery(r *http.Request, key string, fallback int) int {
+	value := r.URL.Query().Get(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed <= 0 {
+		return fallback
+	}
+	return parsed
 }

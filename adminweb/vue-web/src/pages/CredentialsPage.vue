@@ -39,6 +39,11 @@ const fileTypes = computed(() => [
   { value: 4, label: copy.value.fileTypes.video },
   { value: 8, label: copy.value.fileTypes.text },
 ])
+const categoryOptions = computed(() => [
+  { value: "Certification", label: copy.value.categoryOptions.certification },
+  { value: "Exemption", label: copy.value.categoryOptions.exemption },
+  { value: "Qualification", label: copy.value.categoryOptions.qualification },
+])
 
 const selectedFields = computed(() => selected.value || {})
 
@@ -268,7 +273,10 @@ onMounted(load)
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.labels.category }}
-                    <input v-model="category" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="80" :placeholder="copy.placeholders.category" />
+                    <select v-model="category" class="rounded-xl border border-slate-200 px-4 py-3">
+                      <option value="">{{ copy.placeholders.category }}</option>
+                      <option v-for="option in categoryOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                    </select>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.labels.respath }}

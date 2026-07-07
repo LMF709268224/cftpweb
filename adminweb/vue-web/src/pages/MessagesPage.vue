@@ -12,6 +12,7 @@ import { pickFirst } from "@/lib/status"
 type TabKey = "send" | "sent" | "templates"
 
 const pageSize = 20
+const templatePageSize = 10
 
 const activeTab = ref<TabKey>("send")
 const users = ref<JsonRecord[]>([])
@@ -36,6 +37,8 @@ const templateEditOpen = ref(false)
 const usersLoading = ref(false)
 const templatesLoading = ref(false)
 const templateSaving = ref(false)
+const templatePage = ref(1)
+const totalTemplates = ref(0)
 const editingTemplatePath = ref("")
 const formPath = ref("")
 const formTitle = ref("")
@@ -49,10 +52,11 @@ const copy = computed(() => t.value.messagesAdmin)
 const tabs = computed(() => [
   { key: "send" as const, label: copy.value.tabs.send, icon: Send, count: selectedUserIds.value.length },
   { key: "sent" as const, label: copy.value.tabs.sent, icon: List, count: total.value },
-  { key: "templates" as const, label: copy.value.tabs.templates, icon: FileText, count: templates.value.length },
+  { key: "templates" as const, label: copy.value.tabs.templates, icon: FileText, count: totalTemplates.value || templates.value.length },
 ])
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
+const templateTotalPages = computed(() => Math.max(1, Math.ceil((totalTemplates.value || templates.value.length) / templatePageSize)))
 const selectedTemplateFields = computed(() => selectedTemplate.value || {})
 const selectedMessageFields = computed(() => selectedMessage.value || {})
 
@@ -134,9 +138,14 @@ async function loadUsers() {
 async function loadTemplates() {
   templatesLoading.value = true
   try {
-    const data = await apiClient<JsonRecord>("/api/messages/templates")
+    const params = new URLSearchParams({
+      page: String(templatePage.value),
+      page_size: String(templatePageSize),
+    })
+    const data = await apiClient<JsonRecord>(`/api/messages/templates?${params}`)
     const list = Array.isArray(data.templates) ? data.templates : []
     templates.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    totalTemplates.value = Number(data.total || data.total_count || templates.value.length)
     if (!selectedTemplate.value || !templates.value.some((item) => pathOf(item) === pathOf(selectedTemplate.value))) {
       selectedTemplate.value = templates.value[0] || null
     }
@@ -343,6 +352,10 @@ watch([activeTab, messagePage, statusFilter], () => {
   if (activeTab.value === "sent") void loadSentMessages()
 })
 
+watch(templatePage, () => {
+  if (activeTab.value === "templates") void loadTemplates()
+})
+
 onMounted(async () => {
   await Promise.all([loadUsers(), loadTemplates()])
 })
@@ -508,63 +521,48 @@ onMounted(async () => {
           </div>
         </section>
 
-        <section v-else class="space-y-6">
+        <section v-else class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
           <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
               <div>
                 <h2 class="text-xl font-black">{{ copy.templates.listTitle }}</h2>
                 <p class="mt-1 text-sm text-slate-500">{{ copy.templates.listDescription }}</p>
               </div>
-              <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ templates.length }}</span>
+              <button class="rounded-xl bg-[#0b4ea2] px-4 py-2 text-sm font-bold text-white" type="button" @click="resetTemplateForm">{{ copy.templates.createTitle }}</button>
             </div>
             <div v-if="templatesLoading" class="p-12 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
               {{ copy.templates.loading }}
             </div>
-            <div v-else-if="templates.length" class="overflow-x-auto">
-              <div class="min-w-[980px]">
-                <div class="grid grid-cols-[minmax(320px,1.35fr)_minmax(240px,1fr)_110px_180px_180px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
-                  <span>{{ copy.templates.columns.template }}</span>
-                  <span>{{ copy.templates.columns.description }}</span>
-                  <span class="text-center">{{ copy.templates.columns.version }}</span>
-                  <span>{{ copy.templates.columns.updatedAt }}</span>
-                  <span class="text-right">{{ copy.templates.columns.action }}</span>
+            <div v-else-if="templates.length" class="divide-y divide-slate-100">
+              <button
+                v-for="template in templates"
+                :key="pathOf(template)"
+                class="w-full p-5 text-left transition hover:bg-sky-50"
+                :class="pathOf(selectedTemplate) === pathOf(template) ? 'bg-sky-50' : ''"
+                type="button"
+                @click="selectTemplate(template)"
+              >
+                <div class="font-black text-slate-950">{{ titleOf(template) }}</div>
+                <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pathOf(template) }}</div>
+                <div class="mt-3 flex flex-wrap items-center gap-3 text-xs font-bold text-slate-500">
+                  <span>v{{ String(template.version || "-") }}</span>
+                  <span>{{ formatDate(String(pickFirst(template, ["updated_at", "created_at"]) || "")) }}</span>
                 </div>
-                <div class="divide-y divide-slate-100">
-                  <div
-                    v-for="template in templates"
-                    :key="pathOf(template)"
-                    class="grid grid-cols-[minmax(320px,1.35fr)_minmax(240px,1fr)_110px_180px_180px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
-                    :class="pathOf(selectedTemplate) === pathOf(template) ? 'bg-sky-50' : ''"
-                  >
-                    <button class="min-w-0 text-left" type="button" @click="selectTemplate(template)">
-                      <div class="truncate font-black text-slate-950">{{ titleOf(template) }}</div>
-                      <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ pathOf(template) }}</div>
-                    </button>
-                    <div class="min-w-0 truncate text-sm font-semibold text-slate-500">{{ String(template.description || "-") }}</div>
-                    <div class="text-center text-sm font-black text-slate-700">{{ String(template.version || "-") }}</div>
-                    <div class="text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(template, ["updated_at", "created_at"]) || "")) }}</div>
-                    <div class="flex justify-end gap-2">
-                      <button
-                        class="text-sm font-bold text-[#1890ff] transition hover:underline"
-                        type="button"
-                        @click="openTemplateDetail(template)"
-                      >
-                        {{ copy.templates.viewDetails }}
-                      </button>
-                      <button
-                        class="text-sm font-bold text-[#ffba00] transition hover:underline"
-                        type="button"
-                        @click="startTemplateEdit(template)"
-                      >
-                        {{ copy.templates.edit }}
-                      </button>
-                    </div>
-                  </div>
+                <div class="mt-3 flex gap-3">
+                  <span class="text-sm font-bold text-[#1890ff]" @click.stop="openTemplateDetail(template)">{{ copy.templates.viewDetails }}</span>
+                  <span class="text-sm font-bold text-[#ffba00]" @click.stop="startTemplateEdit(template)">{{ copy.templates.edit }}</span>
                 </div>
-              </div>
+              </button>
             </div>
             <div v-else class="p-12 text-center text-slate-500">{{ copy.templates.empty }}</div>
+            <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-4">
+              <span class="text-sm font-bold text-slate-500">{{ copy.sent.pageText(templatePage, templateTotalPages) }}</span>
+              <div class="flex gap-2">
+                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="templatePage <= 1 || templatesLoading" @click="templatePage--">{{ copy.sent.prev }}</button>
+                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="templatePage >= templateTotalPages || templatesLoading" @click="templatePage++">{{ copy.sent.next }}</button>
+              </div>
+            </div>
           </div>
 
           <form class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm" @submit.prevent="saveTemplate">

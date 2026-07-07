@@ -10,9 +10,12 @@ import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 type TabKey = "send" | "sent" | "templates"
+type TemplateMode = "detail" | "create" | "edit"
 
 const pageSize = 20
+const templatePageSize = 10
 const activeTab = ref<TabKey>("send")
+const templateMode = ref<TemplateMode>("detail")
 const users = ref<JsonRecord[]>([])
 const templates = ref<JsonRecord[]>([])
 const selectedTemplate = ref<JsonRecord | null>(null)
@@ -38,6 +41,8 @@ const stats = ref<JsonRecord | null>(null)
 const usersLoading = ref(false)
 const templatesLoading = ref(false)
 const templateSaving = ref(false)
+const templatePage = ref(1)
+const totalTemplates = ref(0)
 const editingTemplatePath = ref("")
 const formPath = ref("")
 const formName = ref("")
@@ -50,7 +55,7 @@ const copy = computed(() => t.value.mailsAdmin)
 const tabs = computed(() => [
   { key: "send" as const, label: copy.value.tabs.send, icon: Send, count: selectedUserIds.value.length },
   { key: "sent" as const, label: copy.value.tabs.sent, icon: List, count: total.value },
-  { key: "templates" as const, label: copy.value.tabs.templates, icon: FileText, count: templates.value.length },
+  { key: "templates" as const, label: copy.value.tabs.templates, icon: FileText, count: totalTemplates.value || templates.value.length },
 ])
 const statusOptions = computed(() => [
   { value: "", label: copy.value.statusOptions.all },
@@ -61,6 +66,7 @@ const statusOptions = computed(() => [
 ])
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
+const templateTotalPages = computed(() => Math.max(1, Math.ceil((totalTemplates.value || templates.value.length) / templatePageSize)))
 const selectedUsers = computed(() => users.value.filter((user) => selectedUserIds.value.includes(userId(user))))
 const selectedMailHtml = computed(() => String(mailDetail.value?.html_body || mailDetail.value?.plain_body || selectedMail.value?.html_body || selectedMail.value?.plain_body || ""))
 const selectedMailRecord = computed(() => mailDetail.value || selectedMail.value || {})
@@ -179,11 +185,17 @@ async function loadUsers() {
 async function loadTemplates() {
   templatesLoading.value = true
   try {
-    const data = await apiClient<JsonRecord>("/api/mails/templates")
+    const params = new URLSearchParams({
+      page: String(templatePage.value),
+      page_size: String(templatePageSize),
+    })
+    const data = await apiClient<JsonRecord>(`/api/mails/templates?${params}`)
     const list = Array.isArray(data.templates) ? data.templates : []
     templates.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    totalTemplates.value = Number(data.total || templates.value.length)
     if (!selectedTemplate.value || !templates.value.some((item) => pathOf(item) === pathOf(selectedTemplate.value))) {
       selectedTemplate.value = templates.value[0] || null
+      templateMode.value = selectedTemplate.value ? "detail" : "create"
     }
   } catch (err) {
     console.error(err)
@@ -200,6 +212,7 @@ async function loadTemplateDetail(path: string) {
 
 async function selectTemplate(template: JsonRecord) {
   selectedTemplate.value = template
+  templateMode.value = "detail"
   try {
     const detail = await loadTemplateDetail(pathOf(template))
     if (detail) selectedTemplate.value = { ...template, ...detail }
@@ -285,9 +298,10 @@ async function sendMail() {
 
 async function editTemplate(template: JsonRecord | null = selectedTemplate.value) {
   if (!template) {
-    resetTemplateForm()
+    startCreateTemplate()
     return
   }
+  templateMode.value = "edit"
   const path = pathOf(template)
   editingTemplatePath.value = path
   formPath.value = path
@@ -320,6 +334,12 @@ function resetTemplateForm() {
   formDescription.value = ""
 }
 
+function startCreateTemplate() {
+  selectedTemplate.value = null
+  templateMode.value = "create"
+  resetTemplateForm()
+}
+
 async function saveTemplate() {
   const path = editingTemplatePath.value || formPath.value.trim()
   if (!path || !formName.value.trim() || !formSubject.value.trim() || !formContent.value.trim()) {
@@ -342,6 +362,7 @@ async function saveTemplate() {
     })
     toast.success(editingTemplatePath.value ? copy.value.toasts.templateUpdated : copy.value.toasts.templateCreated)
     resetTemplateForm()
+    templateMode.value = "detail"
     await loadTemplates()
   } catch (err) {
     console.error(err)
@@ -412,6 +433,10 @@ watch(templatePath, async (path) => {
 
 watch([activeTab, mailPage, statusFilter], () => {
   if (activeTab.value === "sent") void loadSentMails()
+})
+
+watch(templatePage, () => {
+  if (activeTab.value === "templates") void loadTemplates()
 })
 
 onMounted(async () => {
@@ -593,9 +618,14 @@ onMounted(async () => {
 
         <section v-else class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
           <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 p-5">
-              <h2 class="text-xl font-black">{{ copy.templateListTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.templateListDescription }}</p>
+            <div class="flex items-start justify-between gap-3 border-b border-slate-200 p-5">
+              <div>
+                <h2 class="text-xl font-black">{{ copy.templateListTitle }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ copy.templateListDescription }}</p>
+              </div>
+              <button class="shrink-0 rounded-xl bg-[#0b4ea2] px-4 py-2 text-sm font-bold text-white" type="button" @click="startCreateTemplate">
+                {{ copy.createTemplate }}
+              </button>
             </div>
             <div v-if="templatesLoading" class="p-12 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
@@ -614,13 +644,20 @@ onMounted(async () => {
               <div class="mt-1 break-all text-sm text-slate-500">{{ pathOf(template) }}</div>
             </button>
             <div v-if="!templatesLoading && !templates.length" class="p-12 text-center text-slate-500">{{ copy.emptyTemplates }}</div>
+            <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-4">
+              <span class="text-sm font-bold text-slate-500">{{ copy.pageText(templatePage, templateTotalPages) }}</span>
+              <div class="flex gap-2">
+                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="templatePage <= 1 || templatesLoading" @click="templatePage--">{{ copy.prev }}</button>
+                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="templatePage >= templateTotalPages || templatesLoading" @click="templatePage++">{{ copy.next }}</button>
+              </div>
+            </div>
           </div>
 
-          <div class="space-y-6">
-            <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <template v-if="templateMode === 'detail'">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-xl font-black">{{ copy.templateDetails }}</h2>
-                <button class="rounded-xl border px-4 py-2 text-sm font-bold" type="button" @click="editTemplate(selectedTemplate)">{{ copy.editCurrentTemplate }}</button>
+                <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!selectedTemplate" @click="editTemplate(selectedTemplate)">{{ copy.editCurrentTemplate }}</button>
               </div>
               <div v-if="!selectedTemplate" class="p-10 text-center text-slate-500">{{ copy.selectTemplate }}</div>
               <div v-else class="mt-4 grid gap-4 md:grid-cols-2">
@@ -633,9 +670,9 @@ onMounted(async () => {
                   :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
                 />
               </div>
-            </div>
+            </template>
 
-            <form class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm" @submit.prevent="saveTemplate">
+            <form v-else @submit.prevent="saveTemplate">
               <h2 class="text-xl font-black">{{ editingTemplatePath ? copy.editTemplate : copy.createTemplate }}</h2>
               <label class="mt-4 block">
                 <span class="text-sm font-bold">{{ copy.fields.path }}</span>
@@ -661,7 +698,7 @@ onMounted(async () => {
                 <button class="rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="templateSaving" type="submit">
                   {{ templateSaving ? copy.saving : copy.saveTemplate }}
                 </button>
-                <button class="rounded-xl border px-5 py-3 font-bold" type="button" @click="resetTemplateForm">{{ copy.reset }}</button>
+                <button class="rounded-xl border px-5 py-3 font-bold" type="button" @click="templateMode = 'detail'; resetTemplateForm()">{{ copy.reset }}</button>
               </div>
             </form>
           </div>
