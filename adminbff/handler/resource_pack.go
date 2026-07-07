@@ -116,32 +116,6 @@ func (h *Handler) PublishLmsResourcePack(w http.ResponseWriter, r *http.Request)
 	WriteJSON(w, http.StatusOK, resp)
 }
 
-// DeprecateLmsResourcePack POST /api/lms/resource-packs/{pack_id}/deprecate
-func (h *Handler) DeprecateLmsResourcePack(w http.ResponseWriter, r *http.Request) {
-	packID, ok := requiredURLParam(w, r, "pack_id")
-	if !ok {
-		return
-	}
-	var body versionOnlyReq
-	if err := ReadJSON(r, &body); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
-		return
-	}
-	if !requirePositiveVersion(w, body.Version) {
-		return
-	}
-
-	resp, err := h.Lms.DeprecateResourcePackAdmin(r.Context(), &lmspb.DeprecateResourcePackRequest{
-		PackId:  packID,
-		Version: body.Version,
-	})
-	if err != nil {
-		writeLmsError(w, err)
-		return
-	}
-	WriteJSON(w, http.StatusOK, resp)
-}
-
 // RevertLmsResourcePackToDraft POST /api/lms/resource-packs/{pack_id}/revert-to-draft
 func (h *Handler) RevertLmsResourcePackToDraft(w http.ResponseWriter, r *http.Request) {
 	packID, ok := requiredURLParam(w, r, "pack_id")
@@ -161,6 +135,31 @@ func (h *Handler) RevertLmsResourcePackToDraft(w http.ResponseWriter, r *http.Re
 		PackId:  packID,
 		Version: body.Version,
 	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// DuplicateLmsResourcePack POST /api/lms/resource-packs/{pack_id}/duplicate
+func (h *Handler) DuplicateLmsResourcePack(w http.ResponseWriter, r *http.Request) {
+	packID, ok := requiredURLParam(w, r, "pack_id")
+	if !ok {
+		return
+	}
+	var req lmspb.DuplicateResourcePackRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if !requireRequestField(w, req.Title, "title") {
+		return
+	}
+	req.PackId = newLmsID()
+	req.FromPackId = packID
+
+	resp, err := h.Lms.DuplicateResourcePackAdmin(r.Context(), &req)
 	if err != nil {
 		writeLmsError(w, err)
 		return
