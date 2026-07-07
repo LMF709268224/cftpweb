@@ -3,6 +3,7 @@ import { Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -123,7 +124,7 @@ async function save() {
     dialogOpen.value = false
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.saveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.saveFailed))
   } finally {
     saving.value = false
   }

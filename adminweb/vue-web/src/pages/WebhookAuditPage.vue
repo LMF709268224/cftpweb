@@ -2,6 +2,7 @@
 import { Check, ChevronLeft, ChevronRight, Copy as CopyIcon, Loader2, RefreshCw, RotateCcw, Search, Webhook, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
@@ -225,7 +226,7 @@ async function reprocess(message: JsonRecord) {
     await load(page.value)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.reprocessFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.reprocessFailed))
   } finally {
     reprocessing.value = ""
   }

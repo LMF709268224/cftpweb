@@ -3,6 +3,7 @@ import { ArrowLeft, Eye, Loader2, RefreshCw, RotateCcw, Search, ShieldX, StepFor
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -436,7 +437,7 @@ async function retryCertificateTask(task: JsonRecord) {
     await reloadSelected()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.certificateTaskRetryFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.certificateTaskRetryFailed))
   } finally {
     retryingCertificateTask.value = ""
   }
@@ -479,7 +480,7 @@ async function submitAction() {
     await reloadSelected()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.actionFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.actionFailed))
   } finally {
     actionLoading.value = false
   }
@@ -503,7 +504,7 @@ async function viewCertificate() {
     window.open(url, "_blank", "noopener,noreferrer")
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.certificateUrlFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.certificateUrlFailed))
   } finally {
     certificateLoading.value = false
   }

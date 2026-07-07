@@ -3,6 +3,7 @@ import { Loader2, RefreshCw, Search, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -258,7 +259,7 @@ async function purgeSelected() {
     await load(page.value)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.purgeFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.purgeFailed))
   } finally {
     purging.value = ""
   }

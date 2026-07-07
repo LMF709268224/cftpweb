@@ -4,6 +4,7 @@ import { computed, nextTick, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -272,7 +273,7 @@ async function sendMessage() {
     payload.value = "{\n}"
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.sendFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.sendFailed))
   } finally {
     sending.value = false
   }
@@ -340,7 +341,7 @@ async function saveTemplate() {
     await loadTemplates()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.templateSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.templateSaveFailed))
   } finally {
     templateSaving.value = false
   }

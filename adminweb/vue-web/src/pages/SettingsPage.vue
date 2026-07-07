@@ -3,6 +3,7 @@ import { Loader2, RefreshCw, Save, Shield, UserRound } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { useRouter } from "vue-router"
 import { toast } from "vue-sonner"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { clearAuthSession, setAuthSession } from "@/lib/authStorage"
 import type { JsonRecord } from "@/lib/display"
@@ -130,7 +131,7 @@ async function saveProfile() {
     await loadProfile()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.profileSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.profileSaveFailed))
   } finally {
     profileSaving.value = false
   }
@@ -164,7 +165,7 @@ async function savePassword() {
     setTimeout(() => router.push("/login"), 800)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.passwordUpdateFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.passwordUpdateFailed))
   } finally {
     passwordSaving.value = false
   }

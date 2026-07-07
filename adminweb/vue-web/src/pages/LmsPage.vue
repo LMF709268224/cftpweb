@@ -3,6 +3,7 @@ import { FileJson, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -994,7 +995,7 @@ async function saveCourse() {
     await Promise.all([loadCourseDetail(), loadCompleteCourse(), loadMaterials(), loadSupplementaryMaterial()])
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.courseSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.courseSaveFailed))
   } finally {
     savingCourse.value = false
   }
@@ -1014,7 +1015,7 @@ async function publishCourse() {
     if (refreshed) selectedCourse.value = refreshed
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.coursePublishFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
   } finally {
     publishing.value = false
   }
@@ -1047,7 +1048,7 @@ async function confirmDeleteCourse() {
     await loadCourses()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.courseDeleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.courseDeleteFailed))
   } finally {
     deletingCourse.value = false
   }
@@ -1141,7 +1142,7 @@ async function saveChapter() {
     closeChapterDialog()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.chapterSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.chapterSaveFailed))
   } finally {
     savingChapter.value = false
   }
@@ -1172,7 +1173,7 @@ async function confirmDeleteChapter() {
     await loadChapters()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.chapterDeleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.chapterDeleteFailed))
   } finally {
     deletingChapter.value = false
   }
@@ -1273,7 +1274,7 @@ async function saveLesson() {
     await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.lessonSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.lessonSaveFailed))
   } finally {
     savingLesson.value = false
   }
@@ -1304,7 +1305,7 @@ async function confirmDeletePendingLesson() {
     await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.lessonDeleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.lessonDeleteFailed))
   } finally {
     deletingLesson.value = false
   }
@@ -1485,7 +1486,7 @@ async function saveSupplementaryMaterial() {
     await Promise.all([loadSupplementaryMaterial(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.supplementarySaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.supplementarySaveFailed))
   } finally {
     savingSupplementaryMaterial.value = false
   }
@@ -1511,7 +1512,7 @@ async function confirmDeleteSupplementaryMaterial(deleteInfo: PendingDetailDelet
     await Promise.all([loadSupplementaryMaterial(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.supplementaryDeleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.supplementaryDeleteFailed))
     throw err
   }
 }
@@ -1545,7 +1546,7 @@ async function saveMaterial() {
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.materialSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.materialSaveFailed))
   } finally {
     savingMaterial.value = false
   }
@@ -1573,7 +1574,7 @@ async function confirmDeleteMaterial(deleteInfo: PendingDetailDelete) {
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.materialDeleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.materialDeleteFailed))
     throw err
   }
 }
@@ -1762,7 +1763,7 @@ async function saveQuiz() {
     }
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.quizSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.quizSaveFailed))
   } finally {
     savingQuiz.value = false
   }
@@ -1791,7 +1792,7 @@ async function confirmDeleteQuiz(deleteInfo: PendingDetailDelete) {
     await Promise.all([loadQuizzes(scope), loadCourseDetail(), loadCompleteCourse()])
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.quizDeleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.quizDeleteFailed))
     throw err
   }
 }
@@ -1875,7 +1876,7 @@ async function saveQuestion() {
     await loadQuestions()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.questionSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.questionSaveFailed))
   } finally {
     savingQuestion.value = false
   }
@@ -1903,7 +1904,7 @@ async function confirmDeleteQuestion(deleteInfo: PendingDetailDelete) {
     await loadQuestions()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.questionDeleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.questionDeleteFailed))
     throw err
   }
 }
@@ -1964,7 +1965,7 @@ async function saveOption() {
     await loadOptions()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.optionSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.optionSaveFailed))
   } finally {
     savingOption.value = false
   }
@@ -1992,7 +1993,7 @@ async function confirmDeleteOption(deleteInfo: PendingDetailDelete) {
     await loadOptions()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.optionDeleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.optionDeleteFailed))
     throw err
   }
 }
@@ -2055,7 +2056,7 @@ async function importLmsJson() {
     if (selectedCourseId.value) await loadChapters()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.importFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.importFailed))
   } finally {
     importing.value = false
   }

@@ -3,6 +3,7 @@ import { FileWarning, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, UserX 
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -106,7 +107,7 @@ async function check() {
     )
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.checkFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.checkFailed))
   } finally {
     loading.value = false
   }
@@ -137,7 +138,7 @@ async function runAction(action: { key: PermissionAction; endpoint: string }) {
     await check()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.actionFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.actionFailed))
   } finally {
     activeAction.value = null
     loading.value = false

@@ -3,6 +3,7 @@ import { Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vu
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -729,7 +730,7 @@ async function createPipeline() {
     if (created) await selectPipeline(created)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.createFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.createFailed))
   } finally {
     saving.value = false
   }
@@ -751,7 +752,7 @@ async function saveMetadata() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.saveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.saveFailed))
   } finally {
     saving.value = false
   }
@@ -782,7 +783,7 @@ async function saveStructure() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.structureSaveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.structureSaveFailed))
   } finally {
     saving.value = false
   }
@@ -806,7 +807,7 @@ async function publish() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.publishFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.publishFailed))
   } finally {
     saving.value = false
   }
@@ -833,6 +834,9 @@ async function confirmDeprecate() {
     toast.success(copy.value.toasts.deprecated)
     deprecateConfirmOpen.value = false
     await load()
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts.deprecateFailed))
   } finally {
     deprecating.value = false
   }
@@ -866,6 +870,9 @@ async function confirmDeletePipeline() {
     pendingDeletePipeline.value = null
     back()
     await load()
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts.deleteFailed))
   } finally {
     deletingPipeline.value = false
   }
@@ -898,7 +905,7 @@ async function clonePipeline() {
     if (created) await selectPipeline(created)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.cloneFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.cloneFailed))
   } finally {
     saving.value = false
   }

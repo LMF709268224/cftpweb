@@ -3,6 +3,7 @@ import { FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucid
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -523,7 +524,7 @@ async function createBundle() {
     if (created) await selectBundle(created)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.createFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.createFailed))
   } finally {
     saving.value = false
   }
@@ -546,7 +547,7 @@ async function saveMeta() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.saveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.saveFailed))
   } finally {
     saving.value = false
   }
@@ -572,7 +573,7 @@ async function savePricing() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.saveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.saveFailed))
   } finally {
     saving.value = false
   }
@@ -588,7 +589,7 @@ async function publish() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.publishFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.publishFailed))
   } finally {
     publishing.value = false
   }
@@ -604,7 +605,7 @@ async function deprecate() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.deprecateFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.deprecateFailed))
   } finally {
     deprecating.value = false
   }
@@ -624,7 +625,7 @@ async function removeBundle() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.deleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.deleteFailed))
   } finally {
     deleting.value = false
   }

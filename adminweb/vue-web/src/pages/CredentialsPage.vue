@@ -3,6 +3,7 @@ import { Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -176,7 +177,7 @@ async function createDefinition() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.createFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.createFailed))
   } finally {
     creating.value = false
   }

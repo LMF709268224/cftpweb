@@ -2,6 +2,7 @@
 import { FileBox, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { ApiError, apiClient } from "@/lib/apiClient"
 import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -232,7 +233,7 @@ function validatePackForm() {
 }
 
 function packSaveErrorMessage(err: unknown) {
-  if (!(err instanceof ApiError)) return copy.value.toasts.saveFailed
+  if (!(err instanceof ApiError)) return apiErrorMessage(err, copy.value.toasts.saveFailed)
 
   const message = String(err.message || "").toLowerCase()
   if (err.status === 409 || (message.includes("resource pack") && message.includes("already exists"))) {
@@ -241,11 +242,11 @@ function packSaveErrorMessage(err: unknown) {
   if (err.status === 400 || message.includes("invalid_request")) {
     return copy.value.toasts.invalidRequest
   }
-  return copy.value.toasts.saveFailed
+  return apiErrorMessage(err, copy.value.toasts.saveFailed)
 }
 
 function packActionErrorMessage(err: unknown, action: "publish" | "deprecate" | "revert-to-draft") {
-  if (!(err instanceof ApiError)) return copy.value.toasts.actionFailed
+  if (!(err instanceof ApiError)) return apiErrorMessage(err, copy.value.toasts.actionFailed)
 
   const message = String(err.message || "").toLowerCase()
   if (action === "publish" && message.includes("thumbnail")) {
@@ -257,7 +258,7 @@ function packActionErrorMessage(err: unknown, action: "publish" | "deprecate" | 
   if (err.status === 400 || message.includes("invalid_request")) {
     return copy.value.toasts.invalidRequest
   }
-  return copy.value.toasts.actionFailed
+  return apiErrorMessage(err, copy.value.toasts.actionFailed)
 }
 
 async function savePack() {
@@ -347,7 +348,7 @@ async function deletePack() {
     await load()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.deleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.deleteFailed))
   } finally {
     saving.value = false
   }

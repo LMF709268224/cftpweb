@@ -2,6 +2,7 @@
 import { Check, CheckCircle2, Copy as CopyIcon, Loader2, PlayCircle, RefreshCw, Search, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient, ApiError } from "@/lib/apiClient"
 import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -211,7 +212,7 @@ async function syncExamResult() {
     await loadExams(page.value)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.syncFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.syncFailed))
   } finally {
     actionLoading.value = false
   }

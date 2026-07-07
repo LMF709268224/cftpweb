@@ -2,6 +2,7 @@
 import { FileText, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -307,7 +308,7 @@ async function saveFile() {
     mode.value = "detail"
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.saveFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.saveFailed))
   } finally {
     saving.value = false
   }
@@ -333,7 +334,7 @@ async function deleteFile() {
     await loadFiles()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.deleteFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.deleteFailed))
   } finally {
     saving.value = false
   }

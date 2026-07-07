@@ -2,6 +2,7 @@
 import { CheckCircle2, Copy, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -250,7 +251,7 @@ async function audit(action: "approve" | "reject" | "resubmit") {
     await load(page.value)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.auditSubmitFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.auditSubmitFailed))
   } finally {
     auditing.value = false
   }
