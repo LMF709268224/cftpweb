@@ -206,6 +206,29 @@ function bundleStatus(bundle: JsonRecord | null | undefined) {
   return pickFirst(bundle || {}, ["status", "raw_status"])
 }
 
+function bundleTargetSummary(bundle: JsonRecord | null | undefined) {
+  const directPipelineId = String(pickFirst(bundle || {}, ["pipeline_id", "pipeline_cc_ulid"]) || "")
+  if (directPipelineId) return `${copy.value.createItemTypes.pipeline} · ${directPipelineId}`
+
+  const directMembershipId = String(pickFirst(bundle || {}, ["membership_id", "membership_ulid"]) || "")
+  if (directMembershipId) return `${copy.value.createItemTypes.membership} · ${directMembershipId}`
+
+  const parsed = parseJsonSilently(String(bundle?.items_json || ""))
+  const items = Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" ? [parsed] : []
+  for (const item of items) {
+    const record = asRecord(item)
+    if (!record) continue
+    const itemType = String(record.item_type || record.type || record.itemType || record.kind || "").toLowerCase()
+    const ref = String(record.ref_ulid || record.item_id || record.id || record.pipeline_id || record.pipeline_cc_ulid || record.membership_id || record.resource_pack_id || "").trim()
+    if (!ref) continue
+    if (itemType.includes("pipeline")) return `${copy.value.createItemTypes.pipeline} · ${ref}`
+    if (itemType.includes("membership")) return `${copy.value.createItemTypes.membership} · ${ref}`
+    if (itemType.includes("resource")) return `${copy.value.createItemTypes.resourcePack} · ${ref}`
+    return `${itemType || copy.value.fields.linkedTarget} · ${ref}`
+  }
+  return ""
+}
+
 function displayPrice(bundle: JsonRecord | null | undefined) {
   const currency = String(bundle?.display_currency || "")
   const min = Number(bundle?.display_amount_min || 0) / 100
@@ -725,6 +748,7 @@ onMounted(load)
               <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ bundle.description || copy.noDescription }}</div>
               <div class="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
                 <span class="rounded-full bg-slate-100 px-2 py-1">{{ copy.displayPricePrefix }}{{ displayPrice(bundle) }}</span>
+                <span v-if="bundleTargetSummary(bundle)" class="rounded-full bg-slate-100 px-2 py-1">{{ copy.linkedTargetPrefix }}{{ bundleTargetSummary(bundle) }}</span>
                 <span class="rounded-full bg-slate-100 px-2 py-1">{{ copy.fields.idPrefix }}{{ bundleUlid(bundle) || "-" }}</span>
               </div>
             </div>

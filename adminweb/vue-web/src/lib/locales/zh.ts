@@ -1196,6 +1196,7 @@ export const zh = {
     empty: "暂无商品",
     noDescription: "暂无描述",
     displayPricePrefix: "展示价格：",
+    linkedTargetPrefix: "绑定：",
     viewDetails: "查看详情",
     prev: "上一页",
     next: "下一页",

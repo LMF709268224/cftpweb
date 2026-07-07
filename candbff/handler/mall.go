@@ -429,12 +429,17 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 
 	state := h.newBundleEnrichmentState(r.Context(), candidateID)
 	enrichedList := make([]map[string]interface{}, 0, len(bundles))
+	includeUnavailable := strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("include_unavailable")), "true")
 	for _, b := range bundles {
-		enrichedList = append(enrichedList, h.enrichBundle(r.Context(), b, state))
+		enriched := h.enrichBundle(r.Context(), b, state)
+		if !includeUnavailable && enriched["is_pipeline_bundle"] == true && enriched["pipeline_is_active"] == false {
+			continue
+		}
+		enrichedList = append(enrichedList, enriched)
 	}
 	total := int(resp.GetTotal())
-	if status != "" {
-		total = len(bundles)
+	if status != "" || !includeUnavailable {
+		total = len(enrichedList)
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
@@ -559,6 +564,12 @@ func isPipelineBundleItem(item map[string]interface{}) bool {
 		}
 	}
 	return false
+}
+
+func isActivePipelineStatus(status string) bool {
+	normalized := strings.ToUpper(strings.TrimSpace(status))
+	normalized = strings.TrimPrefix(normalized, "PIPELINE_STATUS_")
+	return normalized == "ACTIVE" || normalized == "PUBLISHED"
 }
 
 func isMembershipBundleItem(item map[string]interface{}) bool {
@@ -1139,9 +1150,13 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
 		})
 		if err == nil && pipeline != nil {
+			m["pipeline_status"] = pipeline.GetStatus()
+			m["pipeline_is_active"] = isActivePipelineStatus(pipeline.GetStatus())
 			m["stages"] = toStages(pipeline.GetStages())
 			m["final_quals"] = toUnlockQuals(pipeline.GetCertsQuals())
 			m["category_tips"] = pipeline.GetCategoryTips()
+		} else {
+			m["pipeline_is_active"] = false
 		}
 		if state != nil && state.candidateID != "" {
 			eligibilityResp, err := h.Mall.CheckPipelineEligibility(ctx, &mallpb.CheckPipelineEligibilityRequest{

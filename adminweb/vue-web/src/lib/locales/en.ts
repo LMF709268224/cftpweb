@@ -1198,6 +1198,7 @@ export const en: AdminTranslations = {
     empty: "No products",
     noDescription: "No description",
     displayPricePrefix: "Display price: ",
+    linkedTargetPrefix: "Linked: ",
     viewDetails: "View Details",
     prev: "Previous",
     next: "Next",
