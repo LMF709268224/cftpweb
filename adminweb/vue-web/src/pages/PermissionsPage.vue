@@ -169,7 +169,7 @@ onMounted(loadDefinitions)
               {{ copy.candidateUlid }}
               <input v-model="candidateUlid" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="64" :placeholder="copy.candidatePlaceholder" />
             </label>
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="loading || !canCheck" @click="check">
+            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="loading || !canCheck" @click="check">
               <Loader2 v-if="loading && !activeAction" class="h-4 w-4 animate-spin" />
               <Search v-else class="h-4 w-4" />
               {{ copy.checkPermission }}

@@ -323,7 +323,7 @@ onMounted(load)
             </div>
             <div v-else class="flex gap-2">
               <button class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-600 hover:bg-slate-50" @click="cancelEdit">{{ copy.cancel }}</button>
-              <button class="rounded-lg bg-[#0b7bdc] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#0966b8]" @click="saveEdit">{{ copy.saveAndSubmit }}</button>
+              <button class="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800" @click="saveEdit">{{ copy.saveAndSubmit }}</button>
             </div>
           </div>
           <details v-if="!isEditing" class="rounded-2xl border border-slate-200 bg-white p-4">

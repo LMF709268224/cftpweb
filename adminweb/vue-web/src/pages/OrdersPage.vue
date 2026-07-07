@@ -298,7 +298,7 @@ onMounted(() => load(1))
         <option value="">{{ copy.allPaymentStatuses }}</option>
         <option v-for="option in localizedPaymentStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
       </select>
-      <button class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 text-sm font-bold text-white" type="submit">
+      <button class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-bold text-white" type="submit">
         <Search class="h-4 w-4" />
         {{ copy.search }}
       </button>

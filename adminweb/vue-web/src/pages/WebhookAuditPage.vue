@@ -264,7 +264,7 @@ onMounted(() => load(1))
         <option value="FAILED">{{ copy.statusOptions.failed }}</option>
         <option value="PENDING">{{ copy.statusOptions.pending }}</option>
       </select>
-      <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white" type="submit">
+      <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white" type="submit">
         <Search class="h-4 w-4" />
         {{ copy.search }}
       </button>
