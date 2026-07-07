@@ -278,7 +278,7 @@ onMounted(() => {
             </label>
           </div>
 
-          <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="profileSaving" type="submit">
+          <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="profileSaving" type="submit">
             <Loader2 v-if="profileSaving" class="h-4 w-4 animate-spin" />
             <Save v-else class="h-4 w-4" />
             {{ profileSaving ? copy.saving : copy.saveProfile }}
@@ -300,7 +300,7 @@ onMounted(() => {
             <input v-model="confirmPassword" autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" minlength="8" required type="password" />
           </label>
 
-          <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="passwordSaving" type="submit">
+          <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="passwordSaving" type="submit">
             <Loader2 v-if="passwordSaving" class="h-4 w-4 animate-spin" />
             <Shield v-else class="h-4 w-4" />
             {{ passwordSaving ? copy.updating : copy.updatePassword }}

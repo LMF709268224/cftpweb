@@ -677,7 +677,7 @@ onMounted(async () => {
                 <p class="mt-1 text-xs text-slate-500">{{ copy.manualActionsDescription }}</p>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <button
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
                     type="button"
                     :disabled="!canTriggerNextStage"
                     @click="openAction({ kind: 'trigger-next-stage', pipelineUlid: selectedPipelineUlid })"
@@ -874,7 +874,7 @@ onMounted(async () => {
                       <p class="mt-1 break-all text-sm text-slate-500">{{ certificateTaskUlid(selectedCertificateTask) || "-" }}</p>
                     </div>
                     <button
-                      class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
+                      class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
                       type="button"
                       :disabled="!selectedCertificateTask || retryingCertificateTask === certificateTaskUlid(selectedCertificateTask)"
                       @click="selectedCertificateTask && retryCertificateTask(selectedCertificateTask)"
@@ -1003,7 +1003,7 @@ onMounted(async () => {
         <textarea v-model="actionReason" class="mt-5 min-h-28 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.reasonPlaceholder" />
         <div class="mt-5 flex justify-end gap-3">
           <button class="rounded-xl border px-5 py-3 font-bold" type="button" :disabled="actionLoading" @click="pendingAction = null">{{ copy.cancel }}</button>
-          <button class="rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="actionLoading" @click="submitAction">
+          <button class="rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="actionLoading" @click="submitAction">
             {{ actionLoading ? copy.submitting : copy.confirmSubmit }}
           </button>
         </div>

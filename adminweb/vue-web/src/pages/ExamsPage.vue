@@ -292,7 +292,7 @@ onMounted(() => loadExams(1))
           {{ copy.filters.courseUnitUlid }}
           <input v-model="courseUnitFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.courseUnitPlaceholder" @keyup.enter="search" />
         </label>
-        <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[#0b7bdc] px-5 text-sm font-black text-white shadow-sm" type="button" @click="search">
+        <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm" type="button" @click="search">
           <Search class="h-4 w-4" />
           {{ copy.filters.search }}
         </button>
@@ -528,7 +528,7 @@ onMounted(() => loadExams(1))
 
           <div v-if="selectedExamUlid" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-6 py-4">
             <button
-              class="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0b4ea2] px-4 text-sm font-black text-white shadow-sm disabled:opacity-50"
+              class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-black text-white shadow-sm disabled:opacity-50"
               type="button"
               :disabled="actionLoading"
               @click="syncExamResult"

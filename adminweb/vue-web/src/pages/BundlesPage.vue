@@ -791,7 +791,7 @@ onMounted(load)
                   </label>
                 </div>
                 <div class="flex justify-end">
-                  <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveMeta">
+                  <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveMeta">
                     <Save class="h-4 w-4" />
                     {{ copy.saveMeta }}
                   </button>
@@ -910,7 +910,7 @@ onMounted(load)
                   </label>
                 </div>
                 <div class="flex justify-end">
-                  <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePricing">
+                  <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePricing">
                     <Send class="h-4 w-4" />
                     {{ copy.savePricing }}
                   </button>

@@ -570,7 +570,7 @@ onMounted(async () => {
                 <span class="font-bold">{{ templatePath ? copy.payloadLabel : copy.bodyLabel }}</span>
                 <textarea v-model="payload" class="mt-2 min-h-52 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" />
               </label>
-              <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="sending" type="button" @click="sendMail">
+              <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="sending" type="button" @click="sendMail">
                 <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
                 <Mail v-else class="h-4 w-4" />
                 {{ sending ? copy.sending : copy.sendMail }}

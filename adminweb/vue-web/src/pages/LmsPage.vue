@@ -2212,7 +2212,7 @@ onMounted(() => {
               <input v-model="courseForm.certification_def_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <div class="flex flex-wrap gap-3 lg:col-span-2">
-              <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
+              <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? copy.saving : copy.saveCourse }}
@@ -2440,7 +2440,7 @@ onMounted(() => {
                   <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" :disabled="editingSupplementaryItemIndex < 0" type="button" @click="deleteSupplementaryItem">
                     {{ copy.deleteThisItem }}
                   </button>
-                  <button class="rounded-xl bg-[#0b4ea2] px-4 py-2 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
+                  <button class="rounded-xl bg-blue-700 px-4 py-2 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
                     {{ savingSupplementaryMaterial ? copy.saving : copy.saveThisMaterial }}
                   </button>
                 </div>
@@ -2463,7 +2463,7 @@ onMounted(() => {
                   <span class="mt-1 block text-xs text-slate-500">{{ copy.supplementaryAdvancedHint }}</span>
                 </label>
                 <div class="grid gap-2 sm:grid-cols-2">
-                  <button class="rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="button" @click="saveSupplementaryMaterial">
+                  <button class="rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="button" @click="saveSupplementaryMaterial">
                     {{ savingSupplementaryMaterial ? copy.saving : copy.saveWholeJson }}
                   </button>
                   <button class="rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 disabled:opacity-40" :disabled="!supplementaryMaterialId(supplementaryMaterial)" type="button" @click="deleteSupplementaryMaterial">
@@ -2545,7 +2545,7 @@ onMounted(() => {
                   <span class="mt-1 block text-xs text-slate-500">{{ copy.sortHint }}</span>
                 </label>
               </div>
-              <button class="h-10 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial" type="submit">
+              <button class="h-10 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial" type="submit">
                 {{ savingMaterial ? copy.saving : copy.saveMaterial }}
               </button>
             </div>
@@ -2649,7 +2649,7 @@ onMounted(() => {
             </div>
 
             <div v-if="chapterDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
-              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="button" @click="saveChapter">
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="button" @click="saveChapter">
                 <Loader2 v-if="savingChapter" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingChapter ? copy.saving : copy.saveChapter }}
@@ -2811,7 +2811,7 @@ onMounted(() => {
             </div>
 
             <div v-if="lessonDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
-              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="savingLesson || !lessonForm.chapter_id" type="button" @click="saveLesson">
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingLesson || !lessonForm.chapter_id" type="button" @click="saveLesson">
                 <Loader2 v-if="savingLesson" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingLesson ? copy.saving : copy.saveLesson }}
@@ -3070,7 +3070,7 @@ onMounted(() => {
                         {{ copy.required }}
                       </label>
                       <textarea v-model="questionForm.media_items_json" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs" :placeholder="copy.mediaJsonPlaceholder" />
-                      <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
+                      <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
                         {{ savingQuestion ? copy.saving : copy.saveQuestion }}
                       </button>
                     </form>
@@ -3113,7 +3113,7 @@ onMounted(() => {
                           {{ copy.correctAnswer }}
                         </label>
                       </div>
-                      <button class="mt-3 w-full rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuestionId || savingOption" type="submit">
+                      <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuestionId || savingOption" type="submit">
                         {{ savingOption ? copy.saving : copy.saveOption }}
                       </button>
                     </form>
@@ -3129,7 +3129,7 @@ onMounted(() => {
             </div>
 
             <div v-if="quizDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
-              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-[#0b4ea2] px-4 font-bold text-white disabled:opacity-50" :disabled="savingQuiz || !quizTarget().id" type="button" @click="saveQuiz">
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingQuiz || !quizTarget().id" type="button" @click="saveQuiz">
                 <Loader2 v-if="savingQuiz" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingQuiz ? copy.saving : quizDialogMode === "create" ? copy.saveQuizAndAddQuestions : copy.saveQuiz }}
@@ -3164,7 +3164,7 @@ onMounted(() => {
           <input class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" type="file" accept=".json,application/json" @change="loadImportFile" />
         </label>
         <textarea v-model="importJson" class="mt-4 min-h-80 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" :placeholder="copy.pasteJsonPlaceholder" />
-        <button class="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="importing" type="button" @click="importLmsJson">
+        <button class="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="importing" type="button" @click="importLmsJson">
           <Loader2 v-if="importing" class="h-4 w-4 animate-spin" />
           <UploadCloud v-else class="h-4 w-4" />
           {{ importing ? copy.importing : copy.startImport }}

@@ -1405,7 +1405,7 @@ onMounted(() => {
             <textarea v-model="form.structure_json" :disabled="isStructureLocked()" class="min-h-[560px] w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6 disabled:bg-slate-100 disabled:text-slate-500" />
             <div class="flex flex-wrap justify-end gap-3">
               <button class="rounded-xl border px-5 py-3 font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="applyRawStructure">{{ copy.applyRaw }}</button>
-              <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
+              <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
                 <Send class="h-4 w-4" />
                 {{ copy.saveStructure }}
               </button>
@@ -1413,7 +1413,7 @@ onMounted(() => {
           </div>
 
           <div v-if="activeLayer !== 'raw'" class="flex justify-end gap-3 border-t border-slate-200 p-5">
-            <button class="inline-flex items-center gap-2 rounded-xl bg-[#0b7bdc] px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
+            <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
               <Send class="h-4 w-4" />
               {{ copy.saveStructure }}
             </button>
