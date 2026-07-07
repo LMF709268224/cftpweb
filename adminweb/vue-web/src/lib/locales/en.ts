@@ -1142,6 +1142,11 @@ export const en: AdminTranslations = {
       time: "Time",
       action: "Action",
     },
+    templateColumns: {
+      version: "Version",
+      updatedAt: "Updated At",
+      action: "Action",
+    },
     loading: "Loading...",
     mailIdPrefix: "ID: ",
     viewDetails: "View Details",

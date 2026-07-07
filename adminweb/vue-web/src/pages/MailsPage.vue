@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, List, Loader2, Mail, RefreshCw, Send, X, XCircle } from "lucide-vue-next"
+import { FileText, List, Loader2, Mail, Plus, RefreshCw, Send, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -19,6 +19,7 @@ const templateMode = ref<TemplateMode>("detail")
 const users = ref<JsonRecord[]>([])
 const templates = ref<JsonRecord[]>([])
 const selectedTemplate = ref<JsonRecord | null>(null)
+const templateDialogOpen = ref(false)
 const selectedUserIds = ref<string[]>([])
 const templatePath = ref("")
 const subject = ref("")
@@ -111,6 +112,11 @@ function nameOf(template: JsonRecord | null | undefined) {
 
 function bodyOf(template: JsonRecord | null | undefined) {
   return String(pickFirst(template || {}, ["html_body", "template_body", "plain_body"]) || "")
+}
+
+function templateFieldValue(key: string, value: unknown) {
+  if (key.endsWith("_at")) return formatDate(value) || String(value ?? "-")
+  return value
 }
 
 function mailId(mail: JsonRecord | null | undefined) {
@@ -219,6 +225,24 @@ async function selectTemplate(template: JsonRecord) {
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.templateDetailLoadFailed)
+  }
+}
+
+async function openTemplateDetail(template: JsonRecord) {
+  await selectTemplate(template)
+  templateDialogOpen.value = !!selectedTemplate.value
+}
+
+async function openTemplateEdit(template: JsonRecord | null = selectedTemplate.value) {
+  await editTemplate(template)
+  templateDialogOpen.value = !!template
+}
+
+function closeTemplateDialog() {
+  templateDialogOpen.value = false
+  if (templateMode.value !== "detail") {
+    templateMode.value = "detail"
+    resetTemplateForm()
   }
 }
 
@@ -338,6 +362,7 @@ function startCreateTemplate() {
   selectedTemplate.value = null
   templateMode.value = "create"
   resetTemplateForm()
+  templateDialogOpen.value = true
 }
 
 async function saveTemplate() {
@@ -363,6 +388,7 @@ async function saveTemplate() {
     toast.success(editingTemplatePath.value ? copy.value.toasts.templateUpdated : copy.value.toasts.templateCreated)
     resetTemplateForm()
     templateMode.value = "detail"
+    templateDialogOpen.value = false
     await loadTemplates()
   } catch (err) {
     console.error(err)
@@ -616,95 +642,139 @@ onMounted(async () => {
           </div>
         </section>
 
-        <section v-else class="grid gap-6 xl:grid-cols-[420px_minmax(0,1fr)]">
-          <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex items-start justify-between gap-3 border-b border-slate-200 p-5">
-              <div>
-                <h2 class="text-xl font-black">{{ copy.templateListTitle }}</h2>
-                <p class="mt-1 text-sm text-slate-500">{{ copy.templateListDescription }}</p>
-              </div>
-              <button class="shrink-0 rounded-xl bg-[#0b4ea2] px-4 py-2 text-sm font-bold text-white" type="button" @click="startCreateTemplate">
-                {{ copy.createTemplate }}
-              </button>
+        <section v-else class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-start justify-between gap-3 border-b border-slate-200 p-5">
+            <div>
+              <h2 class="text-xl font-black">{{ copy.templateListTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.templateListDescription }}</p>
             </div>
-            <div v-if="templatesLoading" class="p-12 text-center text-slate-500">
-              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-              {{ copy.loading }}
-            </div>
-            <button
-              v-for="template in templates"
-              v-else
-              :key="pathOf(template)"
-              class="w-full border-b border-slate-100 p-5 text-left last:border-b-0 hover:bg-sky-50"
-              :class="pathOf(selectedTemplate) === pathOf(template) ? 'bg-sky-50' : ''"
-              type="button"
-              @click="selectTemplate(template)"
-            >
-              <div class="font-black">{{ nameOf(template) }}</div>
-              <div class="mt-1 break-all text-sm text-slate-500">{{ pathOf(template) }}</div>
+            <button class="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm" type="button" @click="startCreateTemplate">
+              <Plus class="h-4 w-4" />
+              {{ copy.createTemplate }}
             </button>
-            <div v-if="!templatesLoading && !templates.length" class="p-12 text-center text-slate-500">{{ copy.emptyTemplates }}</div>
-            <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-4">
-              <span class="text-sm font-bold text-slate-500">{{ copy.pageText(templatePage, templateTotalPages) }}</span>
-              <div class="flex gap-2">
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="templatePage <= 1 || templatesLoading" @click="templatePage--">{{ copy.prev }}</button>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="templatePage >= templateTotalPages || templatesLoading" @click="templatePage++">{{ copy.next }}</button>
+          </div>
+          <div class="grid grid-cols-[minmax(0,1fr)_140px_180px_160px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+            <span>{{ copy.template }}</span>
+            <span class="text-center">{{ copy.templateColumns.version }}</span>
+            <span class="text-right">{{ copy.templateColumns.updatedAt }}</span>
+            <span class="text-right">{{ copy.templateColumns.action }}</span>
+          </div>
+          <div v-if="templatesLoading" class="p-12 text-center text-slate-500">
+            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+            {{ copy.loading }}
+          </div>
+          <div v-else-if="templates.length" class="divide-y divide-slate-100">
+            <div
+              v-for="template in templates"
+              :key="pathOf(template)"
+              class="grid grid-cols-[minmax(0,1fr)_140px_180px_160px] items-center gap-5 px-5 py-4 transition hover:bg-slate-50"
+              :class="pathOf(selectedTemplate) === pathOf(template) ? 'bg-sky-50' : ''"
+            >
+              <div class="min-w-0">
+                <div class="truncate font-black text-slate-950">{{ nameOf(template) }}</div>
+                <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pathOf(template) }}</div>
+                <div v-if="template.description" class="mt-1 truncate text-xs font-semibold text-slate-400">{{ template.description }}</div>
+              </div>
+              <div class="text-center">
+                <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">v{{ String(template.version || "-") }}</span>
+              </div>
+              <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(template, ["updated_at", "created_at"]) || "")) }}</div>
+              <div class="flex justify-end gap-3">
+                <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openTemplateDetail(template)">{{ copy.viewDetails }}</button>
+                <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openTemplateEdit(template)">{{ copy.editTemplate }}</button>
               </div>
             </div>
           </div>
+          <div v-else class="p-12 text-center text-slate-500">{{ copy.emptyTemplates }}</div>
+          <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
+            <span class="text-sm font-bold text-slate-500">{{ copy.pageText(templatePage, templateTotalPages) }}</span>
+            <div class="flex gap-3">
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="templatePage <= 1 || templatesLoading" @click="templatePage--">{{ copy.prev }}</button>
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="templatePage >= templateTotalPages || templatesLoading" @click="templatePage++">{{ copy.next }}</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
 
-          <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <Teleport to="body">
+      <div v-if="templateDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+        <section class="flex max-h-[88vh] w-full max-w-[1120px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+            <div class="min-w-0">
+              <h2 class="truncate text-2xl font-black text-slate-950">
+                {{ templateMode === "detail" ? copy.templateDetails : editingTemplatePath ? copy.editTemplate : copy.createTemplate }}
+              </h2>
+              <p v-if="templateMode === 'detail' && selectedTemplate" class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pathOf(selectedTemplate) }}</p>
+              <p v-else-if="editingTemplatePath" class="mt-1 break-all text-sm font-semibold text-slate-500">{{ formPath }}</p>
+            </div>
+            <button
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+              type="button"
+              :aria-label="copy.close"
+              @click="closeTemplateDialog"
+            >
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <div class="min-h-0 flex-1 overflow-y-auto p-5">
             <template v-if="templateMode === 'detail'">
-              <div class="flex flex-wrap items-center justify-between gap-3">
-                <h2 class="text-xl font-black">{{ copy.templateDetails }}</h2>
-                <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!selectedTemplate" @click="editTemplate(selectedTemplate)">{{ copy.editCurrentTemplate }}</button>
-              </div>
               <div v-if="!selectedTemplate" class="p-10 text-center text-slate-500">{{ copy.selectTemplate }}</div>
-              <div v-else class="mt-4 grid gap-4 md:grid-cols-2">
+              <div v-else class="grid gap-4 md:grid-cols-2">
                 <ReadonlyField
                   v-for="(value, key) in selectedTemplateFields"
                   :key="key"
                   :label="String(key)"
-                  :value="value"
+                  :value="templateFieldValue(String(key), value)"
                   :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
                   :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
                 />
               </div>
             </template>
 
-            <form v-else @submit.prevent="saveTemplate">
-              <h2 class="text-xl font-black">{{ editingTemplatePath ? copy.editTemplate : copy.createTemplate }}</h2>
-              <label class="mt-4 block">
+            <form v-else id="mail-template-form" class="space-y-4" @submit.prevent="saveTemplate">
+              <label class="block">
                 <span class="text-sm font-bold">{{ copy.fields.path }}</span>
                 <input v-model="formPath" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100" :disabled="!!editingTemplatePath" />
               </label>
-              <label class="mt-4 block">
+              <label class="block">
                 <span class="text-sm font-bold">{{ copy.fields.name }}</span>
                 <input v-model="formName" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
               </label>
-              <label class="mt-4 block">
+              <label class="block">
                 <span class="text-sm font-bold">{{ copy.fields.subjectTemplate }}</span>
                 <input v-model="formSubject" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
               </label>
-              <label class="mt-4 block">
+              <label class="block">
                 <span class="text-sm font-bold">{{ copy.fields.htmlBody }}</span>
-                <textarea v-model="formContent" class="mt-2 min-h-40 w-full rounded-xl border border-slate-200 p-4" />
+                <textarea v-model="formContent" class="mt-2 min-h-56 w-full rounded-xl border border-slate-200 p-4" />
               </label>
-              <label class="mt-4 block">
+              <label class="block">
                 <span class="text-sm font-bold">{{ copy.fields.description }}</span>
                 <textarea v-model="formDescription" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" />
               </label>
-              <div class="mt-5 flex gap-3">
-                <button class="rounded-xl bg-[#0b4ea2] px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="templateSaving" type="submit">
-                  {{ templateSaving ? copy.saving : copy.saveTemplate }}
-                </button>
-                <button class="rounded-xl border px-5 py-3 font-bold" type="button" @click="templateMode = 'detail'; resetTemplateForm()">{{ copy.reset }}</button>
-              </div>
             </form>
           </div>
+
+          <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-5">
+            <button class="rounded-xl border px-5 py-3 font-bold" type="button" @click="closeTemplateDialog">{{ templateMode === "detail" ? copy.close : copy.reset }}</button>
+            <button
+              v-if="templateMode === 'detail'"
+              class="rounded-xl border px-5 py-3 font-bold disabled:opacity-40"
+              type="button"
+              :disabled="!selectedTemplate"
+              @click="openTemplateEdit(selectedTemplate)"
+            >
+              {{ copy.editTemplate }}
+            </button>
+            <button v-else class="inline-flex h-10 min-w-[120px] items-center justify-center rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-50" :disabled="templateSaving" type="submit" form="mail-template-form">
+              {{ templateSaving ? copy.saving : copy.saveTemplate }}
+            </button>
+          </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </Teleport>
 
     <Teleport to="body">
       <div v-if="mailDetailOpen && selectedMail" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
