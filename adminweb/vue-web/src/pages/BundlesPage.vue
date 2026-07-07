@@ -453,11 +453,6 @@ async function loadCreateTargetOptions() {
     targetOptionsLoading.value = false
   }
 }
-    toast.error(copy.value.toasts.targetOptionsLoadFailed)
-  } finally {
-    targetOptionsLoading.value = false
-  }
-}
 
 async function selectBundle(bundle: JsonRecord, open = true) {
   const id = bundleUlid(bundle)
