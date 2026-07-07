@@ -2,6 +2,7 @@
 import { ChevronLeft, ChevronRight, FileBadge, Loader2, RefreshCw, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, getDisplayTitle, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -219,10 +220,15 @@ onMounted(() => load(1))
               </label>
             </div>
 
-            <div class="rounded-2xl border border-slate-200">
-              <div class="border-b border-slate-100 px-4 py-3 text-sm font-black">{{ copy.rawFields }}</div>
-              <pre class="max-h-[460px] overflow-auto rounded-b-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selected, null, 2) }}</pre>
-            </div>
+            <JsonPreview
+              :title="copy.rawFields"
+              :value="selected"
+              :copy-label="copy.copyJson"
+              :copied-label="copy.copiedJson"
+              :copied-message="copy.toasts.jsonCopied"
+              :copy-error-message="copy.toasts.jsonCopyFailed"
+              max-height="460px"
+            />
           </div>
         </section>
       </div>

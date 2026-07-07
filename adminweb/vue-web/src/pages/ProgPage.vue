@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ArrowLeft, Check, Copy as CopyIcon, Eye, Loader2, RefreshCw, RotateCcw, Search, ShieldX, StepForward, X } from "lucide-vue-next"
+import { ArrowLeft, Eye, Loader2, RefreshCw, RotateCcw, Search, ShieldX, StepForward, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
-import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -60,7 +60,6 @@ const selectedStageIndex = ref(0)
 const selectedUnitKey = ref("")
 const pendingAction = ref<PendingAction | null>(null)
 const actionReason = ref("")
-const copiedRawJson = ref(false)
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {}
@@ -214,20 +213,6 @@ function readableValue(value: unknown) {
   if (typeof value === "boolean") return value ? copy.value.yes : copy.value.no
   if (typeof value === "object") return JSON.stringify(value, null, 2)
   return String(value)
-}
-
-async function copyRawJson() {
-  try {
-    await copyTextToClipboard(rawDetailJson.value)
-    copiedRawJson.value = true
-    toast.success(copy.value.toasts.jsonCopied)
-    window.setTimeout(() => {
-      copiedRawJson.value = false
-    }, 1600)
-  } catch (err) {
-    console.error(err)
-    toast.error(copy.value.toasts.jsonCopyFailed)
-  }
 }
 
 function detailFieldValue(group: "overview" | "stage" | "unit" | "log", key: string, value: unknown, record?: JsonRecord) {
@@ -768,7 +753,15 @@ onMounted(async () => {
                         <div class="mt-1 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
                       </div>
                     </div>
-                    <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selectedStage, null, 2) }}</pre>
+                    <JsonPreview
+                      :title="copy.tabs.stages.title"
+                      :value="selectedStage"
+                      :copy-label="copy.copyJson"
+                      :copied-label="copy.copiedJson"
+                      :copied-message="copy.toasts.jsonCopied"
+                      :copy-error-message="copy.toasts.jsonCopyFailed"
+                      max-height="360px"
+                    />
                   </template>
                   <div v-else class="p-12 text-center text-slate-500">{{ copy.selectStage }}</div>
                 </div>
@@ -827,7 +820,15 @@ onMounted(async () => {
                         {{ copy.resetExamSignup }}
                       </button>
                     </div>
-                    <pre class="max-h-[300px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(selectedUnit.unit, null, 2) }}</pre>
+                    <JsonPreview
+                      :title="copy.tabs.units.title"
+                      :value="selectedUnit.unit"
+                      :copy-label="copy.copyJson"
+                      :copied-label="copy.copiedJson"
+                      :copied-message="copy.toasts.jsonCopied"
+                      :copy-error-message="copy.toasts.jsonCopyFailed"
+                      max-height="300px"
+                    />
                   </template>
                   <div v-else class="p-12 text-center text-slate-500">{{ copy.selectUnit }}</div>
                 </div>
@@ -902,7 +903,15 @@ onMounted(async () => {
                       <div class="border-b border-slate-100 px-4 py-3 text-sm font-black">{{ copy.certificateTasks.templateParams }}</div>
                       <pre class="max-h-[260px] overflow-auto rounded-b-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ certificateTaskDetail.template_params }}</pre>
                     </div>
-                    <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(certificateTaskDetail || selectedCertificateTask || {}, null, 2) }}</pre>
+                    <JsonPreview
+                      :title="copy.certificateTasks.detailTitle"
+                      :value="certificateTaskDetail || selectedCertificateTask || {}"
+                      :copy-label="copy.copyJson"
+                      :copied-label="copy.copiedJson"
+                      :copied-message="copy.toasts.jsonCopied"
+                      :copy-error-message="copy.toasts.jsonCopyFailed"
+                      max-height="360px"
+                    />
                   </template>
                   <div v-else class="p-12 text-center text-slate-500">{{ copy.certificateTasks.selectTask }}</div>
                 </div>
@@ -953,7 +962,15 @@ onMounted(async () => {
                         <div class="mt-2 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
                       </div>
                     </div>
-                    <pre class="max-h-[360px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(logDetail || selectedLog || {}, null, 2) }}</pre>
+                    <JsonPreview
+                      :title="copy.logDetailTitle"
+                      :value="logDetail || selectedLog || {}"
+                      :copy-label="copy.copyJson"
+                      :copied-label="copy.copiedJson"
+                      :copied-message="copy.toasts.jsonCopied"
+                      :copy-error-message="copy.toasts.jsonCopyFailed"
+                      max-height="360px"
+                    />
                   </template>
                 </div>
               </div>
@@ -962,20 +979,15 @@ onMounted(async () => {
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   {{ copy.rawHint }}
                 </div>
-                <details class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
-                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
-                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyRawJson">
-                        <Check v-if="copiedRawJson" class="h-3.5 w-3.5" />
-                        <CopyIcon v-else class="h-3.5 w-3.5" />
-                        {{ copiedRawJson ? copy.copiedJson : copy.copyJson }}
-                      </button>
-                    </div>
-                    <pre class="max-h-[620px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ rawDetailJson }}</pre>
-                  </div>
-                </details>
+                <JsonPreview
+                  :title="copy.rawJson"
+                  :text="rawDetailJson"
+                  :copy-label="copy.copyJson"
+                  :copied-label="copy.copiedJson"
+                  :copied-message="copy.toasts.jsonCopied"
+                  :copy-error-message="copy.toasts.jsonCopyFailed"
+                  max-height="620px"
+                />
               </div>
             </section>
         </section>

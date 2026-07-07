@@ -2,6 +2,7 @@
 import { FileText, List, Loader2, Mail, RefreshCw, Send, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -704,9 +705,25 @@ onMounted(async () => {
               {{ copy.loading }}
             </div>
             <template v-else>
-              <pre v-if="mailStatusDetail" class="max-h-36 overflow-auto rounded-2xl bg-slate-100 p-4 text-xs text-slate-700">{{ JSON.stringify(mailStatusDetail, null, 2) }}</pre>
+              <JsonPreview
+                v-if="mailStatusDetail"
+                :title="copy.statusDetail"
+                :value="mailStatusDetail"
+                :copy-label="copy.copyJson"
+                :copied-label="copy.copiedJson"
+                :copied-message="copy.toasts.jsonCopied"
+                :copy-error-message="copy.toasts.jsonCopyFailed"
+                max-height="144px"
+              />
               <iframe v-if="selectedMailHtml" class="h-[440px] w-full rounded-2xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="selectedMailHtml" />
-              <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs text-slate-100">{{ JSON.stringify(selectedMailRecord, null, 2) }}</pre>
+              <JsonPreview
+                :title="copy.rawJson"
+                :value="selectedMailRecord"
+                :copy-label="copy.copyJson"
+                :copied-label="copy.copiedJson"
+                :copied-message="copy.toasts.jsonCopied"
+                :copy-error-message="copy.toasts.jsonCopyFailed"
+              />
             </template>
           </div>
         </section>

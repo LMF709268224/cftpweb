@@ -386,6 +386,8 @@ export const zh = {
     currentRequest: "当前流水",
     close: "关闭",
     rawFields: "完整原始字段",
+    copyJson: "复制 JSON",
+    copiedJson: "已复制",
     fieldLabels: {
       request_ulid: "请求 ID",
       request_id: "请求 ID",
@@ -430,6 +432,8 @@ export const zh = {
     },
     toasts: {
       loadFailed: "证书生成流水加载失败",
+      jsonCopied: "JSON 已复制",
+      jsonCopyFailed: "复制失败",
     },
   },
   settings: {
@@ -514,6 +518,9 @@ export const zh = {
     candidate: "Candidate",
     credentialDefinition: "Credential Definition",
     resultTitle: "检查结果",
+    rawJson: "原始 JSON",
+    copyJson: "复制 JSON",
+    copiedJson: "已复制",
     emptyResult: "暂无结果。请先选择资格定义并检查考生。",
     actionTitle: "管理操作",
     actionDescription: "请选择考生和资格定义后执行操作。",
@@ -545,6 +552,8 @@ export const zh = {
       reasonRequired: "请填写操作原因",
       actionSuccess: "操作成功",
       actionFailed: "操作失败",
+      jsonCopied: "JSON 已复制",
+      jsonCopyFailed: "复制失败",
     },
   },
   messagesAdmin: {
@@ -552,6 +561,9 @@ export const zh = {
     subtitle: "发送站内通知、维护模板并查看发送记录。",
     refreshUsers: "刷新用户",
     refreshTemplates: "刷新模板",
+    rawJson: "原始 JSON",
+    copyJson: "复制 JSON",
+    copiedJson: "已复制",
     tabs: {
       send: "发送站内信",
       sent: "发送记录",
@@ -682,6 +694,8 @@ export const zh = {
       templateUpdated: "模板已更新",
       templateCreated: "模板已创建",
       templateSaveFailed: "模板保存失败",
+      jsonCopied: "JSON 已复制",
+      jsonCopyFailed: "复制失败",
     },
   },
   applications: {
@@ -1095,6 +1109,8 @@ export const zh = {
       mailCancelled: "邮件已取消",
       cancelFailed: "取消失败",
       cancelNotAllowed: "只有调度中的邮件可以取消",
+      jsonCopied: "JSON 已复制",
+      jsonCopyFailed: "复制失败",
     },
     sendTitle: "新建邮件",
     recipients: "收件用户",
@@ -1146,6 +1162,10 @@ export const zh = {
     reset: "清空",
     detailTitle: "邮件详情",
     cancelMail: "取消邮件",
+    statusDetail: "状态详情",
+    rawJson: "原始 JSON",
+    copyJson: "复制 JSON",
+    copiedJson: "已复制",
     close: "关闭",
   },
   bundlesAdmin: {

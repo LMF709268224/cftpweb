@@ -2,6 +2,7 @@
 import { FileWarning, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, UserX } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
 import { type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -251,7 +252,14 @@ onMounted(loadDefinitions)
                   />
                 </label>
               </div>
-              <pre class="max-h-[420px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ JSON.stringify(checkResult, null, 2) }}</pre>
+              <JsonPreview
+                :title="copy.rawJson"
+                :value="checkResult"
+                :copy-label="copy.copyJson"
+                :copied-label="copy.copiedJson"
+                :copied-message="copy.toasts.jsonCopied"
+                :copy-error-message="copy.toasts.jsonCopyFailed"
+              />
             </div>
           </div>
 
