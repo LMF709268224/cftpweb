@@ -142,8 +142,6 @@ func (s *Server) authMiddleware(next http.Handler) http.Handler {
 		// 注入 context
 		ctx := handler.WithCandidate(r.Context(), candidateID, claims.Email, claims.Name, tokenStr)
 
-		//TODO 往审计服务里面加数据 记录path admin 做了什么
-
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
