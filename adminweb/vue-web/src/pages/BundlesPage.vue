@@ -473,11 +473,7 @@ function removePipelineUnlockPrices(pricingRecord: JsonRecord, pipelineIds: stri
   }
 
   if (!changed) return false
-  if (Object.keys(unlocks).length) {
-    pricingRecord.unlocks = unlocks
-  } else {
-    delete pricingRecord.unlocks
-  }
+  pricingRecord.unlocks = unlocks
   return true
 }
 
