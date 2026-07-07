@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Check, Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
+import { Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
-import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -66,7 +66,6 @@ const deprecating = ref(false)
 const deleteConfirmOpen = ref(false)
 const pendingDeletePipeline = ref<JsonRecord | null>(null)
 const deletingPipeline = ref(false)
-const copiedJsonKey = ref("")
 const limit = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pipelineConfigAdmin)
@@ -473,24 +472,6 @@ function boolValue(item: JsonRecord | null | undefined, key: string) {
 function jsonValue(item: JsonRecord | null | undefined, key: string) {
   const value = item?.[key]
   return JSON.stringify(value ?? [], null, 2)
-}
-
-function jsonText(value: unknown) {
-  return JSON.stringify(value ?? {}, null, 2)
-}
-
-async function copyJsonBlock(key: string, value: unknown) {
-  try {
-    await copyTextToClipboard(jsonText(value))
-    copiedJsonKey.value = key
-    toast.success(copy.value.toasts.jsonCopied)
-    window.setTimeout(() => {
-      if (copiedJsonKey.value === key) copiedJsonKey.value = ""
-    }, 1600)
-  } catch (err) {
-    console.error(err)
-    toast.error(copy.value.toasts.jsonCopyFailed)
-  }
 }
 
 function setField(item: JsonRecord | null | undefined, key: string, value: unknown) {
@@ -1163,20 +1144,15 @@ onMounted(() => {
                     <input :value="fieldValue(selectedStage, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'name', eventValue($event))" />
                   </label>
                 </div>
-                <details class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.jsonPreview }}</summary>
-                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.jsonPreview }}</span>
-                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('stage', selectedStage)">
-                        <Check v-if="copiedJsonKey === 'stage'" class="h-3.5 w-3.5" />
-                        <Copy v-else class="h-3.5 w-3.5" />
-                        {{ copiedJsonKey === 'stage' ? copy.copiedJson : copy.copyJson }}
-                      </button>
-                    </div>
-                    <pre class="max-h-[360px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ jsonText(selectedStage) }}</pre>
-                  </div>
-                </details>
+                <JsonPreview
+                  :title="copy.jsonPreview"
+                  :value="selectedStage"
+                  :copy-label="copy.copyJson"
+                  :copied-label="copy.copiedJson"
+                  :copied-message="copy.toasts.jsonCopied"
+                  :copy-error-message="copy.toasts.jsonCopyFailed"
+                  max-height="360px"
+                />
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddStage }}</div>
             </div>
@@ -1276,20 +1252,15 @@ onMounted(() => {
                     <textarea :value="jsonValue(selectedUnitItem.unit, 'exemption_quals')" :disabled="isStructureLocked()" class="min-h-[110px] rounded-xl border border-slate-200 px-4 py-3 font-mono text-xs disabled:bg-slate-100 disabled:text-slate-500" @change="setJsonField(selectedUnitItem?.unit, 'exemption_quals', eventValue($event))" />
                   </label>
                 </div>
-                <details class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.jsonPreview }}</summary>
-                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.jsonPreview }}</span>
-                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('unit', selectedUnitItem.unit)">
-                        <Check v-if="copiedJsonKey === 'unit'" class="h-3.5 w-3.5" />
-                        <Copy v-else class="h-3.5 w-3.5" />
-                        {{ copiedJsonKey === 'unit' ? copy.copiedJson : copy.copyJson }}
-                      </button>
-                    </div>
-                    <pre class="max-h-[300px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ jsonText(selectedUnitItem.unit) }}</pre>
-                  </div>
-                </details>
+                <JsonPreview
+                  :title="copy.jsonPreview"
+                  :value="selectedUnitItem.unit"
+                  :copy-label="copy.copyJson"
+                  :copied-label="copy.copiedJson"
+                  :copied-message="copy.toasts.jsonCopied"
+                  :copy-error-message="copy.toasts.jsonCopyFailed"
+                  max-height="300px"
+                />
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddUnit }}</div>
             </div>
@@ -1338,20 +1309,15 @@ onMounted(() => {
                     <input :value="fieldValue(selectedCert, 'name_hint')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedCert, 'name_hint', eventValue($event))" />
                   </label>
                 </div>
-                <details class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.jsonPreview }}</summary>
-                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.jsonPreview }}</span>
-                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('cert', selectedCert)">
-                        <Check v-if="copiedJsonKey === 'cert'" class="h-3.5 w-3.5" />
-                        <Copy v-else class="h-3.5 w-3.5" />
-                        {{ copiedJsonKey === 'cert' ? copy.copiedJson : copy.copyJson }}
-                      </button>
-                    </div>
-                    <pre class="max-h-[360px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ jsonText(selectedCert) }}</pre>
-                  </div>
-                </details>
+                <JsonPreview
+                  :title="copy.jsonPreview"
+                  :value="selectedCert"
+                  :copy-label="copy.copyJson"
+                  :copied-label="copy.copiedJson"
+                  :copied-message="copy.toasts.jsonCopied"
+                  :copy-error-message="copy.toasts.jsonCopyFailed"
+                  max-height="360px"
+                />
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddCert }}</div>
             </div>
@@ -1418,20 +1384,15 @@ onMounted(() => {
                     />
                   </label>
                 </div>
-                <details class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.jsonPreview }}</summary>
-                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.jsonPreview }}</span>
-                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock(activeLayer, activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual)">
-                        <Check v-if="copiedJsonKey === activeLayer" class="h-3.5 w-3.5" />
-                        <Copy v-else class="h-3.5 w-3.5" />
-                        {{ copiedJsonKey === activeLayer ? copy.copiedJson : copy.copyJson }}
-                      </button>
-                    </div>
-                    <pre class="max-h-[420px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ jsonText(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual) }}</pre>
-                  </div>
-                </details>
+                <JsonPreview
+                  :title="copy.jsonPreview"
+                  :value="activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual"
+                  :copy-label="copy.copyJson"
+                  :copied-label="copy.copiedJson"
+                  :copied-message="copy.toasts.jsonCopied"
+                  :copy-error-message="copy.toasts.jsonCopyFailed"
+                  max-height="420px"
+                />
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddQual }}</div>
             </div>
@@ -1460,20 +1421,17 @@ onMounted(() => {
         </main>
       </div>
 
-      <details v-if="selected" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <summary class="cursor-pointer text-xl font-black text-slate-950">{{ copy.fullDetails }}</summary>
-        <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-          <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-            <span class="text-xs font-black uppercase text-slate-400">{{ copy.fullDetails }}</span>
-            <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('full-details', selected)">
-              <Check v-if="copiedJsonKey === 'full-details'" class="h-3.5 w-3.5" />
-              <Copy v-else class="h-3.5 w-3.5" />
-              {{ copiedJsonKey === 'full-details' ? copy.copiedJson : copy.copyJson }}
-            </button>
-          </div>
-          <pre class="max-h-[420px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ jsonText(selected) }}</pre>
-        </div>
-      </details>
+      <JsonPreview
+        v-if="selected"
+        class="rounded-3xl p-5 shadow-sm"
+        :title="copy.fullDetails"
+        :value="selected"
+        :copy-label="copy.copyJson"
+        :copied-label="copy.copiedJson"
+        :copied-message="copy.toasts.jsonCopied"
+        :copy-error-message="copy.toasts.jsonCopyFailed"
+        max-height="420px"
+      />
           </section>
 
           <div v-if="activeLayer === 'overview' || creating" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">

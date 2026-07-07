@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Check, Copy as CopyIcon, FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
+import { FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
-import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
@@ -82,7 +82,6 @@ const schemas = ref<JsonRecord | null>(null)
 const activeTab = ref<DetailTab>("summary")
 const mode = ref<Mode>("detail")
 const showDeleteConfirm = ref(false)
-const copiedJsonKey = ref("")
 const limit = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.bundlesAdmin)
@@ -194,20 +193,6 @@ function jsonText(value: unknown) {
 function detailFieldText(value: unknown) {
   const text = String(value ?? "").trim()
   return text || "-"
-}
-
-async function copyJsonBlock(key: string, text: string) {
-  try {
-    await copyTextToClipboard(text)
-    copiedJsonKey.value = key
-    toast.success(copy.value.toasts.jsonCopied)
-    window.setTimeout(() => {
-      if (copiedJsonKey.value === key) copiedJsonKey.value = ""
-    }, 1600)
-  } catch (err) {
-    console.error(err)
-    toast.error(copy.value.toasts.jsonCopyFailed)
-  }
 }
 
 function parseJsonSilently(value: string) {
@@ -907,20 +892,16 @@ onMounted(load)
                   <FileJson class="h-4 w-4" />
                   {{ copy.loadSchema }}
                 </button>
-                <details v-if="schemas" class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.schemaJson }}</summary>
-                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.schemaJson }}</span>
-                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('schema', schemasJson)">
-                        <Check v-if="copiedJsonKey === 'schema'" class="h-3.5 w-3.5" />
-                        <CopyIcon v-else class="h-3.5 w-3.5" />
-                        {{ copiedJsonKey === 'schema' ? copy.copiedJson : copy.copyJson }}
-                      </button>
-                    </div>
-                    <pre class="max-h-[620px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ schemasJson }}</pre>
-                  </div>
-                </details>
+                <JsonPreview
+                  v-if="schemas"
+                  :title="copy.schemaJson"
+                  :text="schemasJson"
+                  :copy-label="copy.copyJson"
+                  :copied-label="copy.copiedJson"
+                  :copied-message="copy.toasts.jsonCopied"
+                  :copy-error-message="copy.toasts.jsonCopyFailed"
+                  max-height="620px"
+                />
                 <div v-else class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">{{ copy.emptySchema }}</div>
               </div>
 
@@ -950,20 +931,15 @@ onMounted(load)
                 <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
                   {{ copy.rawReadonlyHint }}
                 </div>
-                <details class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
-                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
-                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyJsonBlock('raw', selectedJson)">
-                        <Check v-if="copiedJsonKey === 'raw'" class="h-3.5 w-3.5" />
-                        <CopyIcon v-else class="h-3.5 w-3.5" />
-                        {{ copiedJsonKey === 'raw' ? copy.copiedJson : copy.copyJson }}
-                      </button>
-                    </div>
-                    <pre class="max-h-[620px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
-                  </div>
-                </details>
+                <JsonPreview
+                  :title="copy.rawJson"
+                  :text="selectedJson"
+                  :copy-label="copy.copyJson"
+                  :copied-label="copy.copiedJson"
+                  :copied-message="copy.toasts.jsonCopied"
+                  :copy-error-message="copy.toasts.jsonCopyFailed"
+                  max-height="620px"
+                />
               </div>
             </main>
           </div>
