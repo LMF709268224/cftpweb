@@ -280,6 +280,11 @@ export const zh = {
       video: "视频 / Video",
       text: "文本 / Text",
     },
+    categoryOptions: {
+      certification: "认证资格 / Certification",
+      exemption: "免考资格 / Exemption",
+      qualification: "通用资格 / Qualification",
+    },
     toasts: {
       detailLoadFailed: "资格定义详情加载失败",
       listLoadFailed: "资格定义加载失败",
@@ -1171,6 +1176,8 @@ export const zh = {
     next: "下一页",
     createTitle: "新建商品",
     createDescription: "创建草稿需要 bundle_ulid、bundle_gpath、名称，以及合法 JSON。",
+    regenerateUlid: "重新生成",
+    bundleUlidHint: "系统会自动生成商品 ULID，管理员通常不需要手动填写。",
     close: "关闭",
     createDraft: "创建草稿",
     detailTitle: "商品详情",

@@ -67,6 +67,32 @@ const emptyForm: BundleForm = {
   thumbnail_file_hash: "",
 }
 
+const ulidAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+
+function encodeUlidTime(time: number) {
+  let value = Math.floor(time)
+  let output = ""
+  for (let index = 0; index < 10; index += 1) {
+    output = ulidAlphabet[value % 32] + output
+    value = Math.floor(value / 32)
+  }
+  return output
+}
+
+function encodeUlidRandom() {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  let output = ""
+  for (let index = 0; index < 16; index += 1) {
+    output += ulidAlphabet[bytes[index] % 32]
+  }
+  return output
+}
+
+function generateUlid() {
+  return `${encodeUlidTime(Date.now())}${encodeUlidRandom()}`
+}
+
 const bundles = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const form = ref<BundleForm>({ ...emptyForm })
@@ -356,7 +382,7 @@ function newBundle() {
   mode.value = "create"
   activeTab.value = "meta"
   showDeleteConfirm.value = false
-  form.value = { ...emptyForm }
+  form.value = { ...emptyForm, bundle_ulid: generateUlid() }
 }
 
 function closeDetail() {
@@ -623,7 +649,11 @@ onMounted(load)
             <div class="grid gap-4 md:grid-cols-2">
               <label class="grid gap-2 text-sm font-bold">
                 {{ copy.fields.bundleUlid }}
-                <input v-model="form.bundle_ulid" class="rounded-xl border border-slate-200 px-4 py-3" />
+                <div class="flex gap-2">
+                  <input v-model="form.bundle_ulid" readonly class="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600" />
+                  <button class="shrink-0 rounded-xl border px-4 py-3 font-bold" type="button" @click="form.bundle_ulid = generateUlid()">{{ copy.regenerateUlid }}</button>
+                </div>
+                <p class="text-xs font-semibold text-slate-500">{{ copy.bundleUlidHint }}</p>
               </label>
               <label class="grid gap-2 text-sm font-bold">
                 {{ copy.fields.bundleGpath }}

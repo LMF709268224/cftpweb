@@ -291,13 +291,31 @@ func (h *Handler) DeleteMailTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListMailTemplates(w http.ResponseWriter, r *http.Request) {
+	page := parsePositiveIntQuery(r, "page", 1)
+	pageSize := parsePositiveIntQuery(r, "page_size", 10)
 	resp, err := h.Gmail.GetTemplateList(r.Context(), &gmailpb.GetTemplateListRequest{BusinessUnit: "adminserver"})
 	if err != nil {
 		slog.Error("ListMailTemplates failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	payload := jsonPayloadObject(resp)
+	if templates, ok := payload["templates"].([]interface{}); ok {
+		total := len(templates)
+		start := (page - 1) * pageSize
+		if start > total {
+			start = total
+		}
+		end := start + pageSize
+		if end > total {
+			end = total
+		}
+		payload["templates"] = templates[start:end]
+		payload["total"] = total
+		payload["page"] = page
+		payload["page_size"] = pageSize
+	}
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 func (h *Handler) GetMailTemplate(w http.ResponseWriter, r *http.Request) {

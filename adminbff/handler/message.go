@@ -121,17 +121,22 @@ func (h *Handler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ListTemplates(w http.ResponseWriter, r *http.Request) {
 	keyword := r.URL.Query().Get("keyword")
+	page := parsePositiveIntQuery(r, "page", 1)
+	pageSize := parsePositiveIntQuery(r, "page_size", 10)
 	resp, err := h.Gmsg.ListTemplates(r.Context(), &gmsgpb.ListTemplatesRequest{
 		Keyword:  keyword,
-		Page:     1,
-		PageSize: 100,
+		Page:     uint32(page),
+		PageSize: uint32(pageSize),
 	})
 	if err != nil {
 		slog.Error("ListTemplates failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	payload := jsonPayloadObject(resp)
+	payload["page"] = page
+	payload["page_size"] = pageSize
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 func (h *Handler) GetMessageTemplate(w http.ResponseWriter, r *http.Request) {
