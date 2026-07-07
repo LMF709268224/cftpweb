@@ -1384,7 +1384,7 @@ export const en: AdminTranslations = {
     viewDetails: "View Details",
     editPack: "Edit",
     publishPack: "Publish",
-    revertPack: "Revert to Draft",
+    revertPack: "Unpublish",
     deprecatePack: "Deprecate",
     copyPack: "Duplicate",
     statusLabels: {

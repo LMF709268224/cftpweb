@@ -1382,7 +1382,7 @@ export const zh = {
     viewDetails: "查看详情",
     editPack: "编辑",
     publishPack: "上架",
-    revertPack: "撤回草稿",
+    revertPack: "下架",
     deprecatePack: "废弃",
     copyPack: "复制",
     statusLabels: {
