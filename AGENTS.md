@@ -21,3 +21,10 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 - When making code changes, remove obsolete routes, handlers, and frontend calls that the change makes unused.
 - Run the relevant backend and frontend checks before finishing whenever feasible.
 - Create a git commit for completed coding work unless the user explicitly asks not to.
+
+## Interface Contract Discipline
+
+- Do not add guessed fallback or auto-fill behavior just to make an API call pass. If an interface rejects a request, first determine whether our request shape is wrong, the contract changed, or the microservice has a bug.
+- Do not silently copy data between semantically different fields, especially persisted business JSON fields such as prices, IDs, status, or eligibility flags, unless the microservice contract explicitly requires that behavior.
+- If a contract mismatch is unclear, document the exact request, response, and observed state before changing behavior. Prefer asking the microservice owner with concrete examples over mutating stored data from the frontend or BFF.
+- Any compatibility fallback must be explicit, narrowly scoped, reviewed against the service contract, and called out in the final response with the reason it is safe.
