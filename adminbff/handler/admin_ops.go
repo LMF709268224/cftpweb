@@ -348,8 +348,12 @@ func (h *Handler) GetMallNatsMessageDetail(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *Handler) ListProgMailTasks(w http.ResponseWriter, r *http.Request) {
+	candidateULID := queryText(r, "candidate_ulid")
+	if !requireRequestField(w, candidateULID, "candidate_ulid") {
+		return
+	}
 	resp, err := h.Gprog.ListMailTasks(r.Context(), &gprogpb.ListMailTasksReq{
-		CandidateUlid: queryText(r, "candidate_ulid"),
+		CandidateUlid: candidateULID,
 		PipelineUlid:  queryText(r, "pipeline_ulid"),
 		Limit:         queryLimit(r),
 		Offset:        queryOffset(r),

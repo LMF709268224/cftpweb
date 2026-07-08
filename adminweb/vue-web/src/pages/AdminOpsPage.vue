@@ -123,8 +123,9 @@ const modules = computed<OpsModule[]>(() => [
     itemKeys: ["tasks", "items"],
     idKeys: ["mail_task_ulid", "mailTaskUlid"],
     pagination: "offset",
+    requiredFilters: ["candidate_ulid"],
     filters: [
-      { key: "candidate_ulid", label: "candidate_ulid" },
+      { key: "candidate_ulid", label: "candidate_ulid", placeholder: copy.value.placeholders.required },
       { key: "pipeline_ulid", label: "pipeline_ulid" },
     ],
     actions: [
