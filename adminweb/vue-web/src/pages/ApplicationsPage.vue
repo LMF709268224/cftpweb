@@ -31,15 +31,27 @@ const copy = computed(() => t.value.applications)
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => applications.value.length >= pageSize)
 const applicationFieldLabels = computed<Record<string, string>>(() => copy.value.fieldLabels || {})
+const applicationIdKeys = new Set(["app_ulid", "app_id", "application_ulid", "application_id"])
 const selectedFields = computed(() => {
   const current = selected.value || {}
+  let hasApplicationId = false
   const hasDuplicateCredentialName =
     "cred_def_name" in current &&
     "credential_name" in current &&
     String(current.cred_def_name ?? "") === String(current.credential_name ?? "")
 
   return Object.entries(current)
-    .filter(([key]) => !(hasDuplicateCredentialName && key === "credential_name"))
+    .filter(([key, value]) => {
+      if (hasDuplicateCredentialName && key === "credential_name") return false
+      if (!applicationIdKeys.has(key)) return true
+      const currentValue = String(value ?? "")
+      if (!currentValue) return true
+      if (!hasApplicationId) {
+        hasApplicationId = true
+        return true
+      }
+      return currentValue !== appUlid(current)
+    })
     .map(([key, value]) => ({
       key,
       label: applicationFieldLabels.value[key] || key.replace(/_/g, " "),

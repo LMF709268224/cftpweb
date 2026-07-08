@@ -1053,23 +1053,25 @@ onMounted(load)
               <h3 class="text-lg font-black text-slate-950">{{ copy.createSections.basicInfo }}</h3>
               <p class="mt-1 text-sm text-slate-500">{{ copy.createSections.basicInfoDesc }}</p>
               <div class="mt-4 grid gap-4 md:grid-cols-2">
-                <label class="grid gap-2 text-sm font-bold">
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
                   {{ copy.fields.bundleGpath }}
                   <input v-model="form.bundle_gpath" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.bundleGpath" />
                   <p class="text-xs font-semibold text-slate-500">{{ copy.bundleGpathHint }}</p>
                 </label>
-                <label class="grid gap-2 text-sm font-bold">
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
                   {{ copy.fields.name }}
                   <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" :placeholder="copy.placeholders.name" />
+                  <span aria-hidden="true"></span>
                 </label>
-                <label class="grid gap-2 text-sm font-bold">
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
                   {{ copy.fields.thumbnailObjectKey }}
                   <input v-model="form.thumbnail_object_key" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.thumbnailObjectKey" />
                   <p class="text-xs font-semibold text-slate-500">{{ copy.optionalImageHint }}</p>
                 </label>
-                <label class="grid gap-2 text-sm font-bold">
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
                   {{ copy.fields.thumbnailFileHash }}
                   <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.thumbnailFileHash" />
+                  <span aria-hidden="true"></span>
                 </label>
                 <label class="grid gap-2 text-sm font-bold md:col-span-2">
                   {{ copy.fields.description }}
