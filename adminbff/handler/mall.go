@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -154,4 +155,23 @@ func deriveAdminPaymentStatus(orderStatus, paymentStatus, payOrderULID string) s
 	default:
 		return ""
 	}
+}
+
+// AdminSyncOrderMeta POST /api/mall/orders/sync-meta
+func (h *Handler) AdminSyncOrderMeta(w http.ResponseWriter, r *http.Request) {
+	var req mallpb.AdminSyncOrderMetaRequest
+	if r.Body != nil && r.ContentLength != 0 {
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+			return
+		}
+	}
+
+	resp, err := h.Mall.AdminSyncOrderMeta(r.Context(), &req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
 }

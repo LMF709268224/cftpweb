@@ -43,10 +43,14 @@ func (h *Handler) GetCredentialDefinitionDetail(w http.ResponseWriter, r *http.R
 }
 
 type CreateCredentialDefinitionReq struct {
-	Name            string `json:"name"`
-	Description     string `json:"description"`
-	Category        string `json:"category"`
-	FileConstraints []struct {
+	CredDefUlid       string `json:"cred_def_ulid"`
+	CredDefId         string `json:"cred_def_id"`
+	Name              string `json:"name"`
+	Description       string `json:"description"`
+	Category          string `json:"category"`
+	Respath           string `json:"respath"`
+	AcquisitionMethod string `json:"acquisition_method"`
+	FileConstraints   []struct {
 		Name       string `json:"name"`
 		Type       int32  `json:"type"`
 		IsRequired bool   `json:"is_required"`
@@ -61,10 +65,18 @@ func (h *Handler) CreateCredentialDefinition(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	credDefULID := strings.TrimSpace(firstNonEmpty(body.CredDefUlid, body.CredDefId))
+	if credDefULID == "" {
+		credDefULID = newLmsID()
+	}
+
 	req := &gcredspb.CreateCredentialDefinitionRequest{
-		Name:        body.Name,
-		Description: body.Description,
-		Category:    body.Category,
+		CredDefUlid:       credDefULID,
+		Name:              body.Name,
+		Description:       body.Description,
+		Category:          body.Category,
+		Respath:           body.Respath,
+		AcquisitionMethod: body.AcquisitionMethod,
 	}
 
 	for _, fc := range body.FileConstraints {
@@ -76,6 +88,92 @@ func (h *Handler) CreateCredentialDefinition(w http.ResponseWriter, r *http.Requ
 	}
 
 	res, err := h.Creds.CreateCredentialDefinition(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, res)
+}
+
+// ListCredentials GET /api/credentials
+func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
+	res, err := h.Creds.ListCredentials(r.Context(), &gcredspb.ListCredentialsRequest{
+		CandidateUlid: strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
+		CredDefUlid:   strings.TrimSpace(r.URL.Query().Get("cred_def_ulid")),
+		Status:        strings.TrimSpace(r.URL.Query().Get("status")),
+		Page:          queryPage(r),
+		PageSize:      queryPageSize(r),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	credentials := make([]map[string]interface{}, 0, len(res.GetCredentials()))
+	for _, credential := range res.GetCredentials() {
+		if credential == nil {
+			continue
+		}
+		item := jsonPayloadObject(credential)
+		h.attachCandidateName(item, credential.GetCandidateUlid())
+		credentials = append(credentials, item)
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"credentials": credentials,
+		"total":       res.GetTotal(),
+	})
+}
+
+// IgnoreVersionFile POST /api/credentials/version-files/{file_id}/ignore
+func (h *Handler) IgnoreVersionFile(w http.ResponseWriter, r *http.Request) {
+	fileIDRaw, ok := requiredURLParam(w, r, "file_id")
+	if !ok {
+		return
+	}
+	fileID, err := strconv.ParseInt(fileIDRaw, 10, 64)
+	if err != nil || fileID <= 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "file_id must be a positive integer")
+		return
+	}
+
+	var body struct {
+		Reason string `json:"reason"`
+	}
+	if r.Body != nil && r.ContentLength != 0 {
+		if err := ReadJSON(r, &body); err != nil {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+			return
+		}
+	}
+
+	res, err := h.Creds.IgnoreVersionFile(r.Context(), &gcredspb.IgnoreVersionFileRequest{
+		FileId:       fileID,
+		OperatorUlid: adminActorID(r),
+		Reason:       strings.TrimSpace(body.Reason),
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, res)
+}
+
+// CheckCredentialResourcesExist POST /api/credentials/resources/check
+func (h *Handler) CheckCredentialResourcesExist(w http.ResponseWriter, r *http.Request) {
+	var req gcredspb.CheckResourcesExistRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if len(req.CredDefIds) == 0 && len(req.PdfTemplateIds) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "cred_def_ids or pdf_template_ids is required")
+		return
+	}
+
+	res, err := h.Creds.CheckResourcesExist(r.Context(), &req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return

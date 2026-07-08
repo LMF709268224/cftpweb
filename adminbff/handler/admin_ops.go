@@ -172,6 +172,58 @@ func (h *Handler) ListPayOrderItems(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+func (h *Handler) BatchGetPayOrderAmounts(w http.ResponseWriter, r *http.Request) {
+	var req gpaypb.BatchGetOrderAmountsRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if len(req.OrderUlids) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "order_ulids is required")
+		return
+	}
+	resp, err := h.Gpay.BatchGetOrderAmounts(r.Context(), &req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) BatchGetPayInvoiceAmounts(w http.ResponseWriter, r *http.Request) {
+	var req gpaypb.BatchGetInvoiceAmountsRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if len(req.StripeInvoiceIds) == 0 {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "stripe_invoice_ids is required")
+		return
+	}
+	resp, err := h.Gpay.BatchGetInvoiceAmounts(r.Context(), &req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) AdminSyncPaymentRequestCurrency(w http.ResponseWriter, r *http.Request) {
+	var req gpaypb.AdminSyncPaymentRequestCurrencyRequest
+	if r.Body != nil && r.ContentLength != 0 {
+		if err := ReadJSON(r, &req); err != nil {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+			return
+		}
+	}
+	resp, err := h.Gpay.AdminSyncPaymentRequestCurrency(r.Context(), &req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 func (h *Handler) ListMallMailTasks(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Mall.ListMailTasks(r.Context(), &mallpb.ListMailTasksRequest{
 		CandidateUlid: queryText(r, "candidate_ulid"),

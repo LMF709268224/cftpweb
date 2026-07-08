@@ -69,6 +69,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/logs/{transition_ulid}", h.GetProgStatusTransitionLogDetail)
 			r.Post("/{pipeline_ulid}/trigger-next-stage", h.AdminTriggerProgNextStage)
 			r.Post("/{pipeline_ulid}/terminate", h.AdminTerminatePipeline)
+			r.Post("/{pipeline_ulid}/pdf-requests", h.CreateProgPdfRequest)
 			r.Get("/{pipeline_ulid}/certificate-url", h.GetProgPipelineCertificateViewURL)
 		})
 
@@ -163,6 +164,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Get("/{course_id}/chapters", h.ListLmsChapters)
 				r.Post("/{course_id}/chapters", h.CreateLmsChapter)
 				r.Post("/{course_id}/chapters/reorder", h.ReorderLmsChapters)
+				r.Get("/{course_id}/lessons", h.ListLmsLessonsByCourse)
 			})
 
 			r.Route("/materials", func(r chi.Router) {
@@ -261,12 +263,16 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		// ===== Messages =====
 		r.Route("/messages", func(r chi.Router) {
+			r.Get("/stats", h.GetMessageStats)
+			r.Get("/builtin-paths", h.GetAllMessageBuiltInPaths)
+			r.Get("/builtin-path", h.GetMessageBuiltInPath)
 			r.Get("/templates", h.ListTemplates)
 			r.Get("/templates/detail", h.GetMessageTemplate)
 			r.Post("/templates", h.CreateTemplate)
 			r.Put("/templates", h.UpdateTemplate)
 			r.Delete("/templates", h.DeleteMessageTemplate)
 			r.Get("/sent", h.ListSentMessages)
+			r.Post("/revoke", h.RevokeMessage)
 			r.Post("/send", h.SendMessage)
 		})
 
@@ -283,6 +289,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Get("/", h.ListMailTemplates)
 				r.Get("/detail", h.GetMailTemplate)
 				r.Get("/exists", h.HasMailTemplate)
+				r.Get("/builtin-path", h.GetMailBuiltInPath)
 				r.Get("/builtin-paths", h.GetAllBuiltInPaths)
 				r.Post("/render", h.RenderMailTemplate)
 				r.Post("/", h.CreateMailTemplate)
@@ -293,6 +300,9 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		// ===== 资格与证书管理 (Credentials) =====
 		r.Route("/credentials", func(r chi.Router) {
+			r.Get("/", h.ListCredentials)
+			r.Post("/resources/check", h.CheckCredentialResourcesExist)
+			r.Post("/version-files/{file_id}/ignore", h.IgnoreVersionFile)
 			r.Get("/definitions", h.ListCredentialDefinitions)
 			r.Get("/definitions/{cred_def_ulid}", h.GetCredentialDefinitionDetail)
 			r.Post("/definitions", h.CreateCredentialDefinition)
@@ -316,6 +326,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		// ===== PDF 生成请求接口 (PDF Requests) =====
 		r.Route("/pdf-requests", func(r chi.Router) {
 			r.Get("/", h.ListPdfRequests)
+			r.Get("/{request_ulid}", h.GetPdfRequest)
+			r.Get("/{request_ulid}/detail", h.GetPdfRequestDetail)
 		})
 
 		// ===== 商城 (Mall) =====
@@ -323,6 +335,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/stages/{stage_ulid}/order-status", h.GetStageOrderStatus)
 			r.Get("/stage-orders", h.ListStageOrders)
 			r.Get("/orders", h.ListOrders)
+			r.Post("/orders/sync-meta", h.AdminSyncOrderMeta)
 			r.Get("/invoices", h.ListInvoices)
 			r.Get("/bundle-orders", h.ListBundleOrders)
 			r.Route("/mail-tasks", func(r chi.Router) {
@@ -367,6 +380,9 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Get("/{event_id}", h.GetPayWebhookEventDetail)
 			})
 			r.Get("/order-items", h.ListPayOrderItems)
+			r.Post("/order-amounts/batch", h.BatchGetPayOrderAmounts)
+			r.Post("/invoice-amounts/batch", h.BatchGetPayInvoiceAmounts)
+			r.Post("/payment-requests/sync-currency", h.AdminSyncPaymentRequestCurrency)
 		})
 
 		// ===== Webhook 审计 (Exam Webhooks) =====

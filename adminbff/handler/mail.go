@@ -151,13 +151,24 @@ func (h *Handler) GetMail(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, mailID, "mail_id") {
 		return
 	}
-	resp, err := h.Gmail.GetMail(r.Context(), &gmailpb.GetMailRequest{MailUlid: mailID})
+	summary, summaryErr := h.Gmail.GetMail(r.Context(), &gmailpb.GetMailRequest{MailUlid: mailID})
+	detail, err := h.Gmail.GetMailDetail(r.Context(), &gmailpb.GetMailDetailRequest{MailUlid: mailID})
 	if err != nil {
 		slog.Error("GetMail failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	payload := jsonPayloadObject(detail)
+	payload["detail"] = detail
+	if summaryErr == nil && summary != nil {
+		payload["summary"] = summary
+		for key, value := range jsonPayloadObject(summary) {
+			if _, exists := payload[key]; !exists {
+				payload[key] = value
+			}
+		}
+	}
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 func (h *Handler) ListSentMails(w http.ResponseWriter, r *http.Request) {
@@ -318,28 +329,19 @@ func (h *Handler) DeleteMailTemplate(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListMailTemplates(w http.ResponseWriter, r *http.Request) {
 	page := parsePositiveIntQuery(r, "page", 1)
 	pageSize := parsePositiveIntQuery(r, "page_size", 10)
-	resp, err := h.Gmail.GetTemplateList(r.Context(), &gmailpb.GetTemplateListRequest{BusinessUnit: "adminserver"})
+	resp, err := h.Gmail.ListTemplates(r.Context(), &gmailpb.ListTemplatesRequest{
+		BusinessUnit: optionalString(firstNonEmpty(r.URL.Query().Get("business_unit"), "adminserver")),
+		Page:         uint32(page),
+		PageSize:     uint32(pageSize),
+	})
 	if err != nil {
 		slog.Error("ListMailTemplates failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
 	payload := jsonPayloadObject(resp)
-	if templates, ok := payload["templates"].([]interface{}); ok {
-		total := len(templates)
-		start := (page - 1) * pageSize
-		if start > total {
-			start = total
-		}
-		end := start + pageSize
-		if end > total {
-			end = total
-		}
-		payload["templates"] = templates[start:end]
-		payload["total"] = total
-		payload["page"] = page
-		payload["page_size"] = pageSize
-	}
+	payload["page"] = page
+	payload["page_size"] = pageSize
 	WriteJSON(w, http.StatusOK, payload)
 }
 
@@ -348,13 +350,24 @@ func (h *Handler) GetMailTemplate(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, path, "path") {
 		return
 	}
-	resp, err := h.Gmail.GetTemplate(r.Context(), &gmailpb.GetTemplateRequest{Path: path})
+	summary, summaryErr := h.Gmail.GetTemplate(r.Context(), &gmailpb.GetTemplateRequest{Path: path})
+	detail, err := h.Gmail.GetTemplateDetail(r.Context(), &gmailpb.GetTemplateDetailRequest{Path: path})
 	if err != nil {
 		slog.Error("GetMailTemplate failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	payload := jsonPayloadObject(detail)
+	payload["detail"] = detail
+	if summaryErr == nil && summary != nil {
+		payload["summary"] = summary
+		for key, value := range jsonPayloadObject(summary) {
+			if _, exists := payload[key]; !exists {
+				payload[key] = value
+			}
+		}
+	}
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 func (h *Handler) RenderMailTemplate(w http.ResponseWriter, r *http.Request) {
@@ -403,6 +416,31 @@ func (h *Handler) GetAllBuiltInPaths(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gmail.GetAllBuiltInPaths(r.Context(), &gmailpb.GetAllBuiltInPathsRequest{})
 	if err != nil {
 		slog.Error("GetAllBuiltInPaths failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GetMailBuiltInPath(w http.ResponseWriter, r *http.Request) {
+	req := &gmailpb.GetBuiltInPathRequest{}
+	if path := strings.TrimSpace(r.URL.Query().Get("path")); path != "" {
+		req.Query = &gmailpb.GetBuiltInPathRequest_Path{Path: path}
+	} else if rawType := strings.TrimSpace(r.URL.Query().Get("path_type")); rawType != "" {
+		parsed, err := strconv.ParseInt(rawType, 10, 32)
+		if err != nil || parsed <= 0 {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "path_type must be a positive integer")
+			return
+		}
+		req.Query = &gmailpb.GetBuiltInPathRequest_PathType{PathType: gmailpb.BuiltInMailPathType(parsed)}
+	} else {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "path or path_type is required")
+		return
+	}
+
+	resp, err := h.Gmail.GetBuiltInPath(r.Context(), req)
+	if err != nil {
+		slog.Error("GetMailBuiltInPath failed", "error", err)
 		HandleGrpcError(w, err)
 		return
 	}

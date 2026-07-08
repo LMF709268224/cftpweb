@@ -15,6 +15,7 @@ const templates = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const saving = ref(false)
+const detailLoading = ref(false)
 const dialogOpen = ref(false)
 const mode = ref<Mode>("detail")
 const form = ref({
@@ -65,35 +66,33 @@ function openCreate() {
   dialogOpen.value = true
 }
 
-async function openTemplateDetail(template: JsonRecord) {
+async function openTemplate(template: JsonRecord, nextMode: Exclude<Mode, "create">) {
   selected.value = template
-  mode.value = "detail"
+  mode.value = nextMode
   form.value = formFromTemplate(template)
   dialogOpen.value = true
+  detailLoading.value = true
   try {
     selected.value = await loadTemplateDetail(template)
     form.value = formFromTemplate(selected.value)
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.loadFailed)
+  } finally {
+    detailLoading.value = false
   }
 }
 
-async function openTemplateEditor(template: JsonRecord) {
-  selected.value = template
-  mode.value = "edit"
-  form.value = formFromTemplate(template)
-  dialogOpen.value = true
-  try {
-    selected.value = await loadTemplateDetail(template)
-    form.value = formFromTemplate(selected.value)
-  } catch (err) {
-    console.error(err)
-    toast.error(copy.value.toasts.loadFailed)
-  }
+function openTemplateDetail(template: JsonRecord) {
+  void openTemplate(template, "detail")
+}
+
+function openTemplateEditor(template: JsonRecord) {
+  void openTemplate(template, "edit")
 }
 
 function closeDialog() {
+  if (detailLoading.value || saving.value) return
   dialogOpen.value = false
 }
 
@@ -238,11 +237,17 @@ onMounted(load)
                 </h2>
                 <p class="mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? copy.createDescription : templateUlid(selected) }}</p>
               </div>
-              <button class="rounded-full border border-slate-200 p-2 text-slate-500 shadow-sm transition hover:bg-slate-50" type="button" :aria-label="copy.close" @click="closeDialog">
+              <button class="rounded-full border border-slate-200 p-2 text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" type="button" :aria-label="copy.close" :disabled="detailLoading || saving" @click="closeDialog">
                 <X class="h-5 w-5" />
               </button>
             </div>
-            <div class="flex-1 overflow-y-auto p-5">
+            <div class="relative flex-1 overflow-y-auto p-5">
+              <div v-if="detailLoading" class="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-[2px]">
+                <div class="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm font-bold text-slate-600 shadow-xl">
+                  <Loader2 class="h-8 w-8 animate-spin text-blue-700" />
+                  {{ copy.loading }}
+                </div>
+              </div>
               <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <form id="pdf-template-form" class="space-y-4" @submit.prevent="save">
                   <ReadonlyField v-if="readonlyMode" :label="copy.fields.templateId" :value="form.template_id" />
@@ -290,7 +295,7 @@ onMounted(load)
               </div>
             </div>
             <div v-if="!readonlyMode" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
-              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="submit" form="pdf-template-form" :disabled="saving">
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="submit" form="pdf-template-form" :disabled="saving || detailLoading">
                 <Save class="h-4 w-4" />
                 {{ saving ? copy.saving : copy.saveTemplate }}
               </button>
