@@ -18,6 +18,7 @@ import {
   Receipt,
   Settings,
   ShieldCheck,
+  Wrench,
 } from "lucide-vue-next"
 import { computed, onMounted, onUnmounted, ref } from "vue"
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router"
@@ -73,6 +74,7 @@ const navGroups = computed(() => [
   {
     label: copy.value.groups.operations,
     items: [
+      { path: "/admin-ops", label: copy.value.nav.adminOps, icon: Wrench },
       { path: "/audit/logs", label: copy.value.nav.auditLogs, icon: ShieldCheck },
       { path: "/pdf-templates", label: copy.value.nav.pdfTemplates, icon: FileText },
       { path: "/pdf-requests", label: copy.value.nav.pdfRequests, icon: FileBadge },

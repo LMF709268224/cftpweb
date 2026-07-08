@@ -79,8 +79,31 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		})
 
 		r.Route("/prog/course-units", func(r chi.Router) {
+			r.Get("/", h.ListProgCourseUnits)
 			r.Post("/{course_unit_ulid}/force-completed", h.AdminForceCourseCompleted)
 			r.Post("/{course_unit_ulid}/force-signup-exam", h.AdminForceCourseSignupExam)
+		})
+
+		r.Route("/prog/mail-tasks", func(r chi.Router) {
+			r.Get("/", h.ListProgMailTasks)
+			r.Get("/{mail_task_ulid}", h.GetProgMailTaskDetail)
+			r.Post("/{mail_task_ulid}/retry", h.RetryProgMailTask)
+			r.Post("/{mail_task_ulid}/ignore", h.IgnoreProgMailTask)
+		})
+
+		r.Route("/prog/stages", func(r chi.Router) {
+			r.Get("/", h.ListProgStages)
+			r.Get("/{stage_ulid}", h.GetProgStageDetail)
+		})
+
+		r.Route("/prog/driver-events", func(r chi.Router) {
+			r.Get("/", h.ListProgDriverEvents)
+			r.Get("/{event_ulid}", h.GetProgDriverEventDetail)
+		})
+
+		r.Route("/prog/nats-messages", func(r chi.Router) {
+			r.Get("/", h.ListProgNatsMessages)
+			r.Get("/{message_ulid}", h.GetProgNatsMessageDetail)
 		})
 
 		r.Route("/exams", func(r chi.Router) {
@@ -89,6 +112,20 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/{exam_ulid}/result", h.GetAdminExamResult)
 			r.Get("/{exam_ulid}/transitions", h.GetAdminExamTransitions)
 			r.Post("/{exam_ulid}/sync-result", h.SyncAdminExamResult)
+		})
+
+		r.Route("/exam-ops", func(r chi.Router) {
+			r.Route("/audit-messages", func(r chi.Router) {
+				r.Get("/", h.ListExamAuditMessages)
+				r.Get("/{message_ulid}", h.GetExamAuditMessageDetail)
+			})
+			r.Get("/status-transitions", h.ListExamStatusTransitions)
+			r.Route("/reminder-mails", func(r chi.Router) {
+				r.Get("/", h.ListExamReminderMails)
+				r.Get("/{mail_ulid}", h.GetExamReminderMailDetail)
+				r.Post("/{mail_ulid}/retry", h.RetryExamReminderMail)
+				r.Post("/{mail_ulid}/ignore", h.IgnoreExamReminderMail)
+			})
 		})
 
 		// ===== 目录 (Catalogs) =====
@@ -288,6 +325,18 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/orders", h.ListOrders)
 			r.Get("/invoices", h.ListInvoices)
 			r.Get("/bundle-orders", h.ListBundleOrders)
+			r.Route("/mail-tasks", func(r chi.Router) {
+				r.Get("/", h.ListMallMailTasks)
+				r.Get("/{mail_task_ulid}", h.GetMallMailTaskDetail)
+				r.Get("/{mail_task_ulid}/summary", h.GetMallMailTaskSummary)
+				r.Post("/{mail_task_ulid}/retry", h.RetryMallMailTask)
+				r.Post("/{mail_task_ulid}/ignore", h.IgnoreMallMailTask)
+			})
+			r.Route("/nats-messages", func(r chi.Router) {
+				r.Get("/", h.ListMallNatsMessages)
+				r.Get("/{message_ulid}", h.GetMallNatsMessageDetail)
+				r.Get("/{message_ulid}/summary", h.GetMallNatsMessageSummary)
+			})
 			r.Route("/bundles", func(r chi.Router) {
 				r.Get("/", h.ListBundles)
 				r.Post("/", h.CreateBundle)
@@ -308,6 +357,16 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 				r.Get("/{bundle_order_ulid}", h.GetBundleOrderDetail)
 				r.Post("/purge", h.AdminPurgeCandidateBundle)
 			})
+		})
+
+		// ===== Payment Ops =====
+		r.Route("/pay", func(r chi.Router) {
+			r.Get("/subscriptions", h.ListPaySubscriptions)
+			r.Route("/webhook-events", func(r chi.Router) {
+				r.Get("/", h.ListPayWebhookEvents)
+				r.Get("/{event_id}", h.GetPayWebhookEventDetail)
+			})
+			r.Get("/order-items", h.ListPayOrderItems)
 		})
 
 		// ===== Webhook 审计 (Exam Webhooks) =====

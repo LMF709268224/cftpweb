@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router"
 import AdminLayout from "@/components/AdminLayout.vue"
 import { getAccessToken } from "@/lib/authStorage"
+import AdminOpsPage from "@/pages/AdminOpsPage.vue"
 import AuditLogsPage from "@/pages/AuditLogsPage.vue"
 import ApplicationsPage from "@/pages/ApplicationsPage.vue"
 import BundlesPage from "@/pages/BundlesPage.vue"
@@ -49,6 +50,7 @@ export type ResourceRouteKey =
   | "pdfTemplates"
   | "pdfRequests"
   | "auditLogs"
+  | "adminOps"
   | "webhooks"
   | "permissions"
   | "settings"
@@ -219,6 +221,16 @@ export const resourceRoutes: RouteRecordRaw[] = [
       copyKey: "pdfRequests",
       endpoint: "/api/pdf-requests",
       itemKeys: ["requests", "items"],
+    } satisfies ResourceRouteMeta,
+  },
+  {
+    path: "/admin-ops",
+    name: "admin-ops",
+    component: AdminOpsPage,
+    meta: {
+      copyKey: "adminOps",
+      endpoint: "/api/pay/webhook-events",
+      itemKeys: ["items"],
     } satisfies ResourceRouteMeta,
   },
   {
