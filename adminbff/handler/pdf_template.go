@@ -47,7 +47,7 @@ type CreatePdfTemplateReq struct {
 // CreatePdfTemplate POST /api/pdf-templates
 func (h *Handler) CreatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 	var body CreatePdfTemplateReq
-	if err := ReadJSON(r, &body); err != nil {
+	if err := ReadLargeJSON(r, &body); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}
@@ -78,7 +78,7 @@ type UpdatePdfTemplateReq struct {
 // UpdatePdfTemplate PUT /api/pdf-templates
 func (h *Handler) UpdatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 	var body UpdatePdfTemplateReq
-	if err := ReadJSON(r, &body); err != nil {
+	if err := ReadLargeJSON(r, &body); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "Invalid request body")
 		return
 	}

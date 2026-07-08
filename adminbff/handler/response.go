@@ -120,6 +120,11 @@ func ReadJSON(r *http.Request, dest interface{}) error {
 	return json.NewDecoder(r.Body).Decode(dest)
 }
 
+func ReadLargeJSON(r *http.Request, dest interface{}) error {
+	r.Body = http.MaxBytesReader(nil, r.Body, 5<<20)
+	return json.NewDecoder(r.Body).Decode(dest)
+}
+
 func sanitizeFilename(s string) string {
 	s = strings.ReplaceAll(s, `"`, "")
 	s = strings.ReplaceAll(s, `\`, "")
