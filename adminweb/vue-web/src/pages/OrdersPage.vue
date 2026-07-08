@@ -520,9 +520,9 @@ onMounted(() => load(1))
           <div class="font-black">{{ productName(selected) }}</div>
           <div class="mt-1 break-all text-xs text-slate-500">{{ bizRef(selected) }}</div>
         </div>
-        <div class="mt-6 flex justify-end gap-3">
-          <button class="rounded-xl border px-5 py-3 font-bold" type="button" :disabled="Boolean(purging)" @click="showPurgeConfirm = false">{{ copy.cancel }}</button>
-          <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="Boolean(purging)" @click="purgeSelected">
+        <div class="mt-6 flex items-center justify-end gap-3">
+          <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:opacity-50" type="button" :disabled="Boolean(purging)" @click="showPurgeConfirm = false">{{ copy.cancel }}</button>
+          <button class="inline-flex h-11 min-w-[112px] items-center justify-center rounded-xl bg-red-600 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="Boolean(purging)" @click="purgeSelected">
             {{ purging ? copy.purging : copy.confirmPurge }}
           </button>
         </div>

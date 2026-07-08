@@ -1435,9 +1435,9 @@ onMounted(load)
             <div class="font-black">{{ bundleName(selected) }}</div>
             <div class="mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
           </div>
-          <div class="mt-6 flex justify-end gap-3">
-            <button class="rounded-xl border px-5 py-3 font-bold disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="showDeleteConfirm = false">{{ copy.cancel }}</button>
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="removeBundle">
+          <div class="mt-6 flex items-center justify-end gap-3">
+            <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="showDeleteConfirm = false">{{ copy.cancel }}</button>
+            <button class="inline-flex h-11 min-w-[112px] items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="removeBundle">
               <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
               {{ deleting ? copy.deleting : copy.confirmDelete }}
             </button>
