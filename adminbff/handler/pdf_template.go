@@ -35,6 +35,7 @@ func (h *Handler) CreatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &gcredspb.CreatePdfTemplateRequest{
+		TemplateUlid: newLmsID(),
 		Name:         body.Name,
 		Description:  body.Description,
 		HtmlTemplate: body.HtmlTemplate,
