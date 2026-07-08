@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue"
+import { Search } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
+import { formatDate } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 
 type JsonRecord = Record<string, unknown>
@@ -38,6 +40,11 @@ type OpsModule = {
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.adminOps)
 
+function fieldLabel(key: string) {
+  const labels = copy.value.filterLabels as Record<string, string>
+  return labels[key] || key
+}
+
 const modules = computed<OpsModule[]>(() => [
   {
     key: "paySubscriptions",
@@ -48,8 +55,8 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["subscription_ulid", "subscriptionUlid", "stripe_subscription_id", "stripeSubscriptionId", "order_ulid", "orderUlid"],
     pagination: "page",
     filters: [
-      { key: "customer_ulid", label: "customer_ulid" },
-      { key: "status", label: "status" },
+      { key: "customer_ulid", label: fieldLabel("customer_ulid") },
+      { key: "status", label: fieldLabel("status") },
     ],
   },
   {
@@ -62,10 +69,10 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["event_id", "eventId", "stripe_event_id", "stripeEventId"],
     pagination: "page",
     filters: [
-      { key: "event_type", label: "event_type" },
-      { key: "processed_status", label: "processed_status" },
-      { key: "start_time", label: "start_time" },
-      { key: "end_time", label: "end_time" },
+      { key: "event_type", label: fieldLabel("event_type") },
+      { key: "processed_status", label: fieldLabel("processed_status") },
+      { key: "start_time", label: fieldLabel("start_time") },
+      { key: "end_time", label: fieldLabel("end_time") },
     ],
   },
   {
@@ -77,7 +84,7 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["id", "item_id", "itemId"],
     pagination: "page",
     requiredFilters: ["order_ulid"],
-    filters: [{ key: "order_ulid", label: "order_ulid", placeholder: copy.value.placeholders.required }],
+    filters: [{ key: "order_ulid", label: fieldLabel("order_ulid"), placeholder: copy.value.placeholders.required }],
   },
   {
     key: "mallMailTasks",
@@ -89,10 +96,10 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["mail_task_ulid", "mailTaskUlid"],
     pagination: "offset",
     filters: [
-      { key: "candidate_ulid", label: "candidate_ulid" },
-      { key: "order_ulid", label: "order_ulid" },
-      { key: "task_status", label: "task_status" },
-      { key: "mail_type", label: "mail_type" },
+      { key: "candidate_ulid", label: fieldLabel("candidate_ulid") },
+      { key: "order_ulid", label: fieldLabel("order_ulid") },
+      { key: "task_status", label: fieldLabel("task_status") },
+      { key: "mail_type", label: fieldLabel("mail_type") },
     ],
     actions: [
       { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/mall/mail-tasks/${encodeURIComponent(id)}/retry` },
@@ -109,10 +116,10 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["message_ulid", "messageUlid"],
     pagination: "offset",
     filters: [
-      { key: "receive_status", label: "receive_status" },
-      { key: "source_service", label: "source_service" },
-      { key: "subject", label: "subject" },
-      { key: "message_type", label: "message_type" },
+      { key: "receive_status", label: fieldLabel("receive_status") },
+      { key: "source_service", label: fieldLabel("source_service") },
+      { key: "subject", label: fieldLabel("subject") },
+      { key: "message_type", label: fieldLabel("message_type") },
     ],
   },
   {
@@ -126,8 +133,8 @@ const modules = computed<OpsModule[]>(() => [
     pagination: "offset",
     requiredFilters: ["candidate_ulid"],
     filters: [
-      { key: "candidate_ulid", label: "candidate_ulid", placeholder: copy.value.placeholders.required },
-      { key: "pipeline_ulid", label: "pipeline_ulid" },
+      { key: "candidate_ulid", label: fieldLabel("candidate_ulid"), placeholder: copy.value.placeholders.required },
+      { key: "pipeline_ulid", label: fieldLabel("pipeline_ulid") },
     ],
     actions: [
       { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/prog/mail-tasks/${encodeURIComponent(id)}/retry` },
@@ -144,7 +151,7 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["stage_ulid", "stageUlid"],
     pagination: "offset",
     requiredFilters: ["pipeline_ulid"],
-    filters: [{ key: "pipeline_ulid", label: "pipeline_ulid", placeholder: copy.value.placeholders.required }],
+    filters: [{ key: "pipeline_ulid", label: fieldLabel("pipeline_ulid"), placeholder: copy.value.placeholders.required }],
   },
   {
     key: "progCourseUnits",
@@ -157,9 +164,9 @@ const modules = computed<OpsModule[]>(() => [
     pagination: "offset",
     requiredFilters: ["pipeline_ulid"],
     filters: [
-      { key: "pipeline_ulid", label: "pipeline_ulid", placeholder: copy.value.placeholders.required },
-      { key: "stage_ulid", label: "stage_ulid" },
-      { key: "status", label: "status" },
+      { key: "pipeline_ulid", label: fieldLabel("pipeline_ulid"), placeholder: copy.value.placeholders.required },
+      { key: "stage_ulid", label: fieldLabel("stage_ulid") },
+      { key: "status", label: fieldLabel("status") },
     ],
   },
   {
@@ -172,10 +179,10 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["event_ulid", "eventUlid"],
     pagination: "offset",
     filters: [
-      { key: "entity_type", label: "entity_type" },
-      { key: "entity_ulid", label: "entity_ulid" },
-      { key: "event_status", label: "event_status" },
-      { key: "event_type", label: "event_type" },
+      { key: "entity_type", label: fieldLabel("entity_type") },
+      { key: "entity_ulid", label: fieldLabel("entity_ulid") },
+      { key: "event_status", label: fieldLabel("event_status") },
+      { key: "event_type", label: fieldLabel("event_type") },
     ],
   },
   {
@@ -188,8 +195,8 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["message_ulid", "messageUlid"],
     pagination: "offset",
     filters: [
-      { key: "receive_status", label: "receive_status" },
-      { key: "source_service", label: "source_service" },
+      { key: "receive_status", label: fieldLabel("receive_status") },
+      { key: "source_service", label: fieldLabel("source_service") },
     ],
   },
   {
@@ -203,10 +210,10 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["message_ulid", "messageUlid"],
     pagination: "page",
     filters: [
-      { key: "processed_status", label: "processed_status" },
-      { key: "event_type", label: "event_type" },
-      { key: "start_time", label: "start_time" },
-      { key: "end_time", label: "end_time" },
+      { key: "processed_status", label: fieldLabel("processed_status") },
+      { key: "event_type", label: fieldLabel("event_type") },
+      { key: "start_time", label: fieldLabel("start_time") },
+      { key: "end_time", label: fieldLabel("end_time") },
     ],
   },
   {
@@ -218,8 +225,8 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["transition_ulid", "transitionUlid", "id"],
     pagination: "page",
     filters: [
-      { key: "exam_ulid", label: "exam_ulid" },
-      { key: "status_type", label: "status_type" },
+      { key: "exam_ulid", label: fieldLabel("exam_ulid") },
+      { key: "status_type", label: fieldLabel("status_type") },
     ],
   },
   {
@@ -232,11 +239,11 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["mail_ulid", "mailUlid"],
     pagination: "page",
     filters: [
-      { key: "exam_ulid", label: "exam_ulid" },
-      { key: "task_status", label: "task_status" },
-      { key: "delivery_status", label: "delivery_status" },
-      { key: "candidate_email", label: "candidate_email" },
-      { key: "reminder_type", label: "reminder_type" },
+      { key: "exam_ulid", label: fieldLabel("exam_ulid") },
+      { key: "task_status", label: fieldLabel("task_status") },
+      { key: "delivery_status", label: fieldLabel("delivery_status") },
+      { key: "candidate_email", label: fieldLabel("candidate_email") },
+      { key: "reminder_type", label: fieldLabel("reminder_type") },
     ],
     actions: [
       { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/exam-ops/reminder-mails/${encodeURIComponent(id)}/retry` },
@@ -253,6 +260,7 @@ const detail = ref<unknown>(null)
 const detailNotice = ref("")
 const loading = ref(false)
 const detailLoading = ref(false)
+const showDetailModal = ref(false)
 const actionLoading = ref("")
 const total = ref(0)
 const page = ref(1)
@@ -264,6 +272,7 @@ const activeFilters = computed(() => filters[activeModule.value.key] || (filters
 const missingRequiredFilters = computed(() =>
   (activeModule.value.requiredFilters || []).filter((key) => !String(activeFilters.value[key] || "").trim()),
 )
+const missingRequiredFilterLabels = computed(() => missingRequiredFilters.value.map(fieldLabel))
 const canLoad = computed(() => missingRequiredFilters.value.length === 0)
 
 function isRecord(value: unknown): value is JsonRecord {
@@ -293,10 +302,9 @@ function getTitle(item: JsonRecord) {
 }
 
 function getSubtitle(item: JsonRecord) {
-  const parts = [
-    getField(item, ["task_status", "taskStatus", "processed_status", "processedStatus", "event_status", "eventStatus", "status"]),
-    getField(item, ["created_at", "createdAt", "scheduled_at", "scheduledAt"]),
-  ].filter((value) => value !== undefined && value !== "")
+  const status = getField(item, ["task_status", "taskStatus", "processed_status", "processedStatus", "event_status", "eventStatus", "status"])
+  const time = getField(item, ["created_at", "createdAt", "scheduled_at", "scheduledAt"])
+  const parts = [status, formatDate(time)].filter((value) => value !== undefined && value !== "")
   return parts.map(String).join(" · ")
 }
 
@@ -338,6 +346,7 @@ async function loadList(reset = false) {
   selected.value = null
   detail.value = null
   detailNotice.value = ""
+  showDetailModal.value = false
   if (!canLoad.value) {
     items.value = []
     total.value = 0
@@ -350,7 +359,7 @@ async function loadList(reset = false) {
     items.value = extractItems(data, module)
     total.value = Number(data.total || items.value.length || 0)
     if (items.value.length) {
-      await openItem(items.value[0])
+      await openItem(items.value[0], false)
     }
   } catch (error) {
     items.value = []
@@ -361,10 +370,11 @@ async function loadList(reset = false) {
   }
 }
 
-async function openItem(item: JsonRecord) {
+async function openItem(item: JsonRecord, openModal = true) {
   selected.value = item
   detail.value = item
   detailNotice.value = ""
+  showDetailModal.value = openModal
   const module = activeModule.value
   const id = getItemID(item, module)
   if (!module.detailPath || !id) return
@@ -380,6 +390,10 @@ async function openItem(item: JsonRecord) {
   } finally {
     detailLoading.value = false
   }
+}
+
+function closeDetailModal() {
+  showDetailModal.value = false
 }
 
 async function runAction(action: OpsAction) {
@@ -428,7 +442,7 @@ void loadList()
 </script>
 
 <template>
-  <section class="space-y-6">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-8 py-8">
     <header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
         <p class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{{ copy.eyebrow }}</p>
@@ -440,12 +454,12 @@ void loadList()
       </button>
     </header>
 
-    <div class="rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <div class="flex gap-3 overflow-x-auto pb-2">
         <button
           v-for="module in modules"
           :key="module.key"
-          class="shrink-0 rounded-2xl border px-4 py-3 text-left text-sm font-black transition"
+          class="shrink-0 rounded-xl border px-4 py-3 text-left text-sm font-black transition"
           :class="module.key === activeKey ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'"
           @click="activeKey = module.key"
         >
@@ -454,85 +468,110 @@ void loadList()
       </div>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[420px_1fr]">
-      <div class="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-100 p-5">
-          <h2 class="text-xl font-black text-slate-950">{{ activeModule.label }}</h2>
-          <p class="mt-1 text-sm font-medium text-slate-500">{{ activeModule.description }}</p>
-        </div>
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div>
+        <h2 class="text-xl font-black text-slate-950">{{ activeModule.label }}</h2>
+        <p class="mt-1 text-sm font-medium text-slate-500">{{ activeModule.description }}</p>
+      </div>
 
-        <div v-if="activeModule.filters?.length" class="space-y-3 border-b border-slate-100 p-5">
-          <div v-for="filter in activeModule.filters" :key="filter.key" class="space-y-1">
-            <label class="text-xs font-black text-slate-500">{{ filter.label }}</label>
-            <input
-              v-model="activeFilters[filter.key]"
-              class="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold outline-none focus:border-sky-400"
-              :placeholder="filter.placeholder || copy.placeholders.optional"
-              @keyup.enter="loadList(true)"
-            />
+      <div v-if="activeModule.filters?.length" class="mt-5 flex flex-wrap items-end gap-3">
+        <div v-for="filter in activeModule.filters" :key="filter.key" class="w-full space-y-1 sm:w-[200px] 2xl:w-[220px]">
+          <label class="text-xs font-black text-slate-500">{{ filter.label }}</label>
+          <input
+            v-model="activeFilters[filter.key]"
+            class="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold outline-none focus:border-sky-400"
+            :placeholder="filter.placeholder || copy.placeholders.optional"
+            @keyup.enter="loadList(true)"
+          />
+        </div>
+        <button class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white hover:bg-blue-800 sm:w-auto" type="button" @click="loadList(true)">
+          <Search class="h-4 w-4" />
+          {{ copy.search }}
+        </button>
+      </div>
+    </section>
+
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
+        <div>
+          <h2 class="text-xl font-black text-slate-950">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm font-medium text-slate-500">{{ copy.listDescription }}</p>
+        </div>
+        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.total(total) }}</span>
+      </div>
+
+      <div v-if="missingRequiredFilters.length" class="px-6 py-14 text-center text-sm font-bold text-amber-700">
+        {{ copy.requiredPrefix }} {{ missingRequiredFilterLabels.join(", ") }}
+      </div>
+      <div v-else-if="loading" class="px-6 py-14 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
+      <div v-else-if="!items.length" class="px-6 py-14 text-center text-sm font-bold text-slate-500">{{ copy.empty }}</div>
+      <div v-else>
+        <div class="grid grid-cols-[minmax(0,1fr)_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+          <span>{{ copy.record }}</span>
+          <span class="text-right">{{ copy.operation }}</span>
+        </div>
+        <button
+          v-for="item in items"
+          :key="getItemID(item) || stringify(item)"
+          class="grid w-full grid-cols-[minmax(0,1fr)_112px] items-center gap-4 border-b border-slate-100 p-5 text-left transition last:border-b-0 hover:bg-slate-50"
+          :class="getItemID(item) === getItemID(selected) ? 'bg-sky-50' : ''"
+          @click="openItem(item)"
+        >
+          <span class="min-w-0">
+            <span class="block font-black text-slate-950">{{ getTitle(item) }}</span>
+            <span class="mt-1 block break-all text-xs font-bold text-blue-700">{{ getItemID(item) || "-" }}</span>
+            <span class="mt-1 block text-xs font-semibold text-slate-500">{{ getSubtitle(item) || "-" }}</span>
+          </span>
+          <span class="text-right text-sm font-bold text-blue-700">{{ copy.viewDetail }}</span>
+        </button>
+      </div>
+
+      <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
+        <div class="flex gap-2">
+          <button class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold disabled:opacity-40" :disabled="page <= 1 && offset <= 0" @click="previousPage">
+            {{ copy.previous }}
+          </button>
+          <button class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold" :disabled="items.length < pageSize" @click="nextPage">
+            {{ copy.next }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <Teleport to="body">
+      <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+        <div class="flex max-h-[88vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+            <div>
+              <h2 class="text-2xl font-black text-slate-950">{{ copy.detailTitle }}</h2>
+              <p class="mt-1 break-all text-xs font-bold text-blue-700">{{ getItemID(selected) || "-" }}</p>
+            </div>
+            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-xl leading-none text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetailModal">
+              ×
+            </button>
           </div>
-          <button class="h-11 w-full rounded-xl bg-blue-700 text-sm font-black text-white hover:bg-blue-800" @click="loadList(true)">
-            {{ copy.search }}
-          </button>
-        </div>
 
-        <div v-if="missingRequiredFilters.length" class="p-6 text-sm font-bold text-amber-700">
-          {{ copy.requiredPrefix }} {{ missingRequiredFilters.join(", ") }}
-        </div>
-        <div v-else-if="loading" class="p-10 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
-        <div v-else-if="!items.length" class="p-10 text-center text-sm font-bold text-slate-500">{{ copy.empty }}</div>
-        <div v-else class="divide-y divide-slate-100">
-          <button
-            v-for="item in items"
-            :key="getItemID(item) || stringify(item)"
-            class="block w-full p-5 text-left transition hover:bg-slate-50"
-            :class="getItemID(item) === getItemID(selected) ? 'bg-sky-50' : ''"
-            @click="openItem(item)"
-          >
-            <p class="font-black text-slate-950">{{ getTitle(item) }}</p>
-            <p class="mt-1 break-all text-xs font-bold text-blue-700">{{ getItemID(item) || "-" }}</p>
-            <p class="mt-1 text-xs font-semibold text-slate-500">{{ getSubtitle(item) || "-" }}</p>
-          </button>
-        </div>
+          <div class="flex-1 overflow-auto p-6">
+            <div v-if="activeModule.actions?.length && selected" class="mb-5 flex flex-wrap justify-end gap-2">
+              <button
+                v-for="action in activeModule.actions"
+                :key="action.key"
+                class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-black hover:border-slate-500 disabled:opacity-50"
+                :disabled="!!actionLoading"
+                @click="runAction(action)"
+              >
+                {{ actionLoading === action.key ? copy.processing : action.label }}
+              </button>
+            </div>
 
-        <div class="flex items-center justify-between border-t border-slate-100 p-5">
-          <span class="text-xs font-black text-slate-500">{{ copy.total(total) }}</span>
-          <div class="flex gap-2">
-            <button class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold disabled:opacity-40" :disabled="page <= 1 && offset <= 0" @click="previousPage">
-              {{ copy.previous }}
-            </button>
-            <button class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold" :disabled="items.length < pageSize" @click="nextPage">
-              {{ copy.next }}
-            </button>
+            <div v-if="detailNotice" class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
+              {{ detailNotice }}
+            </div>
+            <div v-if="detailLoading" class="mt-10 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
+            <pre v-else class="mt-6 max-h-[64vh] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs font-semibold leading-relaxed text-slate-100">{{ stringify(detail || selected || {}) }}</pre>
           </div>
         </div>
       </div>
-
-      <div class="min-h-[520px] rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 class="text-xl font-black text-slate-950">{{ copy.detailTitle }}</h2>
-            <p class="mt-1 break-all text-xs font-bold text-blue-700">{{ getItemID(selected) || "-" }}</p>
-          </div>
-          <div v-if="activeModule.actions?.length && selected" class="flex flex-wrap gap-2">
-            <button
-              v-for="action in activeModule.actions"
-              :key="action.key"
-              class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-black hover:border-slate-500 disabled:opacity-50"
-              :disabled="!!actionLoading"
-              @click="runAction(action)"
-            >
-              {{ actionLoading === action.key ? copy.processing : action.label }}
-            </button>
-          </div>
-        </div>
-
-        <div v-if="detailNotice" class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
-          {{ detailNotice }}
-        </div>
-        <div v-if="detailLoading" class="mt-10 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
-        <pre v-else class="mt-6 max-h-[640px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs font-semibold leading-relaxed text-slate-100">{{ stringify(detail || selected || {}) }}</pre>
-      </div>
-    </div>
+    </Teleport>
   </section>
 </template>
