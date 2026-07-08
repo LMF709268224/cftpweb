@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
 )
@@ -27,21 +28,35 @@ func (h *Handler) GetPdfTemplateDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := h.Creds.GetPdfTemplateDetail(r.Context(), &gcredspb.GetPdfTemplateRequest{
+	req := &gcredspb.GetPdfTemplateRequest{
 		TemplateUlid: templateID,
-	})
+	}
+	summary, summaryErr := h.Creds.GetPdfTemplate(r.Context(), req)
+	detail, err := h.Creds.GetPdfTemplateDetail(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, res)
+	payload := jsonPayloadObject(detail)
+	payload["detail"] = detail
+	if summaryErr == nil && summary != nil {
+		payload["summary"] = summary
+		for key, value := range jsonPayloadObject(summary) {
+			if _, exists := payload[key]; !exists {
+				payload[key] = value
+			}
+		}
+	}
+
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 type CreatePdfTemplateReq struct {
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	HtmlTemplate string `json:"html_template"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	HtmlTemplate    string `json:"html_template"`
+	ParameterSchema string `json:"parameter_schema"`
 }
 
 // CreatePdfTemplate POST /api/pdf-templates
@@ -53,10 +68,11 @@ func (h *Handler) CreatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &gcredspb.CreatePdfTemplateRequest{
-		TemplateUlid: newLmsID(),
-		Name:         body.Name,
-		Description:  body.Description,
-		HtmlTemplate: body.HtmlTemplate,
+		TemplateUlid:    newLmsID(),
+		Name:            body.Name,
+		Description:     body.Description,
+		HtmlTemplate:    body.HtmlTemplate,
+		ParameterSchema: body.ParameterSchema,
 	}
 
 	res, err := h.Creds.CreatePdfTemplate(r.Context(), req)
@@ -69,10 +85,11 @@ func (h *Handler) CreatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpdatePdfTemplateReq struct {
-	TemplateId   string `json:"template_id"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	HtmlTemplate string `json:"html_template"`
+	TemplateId      string `json:"template_id"`
+	Name            string `json:"name"`
+	Description     string `json:"description"`
+	HtmlTemplate    string `json:"html_template"`
+	ParameterSchema string `json:"parameter_schema"`
 }
 
 // UpdatePdfTemplate PUT /api/pdf-templates
@@ -84,10 +101,11 @@ func (h *Handler) UpdatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &gcredspb.UpdatePdfTemplateRequest{
-		TemplateUlid: body.TemplateId,
-		Name:         body.Name,
-		Description:  body.Description,
-		HtmlTemplate: body.HtmlTemplate,
+		TemplateUlid:    body.TemplateId,
+		Name:            body.Name,
+		Description:     body.Description,
+		HtmlTemplate:    body.HtmlTemplate,
+		ParameterSchema: body.ParameterSchema,
 	}
 
 	res, err := h.Creds.UpdatePdfTemplate(r.Context(), req)
@@ -96,6 +114,74 @@ func (h *Handler) UpdatePdfTemplate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	WriteJSON(w, http.StatusOK, res)
+}
+
+// GetPdfRequest GET /api/pdf-requests/{request_ulid}
+func (h *Handler) GetPdfRequest(w http.ResponseWriter, r *http.Request) {
+	requestULID, ok := requiredURLParam(w, r, "request_ulid")
+	if !ok {
+		return
+	}
+	res, err := h.Creds.GetPdfRequest(r.Context(), &gcredspb.GetPdfRequestRequest{RequestUlid: requestULID})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
+}
+
+// GetPdfRequestDetail GET /api/pdf-requests/{request_ulid}/detail
+func (h *Handler) GetPdfRequestDetail(w http.ResponseWriter, r *http.Request) {
+	requestULID, ok := requiredURLParam(w, r, "request_ulid")
+	if !ok {
+		return
+	}
+	res, err := h.Creds.GetPdfRequestDetail(r.Context(), &gcredspb.GetPdfRequestRequest{RequestUlid: requestULID})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, res)
+}
+
+// CreateProgPdfRequest POST /api/prog/pipelines/{pipeline_ulid}/pdf-requests
+func (h *Handler) CreateProgPdfRequest(w http.ResponseWriter, r *http.Request) {
+	pipelineULID, ok := requiredURLParam(w, r, "pipeline_ulid")
+	if !ok {
+		return
+	}
+	var req gcredspb.CreatePdfRequestRequest
+	if err := ReadLargeJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if strings.TrimSpace(req.RequestUlid) == "" {
+		req.RequestUlid = newLmsID()
+	}
+	if strings.TrimSpace(req.BusinessUnit) == "" {
+		req.BusinessUnit = "gprog"
+	}
+	if strings.TrimSpace(req.ExtRefId) == "" {
+		req.ExtRefId = pipelineULID
+	}
+	if !requireRequestFields(w,
+		req.RequestUlid, "request_ulid",
+		req.BusinessUnit, "business_unit",
+		req.CandidateUlid, "candidate_ulid",
+		req.CredDefUlid, "cred_def_ulid",
+		req.DegreeNo, "degree_no",
+		req.TemplateUlid, "template_ulid",
+		req.TemplateParams, "template_params",
+	) {
+		return
+	}
+
+	res, err := h.Creds.CreatePdfRequest(r.Context(), &req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 	WriteJSON(w, http.StatusOK, res)
 }
 

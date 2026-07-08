@@ -65,9 +65,18 @@ function formatFieldValue(key: string, value: unknown) {
   return String(value)
 }
 
-function openRequest(request: JsonRecord | null, open = true) {
+async function openRequest(request: JsonRecord | null, open = true) {
   selected.value = request
   detailOpen.value = !!request && open
+  const id = request ? requestUlid(request) : ""
+  if (!id) return
+  try {
+    const detail = await apiClient<JsonRecord>(`/api/pdf-requests/${encodeURIComponent(id)}/detail`)
+    selected.value = { ...request, ...detail }
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.loadFailed)
+  }
 }
 
 function closeDetail() {

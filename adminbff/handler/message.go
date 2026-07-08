@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/oklog/ulid/v2"
 
@@ -150,7 +151,7 @@ func (h *Handler) GetMessageTemplate(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, path, "path") {
 		return
 	}
-	resp, err := h.Gmsg.GetTemplate(r.Context(), &gmsgpb.GetTemplateRequest{Path: path})
+	resp, err := h.Gmsg.GetTemplateDetail(r.Context(), &gmsgpb.GetTemplateDetailRequest{Path: path})
 	if err != nil {
 		slog.Error("GetMessageTemplate failed", "error", err)
 		HandleGrpcError(w, err)
@@ -187,4 +188,71 @@ func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) DeleteMessageTemplate(w http.ResponseWriter, r *http.Request) {
 	// TODO(microservice-missing-api): gmsg does not provide DeleteTemplate yet.
 	WriteError(w, http.StatusNotImplemented, ErrNotImplemented, "not implemented in gmsg microservice")
+}
+
+func (h *Handler) RevokeMessage(w http.ResponseWriter, r *http.Request) {
+	var req gmsgpb.RevokeMessageRequest
+	if err := ReadJSON(r, &req); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+	if strings.TrimSpace(req.AdminUlid) == "" {
+		req.AdminUlid = adminActorID(r)
+	}
+	if !requireRequestFields(w, req.UserUlid, "user_ulid", req.MessageUlid, "message_ulid", req.AdminUlid, "admin_ulid") {
+		return
+	}
+
+	resp, err := h.Gmsg.RevokeMessage(r.Context(), &req)
+	if err != nil {
+		slog.Error("RevokeMessage failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GetMessageStats(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Gmsg.GetMessageStats(r.Context(), &gmsgpb.GetMessageStatsRequest{})
+	if err != nil {
+		slog.Error("GetMessageStats failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GetMessageBuiltInPath(w http.ResponseWriter, r *http.Request) {
+	req := &gmsgpb.GetBuiltInPathRequest{}
+	if path := strings.TrimSpace(r.URL.Query().Get("path")); path != "" {
+		req.Query = &gmsgpb.GetBuiltInPathRequest_Path{Path: path}
+	} else if rawType := strings.TrimSpace(r.URL.Query().Get("path_type")); rawType != "" {
+		parsed, err := strconv.ParseInt(rawType, 10, 32)
+		if err != nil || parsed <= 0 {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "path_type must be a positive integer")
+			return
+		}
+		req.Query = &gmsgpb.GetBuiltInPathRequest_PathType{PathType: gmsgpb.BuiltInMsgPathType(parsed)}
+	} else {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "path or path_type is required")
+		return
+	}
+
+	resp, err := h.Gmsg.GetBuiltInPath(r.Context(), req)
+	if err != nil {
+		slog.Error("GetMessageBuiltInPath failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+func (h *Handler) GetAllMessageBuiltInPaths(w http.ResponseWriter, r *http.Request) {
+	resp, err := h.Gmsg.GetAllBuiltInPaths(r.Context(), &gmsgpb.GetAllBuiltInPathsRequest{})
+	if err != nil {
+		slog.Error("GetAllMessageBuiltInPaths failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
 }

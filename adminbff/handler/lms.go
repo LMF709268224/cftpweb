@@ -620,7 +620,7 @@ func (h *Handler) GetLmsCourseMaterial(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	resp, err := h.Lms.GetCourseMaterialAdmin(r.Context(), &lmspb.GetCourseMaterialRequest{
+	resp, err := h.Lms.GetCourseMaterialDetailAdmin(r.Context(), &lmspb.GetCourseMaterialRequest{
 		MaterialUlid: materialID,
 	})
 	if err != nil {
@@ -755,7 +755,7 @@ func (h *Handler) GetLmsChapter(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	resp, err := h.Lms.GetChapterAdmin(r.Context(), &lmspb.GetChapterRequest{
+	resp, err := h.Lms.GetChapterDetailAdmin(r.Context(), &lmspb.GetChapterRequest{
 		ChapterUlid: chapterID,
 	})
 	if err != nil {
@@ -855,6 +855,24 @@ func (h *Handler) ListLmsLessons(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+// ListLmsLessonsByCourse GET /api/lms/courses/{course_id}/lessons
+func (h *Handler) ListLmsLessonsByCourse(w http.ResponseWriter, r *http.Request) {
+	courseID, ok := requiredURLParam(w, r, "course_id")
+	if !ok {
+		return
+	}
+	resp, err := h.Lms.ListLessonsByCourseAdmin(r.Context(), &lmspb.ListLessonsByCourseRequest{
+		CourseUlid: courseID,
+		PageSize:   parseUint32Query(r, "page_size"),
+		PageToken:  strings.TrimSpace(r.URL.Query().Get("page_token")),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 // CreateLmsLesson POST /api/lms/chapters/{chapter_id}/lessons
 func (h *Handler) CreateLmsLesson(w http.ResponseWriter, r *http.Request) {
 	chapterID, ok := requiredURLParam(w, r, "chapter_id")
@@ -896,7 +914,7 @@ func (h *Handler) GetLmsLesson(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	resp, err := h.Lms.GetLessonAdmin(r.Context(), &lmspb.GetLessonRequest{
+	resp, err := h.Lms.GetLessonDetailAdmin(r.Context(), &lmspb.GetLessonRequest{
 		LessonUlid: lessonID,
 	})
 	if err != nil {
@@ -1029,7 +1047,7 @@ func (h *Handler) GetLmsPrerequisite(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	resp, err := h.Lms.GetPrerequisiteAdmin(r.Context(), &lmspb.GetPrerequisiteRequest{
+	resp, err := h.Lms.GetPrerequisiteDetailAdmin(r.Context(), &lmspb.GetPrerequisiteRequest{
 		PrerequisiteUlid: prerequisiteID,
 	})
 	if err != nil {
@@ -1132,14 +1150,18 @@ func (h *Handler) GetLmsQuiz(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	resp, err := h.Lms.GetQuizAdmin(r.Context(), &lmspb.GetQuizRequest{
+	resp, err := h.Lms.GetQuizDetailAdmin(r.Context(), &lmspb.GetQuizDetailRequest{
 		QuizUlid: quizID,
 	})
 	if err != nil {
 		writeLmsError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	payload := jsonPayloadObject(resp)
+	if detail := resp.GetQuizDetail(); detail != nil {
+		payload["quiz"] = detail.GetQuiz()
+	}
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 // UpdateLmsQuiz PUT /api/lms/quizzes/{quiz_id}
@@ -1246,7 +1268,7 @@ func (h *Handler) GetLmsQuizQuestion(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	resp, err := h.Lms.GetQuizQuestionAdmin(r.Context(), &lmspb.GetQuizQuestionRequest{
+	resp, err := h.Lms.GetQuizQuestionDetailAdmin(r.Context(), &lmspb.GetQuizQuestionRequest{
 		QuestionUlid: questionID,
 	})
 	if err != nil {
@@ -1384,7 +1406,7 @@ func (h *Handler) GetLmsQuizOption(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	resp, err := h.Lms.GetQuizOptionAdmin(r.Context(), &lmspb.GetQuizOptionRequest{
+	resp, err := h.Lms.GetQuizOptionDetailAdmin(r.Context(), &lmspb.GetQuizOptionRequest{
 		OptionUlid: optionID,
 	})
 	if err != nil {
