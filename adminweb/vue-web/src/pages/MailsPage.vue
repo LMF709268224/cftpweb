@@ -103,16 +103,33 @@ function userName(user: JsonRecord) {
   return String(pickFirst(user, ["name", "nickname", "email", "id"]) || userEmail(user) || copy.value.defaults.user)
 }
 
+function resolvedTemplate(template: JsonRecord | null | undefined) {
+  if (!template || typeof template !== "object" || Array.isArray(template)) return {}
+  const nested = template.template
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    return { ...template, ...(nested as JsonRecord) }
+  }
+  return template
+}
+
 function pathOf(template: JsonRecord | null | undefined) {
-  return String(pickFirst(template || {}, ["path", "template_path", "template_id"]) || "")
+  return String(pickFirst(resolvedTemplate(template), ["path", "template_path", "template_id"]) || "")
 }
 
 function nameOf(template: JsonRecord | null | undefined) {
-  return String(pickFirst(template || {}, ["name", "template_name", "subject_template", "path"]) || pathOf(template) || copy.value.defaults.template)
+  return String(pickFirst(resolvedTemplate(template), ["name", "template_name", "templateName", "subject_template", "subjectTemplate", "path"]) || pathOf(template) || copy.value.defaults.template)
+}
+
+function subjectOf(template: JsonRecord | null | undefined) {
+  return String(pickFirst(resolvedTemplate(template), ["subject_template", "subjectTemplate"]) || "")
 }
 
 function bodyOf(template: JsonRecord | null | undefined) {
-  return String(pickFirst(template || {}, ["html_body", "template_body", "plain_body"]) || "")
+  return String(pickFirst(resolvedTemplate(template), ["html_body", "htmlBody", "template_body", "templateBody", "plain_body", "plainBody"]) || "")
+}
+
+function descriptionOf(template: JsonRecord | null | undefined) {
+  return String(pickFirst(resolvedTemplate(template), ["description"]) || "")
 }
 
 function templateFieldValue(key: string, value: unknown) {
@@ -335,18 +352,19 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
   editingTemplatePath.value = path
   formPath.value = path
   formName.value = nameOf(template)
-  formSubject.value = String(template.subject_template || "")
+  formSubject.value = subjectOf(template)
   formContent.value = bodyOf(template)
-  formDescription.value = String(template.description || "")
+  formDescription.value = descriptionOf(template)
 
   try {
     const detail = await loadTemplateDetail(path)
     if (detail) {
-      selectedTemplate.value = { ...template, ...detail }
-      formName.value = String(detail.name || formName.value)
-      formSubject.value = String(detail.subject_template || "")
-      formContent.value = String(detail.html_body || detail.template_body || detail.plain_body || "")
-      formDescription.value = String(detail.description || formDescription.value)
+      const merged = resolvedTemplate({ ...template, ...detail })
+      selectedTemplate.value = merged
+      formName.value = nameOf(merged)
+      formSubject.value = subjectOf(merged)
+      formContent.value = bodyOf(merged)
+      formDescription.value = descriptionOf(merged)
     }
   } catch (err) {
     console.error(err)
@@ -453,10 +471,10 @@ watch(templatePath, async (path) => {
     return
   }
   const template = templates.value.find((item) => pathOf(item) === path)
-  payload.value = extractPayloadTemplate(template?.subject_template, bodyOf(template || {}))
+  payload.value = extractPayloadTemplate(subjectOf(template), bodyOf(template || {}))
   try {
     const detail = await loadTemplateDetail(path)
-    payload.value = extractPayloadTemplate(detail?.subject_template, detail?.html_body, detail?.template_body, detail?.plain_body)
+    payload.value = extractPayloadTemplate(subjectOf(detail), bodyOf(detail))
   } catch {
     // Keep the best-effort payload generated from the list response.
   }
