@@ -81,6 +81,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		r.Route("/prog/course-units", func(r chi.Router) {
 			r.Get("/", h.ListProgCourseUnits)
+			r.Get("/{course_unit_ulid}", h.GetProgCourseUnitDetail)
 			r.Post("/{course_unit_ulid}/force-completed", h.AdminForceCourseCompleted)
 			r.Post("/{course_unit_ulid}/force-signup-exam", h.AdminForceCourseSignupExam)
 		})

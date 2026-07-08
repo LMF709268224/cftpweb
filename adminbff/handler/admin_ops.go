@@ -458,6 +458,19 @@ func (h *Handler) ListProgCourseUnits(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, resp)
 }
 
+func (h *Handler) GetProgCourseUnitDetail(w http.ResponseWriter, r *http.Request) {
+	courseUnitULID, ok := requiredURLParam(w, r, "course_unit_ulid")
+	if !ok {
+		return
+	}
+	resp, err := h.Gprog.GetCourseUnitDetail(r.Context(), &gprogpb.GetCourseUnitDetailReq{CourseUnitUlid: courseUnitULID})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	WriteJSON(w, http.StatusOK, resp)
+}
+
 func (h *Handler) ListProgDriverEvents(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gprog.ListDriverEvents(r.Context(), &gprogpb.ListDriverEventsReq{
 		EntityType:  queryText(r, "entity_type"),

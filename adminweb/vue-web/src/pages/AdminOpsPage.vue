@@ -31,6 +31,7 @@ type OpsModule = {
   filters?: OpsFilter[]
   requiredFilters?: string[]
   detailPath?: (id: string) => string
+  detailIDFormat?: "ulid"
   actions?: OpsAction[]
 }
 
@@ -150,6 +151,7 @@ const modules = computed<OpsModule[]>(() => [
     label: copy.value.tabs.progCourseUnits,
     description: copy.value.descriptions.progCourseUnits,
     listPath: "/api/prog/course-units",
+    detailPath: (id) => `/api/prog/course-units/${encodeURIComponent(id)}`,
     itemKeys: ["course_units", "courseUnits", "items"],
     idKeys: ["course_unit_ulid", "courseUnitUlid"],
     pagination: "offset",
@@ -196,6 +198,7 @@ const modules = computed<OpsModule[]>(() => [
     description: copy.value.descriptions.examAudit,
     listPath: "/api/exam-ops/audit-messages",
     detailPath: (id) => `/api/exam-ops/audit-messages/${encodeURIComponent(id)}`,
+    detailIDFormat: "ulid",
     itemKeys: ["audit_messages", "auditMessages", "items"],
     idKeys: ["message_ulid", "messageUlid"],
     pagination: "page",
@@ -247,6 +250,7 @@ const filters = reactive<Record<string, Record<string, string>>>({})
 const items = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const detail = ref<unknown>(null)
+const detailNotice = ref("")
 const loading = ref(false)
 const detailLoading = ref(false)
 const actionLoading = ref("")
@@ -277,6 +281,10 @@ function getField(item: JsonRecord | null, keys: string[]): unknown {
 function getItemID(item: JsonRecord | null, module = activeModule.value) {
   const value = getField(item, module.idKeys)
   return value === undefined ? "" : String(value)
+}
+
+function isULID(value: string) {
+  return /^[0-9A-HJKMNP-TV-Z]{26}$/i.test(value)
 }
 
 function getTitle(item: JsonRecord) {
@@ -329,6 +337,7 @@ async function loadList(reset = false) {
   }
   selected.value = null
   detail.value = null
+  detailNotice.value = ""
   if (!canLoad.value) {
     items.value = []
     total.value = 0
@@ -355,9 +364,14 @@ async function loadList(reset = false) {
 async function openItem(item: JsonRecord) {
   selected.value = item
   detail.value = item
+  detailNotice.value = ""
   const module = activeModule.value
   const id = getItemID(item, module)
   if (!module.detailPath || !id) return
+  if (module.detailIDFormat === "ulid" && !isULID(id)) {
+    detailNotice.value = copy.value.invalidDetailId(id)
+    return
+  }
   detailLoading.value = true
   try {
     detail.value = await apiClient<JsonRecord>(module.detailPath(id))
@@ -513,6 +527,9 @@ void loadList()
           </div>
         </div>
 
+        <div v-if="detailNotice" class="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
+          {{ detailNotice }}
+        </div>
         <div v-if="detailLoading" class="mt-10 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
         <pre v-else class="mt-6 max-h-[640px] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs font-semibold leading-relaxed text-slate-100">{{ stringify(detail || selected || {}) }}</pre>
       </div>
