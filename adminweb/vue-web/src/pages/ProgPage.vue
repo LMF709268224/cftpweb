@@ -1002,9 +1002,9 @@ onMounted(async () => {
         <h2 class="text-2xl font-black">{{ copy.confirmTitle }}</h2>
         <p class="mt-2 text-sm text-slate-600">{{ copy.confirmDescription(actionLabel(pendingAction.kind)) }}</p>
         <textarea v-model="actionReason" class="mt-5 min-h-28 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.reasonPlaceholder" />
-        <div class="mt-5 flex justify-end gap-3">
-          <button class="rounded-xl border px-5 py-3 font-bold" type="button" :disabled="actionLoading" @click="pendingAction = null">{{ copy.cancel }}</button>
-          <button class="rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="actionLoading" @click="submitAction">
+        <div class="mt-5 flex items-center justify-end gap-3">
+          <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:opacity-50" type="button" :disabled="actionLoading" @click="pendingAction = null">{{ copy.cancel }}</button>
+          <button class="inline-flex h-11 min-w-[112px] items-center justify-center rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="actionLoading" @click="submitAction">
             {{ actionLoading ? copy.submitting : copy.confirmSubmit }}
           </button>
         </div>
