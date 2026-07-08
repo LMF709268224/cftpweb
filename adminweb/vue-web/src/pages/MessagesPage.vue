@@ -45,6 +45,7 @@ const formPath = ref("")
 const formTitle = ref("")
 const formContent = ref("")
 const formDescription = ref("")
+const formParameterSchema = ref("{}")
 const formVersion = ref(0)
 const templateTitleInputRef = ref<HTMLInputElement | null>(null)
 const { t } = useAdminLanguage()
@@ -110,6 +111,13 @@ function extractPayloadTemplate(...texts: unknown[]) {
   const result: Record<string, string> = {}
   for (const key of vars) result[key] = ""
   return JSON.stringify(result, null, 2)
+}
+
+function normalizeParameterSchema(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return "{}"
+  JSON.parse(trimmed)
+  return trimmed
 }
 
 function validatePayload() {
@@ -289,6 +297,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
   formPath.value = path
   formTitle.value = titleOf(template)
   formDescription.value = String(template.description || "")
+  formParameterSchema.value = String(template.parameter_schema || "{}")
   formVersion.value = Number(template.version || 0)
   formContent.value = ""
 
@@ -299,6 +308,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
       formTitle.value = String(detail.title_tpl || formTitle.value)
       formContent.value = String(detail.content_tpl || "")
       formDescription.value = String(detail.description || formDescription.value)
+      formParameterSchema.value = String(detail.parameter_schema || "{}")
       formVersion.value = Number(detail.version || formVersion.value)
     }
   } catch (err) {
@@ -313,6 +323,7 @@ function resetTemplateForm() {
   formTitle.value = ""
   formContent.value = ""
   formDescription.value = ""
+  formParameterSchema.value = "{}"
   formVersion.value = 0
 }
 
@@ -320,6 +331,13 @@ async function saveTemplate() {
   const path = editingTemplatePath.value || formPath.value.trim()
   if (!path || !formTitle.value.trim() || !formContent.value.trim()) {
     toast.error(copy.value.toasts.templateFieldsRequired)
+    return
+  }
+  let parameterSchema = "{}"
+  try {
+    parameterSchema = normalizeParameterSchema(formParameterSchema.value)
+  } catch {
+    toast.error(copy.value.toasts.parameterSchemaInvalid)
     return
   }
 
@@ -332,6 +350,7 @@ async function saveTemplate() {
         title_tpl: formTitle.value,
         content_tpl: formContent.value,
         description: formDescription.value,
+        parameter_schema: parameterSchema,
         current_version: formVersion.value,
       }),
     })
@@ -702,6 +721,10 @@ onMounted(async () => {
             <label class="block">
               <span class="text-sm font-bold">{{ copy.templates.description }}</span>
               <textarea v-model="formDescription" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" />
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold">{{ copy.templates.parameterSchema }}</span>
+              <textarea v-model="formParameterSchema" class="mt-2 min-h-32 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" />
             </label>
           </div>
 

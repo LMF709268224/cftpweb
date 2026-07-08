@@ -51,6 +51,7 @@ const formName = ref("")
 const formSubject = ref("")
 const formContent = ref("")
 const formDescription = ref("")
+const formParameterSchema = ref("{}")
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.mailsAdmin)
 
@@ -179,6 +180,13 @@ function extractPayloadTemplate(...texts: unknown[]) {
   const result: Record<string, string> = {}
   for (const key of vars) result[key] = ""
   return JSON.stringify(result, null, 2)
+}
+
+function normalizeParameterSchema(value: string) {
+  const trimmed = value.trim()
+  if (!trimmed) return "{}"
+  JSON.parse(trimmed)
+  return trimmed
 }
 
 function validateTemplatePayload() {
@@ -355,6 +363,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
   formSubject.value = subjectOf(template)
   formContent.value = bodyOf(template)
   formDescription.value = descriptionOf(template)
+  formParameterSchema.value = String(template.parameter_schema || "{}")
 
   try {
     const detail = await loadTemplateDetail(path)
@@ -365,6 +374,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
       formSubject.value = subjectOf(merged)
       formContent.value = bodyOf(merged)
       formDescription.value = descriptionOf(merged)
+      formParameterSchema.value = String(merged.parameter_schema || "{}")
     }
   } catch (err) {
     console.error(err)
@@ -379,6 +389,7 @@ function resetTemplateForm() {
   formSubject.value = ""
   formContent.value = ""
   formDescription.value = ""
+  formParameterSchema.value = "{}"
 }
 
 function startCreateTemplate() {
@@ -394,6 +405,13 @@ async function saveTemplate() {
     toast.error(copy.value.toasts.templateRequired)
     return
   }
+  let parameterSchema = "{}"
+  try {
+    parameterSchema = normalizeParameterSchema(formParameterSchema.value)
+  } catch {
+    toast.error(copy.value.toasts.parameterSchemaInvalid)
+    return
+  }
 
   templateSaving.value = true
   try {
@@ -406,6 +424,7 @@ async function saveTemplate() {
         html_body: formContent.value,
         plain_body: stripHtml(formContent.value),
         description: formDescription.value,
+        parameter_schema: parameterSchema,
       }),
     })
     toast.success(editingTemplatePath.value ? copy.value.toasts.templateUpdated : copy.value.toasts.templateCreated)
@@ -779,6 +798,10 @@ onMounted(async () => {
               <label class="block">
                 <span class="text-sm font-bold">{{ copy.fields.description }}</span>
                 <textarea v-model="formDescription" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" />
+              </label>
+              <label class="block">
+                <span class="text-sm font-bold">{{ copy.fields.parameterSchema }}</span>
+                <textarea v-model="formParameterSchema" class="mt-2 min-h-32 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" />
               </label>
             </form>
           </div>

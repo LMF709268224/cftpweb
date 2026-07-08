@@ -37,6 +37,7 @@ type mailTemplateInput struct {
 	PlainBody       string `json:"plain_body"`
 	TemplateBody    string `json:"template_body"`
 	Description     string `json:"description"`
+	ParameterSchema string `json:"parameter_schema"`
 }
 
 var tplVarRegex = regexp.MustCompile(`{{\s*([a-zA-Z0-9_]+)\s*}}`)
@@ -60,6 +61,18 @@ func (h *Handler) normalizedMailTemplatePath(input mailTemplateInput) string {
 
 func normalizeTemplateSyntax(value string) string {
 	return tplVarRegex.ReplaceAllString(value, "{{.$1}}")
+}
+
+func normalizeParameterSchema(value string) (string, error) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "{}", nil
+	}
+	var payload interface{}
+	if err := json.Unmarshal([]byte(trimmed), &payload); err != nil {
+		return "", err
+	}
+	return trimmed, nil
 }
 
 func (h *Handler) SendMail(w http.ResponseWriter, r *http.Request) {
@@ -236,6 +249,11 @@ func (h *Handler) CreateMailTemplate(w http.ResponseWriter, r *http.Request) {
 	if input.Description == "" {
 		input.Description = "-"
 	}
+	parameterSchema, err := normalizeParameterSchema(input.ParameterSchema)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "parameter_schema must be valid JSON")
+		return
+	}
 
 	resp, err := h.Gmail.CreateTemplate(r.Context(), &gmailpb.CreateTemplateRequest{
 		Path:            firstNonEmpty(input.Path, input.TemplateId),
@@ -245,6 +263,7 @@ func (h *Handler) CreateMailTemplate(w http.ResponseWriter, r *http.Request) {
 		HtmlBody:        normalizeTemplateSyntax(htmlBody),
 		PlainBody:       normalizeTemplateSyntax(plainBody),
 		Description:     input.Description,
+		ParameterSchema: parameterSchema,
 	})
 	if err != nil {
 		slog.Error("CreateMailTemplate failed", "error", err)
@@ -267,6 +286,11 @@ func (h *Handler) UpdateMailTemplate(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestFields(w, path, "path", input.Name, "name", input.SubjectTemplate, "subject_template", htmlBody, "html_body") {
 		return
 	}
+	parameterSchema, err := normalizeParameterSchema(input.ParameterSchema)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "parameter_schema must be valid JSON")
+		return
+	}
 
 	resp, err := h.Gmail.UpdateTemplate(r.Context(), &gmailpb.UpdateTemplateRequest{
 		Path:            path,
@@ -276,6 +300,7 @@ func (h *Handler) UpdateMailTemplate(w http.ResponseWriter, r *http.Request) {
 		HtmlBody:        normalizeTemplateSyntax(htmlBody),
 		PlainBody:       normalizeTemplateSyntax(plainBody),
 		Description:     input.Description,
+		ParameterSchema: parameterSchema,
 	})
 	if err != nil {
 		slog.Error("UpdateMailTemplate failed", "error", err)

@@ -109,6 +109,12 @@ func (h *Handler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
 	if req.Description == "" {
 		req.Description = "-"
 	}
+	parameterSchema, err := normalizeParameterSchema(req.ParameterSchema)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "parameter_schema must be valid JSON")
+		return
+	}
+	req.ParameterSchema = parameterSchema
 
 	resp, err := h.Gmsg.CreateTemplate(r.Context(), &req)
 	if err != nil {
@@ -162,6 +168,12 @@ func (h *Handler) UpdateTemplate(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestFields(w, req.Path, "path", req.TitleTpl, "title_tpl", req.ContentTpl, "content_tpl") {
 		return
 	}
+	parameterSchema, err := normalizeParameterSchema(req.ParameterSchema)
+	if err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "parameter_schema must be valid JSON")
+		return
+	}
+	req.ParameterSchema = parameterSchema
 
 	resp, err := h.Gmsg.UpdateTemplate(r.Context(), &req)
 	if err != nil {
