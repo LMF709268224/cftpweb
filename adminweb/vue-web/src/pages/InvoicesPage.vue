@@ -6,7 +6,7 @@ import { apiClient } from "@/lib/apiClient"
 import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
-import { badgeClass, pickFirst } from "@/lib/status"
+import { badgeClass, labelFor, normalizeStatus, orderStatusOptions, pickFirst } from "@/lib/status"
 
 const invoices = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
@@ -27,7 +27,7 @@ const selectedFields = computed(() =>
     key,
     label: copy.value.fieldLabels[key as keyof typeof copy.value.fieldLabels] || key.replace(/_/g, " "),
     value,
-    displayValue: key.endsWith("_at") ? formatDate(value) : String(value ?? "-"),
+    displayValue: key === "status" ? invoiceStatusLabel(value) : key.endsWith("_at") ? formatDate(value) : String(value ?? "-"),
   })),
 )
 
@@ -42,6 +42,19 @@ function orderId(invoice: JsonRecord | null | undefined) {
 function amountText(invoice: JsonRecord | null | undefined) {
   const amount = Number(invoice?.amount || 0)
   return `${Number.isFinite(amount) ? amount.toFixed(2) : "0.00"} ${invoice?.currency || ""}`.trim()
+}
+
+function normalizedInvoiceStatus(value: unknown) {
+  return normalizeStatus(value)
+    .replace(/^ORDER_STATUS_/, "")
+    .replace(/^INVOICE_STATUS_/, "")
+    .replace(/^PAYMENT_STATUS_/, "")
+}
+
+function invoiceStatusLabel(value: unknown) {
+  const normalized = normalizedInvoiceStatus(value)
+  if (!normalized) return "-"
+  return copy.value.statuses[normalized as keyof typeof copy.value.statuses] || labelFor(orderStatusOptions, normalized)
 }
 
 function isStructuredValue(value: unknown) {
@@ -156,7 +169,7 @@ onMounted(() => load(1))
           </div>
           <div class="text-right text-sm font-black">{{ amountText(invoice) }}</div>
           <div class="min-w-0 text-center">
-            <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(invoice.status)">{{ invoice.status || "-" }}</span>
+            <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(normalizedInvoiceStatus(invoice.status))">{{ invoiceStatusLabel(invoice.status) }}</span>
           </div>
           <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(invoice.created_at || "")) }}</div>
           <div class="text-right">
@@ -210,7 +223,7 @@ onMounted(() => load(1))
               <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.status }}</div>
                 <div class="mt-2">
-                  <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(selected.status)">{{ selected.status || "-" }}</span>
+                  <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(normalizedInvoiceStatus(selected.status))">{{ invoiceStatusLabel(selected.status) }}</span>
                 </div>
               </div>
             </div>
