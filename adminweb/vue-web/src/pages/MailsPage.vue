@@ -120,6 +120,10 @@ function templateFieldValue(key: string, value: unknown) {
   return value
 }
 
+function templateFieldLabel(key: string) {
+  return copy.value.templateFieldLabels[key as keyof typeof copy.value.templateFieldLabels] || key
+}
+
 function mailId(mail: JsonRecord | null | undefined) {
   return String(pickFirst(mail || {}, ["mail_id", "mail_ulid", "id"]) || "")
 }
@@ -726,7 +730,7 @@ onMounted(async () => {
                 <ReadonlyField
                   v-for="(value, key) in selectedTemplateFields"
                   :key="key"
-                  :label="String(key)"
+                  :label="templateFieldLabel(String(key))"
                   :value="templateFieldValue(String(key), value)"
                   :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
                   :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
