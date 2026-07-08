@@ -18,17 +18,20 @@ const total = ref(0)
 const pageSize = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.invoices)
+const summaryFieldKeys = new Set(["order_id", "order_ulid", "status"])
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => page.value * pageSize < total.value || invoices.value.length >= pageSize)
 const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const selectedFields = computed(() =>
-  Object.entries(selected.value || {}).map(([key, value]) => ({
-    key,
-    label: copy.value.fieldLabels[key as keyof typeof copy.value.fieldLabels] || key.replace(/_/g, " "),
-    value,
-    displayValue: key.endsWith("_at") ? formatDate(value) : String(value ?? "-"),
-  })),
+  Object.entries(selected.value || {})
+    .filter(([key]) => !summaryFieldKeys.has(key))
+    .map(([key, value]) => ({
+      key,
+      label: copy.value.fieldLabels[key as keyof typeof copy.value.fieldLabels] || key.replace(/_/g, " "),
+      value,
+      displayValue: key.endsWith("_at") ? formatDate(value) : String(value ?? "-"),
+    })),
 )
 
 function invoiceId(invoice: JsonRecord | null | undefined) {
