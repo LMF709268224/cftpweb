@@ -51,6 +51,13 @@ function formFromTemplate(template: JsonRecord | null) {
   }
 }
 
+async function loadTemplateDetail(template: JsonRecord) {
+  const id = templateUlid(template)
+  if (!id) return template
+  const detail = await apiClient<JsonRecord>(`/api/pdf-templates/detail?template_id=${encodeURIComponent(id)}`)
+  return { ...template, ...detail }
+}
+
 function openCreate() {
   mode.value = "create"
   selected.value = null
@@ -58,18 +65,32 @@ function openCreate() {
   dialogOpen.value = true
 }
 
-function openTemplateDetail(template: JsonRecord) {
+async function openTemplateDetail(template: JsonRecord) {
   selected.value = template
   mode.value = "detail"
   form.value = formFromTemplate(template)
   dialogOpen.value = true
+  try {
+    selected.value = await loadTemplateDetail(template)
+    form.value = formFromTemplate(selected.value)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.loadFailed)
+  }
 }
 
-function openTemplateEditor(template: JsonRecord) {
+async function openTemplateEditor(template: JsonRecord) {
   selected.value = template
   mode.value = "edit"
   form.value = formFromTemplate(template)
   dialogOpen.value = true
+  try {
+    selected.value = await loadTemplateDetail(template)
+    form.value = formFromTemplate(selected.value)
+  } catch (err) {
+    console.error(err)
+    toast.error(copy.value.toasts.loadFailed)
+  }
 }
 
 function closeDialog() {
@@ -85,9 +106,9 @@ async function load() {
     if (selected.value) {
       const refreshed = templates.value.find((item) => templateUlid(item) === templateUlid(selected.value))
       if (refreshed) {
-        selected.value = refreshed
+        selected.value = { ...selected.value, ...refreshed }
         if (mode.value !== "create") {
-          form.value = formFromTemplate(refreshed)
+          form.value = formFromTemplate(selected.value)
         }
       } else {
         selected.value = null
@@ -111,7 +132,7 @@ async function save() {
   }
   saving.value = true
   try {
-    await apiClient("/api/pdf-templates", {
+    const data = await apiClient<JsonRecord>("/api/pdf-templates", {
       method: mode.value === "edit" ? "PUT" : "POST",
       body: JSON.stringify(mode.value === "edit" ? form.value : {
         name: form.value.name,
@@ -120,7 +141,12 @@ async function save() {
       }),
     })
     toast.success(copy.value.toasts.saved)
+    const savedId = templateUlid(data) || form.value.template_id
     await load()
+    if (savedId) {
+      const refreshed = templates.value.find((item) => templateUlid(item) === savedId)
+      selected.value = refreshed || selected.value
+    }
     dialogOpen.value = false
   } catch (err) {
     console.error(err)

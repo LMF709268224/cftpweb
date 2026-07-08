@@ -20,6 +20,24 @@ func (h *Handler) ListPdfTemplates(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, res)
 }
 
+// GetPdfTemplateDetail GET /api/pdf-templates/detail?template_id=...
+func (h *Handler) GetPdfTemplateDetail(w http.ResponseWriter, r *http.Request) {
+	templateID := firstNonEmpty(r.URL.Query().Get("template_id"), r.URL.Query().Get("template_ulid"))
+	if !requireRequestField(w, templateID, "template_id") {
+		return
+	}
+
+	res, err := h.Creds.GetPdfTemplateDetail(r.Context(), &gcredspb.GetPdfTemplateRequest{
+		TemplateUlid: templateID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, res)
+}
+
 type CreatePdfTemplateReq struct {
 	Name         string `json:"name"`
 	Description  string `json:"description"`

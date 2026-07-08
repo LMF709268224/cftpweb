@@ -336,9 +336,12 @@ async function saveTemplate() {
       }),
     })
     toast.success(editingTemplatePath.value ? copy.value.toasts.templateUpdated : copy.value.toasts.templateCreated)
+    const savedPath = path
     templateEditOpen.value = false
     resetTemplateForm()
     await loadTemplates()
+    const savedTemplate = templates.value.find((item) => pathOf(item) === savedPath)
+    if (savedTemplate) await selectTemplate(savedTemplate)
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.templateSaveFailed))

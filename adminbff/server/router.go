@@ -271,6 +271,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		// ===== PDF模板接口 (PDF Templates) =====
 		r.Route("/pdf-templates", func(r chi.Router) {
 			r.Get("/", h.ListPdfTemplates)
+			r.Get("/detail", h.GetPdfTemplateDetail)
 			r.Post("/", h.CreatePdfTemplate)
 			r.Put("/", h.UpdatePdfTemplate)
 		})
