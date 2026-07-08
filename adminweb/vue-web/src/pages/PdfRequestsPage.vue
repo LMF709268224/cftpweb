@@ -6,7 +6,7 @@ import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, getDisplayTitle, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
-import { badgeClass, pickFirst } from "@/lib/status"
+import { pickFirst } from "@/lib/status"
 
 const PAGE_SIZE = 10
 
@@ -49,7 +49,17 @@ function statusLabel(value: unknown) {
   return String(value || copy.value.statuses.unknown)
 }
 
+function statusBadgeClass(value: unknown) {
+  const status = Number(value)
+  if (status === 1) return "border-amber-200 bg-amber-50 text-amber-700"
+  if (status === 2) return "border-blue-200 bg-blue-50 text-blue-700"
+  if (status === 3) return "border-emerald-200 bg-emerald-50 text-emerald-700"
+  if (status === 4) return "border-red-200 bg-red-50 text-red-700"
+  return "border-slate-200 bg-slate-50 text-slate-600"
+}
+
 function formatFieldValue(key: string, value: unknown) {
+  if (key === "status") return statusLabel(value)
   if (key.endsWith("_at")) return formatDate(value)
   if (value === null || value === undefined || value === "") return "-"
   return String(value)
@@ -140,7 +150,7 @@ onMounted(() => load(1))
             <div class="mt-1 truncate text-sm font-bold text-slate-600">{{ requestUlid(request) || "-" }}</div>
           </div>
           <div class="min-w-0 text-center">
-            <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(request.status))">
+            <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(request.status)">
               {{ statusLabel(request.status) }}
             </span>
           </div>
@@ -208,7 +218,7 @@ onMounted(() => load(1))
             <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
               <div class="text-sm font-black text-blue-700">{{ copy.currentRequest }}</div>
               <div class="mt-1 break-all text-lg font-black text-slate-950">{{ requestUlid(selected) || "-" }}</div>
-              <div class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(selected.status))">
+              <div class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(selected.status)">
                 {{ statusLabel(selected.status) }}
               </div>
             </div>
