@@ -19,6 +19,7 @@ type CourseForm = {
   certification_enabled: boolean
   certification_def_id: string
   respath: string
+  course_gpath: string
 }
 
 type ChapterForm = {
@@ -322,6 +323,7 @@ function emptyCourseForm(): CourseForm {
     certification_enabled: false,
     certification_def_id: "",
     respath: "",
+    course_gpath: "",
   }
 }
 
@@ -824,8 +826,9 @@ function courseFormFrom(course: JsonRecord): CourseForm {
     thumbnail_file_hash: String(course.thumbnail_file_hash || ""),
     duration_min: String(course.duration_min || 0),
     certification_enabled: Boolean(course.certification_enabled),
-    certification_def_id: String(course.certification_def_id || ""),
+    certification_def_id: String(course.certification_def_ulid || ""),
     respath: String(course.respath || course.course_gpath || ""),
+    course_gpath: String(course.course_gpath || ""),
   }
 }
 
@@ -840,7 +843,7 @@ function coursePayload(version?: unknown) {
     certification_enabled: courseForm.value.certification_enabled,
     certification_def_id: courseForm.value.certification_def_id.trim(),
     respath: courseForm.value.respath.trim(),
-    course_gpath: courseForm.value.respath.trim(),
+    course_gpath: courseForm.value.course_gpath.trim(),
   }
   if (version !== undefined) payload.version = Number(version || 0)
   return payload
@@ -2194,6 +2197,10 @@ onMounted(() => {
             <label class="block">
               <span class="text-sm font-bold">{{ copy.respath }}</span>
               <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold">{{ copy.course_gpath || 'Course Gpath' }}</span>
+              <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>
