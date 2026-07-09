@@ -14,11 +14,13 @@ import {
   Languages,
   LogOut,
   Mail,
+  Menu,
   MessageSquare,
   Receipt,
   Settings,
   ShieldCheck,
   Wrench,
+  X,
 } from "lucide-vue-next"
 import { computed, onMounted, onUnmounted, ref } from "vue"
 import { RouterLink, RouterView, useRoute, useRouter } from "vue-router"
@@ -30,10 +32,12 @@ import { useAdminLanguage } from "@/lib/language"
 const router = useRouter()
 const route = useRoute()
 const collapsed = ref(false)
+const mobileNavOpen = ref(false)
 const userMenuOpen = ref(false)
 const userMenuRef = ref<HTMLElement | null>(null)
 const { lang, t, setAdminLanguage } = useAdminLanguage()
 const copy = computed(() => t.value.layout)
+const showSidebarText = computed(() => mobileNavOpen.value || !collapsed.value)
 
 const navGroups = computed(() => [
   {
@@ -88,6 +92,10 @@ function refreshUserName() {
   userName.value = getUserName()
 }
 
+function isActivePath(path: string) {
+  return route.path === path || route.path.startsWith(`${path}/`)
+}
+
 function toggleLanguage() {
   setAdminLanguage(lang.value === "zh" ? "en" : "zh")
 }
@@ -125,22 +133,51 @@ onUnmounted(() => {
 
 <template>
   <div class="min-h-screen bg-[#f4f8fc] text-slate-950">
+    <button
+      v-if="!mobileNavOpen"
+      class="fixed left-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-lg shadow-slate-200/70 md:hidden"
+      type="button"
+      aria-label="打开菜单"
+      @click="mobileNavOpen = true"
+    >
+      <Menu class="h-5 w-5" />
+    </button>
+
+    <button
+      v-if="mobileNavOpen"
+      class="fixed inset-0 z-30 bg-slate-950/45 backdrop-blur-[1px] md:hidden"
+      type="button"
+      aria-label="关闭菜单"
+      @click="mobileNavOpen = false"
+    />
+
     <aside
-      class="fixed inset-y-0 left-0 z-30 flex flex-col border-r border-slate-200 bg-white/95 shadow-sm transition-all duration-200"
-      :class="collapsed ? 'w-[76px]' : 'w-[256px]'"
+      class="fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r border-slate-200 bg-blue-50/95 shadow-xl shadow-slate-900/10 transition-all duration-200 md:z-30 md:bg-white/95 md:shadow-sm"
+      :class="[
+        mobileNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+        collapsed ? 'md:w-[76px]' : 'md:w-[256px]',
+      ]"
     >
       <div class="flex h-20 items-center gap-3 border-b border-slate-200 px-4">
         <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0b7bdc] text-white shadow-lg shadow-sky-200">
           <GraduationCap class="h-6 w-6" />
         </div>
-        <div v-if="!collapsed" class="leading-tight">
+        <div v-if="showSidebarText" class="leading-tight">
           <div class="text-lg font-black">CFTP</div>
           <div class="text-sm text-slate-500">{{ copy.systemName }}</div>
         </div>
+        <button
+          class="ml-auto flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/80 hover:text-slate-900 md:hidden"
+          type="button"
+          aria-label="关闭菜单"
+          @click="mobileNavOpen = false"
+        >
+          <X class="h-5 w-5" />
+        </button>
       </div>
 
       <button
-        class="absolute -right-4 top-24 flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm"
+        class="absolute -right-4 top-24 hidden h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm md:flex"
         type="button"
         @click="collapsed = !collapsed"
       >
@@ -149,20 +186,21 @@ onUnmounted(() => {
 
       <nav class="flex-1 overflow-y-auto px-3 py-5">
         <div v-for="group in navGroups" :key="group.label" class="mb-5 last:mb-0">
-          <div v-if="!collapsed" class="mb-2 px-3 text-[11px] font-black uppercase tracking-wider text-slate-400">
+          <div v-if="showSidebarText" class="mb-2 px-3 text-[11px] font-black uppercase tracking-wider text-slate-400">
             {{ group.label }}
           </div>
-          <div v-else class="mx-auto mb-3 h-px w-8 bg-slate-200 first:hidden" />
+          <div v-else class="mx-auto mb-3 hidden h-px w-8 bg-slate-200 first:hidden md:block" />
           <div class="space-y-1">
             <RouterLink
               v-for="item in group.items"
               :key="item.path"
               :to="item.path"
               class="flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
-              :class="route.path === item.path || route.path.startsWith(`${item.path}/`) ? '!bg-[#0b4ea2] !text-white shadow-lg shadow-sky-200 hover:!bg-[#0b4ea2]' : ''"
+              :class="isActivePath(item.path) ? 'bg-blue-200 text-[#0b4ea2] shadow-none hover:bg-blue-200 md:!bg-[#0b4ea2] md:!text-white md:shadow-lg md:shadow-sky-200 md:hover:!bg-[#0b4ea2]' : ''"
+              @click="mobileNavOpen = false"
             >
               <component :is="item.icon" class="h-5 w-5 shrink-0" />
-              <span v-if="!collapsed">{{ item.label }}</span>
+              <span v-if="showSidebarText">{{ item.label }}</span>
             </RouterLink>
           </div>
         </div>
@@ -176,10 +214,10 @@ onUnmounted(() => {
           @click="toggleLanguage"
         >
           <Languages class="h-4 w-4 shrink-0 text-slate-500" />
-          <span v-if="!collapsed">{{ copy.language }}</span>
+          <span v-if="showSidebarText">{{ copy.language }}</span>
         </button>
 
-        <div v-if="!collapsed && userMenuOpen" class="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60">
+        <div v-if="showSidebarText && userMenuOpen" class="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60">
           <div class="flex items-center gap-3 px-4 py-4">
             <div class="flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-700">
               {{ userName.slice(0, 1).toUpperCase() }}
@@ -192,7 +230,7 @@ onUnmounted(() => {
           <RouterLink
             class="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
             to="/settings"
-            @click="userMenuOpen = false"
+            @click="userMenuOpen = false; mobileNavOpen = false"
           >
             <Settings class="h-4 w-4 text-slate-500" />
             {{ copy.accountSettings }}
@@ -209,19 +247,19 @@ onUnmounted(() => {
 
         <button
           class="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-100"
-          :class="!collapsed && userMenuOpen ? 'bg-blue-50 text-[#0b4ea2]' : ''"
+          :class="showSidebarText && userMenuOpen ? 'bg-blue-100 text-[#0b4ea2] md:bg-blue-50' : ''"
           type="button"
           @click="userMenuOpen = !userMenuOpen"
         >
           <div class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-700">
             {{ userName.slice(0, 1).toUpperCase() }}
           </div>
-          <div v-if="!collapsed" class="min-w-0">
+          <div v-if="showSidebarText" class="min-w-0">
             <div class="truncate text-sm font-bold">{{ userName }}</div>
             <div class="text-xs text-slate-500">{{ copy.roleName }}</div>
           </div>
           <ChevronDown
-            v-if="!collapsed"
+            v-if="showSidebarText"
             class="ml-auto h-4 w-4 text-slate-500 transition-transform"
             :class="userMenuOpen ? 'rotate-180' : ''"
           />
@@ -229,7 +267,7 @@ onUnmounted(() => {
       </div>
     </aside>
 
-    <main class="min-h-screen transition-all duration-200" :class="collapsed ? 'pl-[76px]' : 'pl-[256px]'">
+    <main class="min-h-screen pt-8 transition-all duration-200 md:pt-0" :class="collapsed ? 'md:pl-[76px]' : 'md:pl-[256px]'">
       <RouterView />
     </main>
   </div>
