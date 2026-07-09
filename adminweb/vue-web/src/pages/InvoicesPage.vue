@@ -2,6 +2,7 @@
 import { Check, Copy as CopyIcon, Loader2, RefreshCw, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -113,7 +114,7 @@ async function load(targetPage = page.value) {
     invoices.value = []
     selected.value = null
     detailOpen.value = false
-    toast.error(copy.value.toasts.loadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
   } finally {
     loading.value = false
   }
