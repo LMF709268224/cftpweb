@@ -2199,7 +2199,7 @@ onMounted(() => {
               <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">{{ copy.course_gpath || 'Course Gpath' }}</span>
+              <span class="text-sm font-bold">{{ (copy as any).course_gpath || 'Course Gpath' }}</span>
               <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
             </label>
             <label class="block">
