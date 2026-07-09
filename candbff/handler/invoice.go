@@ -28,7 +28,7 @@ var stripeRelativeInvoicePDFPattern = regexp.MustCompile(`/i/[A-Za-z0-9_/-]+/pdf
 
 func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, orderID string) error {
 	limit := int32(50)
-	for offset := int32(0); offset < 500; offset += limit {
+	for offset := int32(0); ; offset += limit {
 		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
 			CandidateUlid: candidateID,
 			Limit:         limit,
@@ -46,6 +46,9 @@ func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, order
 			}
 		}
 		if len(resp.GetItems()) < int(limit) {
+			break
+		}
+		if resp.GetTotal() > 0 && offset+limit >= resp.GetTotal() {
 			break
 		}
 	}
@@ -124,43 +127,7 @@ func (h *Handler) DownloadPdf(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(r.Context(), invoicePDFFetchTimeout)
-	defer cancel()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pdfURL, nil)
-	if err != nil {
-		WriteError(w, http.StatusInternalServerError, ErrInternal, "failed to create invoice PDF request")
-		return
-	}
-
-	pdfResp, err := invoiceHTTPClient.Do(req)
-	if err != nil {
-		slog.Error("Failed to fetch invoice PDF", "error", err, "order_id", orderID)
-		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "failed to fetch invoice PDF")
-		return
-	}
-	defer pdfResp.Body.Close()
-
-	if pdfResp.StatusCode < 200 || pdfResp.StatusCode >= 300 {
-		slog.Error("Invoice PDF endpoint returned non-2xx", "status", pdfResp.StatusCode, "order_id", orderID)
-		WriteError(w, http.StatusServiceUnavailable, ErrServiceUnavailable, "invoice PDF is not available")
-		return
-	}
-
-	filename := sanitizeFilename(resp.GetInvoiceNumber())
-	if filename == "" {
-		filename = sanitizeFilename(orderID)
-	}
-	if filename == "" {
-		filename = "invoice"
-	}
-
-	w.Header().Set("Content-Type", "application/pdf")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.pdf"`, filename))
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	if _, err := io.Copy(w, pdfResp.Body); err != nil {
-		slog.Error("Failed to write invoice PDF response", "error", err, "order_id", orderID)
-	}
+	http.Redirect(w, r, pdfURL, http.StatusTemporaryRedirect)
 }
 
 func resolveStripeInvoicePDFURL(ctx context.Context, hostedInvoiceURL string) (string, error) {

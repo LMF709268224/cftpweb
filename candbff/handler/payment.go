@@ -75,8 +75,6 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	completed := 0
-	totalAmount := 0.0
 	outOrders := make([]OrderItem, 0, len(resp.GetItems()))
 
 	nameCache := make(map[string]string)
@@ -122,14 +120,14 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		outOrders = append(outOrders, orderItem)
-
-		if statusStr == "completed" {
-			completed++
-			totalAmount += amount
-		}
 	}
 
 	totalOrders := int(resp.GetTotal())
+	completed, totalAmount, err := h.candidateOrderAggregates(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 	totalPages := 0
 	if totalOrders > 0 {
 		totalPages = (totalOrders + pageSize - 1) / pageSize
@@ -144,6 +142,41 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		TotalPages:  totalPages,
 		Orders:      outOrders,
 	})
+}
+
+func (h *Handler) candidateOrderAggregates(ctx context.Context, baseReq *mallpb.ListOrdersRequest) (int, float64, error) {
+	if baseReq == nil {
+		return 0, 0, nil
+	}
+	const limit int32 = 50
+	completed := 0
+	totalAmount := 0.0
+	for offset := int32(0); ; offset += limit {
+		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
+			CandidateUlid: baseReq.GetCandidateUlid(),
+			BizType:       baseReq.GetBizType(),
+			OrderStatus:   baseReq.GetOrderStatus(),
+			Limit:         limit,
+			Offset:        offset,
+		})
+		if err != nil {
+			return 0, 0, err
+		}
+		items := resp.GetItems()
+		for _, item := range items {
+			if item == nil {
+				continue
+			}
+			if candidateOrderStatus(item.GetOrderStatus()) == "completed" {
+				completed++
+				totalAmount += float64(item.GetAmountMinor()) / 100.0
+			}
+		}
+		if len(items) < int(limit) || (resp.GetTotal() > 0 && offset+limit >= resp.GetTotal()) {
+			break
+		}
+	}
+	return completed, totalAmount, nil
 }
 
 // GetOrder GET /api/orders/{orderId}
@@ -268,13 +301,21 @@ func (h *Handler) orderDetailResponse(resp *mallpb.GetOrderDetailResponse) Order
 }
 
 func (h *Handler) candidateCancelableOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
+	order, err := h.candidateBusinessOrder(ctx, orderID)
+	if err != nil || order == nil {
+		return order, err
+	}
+	if order.BizType == orderBizPipelinePayment {
+		return nil, nil
+	}
+	return order, nil
+}
+
+func (h *Handler) candidateBusinessOrder(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {
 	summaryResp, err := h.Mall.GetOrderSummary(ctx, &mallpb.GetOrderSummaryRequest{OrderUlid: orderID})
 	if err == nil {
 		if summary := summaryResp.GetSummary(); summaryResp.GetFound() && summary != nil {
 			bizType := normalizeOrderBizType(summary.GetBizType())
-			if bizType == orderBizPipelinePayment {
-				return nil, nil
-			}
 			return &candidateCancelableOrder{
 				OrderID:    strings.TrimSpace(summary.GetOrderUlid()),
 				BizType:    bizType,
@@ -288,6 +329,49 @@ func (h *Handler) candidateCancelableOrder(ctx context.Context, orderID string) 
 	}
 
 	return h.candidateCancelableOrderByBizID(ctx, orderID)
+}
+
+func (h *Handler) verifyCandidatePaymentBizRef(ctx context.Context, candidateID, bizType, bizRefULID string) error {
+	candidateID = strings.TrimSpace(candidateID)
+	bizType = normalizePaymentBizType(bizType)
+	bizRefULID = strings.TrimSpace(bizRefULID)
+	if candidateID == "" || bizType == "" || bizRefULID == "" {
+		return NewError(http.StatusBadRequest, ErrInvalidRequest, "candidate_id, biz_type and biz_ref_ulid are required")
+	}
+
+	order, err := h.candidateBusinessOrderForBiz(ctx, bizType, bizRefULID)
+	if err != nil {
+		return err
+	}
+	if order == nil || order.Candidate != candidateID {
+		return NewError(http.StatusNotFound, ErrNotFound, "order not found or access denied")
+	}
+	return nil
+}
+
+func (h *Handler) candidateBusinessOrderForBiz(ctx context.Context, bizType string, bizRefULID string) (*candidateCancelableOrder, error) {
+	switch normalizePaymentBizType(bizType) {
+	case orderBizBundlePurchase:
+		return h.bundleCancelableOrder(ctx, bizRefULID)
+	case orderBizPipelineUnlock:
+		return h.pipelineUnlockCancelableOrder(ctx, bizRefULID)
+	case orderBizCredentialApply:
+		return h.credentialApplicationCancelableOrder(ctx, bizRefULID)
+	case orderBizCourseRetakePayment:
+		return h.courseRetakeCancelableOrder(ctx, bizRefULID)
+	case orderBizStagePayment:
+		return h.stageCancelableOrder(ctx, bizRefULID)
+	default:
+		return nil, NewError(http.StatusBadRequest, ErrInvalidRequest, "unsupported biz_type")
+	}
+}
+
+func normalizePaymentBizType(raw string) string {
+	bizType := normalizeOrderBizType(raw)
+	if bizType == orderBizPipelinePayment {
+		return orderBizBundlePurchase
+	}
+	return bizType
 }
 
 func (h *Handler) candidateCancelableOrderByBizID(ctx context.Context, orderID string) (*candidateCancelableOrder, error) {

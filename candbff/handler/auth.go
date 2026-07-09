@@ -81,20 +81,26 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 // RefreshToken handles POST /auth/refresh.
 func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		RefreshToken string `json:"refresh_token"`
+	refreshToken := ""
+	if cookie, err := r.Cookie("refresh_token"); err == nil {
+		refreshToken = strings.TrimSpace(cookie.Value)
 	}
-	if err := ReadJSON(r, &input); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
-		return
+	if refreshToken == "" {
+		var input struct {
+			RefreshToken string `json:"refresh_token"`
+		}
+		if err := ReadJSON(r, &input); err != nil {
+			WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
+			return
+		}
+		refreshToken = strings.TrimSpace(input.RefreshToken)
 	}
-
-	if input.RefreshToken == "" {
+	if refreshToken == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "refresh_token is required")
 		return
 	}
 
-	token, err := casdoorsdk.RefreshOAuthToken(input.RefreshToken)
+	token, err := casdoorsdk.RefreshOAuthToken(refreshToken)
 	if err != nil {
 		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "failed to refresh token: "+err.Error())
 		return

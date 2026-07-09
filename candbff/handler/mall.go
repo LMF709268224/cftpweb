@@ -401,53 +401,60 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 	if pageSize > 100 {
 		pageSize = 100
 	}
-	offset := (page - 1) * pageSize
+	offset := int64(page-1) * int64(pageSize)
 	if r.URL.Query().Get("offset") != "" {
-		offset = parseNonNegativeIntQuery(r, "offset", offset)
+		offset = int64(parseNonNegativeIntQuery(r, "offset", int(offset)))
 	}
 	status := strings.TrimSpace(r.URL.Query().Get("status"))
-
-	resp, err := h.Mall.ListBundles(r.Context(), &mallpb.ListBundlesRequest{
-		Limit:  int32(pageSize),
-		Offset: int32(offset),
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	bundles := resp.GetBundles()
-	if status != "" {
-		filtered := make([]*mallpb.BundleInfo, 0, len(bundles))
-		for _, b := range bundles {
-			if strings.EqualFold(strings.TrimSpace(b.GetStatus()), status) {
-				filtered = append(filtered, b)
-			}
-		}
-		bundles = filtered
-	}
-
-	state := h.newBundleEnrichmentState(r.Context(), candidateID)
-	enrichedList := make([]map[string]interface{}, 0, len(bundles))
 	includeUnavailable := strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("include_unavailable")), "true")
-	for _, b := range bundles {
-		enriched := h.enrichBundle(r.Context(), b, state)
-		if !includeUnavailable && enriched["is_pipeline_bundle"] == true && enriched["pipeline_is_active"] == false {
-			continue
+
+	const fetchLimit int32 = 100
+	state := h.newBundleEnrichmentState(r.Context(), candidateID)
+	filtered := make([]map[string]interface{}, 0)
+	for fetchOffset := int32(0); ; fetchOffset += fetchLimit {
+		resp, err := h.Mall.ListBundles(r.Context(), &mallpb.ListBundlesRequest{
+			Limit:  fetchLimit,
+			Offset: fetchOffset,
+		})
+		if err != nil {
+			HandleGrpcError(w, err)
+			return
 		}
-		enrichedList = append(enrichedList, enriched)
+		bundles := resp.GetBundles()
+		for _, b := range bundles {
+			if b == nil {
+				continue
+			}
+			if status != "" && !strings.EqualFold(strings.TrimSpace(b.GetStatus()), status) {
+				continue
+			}
+			enriched := h.enrichBundle(r.Context(), b, state)
+			if !includeUnavailable && enriched["is_pipeline_bundle"] == true && enriched["pipeline_is_active"] == false {
+				continue
+			}
+			filtered = append(filtered, enriched)
+		}
+		if len(bundles) < int(fetchLimit) || fetchOffset+fetchLimit >= resp.GetTotal() {
+			break
+		}
 	}
-	total := int(resp.GetTotal())
-	if status != "" || !includeUnavailable {
-		total = len(enrichedList)
+
+	total := len(filtered)
+	if offset > int64(total) {
+		offset = int64(total)
 	}
+	end := offset + int64(pageSize)
+	if end > int64(total) {
+		end = int64(total)
+	}
+	enrichedList := filtered[offset:end]
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"bundles":     enrichedList,
 		"total":       total,
 		"page":        page,
 		"page_size":   pageSize,
-		"offset":      offset,
+		"offset":      int(offset),
 		"total_pages": totalPages(total, pageSize),
 	})
 }
@@ -1759,14 +1766,19 @@ func (h *Handler) UnlockPipelineInBundle(w http.ResponseWriter, r *http.Request)
 
 // PreviewPayment POST /api/mall/payments/preview
 func (h *Handler) PreviewPayment(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
 	var req PreviewPaymentReq
 	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	req.BizType = strings.TrimSpace(req.BizType)
+	req.BizType = normalizePaymentBizType(req.BizType)
 	req.BizRefUlid = strings.TrimSpace(req.BizRefUlid)
 	if !requireRequestField(w, req.BizType, "biz_type") || !requireRequestField(w, req.BizRefUlid, "biz_ref_ulid") {
+		return
+	}
+	if err := h.verifyCandidatePaymentBizRef(r.Context(), candidateID, req.BizType, req.BizRefUlid); err != nil {
+		writeCandidateAccessError(w, err)
 		return
 	}
 
@@ -1784,24 +1796,24 @@ func (h *Handler) PreviewPayment(w http.ResponseWriter, r *http.Request) {
 
 // InitiatePayment POST /api/mall/payments/initiate
 func (h *Handler) InitiatePayment(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
 	var req InitiatePaymentReq
 	if err := ReadJSON(r, &req); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body: "+err.Error())
 		return
 	}
-	req.BizType = strings.TrimSpace(req.BizType)
+	req.BizType = normalizePaymentBizType(req.BizType)
 	req.BizRefUlid = strings.TrimSpace(req.BizRefUlid)
 	if !requireRequestField(w, req.BizType, "biz_type") || !requireRequestField(w, req.BizRefUlid, "biz_ref_ulid") {
 		return
 	}
-
-	bizType := req.BizType
-	if bizType == "PIPELINE_PAYMENT" {
-		bizType = "BUNDLE_PURCHASE"
+	if err := h.verifyCandidatePaymentBizRef(r.Context(), candidateID, req.BizType, req.BizRefUlid); err != nil {
+		writeCandidateAccessError(w, err)
+		return
 	}
 
 	resp, err := h.Mall.InitiatePayment(r.Context(), &mallpb.InitiatePaymentRequest{
-		BizType:    bizType,
+		BizType:    req.BizType,
 		BizRefUlid: req.BizRefUlid,
 		SuccessUrl: strings.TrimSpace(req.SuccessUrl),
 		CancelUrl:  strings.TrimSpace(req.CancelUrl),

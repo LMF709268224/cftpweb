@@ -228,6 +228,10 @@ func (h *Handler) GetScheduleURL(w http.ResponseWriter, r *http.Request) {
 		if !requireRequestFields(w, candidateID, "candidate_id", examID, "exam_id") {
 			return
 		}
+		if _, err := h.candidateExamDetail(r.Context(), candidateID, examID); err != nil {
+			writeCandidateAccessError(w, err)
+			return
+		}
 		resp, err := h.Gexam.GetScheduleURL(r.Context(), &gexampb.GetURLRequest{
 			ExamUlid:    examID,
 			TermUrlBase: termURLBase,
@@ -285,6 +289,11 @@ func (h *Handler) GetExamResult(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if _, err := h.candidateExamDetail(r.Context(), candidateID, examID); err != nil {
+		writeCandidateAccessError(w, err)
+		return
+	}
+
 	resp, err := h.Gexam.GetExamResultDetail(r.Context(), &gexampb.GetExamRequest{
 		ExamUlid: examID,
 	})
@@ -313,6 +322,7 @@ func (h *Handler) GetExamResult(w http.ResponseWriter, r *http.Request) {
 
 // TermUrlCallback POST /api/exams/{examId}/schedule-callback
 func (h *Handler) TermUrlCallback(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
 	examID := strings.TrimSpace(chi.URLParam(r, "examId"))
 	var input TermUrlInput
 	if err := ReadJSON(r, &input); err != nil {
@@ -326,6 +336,10 @@ func (h *Handler) TermUrlCallback(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if !requireRequestFields(w, examID, "exam_id", input.URLType, "url_type") {
+		return
+	}
+	if _, err := h.candidateExamDetail(r.Context(), candidateID, examID); err != nil {
+		writeCandidateAccessError(w, err)
 		return
 	}
 
@@ -347,20 +361,76 @@ func (h *Handler) TermUrlCallback(w http.ResponseWriter, r *http.Request) {
 
 // TermUrlRedirectCallback GET /api/exams/{examId}/schedule-callback/{urlType}
 func (h *Handler) TermUrlRedirectCallback(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
 	examID := strings.TrimSpace(chi.URLParam(r, "examId"))
 	urlType := strings.TrimSpace(chi.URLParam(r, "urlType"))
 	if examID != "" && urlType != "" {
-		callbackBody := r.URL.RawQuery
-		if callbackBody == "" {
-			callbackBody = "{}"
+		if _, err := h.candidateExamDetail(r.Context(), candidateID, examID); err == nil {
+			callbackBody := r.URL.RawQuery
+			if callbackBody == "" {
+				callbackBody = "{}"
+			}
+			_, _ = h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
+				ExamUlid:     examID,
+				UrlType:      urlType,
+				CallbackBody: callbackBody,
+			})
+		} else {
+			slog.Warn("TermUrlRedirectCallback denied for non-owned exam", "candidate_id", candidateID, "exam_id", examID, "error", err)
 		}
-		_, _ = h.Gexam.TermUrlCallback(r.Context(), &gexampb.TermUrlCallbackRequest{
-			ExamUlid:     examID,
-			UrlType:      urlType,
-			CallbackBody: callbackBody,
-		})
 	}
 	http.Redirect(w, r, "/exams?schedule_return=1", http.StatusFound)
+}
+
+func (h *Handler) candidateExamDetail(ctx context.Context, candidateID, examID string) (*gexampb.ExamDetail, error) {
+	candidateID = strings.TrimSpace(candidateID)
+	examID = strings.TrimSpace(examID)
+	if candidateID == "" || examID == "" {
+		return nil, NewError(http.StatusBadRequest, ErrInvalidRequest, "candidate_id and exam_id are required")
+	}
+
+	detail, err := h.Gexam.GetExamDetail(ctx, &gexampb.GetExamRequest{ExamUlid: examID})
+	if err != nil {
+		return nil, err
+	}
+	if detail == nil || strings.TrimSpace(detail.GetExamUlid()) == "" {
+		return nil, status.Error(codes.NotFound, "exam not found")
+	}
+	if strings.TrimSpace(detail.GetCandidateUlid()) == candidateID {
+		return detail, nil
+	}
+	if strings.TrimSpace(detail.GetCandidateUlid()) != "" {
+		return nil, NewError(http.StatusForbidden, ErrForbidden, "exam is not available for current candidate")
+	}
+
+	for page := uint32(1); ; page++ {
+		req := &gexampb.ListExamsRequest{
+			CandidateUlid: &candidateID,
+			Page:          page,
+			PageSize:      100,
+		}
+		resp, err := h.Gexam.ListExams(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range resp.GetExams() {
+			if item != nil && strings.TrimSpace(item.GetExamUlid()) == examID {
+				return detail, nil
+			}
+		}
+		if len(resp.GetExams()) == 0 || page*100 >= resp.GetTotal() {
+			break
+		}
+	}
+	return nil, NewError(http.StatusForbidden, ErrForbidden, "exam is not available for current candidate")
+}
+
+func writeCandidateAccessError(w http.ResponseWriter, err error) {
+	if appErr, ok := err.(*AppError); ok {
+		HandleAppError(w, appErr)
+		return
+	}
+	HandleGrpcError(w, err)
 }
 
 // ApplyExemption POST /api/exams/units/{courseUnitUlid}/exemption
