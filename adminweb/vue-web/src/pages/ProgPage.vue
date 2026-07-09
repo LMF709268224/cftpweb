@@ -185,7 +185,10 @@ function entityStatusLabel(entityType: unknown, value: unknown) {
 }
 
 function certificateTaskStatusLabel(value: unknown) {
-  return String(value || copy.value.certificateTasks.unknownStatus)
+  const raw = String(value || "").trim()
+  const normalized = raw.toUpperCase()
+  const labels = copy.value.certificateTasks.statusLabels as Record<string, string>
+  return labels[normalized] || labels[raw] || raw || copy.value.certificateTasks.unknownStatus
 }
 
 function entityTypeLabel(value: unknown) {
@@ -226,6 +229,28 @@ function detailFieldValue(group: "overview" | "stage" | "unit" | "log", key: str
   if (key === "entity_type") return entityTypeLabel(value)
   if (isDateField(key)) return formatDate(value) || readableValue(value)
   return readableValue(value)
+}
+
+function certificateTaskFieldLabel(key: string) {
+  const labels = copy.value.certificateTasks.fieldLabels as Record<string, string>
+  const normalized = key.toLowerCase()
+  return labels[key] || labels[normalized] || fieldLabel("overview", normalized)
+}
+
+function certificateTaskFieldValue(key: string, value: unknown) {
+  const normalized = key.toLowerCase()
+  if (normalized === "status") return certificateTaskStatusLabel(value)
+  if (isDateField(normalized)) return formatDate(value) || readableValue(value)
+  return readableValue(value)
+}
+
+function certificateTaskEntries(record: JsonRecord | null | undefined) {
+  if (!record) return []
+  return Object.entries(record).map(([key, value]) => ({
+    key,
+    label: certificateTaskFieldLabel(key),
+    value: certificateTaskFieldValue(key, value),
+  }))
 }
 
 function detailEntries(group: "overview" | "stage" | "unit" | "log", record: JsonRecord | null | undefined) {
@@ -891,9 +916,9 @@ onMounted(async () => {
                   </div>
                   <template v-else-if="selectedCertificateTask">
                     <div class="grid gap-4 md:grid-cols-2">
-                      <div v-for="(value, key) in asRecord((certificateTaskDetail || {}).summary || selectedCertificateTask)" :key="key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                        <div class="text-xs font-black uppercase text-slate-400">{{ key }}</div>
-                        <div class="mt-2 break-all text-sm font-bold">{{ key === 'status' ? certificateTaskStatusLabel(value) : (value || '-') }}</div>
+                      <div v-for="entry in certificateTaskEntries(asRecord((certificateTaskDetail || {}).summary || selectedCertificateTask))" :key="entry.key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
+                        <div class="mt-2 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
                       </div>
                     </div>
                     <div v-if="certificateTaskDetail?.error_message" class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
