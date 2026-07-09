@@ -1688,6 +1688,22 @@ export const en: AdminTranslations = {
       subject: "Subject",
       task_status: "Task Status",
     },
+    groups: {
+      mail: "Mail Tasks",
+      nats: "Messages & Events",
+      runtime: "Runtimes & Status",
+      pay: "Payments & Orders",
+      audit: "Audit",
+    },
+    statusLabels: {
+      SENT: "Sent",
+      FAILED: "Failed",
+      PENDING: "Pending",
+      IGNORED: "Ignored",
+      CANCELLED: "Cancelled",
+      PROCESSED: "Processed",
+      SKIPPED: "Skipped",
+    },
     actions: {
       retry: "Retry",
       ignore: "Ignore",

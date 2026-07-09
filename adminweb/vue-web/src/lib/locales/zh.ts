@@ -1686,6 +1686,22 @@ export const zh = {
       subject: "消息主题",
       task_status: "任务状态",
     },
+    groups: {
+      mail: "邮件相关任务",
+      nats: "消息与事件",
+      runtime: "状态与流转",
+      pay: "支付与订单",
+      audit: "审计",
+    },
+    statusLabels: {
+      SENT: "已发送",
+      FAILED: "失败",
+      PENDING: "待处理",
+      IGNORED: "已忽略",
+      CANCELLED: "已取消",
+      PROCESSED: "已处理",
+      SKIPPED: "已跳过",
+    },
     actions: {
       retry: "重试",
       ignore: "忽略",

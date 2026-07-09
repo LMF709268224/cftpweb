@@ -20,10 +20,12 @@ type OpsAction = {
   label: string
   path: (id: string) => string
   method?: "POST"
+  showIf?: (item: JsonRecord) => boolean
 }
 
 type OpsModule = {
   key: string
+  groupKey: "mail" | "nats" | "runtime" | "pay" | "audit"
   label: string
   description: string
   listPath: string
@@ -48,6 +50,7 @@ function fieldLabel(key: string) {
 const modules = computed<OpsModule[]>(() => [
   {
     key: "paySubscriptions",
+    groupKey: "pay",
     label: copy.value.tabs.paySubscriptions,
     description: copy.value.descriptions.paySubscriptions,
     listPath: "/api/pay/subscriptions",
@@ -61,6 +64,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "payWebhooks",
+    groupKey: "pay",
     label: copy.value.tabs.payWebhooks,
     description: copy.value.descriptions.payWebhooks,
     listPath: "/api/pay/webhook-events",
@@ -77,6 +81,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "payOrderItems",
+    groupKey: "pay",
     label: copy.value.tabs.payOrderItems,
     description: copy.value.descriptions.payOrderItems,
     listPath: "/api/pay/order-items",
@@ -88,6 +93,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "mallMailTasks",
+    groupKey: "mail",
     label: copy.value.tabs.mallMailTasks,
     description: copy.value.descriptions.mallMailTasks,
     listPath: "/api/mall/mail-tasks",
@@ -102,12 +108,13 @@ const modules = computed<OpsModule[]>(() => [
       { key: "mail_type", label: fieldLabel("mail_type") },
     ],
     actions: [
-      { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/mall/mail-tasks/${encodeURIComponent(id)}/retry` },
-      { key: "ignore", label: copy.value.actions.ignore, path: (id) => `/api/mall/mail-tasks/${encodeURIComponent(id)}/ignore` },
+      { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/mall/mail-tasks/${encodeURIComponent(id)}/retry`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" },
+      { key: "ignore", label: copy.value.actions.ignore, path: (id) => `/api/mall/mail-tasks/${encodeURIComponent(id)}/ignore`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" },
     ],
   },
   {
     key: "mbrMailTasks",
+    groupKey: "mail",
     label: copy.value.tabs.mbrMailTasks,
     description: copy.value.descriptions.mbrMailTasks,
     listPath: "/api/memberships/mails",
@@ -121,12 +128,13 @@ const modules = computed<OpsModule[]>(() => [
       { key: "notification_type", label: fieldLabel("notification_type") },
     ],
     actions: [
-      { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/memberships/mails/${encodeURIComponent(id)}/retry` },
-      { key: "ignore", label: copy.value.actions.ignore, path: (id) => `/api/memberships/mails/${encodeURIComponent(id)}/ignore` },
+      { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/memberships/mails/${encodeURIComponent(id)}/retry`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" },
+      { key: "ignore", label: copy.value.actions.ignore, path: (id) => `/api/memberships/mails/${encodeURIComponent(id)}/ignore`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" },
     ],
   },
   {
     key: "mallNats",
+    groupKey: "nats",
     label: copy.value.tabs.mallNats,
     description: copy.value.descriptions.mallNats,
     listPath: "/api/mall/nats-messages",
@@ -143,6 +151,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "progMailTasks",
+    groupKey: "mail",
     label: copy.value.tabs.progMailTasks,
     description: copy.value.descriptions.progMailTasks,
     listPath: "/api/prog/mail-tasks",
@@ -156,12 +165,13 @@ const modules = computed<OpsModule[]>(() => [
       { key: "pipeline_ulid", label: fieldLabel("pipeline_ulid") },
     ],
     actions: [
-      { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/prog/mail-tasks/${encodeURIComponent(id)}/retry` },
-      { key: "ignore", label: copy.value.actions.ignore, path: (id) => `/api/prog/mail-tasks/${encodeURIComponent(id)}/ignore` },
+      { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/prog/mail-tasks/${encodeURIComponent(id)}/retry`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" },
+      { key: "ignore", label: copy.value.actions.ignore, path: (id) => `/api/prog/mail-tasks/${encodeURIComponent(id)}/ignore`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" },
     ],
   },
   {
     key: "progStages",
+    groupKey: "runtime",
     label: copy.value.tabs.progStages,
     description: copy.value.descriptions.progStages,
     listPath: "/api/prog/stages",
@@ -174,6 +184,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "progCourseUnits",
+    groupKey: "runtime",
     label: copy.value.tabs.progCourseUnits,
     description: copy.value.descriptions.progCourseUnits,
     listPath: "/api/prog/course-units",
@@ -190,6 +201,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "progDriverEvents",
+    groupKey: "nats",
     label: copy.value.tabs.progDriverEvents,
     description: copy.value.descriptions.progDriverEvents,
     listPath: "/api/prog/driver-events",
@@ -206,6 +218,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "progNats",
+    groupKey: "nats",
     label: copy.value.tabs.progNats,
     description: copy.value.descriptions.progNats,
     listPath: "/api/prog/nats-messages",
@@ -220,6 +233,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "examAudit",
+    groupKey: "audit",
     label: copy.value.tabs.examAudit,
     description: copy.value.descriptions.examAudit,
     listPath: "/api/exam-ops/audit-messages",
@@ -237,6 +251,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "examTransitions",
+    groupKey: "runtime",
     label: copy.value.tabs.examTransitions,
     description: copy.value.descriptions.examTransitions,
     listPath: "/api/exam-ops/status-transitions",
@@ -250,6 +265,7 @@ const modules = computed<OpsModule[]>(() => [
   },
   {
     key: "examReminders",
+    groupKey: "mail",
     label: copy.value.tabs.examReminders,
     description: copy.value.descriptions.examReminders,
     listPath: "/api/exam-ops/reminder-mails",
@@ -265,8 +281,8 @@ const modules = computed<OpsModule[]>(() => [
       { key: "reminder_type", label: fieldLabel("reminder_type") },
     ],
     actions: [
-      { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/exam-ops/reminder-mails/${encodeURIComponent(id)}/retry` },
-      { key: "ignore", label: copy.value.actions.ignore, path: (id) => `/api/exam-ops/reminder-mails/${encodeURIComponent(id)}/ignore` },
+      { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/exam-ops/reminder-mails/${encodeURIComponent(id)}/retry`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" || item.delivery_status === "FAILED" || item.deliveryStatus === "FAILED" },
+      { key: "ignore", label: copy.value.actions.ignore, path: (id) => `/api/exam-ops/reminder-mails/${encodeURIComponent(id)}/ignore`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" || item.delivery_status === "FAILED" || item.deliveryStatus === "FAILED" },
     ],
   },
 ])
@@ -293,6 +309,28 @@ const missingRequiredFilters = computed(() =>
 )
 const missingRequiredFilterLabels = computed(() => missingRequiredFilters.value.map(fieldLabel))
 const canLoad = computed(() => missingRequiredFilters.value.length === 0)
+
+const moduleGroups = computed(() => {
+  const groupsMap: Record<string, OpsModule[]> = {
+    mail: [],
+    nats: [],
+    runtime: [],
+    pay: [],
+    audit: [],
+  }
+  modules.value.forEach((m) => {
+    if (groupsMap[m.groupKey]) {
+      groupsMap[m.groupKey].push(m)
+    }
+  })
+  return [
+    { key: "mail", modules: groupsMap.mail },
+    { key: "nats", modules: groupsMap.nats },
+    { key: "runtime", modules: groupsMap.runtime },
+    { key: "pay", modules: groupsMap.pay },
+    { key: "audit", modules: groupsMap.audit },
+  ].filter((g) => g.modules.length > 0)
+})
 
 function isRecord(value: unknown): value is JsonRecord {
   return !!value && typeof value === "object" && !Array.isArray(value)
@@ -321,9 +359,10 @@ function getTitle(item: JsonRecord) {
 }
 
 function getSubtitle(item: JsonRecord) {
-  const status = getField(item, ["task_status", "taskStatus", "processed_status", "processedStatus", "event_status", "eventStatus", "status"])
+  const rawStatus = getField(item, ["task_status", "taskStatus", "processed_status", "processedStatus", "event_status", "eventStatus", "status"])
+  const mappedStatus = rawStatus ? ((copy.value.statusLabels as Record<string, string>)?.[String(rawStatus)] || String(rawStatus)) : undefined
   const time = getField(item, ["created_at", "createdAt", "scheduled_at", "scheduledAt"])
-  const parts = [status, formatDate(time)].filter((value) => value !== undefined && value !== "")
+  const parts = [mappedStatus, formatDate(time)].filter((value) => value !== undefined && value !== "")
   return parts.map(String).join(" · ")
 }
 
@@ -473,17 +512,20 @@ void loadList()
       </button>
     </header>
 
-    <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div class="flex flex-wrap gap-2">
-        <button
-          v-for="module in modules"
-          :key="module.key"
-          class="min-h-10 rounded-xl border px-3.5 py-2 text-left text-sm font-black transition"
-          :class="module.key === activeKey ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'"
-          @click="activeKey = module.key"
-        >
-          {{ module.label }}
-        </button>
+    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+      <div v-for="group in moduleGroups" :key="group.key">
+        <div class="mb-2 text-xs font-black tracking-wider text-slate-400 uppercase">{{ (copy.groups as Record<string, string>)[group.key] }}</div>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="module in group.modules"
+            :key="module.key"
+            class="min-h-10 rounded-xl border px-3.5 py-2 text-left text-sm font-black transition"
+            :class="module.key === activeKey ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'"
+            @click="activeKey = module.key"
+          >
+            {{ module.label }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -572,15 +614,16 @@ void loadList()
 
           <div class="flex-1 overflow-auto p-6">
             <div v-if="activeModule.actions?.length && selected" class="mb-5 flex flex-wrap justify-end gap-2">
-              <button
-                v-for="action in activeModule.actions"
-                :key="action.key"
-                class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-black hover:border-slate-500 disabled:opacity-50"
-                :disabled="!!actionLoading"
-                @click="runAction(action)"
-              >
-                {{ actionLoading === action.key ? copy.processing : action.label }}
-              </button>
+              <template v-for="action in activeModule.actions" :key="action.key">
+                <button
+                  v-if="!action.showIf || action.showIf(selected)"
+                  class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-black hover:border-slate-500 disabled:opacity-50"
+                  :disabled="!!actionLoading"
+                  @click="runAction(action)"
+                >
+                  {{ actionLoading === action.key ? copy.processing : action.label }}
+                </button>
+              </template>
             </div>
 
             <div v-if="detailNotice" class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
