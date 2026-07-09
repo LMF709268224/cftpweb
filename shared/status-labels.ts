@@ -268,6 +268,7 @@ export const CANDIDATE_PIPELINE_STATUS_LABELS: StatusLabelMap = {
   "2": "learning.statusWaitFinalElig",
   "3": "learning.statusCompleted",
   "4": "learning.statusIssuingCert",
+  "5": "learning.statusCancelled",
 }
 
 export const CANDIDATE_PIPELINE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
@@ -276,6 +277,7 @@ export const CANDIDATE_PIPELINE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
   "2": "PIPELINE_STATUS_WAIT_FINAL_ELIG",
   "3": "PIPELINE_STATUS_COMPLETED",
   "4": "PIPELINE_STATUS_ISSUING_CERT",
+  "5": "PIPELINE_STATUS_CANCELLED",
 }
 
 export const ADMIN_PIPELINE_STATUS_LABELS: StatusLabelMap = {
@@ -283,6 +285,7 @@ export const ADMIN_PIPELINE_STATUS_LABELS: StatusLabelMap = {
   "2": "progPage.pipelineStatusWaitFinalElig",
   "3": "progPage.pipelineStatusCompleted",
   "4": "progPage.pipelineStatusIssuingCert",
+  "5": "progPage.pipelineStatusCancelled",
 }
 
 export const ADMIN_PIPELINE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
@@ -291,6 +294,7 @@ export const ADMIN_PIPELINE_STATUS_ENUM_NAMES: StatusEnumNameMap = {
   "2": "PIPELINE_STATUS_WAIT_FINAL_ELIG",
   "3": "PIPELINE_STATUS_COMPLETED",
   "4": "PIPELINE_STATUS_ISSUING_CERT",
+  "5": "PIPELINE_STATUS_CANCELLED",
 }
 
 export const STAGE_STATUS_LABELS: StatusLabelMap = {

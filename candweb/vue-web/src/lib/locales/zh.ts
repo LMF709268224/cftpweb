@@ -358,6 +358,7 @@ export const zh = {
     statusWaitFinalElig: "等待最终资格",
     statusCompleted: "已完成",
     statusIssuingCert: "证书签发中",
+    statusCancelled: "已取消",
     statusLearning: "学习中",
     statusWaitingStudy: "待学习",
     statusWaitingSignupExam: "待报名考试",

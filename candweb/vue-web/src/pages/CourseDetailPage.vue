@@ -189,6 +189,10 @@ const pipelineWaitsFinalEligibility = computed(() => {
   const raw = String(pipelineStatus.value ?? "").trim()
   return raw === "2" || raw.toUpperCase().includes("WAIT_FINAL_ELIG")
 })
+const pipelineCancelled = computed(() => {
+  const raw = String(pipelineStatus.value ?? "").trim().toUpperCase().replace(/^PIPELINE_STATUS_/, "")
+  return raw === "5" || raw === "CANCELLED"
+})
 const finalQualificationRequired = computed(() =>
   purchased.value &&
   finalQualificationIds.value.length > 0 &&
@@ -205,7 +209,8 @@ const certificateAvailable = computed(() =>
   purchased.value &&
   Boolean(instancePipelineId.value) &&
   (nextStepAction.value === "view_certificate" || pipelineCompleted.value) &&
-  !pipelineIssuingCertificate.value,
+  !pipelineIssuingCertificate.value &&
+  !pipelineCancelled.value,
 )
 const certificateDescription = computed(() => {
   if (certificateAvailable.value) {

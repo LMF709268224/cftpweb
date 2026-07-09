@@ -1869,6 +1869,7 @@ export const en: AdminTranslations = {
         waitingFinalQualification: "Waiting Final Qualification",
         completed: "Completed",
         issuingCertificate: "Issuing Certificate",
+        cancelled: "Cancelled",
         terminated: "Terminated",
       },
       stage: {

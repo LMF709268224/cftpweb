@@ -101,8 +101,9 @@ const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => pipelines.value.length >= pageSize)
 const canPrevLogs = computed(() => logOffset.value > 0)
 const canNextLogs = computed(() => logs.value.length >= logPageSize)
-const canViewCertificate = computed(() => Boolean(selectedPipelineUlid.value && selectedCandidateUlid.value))
-const canTerminatePipeline = computed(() => Boolean(selectedPipelineUlid.value && !["3", "COMPLETED"].includes(normalizedPipelineStatus(selectedStatus.value))))
+const isPipelineCancelled = computed(() => isCancelledPipelineStatus(selectedStatus.value))
+const canViewCertificate = computed(() => Boolean(selectedPipelineUlid.value && selectedCandidateUlid.value && !isPipelineCancelled.value))
+const canTerminatePipeline = computed(() => Boolean(selectedPipelineUlid.value && !["3", "5", "COMPLETED", "CANCELLED"].includes(normalizedPipelineStatus(selectedStatus.value))))
 const canTriggerNextStage = computed(() => {
   const currentStageUlid = String(detailPipelineRecord.value.current_stage_ulid || "")
   const currentStage = stages.value.find((stage) => stageUlid(stage) === currentStageUlid) || stages.value[0]
@@ -125,6 +126,7 @@ const statusOptions = computed(() => [
   { value: "2", label: copy.value.status.pipeline.waitingFinalQualification },
   { value: "3", label: copy.value.status.pipeline.completed },
   { value: "4", label: copy.value.status.pipeline.issuingCertificate },
+  { value: "5", label: copy.value.status.pipeline.cancelled },
 ])
 
 function pipelineUlid(pipeline: JsonRecord | null | undefined) {
@@ -148,6 +150,10 @@ function normalizedPipelineStatus(value: unknown) {
   return String(value ?? "").trim().toUpperCase().replace(/^PIPELINE_STATUS_/, "")
 }
 
+function isCancelledPipelineStatus(value: unknown) {
+  return ["5", "CANCELLED"].includes(normalizedPipelineStatus(value))
+}
+
 function statusLabel(value: unknown, scope: "pipeline" | "stage" | "unit" = "pipeline") {
   const normalized = scope === "pipeline" ? normalizedPipelineStatus(value) : String(value ?? "")
   if (scope === "pipeline") {
@@ -155,6 +161,7 @@ function statusLabel(value: unknown, scope: "pipeline" | "stage" | "unit" = "pip
     if (normalized === "2" || normalized === "WAIT_FINAL_ELIG") return copy.value.status.pipeline.waitingFinalQualification
     if (normalized === "3" || normalized === "COMPLETED") return copy.value.status.pipeline.completed
     if (normalized === "4" || normalized === "ISSUING_CERT") return copy.value.status.pipeline.issuingCertificate
+    if (normalized === "5" || normalized === "CANCELLED") return copy.value.status.pipeline.cancelled
   }
   if (scope === "stage") {
     if (normalized === "1") return copy.value.status.stage.waitingCandidate
@@ -721,9 +728,10 @@ onMounted(async () => {
                     {{ copy.actions["terminate-pipeline"] }}
                   </button>
                   <button
+                    v-if="canViewCertificate"
                     class="inline-flex items-center justify-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-bold disabled:opacity-40"
                     type="button"
-                    :disabled="certificateLoading || !canViewCertificate"
+                    :disabled="certificateLoading"
                     @click="viewCertificate"
                   >
                     <Eye class="h-4 w-4" />

@@ -360,6 +360,7 @@ export const en: AppTranslations = {
     statusWaitFinalElig: "Waiting for final eligibility",
     statusCompleted: "Completed",
     statusIssuingCert: "Issuing certificate",
+    statusCancelled: "Cancelled",
     statusLearning: "Learning",
     statusWaitingStudy: "Waiting to study",
     statusWaitingSignupExam: "Waiting to sign up for exam",
