@@ -839,7 +839,7 @@ function coursePayload(version?: unknown) {
     duration_min: Number(courseForm.value.duration_min || 0),
     certification_enabled: courseForm.value.certification_enabled,
     certification_def_id: courseForm.value.certification_def_id.trim(),
-    respath: courseForm.value.respath.trim(),
+    course_gpath: courseForm.value.respath.trim(),
   }
   if (version !== undefined) payload.version = Number(version || 0)
   return payload
