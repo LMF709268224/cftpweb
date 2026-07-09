@@ -164,11 +164,11 @@ function statusLabel(value: unknown, scope: "pipeline" | "stage" | "unit" = "pip
   }
   if (scope === "unit") {
     if (normalized === "1") return copy.value.status.unit.notStarted
-    if (normalized === "2") return copy.value.status.unit.studying
-    if (normalized === "3") return copy.value.status.unit.completed
-    if (normalized === "4") return copy.value.status.unit.readyForExamSignup
-    if (normalized === "5") return copy.value.status.unit.examScheduled
-    if (normalized === "6") return copy.value.status.unit.examFailed
+    if (normalized === "2") return copy.value.status.unit.readyForExamSignup
+    if (normalized === "3") return copy.value.status.unit.studying
+    if (normalized === "4") return copy.value.status.unit.examScheduled
+    if (normalized === "5") return copy.value.status.unit.examFailed
+    if (normalized === "6") return copy.value.status.unit.completed
   }
   return String(value || "-")
 }
