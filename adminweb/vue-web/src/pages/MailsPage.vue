@@ -212,7 +212,7 @@ async function loadUsers() {
     users.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item) && !!item.email)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.usersLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.usersLoadFailed))
   } finally {
     usersLoading.value = false
   }
@@ -235,7 +235,7 @@ async function loadTemplates() {
     }
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.templatesLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.templatesLoadFailed))
   } finally {
     templatesLoading.value = false
   }
@@ -254,7 +254,7 @@ async function selectTemplate(template: JsonRecord) {
     if (detail) selectedTemplate.value = { ...template, ...detail }
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.templateDetailLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed))
   }
 }
 
@@ -298,7 +298,7 @@ async function loadSentMails() {
     }
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.sentLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.sentLoadFailed))
   } finally {
     mailsLoading.value = false
   }
@@ -378,7 +378,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
     }
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.templateDetailLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed))
   }
 }
 
@@ -457,7 +457,7 @@ async function openMail(mail: JsonRecord | null, open = true) {
     mailStatusDetail.value = await apiClient<JsonRecord>(`/api/mails/status?mail_id=${encodeURIComponent(id)}`)
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.mailDetailLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.mailDetailLoadFailed))
   } finally {
     mailDetailLoading.value = false
   }

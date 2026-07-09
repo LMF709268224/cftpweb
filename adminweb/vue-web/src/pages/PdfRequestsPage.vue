@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, FileBadge, Loader2, RefreshCw, X } from "luc
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, getDisplayTitle, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -75,7 +76,7 @@ async function openRequest(request: JsonRecord | null, open = true) {
     selected.value = { ...request, ...detail }
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.loadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
   }
 }
 
@@ -100,7 +101,7 @@ async function load(nextPage = page.value) {
     requests.value = []
     selected.value = null
     detailOpen.value = false
-    toast.error(copy.value.toasts.loadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
   } finally {
     loading.value = false
   }

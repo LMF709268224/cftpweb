@@ -910,7 +910,7 @@ async function loadCourses(pageToken = "") {
     nextPageToken.value = String(data.next_page_token || "")
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.courseListLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.courseListLoadFailed))
   } finally {
     loading.value = false
   }
@@ -1069,7 +1069,7 @@ async function loadChapters() {
     chapters.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.chaptersLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.chaptersLoadFailed))
   } finally {
     chaptersLoading.value = false
   }
@@ -1194,7 +1194,7 @@ async function loadLessons() {
     lessons.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.lessonsLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.lessonsLoadFailed))
   } finally {
     lessonsLoading.value = false
   }
@@ -1326,7 +1326,7 @@ async function loadMaterials() {
     materials.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.materialsLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.materialsLoadFailed))
   } finally {
     materialsLoading.value = false
   }
@@ -1651,7 +1651,7 @@ async function loadQuizzes(scope: QuizScope = quizForm.value.scope) {
     clearQuestionState()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.quizzesLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.quizzesLoadFailed))
   } finally {
     quizzesLoading.value = false
   }
@@ -1818,7 +1818,7 @@ async function loadQuestions(id = selectedQuizId.value) {
     optionForm.value = emptyOptionForm()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.questionsLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.questionsLoadFailed))
   } finally {
     questionsLoading.value = false
   }
@@ -1926,7 +1926,7 @@ async function loadOptions(id = selectedQuestionId.value) {
     optionForm.value = emptyOptionForm()
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.optionsLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.optionsLoadFailed))
   } finally {
     optionsLoading.value = false
   }

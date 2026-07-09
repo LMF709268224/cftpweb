@@ -143,7 +143,7 @@ async function loadUsers() {
     users.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.usersLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.usersLoadFailed))
   } finally {
     usersLoading.value = false
   }
@@ -165,7 +165,7 @@ async function loadTemplates() {
     }
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.templatesLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.templatesLoadFailed))
   } finally {
     templatesLoading.value = false
   }
@@ -184,7 +184,7 @@ async function selectTemplate(template: JsonRecord) {
     if (detail) selectedTemplate.value = { ...template, ...detail }
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.templateDetailLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed))
   }
 }
 
@@ -209,7 +209,7 @@ async function loadSentMessages() {
     messages.value = []
     selectedMessage.value = null
     messageDetailOpen.value = false
-    toast.error(copy.value.toasts.sentLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.sentLoadFailed))
   } finally {
     messagesLoading.value = false
   }
@@ -313,7 +313,7 @@ async function editTemplate(template: JsonRecord | null = selectedTemplate.value
     }
   } catch (err) {
     console.error(err)
-    toast.error(copy.value.toasts.templateDetailLoadFailed)
+    toast.error(apiErrorMessage(err, copy.value.toasts.templateDetailLoadFailed))
   }
 }
 

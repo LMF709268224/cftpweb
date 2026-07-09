@@ -2,6 +2,7 @@
 import { computed, reactive, ref, watch } from "vue"
 import { Search } from "lucide-vue-next"
 import { toast } from "vue-sonner"
+import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
@@ -422,7 +423,7 @@ async function loadList(reset = false) {
   } catch (error) {
     items.value = []
     total.value = 0
-    toast.error(error instanceof Error ? error.message : copy.value.toasts.loadFailed)
+    toast.error(apiErrorMessage(error, copy.value.toasts.loadFailed))
   } finally {
     loading.value = false
   }
@@ -444,7 +445,7 @@ async function openItem(item: JsonRecord, openModal = true) {
   try {
     detail.value = await apiClient<JsonRecord>(module.detailPath(id))
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : copy.value.toasts.detailFailed)
+    toast.error(apiErrorMessage(error, copy.value.toasts.detailFailed))
   } finally {
     detailLoading.value = false
   }
@@ -465,7 +466,7 @@ async function runAction(action: OpsAction) {
     toast.success(copy.value.toasts.actionSuccess)
     await loadList()
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : copy.value.toasts.actionFailed)
+    toast.error(apiErrorMessage(error, copy.value.toasts.actionFailed))
   } finally {
     actionLoading.value = ""
   }
