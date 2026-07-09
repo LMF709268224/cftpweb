@@ -196,6 +196,7 @@ const pipelineCancelled = computed(() => {
 const finalQualificationRequired = computed(() =>
   purchased.value &&
   finalQualificationIds.value.length > 0 &&
+  !pipelineCancelled.value &&
   (pipelineWaitsFinalEligibility.value || nextStepAction.value === "final_qualification"),
 )
 const pipelineIssuingCertificate = computed(() => {
@@ -217,6 +218,7 @@ const certificateDescription = computed(() => {
     const name = pipeline.value?.name || t.value.common.unknownCourse
     return t.value.learning.certificateCongratulationsDesc.replace(/\{\{name\}\}/g, name)
   }
+  if (pipelineCancelled.value) return t.value.learning.statusCancelled
   if (pipelineIssuingCertificate.value) return t.value.learning.certificateIssuingDesc
   if (finalQualificationRequired.value) return t.value.learning.finalQualificationDesc
   return t.value.learning.certificateUnavailableDesc

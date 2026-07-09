@@ -280,6 +280,7 @@ const passedQuizzesCount = computed(() => syncState.value?.passed_quizzes_count 
 const nextStep = computed(() => runtime.value?.next_step || {})
 const pipelineStatus = computed(() => runtime.value?.pipeline_status)
 const isPipelineTerminal = computed(() => pipelineIsTerminal(pipelineStatus.value))
+const pipelineCancelled = computed(() => isCancelledPipelineStatus(pipelineStatus.value))
 const currentStageName = computed(() => runtime.value?.current_stage_name || "")
 const currentStageStatus = computed(() => runtime.value?.current_stage_status)
 const currentUnitStatus = computed(() => runtime.value?.current_unit_status)
@@ -302,7 +303,7 @@ const pipelineWaitsFinalEligibility = computed(() => {
   const normalized = normalizeEnumValueUpper(pipelineStatus.value)
   return normalized.includes("WAIT_FINAL_ELIG")
 })
-const finalQualificationRequired = computed(() => pipelineWaitsFinalEligibility.value && finalQualificationIds.value.length > 0)
+const finalQualificationRequired = computed(() => !pipelineCancelled.value && pipelineWaitsFinalEligibility.value && finalQualificationIds.value.length > 0)
 const courseRuntimeUnit = computed(() => {
   const stages = runtime.value?.config?.stages || []
   for (const stage of stages) {
@@ -350,7 +351,7 @@ const nextStepBelongsToCurrentCourse = computed(() => {
   const nextCourseId = firstString(nextStep.value?.course_id, nextStep.value?.course_ulid, nextStep.value?.courseUlid)
   return Boolean(nextCourseId && nextCourseId === courseId.value)
 })
-const hasExamTab = computed(() => courseHasExam.value || (nextStepBelongsToCurrentCourse.value && ["signup_exam", "schedule_exam", "view_exam_schedule", "apply_retake", "view_exam_result"].includes(nextStepState.value.action)))
+const hasExamTab = computed(() => !pipelineCancelled.value && (courseHasExam.value || (nextStepBelongsToCurrentCourse.value && ["signup_exam", "schedule_exam", "view_exam_schedule", "apply_retake", "view_exam_result"].includes(nextStepState.value.action))))
 const courseExamTabCount = computed(() => {
   if (courseExams.value.length > 0) return courseExams.value.length
   if (!courseExamsLoaded.value && hasExamTab.value) return 1
@@ -503,7 +504,7 @@ const examStepDone = computed(() => {
 const currentCertificationStepId = computed<CertificationStepKey>(() => {
   if (!lessonStepDone.value) return "lesson"
   if (quizTasks.value.length > 0 && !quizStepDone.value) return "quiz"
-  if (hasExamTab.value || courseHasExam.value) return "exam"
+  if (!pipelineCancelled.value && (hasExamTab.value || courseHasExam.value)) return "exam"
   if (quizTasks.value.length > 0) return "quiz"
   return "lesson"
 })
@@ -566,11 +567,12 @@ const nextLearningLessonId = computed(() => {
 })
 const hasPendingQuizzes = computed(() => passedQuizzesCount.value < totalQuizzesCount.value)
 const nextStepState = computed(() => {
+  if (pipelineCancelled.value) return { action: "", label: t.value.learning.statusCancelled, desc: t.value.learning.statusCancelled }
   if (nextStep.value?.action) return nextStepDisplayFromAction(nextStep.value.action)
   return nextStepDisplay(nextUnitStatus.value, Boolean(nextLearningLessonId.value), Boolean(nextStep.value?.allow_retake), hasPendingQuizzes.value)
 })
 const sidebarNextActions = new Set(["signup_exam", "schedule_exam", "view_exam_schedule", "apply_retake", "view_exam_result", "view_certificate"])
-const showSidebarNextAction = computed(() => sidebarNextActions.has(nextStepState.value.action))
+const showSidebarNextAction = computed(() => !pipelineCancelled.value && sidebarNextActions.has(nextStepState.value.action))
 
 function flowStepButtonClass(step: { status: FlowStepStatus }) {
   if (step.status === "done") return "border-emerald-200 bg-emerald-50 text-emerald-800"
@@ -645,6 +647,11 @@ const selectedMaterial = computed(() => {
 function pipelineIsTerminal(status?: string | number | null) {
   const normalized = String(status ?? "").trim()
   return normalized.includes("COMPLETED")
+}
+
+function isCancelledPipelineStatus(status?: string | number | null) {
+  const normalized = normalizeEnumValueUpper(status).replace(/^PIPELINE_STATUS_/, "")
+  return normalized === "5" || normalized === "CANCELLED"
 }
 
 function nextStepDisplayFromAction(action?: string) {
@@ -925,12 +932,14 @@ function examStatusLabel(exam: any) {
 }
 
 function canScheduleExam(exam: any) {
+  if (pipelineCancelled.value) return false
   if (hasExamResult(exam) || isWaitingScheduleSync(exam)) return false
   const status = normalizedExamStatus(exam?.exam_status)
   return Boolean(exam?.exam_id && ((status && status.includes("OPEN")) || isExamOpenUnit(exam)))
 }
 
 function canSignupExam(exam: any) {
+  if (pipelineCancelled.value) return false
   return Boolean(exam?.course_unit_ulid && isWaitingSignupExamUnit(exam))
 }
 
@@ -950,6 +959,7 @@ function retakeAction(exam: any) {
 }
 
 function canApplyRetake(exam: any) {
+  if (pipelineCancelled.value) return false
   return Boolean(exam?.course_unit_ulid && exam?.course_unit_cc_ulid && isExamFailedUnit(exam) && ["CREATE_RETAKE_ORDER", "CONTINUE_PAYMENT", "APPLY_RETAKE"].includes(retakeAction(exam)))
 }
 
@@ -1216,6 +1226,7 @@ async function startQuiz(quizId: string) {
 }
 
 async function handleScheduleExam() {
+  if (pipelineCancelled.value) return
   const targetPipelineUlid = runtime.value?.instance?.pipeline_ulid
   if (!nextStep.value?.exam_id || !targetPipelineUlid) return
   scheduleLoading.value = true
@@ -1230,7 +1241,7 @@ async function handleScheduleExam() {
 }
 
 async function handleInlineScheduleExam(exam: any) {
-  if (!exam?.exam_id || scheduleLoading.value) return
+  if (!canScheduleExam(exam) || scheduleLoading.value) return
   scheduleLoading.value = true
   try {
     const termUrlBase = window.location.origin + "/api/public/webhooks/exams/callback"
@@ -1426,6 +1437,7 @@ function scrollToBottom() {
 }
 
 function nextStepLink() {
+  if (pipelineCancelled.value) return `/certifications/${encodeURIComponent(pipelineId.value)}`
   if (nextStepState.value.action === "continue_learning") {
     const nextCourseId = firstString(nextStep.value?.course_id, nextStep.value?.course_ulid, nextStep.value?.courseUlid) || courseId.value
     return nextLearningLessonId.value
@@ -1444,7 +1456,7 @@ const courseStatusPolling = usePolling(
     await loadRuntime(true)
     if (activeContentTab.value === "exam") await loadCourseExams(false, true)
   },
-  { shouldPoll: () => Boolean(pipelineId.value && courseId.value && !isPipelineTerminal.value) },
+  { shouldPoll: () => Boolean(pipelineId.value && courseId.value && !isPipelineTerminal.value && !pipelineCancelled.value) },
 )
 
 onMounted(async () => {
@@ -1480,9 +1492,19 @@ watch(courseId, async () => {
 
 watch(pipelineId, () => void loadRuntime())
 watch(activeContentTab, async (tab) => {
-  if (tab === "exam") await loadCourseExams()
+  if (tab === "exam") {
+    if (pipelineCancelled.value) {
+      activeContentTab.value = "lesson"
+      return
+    }
+    await loadCourseExams()
+  }
 })
 watch([runtime, courseId], async () => {
+  if (pipelineCancelled.value && activeContentTab.value === "exam") {
+    activeContentTab.value = "lesson"
+    return
+  }
   const showLoading = !syncing.value
   if (activeContentTab.value === "exam") await loadCourseExams(showLoading)
 })
