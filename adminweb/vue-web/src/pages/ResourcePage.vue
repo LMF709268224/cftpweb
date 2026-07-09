@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ArrowLeft, ArrowRight, Check, Copy as CopyIcon, FileSearch, Loader2, RefreshCw } from "lucide-vue-next"
+import { ArrowLeft, ArrowRight, FileSearch, Loader2, RefreshCw } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
 import { apiClient } from "@/lib/apiClient"
-import { copyTextToClipboard } from "@/lib/clipboard"
 import {
   formatDate,
   getDisplaySubtitle,
@@ -25,7 +25,6 @@ const page = ref(1)
 const rawData = ref<PageData | null>(null)
 const items = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
-const copiedJson = ref(false)
 const pageSize = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.resourceAdmin)
@@ -35,7 +34,6 @@ const routeCopy = computed(() => copy.value.routes[meta.value.copyKey])
 
 const selectedTitle = computed(() => (selected.value ? getDisplayTitle(selected.value, copy.value.fallbackTitle) : copy.value.selectRecord))
 const selectedEntries = computed(() => Object.entries(selected.value || {}))
-const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const hasNext = computed(() => items.value.length >= pageSize)
 const hasPrevious = computed(() => page.value > 1)
 
@@ -79,20 +77,6 @@ function isRecord(value: unknown): value is JsonRecord {
 
 function jsonText(value: unknown) {
   return JSON.stringify(value ?? {}, null, 2)
-}
-
-async function copySelectedJson() {
-  try {
-    await copyTextToClipboard(selectedJson.value)
-    copiedJson.value = true
-    toast.success(copy.value.jsonCopied)
-    window.setTimeout(() => {
-      copiedJson.value = false
-    }, 1600)
-  } catch (err) {
-    console.error(err)
-    toast.error(copy.value.jsonCopyFailed)
-  }
 }
 
 async function load() {
@@ -326,20 +310,16 @@ onMounted(load)
               <button class="rounded-lg bg-blue-700 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-800" @click="saveEdit">{{ copy.saveAndSubmit }}</button>
             </div>
           </div>
-          <details v-if="!isEditing" class="rounded-2xl border border-slate-200 bg-white p-4">
-            <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
-            <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-              <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
-                <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copySelectedJson">
-                  <Check v-if="copiedJson" class="h-3.5 w-3.5" />
-                  <CopyIcon v-else class="h-3.5 w-3.5" />
-                  {{ copiedJson ? copy.copiedJson : copy.copyJson }}
-                </button>
-              </div>
-              <pre class="max-h-[720px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
-            </div>
-          </details>
+          <JsonPreview
+            v-if="!isEditing"
+            :title="copy.rawJson"
+            :value="selected || {}"
+            :copy-label="copy.copyJson"
+            :copied-label="copy.copiedJson"
+            :copied-message="copy.jsonCopied"
+            :copy-error-message="copy.jsonCopyFailed"
+            max-height="720px"
+          />
           <textarea v-else v-model="draftJson" class="min-h-[500px] w-full rounded-2xl bg-slate-950 p-5 font-mono text-xs leading-6 text-slate-100 outline-none focus:ring-2 focus:ring-[#0b7bdc]"></textarea>
         </div>
       </div>
