@@ -442,7 +442,7 @@ void loadList()
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-5 px-8 py-6">
     <header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
         <p class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{{ copy.eyebrow }}</p>
@@ -455,11 +455,11 @@ void loadList()
     </header>
 
     <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div class="flex gap-3 overflow-x-auto pb-2">
+      <div class="flex flex-wrap gap-2">
         <button
           v-for="module in modules"
           :key="module.key"
-          class="shrink-0 rounded-xl border px-4 py-3 text-left text-sm font-black transition"
+          class="min-h-10 rounded-xl border px-3.5 py-2 text-left text-sm font-black transition"
           :class="module.key === activeKey ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'"
           @click="activeKey = module.key"
         >
@@ -474,7 +474,7 @@ void loadList()
         <p class="mt-1 text-sm font-medium text-slate-500">{{ activeModule.description }}</p>
       </div>
 
-      <div v-if="activeModule.filters?.length" class="mt-5 flex flex-wrap items-end gap-3">
+      <div v-if="activeModule.filters?.length" class="mt-4 flex flex-wrap items-end gap-3">
         <div v-for="filter in activeModule.filters" :key="filter.key" class="w-full space-y-1 sm:w-[200px] 2xl:w-[220px]">
           <label class="text-xs font-black text-slate-500">{{ filter.label }}</label>
           <input
