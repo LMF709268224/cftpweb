@@ -107,6 +107,25 @@ const modules = computed<OpsModule[]>(() => [
     ],
   },
   {
+    key: "mbrMailTasks",
+    label: copy.value.tabs.mbrMailTasks,
+    description: copy.value.descriptions.mbrMailTasks,
+    listPath: "/api/memberships/mails",
+    detailPath: (id) => `/api/memberships/mails/${encodeURIComponent(id)}`,
+    itemKeys: ["mails", "items"],
+    idKeys: ["mail_ulid", "mailUlid"],
+    pagination: "page",
+    filters: [
+      { key: "candidate_ulid", label: fieldLabel("candidate_ulid") },
+      { key: "task_status", label: fieldLabel("task_status") },
+      { key: "notification_type", label: fieldLabel("notification_type") },
+    ],
+    actions: [
+      { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/memberships/mails/${encodeURIComponent(id)}/retry` },
+      { key: "ignore", label: copy.value.actions.ignore, path: (id) => `/api/memberships/mails/${encodeURIComponent(id)}/ignore` },
+    ],
+  },
+  {
     key: "mallNats",
     label: copy.value.tabs.mallNats,
     description: copy.value.descriptions.mallNats,
