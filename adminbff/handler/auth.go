@@ -107,20 +107,13 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 // RefreshToken  POST /auth/refresh
 // 用 refresh_token 换取新的 access_token
 func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
-	var input struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-	if err := ReadJSON(r, &input); err != nil {
-		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid request body: "+err.Error())
-		return
-	}
-
-	if input.RefreshToken == "" {
+	refreshToken := strings.TrimSpace(readRefreshToken(r))
+	if refreshToken == "" {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "refresh_token is required")
 		return
 	}
 
-	token, err := casdoorsdk.RefreshOAuthToken(input.RefreshToken)
+	token, err := casdoorsdk.RefreshOAuthToken(refreshToken)
 	if err != nil {
 		WriteError(w, http.StatusUnauthorized, ErrAuthFailed, "failed to refresh token: "+err.Error())
 		return
@@ -150,6 +143,20 @@ func (h *Handler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 			Name: claims.User.Name,
 		},
 	})
+}
+
+func readRefreshToken(r *http.Request) string {
+	if cookie, err := r.Cookie("refresh_token"); err == nil && strings.TrimSpace(cookie.Value) != "" {
+		return cookie.Value
+	}
+
+	var input struct {
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := ReadJSON(r, &input); err != nil {
+		return ""
+	}
+	return input.RefreshToken
 }
 
 func clearTokenCookies(w http.ResponseWriter) {
@@ -188,12 +195,13 @@ func IsCftpAdmin(user *casdoorsdk.User) bool {
 	if adminRole == "" {
 		adminRole = "role_admin_basic"
 	}
+	adminRole = strings.ToLower(strings.TrimSpace(adminRole))
 
 	for _, role := range user.Roles {
 		if role == nil {
 			continue
 		}
-		if role.Name == adminRole {
+		if strings.ToLower(strings.TrimSpace(role.Name)) == adminRole {
 			return true
 		}
 	}

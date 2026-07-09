@@ -28,15 +28,24 @@ func (h *Handler) GetStageOrderStatus(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ListStageOrders(w http.ResponseWriter, r *http.Request) {
 	candidateULID := strings.TrimSpace(r.URL.Query().Get("candidate_ulid"))
-	stageULID := strings.TrimSpace(r.URL.Query().Get("stage_ulid"))
+	pipelineCCULID := strings.TrimSpace(r.URL.Query().Get("pipeline_cc_ulid"))
+	stageCCULID := strings.TrimSpace(r.URL.Query().Get("stage_cc_ulid"))
+	if stageCCULID == "" {
+		stageCCULID = strings.TrimSpace(r.URL.Query().Get("stage_ulid"))
+	}
 	status := strings.TrimSpace(r.URL.Query().Get("status"))
 
+	if !requireRequestFields(w, pipelineCCULID, "pipeline_cc_ulid", stageCCULID, "stage_cc_ulid") {
+		return
+	}
+
 	req := &mallpb.ListStageOrdersRequest{
-		CandidateUlid: candidateULID,
-		StageCcUlid:   stageULID, // The proto uses stage_cc_ulid
-		OrderStatus:   status,    // The proto uses order_status string
-		Limit:         int32(parseUint32Query(r, "limit")),
-		Offset:        int32(parseUint32Query(r, "offset")),
+		CandidateUlid:  candidateULID,
+		PipelineCcUlid: pipelineCCULID,
+		StageCcUlid:    stageCCULID,
+		OrderStatus:    status, // The proto uses order_status string
+		Limit:          int32(parseUint32Query(r, "limit")),
+		Offset:         int32(parseUint32Query(r, "offset")),
 	}
 
 	resp, err := h.Mall.ListStageOrders(r.Context(), req)
@@ -93,9 +102,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			AmountMinor:   item.GetAmountMinor(),
 			CurrencyCode:  strings.ToUpper(item.GetCurrencyCode()),
 			OrderStatus:   strings.ToUpper(item.GetOrderStatus()),
-			PaymentStatus: deriveAdminPaymentStatus(item.GetOrderStatus(), item.GetPaymentStatus(), item.GetOrderUlid()),
+			PaymentStatus: deriveAdminPaymentStatus(item.GetOrderStatus(), item.GetPaymentStatus()),
 			CreatedAt:     item.GetCreatedAt(),
-			PayOrderULID:  item.GetOrderUlid(),
 		})
 	}
 
@@ -129,10 +137,9 @@ type adminOrderSummary struct {
 	OrderStatus   string `json:"order_status"`
 	PaymentStatus string `json:"payment_status"`
 	CreatedAt     string `json:"created_at"`
-	PayOrderULID  string `json:"pay_order_ulid,omitempty"`
 }
 
-func deriveAdminPaymentStatus(orderStatus, paymentStatus, payOrderULID string) string {
+func deriveAdminPaymentStatus(orderStatus, paymentStatus string) string {
 	status := strings.ToUpper(strings.TrimSpace(paymentStatus))
 	if status != "" && status != "UNSPECIFIED" {
 		return status
@@ -150,8 +157,6 @@ func deriveAdminPaymentStatus(orderStatus, paymentStatus, payOrderULID string) s
 		return "WAIT_PAY"
 	case strings.Contains(status, "PAID") || strings.Contains(status, "COMPLETED"):
 		return "PAID"
-	case strings.TrimSpace(payOrderULID) != "":
-		return "WAIT_PAY"
 	default:
 		return ""
 	}
