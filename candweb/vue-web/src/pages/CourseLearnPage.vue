@@ -1578,7 +1578,7 @@ watch(selectedMaterial, () => {
           </div>
         </div>
 
-        <div class="grid grid-cols-[auto_minmax(18px,1fr)_auto_minmax(18px,1fr)_auto_minmax(18px,1fr)_auto] items-start">
+        <div class="grid w-full grid-cols-[minmax(72px,auto)_minmax(0,1fr)_minmax(72px,auto)_minmax(0,1fr)_minmax(72px,auto)] items-start">
           <template v-for="(step, index) in certificationFlowSteps" :key="step.id">
             <button
               type="button"
