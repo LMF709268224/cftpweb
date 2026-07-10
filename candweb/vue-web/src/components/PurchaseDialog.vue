@@ -849,7 +849,7 @@ function initiatePayment() {
   // Redirect to orders page for existing orders (avoids nested payment session state issues)
   if (!orderCreatedInSession.value) {
     close()
-    router.push("/orders")
+    router.push({ path: "/orders", query: { status: "WAIT_PAYMENT" } })
     return
   }
 

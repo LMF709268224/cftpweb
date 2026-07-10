@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue"
+import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
 import { ChevronRight, CreditCard, FileText, Loader2, Package, Receipt, X, XCircle } from "lucide-vue-next"
 import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics } from "@/lib/status-labels"
@@ -86,9 +87,10 @@ const totalLabel = ref("")
 const hasMore = ref(false)
 const nextCursor = ref("")
 const cursorStack = ref<string[]>([""])
+const route = useRoute()
 const lastPageSize = ref(pageSize.value)
 const selectedBizType = ref("")
-const selectedOrderStatus = ref("")
+const selectedOrderStatus = ref((route.query.status as string) || "")
 const invoiceLoading = ref<string | null>(null)
 const paymentLoading = ref<string | null>(null)
 const cancelLoading = ref<string | null>(null)
