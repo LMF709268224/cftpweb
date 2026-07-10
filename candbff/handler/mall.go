@@ -946,7 +946,7 @@ func (h *Handler) previewPaymentSummary(ctx context.Context, bizType string, biz
 	return toBundlePaymentPreviewSummary(resp)
 }
 
-func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bundleID string, eligibility bundleEligibilitySummary) (*bundleActiveOrderSummary, *bundlePaymentPreviewSummary) {
+func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bundleID string, bundleGpath string, eligibility bundleEligibilitySummary) (*bundleActiveOrderSummary, *bundlePaymentPreviewSummary) {
 	candidateID = strings.TrimSpace(candidateID)
 	bundleID = strings.TrimSpace(bundleID)
 	if candidateID == "" || bundleID == "" {
@@ -1044,6 +1044,17 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 
 				if strings.TrimSpace(orderBundleID) == bundleID {
 					return active, h.previewPaymentSummary(ctx, orderBizBundlePurchase, orderID)
+				}
+
+				if strings.TrimSpace(orderBundleID) != "" && strings.TrimSpace(bundleGpath) != "" {
+					bResp, err := h.Mall.GetBundle(ctx, &mallpb.GetBundleRequest{
+						Query: &mallpb.GetBundleRequest_BundleUlid{BundleUlid: strings.TrimSpace(orderBundleID)},
+					})
+					if err == nil && bResp.GetBundle() != nil {
+						if bResp.GetBundle().GetBundleGpath() == bundleGpath {
+							return active, h.previewPaymentSummary(ctx, orderBizBundlePurchase, orderID)
+						}
+					}
 				}
 
 				// Return nil for preview so UI only shows Cancel, not Pay for another bundle
@@ -1193,14 +1204,14 @@ func (h *Handler) cachedCandidateQualification(ctx context.Context, cache map[st
 	return check
 }
 
-func (h *Handler) bundlePurchaseState(ctx context.Context, state *bundleEnrichmentState, bundleID string, pipelineID string, eligibility bundleEligibilitySummary) bundlePurchaseState {
+func (h *Handler) bundlePurchaseState(ctx context.Context, state *bundleEnrichmentState, bundleID string, bundleGpath string, pipelineID string, eligibility bundleEligibilitySummary) bundlePurchaseState {
 	out := bundlePurchaseState{
 		Eligibility: eligibility,
 	}
 	if state == nil || strings.TrimSpace(state.candidateID) == "" {
 		return out
 	}
-	if activeOrder, preview := h.activeBundleOrder(ctx, state.candidateID, bundleID, eligibility); activeOrder != nil {
+	if activeOrder, preview := h.activeBundleOrder(ctx, state.candidateID, bundleID, bundleGpath, eligibility); activeOrder != nil {
 		out.ActiveOrder = activeOrder
 		out.PaymentPreview = preview
 	}
@@ -1301,7 +1312,7 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 			}
 		}
 	}
-	purchaseState := h.bundlePurchaseState(ctx, state, b.GetBundleUlid(), pipelineID, eligibility)
+	purchaseState := h.bundlePurchaseState(ctx, state, b.GetBundleUlid(), b.GetBundleGpath(), pipelineID, eligibility)
 	m["eligibility"] = purchaseState.Eligibility
 	m["purchase_state"] = purchaseState
 	if purchaseState.ActiveOrder != nil {
