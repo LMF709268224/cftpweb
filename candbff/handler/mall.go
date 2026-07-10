@@ -946,7 +946,7 @@ func (h *Handler) previewPaymentSummary(ctx context.Context, bizType string, biz
 	return toBundlePaymentPreviewSummary(resp)
 }
 
-func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bundleID string) (*bundleActiveOrderSummary, *bundlePaymentPreviewSummary) {
+func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bundleID string, eligibility bundleEligibilitySummary) (*bundleActiveOrderSummary, *bundlePaymentPreviewSummary) {
 	candidateID = strings.TrimSpace(candidateID)
 	bundleID = strings.TrimSpace(bundleID)
 	if candidateID == "" || bundleID == "" {
@@ -991,6 +991,79 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 		}
 		return active, h.previewPaymentSummary(ctx, orderBizBundlePurchase, orderID)
 	}
+
+	// If not found for exact bundle, but we are BLOCKED by an in-progress purchase
+	hasBlocker := false
+	for _, b := range eligibility.Blockers {
+		if b.BlockerType == "IN_PROGRESS_PURCHASE" {
+			hasBlocker = true
+			break
+		}
+	}
+
+	if hasBlocker {
+		// Search ALL bundle orders for this candidate to find the blocking one
+		respAll, err := h.Mall.ListBundleOrders(ctx, &mallpb.ListBundleOrdersRequest{
+			Filters: &mallpb.BundleOrderFilters{
+				CandidateUlid: candidateID,
+			},
+			PageSize: 50,
+		})
+		if err == nil {
+			for _, item := range respAll.GetItems() {
+				if item == nil || !isOpenMallOrderStatus(item.GetOrderStatus()) {
+					continue
+				}
+				var order interface{} = item
+				detailResp, err := h.Mall.GetBundleOrderDetail(ctx, &mallpb.GetBundleOrderDetailRequest{
+					BundleOrderUlid: item.GetBundleOrderUlid(),
+				})
+				if err == nil && detailResp.GetFound() && detailResp.GetDetail() != nil {
+					order = detailResp.GetDetail()
+				}
+
+				orderID := bundleOrderID(order)
+				if orderID == "" {
+					continue
+				}
+				active := &bundleActiveOrderSummary{
+					Action:     "purchase",
+					OrderID:    orderID,
+					Status:     bundleOrderStatus(order),
+					PayOrderID: bundleOrderPayID(order),
+					CanCancel:  canCancelBusinessOrder(orderBizBundlePurchase, bundleOrderStatus(order)),
+					Message:    "in-progress purchase order exists",
+				}
+				// Return nil for preview so UI only shows Cancel, not Pay for another bundle
+				return active, nil 
+			}
+		}
+
+		// Check PipelineUnlockOrders as well
+		unlockResp, err := h.Mall.ListPipelineUnlockOrders(ctx, &mallpb.ListPipelineUnlockOrdersRequest{
+			Filters: &mallpb.PipelineUnlockOrderFilters{
+				CandidateUlid: candidateID,
+			},
+			PageSize: 50,
+		})
+		if err == nil {
+			for _, item := range unlockResp.GetItems() {
+				if item == nil || !isOpenMallOrderStatus(item.GetOrderStatus()) {
+					continue
+				}
+				active := &bundleActiveOrderSummary{
+					Action:     "unlock",
+					OrderID:    item.GetPipelineUnlockOrderUlid(),
+					Status:     item.GetOrderStatus(),
+					PayOrderID: item.GetPayOrderUlid(),
+					CanCancel:  canCancelBusinessOrder(orderBizPipelineUnlock, item.GetOrderStatus()),
+					Message:    "in-progress unlock order exists",
+				}
+				return active, nil
+			}
+		}
+	}
+
 	return nil, nil
 }
 
@@ -1115,7 +1188,7 @@ func (h *Handler) bundlePurchaseState(ctx context.Context, state *bundleEnrichme
 	if state == nil || strings.TrimSpace(state.candidateID) == "" {
 		return out
 	}
-	if activeOrder, preview := h.activeBundleOrder(ctx, state.candidateID, bundleID); activeOrder != nil {
+	if activeOrder, preview := h.activeBundleOrder(ctx, state.candidateID, bundleID, eligibility); activeOrder != nil {
 		out.ActiveOrder = activeOrder
 		out.PaymentPreview = preview
 	}
