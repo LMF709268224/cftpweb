@@ -145,7 +145,7 @@ function syncLocationSelectionFromForm() {
 
   const provinceText = normalizeLocationText(formData.province)
   const matchedProvince = selectedCountryCode.value
-    ? provinceOptions.value.find((state) => [state.name, state.isoCode].some((value) => normalizeLocationText(value) === provinceText))
+    ? provinceOptions.value.find((state) => [state.name, state.isoCode, localizedProvinceName(state)].some((value) => normalizeLocationText(value) === provinceText))
     : undefined
   selectedProvinceCode.value = matchedProvince?.isoCode || ""
   refreshCityOptions()

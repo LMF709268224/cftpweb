@@ -10,10 +10,12 @@ import { getMessage } from "@/lib/messages"
 import { useTranslation } from "@/lib/language"
 import { getCachedCountries, getCountryCityOptions, getCountryOptions, getProvinceOptions, getStateCityOptions, loadLocationData } from "@/lib/locationOptions"
 import { GENDER_OPTIONS, PROFILE_TEXT_LIMITS, isValidInternationalPhone, isValidPostalCode, normalizeGender, normalizeInternationalPhone, normalizePostalCode, trimToMax } from "@/lib/profileFormValidation"
+import { useUser } from "@/lib/user"
 
 const route = useRoute()
 const router = useRouter()
 const { t, lang } = useTranslation()
+const { fetchUser } = useUser()
 const activeTab = ref(String(route.query.tab || "profile"))
 const profile = reactive({
   name: "",
@@ -298,6 +300,7 @@ async function handleUpdateProfile() {
         education: profile.education,
       }),
     })
+    await fetchUser(true)
     toast.success(getMessage("PROFILE_UPDATE_SUCCESS", lang.value))
     if (profile.displayName) {
       localStorage.setItem("user_name", profile.displayName)
