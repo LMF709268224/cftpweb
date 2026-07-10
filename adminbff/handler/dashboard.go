@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -15,7 +17,10 @@ import (
 	"github.com/casdoor/casdoor-go-sdk/casdoorsdk"
 )
 
-const adminDashboardSampleLimit int32 = 500
+const (
+	adminDashboardSampleLimit = 500
+	adminDashboardPageSize    = 100
+)
 
 const (
 	defaultDashboardAdminRole       = "role_admin_basic"
@@ -111,16 +116,14 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	pageUsers := paginateOpsDashboardUsers(filteredUsers, userPage, userPageSize)
 	userSummary := h.buildOpsUserSummary(cftpUsers, pageUsers, candidateByUserID, roleConfig, roleDefinitions)
 
-	pipelines, err := h.Gprog.ListPipelines(r.Context(), &gprogpb.ListPipelinesReq{
-		PageSize: adminDashboardSampleLimit,
-	})
+	pipelines, err := h.listDashboardPipelines(r.Context())
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
 	stageCounts := make(map[string]int64)
-	for _, pipeline := range pipelines.GetPipelines() {
+	for _, pipeline := range pipelines {
 		if pipeline == nil {
 			continue
 		}
@@ -146,12 +149,7 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	orders, err := h.Mall.ListOrders(r.Context(), &mallpb.ListOrdersRequest{
-		Filters: &mallpb.OrderFilters{
-			PaymentStatus: "PAID",
-		},
-		PageSize: uint32(adminDashboardSampleLimit),
-	})
+	orders, err := h.listDashboardPaidOrders(r.Context())
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -160,7 +158,7 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	revenueByCurrency := make(map[string]*opsDashboardRevenue)
-	for _, order := range orders.GetItems() {
+	for _, order := range orders {
 		if order == nil || !isSameLocalDay(order.GetCreatedAt(), startOfDay) {
 			continue
 		}
@@ -195,6 +193,85 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 		TodayRevenue:             revenue,
 		GeneratedAt:              now.Format(time.RFC3339),
 	})
+}
+
+func (h *Handler) listDashboardPipelines(ctx context.Context) ([]*gprogpb.PipelineSummary, error) {
+	items := make([]*gprogpb.PipelineSummary, 0, adminDashboardSampleLimit)
+	cursor := ""
+	seen := make(map[string]struct{})
+
+	for page := 0; page < adminDashboardSampleLimit/adminDashboardPageSize && len(items) < adminDashboardSampleLimit; page++ {
+		pageSize := adminDashboardPageSize
+		if remaining := adminDashboardSampleLimit - len(items); remaining < pageSize {
+			pageSize = remaining
+		}
+		resp, err := h.Gprog.ListPipelines(ctx, &gprogpb.ListPipelinesReq{
+			Cursor:   cursor,
+			PageSize: int32(pageSize),
+		})
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, resp.GetPipelines()...)
+		if !resp.GetHasMore() {
+			break
+		}
+		nextCursor := strings.TrimSpace(resp.GetNextCursor())
+		if nextCursor == "" || nextCursor == cursor {
+			return nil, fmt.Errorf("dashboard pipeline cursor did not advance")
+		}
+		if _, ok := seen[nextCursor]; ok {
+			return nil, fmt.Errorf("dashboard pipeline cursor loop detected")
+		}
+		seen[nextCursor] = struct{}{}
+		cursor = nextCursor
+	}
+
+	if len(items) > adminDashboardSampleLimit {
+		items = items[:adminDashboardSampleLimit]
+	}
+	return items, nil
+}
+
+func (h *Handler) listDashboardPaidOrders(ctx context.Context) ([]*mallpb.OrderSummary, error) {
+	items := make([]*mallpb.OrderSummary, 0, adminDashboardSampleLimit)
+	cursor := ""
+	seen := make(map[string]struct{})
+
+	for page := 0; page < adminDashboardSampleLimit/adminDashboardPageSize && len(items) < adminDashboardSampleLimit; page++ {
+		pageSize := adminDashboardPageSize
+		if remaining := adminDashboardSampleLimit - len(items); remaining < pageSize {
+			pageSize = remaining
+		}
+		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
+			Filters: &mallpb.OrderFilters{
+				PaymentStatus: "PAID",
+			},
+			Cursor:   cursor,
+			PageSize: uint32(pageSize),
+		})
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, resp.GetItems()...)
+		if !resp.GetHasMore() {
+			break
+		}
+		nextCursor := strings.TrimSpace(resp.GetNextCursor())
+		if nextCursor == "" || nextCursor == cursor {
+			return nil, fmt.Errorf("dashboard order cursor did not advance")
+		}
+		if _, ok := seen[nextCursor]; ok {
+			return nil, fmt.Errorf("dashboard order cursor loop detected")
+		}
+		seen[nextCursor] = struct{}{}
+		cursor = nextCursor
+	}
+
+	if len(items) > adminDashboardSampleLimit {
+		items = items[:adminDashboardSampleLimit]
+	}
+	return items, nil
 }
 
 type opsDashboardUserSummary struct {

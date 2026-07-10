@@ -9,7 +9,7 @@ import (
 
 const (
 	defaultCursorPageSize = 20
-	maxCursorPageSize     = 200
+	maxCursorPageSize     = 100
 	exactCountLimit       = 100000
 )
 

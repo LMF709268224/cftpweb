@@ -193,43 +193,77 @@ func (h *Handler) GetResourcePackFileViewURL(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID string, fileID string) (*lmspb.ResourcePackFile, error) {
-	filesResp, err := h.Lms.ListResourcePacks(r.Context(), &lmspb.ListResourcePacksCandidateRequest{
-		Filters: &lmspb.ResourcePackCandidateFilters{
-			CandidateUlid: candidateID,
-		},
-		PageSize: 500,
-	})
-	if err != nil {
-		return nil, err
-	}
+	const pageSize uint32 = 100
+	const maxPages = 1000
+	packCursor := ""
+	seenPackCursors := make(map[string]struct{})
+	for packPage := 0; packPage < maxPages; packPage++ {
+		packsResp, err := h.Lms.ListResourcePacks(r.Context(), &lmspb.ListResourcePacksCandidateRequest{
+			Filters: &lmspb.ResourcePackCandidateFilters{
+				CandidateUlid: candidateID,
+			},
+			Cursor:   packCursor,
+			PageSize: pageSize,
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	for _, pack := range filesResp.GetPacks() {
-		pageToken := ""
-		for {
-			listResp, err := h.Lms.ListResourcePackFiles(r.Context(), &lmspb.ListResourcePackFilesCandidateRequest{
-				Filters: &lmspb.ResourcePackFileCandidateFilters{
-					CandidateUlid: candidateID,
-					PackId:        pack.GetPackId(),
-				},
-				PageSize: 500,
-				Cursor:   pageToken,
-			})
-			if err != nil {
-				return nil, err
-			}
-			for _, file := range listResp.GetFiles() {
-				if file.GetFileId() == fileID {
-					return file, nil
+		for _, pack := range packsResp.GetPacks() {
+			fileCursor := ""
+			seenFileCursors := make(map[string]struct{})
+			filesComplete := false
+			for filePage := 0; filePage < maxPages; filePage++ {
+				listResp, err := h.Lms.ListResourcePackFiles(r.Context(), &lmspb.ListResourcePackFilesCandidateRequest{
+					Filters: &lmspb.ResourcePackFileCandidateFilters{
+						CandidateUlid: candidateID,
+						PackId:        pack.GetPackId(),
+					},
+					PageSize: pageSize,
+					Cursor:   fileCursor,
+				})
+				if err != nil {
+					return nil, err
 				}
+				for _, file := range listResp.GetFiles() {
+					if file.GetFileId() == fileID {
+						return file, nil
+					}
+				}
+				if !listResp.GetHasMore() {
+					filesComplete = true
+					break
+				}
+				nextCursor := strings.TrimSpace(listResp.GetNextCursor())
+				if nextCursor == "" || nextCursor == fileCursor {
+					return nil, status.Error(codes.Internal, "resource pack file cursor did not advance")
+				}
+				if _, ok := seenFileCursors[nextCursor]; ok {
+					return nil, status.Error(codes.Internal, "resource pack file cursor loop detected")
+				}
+				seenFileCursors[nextCursor] = struct{}{}
+				fileCursor = nextCursor
 			}
-			pageToken = listResp.GetNextCursor()
-			if strings.TrimSpace(pageToken) == "" {
-				break
+			if !filesComplete {
+				return nil, status.Error(codes.Internal, "resource pack file pagination exceeded max pages")
 			}
 		}
+
+		if !packsResp.GetHasMore() {
+			return nil, status.Error(codes.NotFound, "resource pack file not found")
+		}
+		nextCursor := strings.TrimSpace(packsResp.GetNextCursor())
+		if nextCursor == "" || nextCursor == packCursor {
+			return nil, status.Error(codes.Internal, "resource pack cursor did not advance")
+		}
+		if _, ok := seenPackCursors[nextCursor]; ok {
+			return nil, status.Error(codes.Internal, "resource pack cursor loop detected")
+		}
+		seenPackCursors[nextCursor] = struct{}{}
+		packCursor = nextCursor
 	}
 
-	return nil, status.Error(codes.NotFound, "resource pack file not found")
+	return nil, status.Error(codes.Internal, "resource pack pagination exceeded max pages")
 }
 
 func parseUint32Query(r *http.Request, key string) uint32 {

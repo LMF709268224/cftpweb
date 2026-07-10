@@ -668,16 +668,11 @@ func (h *Handler) GetCandidateEnrollmentDetail(w http.ResponseWriter, r *http.Re
 }
 
 func (h *Handler) findEnrollmentIdByCourse(ctx context.Context, candidateID, courseID string) (string, error) {
-	resp, err := h.Lms.ListCandidateEnrollments(ctx, &lmspb.ListCandidateEnrollmentsRequest{
-		Filters: &lmspb.CandidateEnrollmentFilters{
-			CandidateUlid: candidateID,
-		},
-		PageSize: 1000,
-	})
+	enrollments, err := h.listCandidateEnrollments(ctx, candidateID)
 	if err != nil {
 		return "", err
 	}
-	for _, e := range resp.GetEnrollments() {
+	for _, e := range enrollments {
 		if e.GetCourseUlid() == courseID {
 			return e.GetEnrollmentId(), nil
 		}
@@ -768,12 +763,7 @@ func (h *Handler) GetProgress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.Lms.ListCandidateEnrollments(r.Context(), &lmspb.ListCandidateEnrollmentsRequest{
-		Filters: &lmspb.CandidateEnrollmentFilters{
-			CandidateUlid: candidateID,
-		},
-		PageSize: 1000,
-	})
+	enrollments, err := h.listCandidateEnrollments(r.Context(), candidateID)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -782,7 +772,7 @@ func (h *Handler) GetProgress(w http.ResponseWriter, r *http.Request) {
 	var records []ProgressRecord
 	targetLessonID := strings.TrimSpace(r.URL.Query().Get("lessonId"))
 
-	for _, e := range resp.GetEnrollments() {
+	for _, e := range enrollments {
 		detail, err := h.Lms.GetCandidateEnrollmentDetail(r.Context(), &lmspb.GetCandidateEnrollmentDetailRequest{
 			CandidateUlid: candidateID,
 			EnrollmentId:  e.GetEnrollmentId(),
@@ -884,18 +874,13 @@ func currentStageNameFromRuntime(config *gccpb.PipelineConfig, runtime *gprog.Ge
 }
 
 func (h *Handler) candidateEnrollmentProgressByCourse(r *http.Request, candidateID string) (map[string]uint32, error) {
-	resp, err := h.Lms.ListCandidateEnrollments(r.Context(), &lmspb.ListCandidateEnrollmentsRequest{
-		Filters: &lmspb.CandidateEnrollmentFilters{
-			CandidateUlid: candidateID,
-		},
-		PageSize: 200,
-	})
+	enrollments, err := h.listCandidateEnrollments(r.Context(), candidateID)
 	if err != nil {
 		return nil, err
 	}
 
-	out := make(map[string]uint32, len(resp.GetEnrollments()))
-	for _, enrollment := range resp.GetEnrollments() {
+	out := make(map[string]uint32, len(enrollments))
+	for _, enrollment := range enrollments {
 		if enrollment == nil {
 			continue
 		}
@@ -910,6 +895,41 @@ func (h *Handler) candidateEnrollmentProgressByCourse(r *http.Request, candidate
 	}
 
 	return out, nil
+}
+
+func (h *Handler) listCandidateEnrollments(ctx context.Context, candidateID string) ([]*lmspb.CandidateEnrollmentSummary, error) {
+	const pageSize uint32 = 100
+	enrollments := make([]*lmspb.CandidateEnrollmentSummary, 0)
+	cursor := ""
+	seen := make(map[string]struct{})
+
+	for page := 0; page < 1000; page++ {
+		resp, err := h.Lms.ListCandidateEnrollments(ctx, &lmspb.ListCandidateEnrollmentsRequest{
+			Filters: &lmspb.CandidateEnrollmentFilters{
+				CandidateUlid: candidateID,
+			},
+			Cursor:   cursor,
+			PageSize: pageSize,
+		})
+		if err != nil {
+			return nil, err
+		}
+		enrollments = append(enrollments, resp.GetEnrollments()...)
+		if !resp.GetHasMore() {
+			return enrollments, nil
+		}
+		nextCursor := strings.TrimSpace(resp.GetNextCursor())
+		if nextCursor == "" || nextCursor == cursor {
+			return nil, fmt.Errorf("candidate enrollment cursor did not advance")
+		}
+		if _, ok := seen[nextCursor]; ok {
+			return nil, fmt.Errorf("candidate enrollment cursor loop detected")
+		}
+		seen[nextCursor] = struct{}{}
+		cursor = nextCursor
+	}
+
+	return nil, fmt.Errorf("candidate enrollment pagination exceeded max pages")
 }
 
 func (h *Handler) candidateCourseIDs(r *http.Request, candidateID string) ([]string, error) {
