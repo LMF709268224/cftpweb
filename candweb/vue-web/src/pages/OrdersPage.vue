@@ -89,6 +89,7 @@ const totalPages = ref(0)
 const totalLabel = ref("")
 const currentCursor = ref("")
 const nextCursor = ref("")
+const prevCursor = ref("")
 const hasMore = ref(false)
 const route = useRoute()
 const selectedBizType = ref("")
@@ -398,6 +399,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     if (page.value > lastPage.value) {
       currentCursor.value = nextCursor.value
     } else if (page.value < lastPage.value) {
+      currentCursor.value = prevCursor.value
       isBackward = true
     }
     lastPage.value = page.value
@@ -415,17 +417,15 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     totalLabel.value = String(res.total_label || totalOrders.value)
     totalPages.value = Number(res.total_pages || 0)
     
-    if (isBackward) {
-      if (Array.isArray(res.orders)) {
-        res.orders.reverse()
-      }
-      nextCursor.value = currentCursor.value
-      currentCursor.value = String(res.next_cursor || "")
-      hasMore.value = true // Since we went backward, there must be a next page
-    } else {
-      nextCursor.value = String(res.next_cursor || "")
-      hasMore.value = Boolean(res.has_more)
+    if (isBackward && Array.isArray(res.orders)) {
+      res.orders.reverse()
     }
+    nextCursor.value = String(res.next_cursor || "")
+    prevCursor.value = String(res.prev_cursor || "")
+    
+    // For cursorMode, hasMore controls the "Next" button.
+    // When going backward, we naturally have a next page.
+    hasMore.value = isBackward ? true : Boolean(res.has_more)
 
     if (Array.isArray(res.orders)) {
       orders.value = res.orders.map((o: any) => ({
@@ -465,6 +465,7 @@ function resetCursorPagination() {
   lastPage.value = 1
   currentCursor.value = ""
   nextCursor.value = ""
+  prevCursor.value = ""
   hasMore.value = false
 }
 
