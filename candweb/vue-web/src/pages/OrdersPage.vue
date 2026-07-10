@@ -122,12 +122,6 @@ const orderTypeOptions = computed(() => [
 
 const orderStatusOptions = computed(() => [
   { value: "", label: t.value.orders.allStatuses },
-  { value: "WAIT_PIPELINE_PAYMENT", label: orderStatusFilterLabel("WAIT_PIPELINE_PAYMENT") },
-  { value: "WAIT_STAGE_PAYMENT", label: orderStatusFilterLabel("WAIT_STAGE_PAYMENT") },
-  { value: "WAIT_RETAKE_PAYMENT", label: orderStatusFilterLabel("WAIT_RETAKE_PAYMENT") },
-  { value: "WAIT_UNLOCK_PAYMENT", label: orderStatusFilterLabel("WAIT_UNLOCK_PAYMENT") },
-  { value: "WAIT_BUNDLE_PAYMENT", label: orderStatusFilterLabel("WAIT_BUNDLE_PAYMENT") },
-  { value: "WAIT_REVIEW_FEE_PAYMENT", label: orderStatusFilterLabel("WAIT_REVIEW_FEE_PAYMENT") },
   { value: "COMPLETED", label: orderStatusFilterLabel("COMPLETED") },
   { value: "CANCELLED", label: orderStatusFilterLabel("CANCELLED") },
   { value: "FAILED", label: orderStatusFilterLabel("FAILED") },
@@ -150,6 +144,7 @@ const payableOrderStatuses = new Set([
   "WAIT_BUNDLE_PAYMENT",
   "WAIT_REVIEW_FEE_PAYMENT",
   "PENDING_PAYMENT",
+  "WAIT_PAYMENT",
   "WAIT_PAY",
   "UNPAID",
 ])
@@ -480,17 +475,6 @@ onMounted(() => {
         </div>
         <div class="flex flex-col gap-3 sm:items-end">
           <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-            <label class="sr-only" for="order-type-filter">{{ t.orders.orderType }}</label>
-            <select
-              id="order-type-filter"
-              :value="selectedBizType"
-              class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 shadow-sm outline-none transition-colors hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-primary/15 sm:w-48"
-              @change="changeOrderType(($event.target as HTMLSelectElement).value)"
-            >
-              <option v-for="option in orderTypeOptions" :key="option.value || 'ALL_TYPES'" :value="option.value">
-                {{ option.label }}
-              </option>
-            </select>
             <label class="sr-only" for="order-status-filter">{{ t.orders.orderStatus }}</label>
             <select
               id="order-status-filter"
