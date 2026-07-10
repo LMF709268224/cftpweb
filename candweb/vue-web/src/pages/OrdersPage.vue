@@ -80,16 +80,17 @@ const { t, lang } = useTranslation()
 const orders = ref<OrderItem[]>([])
 const loading = ref(true)
 const page = ref(1)
+const lastPage = ref(1)
 const pageSize = ref(10)
 const pageSizeOptions = [10, 30, 50, 100]
+const lastPageSize = ref(10)
 const totalOrders = ref(0)
 const totalPages = ref(0)
 const totalLabel = ref("")
-const hasMore = ref(false)
+const currentCursor = ref("")
 const nextCursor = ref("")
-const cursorStack = ref<string[]>([""])
+const hasMore = ref(false)
 const route = useRoute()
-const lastPageSize = ref(pageSize.value)
 const selectedBizType = ref("")
 const selectedOrderStatus = ref((route.query.status as string) || "")
 const invoiceLoading = ref<string | null>(null)
@@ -393,11 +394,20 @@ function orderStatusFilterLabel(status?: string) {
 async function fetchOrders(showLoading = true, suppressErrorToast = false) {
   if (showLoading) loading.value = true
   try {
+    let isBackward = false
+    if (page.value > lastPage.value) {
+      currentCursor.value = nextCursor.value
+    } else if (page.value < lastPage.value) {
+      isBackward = true
+    }
+    lastPage.value = page.value
+
     const params = new URLSearchParams({
       page_size: String(pageSize.value),
     })
-    const cursor = cursorStack.value[page.value - 1] || ""
-    if (cursor) params.set("cursor", cursor)
+    
+    if (currentCursor.value) params.set("cursor", currentCursor.value)
+    if (isBackward) params.set("sort", "1")
     if (selectedBizType.value) params.set("biz_type", selectedBizType.value)
     if (selectedOrderStatus.value) params.set("status", selectedOrderStatus.value)
     const res = await apiClient(`/api/orders?${params.toString()}`, { suppressErrorToast })
@@ -405,9 +415,17 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     totalLabel.value = String(res.total_label || totalOrders.value)
     totalPages.value = Number(res.total_pages || 0)
     hasMore.value = Boolean(res.has_more)
-    nextCursor.value = String(res.next_cursor || "")
-    cursorStack.value = cursorStack.value.slice(0, page.value)
-    cursorStack.value[page.value] = nextCursor.value
+    
+    if (isBackward) {
+      if (Array.isArray(res.orders)) {
+        res.orders.reverse()
+      }
+      nextCursor.value = currentCursor.value
+      currentCursor.value = String(res.next_cursor || "")
+    } else {
+      nextCursor.value = String(res.next_cursor || "")
+    }
+
     if (Array.isArray(res.orders)) {
       orders.value = res.orders.map((o: any) => ({
         id: o.order_id,
@@ -443,7 +461,8 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
 
 function resetCursorPagination() {
   page.value = 1
-  cursorStack.value = [""]
+  lastPage.value = 1
+  currentCursor.value = ""
   nextCursor.value = ""
   hasMore.value = false
 }
