@@ -13,27 +13,10 @@ export const bizTypeOptions: LabelOption[] = [
 ]
 
 export const orderStatusOptions: LabelOption[] = [
-  { value: "PENDING", label: "PENDING" },
   { value: "WAIT_PAYMENT", label: "WAIT_PAYMENT" },
-  { value: "WAIT_BUNDLE_PAYMENT", label: "WAIT_BUNDLE_PAYMENT" },
-  { value: "WAIT_PIPELINE_PAYMENT", label: "WAIT_PIPELINE_PAYMENT" },
-  { value: "WAIT_PIPELINE_INSTANTIATE", label: "WAIT_PIPELINE_INSTANTIATE" },
-  { value: "WAIT_EXEMPTION_SELECTION", label: "WAIT_EXEMPTION_SELECTION" },
-  { value: "WAIT_EXEMPTION_REVIEW", label: "WAIT_EXEMPTION_REVIEW" },
-  { value: "WAIT_STAGE_PAYMENT", label: "WAIT_STAGE_PAYMENT" },
-  { value: "WAIT_REVIEW_FEE_PAYMENT", label: "WAIT_REVIEW_FEE_PAYMENT" },
-  { value: "WAIT_RETAKE_PAYMENT", label: "WAIT_RETAKE_PAYMENT" },
-  { value: "WAIT_UNLOCK_PAYMENT", label: "WAIT_UNLOCK_PAYMENT" },
-  { value: "UPLOAD_READY", label: "UPLOAD_READY" },
-  { value: "UNDER_REVIEW", label: "UNDER_REVIEW" },
-  { value: "RESOLVED", label: "RESOLVED" },
-  { value: "PAID", label: "PAID" },
+  { value: "PENDING", label: "PENDING" },
   { value: "COMPLETED", label: "COMPLETED" },
   { value: "CANCELLED", label: "CANCELLED" },
-  { value: "FAILED", label: "FAILED" },
-  { value: "EXPIRED", label: "EXPIRED" },
-  { value: "PENDING_CREATE", label: "PENDING_CREATE" },
-  { value: "PENDING_PAYMENT", label: "PENDING_PAYMENT" },
   { value: "CLOSED", label: "CLOSED" },
 ]
 

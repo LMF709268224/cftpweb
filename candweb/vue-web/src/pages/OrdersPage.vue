@@ -122,18 +122,11 @@ const orderTypeOptions = computed(() => [
 
 const orderStatusOptions = computed(() => [
   { value: "", label: t.value.orders.allStatuses },
+  { value: "WAIT_PAYMENT", label: orderStatusFilterLabel("WAIT_PAYMENT") },
+  { value: "PENDING", label: orderStatusFilterLabel("PENDING") },
   { value: "COMPLETED", label: orderStatusFilterLabel("COMPLETED") },
   { value: "CANCELLED", label: orderStatusFilterLabel("CANCELLED") },
-  { value: "FAILED", label: orderStatusFilterLabel("FAILED") },
-  { value: "PENDING", label: orderStatusFilterLabel("PENDING") },
-  { value: "PENDING_CREATE", label: orderStatusFilterLabel("PENDING_CREATE") },
-  { value: "PENDING_PAYMENT", label: orderStatusFilterLabel("PENDING_PAYMENT") },
   { value: "CLOSED", label: orderStatusFilterLabel("CLOSED") },
-  { value: "UNPAID", label: orderStatusFilterLabel("UNPAID") },
-  { value: "WAIT_PAY", label: orderStatusFilterLabel("WAIT_PAY") },
-  { value: "REFUND_OFFLINE", label: orderStatusFilterLabel("REFUND_OFFLINE") },
-  { value: "REFUNDED", label: orderStatusFilterLabel("REFUNDED") },
-  { value: "PARTIAL_REFUND", label: orderStatusFilterLabel("PARTIAL_REFUND") },
 ])
 
 const payableOrderStatuses = new Set([
@@ -337,26 +330,16 @@ function orderStatusFilterLabel(status?: string) {
       return zh ? "\u5957\u9910\u5f85\u652f\u4ed8" : "Bundle Payment Pending"
     case "WAIT_REVIEW_FEE_PAYMENT":
       return zh ? "\u5ba1\u6838\u8d39\u5f85\u652f\u4ed8" : "Review Fee Payment Pending"
+    case "WAIT_PAYMENT":
+      return zh ? "\u5f85\u652f\u4ed8" : "Wait Payment"
+    case "PENDING":
+      return zh ? "\u5904\u7406\u4e2d" : "Pending"
     case "COMPLETED":
       return zh ? "\u5df2\u5b8c\u6210" : "Completed"
     case "CANCELLED":
       return zh ? "\u5df2\u53d6\u6d88" : "Cancelled"
-    case "FAILED":
-      return zh ? "\u5931\u8d25" : "Failed"
-    case "PENDING":
-      return zh ? "\u5904\u7406\u4e2d" : "Pending"
-    case "PENDING_CREATE":
-      return zh ? "\u7b49\u5f85\u521b\u5efa" : "Pending Create"
-    case "PENDING_PAYMENT":
-      return zh ? "\u7b49\u5f85\u652f\u4ed8\u786e\u8ba4" : "Pending Payment"
     case "CLOSED":
       return zh ? "\u5df2\u5173\u95ed" : "Closed"
-    case "UNPAID":
-      return zh ? "\u672a\u652f\u4ed8" : "Unpaid"
-    case "WAIT_PAY":
-      return zh ? "\u5f85\u652f\u4ed8" : "Wait Pay"
-    case "REFUND_OFFLINE":
-      return zh ? "\u7ebf\u4e0b\u9000\u6b3e" : "Refund Offline"
     default:
       return normalized || (zh ? "\u5168\u90e8\u72b6\u6001" : "All Statuses")
   }
