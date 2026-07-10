@@ -414,7 +414,6 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     totalOrders.value = Number(res.total_orders || 0)
     totalLabel.value = String(res.total_label || totalOrders.value)
     totalPages.value = Number(res.total_pages || 0)
-    hasMore.value = Boolean(res.has_more)
     
     if (isBackward) {
       if (Array.isArray(res.orders)) {
@@ -422,8 +421,10 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
       }
       nextCursor.value = currentCursor.value
       currentCursor.value = String(res.next_cursor || "")
+      hasMore.value = true // Since we went backward, there must be a next page
     } else {
       nextCursor.value = String(res.next_cursor || "")
+      hasMore.value = Boolean(res.has_more)
     }
 
     if (Array.isArray(res.orders)) {
