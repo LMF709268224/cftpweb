@@ -115,35 +115,7 @@ const orderTypeOptions = computed(() => [
   { value: "CREDENTIAL_APPLICATION", label: orderTypeLabel("CREDENTIAL_APPLICATION") },
   { value: "BUNDLE_PURCHASE", label: orderTypeLabel("BUNDLE_PURCHASE") },
 ])
-const orderStatusOptions = computed(() => [
-  { value: "", label: t.value.orders.allStatuses },
-const selectedOrderStatus = ref("")
-const invoiceLoading = ref<string | null>(null)
-const paymentLoading = ref<string | null>(null)
-const cancelLoading = ref<string | null>(null)
-const detailLoading = ref(false)
-const detailLoadingOrderId = ref<string | null>(null)
-const detailError = ref("")
-const selectedOrderDetail = ref<OrderDetail | null>(null)
-const orderPaymentDialogOpen = ref(false)
-const orderPaymentSession = ref<{
-  orderId: string
-  bizType: string
-  bizRefUlid: string
-  source: string
-  returnPath: string
-} | null>(null)
 
-const invoiceOpeningLabel = computed(() => t.value.orders.invoiceOpening)
-const orderTypeOptions = computed(() => [
-  { value: "", label: t.value.orders.allOrders },
-  { value: "PIPELINE_PAYMENT", label: orderTypeLabel("PIPELINE_PAYMENT") },
-  { value: "STAGE_PAYMENT", label: orderTypeLabel("STAGE_PAYMENT") },
-  { value: "COURSE_RETAKE_PAYMENT", label: orderTypeLabel("COURSE_RETAKE_PAYMENT") },
-  { value: "PIPELINE_UNLOCK", label: orderTypeLabel("PIPELINE_UNLOCK") },
-  { value: "CREDENTIAL_APPLICATION", label: orderTypeLabel("CREDENTIAL_APPLICATION") },
-  { value: "BUNDLE_PURCHASE", label: orderTypeLabel("BUNDLE_PURCHASE") },
-])
 const orderStatusOptions = computed(() => [
   { value: "", label: t.value.orders.allStatuses },
   { value: "WAIT_PIPELINE_PAYMENT", label: orderStatusFilterLabel("WAIT_PIPELINE_PAYMENT") },
@@ -162,6 +134,8 @@ const orderStatusOptions = computed(() => [
   { value: "UNPAID", label: orderStatusFilterLabel("UNPAID") },
   { value: "WAIT_PAY", label: orderStatusFilterLabel("WAIT_PAY") },
   { value: "REFUND_OFFLINE", label: orderStatusFilterLabel("REFUND_OFFLINE") },
+  { value: "REFUNDED", label: orderStatusFilterLabel("REFUNDED") },
+  { value: "PARTIAL_REFUND", label: orderStatusFilterLabel("PARTIAL_REFUND") },
 ])
 
 const payableOrderStatuses = new Set([
