@@ -1081,7 +1081,7 @@ async function handlePaymentSessionError() {
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-muted-foreground">{{ copy.subtotal }}</span>
-              <span class="font-medium">{{ paymentPreview.amount_label || formatMoney(paymentPreview.subtotal / 100, paymentPreview.currency) }}</span>
+              <span class="font-medium">{{ paymentPreview.amount_label || formatMoney((paymentPreview.subtotal || 0) / 100, paymentPreview.currency) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-muted-foreground">{{ copy.discount }}</span>
@@ -1093,7 +1093,7 @@ async function handlePaymentSessionError() {
             </div>
             <div class="mt-2 flex justify-between border-t border-border pt-2">
               <span class="font-semibold text-foreground">{{ copy.total }}</span>
-              <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney(paymentPreview.total / 100, paymentPreview.currency) }}</span>
+              <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney((paymentPreview.total || 0) / 100, paymentPreview.currency) }}</span>
             </div>
           </div>
           <div v-if="paymentPreview.breakdown?.length" class="mt-3 overflow-hidden rounded-xl border border-emerald-200/80 bg-white shadow-sm shadow-emerald-100/60">
