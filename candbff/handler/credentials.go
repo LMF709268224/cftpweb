@@ -480,35 +480,34 @@ func (h *Handler) GetActionableCredentialCount(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	appsRes, err := h.Creds.ListApplications(ctx, &gcredspb.ListApplicationsRequest{
-		Filters: &gcredspb.ApplicationFilters{
-			CandidateUlid: candidateID,
-		},
-		PageSize: 999,
-	})
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
-
-	latestAppStatus := make(map[string]string)
-	for _, app := range appsRes.GetApplications() {
-		credDefUlid := app.GetCredDefUlid()
-		if _, ok := latestAppStatus[credDefUlid]; !ok {
-			latestAppStatus[credDefUlid] = strings.ToUpper(app.GetStatus())
-		}
-	}
-
 	actionableCount := 0
 	for _, def := range defs {
 		credDefUlid := def.GetCredDefUlid()
-		status, hasApp := latestAppStatus[credDefUlid]
-		if !hasApp {
+		
+		// 1. Check if they have ANY application for this def
+		countRes, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
+			Filters: &gcredspb.ApplicationFilters{
+				CandidateUlid: candidateID,
+				CredDefUlid:   credDefUlid,
+			},
+			Limit: 1,
+		})
+		if err == nil && countRes.GetCount() == 0 {
+			// No application at all -> actionable
 			actionableCount++
 			continue
 		}
-		if status == "REUPLOAD" || status == "RESUBMIT" || status == "NEEDS_RESUBMIT" || 
-           status == "APPLICATION_STATUS_REUPLOAD" || status == "APPLICATION_STATUS_RESUBMIT" {
+
+		// 2. If they have an application, check if there are any that need resubmit/reupload
+		reuploadCountRes, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
+			Filters: &gcredspb.ApplicationFilters{
+				CandidateUlid: candidateID,
+				CredDefUlid:   credDefUlid,
+				Statuses:      []string{"REUPLOAD", "RESUBMIT", "NEEDS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD", "APPLICATION_STATUS_RESUBMIT"},
+			},
+			Limit: 1,
+		})
+		if err == nil && reuploadCountRes.GetCount() > 0 {
 			actionableCount++
 		}
 	}
