@@ -773,6 +773,7 @@ export const en: AppTranslations = {
     active: "Active",
     issueDate: "Issue Date",
     expiryDate: "Valid Until",
+    certificateName: "Certificate Name",
     certificateId: "Certificate ID",
     downloadCertificate: "Download Certificate",
     certificateGenerating: "Generating",
