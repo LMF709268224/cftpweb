@@ -5,6 +5,7 @@ import { Award, BookOpen, ChevronUp, ClipboardList, Crown, FileCheck2, Home, Lan
 import { apiClient } from "@/lib/apiClient"
 import { clearAccessToken } from "@/lib/authStorage"
 import { fetchUnreadCount, getCachedUnreadCount, onUnreadCountChanged } from "@/lib/unreadCountCache"
+import { fetchActionableCredentialCount, getCachedActionableCredentialCount, onActionableCredentialCountChanged } from "@/lib/actionableCredentialCountCache"
 import { useTranslation } from "@/lib/language"
 import { initializeSidebarCollapse, useSidebarCollapse } from "@/lib/sidebar"
 import { useUser } from "@/lib/user"
@@ -18,11 +19,13 @@ const route = useRoute()
 const userName = ref(t.value.common.user)
 const userEmail = computed(() => currentUser.value?.email || "")
 const unreadCount = ref(0)
+const actionableCredentialCount = ref(0)
 const menuOpen = ref(false)
 const mobileMenuOpen = ref(false)
 const logoutLoading = ref(false)
 const menuContainer = ref<HTMLElement | null>(null)
 let stopUnreadCountListener: (() => void) | null = null
+let stopActionableCredentialListener: (() => void) | null = null
 
 const navRouteGroups: Record<string, string[]> = {
   "/": ["/"],
@@ -66,7 +69,7 @@ const navItems = computed(() => [
   { href: "/my-certifications", label: t.value.sidebar.myCertifications, group: t.value.sidebar.groupLearning },
   { href: "/exams", label: t.value.sidebar.exams, group: t.value.sidebar.groupLearning },
   { href: "/resource-packs", label: t.value.sidebar.resourcePacks, group: t.value.sidebar.groupLearning },
-  { href: "/credentials", label: t.value.sidebar.credentials, group: t.value.sidebar.groupLearning },
+  { href: "/credentials", label: t.value.sidebar.credentials, group: t.value.sidebar.groupLearning, badge: actionableCredentialCount.value > 0 ? badgeCountLabel(actionableCredentialCount.value) : undefined },
   { href: "/certificates", label: t.value.sidebar.certificates, group: t.value.sidebar.groupMine },
   { href: "/membership", label: t.value.sidebar.membership, group: t.value.sidebar.groupMine },
   { href: "/orders", label: t.value.sidebar.orders, group: t.value.sidebar.groupMine },
@@ -107,6 +110,7 @@ function openMobileSidebar() {
 
 const unreadCountPolling = usePolling(async () => {
   unreadCount.value = await fetchUnreadCount(true)
+  actionableCredentialCount.value = await fetchActionableCredentialCount(true)
 })
 
 onMounted(async () => {
@@ -119,8 +123,12 @@ onMounted(async () => {
   stopUnreadCountListener = onUnreadCountChanged((value) => {
     unreadCount.value = value
   })
+  stopActionableCredentialListener = onActionableCredentialCountChanged((value) => {
+    actionableCredentialCount.value = value
+  })
   try {
     unreadCount.value = await getCachedUnreadCount()
+    actionableCredentialCount.value = await getCachedActionableCredentialCount()
   } catch {
     // Sidebar should never block page rendering.
   }
@@ -132,6 +140,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("storage", updateName)
   window.removeEventListener("pointerdown", handlePointerDown)
   stopUnreadCountListener?.()
+  stopActionableCredentialListener?.()
 })
 
 async function handleLogout() {

@@ -461,3 +461,57 @@ func (h *Handler) UpdateApplication(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, http.StatusOK, res)
 }
+
+// GetActionableCredentialCount GET /api/credentials/actionable-count
+func (h *Handler) GetActionableCredentialCount(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	ctx := r.Context()
+
+	defsRes, err := h.Creds.ListCandidateEligibleDefinitions(ctx, &gcredspb.ListCandidateEligibleDefinitionsRequest{
+		CandidateUlid: candidateID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	defs := defsRes.GetDefinitions()
+	if len(defs) == 0 {
+		WriteJSON(w, http.StatusOK, map[string]interface{}{"actionable_count": 0})
+		return
+	}
+
+	appsRes, err := h.Creds.ListApplications(ctx, &gcredspb.ListApplicationsRequest{
+		Filters: &gcredspb.ApplicationFilters{
+			CandidateUlid: candidateID,
+		},
+		PageSize: 999,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	latestAppStatus := make(map[string]string)
+	for _, app := range appsRes.GetApplications() {
+		credDefUlid := app.GetCredDefUlid()
+		if _, ok := latestAppStatus[credDefUlid]; !ok {
+			latestAppStatus[credDefUlid] = strings.ToUpper(app.GetStatus())
+		}
+	}
+
+	actionableCount := 0
+	for _, def := range defs {
+		credDefUlid := def.GetCredDefUlid()
+		status, hasApp := latestAppStatus[credDefUlid]
+		if !hasApp {
+			actionableCount++
+			continue
+		}
+		if status == "REUPLOAD" || status == "RESUBMIT" || status == "NEEDS_RESUBMIT" || 
+           status == "APPLICATION_STATUS_REUPLOAD" || status == "APPLICATION_STATUS_RESUBMIT" {
+			actionableCount++
+		}
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{"actionable_count": actionableCount})
+}
