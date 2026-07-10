@@ -583,7 +583,7 @@ onMounted(() => {
                   <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm sm:min-w-44 sm:text-right">
                     <p class="text-xs font-semibold text-slate-500">{{ t.orders.detailAmount }}</p>
                     <p v-if="detailPaymentPreview" class="mt-1 text-2xl font-black tracking-tight text-primary">
-                      {{ detailPaymentPreview.total === 0 ? t.orders.free : formatMoney(detailPaymentPreview.total, detailPaymentPreview.currency) }}
+                      {{ detailPaymentPreview.total === 0 ? t.orders.free : formatMoney(detailPaymentPreview.total / 100, detailPaymentPreview.currency) }}
                     </p>
                     <p v-else class="mt-1 text-2xl font-black tracking-tight text-primary">
                       {{ orderAmountDisplay(Number(selectedOrderDetail.summary?.amount || 0), selectedOrderDetail.summary?.currency || "USD", selectedOrderDetail.summary?.status || "", selectedOrderDetail.summary?.raw_status || "", t.orders.free) }}

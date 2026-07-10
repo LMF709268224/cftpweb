@@ -266,7 +266,7 @@ function submitPageJump() {
       <button
         type="button"
         class="page-arrow"
-        :disabled="disabled || (cursorMode ? !hasMore : page >= normalizedTotalPages)"
+        :disabled="disabled || (total > 0 ? page >= normalizedTotalPages : (cursorMode ? !hasMore : page >= normalizedTotalPages))"
         :aria-label="labels.next"
         @click="requestPage(page + 1)"
       >

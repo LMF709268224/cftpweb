@@ -1081,19 +1081,19 @@ async function handlePaymentSessionError() {
           <div class="space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-muted-foreground">{{ copy.subtotal }}</span>
-              <span class="font-medium">{{ paymentPreview.amount_label || formatMoney(paymentPreview.subtotal, paymentPreview.currency) }}</span>
+              <span class="font-medium">{{ paymentPreview.amount_label || formatMoney(paymentPreview.subtotal / 100, paymentPreview.currency) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-muted-foreground">{{ copy.discount }}</span>
-              <span class="font-medium">-{{ formatMoney(paymentPreview.discount_total || 0, paymentPreview.currency) }}</span>
+              <span class="font-medium">-{{ formatMoney((paymentPreview.discount_total || 0) / 100, paymentPreview.currency) }}</span>
             </div>
             <div class="flex justify-between">
               <span class="text-muted-foreground">{{ copy.tax }}</span>
-              <span class="font-medium">{{ formatMoney(paymentPreview.tax_total || 0, paymentPreview.currency) }}</span>
+              <span class="font-medium">{{ formatMoney((paymentPreview.tax_total || 0) / 100, paymentPreview.currency) }}</span>
             </div>
             <div class="mt-2 flex justify-between border-t border-border pt-2">
               <span class="font-semibold text-foreground">{{ copy.total }}</span>
-              <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney(paymentPreview.total, paymentPreview.currency) }}</span>
+              <span class="text-lg font-bold text-foreground">{{ paymentPreview.pay_amount_label || formatMoney(paymentPreview.total / 100, paymentPreview.currency) }}</span>
             </div>
           </div>
           <div v-if="paymentPreview.breakdown?.length" class="mt-3 overflow-hidden rounded-xl border border-emerald-200/80 bg-white shadow-sm shadow-emerald-100/60">
@@ -1106,7 +1106,7 @@ async function handlePaymentSessionError() {
                     <span class="break-all">{{ item.code }}</span>
                   </div>
                 </div>
-                <div class="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 font-bold text-emerald-800">-{{ formatMoney(item.discount || 0, paymentPreview.currency) }}</div>
+                <div class="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 font-bold text-emerald-800">-{{ formatMoney((item.discount || 0) / 100, paymentPreview.currency) }}</div>
               </div>
             </div>
           </div>
