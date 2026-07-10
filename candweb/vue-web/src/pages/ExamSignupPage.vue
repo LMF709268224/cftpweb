@@ -107,6 +107,31 @@ function normalizeLocationText(value: unknown) {
   return typeof value === "string" ? value.trim().toLowerCase() : ""
 }
 
+function normalizeProvinceText(value: unknown) {
+  return normalizeLocationText(value)
+    .replace(/\s+(province|state|autonomous region|special administrative region)$/i, "")
+    .replace(/(壮族自治区|回族自治区|维吾尔自治区|特别行政区|自治区|省|市)$/u, "")
+}
+
+function provinceMatchValues(province: any) {
+  const values = [province.name, province.isoCode, localizedProvinceName(province)]
+  if (selectedCountryCode.value === "CN") {
+    values.push(CN_STATE_LABELS[province.isoCode] || "")
+  }
+  return values
+}
+
+function ensureCurrentCityOption() {
+  const cityText = normalizeLocationText(formData.city)
+  if (!cityText) return
+  const exists = cityOptions.value.some((city) =>
+    [city.name, localizedCityName(city)].some((value) => normalizeLocationText(value) === cityText),
+  )
+  if (!exists) {
+    cityOptions.value = [{ name: formData.city, localizedName: formData.city }, ...cityOptions.value]
+  }
+}
+
 function refreshCountryOptions() {
   countryOptions.value = getCountryOptions(lang.value === "zh" ? "zh-CN" : "en")
 }
@@ -145,10 +170,11 @@ function syncLocationSelectionFromForm() {
 
   const provinceText = normalizeLocationText(formData.province)
   const matchedProvince = selectedCountryCode.value
-    ? provinceOptions.value.find((state) => [state.name, state.isoCode, localizedProvinceName(state)].some((value) => normalizeLocationText(value) === provinceText))
+    ? provinceOptions.value.find((state) => provinceMatchValues(state).some((value) => normalizeProvinceText(value) === normalizeProvinceText(provinceText)))
     : undefined
   selectedProvinceCode.value = matchedProvince?.isoCode || ""
   refreshCityOptions()
+  ensureCurrentCityOption()
 }
 
 function handleCountryChange() {
@@ -298,6 +324,7 @@ watch(lang, () => {
     const mappedCity = Object.entries(CN_CITY_LABELS[selectedProvinceCode.value] || {}).find(([english, chinese]) => english === previousCity || chinese === previousCity)
     if (mappedCity) formData.city = mappedCity[1]
   }
+  ensureCurrentCityOption()
 })
 
 async function syncSignupToProfile() {
