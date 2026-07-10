@@ -15,6 +15,7 @@ const props = defineProps<{
   source?: string
   returnPath?: string
   extraReturnParams?: Record<string, string | number | boolean | null | undefined>
+  couponCodes?: string[]
 }>()
 
 const emit = defineEmits<{ "update:open": [value: boolean] }>()
@@ -60,6 +61,7 @@ function close() {
           :source="source"
           :return-path="returnPath"
           :extra-return-params="extraReturnParams"
+          :coupon-codes="couponCodes"
           min-height-class="min-h-[420px]"
         />
       </div>
