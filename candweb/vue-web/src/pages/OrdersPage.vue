@@ -536,7 +536,6 @@ onMounted(() => {
               </button>
               <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
             </div>
-            <span v-else class="h-9 w-9" />
             <button v-if="canCancelOrder(order)" @click.stop="cancelOrder(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50" :title="t.orders.cancelOrder">
               <Loader2 v-if="cancelLoading === order.id" class="h-4 w-4 animate-spin" />
               <XCircle v-else class="h-4 w-4" />
