@@ -490,11 +490,10 @@ function handlePaginationChange() {
   void fetchOrders()
 }
 
-const ordersPolling = usePolling(() => fetchOrders(false, true))
+// Polling removed for testing
 
 onMounted(() => {
   void fetchOrders()
-  ordersPolling.start()
 })
 </script>
 
