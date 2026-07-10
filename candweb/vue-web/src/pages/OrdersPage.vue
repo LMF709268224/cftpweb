@@ -99,6 +99,7 @@ const detailLoadingOrderId = ref<string | null>(null)
 const detailError = ref("")
 const selectedOrderDetail = ref<OrderDetail | null>(null)
 const selectedOrderItem = ref<OrderItem | null>(null)
+const detailPaymentPreview = ref<any>(null)
 const orderPaymentDialogOpen = ref(false)
 const orderPaymentSession = ref<{
   orderId: string
@@ -190,8 +191,25 @@ async function openOrderDetail(order: OrderItem) {
   detailError.value = ""
   selectedOrderDetail.value = null
   selectedOrderItem.value = order
+  detailPaymentPreview.value = null
   try {
     selectedOrderDetail.value = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`)
+    if (canContinuePayment(order)) {
+      apiClient('/api/mall/payments/preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          biz_type: order.bizType,
+          biz_ref_ulid: order.bizRefUlid,
+          promo_codes: [],
+          coupon_codes: []
+        }),
+        suppressErrorToast: true
+      }).then(res => {
+        detailPaymentPreview.value = res
+      }).catch(err => {
+        console.warn('Failed to fetch payment preview', err)
+      })
+    }
   } catch (error) {
     console.error(error)
     detailError.value = t.value.orders.detailLoadFailed
@@ -512,12 +530,12 @@ onMounted(() => {
                 {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.rawStatus) }}
               </span>
             </div>
-            <div class="text-right"><p class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p></div>
-            <button v-if="canContinuePayment(order)" @click.stop="continuePayment(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-primary transition-colors hover:bg-primary/10" :title="t.orders.continuePayment">
-              <Loader2 v-if="paymentLoading === order.id" class="h-4 w-4 animate-spin" />
-              <CreditCard v-else class="h-4 w-4" />
-              <span class="sr-only">{{ t.orders.continuePayment }}</span>
-            </button>
+            <div class="text-right">
+              <button v-if="canContinuePayment(order)" @click.stop="openOrderDetail(order)" class="inline-flex h-8 items-center justify-center rounded-lg bg-primary/10 px-3 text-sm font-semibold text-primary transition-colors hover:bg-primary/20">
+                {{ t.orders.continuePayment }}
+              </button>
+              <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
+            </div>
             <span v-else class="h-9 w-9" />
             <button v-if="canCancelOrder(order)" @click.stop="cancelOrder(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50" :title="t.orders.cancelOrder">
               <Loader2 v-if="cancelLoading === order.id" class="h-4 w-4 animate-spin" />
@@ -598,7 +616,10 @@ onMounted(() => {
                   </div>
                   <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm sm:min-w-44 sm:text-right">
                     <p class="text-xs font-semibold text-slate-500">{{ t.orders.detailAmount }}</p>
-                    <p class="mt-1 text-2xl font-black tracking-tight text-primary">
+                    <p v-if="detailPaymentPreview" class="mt-1 text-2xl font-black tracking-tight text-primary">
+                      {{ detailPaymentPreview.total === 0 ? t.orders.free : formatMoney(detailPaymentPreview.total, detailPaymentPreview.currency) }}
+                    </p>
+                    <p v-else class="mt-1 text-2xl font-black tracking-tight text-primary">
                       {{ orderAmountDisplay(Number(selectedOrderDetail.summary?.amount || 0), selectedOrderDetail.summary?.currency || "USD", selectedOrderDetail.summary?.status || "", selectedOrderDetail.summary?.raw_status || "", t.orders.free) }}
                     </p>
                   </div>
