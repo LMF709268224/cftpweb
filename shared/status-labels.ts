@@ -218,6 +218,200 @@ export const timelineStatusLabelWithDiagnostics = (
 export const timelineStatusBadgeClassForStatus = (entityType?: StatusValue, status?: StatusValue) => {
   const maps = timelineStatusMapsForEntityType(entityType)
   if (!maps) {
+export const statusEnumNameForStatus = (
+  enumNameMap: StatusEnumNameMap,
+  status?: StatusValue,
+) => {
+  const normalized = normalizeEnumValue(status)
+  return enumNameMap[normalized] || ""
+}
+
+export const statusLabel = (t: TranslationTree, map: StatusLabelMap, status?: StatusValue, fallbackPath = "common.unknown") => {
+  const labelPath = resolveStatusLabelPath(map, status)
+  return labelPath ? resolvePath(t, labelPath) || unknownLabel(t, fallbackPath) : unknownLabel(t, fallbackPath)
+}
+
+// TODO: Remove diagnostic suffix once white-box pipeline troubleshooting is no longer needed.
+export const statusLabelWithDiagnostics = (
+  t: TranslationTree,
+  map: StatusLabelMap,
+  _enumNameMap: StatusEnumNameMap,
+  status?: StatusValue,
+  fallbackPath = "common.unknown",
+) => {
+  return statusLabel(t, map, status, fallbackPath)
+}
+
+export const statusToneFromStatusValue = (status?: StatusValue): StatusTone => {
+  const normalized = normalizeEnumValueUpper(status)
+  if (!normalized) return "neutral"
+
+  if (normalized.includes("UNSPECIFIED") || normalized.includes("UNKNOWN")) {
+    return "neutral"
+  }
+
+  if (
+    normalized.includes("FAILED") ||
+    normalized.includes("ERROR") ||
+    normalized.includes("BROKEN") ||
+    normalized.includes("DELETED") ||
+    normalized.includes("MISSING") ||
+    normalized.includes("REJECTED") ||
+    normalized.includes("REVOKED") ||
+    normalized.includes("TERMINATED")
+  ) {
+    return "danger"
+  }
+
+  if (
+    normalized.includes("RUNNING") ||
+    normalized.includes("IN_PROGRESS") ||
+    normalized.includes("PROCESSING") ||
+    normalized.includes("ONGOING") ||
+    normalized.includes("ACTIVE") ||
+    normalized.includes("GENERATING") ||
+    normalized.includes("LEARNING") ||
+    normalized.includes("OPEN")
+  ) {
+    return "running"
+  }
+
+  if (
+    normalized.includes("COMPLETED") ||
+    normalized.includes("PASSED") ||
+    normalized.includes("APPROVED") ||
+    normalized.includes("FINISHED") ||
+    normalized.includes("DONE") ||
+    normalized.includes("SUCCESS") ||
+    normalized.includes("READ") ||
+    normalized.includes("SENT")
+  ) {
+    return "success"
+  }
+
+  if (
+    normalized.includes("UNREAD") ||
+    normalized.includes("WAIT") ||
+    normalized.includes("PENDING") ||
+    normalized.includes("SCHEDULING") ||
+    normalized.includes("SCHEDULED") ||
+    normalized.includes("APPROVAL") ||
+    normalized.includes("REVIEW") ||
+    normalized.includes("RESUBMIT") ||
+    normalized.includes("REUPLOAD") ||
+    normalized.includes("CANCELLED") ||
+    normalized.includes("TESTING")
+  ) {
+    return "warning"
+  }
+
+  return "neutral"
+}
+
+export const statusToneFromEnumName = (enumName?: StatusValue): StatusTone => {
+  return statusToneFromStatusValue(enumName)
+}
+
+export const statusBadgeClassFromTone = (tone: StatusTone) => {
+  switch (tone) {
+    case "running":
+      return "border-green-400 bg-green-100 text-black"
+    case "success":
+      return "border-blue-400 bg-blue-100 text-black"
+    case "warning":
+      return "border-yellow-400 bg-yellow-100 text-black"
+    case "danger":
+      return "border-red-400 bg-red-100 text-black"
+    case "neutral":
+      return "border-gray-400 bg-gray-100 text-black"
+    default:
+      return "border-gray-400 bg-gray-100 text-black"
+  }
+}
+
+export const statusBadgeClassForStatus = (
+  enumNameMap: StatusEnumNameMap,
+  status?: StatusValue,
+) => {
+  const enumName = statusEnumNameForStatus(enumNameMap, status)
+  return statusBadgeClassFromTone(enumName ? statusToneFromEnumName(enumName) : "neutral")
+}
+
+export const statusBadgeClassForStatusValue = (status?: StatusValue) => {
+  return statusBadgeClassFromTone(statusToneFromStatusValue(status))
+}
+
+export const stageStatusHintLabel = (t: TranslationTree, status?: StatusValue) => {
+  switch (normalizeEnumValue(status)) {
+    case "1":
+      return resolvePath(t, "learning.stageWaitCandidateHint") || unknownLabel(t)
+    case "2":
+      return resolvePath(t, "learning.stageRunningHint") || unknownLabel(t)
+    case "3":
+      return resolvePath(t, "learning.stageCompletedHint") || unknownLabel(t)
+    default:
+      return resolvePath(t, "learning.nextStepDesc") || unknownLabel(t)
+  }
+}
+
+export const timelineStatusLabel = (t: TranslationTree, entityType?: StatusValue, status?: StatusValue) => {
+  switch (normalizeEnumValueUpper(entityType)) {
+    case "PIPELINE":
+      return statusLabel(t, CANDIDATE_PIPELINE_STATUS_LABELS, status)
+    case "STAGE":
+      return statusLabel(t, STAGE_STATUS_LABELS, status)
+    case "COURSE_UNIT":
+      return statusLabel(t, COURSE_UNIT_STATUS_LABELS, status)
+    case "MALL_ORDER":
+      return statusLabel(t, MALL_ORDER_STATUS_LABELS, status)
+    default:
+      return unknownLabel(t)
+  }
+}
+
+const timelineStatusMapsForEntityType = (entityType?: StatusValue) => {
+  switch (normalizeEnumValueUpper(entityType)) {
+    case "PIPELINE":
+      return {
+        labelMap: CANDIDATE_PIPELINE_STATUS_LABELS,
+        enumNameMap: CANDIDATE_PIPELINE_STATUS_ENUM_NAMES,
+      }
+    case "STAGE":
+      return {
+        labelMap: STAGE_STATUS_LABELS,
+        enumNameMap: STAGE_STATUS_ENUM_NAMES,
+      }
+    case "COURSE_UNIT":
+      return {
+        labelMap: COURSE_UNIT_STATUS_LABELS,
+        enumNameMap: COURSE_UNIT_STATUS_ENUM_NAMES,
+      }
+    case "MALL_ORDER":
+      return {
+        labelMap: MALL_ORDER_STATUS_LABELS,
+        enumNameMap: MALL_ORDER_STATUS_ENUM_NAMES,
+      }
+    default:
+      return null
+  }
+}
+
+export const timelineStatusLabelWithDiagnostics = (
+  t: TranslationTree,
+  entityType?: StatusValue,
+  status?: StatusValue,
+  fallbackPath = "common.unknown",
+) => {
+  const maps = timelineStatusMapsForEntityType(entityType)
+  if (!maps) {
+    return unknownLabel(t, fallbackPath)
+  }
+  return statusLabelWithDiagnostics(t, maps.labelMap, maps.enumNameMap, status, fallbackPath)
+}
+
+export const timelineStatusBadgeClassForStatus = (entityType?: StatusValue, status?: StatusValue) => {
+  const maps = timelineStatusMapsForEntityType(entityType)
+  if (!maps) {
     return statusBadgeClassFromTone("neutral")
   }
   return statusBadgeClassForStatus(maps.enumNameMap, status)
@@ -241,6 +435,12 @@ export const MALL_ORDER_STATUS_LABELS: StatusLabelMap = {
   "CANCELLED": "orders.statusCancelled",
   "PENDING_CREATE": "orders.statusPendingCreate",
   "PENDING_PAYMENT": "orders.statusPendingPayment",
+  "WAIT_PAYMENT": "orders.statusWaitPayment",
+  "PENDING": "orders.statusPending",
+  "CLOSED": "orders.statusClosed",
+  "UNPAID": "orders.statusUnpaid",
+  "WAIT_PAY": "orders.statusWaitPayment",
+  "REFUND_OFFLINE": "orders.statusRefundOffline",
 }
 
 export const MALL_ORDER_STATUS_ENUM_NAMES: StatusEnumNameMap = {
@@ -261,6 +461,12 @@ export const MALL_ORDER_STATUS_ENUM_NAMES: StatusEnumNameMap = {
   "CANCELLED": "CANCELLED",
   "PENDING_CREATE": "PENDING",
   "PENDING_PAYMENT": "PENDING",
+  "WAIT_PAYMENT": "WAIT",
+  "PENDING": "PENDING",
+  "CLOSED": "CLOSED",
+  "UNPAID": "WAIT",
+  "WAIT_PAY": "WAIT",
+  "REFUND_OFFLINE": "CANCELLED",
 }
 
 export const CANDIDATE_PIPELINE_STATUS_LABELS: StatusLabelMap = {

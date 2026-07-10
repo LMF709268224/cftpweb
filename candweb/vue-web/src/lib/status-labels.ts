@@ -243,6 +243,10 @@ export const MALL_ORDER_STATUS_LABELS: StatusLabelMap = {
   "PENDING": "orders.statusPending",
   "PENDING_CREATE": "orders.statusPendingCreate",
   "PENDING_PAYMENT": "orders.statusPendingPayment",
+  "CLOSED": "orders.statusClosed",
+  "UNPAID": "orders.statusUnpaid",
+  "WAIT_PAY": "orders.statusWaitPayment",
+  "REFUND_OFFLINE": "orders.statusRefundOffline",
 }
 
 export const MALL_ORDER_STATUS_ENUM_NAMES: StatusEnumNameMap = {
@@ -265,6 +269,10 @@ export const MALL_ORDER_STATUS_ENUM_NAMES: StatusEnumNameMap = {
   "PENDING": "PENDING",
   "PENDING_CREATE": "PENDING",
   "PENDING_PAYMENT": "PENDING",
+  "CLOSED": "CLOSED",
+  "UNPAID": "WAIT",
+  "WAIT_PAY": "WAIT",
+  "REFUND_OFFLINE": "CANCELLED",
 }
 
 export const CANDIDATE_PIPELINE_STATUS_LABELS: StatusLabelMap = {

@@ -717,7 +717,7 @@ func unavailableBundleEligibility(description string) bundleEligibilitySummary {
 	}
 }
 
-func eligibilityFromPipeline(resp *mallpb.CheckPipelineEligibilityResponse) bundleEligibilitySummary {
+func eligibilityFromBundle(resp *mallpb.CheckBundleEligibilityResponse) bundleEligibilitySummary {
 	if resp == nil {
 		return unavailableBundleEligibility("eligibility unavailable")
 	}
@@ -734,7 +734,7 @@ func eligibilityFromPipeline(resp *mallpb.CheckPipelineEligibilityResponse) bund
 		out.Blockers = append(out.Blockers, bundleEligibilityBlocker{
 			BlockerType: blocker.GetBlockerType(),
 			Description: blocker.GetDescription(),
-			Details:     append([]string{}, blocker.GetDetails()...),
+			Details:     blocker.GetDetails(),
 		})
 	}
 	return out
@@ -1255,6 +1255,19 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 		"thumbnail_url":        h.bundleThumbnailURL(ctx, b.GetBundleUlid()),
 	}
 
+	if state != nil && state.candidateID != "" {
+		eligibilityResp, err := h.Mall.CheckBundleEligibility(ctx, &mallpb.CheckBundleEligibilityRequest{
+			CandidateUlid: state.candidateID,
+			BundleCcUlid:  b.GetBundleUlid(),
+		})
+		if err != nil {
+			slog.Warn("Failed to enrich bundle eligibility", "error", err, "candidate_id", state.candidateID, "bundle_id", b.GetBundleUlid())
+			eligibility = unavailableBundleEligibility("eligibility unavailable")
+		} else {
+			eligibility = eligibilityFromBundle(eligibilityResp)
+		}
+	}
+
 	if pipelineID != "" {
 		pipeline, err := h.Gcc.GetPipeline(ctx, &gccpb.GetPipelineRequest{
 			Query: &gccpb.GetPipelineRequest_PipelineUlid{PipelineUlid: pipelineID},
@@ -1267,18 +1280,6 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 			m["category_tips"] = pipeline.GetCategoryTips()
 		} else {
 			m["pipeline_is_active"] = false
-		}
-		if state != nil && state.candidateID != "" {
-			eligibilityResp, err := h.Mall.CheckPipelineEligibility(ctx, &mallpb.CheckPipelineEligibilityRequest{
-				CandidateUlid:  state.candidateID,
-				PipelineCcUlid: pipelineID,
-			})
-			if err != nil {
-				slog.Warn("Failed to enrich pipeline bundle eligibility", "error", err, "candidate_id", state.candidateID, "pipeline_id", pipelineID, "bundle_id", b.GetBundleUlid())
-				eligibility = unavailableBundleEligibility("eligibility unavailable")
-			} else {
-				eligibility = eligibilityFromPipeline(eligibilityResp)
-			}
 		}
 	}
 	if membershipID != "" && h.Gmbr != nil {
@@ -1299,17 +1300,6 @@ func (h *Handler) enrichBundle(ctx context.Context, b *mallpb.BundleInfo, state 
 		}
 		if activeMembership := h.resolveActiveMembership(ctx, state, membershipID, membershipGpath); activeMembership != nil {
 			m["active_membership"] = activeMembership
-			eligibility = bundleEligibilitySummary{
-				Eligible:    false,
-				CanUnlock:   false,
-				CanPurchase: false,
-				Blockers: []bundleEligibilityBlocker{
-					{
-						BlockerType: "ALREADY_PURCHASED",
-						Description: "active membership already exists",
-					},
-				},
-			}
 		}
 	}
 	purchaseState := h.bundlePurchaseState(ctx, state, b.GetBundleUlid(), b.GetBundleGpath(), pipelineID, eligibility)

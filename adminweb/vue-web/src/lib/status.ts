@@ -34,6 +34,7 @@ export const orderStatusOptions: LabelOption[] = [
   { value: "EXPIRED", label: "EXPIRED" },
   { value: "PENDING_CREATE", label: "PENDING_CREATE" },
   { value: "PENDING_PAYMENT", label: "PENDING_PAYMENT" },
+  { value: "CLOSED", label: "CLOSED" },
 ]
 
 export const paymentStatusOptions: LabelOption[] = [
@@ -44,6 +45,7 @@ export const paymentStatusOptions: LabelOption[] = [
   { value: "COMPLETED", label: "COMPLETED" },
   { value: "FAILED", label: "FAILED" },
   { value: "REFUNDED", label: "REFUNDED" },
+  { value: "REFUND_OFFLINE", label: "REFUND_OFFLINE" },
   { value: "CANCELLED", label: "CANCELLED" },
 ]
 

@@ -1,4 +1,4 @@
-﻿import { AppTranslations } from "./zh"
+import { AppTranslations } from "./zh"
 
 export const en: AppTranslations = {
   common: {
@@ -622,6 +622,10 @@ export const en: AppTranslations = {
     statusWaitReview: "Wait Review",
     statusWaitReviewFeePayment: "Wait Review Fee Payment",
     statusUploadReady: "Ready to Upload",
+    statusClosed: "Closed",
+    statusUnpaid: "Unpaid",
+    statusWaitPay: "Wait Payment",
+    statusRefundOffline: "Offline Refund",
     statusResolved: "Resolved",
     statusPaid: "Paid, Processing",
     statusCancelled: "Cancelled",
