@@ -8,7 +8,7 @@ import { formatBackendDate } from "@/lib/utils"
 import { fetchUnreadCount } from "@/lib/unreadCountCache"
 import { useTranslation } from "@/lib/language"
 import { usePolling } from "@/lib/polling"
-type Message = { id: string; numericId: number; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean; isUnread: boolean }
+type Message = { id: string; type: string; rawTitle: string; rawContent: string; time: string; isRead: boolean; isUnread: boolean }
 type MessageTypeKey = "system" | "announcement" | "score" | "payment" | "other"
 type MessageStatusFilter = "unread" | "read"
 
@@ -25,7 +25,8 @@ const detailLoadingId = ref<string | null>(null)
 const totalUnreadCount = ref(0)
 
 const page = ref(1)
-const pageHistory = ref<number[]>([0])
+const cursorStack = ref<string[]>([""])
+const nextCursor = ref("")
 const hasMore = ref(false)
 const pageSize = 10
 
@@ -47,10 +48,6 @@ const unreadCount = computed(() => messageList.value.filter((m) => m.isUnread).l
 
 function nextPage() {
   if (!hasMore.value || loading.value) return
-  if (messageList.value.length > 0) {
-    const lastItem = messageList.value[messageList.value.length - 1]
-    pageHistory.value[page.value] = lastItem.numericId
-  }
   page.value++
   void fetchMessages()
   window.scrollTo({ top: 0, behavior: "smooth" })
@@ -65,7 +62,8 @@ function prevPage() {
 
 function resetPagination() {
   page.value = 1
-  pageHistory.value = [0]
+  cursorStack.value = [""]
+  nextCursor.value = ""
   hasMore.value = false
 }
 
@@ -242,14 +240,17 @@ function formatPayloadSummary(payload: unknown) {
 async function fetchMessages(showLoading = true, suppressErrorToast = false) {
   if (showLoading) loading.value = true
   try {
-    const currentLastId = pageHistory.value[page.value - 1] || 0
     const params = new URLSearchParams({
-      limit: String(pageSize),
-      lastId: String(currentLastId),
+      page_size: String(pageSize),
     })
+    const cursor = cursorStack.value[page.value - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     if (selectedStatus.value) params.set("status", selectedStatus.value)
     const res = await apiClient(`/api/messages?${params.toString()}`, { suppressErrorToast })
     hasMore.value = !!res?.has_more
+    nextCursor.value = String(res?.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, page.value)
+    cursorStack.value[page.value] = nextCursor.value
     if (res?.messages) {
       messageList.value = res.messages.map((m: any) => {
         let type = "system"
@@ -278,7 +279,6 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
         const statusValue = messageStatusValue(m.status)
         return {
           id: String(m.message_id || m.id),
-          numericId: Number(m.id),
           type,
           rawTitle: title,
           rawContent: content,

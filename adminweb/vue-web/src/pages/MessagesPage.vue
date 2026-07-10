@@ -41,6 +41,14 @@ const templateSaving = ref(false)
 const templatePage = ref(1)
 const totalTemplates = ref(0)
 const editingTemplatePath = ref("")
+
+const messageCursorStack = ref<string[]>([""])
+const messageNextCursor = ref("")
+const messageHasMore = ref(false)
+
+const templateCursorStack = ref<string[]>([""])
+const templateNextCursor = ref("")
+const templateHasMore = ref(false)
 const formPath = ref("")
 const formTitle = ref("")
 const formContent = ref("")
@@ -153,13 +161,18 @@ async function loadTemplates() {
   templatesLoading.value = true
   try {
     const params = new URLSearchParams({
-      page: String(templatePage.value),
       page_size: String(templatePageSize),
     })
+    const cursor = templateCursorStack.value[templatePage.value - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     const data = await apiClient<JsonRecord>(`/api/messages/templates?${params}`)
     const list = Array.isArray(data.templates) ? data.templates : []
     templates.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     totalTemplates.value = Number(data.total || data.total_count || templates.value.length)
+    templateHasMore.value = Boolean(data.has_more)
+    templateNextCursor.value = String(data.next_cursor || "")
+    templateCursorStack.value = templateCursorStack.value.slice(0, templatePage.value)
+    templateCursorStack.value[templatePage.value] = templateNextCursor.value
     if (!selectedTemplate.value || !templates.value.some((item) => pathOf(item) === pathOf(selectedTemplate.value))) {
       selectedTemplate.value = templates.value[0] || null
     }
@@ -192,14 +205,19 @@ async function loadSentMessages() {
   messagesLoading.value = true
   try {
     const params = new URLSearchParams({
-      page: String(messagePage.value),
       page_size: String(pageSize),
     })
+    const cursor = messageCursorStack.value[messagePage.value - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     if (statusFilter.value) params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/messages/sent?${params}`)
     const list = Array.isArray(data.messages) ? data.messages : []
     messages.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || messages.value.length)
+    messageHasMore.value = Boolean(data.has_more)
+    messageNextCursor.value = String(data.next_cursor || "")
+    messageCursorStack.value = messageCursorStack.value.slice(0, messagePage.value)
+    messageCursorStack.value[messagePage.value] = messageNextCursor.value
     if (!selectedMessage.value || !messages.value.some((item) => messageId(item) === messageId(selectedMessage.value))) {
       openMessage(messages.value[0] || null, messageDetailOpen.value)
     }
@@ -384,6 +402,13 @@ watch(templatePath, async (path) => {
   }
 })
 
+watch(statusFilter, () => {
+  messagePage.value = 1
+  messageCursorStack.value = [""]
+  messageNextCursor.value = ""
+  messageHasMore.value = false
+})
+
 watch([activeTab, messagePage, statusFilter], () => {
   if (activeTab.value === "sent") void loadSentMessages()
 })
@@ -552,7 +577,7 @@ onMounted(async () => {
             <span class="text-sm font-bold text-slate-500">{{ copy.sent.pageText(messagePage, totalPages) }}</span>
             <div class="flex gap-3">
               <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage <= 1" @click="messagePage--">{{ copy.sent.prev }}</button>
-              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="messagePage >= totalPages" @click="messagePage++">{{ copy.sent.next }}</button>
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!messageHasMore" @click="messagePage++">{{ copy.sent.next }}</button>
             </div>
           </div>
         </section>
@@ -605,7 +630,7 @@ onMounted(async () => {
             <span class="text-sm font-bold text-slate-500">{{ copy.sent.pageText(templatePage, templateTotalPages) }}</span>
             <div class="flex gap-3">
               <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="templatePage <= 1 || templatesLoading" @click="templatePage--">{{ copy.sent.prev }}</button>
-              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="templatePage >= templateTotalPages || templatesLoading" @click="templatePage++">{{ copy.sent.next }}</button>
+              <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!templateHasMore || templatesLoading" @click="templatePage++">{{ copy.sent.next }}</button>
             </div>
           </div>
         </section>

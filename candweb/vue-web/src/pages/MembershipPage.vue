@@ -21,10 +21,18 @@ const historyPage = ref(1)
 const historyPageSize = ref(10)
 const historyTotal = ref(0)
 const historyTotalPages = ref(0)
+const lastHistoryPageSize = ref(historyPageSize.value)
+const historyCursorStack = ref<string[]>([""])
+const historyNextCursor = ref("")
+const historyHasMore = ref(false)
 const billingPage = ref(1)
 const billingPageSize = ref(10)
 const billingTotal = ref(0)
 const billingTotalPages = ref(0)
+const lastBillingPageSize = ref(billingPageSize.value)
+const billingCursorStack = ref<string[]>([""])
+const billingNextCursor = ref("")
+const billingHasMore = ref(false)
 const pageSizeOptions = [10, 30, 50, 100]
 
 const tabs = computed(() => [
@@ -213,20 +221,34 @@ function totalPagesFrom(data: any, total: number, pageSize: number) {
 }
 
 async function loadMembershipHistory() {
-  const historyData = await apiClient(`/api/membership/history?page=${historyPage.value}&page_size=${historyPageSize.value}`)
+  const params = new URLSearchParams({ page_size: String(historyPageSize.value) })
+  const cursor = historyCursorStack.value[historyPage.value - 1] || ""
+  if (cursor) params.set("cursor", cursor)
+  const historyData = await apiClient(`/api/membership/history?${params.toString()}`)
   const nextHistory = listFrom(historyData, ["user_memberships", "memberships", "records", "items", "history"])
   history.value = nextHistory
   historyTotal.value = totalFrom(historyData, nextHistory)
   historyTotalPages.value = totalPagesFrom(historyData, historyTotal.value, historyPageSize.value)
+  historyHasMore.value = Boolean(historyData?.has_more)
+  historyNextCursor.value = String(historyData?.next_cursor || "")
+  historyCursorStack.value = historyCursorStack.value.slice(0, historyPage.value)
+  historyCursorStack.value[historyPage.value] = historyNextCursor.value
   return nextHistory
 }
 
 async function loadMembershipBillings() {
-  const billingData = await apiClient(`/api/membership/billings?page=${billingPage.value}&page_size=${billingPageSize.value}`)
+  const params = new URLSearchParams({ page_size: String(billingPageSize.value) })
+  const cursor = billingCursorStack.value[billingPage.value - 1] || ""
+  if (cursor) params.set("cursor", cursor)
+  const billingData = await apiClient(`/api/membership/billings?${params.toString()}`)
   const nextBillings = listFrom(billingData, ["billings", "records", "items"])
   billings.value = nextBillings
   billingTotal.value = totalFrom(billingData, nextBillings)
   billingTotalPages.value = totalPagesFrom(billingData, billingTotal.value, billingPageSize.value)
+  billingHasMore.value = Boolean(billingData?.has_more)
+  billingNextCursor.value = String(billingData?.next_cursor || "")
+  billingCursorStack.value = billingCursorStack.value.slice(0, billingPage.value)
+  billingCursorStack.value[billingPage.value] = billingNextCursor.value
   return nextBillings
 }
 
@@ -289,13 +311,35 @@ async function cancelMembership() {
   }
 }
 
+function resetHistoryPagination() {
+  historyPage.value = 1
+  historyCursorStack.value = [""]
+  historyNextCursor.value = ""
+  historyHasMore.value = false
+}
+
+function resetBillingPagination() {
+  billingPage.value = 1
+  billingCursorStack.value = [""]
+  billingNextCursor.value = ""
+  billingHasMore.value = false
+}
+
 function handleHistoryPaginationChange() {
   if (loading.value) return
+  if (historyPageSize.value !== lastHistoryPageSize.value) {
+    lastHistoryPageSize.value = historyPageSize.value
+    resetHistoryPagination()
+  }
   void loadMembershipHistory()
 }
 
 function handleBillingPaginationChange() {
   if (loading.value) return
+  if (billingPageSize.value !== lastBillingPageSize.value) {
+    lastBillingPageSize.value = billingPageSize.value
+    resetBillingPagination()
+  }
   void loadMembershipBillings()
 }
 
@@ -490,6 +534,8 @@ onMounted(() => {
               :page-size-options="pageSizeOptions"
               :disabled="loading"
               :locale="lang"
+              cursor-mode
+              :has-more="historyHasMore"
               @page-change="handleHistoryPaginationChange"
             />
           </section>
@@ -512,6 +558,8 @@ onMounted(() => {
               :page-size-options="pageSizeOptions"
               :disabled="loading"
               :locale="lang"
+              cursor-mode
+              :has-more="billingHasMore"
               @page-change="handleBillingPaginationChange"
             />
           </section>
