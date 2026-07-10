@@ -98,6 +98,7 @@ const detailLoading = ref(false)
 const detailLoadingOrderId = ref<string | null>(null)
 const detailError = ref("")
 const selectedOrderDetail = ref<OrderDetail | null>(null)
+const selectedOrderItem = ref<OrderItem | null>(null)
 const orderPaymentDialogOpen = ref(false)
 const orderPaymentSession = ref<{
   orderId: string
@@ -188,6 +189,7 @@ async function openOrderDetail(order: OrderItem) {
   detailLoadingOrderId.value = order.id
   detailError.value = ""
   selectedOrderDetail.value = null
+  selectedOrderItem.value = order
   try {
     selectedOrderDetail.value = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`)
   } catch (error) {
@@ -633,6 +635,13 @@ onMounted(() => {
             </section>
 
           </div>
+        </div>
+        <div v-if="selectedOrderItem && canContinuePayment(selectedOrderItem)" class="border-t border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
+          <button @click="continuePayment(selectedOrderItem)" class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
+            <CreditCard class="h-5 w-5" />
+            <Loader2 v-if="paymentLoading === selectedOrderItem.id" class="h-5 w-5 animate-spin" />
+            {{ t.orders.continuePayment }}
+          </button>
         </div>
       </div>
     </div>
