@@ -23,6 +23,9 @@ const detailDialogOpen = ref(false)
 const copiedJson = ref(false)
 const page = ref(1)
 const total = ref(0)
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
 
 const statusFilter = ref("")
 const resultStatusFilter = ref("")
@@ -34,7 +37,7 @@ const copy = computed(() => t.value.exams)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const canPrev = computed(() => page.value > 1)
-const canNext = computed(() => page.value < totalPages.value)
+const canNext = computed(() => hasMore.value)
 const selectedExamUlid = computed(() => examUlid(detail.value || selectedSummary.value))
 const rawDetailJson = computed(() => JSON.stringify({ detail: detail.value || selectedSummary.value, result: result.value, transitions: transitions.value }, null, 2))
 const candidateName = computed(() => {
@@ -137,9 +140,10 @@ async function loadExams(targetPage = page.value) {
   loading.value = true
   try {
     const params = new URLSearchParams({
-      page: String(targetPage),
       page_size: String(pageSize),
     })
+    const cursor = cursorStack.value[targetPage - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     if (statusFilter.value) params.set("status", statusFilter.value)
     if (resultStatusFilter.value) params.set("result_status", resultStatusFilter.value)
     if (candidateFilter.value.trim()) params.set("candidate_ulid", candidateFilter.value.trim())
@@ -149,6 +153,10 @@ async function loadExams(targetPage = page.value) {
     const data = await apiClient<JsonRecord>(`/api/exams?${params}`)
     exams.value = asArray(data.exams)
     total.value = Number(data.total || exams.value.length || 0)
+    hasMore.value = Boolean(data.has_more)
+    nextCursor.value = String(data.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, targetPage)
+    cursorStack.value[targetPage] = nextCursor.value
     page.value = targetPage
     if (selectedExamUlid.value && !exams.value.some((item) => examUlid(item) === selectedExamUlid.value)) {
       clearSelection()
@@ -157,6 +165,8 @@ async function loadExams(targetPage = page.value) {
     console.error(err)
     exams.value = []
     total.value = 0
+    hasMore.value = false
+    nextCursor.value = ""
     toast.error(copy.value.toasts.listLoadFailed)
   } finally {
     loading.value = false
@@ -220,6 +230,7 @@ async function syncExamResult() {
 
 async function search() {
   clearSelection()
+  resetCursorPagination()
   await loadExams(1)
 }
 
@@ -240,8 +251,17 @@ function closeDetailDialog() {
   clearSelection()
 }
 
+function resetCursorPagination() {
+  page.value = 1
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
+}
+
 function changePage(nextPage: number) {
-  if (nextPage < 1 || nextPage > totalPages.value) return
+  if (nextPage < 1 || nextPage === page.value) return
+  if (nextPage > page.value && !hasMore.value) return
+  if (Math.abs(nextPage - page.value) !== 1) return
   loadExams(nextPage)
 }
 

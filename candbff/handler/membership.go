@@ -9,11 +9,11 @@ import (
 
 // ListMembershipPlans GET /api/membership/plans
 func (h *Handler) ListMembershipPlans(w http.ResponseWriter, r *http.Request) {
-	page, pageSize := parsePagination(r, 20)
+	page := parseCursorPage(r, 20)
 
 	resp, err := h.Gmbr.ListMemberships(r.Context(), &gmbrpb.ListMembershipsRequest{
-		Page:     int32(page),
-		PageSize: int32(pageSize),
+		PageSize: page.PageSize,
+		Cursor:   page.Cursor,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -38,8 +38,9 @@ func (h *Handler) ListMembershipPlans(w http.ResponseWriter, r *http.Request) {
 	WriteJSON(w, http.StatusOK, map[string]any{
 		"memberships": plans,
 		"total":       len(plans),
-		"page":        page,
-		"page_size":   pageSize,
+		"page_size":   page.PageSize,
+		"next_cursor": resp.GetNextCursor(),
+		"has_more":    resp.GetHasMore(),
 	})
 }
 
@@ -61,7 +62,7 @@ func (h *Handler) GetActiveMembership(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gmbr.GetActiveMembership(r.Context(), &gmbrpb.GetActiveMembershipRequest{
-		CandidateUlid: candidateID,
+		CandidateUlid:   candidateID,
 		MembershipGpath: membershipGpath,
 	})
 	if err != nil {
@@ -80,12 +81,14 @@ func (h *Handler) ListUserMemberships(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	page, pageSize := parsePagination(r, 10)
+	page := parseCursorPage(r, 10)
 
 	resp, err := h.Gmbr.ListUserMemberships(r.Context(), &gmbrpb.ListUserMembershipsRequest{
-		CandidateUlid: candidateID,
-		Page:          int32(page),
-		PageSize:      int32(pageSize),
+		Filters: &gmbrpb.UserMembershipFilters{
+			CandidateUlid: candidateID,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -108,13 +111,15 @@ func (h *Handler) ListMembershipBillings(w http.ResponseWriter, r *http.Request)
 		membershipRecordULID = strings.TrimSpace(r.URL.Query().Get("membership_record_id"))
 	}
 
-	page, pageSize := parsePagination(r, 10)
+	page := parseCursorPage(r, 10)
 
 	resp, err := h.Gmbr.ListMembershipBillings(r.Context(), &gmbrpb.ListMembershipBillingsRequest{
-		CandidateUlid:        candidateID,
-		MembershipRecordUlid: membershipRecordULID,
-		Page:                 int32(page),
-		PageSize:             int32(pageSize),
+		Filters: &gmbrpb.MembershipBillingFilters{
+			CandidateUlid:        candidateID,
+			MembershipRecordUlid: membershipRecordULID,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

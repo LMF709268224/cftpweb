@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -11,15 +12,33 @@ import (
 )
 
 func (h *Handler) ListProgPipelines(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	req := &gprogpb.ListPipelinesReq{
-		CandidateUlid:  strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
-		PipelineCcUlid: strings.TrimSpace(r.URL.Query().Get("pipeline_cc_ulid")),
-		Status:         gprogpb.PipelineStatus(parseEnumQuery(r, "status")),
-		Limit:          int32(parseUint32Query(r, "limit")),
-		Offset:         int32(parseUint32Query(r, "offset")),
+		Filters: &gprogpb.PipelineFilters{
+			CandidateUlid:  strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
+			PipelineCcUlid: strings.TrimSpace(r.URL.Query().Get("pipeline_cc_ulid")),
+			Status:         gprogpb.PipelineStatus(parseEnumQuery(r, "status")),
+		},
+		Cursor:   page.Cursor,
+		PageSize: int32(page.PageSize),
 	}
 
 	resp, err := h.Gprog.ListPipelines(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Gprog.GetPipelineCount(ctx, &gprogpb.GetPipelineCountRequest{
+			Filters: req.GetFilters(),
+			Limit:   int32(limit),
+			Cursor:  cursor,
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -36,8 +55,12 @@ func (h *Handler) ListProgPipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
-		"pipelines": items,
-		"total":     resp.GetTotal(),
+		"pipelines":   items,
+		"total":       total.Total,
+		"total_label": total.Label(),
+		"total_exact": total.Exact,
+		"next_cursor": resp.GetNextCursor(),
+		"has_more":    resp.GetHasMore(),
 	})
 }
 
@@ -102,9 +125,11 @@ func (h *Handler) ListProgStatusTransitionLogs(w http.ResponseWriter, r *http.Re
 	}
 
 	req := &gprogpb.ListStatusTransitionLogsReq{
-		PipelineUlid: pipelineULID,
-		Limit:        int32(parseUint32Query(r, "limit")),
-		Offset:       int32(parseUint32Query(r, "offset")),
+		Filters: &gprogpb.StatusTransitionLogFilters{
+			PipelineUlid: pipelineULID,
+		},
+		Cursor:   strings.TrimSpace(r.URL.Query().Get("cursor")),
+		PageSize: int32(parseCursorPage(r, 20).PageSize),
 	}
 
 	resp, err := h.Gprog.ListStatusTransitionLogs(r.Context(), req)
@@ -235,11 +260,14 @@ func (h *Handler) ListProgCertificateTasks(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	page := parseCursorPage(r, 20)
 	req := &gprogpb.ListCertificateTasksReq{
-		CandidateUlid: candidateULID,
-		PipelineUlid:  strings.TrimSpace(r.URL.Query().Get("pipeline_ulid")),
-		Limit:         int32(parseUint32Query(r, "limit")),
-		Offset:        int32(parseUint32Query(r, "offset")),
+		Filters: &gprogpb.CertificateTaskFilters{
+			CandidateUlid: candidateULID,
+			PipelineUlid:  strings.TrimSpace(r.URL.Query().Get("pipeline_ulid")),
+		},
+		Cursor:   page.Cursor,
+		PageSize: int32(page.PageSize),
 	}
 
 	resp, err := h.Gprog.ListCertificateTasks(r.Context(), req)

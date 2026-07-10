@@ -26,8 +26,13 @@ const search = ref("")
 const exams = ref<any[]>([])
 const total = ref(0)
 const totalPages = ref(0)
+const totalLabel = ref("")
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
 const page = ref(1)
 const pageSize = ref(10)
+const lastPageSize = ref(pageSize.value)
 const pageSizeOptions = [10, 30, 50, 100]
 const retakePaymentSession = ref<{
   paymentKey?: string
@@ -267,13 +272,17 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     exams.value = []
     total.value = 0
     totalPages.value = 0
+    totalLabel.value = "0"
+    hasMore.value = false
+    nextCursor.value = ""
     return
   }
   if (showLoading) loading.value = true
   try {
     const params = new URLSearchParams()
-    params.set("page", String(page.value))
     params.set("page_size", String(pageSize.value))
+    const cursor = cursorStack.value[page.value - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     if (tab === "history") params.set("result_status", "DONE")
     if (keyword.trim()) params.set("confirmation_number", keyword.trim())
     const res = await apiClient(`/api/exams?${params.toString()}`, { suppressErrorToast })
@@ -281,11 +290,19 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     exams.value = nextExams
     syncPendingScheduleState(nextExams)
     total.value = Number(res?.total || 0)
+    totalLabel.value = String(res?.total_label || total.value)
     totalPages.value = Number(res?.total_pages || Math.ceil(total.value / pageSize.value) || 0)
+    hasMore.value = Boolean(res?.has_more)
+    nextCursor.value = String(res?.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, page.value)
+    cursorStack.value[page.value] = nextCursor.value
   } catch {
     exams.value = []
     total.value = 0
     totalPages.value = 0
+    totalLabel.value = "0"
+    hasMore.value = false
+    nextCursor.value = ""
   } finally {
     if (showLoading) loading.value = false
   }
@@ -358,13 +375,24 @@ async function handleApplyRetake(exam: any) {
   }
 }
 
-watch(activeTab, (tab) => {
+function resetCursorPagination() {
   page.value = 1
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
+}
+
+watch(activeTab, (tab) => {
+  resetCursorPagination()
   void loadExams(tab, search.value)
 })
 
 function handlePaginationChange() {
   if (loading.value) return
+  if (pageSize.value !== lastPageSize.value) {
+    lastPageSize.value = pageSize.value
+    resetCursorPagination()
+  }
   void loadExams(activeTab.value, search.value)
 }
 
@@ -539,9 +567,12 @@ onBeforeUnmount(() => {
           v-model:page-size="pageSize"
           :total="total"
           :total-pages="totalPages"
+          :total-label="totalLabel"
           :page-size-options="pageSizeOptions"
           :disabled="loading"
           :locale="lang"
+          cursor-mode
+          :has-more="hasMore"
           @page-change="handlePaginationChange"
         />
       </div>

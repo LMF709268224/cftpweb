@@ -156,17 +156,33 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 	candidateID := CandidateID(r)
 	credDefID := strings.TrimSpace(firstNonEmpty(r.URL.Query().Get("cred_def_ulid"), r.URL.Query().Get("cred_def_id")))
 
-	page := parsePositiveIntQuery(r, "page", 1)
-	pageSize := parsePositiveIntQuery(r, "page_size", parsePositiveIntQuery(r, "limit", 10))
+	page := parseCursorPage(r, 10)
 
 	req := &gcredspb.ListApplicationsRequest{
-		CandidateUlid: candidateID,
-		CredDefUlid:   credDefID,
-		Page:          uint32(page),
-		PageSize:      uint32(pageSize),
+		Filters: &gcredspb.ApplicationFilters{
+			CandidateUlid: candidateID,
+			CredDefUlid:   credDefID,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	}
 
 	res, err := h.Creds.ListApplications(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
+			Filters: req.GetFilters(),
+			Limit:   limit,
+			Cursor:  cursor,
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -189,9 +205,12 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"applications": applications,
-		"total":        res.GetTotal(),
-		"page":         page,
-		"page_size":    pageSize,
+		"total":        total.Total,
+		"total_label":  total.Label(),
+		"total_exact":  total.Exact,
+		"page_size":    page.PageSize,
+		"next_cursor":  res.GetNextCursor(),
+		"has_more":     res.GetHasMore(),
 	})
 }
 

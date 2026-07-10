@@ -34,9 +34,10 @@ func uint32Query(r *http.Request, key string, fallback uint32) uint32 {
 }
 
 func (h *Handler) ListMemberships(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gmbr.ListMemberships(r.Context(), &gmbrpb.ListMembershipsRequest{
-		Page:     int32Query(r, "page", 1),
-		PageSize: int32Query(r, "page_size", 20),
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -80,10 +81,13 @@ func (h *Handler) ListUserMemberships(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, candidateULID, "candidate_ulid") {
 		return
 	}
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gmbr.ListUserMemberships(r.Context(), &gmbrpb.ListUserMembershipsRequest{
-		CandidateUlid: candidateULID,
-		Page:          int32Query(r, "page", 1),
-		PageSize:      int32Query(r, "page_size", 20),
+		Filters: &gmbrpb.UserMembershipFilters{
+			CandidateUlid: candidateULID,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -98,11 +102,14 @@ func (h *Handler) ListMembershipBillings(w http.ResponseWriter, r *http.Request)
 		strings.TrimSpace(r.URL.Query().Get("membership_record_ulid")),
 		strings.TrimSpace(r.URL.Query().Get("membership_record_id")),
 	)
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gmbr.ListMembershipBillings(r.Context(), &gmbrpb.ListMembershipBillingsRequest{
-		CandidateUlid:        candidateULID,
-		MembershipRecordUlid: membershipRecordULID,
-		Page:                 int32Query(r, "page", 1),
-		PageSize:             int32Query(r, "page_size", 20),
+		Filters: &gmbrpb.MembershipBillingFilters{
+			CandidateUlid:        candidateULID,
+			MembershipRecordUlid: membershipRecordULID,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -231,12 +238,15 @@ func (h *Handler) AdminPurgeCandidateMembership(w http.ResponseWriter, r *http.R
 }
 
 func (h *Handler) ListMembershipMails(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gmbr.ListMembershipMails(r.Context(), &gmbrpb.ListMembershipMailsRequest{
-		CandidateUlid:    optionalString(strings.TrimSpace(r.URL.Query().Get("candidate_ulid"))),
-		TaskStatus:       optionalString(strings.TrimSpace(r.URL.Query().Get("task_status"))),
-		NotificationType: optionalString(strings.TrimSpace(r.URL.Query().Get("notification_type"))),
-		Page:             uint32Query(r, "page", 1),
-		PageSize:         uint32Query(r, "page_size", 20),
+		Filters: &gmbrpb.MembershipMailFilters{
+			CandidateUlid:    optionalString(strings.TrimSpace(r.URL.Query().Get("candidate_ulid"))),
+			TaskStatus:       optionalString(strings.TrimSpace(r.URL.Query().Get("task_status"))),
+			NotificationType: optionalString(strings.TrimSpace(r.URL.Query().Get("notification_type"))),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

@@ -20,6 +20,9 @@ const detailOpen = ref(false)
 const reprocessing = ref("")
 const page = ref(1)
 const total = ref(0)
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
 const status = ref("")
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.webhooks)
@@ -140,9 +143,10 @@ async function load(targetPage = page.value) {
   loading.value = true
   try {
     const params = new URLSearchParams({
-      page: String(targetPage),
       page_size: String(PAGE_SIZE),
     })
+    const cursor = cursorStack.value[targetPage - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     if (status.value) params.set("status", status.value)
 
     const data = await apiClient<JsonRecord>(`/api/audit/webhooks?${params}`)
@@ -152,7 +156,11 @@ async function load(targetPage = page.value) {
 
     messages.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || messages.value.length) || 0
-    page.value = Number(data.page || targetPage)
+    hasMore.value = Boolean(data.has_more)
+    nextCursor.value = String(data.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, targetPage)
+    cursorStack.value[targetPage] = nextCursor.value
+    page.value = targetPage
     const nextSelected = messages.value.find((item) => msgKey(item) === selectedKey) || messages.value[0] || null
     if (nextSelected) {
       await loadDetail(nextSelected, false, detailOpen.value)
@@ -167,6 +175,8 @@ async function load(targetPage = page.value) {
     selected.value = null
     detail.value = null
     detailOpen.value = false
+    hasMore.value = false
+    nextCursor.value = ""
     toast.error(copy.value.toasts.loadFailed)
   } finally {
     loading.value = false
@@ -217,11 +227,17 @@ async function reprocess(message: JsonRecord) {
 }
 
 function search() {
+  page.value = 1
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
   load(1)
 }
 
 function goPage(nextPage: number) {
-  if (nextPage < 1 || nextPage > totalPages.value || nextPage === page.value) return
+  if (nextPage < 1 || nextPage === page.value) return
+  if (nextPage > page.value && !hasMore.value) return
+  if (Math.abs(nextPage - page.value) !== 1) return
   load(nextPage)
 }
 
@@ -324,7 +340,7 @@ onMounted(() => load(1))
           <button
             class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
             type="button"
-            :disabled="page >= totalPages || loading"
+            :disabled="!hasMore || loading"
             @click="goPage(page + 1)"
           >
             {{ copy.next }}

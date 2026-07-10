@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -40,12 +41,14 @@ func (h *Handler) ListStageOrders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req := &mallpb.ListStageOrdersRequest{
-		CandidateUlid:  candidateULID,
-		PipelineCcUlid: pipelineCCULID,
-		StageCcUlid:    stageCCULID,
-		OrderStatus:    status, // The proto uses order_status string
-		Limit:          int32(parseUint32Query(r, "limit")),
-		Offset:         int32(parseUint32Query(r, "offset")),
+		Filters: &mallpb.StageOrderFilters{
+			CandidateUlid:  candidateULID,
+			PipelineCcUlid: pipelineCCULID,
+			StageCcUlid:    stageCCULID,
+			OrderStatus:    status,
+		},
+		Cursor:   strings.TrimSpace(r.URL.Query().Get("cursor")),
+		PageSize: parseCursorPage(r, 20).PageSize,
 	}
 
 	resp, err := h.Mall.ListStageOrders(r.Context(), req)
@@ -64,24 +67,37 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		BizRefULID:    strings.TrimSpace(r.URL.Query().Get("biz_ref_ulid")),
 		OrderStatus:   strings.TrimSpace(r.URL.Query().Get("order_status")),
 		PaymentStatus: strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("payment_status"))),
-		Limit:         int32Query(r, "limit", 20),
-		Offset:        int32Query(r, "offset", 0),
 	}
-	if query.Limit <= 0 {
-		query.Limit = 20
-	}
+	page := parseCursorPage(r, 20)
 
 	req := &mallpb.ListOrdersRequest{
-		CandidateUlid: query.CandidateULID,
-		BizType:       query.BizType,
-		BizRefUlid:    query.BizRefULID,
-		OrderStatus:   query.OrderStatus,
-		PaymentStatus: query.PaymentStatus,
-		Limit:         query.Limit,
-		Offset:        query.Offset,
+		Filters: &mallpb.OrderFilters{
+			CandidateUlid: query.CandidateULID,
+			BizType:       query.BizType,
+			BizRefUlid:    query.BizRefULID,
+			OrderStatus:   query.OrderStatus,
+			PaymentStatus: query.PaymentStatus,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	}
 
 	resp, err := h.Mall.ListOrders(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Mall.GetOrderCount(ctx, &mallpb.GetOrderCountRequest{
+			Filters: req.GetFilters(),
+			Limit:   limit,
+			Cursor:  cursor,
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -107,7 +123,14 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	WriteJSON(w, http.StatusOK, adminOrderListResponse{Items: items, Total: resp.GetTotal()})
+	WriteJSON(w, http.StatusOK, adminOrderListResponse{
+		Items:      items,
+		Total:      int32(total.Total),
+		TotalLabel: total.Label(),
+		TotalExact: total.Exact,
+		NextCursor: resp.GetNextCursor(),
+		HasMore:    resp.GetHasMore(),
+	})
 }
 
 type adminOrderListQuery struct {
@@ -116,13 +139,15 @@ type adminOrderListQuery struct {
 	BizRefULID    string
 	OrderStatus   string
 	PaymentStatus string
-	Limit         int32
-	Offset        int32
 }
 
 type adminOrderListResponse struct {
-	Items []adminOrderSummary `json:"items"`
-	Total int32               `json:"total"`
+	Items      []adminOrderSummary `json:"items"`
+	Total      int32               `json:"total"`
+	TotalLabel string              `json:"total_label,omitempty"`
+	TotalExact bool                `json:"total_exact"`
+	NextCursor string              `json:"next_cursor,omitempty"`
+	HasMore    bool                `json:"has_more"`
 }
 
 type adminOrderSummary struct {

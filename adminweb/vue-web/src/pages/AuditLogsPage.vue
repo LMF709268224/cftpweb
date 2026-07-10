@@ -18,6 +18,9 @@ const detailLoading = ref(false)
 const detailOpen = ref(false)
 const page = ref(1)
 const total = ref(0)
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
 const filters = ref({
   keyword: "",
   source_service: "",
@@ -32,7 +35,7 @@ const filters = ref({
 
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)))
 const canPrevious = computed(() => page.value > 1)
-const canNext = computed(() => page.value < totalPages.value)
+const canNext = computed(() => hasMore.value)
 const detailEntries = computed(() => Object.entries(detail.value || {}))
 
 function asRecordList(value: unknown) {
@@ -85,8 +88,9 @@ async function load() {
   loading.value = true
   try {
     const params = new URLSearchParams()
-    params.set("page", String(page.value))
     params.set("page_size", String(pageSize))
+    const cursor = cursorStack.value[page.value - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     for (const [key, value] of Object.entries(filters.value)) {
       const text = String(value || "").trim()
       if (!text) continue
@@ -95,6 +99,10 @@ async function load() {
     const data = await apiClient<JsonRecord>(`/api/audit/logs?${params}`)
     logs.value = asRecordList(data.items)
     total.value = Number(data.total || logs.value.length)
+    hasMore.value = Boolean(data.has_more)
+    nextCursor.value = String(data.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, page.value)
+    cursorStack.value[page.value] = nextCursor.value
     if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
       selected.value = logs.value[0] || null
     }
@@ -102,6 +110,8 @@ async function load() {
     console.error(err)
     logs.value = []
     total.value = 0
+    hasMore.value = false
+    nextCursor.value = ""
     selected.value = null
     toast.error(copy.value.toasts.loadFailed)
   } finally {
@@ -111,6 +121,9 @@ async function load() {
 
 function resetAndLoad() {
   page.value = 1
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
   void load()
 }
 

@@ -172,27 +172,18 @@ func (h *Handler) GetMail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListSentMails(w http.ResponseWriter, r *http.Request) {
-	page := 1
-	pageSize := 50
-	if p := r.URL.Query().Get("page"); p != "" {
-		if v, err := strconv.Atoi(p); err == nil && v > 0 {
-			page = v
-		}
-	}
-	if ps := r.URL.Query().Get("page_size"); ps != "" {
-		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
-			pageSize = v
-		}
-	}
+	page := parseCursorPage(r, 50)
 
 	var statusPtr *string
 	if status := r.URL.Query().Get("status"); status != "" {
 		statusPtr = &status
 	}
 	resp, err := h.Gmail.ListMails(r.Context(), &gmailpb.ListMailsRequest{
-		Page:     uint32(page),
-		PageSize: uint32(pageSize),
-		Status:   statusPtr,
+		Filters: &gmailpb.MailFilters{
+			Status: statusPtr,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		slog.Error("ListMails failed", "error", err)
@@ -327,12 +318,13 @@ func (h *Handler) DeleteMailTemplate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListMailTemplates(w http.ResponseWriter, r *http.Request) {
-	page := parsePositiveIntQuery(r, "page", 1)
-	pageSize := parsePositiveIntQuery(r, "page_size", 10)
+	page := parseCursorPage(r, 10)
 	resp, err := h.Gmail.ListTemplates(r.Context(), &gmailpb.ListTemplatesRequest{
-		BusinessUnit: optionalString(firstNonEmpty(r.URL.Query().Get("business_unit"), "adminserver")),
-		Page:         uint32(page),
-		PageSize:     uint32(pageSize),
+		Filters: &gmailpb.TemplateFilters{
+			BusinessUnit: optionalString(firstNonEmpty(r.URL.Query().Get("business_unit"), "adminserver")),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		slog.Error("ListMailTemplates failed", "error", err)
@@ -340,8 +332,7 @@ func (h *Handler) ListMailTemplates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	payload := jsonPayloadObject(resp)
-	payload["page"] = page
-	payload["page_size"] = pageSize
+	payload["page_size"] = page.PageSize
 	WriteJSON(w, http.StatusOK, payload)
 }
 

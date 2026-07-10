@@ -169,14 +169,18 @@ func (h *Handler) DuplicateBundle(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
-	req := &mallpb.ListBundlesAdminRequest{
-		Limit:  int32Query(r, "limit", 20),
-		Offset: int32Query(r, "offset", 0),
+	page := parseCursorPage(r, 20)
+	filters := &mallpb.BundleAdminFilters{
 		Status: strings.TrimSpace(r.URL.Query().Get("status")),
 	}
 	if _, ok := r.URL.Query()["is_current_only"]; ok {
 		isCurrentOnly := parseBoolQuery(r, "is_current_only")
-		req.IsCurrentOnly = &isCurrentOnly
+		filters.IsCurrentOnly = &isCurrentOnly
+	}
+	req := &mallpb.ListBundlesAdminRequest{
+		Filters:  filters,
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	}
 	resp, err := h.Mall.ListBundlesAdmin(r.Context(), req)
 	if err != nil {
@@ -255,12 +259,15 @@ func (h *Handler) AdminSyncBundleDisplayPricing(w http.ResponseWriter, r *http.R
 }
 
 func (h *Handler) ListBundleOrders(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
-		CandidateUlid: strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
-		BundleUlid:    strings.TrimSpace(r.URL.Query().Get("bundle_ulid")),
-		OrderStatus:   strings.TrimSpace(r.URL.Query().Get("order_status")),
-		Limit:         int32Query(r, "limit", 20),
-		Offset:        int32Query(r, "offset", 0),
+		Filters: &mallpb.BundleOrderFilters{
+			CandidateUlid: strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
+			BundleUlid:    strings.TrimSpace(r.URL.Query().Get("bundle_ulid")),
+			OrderStatus:   strings.TrimSpace(r.URL.Query().Get("order_status")),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

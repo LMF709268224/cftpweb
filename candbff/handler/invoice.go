@@ -27,12 +27,15 @@ var stripeInvoicePDFPattern = regexp.MustCompile(`https://invoice\.stripe\.com/i
 var stripeRelativeInvoicePDFPattern = regexp.MustCompile(`/i/[A-Za-z0-9_/-]+/pdf(?:\?[^"' <]*)?`)
 
 func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, orderID string) error {
-	limit := int32(50)
-	for offset := int32(0); ; offset += limit {
+	const limit uint32 = 50
+	cursor := ""
+	for {
 		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
-			CandidateUlid: candidateID,
-			Limit:         limit,
-			Offset:        offset,
+			Filters: &mallpb.OrderFilters{
+				CandidateUlid: candidateID,
+			},
+			Cursor:   cursor,
+			PageSize: limit,
 		})
 		if err != nil {
 			return err
@@ -45,12 +48,10 @@ func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, order
 				return nil
 			}
 		}
-		if len(resp.GetItems()) < int(limit) {
+		if !resp.GetHasMore() || resp.GetNextCursor() == "" {
 			break
 		}
-		if resp.GetTotal() > 0 && offset+limit >= resp.GetTotal() {
-			break
-		}
+		cursor = resp.GetNextCursor()
 	}
 	return NewError(http.StatusForbidden, ErrForbidden, "access denied")
 }

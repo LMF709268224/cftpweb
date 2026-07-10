@@ -20,10 +20,13 @@ type allResourcePackFilesPageToken struct {
 
 // ListLmsResourcePacks GET /api/lms/resource-packs
 func (h *Handler) ListLmsResourcePacks(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListResourcePacksAdmin(r.Context(), &lmspb.ListResourcePacksRequest{
-		PageSize:  parseUint32Query(r, "page_size"),
-		PageToken: r.URL.Query().Get("page_token"),
-		Status:    r.URL.Query().Get("status"),
+		Filters: &lmspb.ResourcePackFilters{
+			Status: r.URL.Query().Get("status"),
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -216,10 +219,13 @@ func (h *Handler) ListLmsResourcePackFiles(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
-		PackId:    packID,
-		PageSize:  parseUint32Query(r, "page_size"),
-		PageToken: r.URL.Query().Get("page_token"),
+		Filters: &lmspb.ResourcePackFileFilters{
+			PackId: packID,
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -332,10 +338,13 @@ func validateResourcePackFilePayload(w http.ResponseWriter, title string, fileTy
 func (h *Handler) ListAllLmsResourcePackFiles(w http.ResponseWriter, r *http.Request) {
 	packID := r.URL.Query().Get("pack_id")
 	if packID != "" {
+		page := parseCursorPage(r, 20)
 		resp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
-			PackId:    packID,
-			PageSize:  parseUint32Query(r, "page_size"),
-			PageToken: r.URL.Query().Get("page_token"),
+			Filters: &lmspb.ResourcePackFileFilters{
+				PackId: packID,
+			},
+			PageSize: page.PageSize,
+			Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 		})
 		if err != nil {
 			writeLmsError(w, err)
@@ -362,14 +371,14 @@ func (h *Handler) ListAllLmsResourcePackFiles(w http.ResponseWriter, r *http.Req
 				break
 			}
 			packsResp, err := h.Lms.ListResourcePacksAdmin(r.Context(), &lmspb.ListResourcePacksRequest{
-				PageSize:  resourcePackFilePackPageSize,
-				PageToken: state.PackNextToken,
+				PageSize: resourcePackFilePackPageSize,
+				Cursor:   state.PackNextToken,
 			})
 			if err != nil {
 				writeLmsError(w, err)
 				return
 			}
-			state.PackNextToken = packsResp.GetNextPageToken()
+			state.PackNextToken = packsResp.GetNextCursor()
 			state.PackListDone = state.PackNextToken == ""
 			for _, pack := range packsResp.GetPacks() {
 				if strings.TrimSpace(pack.GetPackId()) != "" {
@@ -384,9 +393,11 @@ func (h *Handler) ListAllLmsResourcePackFiles(w http.ResponseWriter, r *http.Req
 		packID := state.PackIDs[0]
 		remaining := pageSize - uint32(len(allFiles))
 		filesResp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
-			PackId:    packID,
-			PageSize:  remaining,
-			PageToken: state.FileToken,
+			Filters: &lmspb.ResourcePackFileFilters{
+				PackId: packID,
+			},
+			PageSize: remaining,
+			Cursor:   state.FileToken,
 		})
 		if err != nil {
 			writeLmsError(w, err)
@@ -394,7 +405,7 @@ func (h *Handler) ListAllLmsResourcePackFiles(w http.ResponseWriter, r *http.Req
 		}
 		if filesResp != nil {
 			allFiles = append(allFiles, filesResp.GetFiles()...)
-			state.FileToken = filesResp.GetNextPageToken()
+			state.FileToken = filesResp.GetNextCursor()
 		}
 		if state.FileToken != "" {
 			break

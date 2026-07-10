@@ -19,6 +19,11 @@ const applicationPageSize = ref(10)
 const applicationPageSizeOptions = [10, 30, 50, 100]
 const applicationTotal = ref(0)
 const applicationTotalPages = ref(0)
+const applicationTotalLabel = ref("")
+const applicationHasMore = ref(false)
+const applicationNextCursor = ref("")
+const applicationCursorStack = ref<string[]>([""])
+const lastApplicationPageSize = ref(applicationPageSize.value)
 const loading = ref(true)
 const applicationsLoading = ref(false)
 const selectedDef = ref<any>(null)
@@ -57,14 +62,20 @@ async function fetchApplications(options: { showLoading?: boolean } = {}) {
   if (options.showLoading) applicationsLoading.value = true
   try {
     const params = new URLSearchParams({
-      page: String(applicationPage.value),
       page_size: String(applicationPageSize.value),
     })
+    const cursor = applicationCursorStack.value[applicationPage.value - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     const appsRes = await apiClient(`/api/credentials/applications?${params.toString()}`)
     const nextApplications = appsRes?.applications || []
     applications.value = nextApplications
     applicationTotal.value = totalFrom(appsRes, nextApplications)
+    applicationTotalLabel.value = String(appsRes?.total_label || applicationTotal.value)
     applicationTotalPages.value = totalPagesFrom(appsRes, applicationTotal.value, applicationPageSize.value)
+    applicationHasMore.value = Boolean(appsRes?.has_more)
+    applicationNextCursor.value = String(appsRes?.next_cursor || "")
+    applicationCursorStack.value = applicationCursorStack.value.slice(0, applicationPage.value)
+    applicationCursorStack.value[applicationPage.value] = applicationNextCursor.value
   } finally {
     if (options.showLoading) applicationsLoading.value = false
   }
@@ -87,6 +98,13 @@ async function fetchData() {
 }
 
 async function handleApplicationPageChange() {
+  if (applicationPageSize.value !== lastApplicationPageSize.value) {
+    lastApplicationPageSize.value = applicationPageSize.value
+    applicationPage.value = 1
+    applicationCursorStack.value = [""]
+    applicationNextCursor.value = ""
+    applicationHasMore.value = false
+  }
   await fetchApplications({ showLoading: true })
 }
 
@@ -368,7 +386,10 @@ onMounted(fetchData)
             v-model:page-size="applicationPageSize"
             :total="applicationTotal"
             :total-pages="applicationTotalPages"
+            :total-label="applicationTotalLabel"
             :page-size-options="applicationPageSizeOptions"
+            cursor-mode
+            :has-more="applicationHasMore"
             :locale="lang"
             @page-change="handleApplicationPageChange"
           />

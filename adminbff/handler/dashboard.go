@@ -112,8 +112,7 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	userSummary := h.buildOpsUserSummary(cftpUsers, pageUsers, candidateByUserID, roleConfig, roleDefinitions)
 
 	pipelines, err := h.Gprog.ListPipelines(r.Context(), &gprogpb.ListPipelinesReq{
-		Limit:  adminDashboardSampleLimit,
-		Offset: 0,
+		PageSize: adminDashboardSampleLimit,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -148,9 +147,10 @@ func (h *Handler) OpsDashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	orders, err := h.Mall.ListOrders(r.Context(), &mallpb.ListOrdersRequest{
-		PaymentStatus: "PAID",
-		Limit:         adminDashboardSampleLimit,
-		Offset:        0,
+		Filters: &mallpb.OrderFilters{
+			PaymentStatus: "PAID",
+		},
+		PageSize: uint32(adminDashboardSampleLimit),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

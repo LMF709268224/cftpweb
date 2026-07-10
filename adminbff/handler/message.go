@@ -63,18 +63,7 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListSentMessages(w http.ResponseWriter, r *http.Request) {
-	page := 1
-	pageSize := 50
-	if p := r.URL.Query().Get("page"); p != "" {
-		if v, err := strconv.Atoi(p); err == nil && v > 0 {
-			page = v
-		}
-	}
-	if ps := r.URL.Query().Get("page_size"); ps != "" {
-		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
-			pageSize = v
-		}
-	}
+	page := parseCursorPage(r, 50)
 
 	var statusPtr *gmsgpb.MessageStatus
 	if statusStr := r.URL.Query().Get("status"); statusStr != "" {
@@ -85,9 +74,11 @@ func (h *Handler) ListSentMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gmsg.ListMessagesAdmin(r.Context(), &gmsgpb.ListMessagesAdminRequest{
-		Page:     uint32(page),
-		PageSize: uint32(pageSize),
-		Status:   statusPtr,
+		Filters: &gmsgpb.MessageAdminFilters{
+			Status: statusPtr,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		slog.Error("ListMessagesAdmin failed", "error", err)
@@ -128,12 +119,13 @@ func (h *Handler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ListTemplates(w http.ResponseWriter, r *http.Request) {
 	keyword := r.URL.Query().Get("keyword")
-	page := parsePositiveIntQuery(r, "page", 1)
-	pageSize := parsePositiveIntQuery(r, "page_size", 10)
+	page := parseCursorPage(r, 10)
 	resp, err := h.Gmsg.ListTemplates(r.Context(), &gmsgpb.ListTemplatesRequest{
-		Keyword:  keyword,
-		Page:     uint32(page),
-		PageSize: uint32(pageSize),
+		Filters: &gmsgpb.TemplateFilters{
+			Keyword: keyword,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		slog.Error("ListTemplates failed", "error", err)
@@ -141,8 +133,7 @@ func (h *Handler) ListTemplates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	payload := jsonPayloadObject(resp)
-	payload["page"] = page
-	payload["page_size"] = pageSize
+	payload["page_size"] = page.PageSize
 	WriteJSON(w, http.StatusOK, payload)
 }
 

@@ -38,13 +38,15 @@ func (h *Handler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 2. 获取未读消息数
-	msgResp, err := h.Gmsg.ListMessages(ctx, &gmsgpb.ListMessagesRequest{
-		UserUlid: candidateID,
-		Status:   gmsgpb.MessageStatus_UNREAD.Enum(),
-		Limit:    99,
+	msgResp, err := h.Gmsg.GetMessageCount(ctx, &gmsgpb.GetMessageCountRequest{
+		Filters: &gmsgpb.MessageFilters{
+			UserUlid: candidateID,
+			Status:   gmsgpb.MessageStatus_UNREAD.Enum(),
+		},
+		Limit: 99,
 	})
 	if err == nil {
-		out.UnreadMessagesCount = uint32(len(msgResp.GetMessages()))
+		out.UnreadMessagesCount = msgResp.GetCount()
 	}
 
 	WriteJSON(w, http.StatusOK, out)

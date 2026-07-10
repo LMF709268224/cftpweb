@@ -403,11 +403,14 @@ func (h *Handler) candidateExamDetail(ctx context.Context, candidateID, examID s
 		return nil, NewError(http.StatusForbidden, ErrForbidden, "exam is not available for current candidate")
 	}
 
-	for page := uint32(1); ; page++ {
+	cursor := ""
+	for {
 		req := &gexampb.ListExamsRequest{
-			CandidateUlid: &candidateID,
-			Page:          page,
-			PageSize:      100,
+			Filters: &gexampb.ExamFilters{
+				CandidateUlid: &candidateID,
+			},
+			Cursor:   cursor,
+			PageSize: 100,
 		}
 		resp, err := h.Gexam.ListExams(ctx, req)
 		if err != nil {
@@ -418,9 +421,10 @@ func (h *Handler) candidateExamDetail(ctx context.Context, candidateID, examID s
 				return detail, nil
 			}
 		}
-		if len(resp.GetExams()) == 0 || page*100 >= resp.GetTotal() {
+		if !resp.GetHasMore() || resp.GetNextCursor() == "" {
 			break
 		}
+		cursor = resp.GetNextCursor()
 	}
 	return nil, NewError(http.StatusForbidden, ErrForbidden, "exam is not available for current candidate")
 }
@@ -450,26 +454,27 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 	resultStatus := strings.TrimSpace(r.URL.Query().Get("result_status"))
 	confirmationNumber := strings.TrimSpace(r.URL.Query().Get("confirmation_number"))
 	courseUnitUlid := strings.TrimSpace(r.URL.Query().Get("course_unit_ulid"))
-	page, pageSize := parsePagination(r, 20)
+	page := parseCursorPage(r, 20)
 
 	req := &gexampb.ListExamsRequest{
-		Page:     uint32(page),
-		PageSize: uint32(pageSize),
+		Filters:  &gexampb.ExamFilters{},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	}
 	if status != "" {
-		req.Status = &status
+		req.Filters.Status = &status
 	}
 	if resultStatus != "" {
-		req.ResultStatus = &resultStatus
+		req.Filters.ResultStatus = &resultStatus
 	}
 	if confirmationNumber != "" {
-		req.ConfirmationNumber = &confirmationNumber
+		req.Filters.ConfirmationNumber = &confirmationNumber
 	}
 	if courseUnitUlid != "" {
-		req.CourseUnitUlid = &courseUnitUlid
+		req.Filters.CourseUnitUlid = &courseUnitUlid
 	}
 	if candidateID != "" {
-		req.CandidateUlid = &candidateID
+		req.Filters.CandidateUlid = &candidateID
 	}
 
 	resp, err := h.Gexam.ListExams(r.Context(), req)
@@ -477,10 +482,29 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Gexam.GetExamCount(ctx, &gexampb.GetExamCountRequest{
+			Filters: req.GetFilters(),
+			Limit:   limit,
+			Cursor:  cursor,
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 
 	out := ListExamsRsp{
-		Exams: make([]ExamListItem, 0, len(resp.GetExams())),
-		Total: resp.GetTotal(),
+		Exams:      make([]ExamListItem, 0, len(resp.GetExams())),
+		Total:      total.Total,
+		TotalLabel: total.Label(),
+		TotalExact: total.Exact,
+		NextCursor: resp.GetNextCursor(),
+		HasMore:    resp.GetHasMore(),
 	}
 	bundleOrdersByPipeline := h.completedBundleOrdersByPipeline(r, candidateID)
 	for _, exam := range resp.GetExams() {
@@ -705,11 +729,13 @@ func (h *Handler) retakePaymentSnapshot(ctx context.Context, candidateID, course
 	}
 
 	orders, err := h.Mall.ListCourseRetakeOrders(ctx, &mallpb.ListCourseRetakeOrdersRequest{
-		CandidateUlid:    candidateID,
-		CourseUnitUlid:   courseUnitUlid,
-		CourseUnitCcUlid: courseUnitCcUlid,
-		BundleOrderUlid:  bundleOrderUlid,
-		Limit:            20,
+		Filters: &mallpb.CourseRetakeOrderFilters{
+			CandidateUlid:    candidateID,
+			CourseUnitUlid:   courseUnitUlid,
+			CourseUnitCcUlid: courseUnitCcUlid,
+			BundleOrderUlid:  bundleOrderUlid,
+		},
+		PageSize: 20,
 	})
 	if err != nil {
 		slog.Warn("retake payment snapshot list orders failed", "candidate_id", candidateID, "course_unit_ulid", courseUnitUlid, "course_unit_cc_ulid", courseUnitCcUlid, "error", err)
@@ -747,8 +773,10 @@ func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID s
 		return out
 	}
 	resp, err := h.Mall.ListBundleOrders(r.Context(), &mallpb.ListBundleOrdersRequest{
-		CandidateUlid: candidateID,
-		Limit:         100,
+		Filters: &mallpb.BundleOrderFilters{
+			CandidateUlid: candidateID,
+		},
+		PageSize: 100,
 	})
 	if err != nil {
 		slog.Warn("ListExams list bundle orders failed", "candidate_id", candidateID, "error", err)

@@ -56,6 +56,12 @@ const candidateFilter = ref("")
 const statusFilter = ref("all")
 const offset = ref(0)
 const logOffset = ref(0)
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
+const logsHasMore = ref(false)
+const logsNextCursor = ref("")
+const logsCursorStack = ref<string[]>([""])
 const activeTab = ref<DetailTab>("overview")
 const selectedStageIndex = ref(0)
 const selectedUnitKey = ref("")
@@ -98,9 +104,9 @@ const selectedStage = computed(() => stages.value[selectedStageIndex.value] || n
 const selectedUnit = computed(() => units.value.find((item) => item.key === selectedUnitKey.value) || units.value[0] || null)
 const totalUnits = computed(() => units.value.length)
 const canPrev = computed(() => offset.value > 0)
-const canNext = computed(() => pipelines.value.length >= pageSize)
+const canNext = computed(() => hasMore.value)
 const canPrevLogs = computed(() => logOffset.value > 0)
-const canNextLogs = computed(() => logs.value.length >= logPageSize)
+const canNextLogs = computed(() => logsHasMore.value)
 const isPipelineCancelled = computed(() => isCancelledPipelineStatus(selectedStatus.value))
 const canViewCertificate = computed(() => Boolean(selectedPipelineUlid.value && selectedCandidateUlid.value && !isPipelineCancelled.value))
 const canTerminatePipeline = computed(() => Boolean(selectedPipelineUlid.value && !["3", "5", "COMPLETED", "CANCELLED"].includes(normalizedPipelineStatus(selectedStatus.value))))
@@ -326,18 +332,26 @@ async function loadPipelineCatalog() {
 async function loadPipelines() {
   loading.value = true
   try {
+    const currentPage = Math.floor(offset.value / pageSize) + 1
     const params = new URLSearchParams({
-      limit: String(pageSize),
-      offset: String(offset.value),
+      page_size: String(pageSize),
     })
+    const cursor = cursorStack.value[currentPage - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     if (candidateFilter.value.trim()) params.set("candidate_ulid", candidateFilter.value.trim())
     if (statusFilter.value !== "all") params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/prog/pipelines?${params}`)
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
     pipelines.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    hasMore.value = Boolean(data.has_more)
+    nextCursor.value = String(data.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, currentPage)
+    cursorStack.value[currentPage] = nextCursor.value
   } catch (err) {
     console.error(err)
     pipelines.value = []
+    hasMore.value = false
+    nextCursor.value = ""
     toast.error(copy.value.toasts.listLoadFailed)
   } finally {
     loading.value = false
@@ -353,6 +367,9 @@ async function openPipeline(pipeline: JsonRecord) {
   certificateTasks.value = []
   selectedCertificateTask.value = null
   certificateTaskDetail.value = null
+  logsCursorStack.value = [""]
+  logsNextCursor.value = ""
+  logsHasMore.value = false
   activeTab.value = "overview"
   selectedStageIndex.value = 0
   selectedUnitKey.value = ""
@@ -379,13 +396,19 @@ async function loadLogs(pipelineId = selectedPipelineUlid.value, targetOffset = 
   if (!pipelineId) return
   logsLoading.value = true
   try {
+    const currentPage = Math.floor(targetOffset / logPageSize) + 1
     const params = new URLSearchParams({
-      limit: String(logPageSize),
-      offset: String(targetOffset),
+      page_size: String(logPageSize),
     })
+    const cursor = logsCursorStack.value[currentPage - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     const data = await apiClient<JsonRecord>(`/api/prog/pipelines/${encodeURIComponent(pipelineId)}/logs?${params}`)
     const list = Array.isArray(data.logs) ? data.logs : []
     logs.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    logsHasMore.value = Boolean(data.has_more)
+    logsNextCursor.value = String(data.next_cursor || "")
+    logsCursorStack.value = logsCursorStack.value.slice(0, currentPage)
+    logsCursorStack.value[currentPage] = logsNextCursor.value
     logOffset.value = targetOffset
     selectedLog.value = logs.value[0] || null
     if (selectedLog.value) await loadLogDetail(String(selectedLog.value.transition_ulid || ""))
@@ -394,6 +417,8 @@ async function loadLogs(pipelineId = selectedPipelineUlid.value, targetOffset = 
     logs.value = []
     selectedLog.value = null
     logDetail.value = null
+    logsHasMore.value = false
+    logsNextCursor.value = ""
     toast.error(copy.value.toasts.logsLoadFailed)
   } finally {
     logsLoading.value = false
@@ -554,7 +579,18 @@ function backToList() {
   activeTab.value = "overview"
 }
 
-watch([candidateFilter, statusFilter, offset], () => loadPipelines())
+watch([candidateFilter, statusFilter], () => {
+  selectedSummary.value = null
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
+  if (offset.value !== 0) {
+    offset.value = 0
+    return
+  }
+  void loadPipelines()
+})
+watch(offset, () => loadPipelines())
 onMounted(async () => {
   await Promise.all([loadPipelineCatalog(), loadPipelines()])
 })

@@ -10,11 +10,17 @@ const props = withDefaults(defineProps<{
   pageSizeOptions?: number[]
   disabled?: boolean
   locale?: "zh" | "en"
+  cursorMode?: boolean
+  hasMore?: boolean
+  totalLabel?: string
 }>(), {
   totalPages: 0,
   pageSizeOptions: () => [30, 50, 100],
   disabled: false,
   locale: "zh",
+  cursorMode: false,
+  hasMore: false,
+  totalLabel: "",
 })
 
 const emit = defineEmits<{
@@ -51,6 +57,8 @@ const normalizedTotalPages = computed(() => {
   if (props.total <= 0) return 1
   return Math.max(1, Math.ceil(props.total / props.pageSize))
 })
+
+const displayedTotal = computed(() => props.totalLabel || String(props.total))
 
 const pageItems = computed<(number | "...")[]>(() => {
   const total = normalizedTotalPages.value
@@ -115,6 +123,14 @@ onBeforeUnmount(() => {
 
 function requestPage(nextPage: number) {
   if (props.disabled) return
+  if (props.cursorMode) {
+    if (nextPage < 1 || nextPage === props.page) return
+    if (nextPage > props.page && !props.hasMore) return
+    if (Math.abs(nextPage - props.page) !== 1) return
+    emit("update:page", nextPage)
+    emit("page-change")
+    return
+  }
   const maxPage = normalizedTotalPages.value
   if (nextPage < 1 || nextPage > maxPage || nextPage === props.page) return
   emit("update:page", nextPage)
@@ -180,7 +196,7 @@ function submitPageJump() {
 <template>
   <div ref="paginationRef" class="app-pagination">
     <div class="pagination-total">
-      <span>{{ labels.total }} {{ total }}</span>
+      <span>{{ labels.total }} {{ displayedTotal }}</span>
       <div ref="pageSizeWrapRef" class="page-size-wrap">
         <button
           type="button"
@@ -218,36 +234,39 @@ function submitPageJump() {
       >
         <ChevronLeft class="h-4 w-4" />
       </button>
-      <template v-for="(item, index) in pageItems" :key="`desktop-${item}-${index}`">
-        <span v-if="item === '...'" class="page-ellipsis desktop-page-item">...</span>
-        <button
-          v-else
-          type="button"
-          class="page-number desktop-page-item"
-          :class="{ 'is-active': item === page }"
-          :disabled="disabled || item === page"
-          @click="requestPage(item)"
-        >
-          {{ item }}
-        </button>
+      <template v-if="!cursorMode">
+        <template v-for="(item, index) in pageItems" :key="`desktop-${item}-${index}`">
+          <span v-if="item === '...'" class="page-ellipsis desktop-page-item">...</span>
+          <button
+            v-else
+            type="button"
+            class="page-number desktop-page-item"
+            :class="{ 'is-active': item === page }"
+            :disabled="disabled || item === page"
+            @click="requestPage(item)"
+          >
+            {{ item }}
+          </button>
+        </template>
+        <template v-for="(item, index) in mobilePageItems" :key="`mobile-${item}-${index}`">
+          <span v-if="item === '...'" class="page-ellipsis mobile-page-item">...</span>
+          <button
+            v-else
+            type="button"
+            class="page-number mobile-page-item"
+            :class="{ 'is-active': item === page }"
+            :disabled="disabled || item === page"
+            @click="requestPage(item)"
+          >
+            {{ item }}
+          </button>
+        </template>
       </template>
-      <template v-for="(item, index) in mobilePageItems" :key="`mobile-${item}-${index}`">
-        <span v-if="item === '...'" class="page-ellipsis mobile-page-item">...</span>
-        <button
-          v-else
-          type="button"
-          class="page-number mobile-page-item"
-          :class="{ 'is-active': item === page }"
-          :disabled="disabled || item === page"
-          @click="requestPage(item)"
-        >
-          {{ item }}
-        </button>
-      </template>
+      <span v-if="cursorMode" class="page-number is-active">{{ page }}</span>
       <button
         type="button"
         class="page-arrow"
-        :disabled="disabled || page >= normalizedTotalPages"
+        :disabled="disabled || (cursorMode ? !hasMore : page >= normalizedTotalPages)"
         :aria-label="labels.next"
         @click="requestPage(page + 1)"
       >
@@ -255,7 +274,7 @@ function submitPageJump() {
       </button>
     </div>
 
-    <div class="pagination-jump">
+    <div v-if="!cursorMode" class="pagination-jump">
       <span>{{ labels.goTo }}</span>
       <label class="sr-only" for="pagination-page-jump">{{ labels.pageNumber }}</label>
       <input

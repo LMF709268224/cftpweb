@@ -3,7 +3,6 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 
 	gexampb "github.com/afnandelfin620-star/cftptest/cftp/gexam"
@@ -11,27 +10,18 @@ import (
 )
 
 func (h *Handler) ListAdminExams(w http.ResponseWriter, r *http.Request) {
-	page := 1
-	pageSize := 10
-	if p := r.URL.Query().Get("page"); p != "" {
-		if v, err := strconv.Atoi(p); err == nil && v > 0 {
-			page = v
-		}
-	}
-	if ps := r.URL.Query().Get("page_size"); ps != "" {
-		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
-			pageSize = v
-		}
-	}
+	page := parseCursorPage(r, 10)
 
 	req := &gexampb.ListExamsRequest{
-		Page:               uint32(page),
-		PageSize:           uint32(pageSize),
-		Status:             optionalString(r.URL.Query().Get("status")),
-		ResultStatus:       optionalString(r.URL.Query().Get("result_status")),
-		CandidateUlid:      optionalString(r.URL.Query().Get("candidate_ulid")),
-		ConfirmationNumber: optionalString(r.URL.Query().Get("confirmation_number")),
-		CourseUnitUlid:     optionalString(r.URL.Query().Get("course_unit_ulid")),
+		Filters: &gexampb.ExamFilters{
+			Status:             optionalString(r.URL.Query().Get("status")),
+			ResultStatus:       optionalString(r.URL.Query().Get("result_status")),
+			CandidateUlid:      optionalString(r.URL.Query().Get("candidate_ulid")),
+			ConfirmationNumber: optionalString(r.URL.Query().Get("confirmation_number")),
+			CourseUnitUlid:     optionalString(r.URL.Query().Get("course_unit_ulid")),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	}
 
 	resp, err := h.Gexam.ListExams(r.Context(), req)
@@ -101,18 +91,7 @@ func (h *Handler) SyncAdminExamResult(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListWebhookMessages(w http.ResponseWriter, r *http.Request) {
-	page := 1
-	pageSize := 50
-	if p := r.URL.Query().Get("page"); p != "" {
-		if v, err := strconv.Atoi(p); err == nil && v > 0 {
-			page = v
-		}
-	}
-	if ps := r.URL.Query().Get("page_size"); ps != "" {
-		if v, err := strconv.Atoi(ps); err == nil && v > 0 {
-			pageSize = v
-		}
-	}
+	page := parseCursorPage(r, 50)
 
 	var statusPtr *string
 	if status := r.URL.Query().Get("status"); status != "" {
@@ -120,9 +99,11 @@ func (h *Handler) ListWebhookMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gexam.ListWebhookMessages(r.Context(), &gexampb.ListWebhookMessagesRequest{
-		Page:            uint32(page),
-		PageSize:        uint32(pageSize),
-		ProcessedStatus: statusPtr,
+		Filters: &gexampb.WebhookFilters{
+			ProcessedStatus: statusPtr,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

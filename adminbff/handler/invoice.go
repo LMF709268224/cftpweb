@@ -1,8 +1,8 @@
 package handler
 
 import (
+	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	gpaypb "github.com/afnandelfin620-star/cftptest/cftp/gpay"
@@ -21,24 +21,21 @@ type InvoiceItem struct {
 }
 
 type ListInvoicesRsp struct {
-	Total    uint32        `json:"total"`
-	Invoices []InvoiceItem `json:"invoices"`
+	Total      uint32        `json:"total"`
+	TotalLabel string        `json:"total_label,omitempty"`
+	TotalExact bool          `json:"total_exact"`
+	Invoices   []InvoiceItem `json:"invoices"`
+	NextCursor string        `json:"next_cursor,omitempty"`
+	HasMore    bool          `json:"has_more"`
 }
 
 // ListInvoices GET /api/invoices
 func (h *Handler) ListInvoices(w http.ResponseWriter, r *http.Request) {
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	if page <= 0 {
-		page = 1
-	}
-	pageSize, _ := strconv.Atoi(r.URL.Query().Get("page_size"))
-	if pageSize <= 0 || pageSize > 100 {
-		pageSize = 20
-	}
+	page := parseCursorPage(r, 20)
 
 	req := &gpaypb.ListInvoicesRequest{
-		Page:     uint32(page),
-		PageSize: uint32(pageSize),
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	}
 
 	resp, err := h.Gpay.ListInvoices(r.Context(), req)
@@ -46,10 +43,29 @@ func (h *Handler) ListInvoices(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Gpay.GetInvoiceCount(ctx, &gpaypb.GetInvoiceCountRequest{
+			Filters: req.GetFilters(),
+			Limit:   limit,
+			Cursor:  cursor,
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 
 	rsp := ListInvoicesRsp{
-		Total:    resp.GetTotal(),
-		Invoices: make([]InvoiceItem, 0, len(resp.GetInvoices())),
+		Total:      total.Total,
+		TotalLabel: total.Label(),
+		TotalExact: total.Exact,
+		Invoices:   make([]InvoiceItem, 0, len(resp.GetInvoices())),
+		NextCursor: resp.GetNextCursor(),
+		HasMore:    resp.GetHasMore(),
 	}
 
 	for _, inv := range resp.GetInvoices() {

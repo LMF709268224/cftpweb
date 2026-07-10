@@ -46,6 +46,10 @@ const navRouteGroups: Record<string, string[]> = {
   "/messages": ["/messages"],
 }
 
+function badgeCountLabel(count: number) {
+  return count >= 99 ? "99+" : String(count)
+}
+
 function isNavItemActive(href: string) {
   const currentPath = route.path
   const groups = navRouteGroups[href] || [href]
@@ -66,7 +70,7 @@ const navItems = computed(() => [
   { href: "/certificates", label: t.value.sidebar.certificates, group: t.value.sidebar.groupMine },
   { href: "/membership", label: t.value.sidebar.membership, group: t.value.sidebar.groupMine },
   { href: "/orders", label: t.value.sidebar.orders, group: t.value.sidebar.groupMine },
-  { href: "/messages", label: t.value.sidebar.messages, group: t.value.sidebar.groupMine, badge: unreadCount.value > 0 ? unreadCount.value : undefined },
+  { href: "/messages", label: t.value.sidebar.messages, group: t.value.sidebar.groupMine, badge: unreadCount.value > 0 ? badgeCountLabel(unreadCount.value) : undefined },
 ])
 
 const navIconByHref = {

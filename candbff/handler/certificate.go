@@ -12,7 +12,6 @@ func (h *Handler) ListCertificates(w http.ResponseWriter, r *http.Request) {
 
 	credsResp, err := h.Creds.ListCandidateCredentials(r.Context(), &gcredspb.ListCandidateCredentialsRequest{
 		CandidateUlid: candidateID,
-		Page:          1,
 		PageSize:      100,
 	})
 	if err != nil {

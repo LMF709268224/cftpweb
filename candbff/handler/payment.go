@@ -43,10 +43,9 @@ type candidateCancelableOrder struct {
 // ListOrders GET /api/orders
 func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
-	page := parsePositiveIntQuery(r, "page", 1)
-	pageSize := parsePositiveIntQuery(r, "page_size", parsePositiveIntQuery(r, "limit", 10))
-	if pageSize > defaultCandidateOrderPageMax {
-		pageSize = defaultCandidateOrderPageMax
+	page := parseCursorPage(r, 10)
+	if page.PageSize > defaultCandidateOrderPageMax {
+		page.PageSize = defaultCandidateOrderPageMax
 	}
 
 	bizType := normalizeOrderBizType(r.URL.Query().Get("biz_type"))
@@ -56,20 +55,32 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 	}
 	orderStatus := normalizeOrderStatusFilter(r)
 
-	var offset int64 = int64(page-1) * int64(pageSize)
-	if offset > 2147483647 { // math.MaxInt32
-		offset = 2147483647
-	}
-
 	req := &mallpb.ListOrdersRequest{
-		CandidateUlid: candidateID,
-		BizType:       bizType,
-		OrderStatus:   orderStatus,
-		Limit:         int32(pageSize),
-		Offset:        int32(offset),
+		Filters: &mallpb.OrderFilters{
+			CandidateUlid: candidateID,
+			BizType:       bizType,
+			OrderStatus:   orderStatus,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	}
 
 	resp, err := h.Mall.ListOrders(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Mall.GetOrderCount(ctx, &mallpb.GetOrderCountRequest{
+			Filters: req.GetFilters(),
+			Limit:   limit,
+			Cursor:  cursor,
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
@@ -122,24 +133,23 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		outOrders = append(outOrders, orderItem)
 	}
 
-	totalOrders := int(resp.GetTotal())
 	completed, totalAmount, err := h.candidateOrderAggregates(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
-	totalPages := 0
-	if totalOrders > 0 {
-		totalPages = (totalOrders + pageSize - 1) / pageSize
-	}
 
 	WriteJSON(w, http.StatusOK, OrderListRsp{
-		TotalOrders: totalOrders,
+		TotalOrders: int(total.Total),
+		TotalLabel:  total.Label(),
+		TotalExact:  total.Exact,
 		Completed:   completed,
 		TotalAmount: totalAmount,
-		Page:        page,
-		PageSize:    pageSize,
-		TotalPages:  totalPages,
+		Page:        1,
+		PageSize:    int(page.PageSize),
+		TotalPages:  0,
+		NextCursor:  resp.GetNextCursor(),
+		HasMore:     resp.GetHasMore(),
 		Orders:      outOrders,
 	})
 }
@@ -148,16 +158,15 @@ func (h *Handler) candidateOrderAggregates(ctx context.Context, baseReq *mallpb.
 	if baseReq == nil {
 		return 0, 0, nil
 	}
-	const limit int32 = 50
+	const limit uint32 = 50
 	completed := 0
 	totalAmount := 0.0
-	for offset := int32(0); ; offset += limit {
+	cursor := ""
+	for {
 		resp, err := h.Mall.ListOrders(ctx, &mallpb.ListOrdersRequest{
-			CandidateUlid: baseReq.GetCandidateUlid(),
-			BizType:       baseReq.GetBizType(),
-			OrderStatus:   baseReq.GetOrderStatus(),
-			Limit:         limit,
-			Offset:        offset,
+			Filters:  baseReq.GetFilters(),
+			Cursor:   cursor,
+			PageSize: limit,
 		})
 		if err != nil {
 			return 0, 0, err
@@ -172,9 +181,10 @@ func (h *Handler) candidateOrderAggregates(ctx context.Context, baseReq *mallpb.
 				totalAmount += float64(item.GetAmountMinor()) / 100.0
 			}
 		}
-		if len(items) < int(limit) || (resp.GetTotal() > 0 && offset+limit >= resp.GetTotal()) {
+		if !resp.GetHasMore() || resp.GetNextCursor() == "" {
 			break
 		}
+		cursor = resp.GetNextCursor()
 	}
 	return completed, totalAmount, nil
 }

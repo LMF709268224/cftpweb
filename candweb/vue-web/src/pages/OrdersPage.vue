@@ -82,6 +82,11 @@ const pageSize = ref(10)
 const pageSizeOptions = [10, 30, 50, 100]
 const totalOrders = ref(0)
 const totalPages = ref(0)
+const totalLabel = ref("")
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
+const lastPageSize = ref(pageSize.value)
 const selectedBizType = ref("")
 const selectedOrderStatus = ref("")
 const invoiceLoading = ref<string | null>(null)
@@ -310,14 +315,20 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
   if (showLoading) loading.value = true
   try {
     const params = new URLSearchParams({
-      page: String(page.value),
       page_size: String(pageSize.value),
     })
+    const cursor = cursorStack.value[page.value - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     if (selectedBizType.value) params.set("biz_type", selectedBizType.value)
     if (selectedOrderStatus.value) params.set("status", selectedOrderStatus.value)
     const res = await apiClient(`/api/orders?${params.toString()}`, { suppressErrorToast })
     totalOrders.value = Number(res.total_orders || 0)
+    totalLabel.value = String(res.total_label || totalOrders.value)
     totalPages.value = Number(res.total_pages || 0)
+    hasMore.value = Boolean(res.has_more)
+    nextCursor.value = String(res.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, page.value)
+    cursorStack.value[page.value] = nextCursor.value
     if (Array.isArray(res.orders)) {
       orders.value = res.orders.map((o: any) => ({
         id: o.order_id,
@@ -343,25 +354,39 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     orders.value = []
     totalOrders.value = 0
     totalPages.value = 0
+    totalLabel.value = "0"
+    hasMore.value = false
+    nextCursor.value = ""
   } finally {
     if (showLoading) loading.value = false
   }
 }
 
+function resetCursorPagination() {
+  page.value = 1
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
+}
+
 function changeOrderType(value: string) {
   selectedBizType.value = value
-  page.value = 1
+  resetCursorPagination()
   void fetchOrders()
 }
 
 function changeOrderStatus(value: string) {
   selectedOrderStatus.value = value
-  page.value = 1
+  resetCursorPagination()
   void fetchOrders()
 }
 
 function handlePaginationChange() {
   if (loading.value) return
+  if (pageSize.value !== lastPageSize.value) {
+    lastPageSize.value = pageSize.value
+    resetCursorPagination()
+  }
   void fetchOrders()
 }
 
@@ -478,9 +503,12 @@ onMounted(() => {
           v-model:page-size="pageSize"
           :total="totalOrders"
           :total-pages="totalPages"
+          :total-label="totalLabel"
           :page-size-options="pageSizeOptions"
           :disabled="loading"
           :locale="lang"
+          cursor-mode
+          :has-more="hasMore"
           @page-change="handlePaginationChange"
         />
       </div>

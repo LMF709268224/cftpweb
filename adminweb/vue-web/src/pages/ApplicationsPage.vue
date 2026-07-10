@@ -19,6 +19,9 @@ const detailOpen = ref(false)
 const auditing = ref(false)
 const page = ref(1)
 const total = ref(0)
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
 const statusFilter = ref("0")
 const auditRemark = ref("")
 const activeTab = ref<DetailTab>("overview")
@@ -29,7 +32,7 @@ const { t } = useAdminLanguage()
 const copy = computed(() => t.value.applications)
 
 const canPrev = computed(() => page.value > 1)
-const canNext = computed(() => applications.value.length >= pageSize)
+const canNext = computed(() => hasMore.value)
 const applicationFieldLabels = computed<Record<string, string>>(() => copy.value.fieldLabels || {})
 const applicationIdKeys = new Set(["app_ulid", "app_id", "application_ulid", "application_id"])
 const selectedFields = computed(() => {
@@ -221,10 +224,20 @@ function closeDetail() {
 async function load(targetPage = page.value) {
   loading.value = true
   try {
-    const data = await apiClient<JsonRecord>(`/api/applications?page_number=${targetPage}&page_size=${pageSize}&status=${statusFilter.value}`)
+    const params = new URLSearchParams({
+      page_size: String(pageSize),
+      status: statusFilter.value,
+    })
+    const cursor = cursorStack.value[targetPage - 1] || ""
+    if (cursor) params.set("cursor", cursor)
+    const data = await apiClient<JsonRecord>(`/api/applications?${params}`)
     const list = Array.isArray(data.applications) ? data.applications : []
     applications.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || applications.value.length) || 0
+    hasMore.value = Boolean(data.has_more)
+    nextCursor.value = String(data.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, targetPage)
+    cursorStack.value[targetPage] = nextCursor.value
     selected.value = applications.value[0] || null
     activeTab.value = "overview"
     page.value = targetPage
@@ -234,6 +247,8 @@ async function load(targetPage = page.value) {
     applications.value = []
     selected.value = null
     total.value = 0
+    hasMore.value = false
+    nextCursor.value = ""
     toast.error(copy.value.toasts.listLoadFailed)
   } finally {
     loading.value = false
@@ -269,7 +284,17 @@ async function audit(action: "approve" | "reject" | "resubmit") {
   }
 }
 
-watch(statusFilter, () => load(1))
+function resetCursorPagination() {
+  page.value = 1
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
+}
+
+watch(statusFilter, () => {
+  resetCursorPagination()
+  void load(1)
+})
 onMounted(() => load(1))
 </script>
 

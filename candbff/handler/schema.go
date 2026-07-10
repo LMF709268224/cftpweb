@@ -445,8 +445,12 @@ type ExamListItem struct {
 }
 
 type ListExamsRsp struct {
-	Exams []ExamListItem `json:"exams"`
-	Total uint32         `json:"total"`
+	Exams      []ExamListItem `json:"exams"`
+	Total      uint32         `json:"total"`
+	TotalLabel string         `json:"total_label,omitempty"`
+	TotalExact bool           `json:"total_exact"`
+	NextCursor string         `json:"next_cursor,omitempty"`
+	HasMore    bool           `json:"has_more"`
 }
 
 type CandidateSignupExamRsp struct {
@@ -638,11 +642,15 @@ type PreviewPaymentReq struct {
 
 type OrderListRsp struct {
 	TotalOrders int         `json:"total_orders"`
+	TotalLabel  string      `json:"total_label,omitempty"`
+	TotalExact  bool        `json:"total_exact"`
 	Completed   int         `json:"completed"`
 	TotalAmount float64     `json:"total_amount"`
 	Page        int         `json:"page"`
 	PageSize    int         `json:"page_size"`
 	TotalPages  int         `json:"total_pages"`
+	NextCursor  string      `json:"next_cursor,omitempty"`
+	HasMore     bool        `json:"has_more"`
 	Orders      []OrderItem `json:"orders"`
 }
 
@@ -716,8 +724,9 @@ type MessageItem struct {
 }
 
 type MessageListRsp struct {
-	Messages []MessageItem `json:"messages"`
-	HasMore  bool          `json:"has_more"`
+	Messages   []MessageItem `json:"messages"`
+	HasMore    bool          `json:"has_more"`
+	NextCursor string        `json:"next_cursor,omitempty"`
 }
 
 type MessageUnreadCountRsp struct {

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
@@ -98,12 +99,31 @@ func (h *Handler) CreateCredentialDefinition(w http.ResponseWriter, r *http.Requ
 
 // ListCredentials GET /api/credentials
 func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
-	res, err := h.Creds.ListCredentials(r.Context(), &gcredspb.ListCredentialsRequest{
+	page := parseCursorPage(r, 20)
+	filters := &gcredspb.CredentialFilters{
 		CandidateUlid: strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
 		CredDefUlid:   strings.TrimSpace(r.URL.Query().Get("cred_def_ulid")),
 		Status:        strings.TrimSpace(r.URL.Query().Get("status")),
-		Page:          queryPage(r),
-		PageSize:      queryPageSize(r),
+	}
+	res, err := h.Creds.ListCredentials(r.Context(), &gcredspb.ListCredentialsRequest{
+		Filters:  filters,
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Creds.GetCredentialCount(ctx, &gcredspb.GetCredentialCountRequest{
+			Filters: filters,
+			Limit:   limit,
+			Cursor:  cursor,
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -122,7 +142,11 @@ func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"credentials": credentials,
-		"total":       res.GetTotal(),
+		"total":       total.Total,
+		"total_label": total.Label(),
+		"total_exact": total.Exact,
+		"next_cursor": res.GetNextCursor(),
+		"has_more":    res.GetHasMore(),
 	})
 }
 
@@ -192,31 +216,16 @@ type ListApplicationsReq struct {
 
 // ListApplications 查询考生资格申请
 func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
-	// 默认参数
-	page := uint32(1)
-	pageSize := uint32(20)
-
-	// query params
-	qPageNumber := r.URL.Query().Get("page_number")
-	qPageSize := r.URL.Query().Get("page_size")
+	page := parseCursorPage(r, 20)
 	statusFilter := normalizeApplicationStatus(r.URL.Query().Get("status"))
 
-	if qPageNumber != "" {
-		if val, err := strconv.Atoi(qPageNumber); err == nil {
-			page = uint32(val)
-		}
+	req := &gcredspb.ListApplicationsRequest{
+		Filters:  &gcredspb.ApplicationFilters{},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	}
-	if qPageSize != "" {
-		if val, err := strconv.Atoi(qPageSize); err == nil {
-			pageSize = uint32(val)
-		}
-	}
-
-	req := &gcredspb.ListApplicationsRequest{Page: page, PageSize: pageSize}
 	if statusFilter != "" {
-		// TODO: 待 gcreds ListApplicationsRequest 补充 Status 字段后改为下推筛选。
-		req.Page = 1
-		req.PageSize = 500
+		req.Filters.Statuses = []string{statusFilter}
 	}
 
 	res, err := h.Creds.ListApplications(r.Context(), req)
@@ -224,26 +233,20 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-
-	if statusFilter != "" {
-		filtered := make([]*gcredspb.ApplicationSummary, 0, len(res.GetApplications()))
-		for _, app := range res.GetApplications() {
-			if normalizeApplicationStatus(app.GetStatus()) == statusFilter {
-				filtered = append(filtered, app)
-			}
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
+			Filters: req.GetFilters(),
+			Limit:   limit,
+			Cursor:  cursor,
+		})
+		if err != nil {
+			return 0, "", err
 		}
-
-		start := int((page - 1) * pageSize)
-		end := start + int(pageSize)
-		if start > len(filtered) {
-			start = len(filtered)
-		}
-		if end > len(filtered) {
-			end = len(filtered)
-		}
-
-		res.Applications = filtered[start:end]
-		res.Total = uint32(len(filtered))
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
 	}
 
 	credentialNames := h.credentialDefinitionNames(r)
@@ -263,7 +266,11 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, http.StatusOK, map[string]interface{}{
 		"applications": applications,
-		"total":        res.GetTotal(),
+		"total":        total.Total,
+		"total_label":  total.Label(),
+		"total_exact":  total.Exact,
+		"next_cursor":  res.GetNextCursor(),
+		"has_more":     res.GetHasMore(),
 	})
 }
 

@@ -93,6 +93,9 @@ const detailOpen = ref(false)
 const statusFilter = ref("")
 const offset = ref(0)
 const total = ref(0)
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
 const schemas = ref<JsonRecord | null>(null)
 const activeTab = ref<DetailTab>("summary")
 const mode = ref<Mode>("detail")
@@ -105,7 +108,7 @@ const copy = computed(() => t.value.bundlesAdmin)
 const currentPage = computed(() => Math.floor(offset.value / limit) + 1)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)))
 const canPrev = computed(() => offset.value > 0)
-const canNext = computed(() => offset.value + bundles.value.length < total.value)
+const canNext = computed(() => hasMore.value)
 const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value || duplicating.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
 const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
@@ -478,14 +481,19 @@ async function load() {
   loading.value = true
   try {
     const params = new URLSearchParams({
-      limit: String(limit),
-      offset: String(offset.value),
+      page_size: String(limit),
     })
+    const cursor = cursorStack.value[currentPage.value - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     if (statusFilter.value) params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/mall/bundles?${params}`)
     const list = Array.isArray(data.bundles) ? data.bundles : []
     bundles.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || 0)
+    hasMore.value = Boolean(data.has_more)
+    nextCursor.value = String(data.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, currentPage.value)
+    cursorStack.value[currentPage.value] = nextCursor.value
     if (!selected.value && bundles.value.length) {
       await selectBundle(bundles.value[0], false)
     }
@@ -493,6 +501,8 @@ async function load() {
     console.error(err)
     bundles.value = []
     total.value = 0
+    hasMore.value = false
+    nextCursor.value = ""
     toast.error(copy.value.toasts.loadFailed)
   } finally {
     loading.value = false
@@ -892,6 +902,9 @@ async function loadSchemas() {
 
 watch(statusFilter, () => {
   selected.value = null
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
   if (offset.value !== 0) {
     offset.value = 0
     return

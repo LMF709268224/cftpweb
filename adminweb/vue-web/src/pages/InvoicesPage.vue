@@ -17,12 +17,15 @@ const copiedJson = ref(false)
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.invoices)
 const summaryFieldKeys = new Set(["order_id", "order_ulid", "status"])
 
 const canPrev = computed(() => page.value > 1)
-const canNext = computed(() => page.value * pageSize < total.value || invoices.value.length >= pageSize)
+const canNext = computed(() => hasMore.value)
 const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const selectedFields = computed(() =>
   Object.entries(selected.value || {})
@@ -100,10 +103,17 @@ function closeDetail() {
 async function load(targetPage = page.value) {
   loading.value = true
   try {
-    const data = await apiClient<JsonRecord>(`/api/mall/invoices?page=${targetPage}&page_size=${pageSize}`)
+    const params = new URLSearchParams({ page_size: String(pageSize) })
+    const cursor = cursorStack.value[targetPage - 1] || ""
+    if (cursor) params.set("cursor", cursor)
+    const data = await apiClient<JsonRecord>(`/api/mall/invoices?${params}`)
     const list = Array.isArray(data.invoices) ? data.invoices : []
     invoices.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || invoices.value.length) || 0
+    hasMore.value = Boolean(data.has_more)
+    nextCursor.value = String(data.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, targetPage)
+    cursorStack.value[targetPage] = nextCursor.value
     page.value = targetPage
     if (!selected.value || !invoices.value.some((item) => invoiceId(item) === invoiceId(selected.value))) {
       openInvoice(invoices.value[0] || null, false)
@@ -114,6 +124,8 @@ async function load(targetPage = page.value) {
     invoices.value = []
     selected.value = null
     detailOpen.value = false
+    hasMore.value = false
+    nextCursor.value = ""
     toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
   } finally {
     loading.value = false

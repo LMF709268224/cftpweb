@@ -149,11 +149,14 @@ func validateLmsUploadURLPayload(w http.ResponseWriter, req *lmspb.CreateUploadU
 
 // ListLmsCourses GET /api/lms/courses
 func (h *Handler) ListLmsCourses(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListCoursesAdmin(r.Context(), &lmspb.ListCoursesRequest{
-		CategoryTips:  r.URL.Query().Get("category_tips"),
-		PublishedOnly: parseBoolQuery(r, "published_only"),
-		PageSize:      parseUint32Query(r, "page_size"),
-		PageToken:     r.URL.Query().Get("page_token"),
+		Filters: &lmspb.CourseFilters{
+			CategoryTips:  r.URL.Query().Get("category_tips"),
+			PublishedOnly: parseBoolQuery(r, "published_only"),
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -334,11 +337,14 @@ func (h *Handler) ListLmsCourseEnrollmentsForAdmin(w http.ResponseWriter, r *htt
 	if !ok {
 		return
 	}
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListCourseEnrollmentsForAdmin(r.Context(), &lmspb.ListCourseEnrollmentsForAdminRequest{
-		CourseUlid: courseID,
-		Status:     r.URL.Query().Get("status"),
-		PageSize:   parseUint32Query(r, "page_size"),
-		PageToken:  r.URL.Query().Get("page_token"),
+		Filters: &lmspb.CourseEnrollmentForAdminFilters{
+			CourseUlid: courseID,
+			Status:     r.URL.Query().Get("status"),
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -370,13 +376,16 @@ func (h *Handler) GetLmsCandidateProgressForAdmin(w http.ResponseWriter, r *http
 
 // ListLmsCourseEnrollments GET /api/lms/enrollments
 func (h *Handler) ListLmsCourseEnrollments(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListCourseEnrollmentsAdmin(r.Context(), &lmspb.ListCourseEnrollmentsRequest{
-		CandidateUlid: r.URL.Query().Get("candidate_id"),
-		CourseUlid:    r.URL.Query().Get("course_id"),
-		BizUnit:       r.URL.Query().Get("biz_unit"),
-		Status:        r.URL.Query().Get("status"),
-		PageSize:      parseUint32Query(r, "page_size"),
-		PageToken:     r.URL.Query().Get("page_token"),
+		Filters: &lmspb.CourseEnrollmentFilters{
+			CandidateUlid: r.URL.Query().Get("candidate_id"),
+			CourseUlid:    r.URL.Query().Get("course_id"),
+			BizUnit:       r.URL.Query().Get("biz_unit"),
+			Status:        r.URL.Query().Get("status"),
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -407,12 +416,15 @@ func (h *Handler) ListLmsLessonProgress(w http.ResponseWriter, r *http.Request) 
 	if !requireRequestField(w, candidateID, "candidate_id") {
 		return
 	}
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListLessonProgressAdmin(r.Context(), &lmspb.ListLessonProgressRequest{
-		CandidateUlid: candidateID,
-		LessonUlid:    r.URL.Query().Get("lesson_id"),
-		Status:        r.URL.Query().Get("status"),
-		PageSize:      parseUint32Query(r, "page_size"),
-		PageToken:     r.URL.Query().Get("page_token"),
+		Filters: &lmspb.LessonProgressFilters{
+			CandidateUlid: candidateID,
+			LessonUlid:    r.URL.Query().Get("lesson_id"),
+			Status:        r.URL.Query().Get("status"),
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -449,11 +461,14 @@ func (h *Handler) ListLmsChapterProgress(w http.ResponseWriter, r *http.Request)
 	if !requireRequestFields(w, candidateID, "candidate_id", courseID, "course_id") {
 		return
 	}
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListChapterProgressAdmin(r.Context(), &lmspb.ListChapterProgressRequest{
-		CandidateUlid: candidateID,
-		CourseUlid:    courseID,
-		PageSize:      parseUint32Query(r, "page_size"),
-		PageToken:     r.URL.Query().Get("page_token"),
+		Filters: &lmspb.ChapterProgressFilters{
+			CandidateUlid: candidateID,
+			CourseUlid:    courseID,
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -489,12 +504,15 @@ func (h *Handler) ListLmsQuizAttempts(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListQuizAttemptsAdmin(r.Context(), &lmspb.ListQuizAttemptsRequest{
-		QuizUlid:  quizID,
-		UserUlid:  r.URL.Query().Get("candidate_id"),
-		Status:    r.URL.Query().Get("status"),
-		PageSize:  parseUint32Query(r, "page_size"),
-		PageToken: r.URL.Query().Get("page_token"),
+		Filters: &lmspb.QuizAttemptsFilters{
+			QuizUlid: quizID,
+			UserUlid: r.URL.Query().Get("candidate_id"),
+			Status:   r.URL.Query().Get("status"),
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -861,10 +879,13 @@ func (h *Handler) ListLmsLessonsByCourse(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListLessonsByCourseAdmin(r.Context(), &lmspb.ListLessonsByCourseRequest{
-		CourseUlid: courseID,
-		PageSize:   parseUint32Query(r, "page_size"),
-		PageToken:  strings.TrimSpace(r.URL.Query().Get("page_token")),
+		Filters: &lmspb.LessonFilters{
+			CourseUlid: courseID,
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1492,10 +1513,13 @@ func (h *Handler) ReorderLmsQuizOptions(w http.ResponseWriter, r *http.Request) 
 
 // ListLmsObjects GET /api/lms/objects
 func (h *Handler) ListLmsObjects(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListObjectsAdmin(r.Context(), &lmspb.ListObjectsRequest{
-		Prefix:    r.URL.Query().Get("prefix"),
-		PageSize:  parseUint32Query(r, "page_size"),
-		PageToken: r.URL.Query().Get("page_token"),
+		Filters: &lmspb.ObjectFilters{
+			Prefix: r.URL.Query().Get("prefix"),
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1506,12 +1530,15 @@ func (h *Handler) ListLmsObjects(w http.ResponseWriter, r *http.Request) {
 
 // ListLmsCourseAssets GET /api/lms/assets
 func (h *Handler) ListLmsCourseAssets(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListCourseAssetsAdmin(r.Context(), &lmspb.ListCourseAssetsRequest{
-		Status:       r.URL.Query().Get("status"),
-		AssetType:    r.URL.Query().Get("asset_type"),
-		AssociatedId: r.URL.Query().Get("associated_id"),
-		PageSize:     parseUint32Query(r, "page_size"),
-		PageToken:    r.URL.Query().Get("page_token"),
+		Filters: &lmspb.CourseAssetFilters{
+			Status:       r.URL.Query().Get("status"),
+			AssetType:    r.URL.Query().Get("asset_type"),
+			AssociatedId: r.URL.Query().Get("associated_id"),
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)
@@ -1581,10 +1608,13 @@ func (h *Handler) CreateLmsViewURL(w http.ResponseWriter, r *http.Request) {
 
 // ListLmsBrokenAssets GET /api/lms/broken-assets
 func (h *Handler) ListLmsBrokenAssets(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Lms.ListBrokenAssetsAdmin(r.Context(), &lmspb.ListBrokenAssetsRequest{
-		PageSize:  parseUint32Query(r, "page_size"),
-		PageToken: r.URL.Query().Get("page_token"),
-		AssetType: r.URL.Query().Get("asset_type"),
+		Filters: &lmspb.BrokenAssetFilters{
+			AssetType: r.URL.Query().Get("asset_type"),
+		},
+		PageSize: page.PageSize,
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		writeLmsError(w, err)

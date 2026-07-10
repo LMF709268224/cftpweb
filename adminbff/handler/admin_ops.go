@@ -117,11 +117,14 @@ func readRetryMailTaskBody(w http.ResponseWriter, r *http.Request) (retryMailTas
 }
 
 func (h *Handler) ListPaySubscriptions(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gpay.ListSubscriptions(r.Context(), &gpaypb.ListSubscriptionsRequest{
-		CustomerUlid: queryText(r, "customer_ulid"),
-		Status:       parsePayOrderStatus(r),
-		Page:         queryPage(r),
-		PageSize:     queryPageSize(r),
+		Filters: &gpaypb.SubscriptionFilters{
+			CustomerUlid: queryText(r, "customer_ulid"),
+			Status:       parsePayOrderStatus(r),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -131,13 +134,16 @@ func (h *Handler) ListPaySubscriptions(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListPayWebhookEvents(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gpay.ListWebhookEvents(r.Context(), &gpaypb.ListWebhookEventsRequest{
-		EventType:       queryText(r, "event_type"),
-		ProcessedStatus: queryText(r, "processed_status"),
-		StartTime:       queryInt64(r, "start_time"),
-		EndTime:         queryInt64(r, "end_time"),
-		Page:            queryPage(r),
-		PageSize:        queryPageSize(r),
+		Filters: &gpaypb.WebhookEventFilters{
+			EventType:       queryText(r, "event_type"),
+			ProcessedStatus: queryText(r, "processed_status"),
+			StartTime:       queryInt64(r, "start_time"),
+			EndTime:         queryInt64(r, "end_time"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -225,13 +231,16 @@ func (h *Handler) AdminSyncPaymentRequestCurrency(w http.ResponseWriter, r *http
 }
 
 func (h *Handler) ListMallMailTasks(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Mall.ListMailTasks(r.Context(), &mallpb.ListMailTasksRequest{
-		CandidateUlid: queryText(r, "candidate_ulid"),
-		OrderUlid:     queryText(r, "order_ulid"),
-		TaskStatus:    queryText(r, "task_status"),
-		MailType:      queryText(r, "mail_type"),
-		Limit:         queryLimit(r),
-		Offset:        queryOffset(r),
+		Filters: &mallpb.MailTaskFilters{
+			CandidateUlid: queryText(r, "candidate_ulid"),
+			OrderUlid:     queryText(r, "order_ulid"),
+			TaskStatus:    queryText(r, "task_status"),
+			MailType:      queryText(r, "mail_type"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -306,13 +315,16 @@ func (h *Handler) IgnoreMallMailTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListMallNatsMessages(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Mall.ListNatsMessages(r.Context(), &mallpb.ListNatsMessagesRequest{
-		ReceiveStatus: queryText(r, "receive_status"),
-		SourceService: queryText(r, "source_service"),
-		Subject:       queryText(r, "subject"),
-		MessageType:   queryText(r, "message_type"),
-		Limit:         queryLimit(r),
-		Offset:        queryOffset(r),
+		Filters: &mallpb.NatsMessageFilters{
+			ReceiveStatus: queryText(r, "receive_status"),
+			SourceService: queryText(r, "source_service"),
+			Subject:       queryText(r, "subject"),
+			MessageType:   queryText(r, "message_type"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -352,11 +364,14 @@ func (h *Handler) ListProgMailTasks(w http.ResponseWriter, r *http.Request) {
 	if !requireRequestField(w, candidateULID, "candidate_ulid") {
 		return
 	}
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gprog.ListMailTasks(r.Context(), &gprogpb.ListMailTasksReq{
-		CandidateUlid: candidateULID,
-		PipelineUlid:  queryText(r, "pipeline_ulid"),
-		Limit:         queryLimit(r),
-		Offset:        queryOffset(r),
+		Filters: &gprogpb.MailTaskFilters{
+			CandidateUlid: candidateULID,
+			PipelineUlid:  queryText(r, "pipeline_ulid"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: int32(page.PageSize),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -418,10 +433,13 @@ func (h *Handler) IgnoreProgMailTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListProgStages(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gprog.ListStages(r.Context(), &gprogpb.ListStagesReq{
-		PipelineUlid: queryText(r, "pipeline_ulid"),
-		Limit:        queryLimit(r),
-		Offset:       queryOffset(r),
+		Filters: &gprogpb.StageFilters{
+			PipelineUlid: queryText(r, "pipeline_ulid"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: int32(page.PageSize),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -444,12 +462,15 @@ func (h *Handler) GetProgStageDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ListProgCourseUnits(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gprog.ListCourseUnits(r.Context(), &gprogpb.ListCourseUnitsReq{
-		PipelineUlid: queryText(r, "pipeline_ulid"),
-		StageUlid:    queryText(r, "stage_ulid"),
-		Status:       parseCourseUnitStatus(r),
-		Limit:        queryLimit(r),
-		Offset:       queryOffset(r),
+		Filters: &gprogpb.CourseUnitFilters{
+			PipelineUlid: queryText(r, "pipeline_ulid"),
+			StageUlid:    queryText(r, "stage_ulid"),
+			Status:       parseCourseUnitStatus(r),
+		},
+		Cursor:   page.Cursor,
+		PageSize: int32(page.PageSize),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -472,13 +493,16 @@ func (h *Handler) GetProgCourseUnitDetail(w http.ResponseWriter, r *http.Request
 }
 
 func (h *Handler) ListProgDriverEvents(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gprog.ListDriverEvents(r.Context(), &gprogpb.ListDriverEventsReq{
-		EntityType:  queryText(r, "entity_type"),
-		EntityUlid:  queryText(r, "entity_ulid"),
-		EventStatus: queryText(r, "event_status"),
-		EventType:   queryText(r, "event_type"),
-		Limit:       queryLimit(r),
-		Offset:      queryOffset(r),
+		Filters: &gprogpb.DriverEventFilters{
+			EntityType:  queryText(r, "entity_type"),
+			EntityUlid:  queryText(r, "entity_ulid"),
+			EventStatus: queryText(r, "event_status"),
+			EventType:   queryText(r, "event_type"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: int32(page.PageSize),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -501,11 +525,14 @@ func (h *Handler) GetProgDriverEventDetail(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *Handler) ListProgNatsMessages(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gprog.ListNatsMessages(r.Context(), &gprogpb.ListNatsMessagesReq{
-		ReceiveStatus: queryText(r, "receive_status"),
-		SourceService: queryText(r, "source_service"),
-		Limit:         queryLimit(r),
-		Offset:        queryOffset(r),
+		Filters: &gprogpb.NatsMessageFilters{
+			ReceiveStatus: queryText(r, "receive_status"),
+			SourceService: queryText(r, "source_service"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: int32(page.PageSize),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -528,13 +555,16 @@ func (h *Handler) GetProgNatsMessageDetail(w http.ResponseWriter, r *http.Reques
 }
 
 func (h *Handler) ListExamAuditMessages(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gexam.ListAuditMessages(r.Context(), &gexampb.ListAuditMessagesRequest{
-		ProcessedStatus: optionalQueryString(r, "processed_status"),
-		EventType:       optionalQueryString(r, "event_type"),
-		StartTime:       optionalQueryString(r, "start_time"),
-		EndTime:         optionalQueryString(r, "end_time"),
-		Page:            queryPage(r),
-		PageSize:        queryPageSize(r),
+		Filters: &gexampb.AuditFilters{
+			ProcessedStatus: optionalQueryString(r, "processed_status"),
+			EventType:       optionalQueryString(r, "event_type"),
+			StartTime:       optionalQueryString(r, "start_time"),
+			EndTime:         optionalQueryString(r, "end_time"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -557,11 +587,14 @@ func (h *Handler) GetExamAuditMessageDetail(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *Handler) ListExamStatusTransitions(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gexam.ListExamStatusTransitions(r.Context(), &gexampb.ListExamStatusTransitionsRequest{
-		ExamUlid:   optionalQueryString(r, "exam_ulid"),
-		StatusType: optionalQueryString(r, "status_type"),
-		Page:       queryPage(r),
-		PageSize:   queryPageSize(r),
+		Filters: &gexampb.TransitionFilters{
+			ExamUlid:   optionalQueryString(r, "exam_ulid"),
+			StatusType: optionalQueryString(r, "status_type"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -571,14 +604,17 @@ func (h *Handler) ListExamStatusTransitions(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *Handler) ListExamReminderMails(w http.ResponseWriter, r *http.Request) {
+	page := parseCursorPage(r, 20)
 	resp, err := h.Gexam.ListReminderMails(r.Context(), &gexampb.ListReminderMailsRequest{
-		ExamUlid:       optionalQueryString(r, "exam_ulid"),
-		TaskStatus:     optionalQueryString(r, "task_status"),
-		DeliveryStatus: optionalQueryString(r, "delivery_status"),
-		CandidateEmail: optionalQueryString(r, "candidate_email"),
-		ReminderType:   optionalQueryString(r, "reminder_type"),
-		Page:           queryPage(r),
-		PageSize:       queryPageSize(r),
+		Filters: &gexampb.MailFilters{
+			ExamUlid:       optionalQueryString(r, "exam_ulid"),
+			TaskStatus:     optionalQueryString(r, "task_status"),
+			DeliveryStatus: optionalQueryString(r, "delivery_status"),
+			CandidateEmail: optionalQueryString(r, "candidate_email"),
+			ReminderType:   optionalQueryString(r, "reminder_type"),
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

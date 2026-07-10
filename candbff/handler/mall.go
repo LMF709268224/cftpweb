@@ -132,15 +132,17 @@ func (h *Handler) pipelinePurchaseCount(r *http.Request, pipelineID string) (int
 	if pipelineID == "" {
 		return 0, false
 	}
-	resp, err := h.Gprog.ListPipelines(r.Context(), &gprog.ListPipelinesReq{
-		PipelineCcUlid: pipelineID,
-		Limit:          1,
+	resp, err := h.Gprog.GetPipelineCount(r.Context(), &gprog.GetPipelineCountRequest{
+		Filters: &gprog.PipelineFilters{
+			PipelineCcUlid: pipelineID,
+		},
+		Limit: exactCountLimit,
 	})
 	if err != nil {
 		slog.Warn("Failed to get pipeline purchase count", "error", err, "pipeline_id", pipelineID)
 		return 0, false
 	}
-	return resp.GetTotal(), true
+	return int32(resp.GetCount()), true
 }
 
 // GetPipelineDetail  GET /api/mall/pipelines/{id}
@@ -408,13 +410,14 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 	status := strings.TrimSpace(r.URL.Query().Get("status"))
 	includeUnavailable := strings.EqualFold(strings.TrimSpace(r.URL.Query().Get("include_unavailable")), "true")
 
-	const fetchLimit int32 = 100
+	const fetchLimit uint32 = 100
 	state := h.newBundleEnrichmentState(r.Context(), candidateID)
 	filtered := make([]map[string]interface{}, 0)
-	for fetchOffset := int32(0); ; fetchOffset += fetchLimit {
+	cursor := ""
+	for {
 		resp, err := h.Mall.ListBundles(r.Context(), &mallpb.ListBundlesRequest{
-			Limit:  fetchLimit,
-			Offset: fetchOffset,
+			Cursor:   cursor,
+			PageSize: fetchLimit,
 		})
 		if err != nil {
 			HandleGrpcError(w, err)
@@ -434,9 +437,10 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 			}
 			filtered = append(filtered, enriched)
 		}
-		if len(bundles) < int(fetchLimit) || fetchOffset+fetchLimit >= resp.GetTotal() {
+		if !resp.GetHasMore() || resp.GetNextCursor() == "" {
 			break
 		}
+		cursor = resp.GetNextCursor()
 	}
 
 	total := len(filtered)
@@ -751,9 +755,10 @@ func (h *Handler) newBundleEnrichmentState(ctx context.Context, candidateID stri
 		return state
 	}
 	resp, err := h.Gmbr.ListUserMemberships(ctx, &gmbrpb.ListUserMembershipsRequest{
-		CandidateUlid: state.candidateID,
-		Page:          1,
-		PageSize:      100,
+		Filters: &gmbrpb.UserMembershipFilters{
+			CandidateUlid: state.candidateID,
+		},
+		PageSize: 100,
 	})
 	if err != nil {
 		slog.Warn("Failed to preload membership history for bundle list", "error", err, "candidate_id", state.candidateID)
@@ -948,9 +953,11 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 		return nil, nil
 	}
 	resp, err := h.Mall.ListBundleOrders(ctx, &mallpb.ListBundleOrdersRequest{
-		CandidateUlid: candidateID,
-		BundleUlid:    bundleID,
-		Limit:         20,
+		Filters: &mallpb.BundleOrderFilters{
+			CandidateUlid: candidateID,
+			BundleUlid:    bundleID,
+		},
+		PageSize: 20,
 	})
 	if err != nil {
 		slog.Warn("Failed to load active bundle order during enrichment", "error", err, "candidate_id", candidateID, "bundle_id", bundleID)

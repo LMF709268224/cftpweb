@@ -17,6 +17,9 @@ const loading = ref(false)
 const detailOpen = ref(false)
 const page = ref(1)
 const total = ref(0)
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pdfRequests)
 
@@ -87,12 +90,19 @@ function closeDetail() {
 async function load(nextPage = page.value) {
   loading.value = true
   try {
-    const data = await apiClient<JsonRecord>(`/api/pdf-requests?page=${nextPage}&page_size=${PAGE_SIZE}`)
+    const params = new URLSearchParams({ page_size: String(PAGE_SIZE) })
+    const cursor = cursorStack.value[nextPage - 1] || ""
+    if (cursor) params.set("cursor", cursor)
+    const data = await apiClient<JsonRecord>(`/api/pdf-requests?${params}`)
     const list = Array.isArray(data.requests) ? data.requests : []
     const selectedId = selected.value ? requestUlid(selected.value) : ""
 
-    page.value = Number(data.page || nextPage)
+    page.value = nextPage
     total.value = Number(data.total || list.length)
+    hasMore.value = Boolean(data.has_more)
+    nextCursor.value = String(data.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, nextPage)
+    cursorStack.value[nextPage] = nextCursor.value
     requests.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     selected.value = requests.value.find((item) => requestUlid(item) === selectedId) || requests.value[0] || null
     if (!selected.value) detailOpen.value = false
@@ -101,6 +111,8 @@ async function load(nextPage = page.value) {
     requests.value = []
     selected.value = null
     detailOpen.value = false
+    hasMore.value = false
+    nextCursor.value = ""
     toast.error(apiErrorMessage(err, copy.value.toasts.loadFailed))
   } finally {
     loading.value = false
@@ -108,7 +120,9 @@ async function load(nextPage = page.value) {
 }
 
 function goPage(nextPage: number) {
-  if (nextPage < 1 || nextPage > totalPages.value || nextPage === page.value) return
+  if (nextPage < 1 || nextPage === page.value) return
+  if (nextPage > page.value && !hasMore.value) return
+  if (Math.abs(nextPage - page.value) !== 1) return
   load(nextPage)
 }
 
@@ -192,7 +206,7 @@ onMounted(() => load(1))
           <button
             class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
             type="button"
-            :disabled="page >= totalPages || loading"
+            :disabled="!hasMore || loading"
             @click="goPage(page + 1)"
           >
             {{ copy.next }}

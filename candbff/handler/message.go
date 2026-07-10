@@ -21,45 +21,47 @@ const (
 func (h *Handler) ListMessages(w http.ResponseWriter, r *http.Request) {
 	candidateID := CandidateID(r)
 
-	limit := parsePositiveIntQuery(r, "limit", defaultMessageListLimit)
-	if limit > maxMessageListLimit {
-		limit = maxMessageListLimit
+	page := parseCursorPage(r, defaultMessageListLimit)
+	if page.PageSize > maxMessageListLimit {
+		page.PageSize = maxMessageListLimit
 	}
-	lastID := uint64(parseNonNegativeIntQuery(r, "lastId", 0))
 	status, ok := parseCandidateMessageStatus(r.URL.Query().Get("status"))
 	if !ok {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "unsupported status")
 		return
 	}
 
-	messages, hasMore, err := h.listMessagesPage(r.Context(), candidateID, status, limit, lastID)
+	messages, nextCursor, hasMore, err := h.listMessagesPage(r.Context(), candidateID, status, page)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
 
 	WriteJSON(w, http.StatusOK, MessageListRsp{
-		Messages: messages,
-		HasMore:  hasMore,
+		Messages:   messages,
+		HasMore:    hasMore,
+		NextCursor: nextCursor,
 	})
 }
 
-func (h *Handler) listMessagesPage(ctx context.Context, candidateID string, status *gmsgpb.MessageStatus, limit int, lastID uint64) ([]MessageItem, bool, error) {
+func (h *Handler) listMessagesPage(ctx context.Context, candidateID string, status *gmsgpb.MessageStatus, page cursorPage) ([]MessageItem, string, bool, error) {
 	rsp, err := h.Gmsg.ListMessages(ctx, &gmsgpb.ListMessagesRequest{
-		UserUlid: candidateID,
-		Limit:    uint32(limit),
-		LastId:   lastID,
-		Status:   status,
+		Filters: &gmsgpb.MessageFilters{
+			UserUlid: candidateID,
+			Status:   status,
+		},
+		Cursor:   page.Cursor,
+		PageSize: page.PageSize,
 	})
 	if err != nil {
-		return nil, false, err
+		return nil, "", false, err
 	}
 
 	messages := make([]MessageItem, 0, len(rsp.GetMessages()))
 	for _, msg := range rsp.GetMessages() {
 		messages = append(messages, h.messageItem(ctx, msg))
 	}
-	return messages, rsp.GetHasMore(), nil
+	return messages, rsp.GetNextCursor(), rsp.GetHasMore(), nil
 }
 
 func (h *Handler) messageItem(ctx context.Context, msg *gmsgpb.MessageItem) MessageItem {
@@ -115,8 +117,11 @@ func (h *Handler) GetUnreadMessageCount(w http.ResponseWriter, r *http.Request) 
 	candidateID := CandidateID(r)
 
 	rsp, err := h.Gmsg.GetMessageCount(r.Context(), &gmsgpb.GetMessageCountRequest{
-		UserUlid: candidateID,
-		Status:   gmsgpb.MessageStatus_UNREAD.Enum(),
+		Filters: &gmsgpb.MessageFilters{
+			UserUlid: candidateID,
+			Status:   gmsgpb.MessageStatus_UNREAD.Enum(),
+		},
+		Limit: 99,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

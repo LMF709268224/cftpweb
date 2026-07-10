@@ -53,9 +53,10 @@ func (h *Handler) GetPipelineTimeline(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Gprog.ListStatusTransitionLogs(r.Context(), &gprog.ListStatusTransitionLogsReq{
-		PipelineUlid: pipelineUlid,
-		Limit:        100,
-		Offset:       0,
+		Filters: &gprog.StatusTransitionLogFilters{
+			PipelineUlid: pipelineUlid,
+		},
+		PageSize: 100,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -83,7 +84,7 @@ func (h *Handler) GetPipelineTimeline(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, http.StatusOK, PipelineTimelineRsp{
 		Logs:  logs,
-		Total: resp.GetTotal(),
+		Total: int32(len(logs)),
 	})
 }
 
@@ -379,10 +380,12 @@ func (h *Handler) ListCandidateEnrollments(w http.ResponseWriter, r *http.Reques
 	}
 
 	resp, err := h.Lms.ListCandidateEnrollments(r.Context(), &lmspb.ListCandidateEnrollmentsRequest{
-		CandidateUlid: candidateID,
-		Status:        status,
-		PageSize:      pageSize,
-		PageToken:     pageToken,
+		Filters: &lmspb.CandidateEnrollmentFilters{
+			CandidateUlid: candidateID,
+			Status:        status,
+		},
+		PageSize: pageSize,
+		Cursor:   pageToken,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -666,8 +669,10 @@ func (h *Handler) GetCandidateEnrollmentDetail(w http.ResponseWriter, r *http.Re
 
 func (h *Handler) findEnrollmentIdByCourse(ctx context.Context, candidateID, courseID string) (string, error) {
 	resp, err := h.Lms.ListCandidateEnrollments(ctx, &lmspb.ListCandidateEnrollmentsRequest{
-		CandidateUlid: candidateID,
-		PageSize:      1000,
+		Filters: &lmspb.CandidateEnrollmentFilters{
+			CandidateUlid: candidateID,
+		},
+		PageSize: 1000,
 	})
 	if err != nil {
 		return "", err
@@ -764,8 +769,10 @@ func (h *Handler) GetProgress(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.ListCandidateEnrollments(r.Context(), &lmspb.ListCandidateEnrollmentsRequest{
-		CandidateUlid: candidateID,
-		PageSize:      1000,
+		Filters: &lmspb.CandidateEnrollmentFilters{
+			CandidateUlid: candidateID,
+		},
+		PageSize: 1000,
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -878,8 +885,10 @@ func currentStageNameFromRuntime(config *gccpb.PipelineConfig, runtime *gprog.Ge
 
 func (h *Handler) candidateEnrollmentProgressByCourse(r *http.Request, candidateID string) (map[string]uint32, error) {
 	resp, err := h.Lms.ListCandidateEnrollments(r.Context(), &lmspb.ListCandidateEnrollmentsRequest{
-		CandidateUlid: candidateID,
-		PageSize:      200,
+		Filters: &lmspb.CandidateEnrollmentFilters{
+			CandidateUlid: candidateID,
+		},
+		PageSize: 200,
 	})
 	if err != nil {
 		return nil, err
@@ -965,9 +974,11 @@ func (h *Handler) quizProgressByCourse(r *http.Request, candidateID string, cour
 	for _, quizID := range quizIDs {
 		item := QuizProgressItem{QuizID: quizID}
 		resp, err := h.Lms.ListQuizAttemptsCandidate(r.Context(), &lmspb.ListQuizAttemptsCandidateRequest{
-			QuizUlid:      quizID,
-			CandidateUlid: candidateID,
-			PageSize:      20,
+			Filters: &lmspb.QuizAttemptsCandidateFilters{
+				QuizUlid:      quizID,
+				CandidateUlid: candidateID,
+			},
+			PageSize: 20,
 		})
 		if err != nil {
 			slog.Warn("failed to list candidate quiz attempts", "error", err, "candidate_id", candidateID, "quiz_id", quizID)

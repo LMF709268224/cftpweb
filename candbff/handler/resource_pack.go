@@ -21,9 +21,11 @@ func (h *Handler) ListResourcePacks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp, err := h.Lms.ListResourcePacks(r.Context(), &lmspb.ListResourcePacksCandidateRequest{
-		CandidateUlid: candidateID,
-		PageSize:      parseUint32Query(r, "page_size"),
-		PageToken:     r.URL.Query().Get("page_token"),
+		Filters: &lmspb.ResourcePackCandidateFilters{
+			CandidateUlid: candidateID,
+		},
+		PageSize: parseUint32Query(r, "page_size"),
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -44,10 +46,12 @@ func (h *Handler) ListResourcePackFiles(w http.ResponseWriter, r *http.Request) 
 	}
 
 	resp, err := h.Lms.ListResourcePackFiles(r.Context(), &lmspb.ListResourcePackFilesCandidateRequest{
-		CandidateUlid: candidateID,
-		PackId:        packID,
-		PageSize:      parseUint32Query(r, "page_size"),
-		PageToken:     r.URL.Query().Get("page_token"),
+		Filters: &lmspb.ResourcePackFileCandidateFilters{
+			CandidateUlid: candidateID,
+			PackId:        packID,
+		},
+		PageSize: parseUint32Query(r, "page_size"),
+		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -82,9 +86,13 @@ func (h *Handler) ListResourcePackFiles(w http.ResponseWriter, r *http.Request) 
 	out := struct {
 		Files         []extFile `json:"files,omitempty"`
 		NextPageToken string    `json:"next_page_token,omitempty"`
+		NextCursor    string    `json:"next_cursor,omitempty"`
+		HasMore       bool      `json:"has_more"`
 	}{
 		Files:         extFiles,
-		NextPageToken: resp.GetNextPageToken(),
+		NextPageToken: resp.GetNextCursor(),
+		NextCursor:    resp.GetNextCursor(),
+		HasMore:       resp.GetHasMore(),
 	}
 
 	// b, _ := json.MarshalIndent(extFiles, "", "  ")
@@ -186,8 +194,10 @@ func (h *Handler) GetResourcePackFileViewURL(w http.ResponseWriter, r *http.Requ
 
 func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID string, fileID string) (*lmspb.ResourcePackFile, error) {
 	filesResp, err := h.Lms.ListResourcePacks(r.Context(), &lmspb.ListResourcePacksCandidateRequest{
-		CandidateUlid: candidateID,
-		PageSize:      500,
+		Filters: &lmspb.ResourcePackCandidateFilters{
+			CandidateUlid: candidateID,
+		},
+		PageSize: 500,
 	})
 	if err != nil {
 		return nil, err
@@ -197,10 +207,12 @@ func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID 
 		pageToken := ""
 		for {
 			listResp, err := h.Lms.ListResourcePackFiles(r.Context(), &lmspb.ListResourcePackFilesCandidateRequest{
-				CandidateUlid: candidateID,
-				PackId:        pack.GetPackId(),
-				PageSize:      500,
-				PageToken:     pageToken,
+				Filters: &lmspb.ResourcePackFileCandidateFilters{
+					CandidateUlid: candidateID,
+					PackId:        pack.GetPackId(),
+				},
+				PageSize: 500,
+				Cursor:   pageToken,
 			})
 			if err != nil {
 				return nil, err
@@ -210,7 +222,7 @@ func (h *Handler) findResourcePackFileForCandidate(r *http.Request, candidateID 
 					return file, nil
 				}
 			}
-			pageToken = listResp.GetNextPageToken()
+			pageToken = listResp.GetNextCursor()
 			if strings.TrimSpace(pageToken) == "" {
 				break
 			}

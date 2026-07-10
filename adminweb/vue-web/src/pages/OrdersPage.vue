@@ -38,6 +38,9 @@ const showPurgeConfirm = ref(false)
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
+const hasMore = ref(false)
+const nextCursor = ref("")
+const cursorStack = ref<string[]>([""])
 const activeTab = ref<DetailTab>("summary")
 
 const candidateUlid = ref("")
@@ -46,7 +49,7 @@ const orderStatus = ref("")
 const paymentStatus = ref("")
 
 const canPrev = computed(() => page.value > 1)
-const canNext = computed(() => orders.value.length >= pageSize)
+const canNext = computed(() => hasMore.value)
 const isBundlePurchase = computed(() => normalizeStatus(biz(selected.value || {})) === "BUNDLE_PURCHASE")
 const localizedBizTypeOptions = computed(() => localizeOptions(bizTypeOptions, "bizTypes"))
 const localizedOrderStatusOptions = computed(() => localizeOptions(orderStatusOptions, "orderStatuses"))
@@ -202,10 +205,10 @@ async function load(targetPage = page.value) {
   loading.value = true
   try {
     const params = new URLSearchParams({
-      page: String(targetPage),
-      limit: String(pageSize),
-      offset: String((targetPage - 1) * pageSize),
+      page_size: String(pageSize),
     })
+    const cursor = cursorStack.value[targetPage - 1] || ""
+    if (cursor) params.set("cursor", cursor)
     if (candidateUlid.value.trim()) params.set("candidate_ulid", candidateUlid.value.trim())
     if (bizType.value) params.set("biz_type", bizType.value)
     if (orderStatus.value) params.set("order_status", orderStatus.value)
@@ -215,6 +218,10 @@ async function load(targetPage = page.value) {
     const list = Array.isArray(data.items) ? data.items : Array.isArray(data.orders) ? data.orders : []
     orders.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total ?? data.total_count ?? data.totalCount ?? orders.value.length) || 0
+    hasMore.value = Boolean(data.has_more)
+    nextCursor.value = String(data.next_cursor || "")
+    cursorStack.value = cursorStack.value.slice(0, targetPage)
+    cursorStack.value[targetPage] = nextCursor.value
     page.value = targetPage
     if (orders.value.length) {
       await selectOrder(orders.value[0], detailOpen.value)
@@ -230,6 +237,8 @@ async function load(targetPage = page.value) {
     bundleDetail.value = null
     detailOpen.value = false
     total.value = 0
+    hasMore.value = false
+    nextCursor.value = ""
     toast.error(copy.value.toasts.ordersLoadFailed)
   } finally {
     loading.value = false
@@ -266,6 +275,10 @@ async function purgeSelected() {
 }
 
 function search() {
+  page.value = 1
+  cursorStack.value = [""]
+  nextCursor.value = ""
+  hasMore.value = false
   void load(1)
 }
 
