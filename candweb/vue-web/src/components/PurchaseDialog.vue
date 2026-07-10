@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue"
+import { useRouter } from "vue-router"
 import { toast } from "vue-sonner"
 import { AlertCircle, Building2, Check, CreditCard, Lock, Loader2, ShoppingCart, X } from "lucide-vue-next"
 import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
@@ -131,7 +132,9 @@ const cancelOrderLoading = ref(false)
 const credentialApplicationLoadingKey = ref("")
 const eligibility = ref<EligibilityPreview | null>(null)
 const exemptionOptions = ref<ExemptionOptions | null>(null)
+const router = useRouter()
 const activeOrder = ref<ActiveOrder | null>(null)
+const orderCreatedInSession = ref(false)
 const paymentPreview = ref<PaymentPreview | null>(null)
 const previewError = ref("")
 const exemptionError = ref("")
@@ -320,6 +323,7 @@ watch(() => props.open, async (open) => {
 function close() {
   activePaymentSession.value = null
   credentialApplicationOrder.value = null
+  orderCreatedInSession.value = false
   paymentLoading.value = false
   cancelOrderLoading.value = false
   emit("update:open", false)
@@ -653,6 +657,7 @@ async function createPurchaseOrder() {
     }
 
     const { orderId, orderStatus } = await createBundlePurchaseOrder()
+    orderCreatedInSession.value = true
     if (isCompletedStatus(orderStatus)) {
       toast.success(copy.value.purchaseCompleted)
       close()
@@ -690,6 +695,7 @@ async function createUnlockOrder() {
     })
     const orderId = order.pipeline_unlock_order_ulid
     const orderStatus = order.order_status
+    orderCreatedInSession.value = true
     activeOrder.value = {
       action: "unlock",
       orderId,
@@ -839,6 +845,14 @@ function initiatePayment() {
     toast.error(copy.value.couponInvalidPaymentBlocked)
     return
   }
+
+  // Redirect to orders page for existing orders (avoids nested payment session state issues)
+  if (!orderCreatedInSession.value) {
+    close()
+    router.push("/orders")
+    return
+  }
+
   const bizType = activeOrder.value.action === "unlock" ? "PIPELINE_UNLOCK" : "BUNDLE_PURCHASE"
   if (paymentMethod.value !== "stripe") {
     toast.error(copy.value.unsupportedPaymentKey)

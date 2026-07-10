@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue"
-import { RouterLink } from "vue-router"
+import { RouterLink, useRouter } from "vue-router"
 import { AlertCircle, BookOpen, CheckCircle2, Clock, Lock, ShoppingCart, Users } from "lucide-vue-next"
 import { CANDIDATE_PIPELINE_STATUS_LABELS, statusLabel } from "@/lib/status-labels"
 import { useTranslation } from "@/lib/language"
@@ -44,6 +44,7 @@ const props = defineProps<{
 }>()
 
 const { t, lang } = useTranslation()
+const router = useRouter()
 const showPurchaseDialog = ref(false)
 const freshBundle = ref<any | null>(null)
 const statusRefreshing = ref(false)
@@ -128,6 +129,10 @@ async function handleCardClick() {
   if (effectivePurchased.value || statusRefreshing.value) return
   await refreshBundleState()
   if (effectivePurchased.value) return
+  if (hasInProgressOrder.value) {
+    router.push("/orders")
+    return
+  }
   showPurchaseDialog.value = true
 }
 </script>
