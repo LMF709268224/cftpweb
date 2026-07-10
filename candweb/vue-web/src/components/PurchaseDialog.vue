@@ -170,8 +170,9 @@ const hasInProgressOrder = computed(() => blockers.value.some((blocker) => block
 const exemptionStages = computed(() => exemptionOptions.value?.stages?.filter((stage) => (stage.units?.length || 0) > 0) || [])
 const hasExemptionOptions = computed(() => exemptionStages.value.length > 0)
 const selectedExemptionCount = computed(() => Object.values(selectedExemptionUnitIds.value).filter(Boolean).length)
-const isPreparingOrder = computed(() => Boolean(actionLoading.value && activeOrder.value && !paymentPreview.value && !activePaymentSession.value && !previewError.value))
-const isOrderPreviewLoading = computed(() => Boolean(activeOrder.value && !paymentPreview.value && !previewError.value && !activePaymentSession.value))
+const isPreparingOrder = computed(() => Boolean(actionLoading.value && activeOrder.value && !paymentPreview.value && !activePaymentSession.value && !previewError.value && !isBlockingOtherOrder.value))
+const isBlockingOtherOrder = computed(() => Boolean(activeOrder.value && activeOrder.value.action === 'purchase' && !paymentPreview.value))
+const isOrderPreviewLoading = computed(() => Boolean(activeOrder.value && !paymentPreview.value && !previewError.value && !activePaymentSession.value && !isBlockingOtherOrder.value && activeOrder.value.action !== 'unlock'))
 const canCancelActiveOrder = computed(() => Boolean(activeOrder.value?.orderId && (activeOrder.value?.canCancel || isCancelableOrderStatus(activeOrder.value?.status))))
 const pendingCredentialApplications = ref<Record<string, boolean>>({})
 const hasPendingCredentialApplication = computed(() => Object.values(pendingCredentialApplications.value).some(Boolean))
@@ -901,12 +902,12 @@ async function handlePaymentSessionError() {
           </div>
           <p class="mt-2 text-sm leading-6 text-blue-800">{{ copy.preparingOrderDesc }}</p>
         </div>
-        <div v-else-if="cannotContinue && !hasInProgressOrder" class="rounded-lg border border-amber-200 bg-amber-50 p-4">
+        <div v-else-if="cannotContinue && (!hasInProgressOrder || isBlockingOtherOrder)" class="rounded-lg border border-amber-200 bg-amber-50 p-4">
           <div class="flex items-center gap-2 font-semibold text-amber-900"><AlertCircle class="h-4 w-4" />{{ copy.blockedTitle }}</div>
           <p class="mt-2 text-sm text-amber-800">{{ copy.blockedDesc }}</p>
         </div>
 
-        <div v-if="blockers.length > 0 && cannotContinue && !hasInProgressOrder" class="rounded-lg border border-amber-200 bg-amber-50/70 p-4">
+        <div v-if="blockers.length > 0 && cannotContinue && (!hasInProgressOrder || isBlockingOtherOrder)" class="rounded-lg border border-amber-200 bg-amber-50/70 p-4">
           <div class="mb-3 text-sm font-semibold text-amber-950">{{ copy.blockersTitle }}</div>
           <ul class="space-y-2">
             <li v-for="(blocker, index) in blockers" :key="`${blocker.blocker_type || 'blocker'}-${index}`" class="rounded-lg border border-amber-200 bg-white/80 p-3">
