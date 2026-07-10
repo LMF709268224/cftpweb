@@ -16,6 +16,7 @@ const (
 type cursorPage struct {
 	Cursor   string
 	PageSize uint32
+	Sort     int32
 }
 
 type countResult struct {
