@@ -1034,6 +1034,18 @@ func (h *Handler) activeBundleOrder(ctx context.Context, candidateID string, bun
 					CanCancel:  canCancelBusinessOrder(orderBizBundlePurchase, bundleOrderStatus(order)),
 					Message:    "in-progress purchase order exists",
 				}
+				// Check if the order actually matches the current bundle ID
+				var orderBundleID string
+				if summary, ok := order.(*mallpb.BundleOrderSummary); ok && summary != nil {
+					orderBundleID = summary.GetBundleUlid()
+				} else if detail, ok := order.(*mallpb.BundleOrderDetail); ok && detail != nil && detail.GetSummary() != nil {
+					orderBundleID = detail.GetSummary().GetBundleUlid()
+				}
+
+				if strings.TrimSpace(orderBundleID) == bundleID {
+					return active, h.previewPaymentSummary(ctx, orderBizBundlePurchase, orderID)
+				}
+
 				// Return nil for preview so UI only shows Cancel, not Pay for another bundle
 				return active, nil 
 			}
