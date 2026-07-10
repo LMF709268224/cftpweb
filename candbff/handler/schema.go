@@ -650,6 +650,7 @@ type OrderListRsp struct {
 	PageSize    int         `json:"page_size"`
 	TotalPages  int         `json:"total_pages"`
 	NextCursor  string      `json:"next_cursor,omitempty"`
+	PrevCursor  string      `json:"prev_cursor,omitempty"`
 	HasMore     bool        `json:"has_more"`
 	Orders      []OrderItem `json:"orders"`
 }

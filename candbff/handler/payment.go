@@ -150,6 +150,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		PageSize:    int(page.PageSize),
 		TotalPages:  0,
 		NextCursor:  resp.GetNextCursor(),
+		PrevCursor:  resp.GetPrevCursor(),
 		HasMore:     resp.GetHasMore(),
 		Orders:      outOrders,
 	})
