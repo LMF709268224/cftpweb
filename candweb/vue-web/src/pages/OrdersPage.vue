@@ -160,7 +160,7 @@ const detailSummaryFields = computed<DetailField[]>(() => {
     { label: t.value.orders.detailProductName, value: summary.meta?.product_name || "" },
     { label: t.value.orders.detailOrderId, value: summary.order_id || "" },
     { label: t.value.orders.detailType, value: orderTypeLabel(summary.biz_type) },
-    { label: t.value.orders.detailAmount, value: formatMoney(Number(summary.amount || 0), summary.currency || "USD") },
+    { label: t.value.orders.detailAmount, value: orderAmountDisplay(Number(summary.amount || 0), summary.currency || "USD", summary.status || "", summary.raw_status || "", t.value.orders.free) },
     { label: t.value.orders.detailPaidAt, value: detail?.paid_at || "" },
     { label: t.value.orders.detailStatus, value: summary.raw_status ? timelineStatusLabelWithDiagnostics(t, "MALL_ORDER", summary.raw_status) : summary.status || "" },
     { label: t.value.orders.detailCreatedAt, value: summary.created_at || "" },
@@ -275,6 +275,16 @@ function formatMoney(amount: number, currency = "USD") {
   }
 }
 
+function orderAmountDisplay(amount: number, currency: string, status: string, rawStatus: string, freeText: string) {
+  if (amount > 0) return formatMoney(amount, currency || "USD")
+  const s = String(status || "").toLowerCase()
+  const r = String(rawStatus || "").toUpperCase()
+  if (s === "completed" || s === "paid" || r.includes("COMPLETED") || r.includes("RESOLVED")) {
+    return freeText
+  }
+  return "-"
+}
+
 function orderTypeLabel(bizType?: string) {
   const normalized = String(bizType || "").toUpperCase()
   const zh = lang.value === "zh"
@@ -365,7 +375,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
         currency: (o.currency || "USD").toUpperCase(),
         bizType: o.biz_type || "",
         bizRefUlid: o.biz_ref_ulid || "",
-        amount: o.amount > 0 ? formatMoney(o.amount, o.currency || "USD") : t.value.orders.free,
+        amount: orderAmountDisplay(o.amount || 0, o.currency || "USD", o.status || "", o.raw_status || "", t.value.orders.free),
         status: (o.status in statusConfig ? o.status : "pending") as OrderStatus,
         rawStatus: o.raw_status,
         pipelineId: o.pipeline_id,
@@ -587,7 +597,7 @@ onMounted(() => {
                   <div class="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 shadow-sm sm:min-w-44 sm:text-right">
                     <p class="text-xs font-semibold text-slate-500">{{ t.orders.detailAmount }}</p>
                     <p class="mt-1 text-2xl font-black tracking-tight text-primary">
-                      {{ formatMoney(Number(selectedOrderDetail.summary?.amount || 0), selectedOrderDetail.summary?.currency || "USD") }}
+                      {{ orderAmountDisplay(Number(selectedOrderDetail.summary?.amount || 0), selectedOrderDetail.summary?.currency || "USD", selectedOrderDetail.summary?.status || "", selectedOrderDetail.summary?.raw_status || "", t.orders.free) }}
                     </p>
                   </div>
                 </div>
