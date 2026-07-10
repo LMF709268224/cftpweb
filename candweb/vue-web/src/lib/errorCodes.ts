@@ -66,6 +66,10 @@ export const ErrorMessages: Record<string, { zh: string; en: string }> = {
     zh: "您已购买该项目",
     en: "You have already purchased this item.",
   },
+  IN_PROGRESS_PURCHASE: {
+    zh: "您有正在进行中的相关订单，请先完成或取消现有订单",
+    en: "You have an in-progress order. Please complete or cancel the existing order first.",
+  },
   INVALID_PIPELINE: {
     zh: "管线信息无效",
     en: "Invalid pipeline.",

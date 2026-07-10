@@ -112,6 +112,18 @@ func HandleGrpcError(w http.ResponseWriter, err error) {
 		errorCode = ErrInternal
 	}
 
+	// Rescue known business errors that might be wrapped in generic gRPC status codes
+	if strings.Contains(st.Message(), "IN_PROGRESS_PURCHASE") {
+		httpStatus = http.StatusConflict
+		errorCode = "IN_PROGRESS_PURCHASE"
+	} else if strings.Contains(st.Message(), "ALREADY_PURCHASED") {
+		httpStatus = http.StatusConflict
+		errorCode = ErrAlreadyPurchased
+	} else if strings.Contains(st.Message(), "NOT_ELIGIBLE") {
+		httpStatus = http.StatusForbidden
+		errorCode = ErrNotEligible
+	}
+
 	WriteError(w, httpStatus, errorCode, st.Message())
 }
 
