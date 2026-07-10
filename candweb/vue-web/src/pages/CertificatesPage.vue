@@ -194,9 +194,24 @@ onMounted(async () => {
               {{ t.certificatesPage.celebrationModalDesc }}
             </p>
 
-            <div class="mt-6 rounded-[18px] bg-[#f7fbfc] px-4 py-4 shadow-inner shadow-primary/5">
-              <p class="text-xs uppercase tracking-[0.22em] text-primary/70">{{ featuredCertificate.name }}</p>
-              <p class="mt-2 text-sm text-muted-foreground">{{ featuredCertificate.issueDate }} · {{ featuredCertificate.expiryDate }}</p>
+            <div class="mt-6 rounded-[18px] border border-primary/15 bg-[linear-gradient(180deg,#f8fbff_0%,#edf6ff_100%)] px-5 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_28px_rgba(16,30,67,0.08)]">
+              <div class="flex items-start gap-3">
+                <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-[0_8px_18px_rgba(16,30,67,0.2)]">
+                  <Award class="h-5 w-5" />
+                </div>
+                <div class="min-w-0 flex-1">
+                  <p class="text-xs font-semibold uppercase tracking-[0.14em] text-primary/70">{{ t.certificatesPage.certificateName }}</p>
+                  <p class="mt-1 break-words text-xl font-bold leading-snug text-slate-950 md:text-2xl">{{ featuredCertificate.name }}</p>
+                  <p class="mt-2 flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
+                    <span class="inline-flex items-center gap-1.5">
+                      <Calendar class="h-4 w-4 text-primary/70" />
+                      {{ featuredCertificate.issueDate }}
+                    </span>
+                    <span class="text-slate-300">|</span>
+                    <span>{{ featuredCertificate.expiryDate }}</span>
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div class="mt-6">
