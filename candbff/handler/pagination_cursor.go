@@ -76,9 +76,15 @@ func parseCursorPage(r *http.Request, fallback int) cursorPage {
 	if pageSize > maxCursorPageSize {
 		pageSize = maxCursorPageSize
 	}
+	sortStr := strings.TrimSpace(r.URL.Query().Get("sort"))
+	var sortOrder int32
+	if sortStr == "1" {
+		sortOrder = 1
+	}
 	return cursorPage{
 		Cursor:   strings.TrimSpace(r.URL.Query().Get("cursor")),
 		PageSize: uint32(pageSize),
+		Sort:     sortOrder,
 	}
 }
 
