@@ -5,6 +5,7 @@ import { toast } from "vue-sonner"
 import { AlertCircle, Building2, Check, CreditCard, Lock, Loader2, ShoppingCart, X } from "lucide-vue-next"
 import { timelineStatusLabelWithDiagnostics, timelineStatusBadgeClassForStatus } from "@/lib/status-labels"
 import PaymentSessionPanel from "@/components/PaymentSessionPanel.vue"
+import CouponInputBlock from "@/components/CouponInputBlock.vue"
 import { ApiClientError, apiClient } from "@/lib/apiClient"
 import { useTranslation } from "@/lib/language"
 
@@ -849,7 +850,7 @@ function initiatePayment() {
   // Redirect to orders page for existing orders (avoids nested payment session state issues)
   if (!orderCreatedInSession.value) {
     close()
-    router.push({ path: "/orders", query: { status: "WAIT_PAYMENT" } })
+    router.push({ path: "/orders" })
     return
   }
 
@@ -1121,34 +1122,17 @@ async function handlePaymentSessionError() {
           </div>
         </div>
 
-        <div v-if="activeOrder?.action === 'purchase' && paymentPreview && !activePaymentSession" class="rounded-lg border border-blue-100 bg-blue-50/70 p-4">
-          <label class="text-sm font-semibold text-foreground" for="purchase-coupon-input">{{ copy.couponTitle }}</label>
-          <p class="mt-1 text-xs text-muted-foreground">{{ copy.couponHint }}</p>
-          <div class="mt-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <input
-              id="purchase-coupon-input"
-              v-model="couponInput"
-              class="input h-10 bg-white shadow-sm shadow-blue-100/40"
-              :placeholder="copy.couponPlaceholder"
-              :disabled="couponPreviewLoading || paymentLoading"
-              @keydown.enter.prevent="applyCouponCodes"
-            />
-            <button type="button" class="inline-flex h-10 min-w-[112px] shrink-0 items-center justify-center gap-2 rounded-lg border border-blue-100 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm shadow-blue-100/50 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" :disabled="couponPreviewLoading || paymentLoading" @click="applyCouponCodes">
-              <Loader2 v-if="couponPreviewLoading" class="h-4 w-4 animate-spin" />
-              {{ copy.applyCoupon }}
-            </button>
-            <button v-if="activeCouponCodes.length" type="button" class="inline-flex h-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition-colors hover:border-blue-300 hover:bg-blue-100 hover:text-blue-900 disabled:cursor-not-allowed disabled:opacity-50 sm:col-start-2" :disabled="couponPreviewLoading || paymentLoading" @click="clearCouponCodes">
-              {{ copy.clearCoupon }}
-            </button>
-          </div>
-          <div v-if="activeCouponCodes.length" class="mt-2 flex flex-wrap gap-2">
-            <span v-for="code in activeCouponCodes" :key="code" class="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">{{ code }}</span>
-          </div>
-          <p v-if="couponError" class="mt-2 text-xs text-red-600">{{ couponError }}</p>
-          <p v-if="cannotPayReason" class="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
-            {{ cannotPayReason }}
-          </p>
-        </div>
+        <CouponInputBlock
+          v-if="activeOrder?.action === 'purchase' && paymentPreview && !activePaymentSession"
+          v-model="couponInput"
+          :active-coupon-codes="activeCouponCodes"
+          :loading="couponPreviewLoading"
+          :disabled="paymentLoading"
+          :error="couponError"
+          :cannot-pay-reason="cannotPayReason"
+          @apply="applyCouponCodes"
+          @clear="clearCouponCodes"
+        />
 
         <div v-if="activeOrder && previewError" class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           <div class="flex items-center gap-2 font-semibold"><AlertCircle class="h-4 w-4" />{{ copy.pricePreviewTitle }}</div>

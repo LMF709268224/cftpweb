@@ -130,7 +130,7 @@ async function handleCardClick() {
   await refreshBundleState()
   if (effectivePurchased.value) return
   if (hasInProgressOrder.value) {
-    router.push({ path: "/orders", query: { status: "WAIT_PAYMENT" } })
+    router.push({ path: "/orders" })
     return
   }
   showPurchaseDialog.value = true

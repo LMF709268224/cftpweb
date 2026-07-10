@@ -7,6 +7,7 @@ import { timelineStatusBadgeClassForStatus, timelineStatusLabelWithDiagnostics }
 import AppShell from "@/components/AppShell.vue"
 import AppPagination from "@/components/AppPagination.vue"
 import PaymentSessionDialog from "@/components/PaymentSessionDialog.vue"
+import CouponInputBlock from "@/components/CouponInputBlock.vue"
 import { apiClient } from "@/lib/apiClient"
 import { formatBackendDateMinute } from "@/lib/utils"
 import { useTranslation } from "@/lib/language"
@@ -107,7 +108,17 @@ const orderPaymentSession = ref<{
   bizRefUlid: string
   source: string
   returnPath: string
+  couponCodes: string[]
 } | null>(null)
+
+const couponInput = ref("")
+const appliedCouponCodes = ref<string[]>([])
+const couponPreviewLoading = ref(false)
+const couponError = ref("")
+
+const activeCouponCodes = computed(() => appliedCouponCodes.value.map((code) => code.trim()).filter(Boolean))
+const hasInvalidCouponCodes = computed(() => Boolean(detailPaymentPreview.value?.invalid?.length))
+const cannotPayReason = computed(() => hasInvalidCouponCodes.value ? (t.value.purchaseDialog?.couponInvalidPaymentBlocked || "Invalid coupon. Cannot proceed.") : "")
 
 const invoiceOpeningLabel = computed(() => t.value.orders.invoiceOpening)
 const orderTypeOptions = computed(() => [
@@ -172,6 +183,49 @@ function orderStatusBadgeClass(order: OrderItem) {
   return timelineStatusBadgeClassForStatus("MALL_ORDER", order.rawStatus)
 }
 
+function normalizeCouponCodes(codes: string[]) {
+  return Array.from(new Set(codes.map((c) => String(c || "").trim()).filter(Boolean)))
+}
+
+function couponInputCodes() {
+  return normalizeCouponCodes(couponInput.value.split(/[\s,，;；]+/))
+}
+
+async function refreshPaymentPreviewWithCoupons(codes = activeCouponCodes.value) {
+  if (!selectedOrderItem.value || !selectedOrderItem.value.bizType || !selectedOrderItem.value.bizRefUlid) return
+  couponPreviewLoading.value = true
+  couponError.value = ""
+  try {
+    detailPaymentPreview.value = await apiClient("/api/mall/payments/preview", {
+      method: "POST",
+      body: JSON.stringify({
+        biz_type: selectedOrderItem.value.bizType,
+        biz_ref_ulid: selectedOrderItem.value.bizRefUlid,
+        promo_codes: normalizeCouponCodes(codes),
+        coupon_codes: [],
+      }),
+      suppressErrorToast: true,
+    })
+  } catch (err) {
+    console.error(err)
+    couponError.value = t.value.common?.error || "Error"
+  } finally {
+    couponPreviewLoading.value = false
+  }
+}
+
+async function applyCouponCodes() {
+  const nextCodes = couponInputCodes()
+  appliedCouponCodes.value = nextCodes
+  await refreshPaymentPreviewWithCoupons(nextCodes)
+}
+
+async function clearCouponCodes() {
+  couponInput.value = ""
+  appliedCouponCodes.value = []
+  await refreshPaymentPreviewWithCoupons([])
+}
+
 async function openOrderDetail(order: OrderItem) {
   if (!order.id || detailLoading.value) return
   detailLoading.value = true
@@ -182,21 +236,11 @@ async function openOrderDetail(order: OrderItem) {
   detailPaymentPreview.value = null
   try {
     selectedOrderDetail.value = await apiClient(`/api/orders/${encodeURIComponent(order.id)}`)
+    couponInput.value = ""
+    appliedCouponCodes.value = []
+    couponError.value = ""
     if (canContinuePayment(order)) {
-      apiClient('/api/mall/payments/preview', {
-        method: 'POST',
-        body: JSON.stringify({
-          biz_type: order.bizType,
-          biz_ref_ulid: order.bizRefUlid,
-          promo_codes: [],
-          coupon_codes: []
-        }),
-        suppressErrorToast: true
-      }).then(res => {
-        detailPaymentPreview.value = res
-      }).catch(err => {
-        console.warn('Failed to fetch payment preview', err)
-      })
+      await refreshPaymentPreviewWithCoupons([])
     }
   } catch (error) {
     console.error(error)
@@ -254,6 +298,7 @@ function continuePayment(order: OrderItem) {
     bizRefUlid: order.bizRefUlid,
     source: "orders",
     returnPath: "/orders",
+    couponCodes: activeCouponCodes.value,
   }
   orderPaymentDialogOpen.value = true
   window.setTimeout(() => {
@@ -624,7 +669,18 @@ onMounted(() => {
           </div>
         </div>
         <div v-if="selectedOrderItem && canContinuePayment(selectedOrderItem)" class="border-t border-slate-100 bg-slate-50 px-5 py-4 sm:px-6">
-          <button @click="continuePayment(selectedOrderItem)" class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground shadow-sm hover:bg-primary/90">
+          <CouponInputBlock
+            class="mb-4"
+            v-model="couponInput"
+            :active-coupon-codes="activeCouponCodes"
+            :loading="couponPreviewLoading"
+            :disabled="paymentLoading != null"
+            :error="couponError"
+            :cannot-pay-reason="cannotPayReason"
+            @apply="applyCouponCodes"
+            @clear="clearCouponCodes"
+          />
+          <button @click="continuePayment(selectedOrderItem)" :disabled="!!cannotPayReason" class="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50">
             <CreditCard class="h-5 w-5" />
             <Loader2 v-if="paymentLoading === selectedOrderItem.id" class="h-5 w-5 animate-spin" />
             {{ t.orders.continuePayment }}
@@ -643,6 +699,7 @@ onMounted(() => {
       :order-id="orderPaymentSession.orderId"
       :source="orderPaymentSession.source"
       :return-path="orderPaymentSession.returnPath"
+      :coupon-codes="orderPaymentSession.couponCodes"
     />
   </AppShell>
 </template>
