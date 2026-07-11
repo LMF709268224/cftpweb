@@ -172,13 +172,6 @@ async function load(targetPage = page.value) {
     const list = Array.isArray(rawList) ? rawList : []
     const selectedKey = selected.value ? msgKey(selected.value) : ""
 
-    if (isBackward && Array.isArray(list.filter((item))) {
-
-
-      list.filter((item).reverse()
-
-
-    }
 
 
     messages.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))

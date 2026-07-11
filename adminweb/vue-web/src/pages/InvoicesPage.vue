@@ -126,11 +126,6 @@ async function load(targetPage = page.value) {
 
     const data = await apiClient<JsonRecord>(`/api/mall/invoices?${params}`)
     const list = Array.isArray(data.invoices) ? data.invoices : []
-    if (isBackward && Array.isArray(list.filter((item))) {
-
-      list.filter((item).reverse()
-
-    }
 
     invoices.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || invoices.value.length) || 0

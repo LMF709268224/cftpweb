@@ -506,11 +506,6 @@ async function load() {
     if (statusFilter.value) params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/mall/bundles?${params}`)
     const list = Array.isArray(data.bundles) ? data.bundles : []
-    if (isBackward && Array.isArray(list.filter((item))) {
-
-      list.filter((item).reverse()
-
-    }
 
     bundles.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || 0)

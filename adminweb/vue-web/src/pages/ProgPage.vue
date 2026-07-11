@@ -360,11 +360,6 @@ async function loadPipelines() {
     if (statusFilter.value !== "all") params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/prog/pipelines?${params}`)
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
-    if (isBackward && Array.isArray(list.filter((item))) {
-
-      list.filter((item).reverse()
-
-    }
 
     pipelines.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     hasMore.value = Boolean(data.has_more)
@@ -429,11 +424,6 @@ async function loadLogs(pipelineId = selectedPipelineUlid.value, targetOffset = 
     if (cursor) params.set("cursor", cursor)
     const data = await apiClient<JsonRecord>(`/api/prog/pipelines/${encodeURIComponent(pipelineId)}/logs?${params}`)
     const list = Array.isArray(data.logs) ? data.logs : []
-    if (isBackward && Array.isArray(list.filter((item))) {
-
-      list.filter((item).reverse()
-
-    }
 
     logs.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     logsHasMore.value = Boolean(data.has_more)
@@ -484,11 +474,6 @@ async function loadCertificateTasks() {
     if (selectedPipelineUlid.value) params.set("pipeline_ulid", selectedPipelineUlid.value)
     const data = await apiClient<JsonRecord>(`/api/prog/certificate-tasks?${params}`)
     const list = Array.isArray(data.tasks) ? data.tasks : []
-    if (isBackward && Array.isArray(list.filter((item))) {
-
-      list.filter((item).reverse()
-
-    }
 
     certificateTasks.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     selectedCertificateTask.value = certificateTasks.value[0] || null

@@ -250,11 +250,6 @@ async function load(targetPage = page.value) {
 
     const data = await apiClient<JsonRecord>(`/api/applications?${params}`)
     const list = Array.isArray(data.applications) ? data.applications : []
-    if (isBackward && Array.isArray(list.filter((item))) {
-
-      list.filter((item).reverse()
-
-    }
 
     applications.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || applications.value.length) || 0

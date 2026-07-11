@@ -122,11 +122,6 @@ async function load(nextPage = page.value) {
     prevCursor.value = String(res?.prev_cursor || res?.data?.prev_cursor || data?.prev_cursor || res?.data?.data?.prev_cursor || "")
 
     lastPage.value = nextPage
-    if (isBackward && Array.isArray(list.filter((item))) {
-
-      list.filter((item).reverse()
-
-    }
 
     requests.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     selected.value = requests.value.find((item) => requestUlid(item) === selectedId) || requests.value[0] || null
