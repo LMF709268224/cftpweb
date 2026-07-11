@@ -170,7 +170,7 @@ onMounted(() => load(1))
           <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+        
       </div>
       <div class="grid grid-cols-[minmax(0,1fr)_160px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
         <span>{{ copy.columns.request }}</span>
@@ -214,7 +214,7 @@ onMounted(() => load(1))
       </div>
 
       <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-        <span class="text-sm font-bold text-slate-500">{{ copy.pageText(page, totalPages) }}</span>
+        <div></div>
         <div class="flex gap-3">
           <button
             class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
