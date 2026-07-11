@@ -26,7 +26,8 @@ type OrderItem = {
   bizType: string
   bizRefUlid: string
   status: OrderStatus
-  rawStatus: string
+  order_status: string
+  raw_status?: string
   pipelineId: string
   paymentMethod: string
   canCancel: boolean
@@ -47,7 +48,7 @@ type OrderDetail = {
     currency?: string
     amount?: number
     amount_minor?: number
-    status?: string
+    order_status?: string
     raw_status?: string
     payment_status?: string
     created_at?: string
@@ -163,9 +164,9 @@ const detailSummaryFields = computed<DetailField[]>(() => {
     { label: t.value.orders.detailProductName, value: summary.meta?.product_name || "" },
     { label: t.value.orders.detailOrderId, value: summary.order_id || "" },
     { label: t.value.orders.detailType, value: orderTypeLabel(summary.biz_type) },
-    { label: t.value.orders.detailAmount, value: orderAmountDisplay(Number(summary.amount || 0), summary.currency || "USD", summary.status || "", summary.raw_status || "", t.value.orders.free) },
+    { label: t.value.orders.detailAmount, value: orderAmountDisplay(Number(summary.amount || 0), summary.currency || "USD", summary.order_status || "", t.value.orders.free) },
     { label: t.value.orders.detailPaidAt, value: detail?.paid_at || "" },
-    { label: t.value.orders.detailStatus, value: summary.raw_status ? timelineStatusLabelWithDiagnostics(t, "MALL_ORDER", summary.raw_status) : summary.status || "" },
+    { label: t.value.orders.detailStatus, value: summary.order_status ? timelineStatusLabelWithDiagnostics(t, "MALL_ORDER", summary.order_status) : "" },
     { label: t.value.orders.detailCreatedAt, value: summary.created_at || "" },
   ].filter((field) => field.value !== "")
 })
@@ -179,10 +180,10 @@ const detailExtraFields = computed<DetailField[]>(() => {
 })
 
 function orderStatusBadgeClass(order: OrderItem) {
-  if (order.status === "completed" || order.rawStatus === "COMPLETED") {
+  if (order.order_status === "COMPLETED" || order.order_status === "SUCCESS") {
     return "border-[#6CE9A6] bg-[#ECFDF3] text-[#027A48]"
   }
-  return timelineStatusBadgeClassForStatus("MALL_ORDER", order.rawStatus)
+  return timelineStatusBadgeClassForStatus("MALL_ORDER", order.order_status)
 }
 
 function normalizeCouponCodes(codes: string[]) {
@@ -261,9 +262,9 @@ function closeOrderDetail() {
 
 function canContinuePayment(order: OrderItem) {
   if (!order.bizType || !order.bizRefUlid) return false
-  const rawStatus = String(order.rawStatus || "").toUpperCase()
-  if (order.status === "completed" || rawStatus.includes("COMPLETED")) return false
-  return payableOrderStatuses.has(rawStatus)
+  const orderStatus = String(order.order_status || "").toUpperCase()
+  if (orderStatus === "COMPLETED" || orderStatus === "SUCCESS") return false
+  return payableOrderStatuses.has(orderStatus)
 }
 
 function canCancelOrder(order: OrderItem) {
@@ -330,11 +331,10 @@ function formatMoney(amount: number, currency = "USD") {
   }
 }
 
-function orderAmountDisplay(amount: number, currency: string, status: string, rawStatus: string, freeText: string) {
+function orderAmountDisplay(amount: number, currency: string, orderStatus: string, freeText: string) {
   if (amount > 0) return formatMoney(amount, currency || "USD")
-  const s = String(status || "").toLowerCase()
-  const r = String(rawStatus || "").toUpperCase()
-  if (s === "completed" || s === "paid" || r.includes("COMPLETED") || r.includes("RESOLVED")) {
+  const r = String(orderStatus || "").toUpperCase()
+  if (r === "COMPLETED" || r === "SUCCESS" || r === "PAID" || r.includes("RESOLVED")) {
     return freeText
   }
   return "-"
@@ -432,9 +432,10 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
         currency: (o.currency || "USD").toUpperCase(),
         bizType: o.biz_type || "",
         bizRefUlid: o.biz_ref_ulid || "",
-        amount: orderAmountDisplay(o.amount || 0, o.currency || "USD", o.status || "", o.raw_status || "", t.value.orders.free),
-        status: (o.status in statusConfig ? o.status : "pending") as OrderStatus,
-        rawStatus: o.raw_status,
+        amount: orderAmountDisplay(o.amount || 0, o.currency || "USD", o.order_status || "", t.value.orders.free),
+        status: (o.order_status in statusConfig ? o.order_status : "pending") as OrderStatus,
+        order_status: o.order_status,
+        raw_status: o.raw_status,
         pipelineId: o.pipeline_id,
         paymentMethod: o.payment_method,
         canCancel: Boolean(o.can_cancel),
@@ -554,7 +555,7 @@ onMounted(() => {
           <div class="grid w-full grid-cols-[1fr_auto_auto_auto_auto_auto] items-center gap-x-3 gap-y-3 pl-16 md:w-auto md:shrink-0 md:grid-cols-[96px_96px_36px_36px_36px_20px] md:gap-x-5 md:pl-0">
             <div class="flex justify-start md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
-                {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.rawStatus) }}
+                {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.order_status) }}
               </span>
             </div>
             <div class="text-right">
@@ -629,8 +630,8 @@ onMounted(() => {
               <div class="border-b border-primary/10 bg-gradient-to-r from-primary/10 via-white to-emerald-50 px-4 py-4 sm:px-5">
                 <div class="mb-4 flex items-start justify-between gap-3">
                   <h3 class="font-semibold text-slate-950">{{ t.orders.detailSummary }}</h3>
-                  <span v-if="selectedOrderDetail.summary?.raw_status" class="badge shrink-0 text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', selectedOrderDetail.summary.raw_status)">
-                    {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', selectedOrderDetail.summary.raw_status) }}
+                  <span v-if="selectedOrderDetail.summary?.order_status" class="badge shrink-0 text-xs" :class="timelineStatusBadgeClassForStatus('MALL_ORDER', selectedOrderDetail.summary.order_status)">
+                    {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', selectedOrderDetail.summary.order_status) }}
                   </span>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
@@ -646,7 +647,7 @@ onMounted(() => {
                       {{ detailPaymentPreview.total === 0 ? t.orders.free : formatMoney(detailPaymentPreview.total / 100, detailPaymentPreview.currency) }}
                     </p>
                     <p v-else class="mt-1 text-2xl font-black tracking-tight text-primary">
-                      {{ orderAmountDisplay(Number(selectedOrderDetail.summary?.amount || 0), selectedOrderDetail.summary?.currency || "USD", selectedOrderDetail.summary?.status || "", selectedOrderDetail.summary?.raw_status || "", t.orders.free) }}
+                      {{ orderAmountDisplay(Number(selectedOrderDetail.summary?.amount || 0), selectedOrderDetail.summary?.currency || "USD", selectedOrderDetail.summary?.order_status || "", t.orders.free) }}
                     </p>
                   </div>
                 </div>
