@@ -24,7 +24,6 @@ const lastPage = ref(1)
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pdfRequests)
 
-const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 
 const detailFields = computed(() => {
   if (!selected.value) return []
