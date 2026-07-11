@@ -337,7 +337,6 @@ async function loadPipelines() {
     const params = new URLSearchParams({
       page_size: String(pageSize),
     })
-    let isBackward = false
 
     let cursor = ""
 
@@ -349,7 +348,6 @@ async function loadPipelines() {
 
       cursor = prevCursor.value
 
-      isBackward = true
 
     }
 
@@ -357,7 +355,6 @@ async function loadPipelines() {
 
     if (cursor) params.set("cursor", cursor)
 
-    if (isBackward) params.set("sort", "1")
 
     if (candidateFilter.value.trim()) params.set("candidate_ulid", candidateFilter.value.trim())
     if (statusFilter.value !== "all") params.set("status", statusFilter.value)

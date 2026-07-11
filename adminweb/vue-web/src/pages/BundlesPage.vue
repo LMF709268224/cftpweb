@@ -484,7 +484,6 @@ async function load() {
     const params = new URLSearchParams({
       page_size: String(limit),
     })
-    let isBackward = false
 
     let cursor = ""
 
@@ -496,7 +495,6 @@ async function load() {
 
       cursor = prevCursor.value
 
-      isBackward = true
 
     }
 
@@ -504,7 +502,6 @@ async function load() {
 
     if (cursor) params.set("cursor", cursor)
 
-    if (isBackward) params.set("sort", "1")
 
     if (statusFilter.value) params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/mall/bundles?${params}`)

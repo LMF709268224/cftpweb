@@ -229,7 +229,6 @@ async function load(targetPage = page.value) {
       page_size: String(pageSize),
       status: statusFilter.value,
     })
-    let isBackward = false
 
     let cursor = ""
 
@@ -241,7 +240,6 @@ async function load(targetPage = page.value) {
 
       cursor = prevCursor.value
 
-      isBackward = true
 
     }
 
@@ -249,7 +247,6 @@ async function load(targetPage = page.value) {
 
     if (cursor) params.set("cursor", cursor)
 
-    if (isBackward) params.set("sort", "1")
 
     const data = await apiClient<JsonRecord>(`/api/applications?${params}`)
     const list = Array.isArray(data.applications) ? data.applications : []

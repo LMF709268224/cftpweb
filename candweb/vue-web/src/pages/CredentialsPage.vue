@@ -66,23 +66,17 @@ async function fetchApplications(options: { showLoading?: boolean } = {}) {
       page_size: String(applicationPageSize.value),
     })
     
-    let isBackward = false
     let cursor = ""
     if (applicationPage.value > lastApplicationPage.value) {
       cursor = applicationNextCursor.value
     } else if (applicationPage.value < lastApplicationPage.value) {
       cursor = applicationPrevCursor.value
-      isBackward = true
     }
     
     if (cursor) params.set("cursor", cursor)
-    if (isBackward) params.set("sort", "1")
     
     const appsRes = await apiClient(`/api/credentials/applications?${params.toString()}`)
     const nextApplications = appsRes?.applications || []
-    if (isBackward && Array.isArray(nextApplications)) {
-      nextApplications.reverse()
-    }
     applications.value = nextApplications
     applicationTotal.value = totalFrom(appsRes, nextApplications)
     applicationTotalLabel.value = String(appsRes?.total_label || applicationTotal.value)

@@ -225,22 +225,16 @@ function totalPagesFrom(data: any, total: number, pageSize: number) {
 async function loadMembershipHistory() {
   const params = new URLSearchParams({ page_size: String(historyPageSize.value) })
   
-  let isBackward = false
   let cursor = ""
   if (historyPage.value > lastHistoryPage.value) {
     cursor = historyNextCursor.value
   } else if (historyPage.value < lastHistoryPage.value) {
     cursor = historyPrevCursor.value
-    isBackward = true
   }
   
   if (cursor) params.set("cursor", cursor)
-  if (isBackward) params.set("sort", "1")
   const historyData = await apiClient(`/api/membership/history?${params.toString()}`)
   const nextHistory = listFrom(historyData, ["user_memberships", "memberships", "records", "items", "history"])
-  if (isBackward && Array.isArray(nextHistory)) {
-    nextHistory.reverse()
-  }
   history.value = nextHistory
   historyTotal.value = totalFrom(historyData, nextHistory)
   historyTotalPages.value = totalPagesFrom(historyData, historyTotal.value, historyPageSize.value)
@@ -254,22 +248,16 @@ async function loadMembershipHistory() {
 async function loadMembershipBillings() {
   const params = new URLSearchParams({ page_size: String(billingPageSize.value) })
   
-  let isBackward = false
   let cursor = ""
   if (billingPage.value > lastBillingPage.value) {
     cursor = billingNextCursor.value
   } else if (billingPage.value < lastBillingPage.value) {
     cursor = billingPrevCursor.value
-    isBackward = true
   }
   
   if (cursor) params.set("cursor", cursor)
-  if (isBackward) params.set("sort", "1")
   const billingData = await apiClient(`/api/membership/billings?${params.toString()}`)
   const nextBillings = listFrom(billingData, ["billings", "records", "items"])
-  if (isBackward && Array.isArray(nextBillings)) {
-    nextBillings.reverse()
-  }
   billings.value = nextBillings
   billingTotal.value = totalFrom(billingData, nextBillings)
   billingTotalPages.value = totalPagesFrom(billingData, billingTotal.value, billingPageSize.value)

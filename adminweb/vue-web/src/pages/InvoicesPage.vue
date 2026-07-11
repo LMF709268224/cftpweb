@@ -105,7 +105,6 @@ async function load(targetPage = page.value) {
   loading.value = true
   try {
     const params = new URLSearchParams({ page_size: String(pageSize) })
-    let isBackward = false
 
     let cursor = ""
 
@@ -117,7 +116,6 @@ async function load(targetPage = page.value) {
 
       cursor = prevCursor.value
 
-      isBackward = true
 
     }
 
@@ -125,7 +123,6 @@ async function load(targetPage = page.value) {
 
     if (cursor) params.set("cursor", cursor)
 
-    if (isBackward) params.set("sort", "1")
 
     const data = await apiClient<JsonRecord>(`/api/mall/invoices?${params}`)
     const list = Array.isArray(data.invoices) ? data.invoices : []

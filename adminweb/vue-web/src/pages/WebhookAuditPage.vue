@@ -146,7 +146,6 @@ async function load(targetPage = page.value) {
     const params = new URLSearchParams({
       page_size: String(PAGE_SIZE),
     })
-    let isBackward = false
 
     let cursor = ""
 
@@ -158,7 +157,6 @@ async function load(targetPage = page.value) {
 
       cursor = prevCursor.value
 
-      isBackward = true
 
     }
 
@@ -166,7 +164,6 @@ async function load(targetPage = page.value) {
 
     if (cursor) params.set("cursor", cursor)
 
-    if (isBackward) params.set("sort", "1")
 
     if (status.value) params.set("status", status.value)
 

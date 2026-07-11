@@ -395,12 +395,10 @@ function orderStatusFilterLabel(status?: string) {
 async function fetchOrders(showLoading = true, suppressErrorToast = false) {
   if (showLoading) loading.value = true
   try {
-    let isBackward = false
     if (page.value > lastPage.value) {
       currentCursor.value = nextCursor.value
     } else if (page.value < lastPage.value) {
       currentCursor.value = prevCursor.value
-      isBackward = true
     }
     lastPage.value = page.value
 
@@ -409,7 +407,6 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     })
     
     if (currentCursor.value) params.set("cursor", currentCursor.value)
-    if (isBackward) params.set("sort", "1")
     if (selectedBizType.value) params.set("biz_type", selectedBizType.value)
     if (selectedOrderStatus.value) params.set("status", selectedOrderStatus.value)
     const res = await apiClient(`/api/orders?${params.toString()}`, { suppressErrorToast })
@@ -417,15 +414,12 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     totalLabel.value = String(res.total_label || totalOrders.value)
     totalPages.value = Number(res.total_pages || 0)
     
-    if (isBackward && Array.isArray(res.orders)) {
-      res.orders.reverse()
-    }
     nextCursor.value = String(res.next_cursor || "")
     prevCursor.value = String(res.prev_cursor || "")
     
     // For cursorMode, hasMore controls the "Next" button.
     // When going backward, we naturally have a next page.
-    hasMore.value = isBackward ? true : Boolean(res.has_more)
+    hasMore.value = (page.value < lastPage.value) ? true : Boolean(res.has_more)
 
     if (Array.isArray(res.orders)) {
       orders.value = res.orders.map((o: any) => ({

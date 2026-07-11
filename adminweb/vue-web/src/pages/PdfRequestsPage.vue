@@ -92,7 +92,6 @@ async function load(nextPage = page.value) {
   loading.value = true
   try {
     const params = new URLSearchParams({ page_size: String(PAGE_SIZE) })
-    let isBackward = false
 
     let cursor = ""
 
@@ -104,7 +103,6 @@ async function load(nextPage = page.value) {
 
       cursor = prevCursor.value
 
-      isBackward = true
 
     }
 
@@ -112,7 +110,6 @@ async function load(nextPage = page.value) {
 
     if (cursor) params.set("cursor", cursor)
 
-    if (isBackward) params.set("sort", "1")
 
     const data = await apiClient<JsonRecord>(`/api/pdf-requests?${params}`)
     const list = Array.isArray(data.requests) ? data.requests : []

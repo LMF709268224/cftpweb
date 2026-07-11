@@ -90,7 +90,6 @@ async function load() {
   try {
     const params = new URLSearchParams()
     params.set("page_size", String(pageSize))
-    let isBackward = false
 
     let cursor = ""
 
@@ -102,7 +101,6 @@ async function load() {
 
       cursor = prevCursor.value
 
-      isBackward = true
 
     }
 
@@ -110,7 +108,6 @@ async function load() {
 
     if (cursor) params.set("cursor", cursor)
 
-    if (isBackward) params.set("sort", "1")
 
     for (const [key, value] of Object.entries(filters.value)) {
       const text = String(value || "").trim()

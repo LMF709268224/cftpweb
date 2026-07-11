@@ -143,7 +143,6 @@ async function loadExams(targetPage = page.value) {
     const params = new URLSearchParams({
       page_size: String(pageSize),
     })
-    let isBackward = false
 
     let cursor = ""
 
@@ -155,7 +154,6 @@ async function loadExams(targetPage = page.value) {
 
       cursor = prevCursor.value
 
-      isBackward = true
 
     }
 
@@ -163,7 +161,6 @@ async function loadExams(targetPage = page.value) {
 
     if (cursor) params.set("cursor", cursor)
 
-    if (isBackward) params.set("sort", "1")
 
     if (statusFilter.value) params.set("status", statusFilter.value)
     if (resultStatusFilter.value) params.set("result_status", resultStatusFilter.value)

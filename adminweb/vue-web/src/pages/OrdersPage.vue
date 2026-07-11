@@ -208,7 +208,6 @@ async function load(targetPage = page.value) {
     const params = new URLSearchParams({
       page_size: String(pageSize),
     })
-    let isBackward = false
 
     let cursor = ""
 
@@ -220,7 +219,6 @@ async function load(targetPage = page.value) {
 
       cursor = prevCursor.value
 
-      isBackward = true
 
     }
 
@@ -228,7 +226,6 @@ async function load(targetPage = page.value) {
 
     if (cursor) params.set("cursor", cursor)
 
-    if (isBackward) params.set("sort", "1")
 
     if (candidateUlid.value.trim()) params.set("candidate_ulid", candidateUlid.value.trim())
     if (bizType.value) params.set("biz_type", bizType.value)
@@ -237,9 +234,6 @@ async function load(targetPage = page.value) {
 
     const data = await apiClient<JsonRecord>(`/api/mall/orders?${params}`)
     const list = Array.isArray(data.items) ? data.items : Array.isArray(data.orders) ? data.orders : []
-    if (isBackward && Array.isArray(list)) {
-      list.reverse()
-    }
 
     orders.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total ?? data.total_count ?? data.totalCount ?? orders.value.length) || 0

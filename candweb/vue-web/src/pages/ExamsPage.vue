@@ -283,24 +283,18 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     const params = new URLSearchParams()
     params.set("page_size", String(pageSize.value))
     
-    let isBackward = false
     let cursor = ""
     if (page.value > lastPage.value) {
       cursor = nextCursor.value
     } else if (page.value < lastPage.value) {
       cursor = prevCursor.value
-      isBackward = true
     }
     
     if (cursor) params.set("cursor", cursor)
-    if (isBackward) params.set("sort", "1")
     if (tab === "history") params.set("result_status", "DONE")
     if (keyword.trim()) params.set("confirmation_number", keyword.trim())
     const res = await apiClient(`/api/exams?${params.toString()}`, { suppressErrorToast })
     const nextExams = res?.exams || []
-    if (isBackward && Array.isArray(nextExams)) {
-      nextExams.reverse()
-    }
     exams.value = nextExams
     syncPendingScheduleState(nextExams)
     total.value = Number(res?.total || 0)
