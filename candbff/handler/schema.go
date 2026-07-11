@@ -551,7 +551,7 @@ type OrderItem struct {
 	BizType              string  `json:"biz_type,omitempty"`
 	BizRefUlid           string  `json:"biz_ref_ulid,omitempty"`
 	OrderStatus          string  `json:"order_status"`
-	RawStatus            string  `json:"raw_status"`
+	PaymentStatus        string  `json:"payment_status,omitempty"`
 	PipelineID           string  `json:"pipeline_id"`
 	CreatedAt            string  `json:"created_at"`
 	PaymentMethod        string  `json:"payment_method"`
@@ -671,7 +671,6 @@ type OrderSummaryDetail struct {
 	Amount        float64         `json:"amount"`
 	AmountMinor   int64           `json:"amount_minor"`
 	OrderStatus   string          `json:"order_status"`
-	RawStatus     string          `json:"raw_status"`
 	PaymentStatus string          `json:"payment_status,omitempty"`
 	CreatedAt     string          `json:"created_at,omitempty"`
 	Meta          OrderMetaDetail `json:"meta,omitempty"`

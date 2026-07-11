@@ -27,7 +27,7 @@ type OrderItem = {
   bizRefUlid: string
   status: OrderStatus
   order_status: string
-  raw_status?: string
+  payment_status?: string
   pipelineId: string
   paymentMethod: string
   canCancel: boolean
@@ -49,7 +49,6 @@ type OrderDetail = {
     amount?: number
     amount_minor?: number
     order_status?: string
-    raw_status?: string
     payment_status?: string
     created_at?: string
     meta?: {
@@ -435,7 +434,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
         amount: orderAmountDisplay(o.amount || 0, o.currency || "USD", o.order_status || "", t.value.orders.free),
         status: (o.order_status in statusConfig ? o.order_status : "pending") as OrderStatus,
         order_status: o.order_status,
-        raw_status: o.raw_status,
+        payment_status: o.payment_status,
         pipelineId: o.pipeline_id,
         paymentMethod: o.payment_method,
         canCancel: Boolean(o.can_cancel),
