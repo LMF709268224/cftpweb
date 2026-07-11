@@ -456,7 +456,7 @@ onMounted(async () => {
               <component :is="tab.icon" class="h-4 w-4" />
               {{ tab.label }}
             </span>
-            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
+            
           </div>
         </button>
       </div>
@@ -527,13 +527,16 @@ onMounted(async () => {
           <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
             <div>
               <h2 class="text-xl font-black">{{ copy.sent.title }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.sent.summary(pageSize, total) }}</p>
+              
             </div>
-            <select v-model="statusFilter" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
+            <div class="flex items-center gap-3">
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
+              <select v-model="statusFilter" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
               <option value="">{{ copy.sent.allStatus }}</option>
               <option value="1">{{ copy.sent.unread }}</option>
               <option value="2">{{ copy.sent.read }}</option>
             </select>
+            </div>
           </div>
           <div class="grid grid-cols-[minmax(0,1fr)_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
             <span>{{ copy.sent.columns.message }}</span>
@@ -586,12 +589,15 @@ onMounted(async () => {
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
             <div>
               <h2 class="text-xl font-black">{{ copy.templates.listTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.templates.listDescription }}</p>
+              
             </div>
-            <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm" type="button" @click="startTemplateCreate">
+            <div class="flex items-center gap-3">
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ totalTemplates || templates.length }} 条</span>
+              <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm" type="button" @click="startTemplateCreate">
               <Plus class="h-4 w-4" />
               {{ copy.templates.createTitle }}
             </button>
+          </div>
           </div>
           <div class="grid grid-cols-[minmax(0,1fr)_140px_180px_160px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
             <span>{{ copy.templates.columns.template }}</span>
