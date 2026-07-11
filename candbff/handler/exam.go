@@ -460,6 +460,7 @@ func (h *Handler) ListExams(w http.ResponseWriter, r *http.Request) {
 		Filters:  &gexampb.ExamFilters{},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gexampb.SortOrder(page.Sort),
 	}
 	if status != "" {
 		req.Filters.Status = &status

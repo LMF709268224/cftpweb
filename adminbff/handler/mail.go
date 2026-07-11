@@ -184,6 +184,7 @@ func (h *Handler) ListSentMails(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gmailpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		slog.Error("ListMails failed", "error", err)
@@ -325,6 +326,7 @@ func (h *Handler) ListMailTemplates(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gmailpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		slog.Error("ListMailTemplates failed", "error", err)

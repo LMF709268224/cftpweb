@@ -76,17 +76,24 @@ func parseCursorPage(r *http.Request, fallback int) cursorPage {
 	if pageSize > maxCursorPageSize {
 		pageSize = maxCursorPageSize
 	}
+	sortStr := strings.TrimSpace(r.URL.Query().Get("sort"))
+	var sortOrder int32
+	if sortStr == "1" {
+		sortOrder = 1
+	}
 	return cursorPage{
 		Cursor:   strings.TrimSpace(r.URL.Query().Get("cursor")),
 		PageSize: uint32(pageSize),
+		Sort:     sortOrder,
 	}
 }
 
-func cursorListPayload(items interface{}, page cursorPage, nextCursor string, hasMore bool) map[string]interface{} {
+func cursorListPayload(items interface{}, page cursorPage, nextCursor string, prevCursor string, hasMore bool) map[string]interface{} {
 	return map[string]interface{}{
 		"items":       items,
 		"page_size":   page.PageSize,
 		"next_cursor": nextCursor,
+		"prev_cursor": prevCursor,
 		"has_more":    hasMore,
 	}
 }

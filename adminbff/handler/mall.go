@@ -80,6 +80,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: mallpb.SortOrder(page.Sort),
 	}
 
 	resp, err := h.Mall.ListOrders(r.Context(), req)

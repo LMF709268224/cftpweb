@@ -109,6 +109,7 @@ func (h *Handler) ListCredentials(w http.ResponseWriter, r *http.Request) {
 		Filters:  filters,
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gcredspb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -223,6 +224,7 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 		Filters:  &gcredspb.ApplicationFilters{},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gcredspb.SortOrder(page.Sort),
 	}
 	if statusFilter != "" {
 		req.Filters.Statuses = []string{statusFilter}

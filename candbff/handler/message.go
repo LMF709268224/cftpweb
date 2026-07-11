@@ -52,6 +52,7 @@ func (h *Handler) listMessagesPage(ctx context.Context, candidateID string, stat
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gmsgpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		return nil, "", false, err

@@ -156,6 +156,7 @@ func (h *Handler) ListLmsCourses(w http.ResponseWriter, r *http.Request) {
 			PublishedOnly: parseBoolQuery(r, "published_only"),
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -344,6 +345,7 @@ func (h *Handler) ListLmsCourseEnrollmentsForAdmin(w http.ResponseWriter, r *htt
 			Status:     r.URL.Query().Get("status"),
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -385,6 +387,7 @@ func (h *Handler) ListLmsCourseEnrollments(w http.ResponseWriter, r *http.Reques
 			Status:        r.URL.Query().Get("status"),
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -424,6 +427,7 @@ func (h *Handler) ListLmsLessonProgress(w http.ResponseWriter, r *http.Request) 
 			Status:        r.URL.Query().Get("status"),
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -468,6 +472,7 @@ func (h *Handler) ListLmsChapterProgress(w http.ResponseWriter, r *http.Request)
 			CourseUlid:    courseID,
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -512,6 +517,7 @@ func (h *Handler) ListLmsQuizAttempts(w http.ResponseWriter, r *http.Request) {
 			Status:   r.URL.Query().Get("status"),
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -885,6 +891,7 @@ func (h *Handler) ListLmsLessonsByCourse(w http.ResponseWriter, r *http.Request)
 			CourseUlid: courseID,
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -1519,6 +1526,7 @@ func (h *Handler) ListLmsObjects(w http.ResponseWriter, r *http.Request) {
 			Prefix: r.URL.Query().Get("prefix"),
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -1538,6 +1546,7 @@ func (h *Handler) ListLmsCourseAssets(w http.ResponseWriter, r *http.Request) {
 			AssociatedId: r.URL.Query().Get("associated_id"),
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -1614,6 +1623,7 @@ func (h *Handler) ListLmsBrokenAssets(w http.ResponseWriter, r *http.Request) {
 			AssetType: r.URL.Query().Get("asset_type"),
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {

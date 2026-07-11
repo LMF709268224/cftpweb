@@ -26,6 +26,7 @@ func (h *Handler) ListLmsResourcePacks(w http.ResponseWriter, r *http.Request) {
 			Status: r.URL.Query().Get("status"),
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -225,6 +226,7 @@ func (h *Handler) ListLmsResourcePackFiles(w http.ResponseWriter, r *http.Reques
 			PackId: packID,
 		},
 		PageSize: page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
 		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 	})
 	if err != nil {
@@ -344,6 +346,7 @@ func (h *Handler) ListAllLmsResourcePackFiles(w http.ResponseWriter, r *http.Req
 				PackId: packID,
 			},
 			PageSize: page.PageSize,
+			SortOrder: lmspb.SortOrder(page.Sort),
 			Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
 		})
 		if err != nil {

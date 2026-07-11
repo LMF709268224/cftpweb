@@ -21,6 +21,7 @@ func (h *Handler) ListProgPipelines(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: int32(page.PageSize),
+		SortOrder: gprogpb.SortOrder(page.Sort),
 	}
 
 	resp, err := h.Gprog.ListPipelines(r.Context(), req)
@@ -268,6 +269,7 @@ func (h *Handler) ListProgCertificateTasks(w http.ResponseWriter, r *http.Reques
 		},
 		Cursor:   page.Cursor,
 		PageSize: int32(page.PageSize),
+		SortOrder: gprogpb.SortOrder(page.Sort),
 	}
 
 	resp, err := h.Gprog.ListCertificateTasks(r.Context(), req)

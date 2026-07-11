@@ -181,6 +181,7 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 		Filters:  filters,
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: mallpb.SortOrder(page.Sort),
 	}
 	resp, err := h.Mall.ListBundlesAdmin(r.Context(), req)
 	if err != nil {
@@ -268,6 +269,7 @@ func (h *Handler) ListBundleOrders(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: mallpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

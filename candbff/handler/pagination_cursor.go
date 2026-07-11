@@ -88,11 +88,12 @@ func parseCursorPage(r *http.Request, fallback int) cursorPage {
 	}
 }
 
-func cursorListPayload(items interface{}, page cursorPage, nextCursor string, hasMore bool) map[string]interface{} {
+func cursorListPayload(items interface{}, page cursorPage, nextCursor string, prevCursor string, hasMore bool) map[string]interface{} {
 	return map[string]interface{}{
 		"items":       items,
 		"page_size":   page.PageSize,
 		"next_cursor": nextCursor,
+		"prev_cursor": prevCursor,
 		"has_more":    hasMore,
 	}
 }

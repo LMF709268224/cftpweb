@@ -36,6 +36,7 @@ func (h *Handler) ListInvoices(w http.ResponseWriter, r *http.Request) {
 	req := &gpaypb.ListInvoicesRequest{
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gpaypb.SortOrder(page.Sort),
 	}
 
 	resp, err := h.Gpay.ListInvoices(r.Context(), req)

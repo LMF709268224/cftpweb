@@ -125,6 +125,7 @@ func (h *Handler) ListPaySubscriptions(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gpaypb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -144,6 +145,7 @@ func (h *Handler) ListPayWebhookEvents(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gpaypb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -241,6 +243,7 @@ func (h *Handler) ListMallMailTasks(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: mallpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -325,6 +328,7 @@ func (h *Handler) ListMallNatsMessages(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: mallpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -372,6 +376,7 @@ func (h *Handler) ListProgMailTasks(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: int32(page.PageSize),
+		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -440,6 +445,7 @@ func (h *Handler) ListProgStages(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: int32(page.PageSize),
+		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -471,6 +477,7 @@ func (h *Handler) ListProgCourseUnits(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: int32(page.PageSize),
+		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -503,6 +510,7 @@ func (h *Handler) ListProgDriverEvents(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: int32(page.PageSize),
+		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -533,6 +541,7 @@ func (h *Handler) ListProgNatsMessages(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: int32(page.PageSize),
+		SortOrder: gprogpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -565,6 +574,7 @@ func (h *Handler) ListExamAuditMessages(w http.ResponseWriter, r *http.Request) 
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gexampb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -595,6 +605,7 @@ func (h *Handler) ListExamStatusTransitions(w http.ResponseWriter, r *http.Reque
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gexampb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -615,6 +626,7 @@ func (h *Handler) ListExamReminderMails(w http.ResponseWriter, r *http.Request) 
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gexampb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

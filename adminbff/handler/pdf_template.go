@@ -191,6 +191,7 @@ func (h *Handler) ListPdfRequests(w http.ResponseWriter, r *http.Request) {
 	req := &gcredspb.ListPdfRequestsRequest{
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gcredspb.SortOrder(page.Sort),
 	}
 
 	res, err := h.Creds.ListPdfRequests(r.Context(), req)

@@ -163,8 +163,9 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 			CandidateUlid: candidateID,
 			CredDefUlid:   credDefID,
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
+		SortOrder: gcredspb.SortOrder(page.Sort),
 	}
 
 	res, err := h.Creds.ListApplications(r.Context(), req)
@@ -210,6 +211,7 @@ func (h *Handler) ListCandidateApplications(w http.ResponseWriter, r *http.Reque
 		"total_exact":  total.Exact,
 		"page_size":    page.PageSize,
 		"next_cursor":  res.GetNextCursor(),
+		"prev_cursor":  res.GetPrevCursor(),
 		"has_more":     res.GetHasMore(),
 	})
 }

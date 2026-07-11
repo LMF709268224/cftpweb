@@ -79,6 +79,7 @@ func (h *Handler) ListSentMessages(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gmsgpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		slog.Error("ListMessagesAdmin failed", "error", err)
@@ -126,6 +127,7 @@ func (h *Handler) ListTemplates(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gmsgpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		slog.Error("ListTemplates failed", "error", err)

@@ -25,6 +25,7 @@ func (h *Handler) ListAuditLogs(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gauditpb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)

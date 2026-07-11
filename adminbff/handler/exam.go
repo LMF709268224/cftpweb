@@ -22,6 +22,7 @@ func (h *Handler) ListAdminExams(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gexampb.SortOrder(page.Sort),
 	}
 
 	resp, err := h.Gexam.ListExams(r.Context(), req)
@@ -104,6 +105,7 @@ func (h *Handler) ListWebhookMessages(w http.ResponseWriter, r *http.Request) {
 		},
 		Cursor:   page.Cursor,
 		PageSize: page.PageSize,
+		SortOrder: gexampb.SortOrder(page.Sort),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
