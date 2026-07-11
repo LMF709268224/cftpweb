@@ -34,8 +34,9 @@ func (h *Handler) ListInvoices(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
 
 	req := &gpaypb.ListInvoicesRequest{
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   &gpaypb.InvoiceFilters{},
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gpaypb.SortOrder(page.Sort),
 	}
 

@@ -184,7 +184,6 @@ onMounted(loadDefinitions)
               <h2 class="text-xl font-black">{{ copy.definitionsTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.definitionsDescription }}</p>
             </div>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ definitions.length }}</span>
           </div>
           <div v-if="definitionsLoading" class="p-10 text-center text-slate-500">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
