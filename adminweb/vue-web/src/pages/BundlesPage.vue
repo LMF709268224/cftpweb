@@ -509,9 +509,9 @@ async function load() {
 
     bundles.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || 0)
-    const isBackward = page.value < lastPage.value
+    const isBackward = currentPage.value < lastPage.value
     hasMore.value = isBackward ? true : Boolean(data.has_more)
-    lastPage.value = page.value
+    lastPage.value = currentPage.value
 nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
 
