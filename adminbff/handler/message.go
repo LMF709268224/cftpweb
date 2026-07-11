@@ -73,12 +73,14 @@ func (h *Handler) ListSentMessages(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	filters := &gmsgpb.MessageAdminFilters{
+		Status: statusPtr,
+	}
+
 	resp, err := h.Gmsg.ListMessagesAdmin(r.Context(), &gmsgpb.ListMessagesAdminRequest{
-		Filters: &gmsgpb.MessageAdminFilters{
-			Status: statusPtr,
-		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   filters,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmsgpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -86,7 +88,19 @@ func (h *Handler) ListSentMessages(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+
+	countResp, err := h.Gmsg.GetMessageCountAdmin(r.Context(), &gmsgpb.GetMessageCountAdminRequest{
+		Filters: filters,
+	})
+	if err != nil {
+		slog.Error("GetMessageCountAdmin failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+
+	payload := jsonPayloadObject(resp)
+	payload["total"] = countResp.GetCount()
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 func (h *Handler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
@@ -121,12 +135,13 @@ func (h *Handler) CreateTemplate(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) ListTemplates(w http.ResponseWriter, r *http.Request) {
 	keyword := r.URL.Query().Get("keyword")
 	page := parseCursorPage(r, 10)
+	filters := &gmsgpb.TemplateFilters{
+		Keyword: keyword,
+	}
 	resp, err := h.Gmsg.ListTemplates(r.Context(), &gmsgpb.ListTemplatesRequest{
-		Filters: &gmsgpb.TemplateFilters{
-			Keyword: keyword,
-		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   filters,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmsgpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -134,8 +149,19 @@ func (h *Handler) ListTemplates(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+
+	countResp, err := h.Gmsg.GetTemplateCount(r.Context(), &gmsgpb.GetTemplateCountRequest{
+		Filters: filters,
+	})
+	if err != nil {
+		slog.Error("GetTemplateCount failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+
 	payload := jsonPayloadObject(resp)
 	payload["page_size"] = page.PageSize
+	payload["total"] = countResp.GetCount()
 	WriteJSON(w, http.StatusOK, payload)
 }
 

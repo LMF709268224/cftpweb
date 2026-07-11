@@ -178,12 +178,13 @@ func (h *Handler) ListSentMails(w http.ResponseWriter, r *http.Request) {
 	if status := r.URL.Query().Get("status"); status != "" {
 		statusPtr = &status
 	}
+	filters := &gmailpb.MailFilters{
+		Status: statusPtr,
+	}
 	resp, err := h.Gmail.ListMails(r.Context(), &gmailpb.ListMailsRequest{
-		Filters: &gmailpb.MailFilters{
-			Status: statusPtr,
-		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   filters,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmailpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -191,7 +192,19 @@ func (h *Handler) ListSentMails(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+
+	countResp, err := h.Gmail.GetMailCount(r.Context(), &gmailpb.GetMailCountRequest{
+		Filters: filters,
+	})
+	if err != nil {
+		slog.Error("GetMailCount failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+
+	payload := jsonPayloadObject(resp)
+	payload["total"] = countResp.GetCount()
+	WriteJSON(w, http.StatusOK, payload)
 }
 
 func (h *Handler) GetMailStatus(w http.ResponseWriter, r *http.Request) {
@@ -320,12 +333,13 @@ func (h *Handler) DeleteMailTemplate(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ListMailTemplates(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 10)
+	filters := &gmailpb.TemplateFilters{
+		BusinessUnit: optionalString(firstNonEmpty(r.URL.Query().Get("business_unit"), "adminserver")),
+	}
 	resp, err := h.Gmail.ListTemplates(r.Context(), &gmailpb.ListTemplatesRequest{
-		Filters: &gmailpb.TemplateFilters{
-			BusinessUnit: optionalString(firstNonEmpty(r.URL.Query().Get("business_unit"), "adminserver")),
-		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   filters,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gmailpb.SortOrder(page.Sort),
 	})
 	if err != nil {
@@ -333,8 +347,19 @@ func (h *Handler) ListMailTemplates(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
+
+	countResp, err := h.Gmail.GetTemplateCount(r.Context(), &gmailpb.GetTemplateCountRequest{
+		Filters: filters,
+	})
+	if err != nil {
+		slog.Error("GetTemplateCount failed", "error", err)
+		HandleGrpcError(w, err)
+		return
+	}
+
 	payload := jsonPayloadObject(resp)
 	payload["page_size"] = page.PageSize
+	payload["total"] = countResp.GetCount()
 	WriteJSON(w, http.StatusOK, payload)
 }
 
