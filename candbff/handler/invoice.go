@@ -42,7 +42,7 @@ func (h *Handler) verifyInvoiceableOrder(ctx context.Context, candidateID, order
 		}
 		for _, item := range resp.GetItems() {
 			if item.GetOrderUlid() == orderID {
-				if candidateOrderStatus(item.GetOrderStatus()) != "completed" {
+				if !isOrderCompleted(item.GetOrderStatus()) {
 					return NewError(http.StatusConflict, ErrPrecondition, "invoice is only available for completed orders")
 				}
 				return nil

@@ -755,7 +755,7 @@ func (h *Handler) retakePaymentSnapshot(ctx context.Context, candidateID, course
 		out.orderStatus = order.GetOrderStatus()
 		out.payOrderUlid = order.GetPayOrderUlid()
 		latestCreatedAt = order.GetCreatedAt()
-		if candidateOrderStatus(order.GetOrderStatus()) == "completed" {
+		if isOrderCompleted(order.GetOrderStatus()) {
 			out.paid = true
 		}
 	}
@@ -787,7 +787,7 @@ func (h *Handler) completedBundleOrdersByPipeline(r *http.Request, candidateID s
 		if order == nil || strings.TrimSpace(order.GetBundleOrderUlid()) == "" {
 			continue
 		}
-		if candidateOrderStatus(order.GetOrderStatus()) != "completed" {
+		if !isOrderCompleted(order.GetOrderStatus()) {
 			continue
 		}
 		bundle, err := h.Mall.GetBundle(r.Context(), &mallpb.GetBundleRequest{

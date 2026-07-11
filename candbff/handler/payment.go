@@ -96,7 +96,6 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		}
 
 		rawStatus := candidateOrderRawStatus(item.GetOrderStatus())
-		statusStr := candidateOrderStatus(rawStatus)
 		amount := float64(item.GetAmountMinor()) / 100.0
 		currency := item.GetCurrencyCode()
 
@@ -120,14 +119,14 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			ProductName:          name,
 			BizType:              item.GetBizType(),
 			BizRefUlid:           item.GetBizRefUlid(),
-			Status:               statusStr,
+			Status:               rawStatus,
 			RawStatus:            rawStatus,
 			CreatedAt:            formatOrderCreatedAt(item.GetCreatedAt()),
 			Amount:               amount,
 			Currency:             currency,
 			PayOrderUlid:         payOrderID,
 			PipelinePayOrderUlid: payOrderID,
-			CanViewInvoice:       statusStr == "completed" && payOrderID != "",
+			CanViewInvoice:       rawStatus == "COMPLETED" && payOrderID != "",
 			CanCancel:            canCancelBusinessOrder(item.GetBizType(), rawStatus),
 		}
 
@@ -178,7 +177,7 @@ func (h *Handler) candidateOrderAggregates(ctx context.Context, baseReq *mallpb.
 			if item == nil {
 				continue
 			}
-			if candidateOrderStatus(item.GetOrderStatus()) == "completed" {
+			if isOrderCompleted(item.GetOrderStatus()) {
 				completed++
 				totalAmount += float64(item.GetAmountMinor()) / 100.0
 			}
@@ -278,7 +277,7 @@ func (h *Handler) orderDetailResponse(resp *mallpb.GetOrderDetailResponse) Order
 			Currency:      strings.ToUpper(strings.TrimSpace(summary.GetCurrencyCode())),
 			Amount:        float64(summary.GetAmountMinor()) / 100.0,
 			AmountMinor:   summary.GetAmountMinor(),
-			Status:        candidateOrderStatus(rawStatus),
+			Status:        rawStatus,
 			RawStatus:     rawStatus,
 			PaymentStatus: strings.TrimSpace(summary.GetPaymentStatus()),
 			CreatedAt:     formatOrderCreatedAt(summary.GetCreatedAt()),
@@ -531,23 +530,16 @@ func isCandidateOrderBizType(bizType string) bool {
 	return false
 }
 
-func candidateOrderStatus(raw string) string {
-	orderStatus := candidateOrderRawStatus(raw)
-	switch orderStatus {
-	case "COMPLETED", "SUCCESS", "PAID":
-		return "completed"
-	case "CANCEL", "CANCELLED", "CANCELED", "FAILED":
-		return "cancelled"
-	case "":
-		return "pending"
-	default:
-		return "processing"
-	}
+
+func isOrderCompleted(raw string) bool {
+	status := strings.ToUpper(strings.TrimSpace(raw))
+	return status == "COMPLETED" || status == "SUCCESS" || status == "PAID"
 }
 
 func canCancelCandidateOrder(raw string) bool {
-	switch candidateOrderStatus(raw) {
-	case "completed", "cancelled":
+	status := strings.ToUpper(strings.TrimSpace(raw))
+	switch status {
+	case "COMPLETED", "SUCCESS", "PAID", "CANCEL", "CANCELLED", "CANCELED", "FAILED":
 		return false
 	default:
 		return true
