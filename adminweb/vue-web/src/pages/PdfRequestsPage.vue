@@ -117,8 +117,10 @@ async function load(nextPage = page.value) {
 
     page.value = nextPage
     total.value = Number(data.total || list.length)
-    hasMore.value = Boolean(data.has_more)
-    nextCursor.value = String(data.next_cursor || "")
+    const isBackward = page.value < lastPage.value
+    hasMore.value = isBackward ? true : Boolean(data.has_more)
+    lastPage.value = page.value
+nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = nextPage

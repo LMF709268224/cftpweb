@@ -300,11 +300,13 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     total.value = Number(res?.total || 0)
     totalLabel.value = String(res?.total_label || total.value)
     totalPages.value = Number(res?.total_pages || Math.ceil(total.value / pageSize.value) || 0)
-    hasMore.value = Boolean(res?.has_more)
-    nextCursor.value = String(res?.next_cursor || "")
+    const isBackward = page.value < lastPage.value
+    hasMore.value = isBackward ? true : Boolean(res?.has_more)
+    lastPage.value = page.value
+nextCursor.value = String(res?.next_cursor || "")
     prevCursor.value = String(res?.prev_cursor || "")
     lastPage.value = page.value
-  } catch {
+} catch {
     exams.value = []
     total.value = 0
     totalPages.value = 0

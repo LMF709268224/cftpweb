@@ -171,8 +171,10 @@ async function loadExams(targetPage = page.value) {
     const data = await apiClient<JsonRecord>(`/api/exams?${params}`)
     exams.value = asArray(data.exams)
     total.value = Number(data.total || exams.value.length || 0)
-    hasMore.value = Boolean(data.has_more)
-    nextCursor.value = String(data.next_cursor || "")
+    const isBackward = page.value < lastPage.value
+    hasMore.value = isBackward ? true : Boolean(data.has_more)
+    lastPage.value = page.value
+nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = targetPage

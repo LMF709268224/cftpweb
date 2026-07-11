@@ -117,12 +117,14 @@ async function load() {
     const data = await apiClient<JsonRecord>(`/api/audit/logs?${params}`)
     logs.value = asRecordList(data.items)
     total.value = Number(data.total || logs.value.length)
-    hasMore.value = Boolean(data.has_more)
-    nextCursor.value = String(data.next_cursor || "")
+    const isBackward = page.value < lastPage.value
+    hasMore.value = isBackward ? true : Boolean(data.has_more)
+    lastPage.value = page.value
+nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = page.value
-    if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
+if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
       selected.value = logs.value[0] || null
     }
   } catch (err) {

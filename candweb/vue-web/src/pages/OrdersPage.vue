@@ -400,8 +400,7 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     } else if (page.value < lastPage.value) {
       currentCursor.value = prevCursor.value
     }
-    lastPage.value = page.value
-
+    
     const params = new URLSearchParams({
       page_size: String(pageSize.value),
     })
@@ -419,7 +418,9 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
     
     // For cursorMode, hasMore controls the "Next" button.
     // When going backward, we naturally have a next page.
-    hasMore.value = (page.value < lastPage.value) ? true : Boolean(res.has_more)
+    const isBackward = page.value < lastPage.value
+    hasMore.value = isBackward ? true : Boolean(res.has_more)
+    lastPage.value = page.value
 
     if (Array.isArray(res.orders)) {
       orders.value = res.orders.map((o: any) => ({

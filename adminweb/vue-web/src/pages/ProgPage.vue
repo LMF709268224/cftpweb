@@ -362,8 +362,10 @@ async function loadPipelines() {
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
 
     pipelines.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
-    hasMore.value = Boolean(data.has_more)
-    nextCursor.value = String(data.next_cursor || "")
+    const isBackward = page.value < lastPage.value
+    hasMore.value = isBackward ? true : Boolean(data.has_more)
+    lastPage.value = page.value
+nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = currentPage
