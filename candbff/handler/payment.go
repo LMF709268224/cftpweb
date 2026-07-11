@@ -555,19 +555,16 @@ func canCancelCandidateOrder(raw string) bool {
 }
 
 func canCancelBusinessOrder(bizType, rawStatus string) bool {
-	status := candidateOrderRawStatus(rawStatus)
-	if status == "WAIT_PAYMENT" || status == "PENDING_PAYMENT" {
-		return true
-	}
+	status := strings.ToUpper(strings.TrimSpace(rawStatus))
 	switch normalizeOrderBizType(bizType) {
 	case orderBizBundlePurchase:
-		return status == "WAIT_BUNDLE_PAYMENT"
+		return status == "WAIT_PAYMENT"
 	case orderBizStagePayment:
 		return status == "WAIT_EXEMPTION_SELECTION" || status == "WAIT_STAGE_PAYMENT"
 	case orderBizCourseRetakePayment:
-		return status == "WAIT_RETAKE_PAYMENT"
+		return status == "WAIT_PAYMENT"
 	case orderBizPipelineUnlock:
-		return status == "WAIT_UNLOCK_PAYMENT"
+		return status == "WAIT_PAYMENT"
 	case orderBizCredentialApply:
 		return status == "WAIT_REVIEW_FEE_PAYMENT"
 	default:
@@ -576,24 +573,7 @@ func canCancelBusinessOrder(bizType, rawStatus string) bool {
 }
 
 func candidateOrderRawStatus(raw string) string {
-	orderStatus := strings.ToUpper(strings.TrimSpace(raw))
-	orderStatus = strings.NewReplacer("-", "_", " ", "_").Replace(orderStatus)
-	switch orderStatus {
-	case "0", "UNSPECIFIED", "ORDER_STATUS_UNSPECIFIED":
-		return "PENDING"
-	case "1", "ORDER_STATUS_PENDING_CREATE":
-		return "PENDING_CREATE"
-	case "2", "PENDING", "WAIT_PAY", "UNPAID", "ORDER_STATUS_PENDING_PAYMENT":
-		return "PENDING_PAYMENT"
-	case "3", "SUCCESS", "ORDER_STATUS_COMPLETED":
-		return "COMPLETED"
-	case "4", "CANCEL", "CANCELED", "ORDER_STATUS_CANCELLED", "ORDER_STATUS_CANCELED":
-		return "CANCELLED"
-	case "5", "ORDER_STATUS_FAILED":
-		return "FAILED"
-	default:
-		return orderStatus
-	}
+	return strings.ToUpper(strings.TrimSpace(raw))
 }
 
 func formatOrderCreatedAt(createdAt string) string {
