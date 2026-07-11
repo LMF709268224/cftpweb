@@ -83,7 +83,12 @@ type bundlePurchaseState struct {
 // ListPipelines  GET /api/mall/pipelines
 func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 	resp, err := h.Gcc.ListPipelines(r.Context(), &gccpb.ListPipelinesRequest{
-		CandidateUlid: CandidateID(r),
+		Filters: &gccpb.PipelineFilters{
+			CandidateUlid: CandidateID(r),
+			CategoryTips:  r.URL.Query().Get("category_tips"),
+		},
+		Cursor:   r.URL.Query().Get("page_token"),
+		PageSize: parseUint32Query(r, "page_size"),
 	})
 	if err != nil {
 		HandleGrpcError(w, err)
@@ -91,7 +96,10 @@ func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out := ListPipelinesRsp{
-		Pipelines: make([]PipelineConfig, 0, len(resp.GetPipelines())),
+		Pipelines:  make([]PipelineConfig, 0, len(resp.GetPipelines())),
+		HasMore:    resp.GetHasMore(),
+		NextCursor: resp.GetNextCursor(),
+		PrevCursor: resp.GetPrevCursor(),
 	}
 
 	// TODO: wait for GCC catalog management/list API to support grouped browsing.

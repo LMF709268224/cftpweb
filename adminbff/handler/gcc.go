@@ -11,11 +11,20 @@ import (
 
 // ListPipelines GET /api/pipelines
 func (h *Handler) ListPipelines(w http.ResponseWriter, r *http.Request) {
+	status := r.URL.Query().Get("status")
+	var statusOpt *string
+	if status != "" {
+		statusOpt = &status
+	}
+
 	req := &gccpb.ListPipelinesAdminRequest{
-		CategoryTips: r.URL.Query().Get("category_tips"),
-		OnlyCurrent:  r.URL.Query().Get("only_current") == "true",
-		Limit:        int32(parseUint32Query(r, "limit")),
-		Offset:       int32(parseUint32Query(r, "offset")),
+		Filters: &gccpb.PipelineAdminFilters{
+			CategoryTips: r.URL.Query().Get("category_tips"),
+			OnlyCurrent:  r.URL.Query().Get("only_current") == "true",
+			Status:       statusOpt,
+		},
+		Cursor:   r.URL.Query().Get("page_token"),
+		PageSize: parseUint32Query(r, "page_size"),
 	}
 
 	resp, err := h.Gcc.ListPipelinesAdmin(r.Context(), req)

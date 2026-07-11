@@ -55,7 +55,10 @@ const saving = ref(false)
 const creating = ref(false)
 const categoryFilter = ref("")
 const onlyCurrent = ref(false)
-const offset = ref(0)
+const pageToken = ref("")
+const nextToken = ref("")
+const prevToken = ref("")
+const hasMore = ref(false)
 const activeLayer = ref<LayerKey>("overview")
 const selectedStageIndex = ref(0)
 const selectedUnitPath = ref("")
@@ -71,8 +74,8 @@ const limit = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pipelineConfigAdmin)
 
-const canPrev = computed(() => offset.value > 0)
-const canNext = computed(() => pipelines.value.length >= limit)
+const canPrev = computed(() => !!prevToken.value)
+const canNext = computed(() => hasMore.value)
 const inEditor = computed(() => !!selected.value || creating.value)
 const selectedId = computed(() => selected.value ? pipelineUlid(selected.value) : "")
 const published = computed(() => {
@@ -614,14 +617,17 @@ async function load() {
   loading.value = true
   try {
     const params = new URLSearchParams({
-      limit: String(limit),
-      offset: String(offset.value),
+      page_size: String(limit),
     })
+    if (pageToken.value) params.set("page_token", pageToken.value)
     if (categoryFilter.value.trim()) params.set("category_tips", categoryFilter.value.trim())
     if (onlyCurrent.value) params.set("only_current", "true")
     const data = await apiClient<JsonRecord>(`/api/pipelines?${params}`)
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
     pipelines.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    hasMore.value = Boolean(data.has_more)
+    nextToken.value = String(data.next_cursor || "")
+    prevToken.value = String(data.prev_cursor || "")
   } catch (err) {
     console.error(err)
     pipelines.value = []
@@ -917,7 +923,7 @@ async function clonePipeline() {
   }
 }
 
-watch([categoryFilter, onlyCurrent, offset], () => load())
+watch([categoryFilter, onlyCurrent], () => { pageToken.value = ""; load() })
 onMounted(() => {
   void load()
   void loadCourseOptions()
@@ -999,8 +1005,8 @@ onMounted(() => {
         </div>
       </template>
       <div class="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
-        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - limit)">{{ copy.prev }}</button>
-        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += limit">{{ copy.next }}</button>
+        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="pageToken = prevToken; load()">{{ copy.prev }}</button>
+        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="pageToken = nextToken; load()">{{ copy.next }}</button>
       </div>
     </section>
 

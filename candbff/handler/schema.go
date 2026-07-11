@@ -82,7 +82,10 @@ type BaseRsp struct {
 }
 
 type ListPipelinesRsp struct {
-	Pipelines []PipelineConfig `json:"pipelines,omitempty"`
+	Pipelines  []PipelineConfig `json:"pipelines,omitempty"`
+	HasMore    bool             `json:"has_more"`
+	NextCursor string           `json:"next_cursor,omitempty"`
+	PrevCursor string           `json:"prev_cursor,omitempty"`
 }
 
 type PipelineDetailRsp struct {

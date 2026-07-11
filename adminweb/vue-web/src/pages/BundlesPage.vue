@@ -564,7 +564,7 @@ async function loadCreateTargetOptions() {
   }
   try {
     const [pipelines, memberships, packs] = await Promise.all([
-      loadRecords("pipelines", apiClient<JsonRecord>("/api/pipelines?limit=200&offset=0&only_current=true"), ["pipelines", "items"]),
+      loadRecords("pipelines", apiClient<JsonRecord>("/api/pipelines?page_size=200&only_current=true"), ["pipelines", "items"]),
       loadRecords("memberships", apiClient<JsonRecord>("/api/memberships?page=1&page_size=200"), ["memberships", "membership_configs", "items"]),
       loadRecords("resource-packs", apiClient<JsonRecord>("/api/lms/resource-packs?page_size=200"), ["packs", "items"]),
     ])
