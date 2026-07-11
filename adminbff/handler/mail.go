@@ -195,6 +195,7 @@ func (h *Handler) ListSentMails(w http.ResponseWriter, r *http.Request) {
 
 	countResp, err := h.Gmail.GetMailCount(r.Context(), &gmailpb.GetMailCountRequest{
 		Filters: filters,
+		Limit:   10000,
 	})
 	if err != nil {
 		slog.Error("GetMailCount failed", "error", err)
@@ -350,6 +351,7 @@ func (h *Handler) ListMailTemplates(w http.ResponseWriter, r *http.Request) {
 
 	countResp, err := h.Gmail.GetTemplateCount(r.Context(), &gmailpb.GetTemplateCountRequest{
 		Filters: filters,
+		Limit:   10000,
 	})
 	if err != nil {
 		slog.Error("GetTemplateCount failed", "error", err)

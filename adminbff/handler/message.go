@@ -91,6 +91,7 @@ func (h *Handler) ListSentMessages(w http.ResponseWriter, r *http.Request) {
 
 	countResp, err := h.Gmsg.GetMessageCountAdmin(r.Context(), &gmsgpb.GetMessageCountAdminRequest{
 		Filters: filters,
+		Limit:   10000,
 	})
 	if err != nil {
 		slog.Error("GetMessageCountAdmin failed", "error", err)
@@ -152,6 +153,7 @@ func (h *Handler) ListTemplates(w http.ResponseWriter, r *http.Request) {
 
 	countResp, err := h.Gmsg.GetTemplateCount(r.Context(), &gmsgpb.GetTemplateCountRequest{
 		Filters: filters,
+		Limit:   10000,
 	})
 	if err != nil {
 		slog.Error("GetTemplateCount failed", "error", err)
