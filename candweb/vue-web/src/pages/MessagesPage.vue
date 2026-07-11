@@ -25,7 +25,8 @@ const detailLoadingId = ref<string | null>(null)
 const totalUnreadCount = ref(0)
 
 const page = ref(1)
-const cursorStack = ref<string[]>([""])
+const lastPage = ref(1)
+const prevCursor = ref("")
 const nextCursor = ref("")
 const hasMore = ref(false)
 const pageSize = 10
@@ -62,7 +63,8 @@ function prevPage() {
 
 function resetPagination() {
   page.value = 1
-  cursorStack.value = [""]
+  lastPage.value = 1
+  prevCursor.value = ""
   nextCursor.value = ""
   hasMore.value = false
 }
@@ -243,14 +245,20 @@ async function fetchMessages(showLoading = true, suppressErrorToast = false) {
     const params = new URLSearchParams({
       page_size: String(pageSize),
     })
-    const cursor = cursorStack.value[page.value - 1] || ""
+    let cursor = ""
+    if (page.value > lastPage.value) {
+      cursor = nextCursor.value
+    } else if (page.value < lastPage.value) {
+      cursor = prevCursor.value
+    }
+    
     if (cursor) params.set("cursor", cursor)
     if (selectedStatus.value) params.set("status", selectedStatus.value)
     const res = await apiClient(`/api/messages?${params.toString()}`, { suppressErrorToast })
     hasMore.value = !!res?.has_more
     nextCursor.value = String(res?.next_cursor || "")
-    cursorStack.value = cursorStack.value.slice(0, page.value)
-    cursorStack.value[page.value] = nextCursor.value
+    prevCursor.value = String(res?.prev_cursor || "")
+    lastPage.value = page.value
     if (res?.messages) {
       messageList.value = res.messages.map((m: any) => {
         let type = "system"
