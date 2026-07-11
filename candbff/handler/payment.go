@@ -556,6 +556,9 @@ func canCancelCandidateOrder(raw string) bool {
 
 func canCancelBusinessOrder(bizType, rawStatus string) bool {
 	status := candidateOrderRawStatus(rawStatus)
+	if status == "WAIT_PAYMENT" || status == "PENDING_PAYMENT" {
+		return true
+	}
 	switch normalizeOrderBizType(bizType) {
 	case orderBizBundlePurchase:
 		return status == "WAIT_BUNDLE_PAYMENT"
