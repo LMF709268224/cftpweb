@@ -22,7 +22,8 @@ const historyPageSize = ref(10)
 const historyTotal = ref(0)
 const historyTotalPages = ref(0)
 const lastHistoryPageSize = ref(historyPageSize.value)
-const historyCursorStack = ref<string[]>([""])
+const historyPrevCursor = ref("")
+const lastHistoryPage = ref(1)
 const historyNextCursor = ref("")
 const historyHasMore = ref(false)
 const billingPage = ref(1)
@@ -30,7 +31,8 @@ const billingPageSize = ref(10)
 const billingTotal = ref(0)
 const billingTotalPages = ref(0)
 const lastBillingPageSize = ref(billingPageSize.value)
-const billingCursorStack = ref<string[]>([""])
+const billingPrevCursor = ref("")
+const lastBillingPage = ref(1)
 const billingNextCursor = ref("")
 const billingHasMore = ref(false)
 const pageSizeOptions = [10, 30, 50, 100]
@@ -222,33 +224,59 @@ function totalPagesFrom(data: any, total: number, pageSize: number) {
 
 async function loadMembershipHistory() {
   const params = new URLSearchParams({ page_size: String(historyPageSize.value) })
-  const cursor = historyCursorStack.value[historyPage.value - 1] || ""
+  
+  let isBackward = false
+  let cursor = ""
+  if (historyPage.value > lastHistoryPage.value) {
+    cursor = historyNextCursor.value
+  } else if (historyPage.value < lastHistoryPage.value) {
+    cursor = historyPrevCursor.value
+    isBackward = true
+  }
+  
   if (cursor) params.set("cursor", cursor)
+  if (isBackward) params.set("sort", "1")
   const historyData = await apiClient(`/api/membership/history?${params.toString()}`)
   const nextHistory = listFrom(historyData, ["user_memberships", "memberships", "records", "items", "history"])
+  if (isBackward && Array.isArray(nextHistory)) {
+    nextHistory.reverse()
+  }
   history.value = nextHistory
   historyTotal.value = totalFrom(historyData, nextHistory)
   historyTotalPages.value = totalPagesFrom(historyData, historyTotal.value, historyPageSize.value)
   historyHasMore.value = Boolean(historyData?.has_more)
   historyNextCursor.value = String(historyData?.next_cursor || "")
-  historyCursorStack.value = historyCursorStack.value.slice(0, historyPage.value)
-  historyCursorStack.value[historyPage.value] = historyNextCursor.value
+  historyPrevCursor.value = String(historyData?.prev_cursor || "")
+  lastHistoryPage.value = historyPage.value
   return nextHistory
 }
 
 async function loadMembershipBillings() {
   const params = new URLSearchParams({ page_size: String(billingPageSize.value) })
-  const cursor = billingCursorStack.value[billingPage.value - 1] || ""
+  
+  let isBackward = false
+  let cursor = ""
+  if (billingPage.value > lastBillingPage.value) {
+    cursor = billingNextCursor.value
+  } else if (billingPage.value < lastBillingPage.value) {
+    cursor = billingPrevCursor.value
+    isBackward = true
+  }
+  
   if (cursor) params.set("cursor", cursor)
+  if (isBackward) params.set("sort", "1")
   const billingData = await apiClient(`/api/membership/billings?${params.toString()}`)
   const nextBillings = listFrom(billingData, ["billings", "records", "items"])
+  if (isBackward && Array.isArray(nextBillings)) {
+    nextBillings.reverse()
+  }
   billings.value = nextBillings
   billingTotal.value = totalFrom(billingData, nextBillings)
   billingTotalPages.value = totalPagesFrom(billingData, billingTotal.value, billingPageSize.value)
   billingHasMore.value = Boolean(billingData?.has_more)
   billingNextCursor.value = String(billingData?.next_cursor || "")
-  billingCursorStack.value = billingCursorStack.value.slice(0, billingPage.value)
-  billingCursorStack.value[billingPage.value] = billingNextCursor.value
+  billingPrevCursor.value = String(billingData?.prev_cursor || "")
+  lastBillingPage.value = billingPage.value
   return nextBillings
 }
 
@@ -313,14 +341,16 @@ async function cancelMembership() {
 
 function resetHistoryPagination() {
   historyPage.value = 1
-  historyCursorStack.value = [""]
+  lastHistoryPage.value = 1
+  historyPrevCursor.value = ""
   historyNextCursor.value = ""
   historyHasMore.value = false
 }
 
 function resetBillingPagination() {
   billingPage.value = 1
-  billingCursorStack.value = [""]
+  lastBillingPage.value = 1
+  billingPrevCursor.value = ""
   billingNextCursor.value = ""
   billingHasMore.value = false
 }

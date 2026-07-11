@@ -29,7 +29,8 @@ const totalPages = ref(0)
 const totalLabel = ref("")
 const hasMore = ref(false)
 const nextCursor = ref("")
-const cursorStack = ref<string[]>([""])
+const prevCursor = ref("")
+const lastPage = ref(1)
 const page = ref(1)
 const pageSize = ref(10)
 const lastPageSize = ref(pageSize.value)
@@ -281,12 +282,25 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
   try {
     const params = new URLSearchParams()
     params.set("page_size", String(pageSize.value))
-    const cursor = cursorStack.value[page.value - 1] || ""
+    
+    let isBackward = false
+    let cursor = ""
+    if (page.value > lastPage.value) {
+      cursor = nextCursor.value
+    } else if (page.value < lastPage.value) {
+      cursor = prevCursor.value
+      isBackward = true
+    }
+    
     if (cursor) params.set("cursor", cursor)
+    if (isBackward) params.set("sort", "1")
     if (tab === "history") params.set("result_status", "DONE")
     if (keyword.trim()) params.set("confirmation_number", keyword.trim())
     const res = await apiClient(`/api/exams?${params.toString()}`, { suppressErrorToast })
     const nextExams = res?.exams || []
+    if (isBackward && Array.isArray(nextExams)) {
+      nextExams.reverse()
+    }
     exams.value = nextExams
     syncPendingScheduleState(nextExams)
     total.value = Number(res?.total || 0)
@@ -294,8 +308,8 @@ async function loadExams(tab: TabId = activeTab.value, keyword = search.value, s
     totalPages.value = Number(res?.total_pages || Math.ceil(total.value / pageSize.value) || 0)
     hasMore.value = Boolean(res?.has_more)
     nextCursor.value = String(res?.next_cursor || "")
-    cursorStack.value = cursorStack.value.slice(0, page.value)
-    cursorStack.value[page.value] = nextCursor.value
+    prevCursor.value = String(res?.prev_cursor || "")
+    lastPage.value = page.value
   } catch {
     exams.value = []
     total.value = 0
@@ -377,7 +391,8 @@ async function handleApplyRetake(exam: any) {
 
 function resetCursorPagination() {
   page.value = 1
-  cursorStack.value = [""]
+  lastPage.value = 1
+  prevCursor.value = ""
   nextCursor.value = ""
   hasMore.value = false
 }

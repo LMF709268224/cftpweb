@@ -40,7 +40,8 @@ const total = ref(0)
 const pageSize = 20
 const hasMore = ref(false)
 const nextCursor = ref("")
-const cursorStack = ref<string[]>([""])
+const prevCursor = ref("")
+const lastPage = ref(1)
 const activeTab = ref<DetailTab>("summary")
 
 const candidateUlid = ref("")
@@ -207,8 +208,28 @@ async function load(targetPage = page.value) {
     const params = new URLSearchParams({
       page_size: String(pageSize),
     })
-    const cursor = cursorStack.value[targetPage - 1] || ""
+    let isBackward = false
+
+    let cursor = ""
+
+    if (targetPage > lastPage.value) {
+
+      cursor = nextCursor.value
+
+    } else if (targetPage < lastPage.value) {
+
+      cursor = prevCursor.value
+
+      isBackward = true
+
+    }
+
+    
+
     if (cursor) params.set("cursor", cursor)
+
+    if (isBackward) params.set("sort", "1")
+
     if (candidateUlid.value.trim()) params.set("candidate_ulid", candidateUlid.value.trim())
     if (bizType.value) params.set("biz_type", bizType.value)
     if (orderStatus.value) params.set("order_status", orderStatus.value)
@@ -216,12 +237,17 @@ async function load(targetPage = page.value) {
 
     const data = await apiClient<JsonRecord>(`/api/mall/orders?${params}`)
     const list = Array.isArray(data.items) ? data.items : Array.isArray(data.orders) ? data.orders : []
+    if (isBackward && Array.isArray(list)) {
+      list.reverse()
+    }
+
     orders.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total ?? data.total_count ?? data.totalCount ?? orders.value.length) || 0
     hasMore.value = Boolean(data.has_more)
     nextCursor.value = String(data.next_cursor || "")
-    cursorStack.value = cursorStack.value.slice(0, targetPage)
-    cursorStack.value[targetPage] = nextCursor.value
+    prevCursor.value = String(res?.prev_cursor || res?.data?.prev_cursor || data?.prev_cursor || res?.data?.data?.prev_cursor || "")
+
+    lastPage.value = targetPage
     page.value = targetPage
     if (orders.value.length) {
       await selectOrder(orders.value[0], detailOpen.value)
@@ -276,7 +302,9 @@ async function purgeSelected() {
 
 function search() {
   page.value = 1
-  cursorStack.value = [""]
+  lastPage.value = 1
+
+  prevCursor.value = ""
   nextCursor.value = ""
   hasMore.value = false
   void load(1)

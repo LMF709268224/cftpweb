@@ -95,7 +95,8 @@ const offset = ref(0)
 const total = ref(0)
 const hasMore = ref(false)
 const nextCursor = ref("")
-const cursorStack = ref<string[]>([""])
+const prevCursor = ref("")
+const lastPage = ref(1)
 const schemas = ref<JsonRecord | null>(null)
 const activeTab = ref<DetailTab>("summary")
 const mode = ref<Mode>("detail")
@@ -483,17 +484,44 @@ async function load() {
     const params = new URLSearchParams({
       page_size: String(limit),
     })
-    const cursor = cursorStack.value[currentPage.value - 1] || ""
+    let isBackward = false
+
+    let cursor = ""
+
+    if (currentPage.value > lastPage.value) {
+
+      cursor = nextCursor.value
+
+    } else if (currentPage.value < lastPage.value) {
+
+      cursor = prevCursor.value
+
+      isBackward = true
+
+    }
+
+    
+
     if (cursor) params.set("cursor", cursor)
+
+    if (isBackward) params.set("sort", "1")
+
     if (statusFilter.value) params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/mall/bundles?${params}`)
     const list = Array.isArray(data.bundles) ? data.bundles : []
+    if (isBackward && Array.isArray(list.filter((item))) {
+
+      list.filter((item).reverse()
+
+    }
+
     bundles.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     total.value = Number(data.total || 0)
     hasMore.value = Boolean(data.has_more)
     nextCursor.value = String(data.next_cursor || "")
-    cursorStack.value = cursorStack.value.slice(0, currentPage.value)
-    cursorStack.value[currentPage.value] = nextCursor.value
+    prevCursor.value = String(res?.prev_cursor || res?.data?.prev_cursor || data?.prev_cursor || res?.data?.data?.prev_cursor || "")
+
+    lastPage.value = currentPage.value
     if (!selected.value && bundles.value.length) {
       await selectBundle(bundles.value[0], false)
     }
@@ -902,7 +930,9 @@ async function loadSchemas() {
 
 watch(statusFilter, () => {
   selected.value = null
-  cursorStack.value = [""]
+  lastPage.value = 1
+
+  prevCursor.value = ""
   nextCursor.value = ""
   hasMore.value = false
   if (offset.value !== 0) {

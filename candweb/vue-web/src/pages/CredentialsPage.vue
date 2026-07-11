@@ -22,7 +22,8 @@ const applicationTotalPages = ref(0)
 const applicationTotalLabel = ref("")
 const applicationHasMore = ref(false)
 const applicationNextCursor = ref("")
-const applicationCursorStack = ref<string[]>([""])
+const applicationPrevCursor = ref("")
+const lastApplicationPage = ref(1)
 const lastApplicationPageSize = ref(applicationPageSize.value)
 const loading = ref(true)
 const applicationsLoading = ref(false)
@@ -64,18 +65,32 @@ async function fetchApplications(options: { showLoading?: boolean } = {}) {
     const params = new URLSearchParams({
       page_size: String(applicationPageSize.value),
     })
-    const cursor = applicationCursorStack.value[applicationPage.value - 1] || ""
+    
+    let isBackward = false
+    let cursor = ""
+    if (applicationPage.value > lastApplicationPage.value) {
+      cursor = applicationNextCursor.value
+    } else if (applicationPage.value < lastApplicationPage.value) {
+      cursor = applicationPrevCursor.value
+      isBackward = true
+    }
+    
     if (cursor) params.set("cursor", cursor)
+    if (isBackward) params.set("sort", "1")
+    
     const appsRes = await apiClient(`/api/credentials/applications?${params.toString()}`)
     const nextApplications = appsRes?.applications || []
+    if (isBackward && Array.isArray(nextApplications)) {
+      nextApplications.reverse()
+    }
     applications.value = nextApplications
     applicationTotal.value = totalFrom(appsRes, nextApplications)
     applicationTotalLabel.value = String(appsRes?.total_label || applicationTotal.value)
     applicationTotalPages.value = totalPagesFrom(appsRes, applicationTotal.value, applicationPageSize.value)
     applicationHasMore.value = Boolean(appsRes?.has_more)
     applicationNextCursor.value = String(appsRes?.next_cursor || "")
-    applicationCursorStack.value = applicationCursorStack.value.slice(0, applicationPage.value)
-    applicationCursorStack.value[applicationPage.value] = applicationNextCursor.value
+    applicationPrevCursor.value = String(appsRes?.prev_cursor || "")
+    lastApplicationPage.value = applicationPage.value
   } finally {
     if (options.showLoading) applicationsLoading.value = false
   }
@@ -101,8 +116,9 @@ async function handleApplicationPageChange() {
   if (applicationPageSize.value !== lastApplicationPageSize.value) {
     lastApplicationPageSize.value = applicationPageSize.value
     applicationPage.value = 1
-    applicationCursorStack.value = [""]
+    lastApplicationPage.value = 1
     applicationNextCursor.value = ""
+    applicationPrevCursor.value = ""
     applicationHasMore.value = false
   }
   await fetchApplications({ showLoading: true })

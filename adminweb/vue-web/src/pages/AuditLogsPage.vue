@@ -20,7 +20,8 @@ const page = ref(1)
 const total = ref(0)
 const hasMore = ref(false)
 const nextCursor = ref("")
-const cursorStack = ref<string[]>([""])
+const prevCursor = ref("")
+const lastPage = ref(1)
 const filters = ref({
   keyword: "",
   source_service: "",
@@ -89,8 +90,28 @@ async function load() {
   try {
     const params = new URLSearchParams()
     params.set("page_size", String(pageSize))
-    const cursor = cursorStack.value[page.value - 1] || ""
+    let isBackward = false
+
+    let cursor = ""
+
+    if (page.value > lastPage.value) {
+
+      cursor = nextCursor.value
+
+    } else if (page.value < lastPage.value) {
+
+      cursor = prevCursor.value
+
+      isBackward = true
+
+    }
+
+    
+
     if (cursor) params.set("cursor", cursor)
+
+    if (isBackward) params.set("sort", "1")
+
     for (const [key, value] of Object.entries(filters.value)) {
       const text = String(value || "").trim()
       if (!text) continue
@@ -101,8 +122,9 @@ async function load() {
     total.value = Number(data.total || logs.value.length)
     hasMore.value = Boolean(data.has_more)
     nextCursor.value = String(data.next_cursor || "")
-    cursorStack.value = cursorStack.value.slice(0, page.value)
-    cursorStack.value[page.value] = nextCursor.value
+    prevCursor.value = String(res?.prev_cursor || res?.data?.prev_cursor || data?.prev_cursor || res?.data?.data?.prev_cursor || "")
+
+    lastPage.value = page.value
     if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
       selected.value = logs.value[0] || null
     }
@@ -121,7 +143,9 @@ async function load() {
 
 function resetAndLoad() {
   page.value = 1
-  cursorStack.value = [""]
+  lastPage.value = 1
+
+  prevCursor.value = ""
   nextCursor.value = ""
   hasMore.value = false
   void load()

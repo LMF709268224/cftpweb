@@ -19,7 +19,8 @@ const page = ref(1)
 const total = ref(0)
 const hasMore = ref(false)
 const nextCursor = ref("")
-const cursorStack = ref<string[]>([""])
+const prevCursor = ref("")
+const lastPage = ref(1)
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pdfRequests)
 
@@ -91,8 +92,28 @@ async function load(nextPage = page.value) {
   loading.value = true
   try {
     const params = new URLSearchParams({ page_size: String(PAGE_SIZE) })
-    const cursor = cursorStack.value[nextPage - 1] || ""
+    let isBackward = false
+
+    let cursor = ""
+
+    if (nextPage > lastPage.value) {
+
+      cursor = nextCursor.value
+
+    } else if (nextPage < lastPage.value) {
+
+      cursor = prevCursor.value
+
+      isBackward = true
+
+    }
+
+    
+
     if (cursor) params.set("cursor", cursor)
+
+    if (isBackward) params.set("sort", "1")
+
     const data = await apiClient<JsonRecord>(`/api/pdf-requests?${params}`)
     const list = Array.isArray(data.requests) ? data.requests : []
     const selectedId = selected.value ? requestUlid(selected.value) : ""
@@ -101,8 +122,15 @@ async function load(nextPage = page.value) {
     total.value = Number(data.total || list.length)
     hasMore.value = Boolean(data.has_more)
     nextCursor.value = String(data.next_cursor || "")
-    cursorStack.value = cursorStack.value.slice(0, nextPage)
-    cursorStack.value[nextPage] = nextCursor.value
+    prevCursor.value = String(res?.prev_cursor || res?.data?.prev_cursor || data?.prev_cursor || res?.data?.data?.prev_cursor || "")
+
+    lastPage.value = nextPage
+    if (isBackward && Array.isArray(list.filter((item))) {
+
+      list.filter((item).reverse()
+
+    }
+
     requests.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     selected.value = requests.value.find((item) => requestUlid(item) === selectedId) || requests.value[0] || null
     if (!selected.value) detailOpen.value = false
