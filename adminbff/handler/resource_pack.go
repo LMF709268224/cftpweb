@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -21,19 +22,46 @@ type allResourcePackFilesPageToken struct {
 // ListLmsResourcePacks GET /api/lms/resource-packs
 func (h *Handler) ListLmsResourcePacks(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
-	resp, err := h.Lms.ListResourcePacksAdmin(r.Context(), &lmspb.ListResourcePacksRequest{
-		Filters: &lmspb.ResourcePackFilters{
-			Status: r.URL.Query().Get("status"),
-		},
-		PageSize: page.PageSize,
-		SortOrder: lmspb.SortOrder(page.Sort),
-		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
+	filters := &lmspb.ResourcePackFilters{
+		Status: r.URL.Query().Get("status"),
+	}
+
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Lms.GetResourcePackCountAdmin(ctx, &lmspb.GetResourcePackCountRequest{
+			Filters:   filters,
+			Limit:     limit,
+			Cursor:    cursor,
+			SortOrder: lmspb.SortOrder(page.Sort),
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
 	})
 	if err != nil {
 		writeLmsError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+
+	resp, err := h.Lms.ListResourcePacksAdmin(r.Context(), &lmspb.ListResourcePacksRequest{
+		Filters:   filters,
+		PageSize:  page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
+		Cursor:    firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"total":       total.Total,
+		"exact":       total.Exact,
+		"has_more":    resp.GetHasMore(),
+		"next_cursor": resp.GetNextCursor(),
+		"prev_cursor": resp.GetPrevCursor(),
+		"packs":       resp.GetPacks(),
+	})
 }
 
 // CreateLmsResourcePack POST /api/lms/resource-packs
@@ -221,19 +249,46 @@ func (h *Handler) ListLmsResourcePackFiles(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	page := parseCursorPage(r, 20)
-	resp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
-		Filters: &lmspb.ResourcePackFileFilters{
-			PackId: packID,
-		},
-		PageSize: page.PageSize,
-		SortOrder: lmspb.SortOrder(page.Sort),
-		Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
+	filters := &lmspb.ResourcePackFileFilters{
+		PackId: packID,
+	}
+
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Lms.GetResourcePackFileCountAdmin(ctx, &lmspb.GetResourcePackFileCountRequest{
+			Filters:   filters,
+			Limit:     limit,
+			Cursor:    cursor,
+			SortOrder: lmspb.SortOrder(page.Sort),
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
 	})
 	if err != nil {
 		writeLmsError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+
+	resp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
+		Filters:   filters,
+		PageSize:  page.PageSize,
+		SortOrder: lmspb.SortOrder(page.Sort),
+		Cursor:    firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
+	})
+	if err != nil {
+		writeLmsError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"total":       total.Total,
+		"exact":       total.Exact,
+		"has_more":    resp.GetHasMore(),
+		"next_cursor": resp.GetNextCursor(),
+		"prev_cursor": resp.GetPrevCursor(),
+		"files":       resp.GetFiles(),
+	})
 }
 
 // CreateLmsResourcePackFile POST /api/lms/resource-packs/{pack_id}/files
@@ -341,19 +396,45 @@ func (h *Handler) ListAllLmsResourcePackFiles(w http.ResponseWriter, r *http.Req
 	packID := r.URL.Query().Get("pack_id")
 	if packID != "" {
 		page := parseCursorPage(r, 20)
-		resp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
-			Filters: &lmspb.ResourcePackFileFilters{
-				PackId: packID,
-			},
-			PageSize: page.PageSize,
-			SortOrder: lmspb.SortOrder(page.Sort),
-			Cursor:   firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
+		filters := &lmspb.ResourcePackFileFilters{
+			PackId: packID,
+		}
+		
+		total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+			resp, err := h.Lms.GetResourcePackFileCountAdmin(ctx, &lmspb.GetResourcePackFileCountRequest{
+				Filters:   filters,
+				Limit:     limit,
+				Cursor:    cursor,
+				SortOrder: lmspb.SortOrder(page.Sort),
+			})
+			if err != nil {
+				return 0, "", err
+			}
+			return resp.GetCount(), resp.GetNextCursor(), nil
 		})
 		if err != nil {
 			writeLmsError(w, err)
 			return
 		}
-		WriteJSON(w, http.StatusOK, resp)
+
+		resp, err := h.Lms.ListResourcePackFilesAdmin(r.Context(), &lmspb.ListResourcePackFilesRequest{
+			Filters:   filters,
+			PageSize:  page.PageSize,
+			SortOrder: lmspb.SortOrder(page.Sort),
+			Cursor:    firstNonEmpty(r.URL.Query().Get("cursor"), r.URL.Query().Get("page_token")),
+		})
+		if err != nil {
+			writeLmsError(w, err)
+			return
+		}
+		WriteJSON(w, http.StatusOK, map[string]interface{}{
+			"total":       total.Total,
+			"exact":       total.Exact,
+			"has_more":    resp.GetHasMore(),
+			"next_cursor": resp.GetNextCursor(),
+			"prev_cursor": resp.GetPrevCursor(),
+			"files":       resp.GetFiles(),
+		})
 		return
 	}
 

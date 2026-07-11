@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -183,12 +184,38 @@ func (h *Handler) ListBundles(w http.ResponseWriter, r *http.Request) {
 		PageSize: page.PageSize,
 		SortOrder: mallpb.SortOrder(page.Sort),
 	}
+
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Mall.GetBundlesAdminCount(ctx, &mallpb.GetBundlesAdminCountRequest{
+			Filters:   filters,
+			Limit:     limit,
+			Cursor:    cursor,
+			SortOrder: mallpb.SortOrder(page.Sort),
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
 	resp, err := h.Mall.ListBundlesAdmin(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"total":       total.Total,
+		"exact":       total.Exact,
+		"has_more":    resp.GetHasMore(),
+		"next_cursor": resp.GetNextCursor(),
+		"prev_cursor": resp.GetPrevCursor(),
+		"bundles":     resp.GetBundles(),
+	})
 }
 
 func (h *Handler) PublishBundle(w http.ResponseWriter, r *http.Request) {

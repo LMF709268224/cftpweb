@@ -13,33 +13,37 @@ import (
 
 func (h *Handler) ListProgPipelines(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
-	req := &gprogpb.ListPipelinesReq{
-		Filters: &gprogpb.PipelineFilters{
-			CandidateUlid:  strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
-			PipelineCcUlid: strings.TrimSpace(r.URL.Query().Get("pipeline_cc_ulid")),
-			Status:         gprogpb.PipelineStatus(parseEnumQuery(r, "status")),
-		},
-		Cursor:   page.Cursor,
-		PageSize: int32(page.PageSize),
-		SortOrder: gprogpb.SortOrder(page.Sort),
+	filters := &gprogpb.PipelineFilters{
+		CandidateUlid:  strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
+		PipelineCcUlid: strings.TrimSpace(r.URL.Query().Get("pipeline_cc_ulid")),
+		Status:         gprogpb.PipelineStatus(parseEnumQuery(r, "status")),
 	}
 
-	resp, err := h.Gprog.ListPipelines(r.Context(), req)
-	if err != nil {
-		HandleGrpcError(w, err)
-		return
-	}
 	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
 		resp, err := h.Gprog.GetPipelineCount(ctx, &gprogpb.GetPipelineCountRequest{
-			Filters: req.GetFilters(),
-			Limit:   int32(limit),
-			Cursor:  cursor,
+			Filters:   filters,
+			Limit:     int32(limit),
+			Cursor:    cursor,
+			SortOrder: gprogpb.SortOrder(page.Sort),
 		})
 		if err != nil {
 			return 0, "", err
 		}
 		return resp.GetCount(), resp.GetNextCursor(), nil
 	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	req := &gprogpb.ListPipelinesReq{
+		Filters:   filters,
+		Cursor:    page.Cursor,
+		PageSize:  int32(page.PageSize),
+		SortOrder: gprogpb.SortOrder(page.Sort),
+	}
+
+	resp, err := h.Gprog.ListPipelines(r.Context(), req)
 	if err != nil {
 		HandleGrpcError(w, err)
 		return

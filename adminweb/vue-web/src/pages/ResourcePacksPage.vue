@@ -10,6 +10,7 @@ const pageSize = 10
 
 const packs = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
+const total = ref(0)
 const loading = ref(false)
 const detailLoading = ref(false)
 const saving = ref(false)
@@ -152,6 +153,7 @@ async function load() {
     if (pageToken.value) url.searchParams.set("page_token", pageToken.value)
 
     const data = await apiClient<JsonRecord>(`${url.pathname}${url.search}`)
+    total.value = Number(data.total) || 0
     packs.value = asRecordList(data.packs || data.items)
     nextPageToken.value = String(data.next_page_token || "")
     const nextSelected = packs.value.find((pack) => packId(pack) === form.value.pack_id) || packs.value[0] || null
@@ -434,6 +436,7 @@ onMounted(load)
             <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
           </div>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">{{ copy.pageSizeText(packs.length, pageSize) }}</span>
         </div>
 

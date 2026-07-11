@@ -169,6 +169,7 @@ async function loadExams(targetPage = page.value) {
     if (courseUnitFilter.value.trim()) params.set("course_unit_ulid", courseUnitFilter.value.trim())
 
     const data = await apiClient<JsonRecord>(`/api/exams?${params}`)
+    total.value = Number(data.total) || 0
     exams.value = asArray(data.exams)
     total.value = Number(data.total || exams.value.length || 0)
     const isBackward = page.value < lastPage.value
@@ -349,6 +350,7 @@ onMounted(() => loadExams(1))
           <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
         <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
 

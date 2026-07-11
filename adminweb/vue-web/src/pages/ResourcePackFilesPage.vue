@@ -12,6 +12,7 @@ const pageSize = 10
 const packs = ref<JsonRecord[]>([])
 const files = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
+const total = ref(0)
 const loading = ref(false)
 const detailLoading = ref(false)
 const saving = ref(false)
@@ -173,6 +174,7 @@ async function loadFileDetail(file: JsonRecord | null) {
 
 async function loadPacks() {
   const data = await apiClient<JsonRecord>("/api/lms/resource-packs?page_size=1000")
+    total.value = Number(data.total) || 0
   packs.value = asRecordList(data.packs || data.items)
 }
 
@@ -410,6 +412,7 @@ onMounted(load)
             <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
           </div>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">{{ copy.pageSizeText(files.length, pageSize) }}</span>
         </div>
 

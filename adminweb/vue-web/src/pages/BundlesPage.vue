@@ -505,6 +505,7 @@ async function load() {
 
     if (statusFilter.value) params.set("status", statusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/mall/bundles?${params}`)
+    total.value = Number(data.total) || 0
     const list = Array.isArray(data.bundles) ? data.bundles : []
 
     bundles.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
@@ -981,6 +982,7 @@ onMounted(load)
               <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
             </div>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ total }}</span>
           </div>
           <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">

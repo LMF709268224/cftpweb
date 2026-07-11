@@ -42,6 +42,7 @@ const certificateTasks = ref<JsonRecord[]>([])
 const selectedCertificateTask = ref<JsonRecord | null>(null)
 const certificateTaskDetail = ref<JsonRecord | null>(null)
 
+const total = ref(0)
 const loading = ref(false)
 const detailLoading = ref(false)
 const logsLoading = ref(false)
@@ -317,6 +318,7 @@ function ensureSelections() {
 async function loadPipelineCatalog() {
   try {
     const data = await apiClient<JsonRecord>("/api/pipelines?limit=200&offset=0")
+    total.value = Number(data.total) || 0
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
     const next: Record<string, string> = {}
     for (const item of list) {
@@ -663,6 +665,7 @@ onMounted(async () => {
               <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
             </div>
+          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
             <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ pipelines.length }}</span>
           </div>
           <div v-if="loading" class="px-6 py-10 text-center text-slate-500">

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -12,16 +13,35 @@ import (
 func (h *Handler) ListAdminExams(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 10)
 
+	filters := &gexampb.ExamFilters{
+		Status:             optionalString(r.URL.Query().Get("status")),
+		ResultStatus:       optionalString(r.URL.Query().Get("result_status")),
+		CandidateUlid:      optionalString(r.URL.Query().Get("candidate_ulid")),
+		ConfirmationNumber: optionalString(r.URL.Query().Get("confirmation_number")),
+		CourseUnitUlid:     optionalString(r.URL.Query().Get("course_unit_ulid")),
+	}
+
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Gexam.GetExamCount(ctx, &gexampb.GetExamCountRequest{
+			Filters:   filters,
+			Limit:     limit,
+			Cursor:    cursor,
+			SortOrder: gexampb.SortOrder(page.Sort),
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
 	req := &gexampb.ListExamsRequest{
-		Filters: &gexampb.ExamFilters{
-			Status:             optionalString(r.URL.Query().Get("status")),
-			ResultStatus:       optionalString(r.URL.Query().Get("result_status")),
-			CandidateUlid:      optionalString(r.URL.Query().Get("candidate_ulid")),
-			ConfirmationNumber: optionalString(r.URL.Query().Get("confirmation_number")),
-			CourseUnitUlid:     optionalString(r.URL.Query().Get("course_unit_ulid")),
-		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Filters:   filters,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: gexampb.SortOrder(page.Sort),
 	}
 
@@ -30,7 +50,14 @@ func (h *Handler) ListAdminExams(w http.ResponseWriter, r *http.Request) {
 		HandleGrpcError(w, err)
 		return
 	}
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"total":       total.Total,
+		"exact":       total.Exact,
+		"has_more":    resp.GetHasMore(),
+		"next_cursor": resp.GetNextCursor(),
+		"prev_cursor": resp.GetPrevCursor(),
+		"exams":       resp.GetExams(),
+	})
 }
 
 func (h *Handler) GetAdminExamDetail(w http.ResponseWriter, r *http.Request) {
