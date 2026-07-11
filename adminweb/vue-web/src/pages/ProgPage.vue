@@ -62,6 +62,7 @@ const nextCursor = ref("")
 const prevCursor = ref("")
 const lastPage = ref(1)
 const logsHasMore = ref(false)
+const logsTotal = ref(0)
 const logsNextCursor = ref("")
 const logsCursorStack = ref<string[]>([""])
 const activeTab = ref<DetailTab>("overview")
@@ -431,6 +432,7 @@ async function loadLogs(pipelineId = selectedPipelineUlid.value, targetOffset = 
 
     logs.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
     logsHasMore.value = Boolean(data.has_more)
+    logsTotal.value = Number(data.total) || 0
     logsNextCursor.value = String(data.next_cursor || "")
     logsCursorStack.value = logsCursorStack.value.slice(0, currentPage)
     logsCursorStack.value[currentPage] = logsNextCursor.value
@@ -665,9 +667,8 @@ onMounted(async () => {
               <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
             </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ pipelines.length }}</span>
-          </div>
+          
+            </div>
           <div v-if="loading" class="px-6 py-10 text-center text-slate-500">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
             {{ copy.loading }}
@@ -1043,9 +1044,12 @@ onMounted(async () => {
                     <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</div>
                   </button>
                   <div v-if="!logsLoading && !logs.length" class="p-10 text-center text-slate-500">{{ copy.noLogs }}</div>
-                  <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
+                  <div class="flex items-center justify-between border-t border-slate-200 px-5 py-4">
+                    <span class="text-sm font-bold text-slate-500">{{ Math.floor(logOffset / logPageSize) + 1 }} / {{ Math.max(1, Math.ceil(logsTotal / logPageSize)) }}</span>
+                    <div class="flex gap-3">
                     <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevLogs" @click="loadLogs(selectedPipelineUlid, Math.max(0, logOffset - logPageSize))">{{ copy.prev }}</button>
                     <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNextLogs" @click="loadLogs(selectedPipelineUlid, logOffset + logPageSize)">{{ copy.next }}</button>
+                    </div>
                   </div>
                 </div>
                 <div class="space-y-5 p-5">

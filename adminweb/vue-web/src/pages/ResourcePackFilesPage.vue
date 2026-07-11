@@ -412,9 +412,8 @@ onMounted(load)
             <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">{{ copy.pageSizeText(files.length, pageSize) }}</span>
-        </div>
+          
+          </div>
 
         <div v-if="loading" class="px-6 py-10 text-center text-slate-500">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
@@ -459,7 +458,7 @@ onMounted(load)
         </div>
 
         <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
-          <span class="mr-auto text-sm font-bold text-slate-500">{{ copy.pageText(currentPage) }}</span>
+          <span class="mr-auto text-sm font-bold text-slate-500">{{ `${currentPage} / ${Math.max(1, Math.ceil(total / pageSize))}` }}</span>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
         </div>

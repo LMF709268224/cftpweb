@@ -143,11 +143,35 @@ func (h *Handler) ListProgStatusTransitionLogs(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Gprog.GetStatusTransitionLogCount(ctx, &gprogpb.GetStatusTransitionLogCountRequest{
+			Filters:   req.Filters,
+			Limit:     int32(limit),
+			Cursor:    cursor,
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
 	for _, log := range resp.GetLogs() {
 		mapLogSummaryStatuses(log)
 	}
 
-	WriteJSON(w, http.StatusOK, resp)
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"logs":        resp.GetLogs(),
+		"total":       total.Total,
+		"total_label": total.Label(),
+		"total_exact": total.Exact,
+		"next_cursor": resp.GetNextCursor(),
+		"prev_cursor": resp.GetPrevCursor(),
+		"has_more":    resp.GetHasMore(),
+	})
 }
 
 func (h *Handler) GetProgStatusTransitionLogDetail(w http.ResponseWriter, r *http.Request) {
@@ -282,7 +306,32 @@ func (h *Handler) ListProgCertificateTasks(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	WriteJSON(w, http.StatusOK, resp)
+	total, err := countCursorAll(r.Context(), func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+		resp, err := h.Gprog.GetCertificateTaskCount(ctx, &gprogpb.GetCertificateTaskCountRequest{
+			Filters:   req.Filters,
+			Limit:     int32(limit),
+			Cursor:    cursor,
+			SortOrder: gprogpb.SortOrder(page.Sort),
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		return resp.GetCount(), resp.GetNextCursor(), nil
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, map[string]interface{}{
+		"tasks":       resp.GetTasks(),
+		"total":       total.Total,
+		"total_label": total.Label(),
+		"total_exact": total.Exact,
+		"next_cursor": resp.GetNextCursor(),
+		"prev_cursor": resp.GetPrevCursor(),
+		"has_more":    resp.GetHasMore(),
+	})
 }
 
 func (h *Handler) GetProgCertificateTaskDetail(w http.ResponseWriter, r *http.Request) {
