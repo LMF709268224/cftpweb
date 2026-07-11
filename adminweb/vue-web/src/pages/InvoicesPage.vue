@@ -131,7 +131,7 @@ async function load(targetPage = page.value) {
     total.value = Number(data.total || invoices.value.length) || 0
     hasMore.value = Boolean(data.has_more)
     nextCursor.value = String(data.next_cursor || "")
-    prevCursor.value = String(res?.prev_cursor || res?.data?.prev_cursor || data?.prev_cursor || res?.data?.data?.prev_cursor || "")
+    prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = targetPage
     page.value = targetPage

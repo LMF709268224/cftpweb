@@ -119,7 +119,7 @@ async function load() {
     total.value = Number(data.total || logs.value.length)
     hasMore.value = Boolean(data.has_more)
     nextCursor.value = String(data.next_cursor || "")
-    prevCursor.value = String(res?.prev_cursor || res?.data?.prev_cursor || data?.prev_cursor || res?.data?.data?.prev_cursor || "")
+    prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = page.value
     if (!logs.value.some((item) => auditId(item) === auditId(selected.value))) {
