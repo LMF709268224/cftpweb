@@ -1,6 +1,7 @@
 import { toast } from "vue-sonner"
 import { clearAccessToken, getAccessToken } from "./authStorage"
 import { getErrorMessage, localizeApiErrorMessage } from "./errorCodes"
+import { telemetry } from "./telemetry"
 
 type ApiClientOptions = RequestInit & {
   timeoutMs?: number
@@ -70,9 +71,11 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     })
   } catch (err) {
     const isAbort = err instanceof DOMException && err.name === "AbortError"
-    const errorMsg = getErrorMessage(isAbort ? "REQUEST_TIMEOUT" : "NETWORK_ERROR", currentLang)
+    const errorCode = isAbort ? "REQUEST_TIMEOUT" : "NETWORK_ERROR"
+    const errorMsg = getErrorMessage(errorCode, currentLang)
     showErrorToast(errorMsg)
-    throw new ApiClientError(errorMsg, { errorCode: isAbort ? "REQUEST_TIMEOUT" : "NETWORK_ERROR" })
+    telemetry.track("api_error", { url: endpoint, error_code: errorCode, message: errorMsg })
+    throw new ApiClientError(errorMsg, { errorCode })
   } finally {
     window.clearTimeout(timeoutId)
   }
@@ -85,6 +88,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     setTimeout(() => {
       window.location.href = "/login"
     }, 1500)
+    telemetry.track("api_error", { url: endpoint, error_code: "UNAUTHORIZED", status: res.status })
     throw new ApiClientError(getErrorMessage("UNAUTHORIZED", currentLang), { errorCode: "UNAUTHORIZED", status: res.status })
   }
 
@@ -95,6 +99,7 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
     if (!res.ok) {
       const errorMsg = getErrorMessage("UNKNOWN_ERROR", currentLang)
       showErrorToast(errorMsg)
+      telemetry.track("api_error", { url: endpoint, error_code: "UNKNOWN_ERROR", status: res.status })
       throw new ApiClientError(errorMsg, { errorCode: "UNKNOWN_ERROR", status: res.status })
     }
     return res
@@ -105,6 +110,12 @@ export async function apiClient(endpoint: string, options: ApiClientOptions = {}
       ? localizeApiErrorMessage(data.error_code, data.message, currentLang)
       : getErrorMessage(data.error_code, currentLang)
     showErrorToast(errorMsg)
+    telemetry.track("api_error", {
+      url: endpoint,
+      error_code: data.error_code,
+      message: typeof data.message === "string" ? data.message : undefined,
+      status: res.status,
+    })
     throw new ApiClientError(errorMsg, {
       errorCode: data.error_code,
       rawMessage: typeof data.message === "string" ? data.message : undefined,

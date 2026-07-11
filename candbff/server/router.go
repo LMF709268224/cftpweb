@@ -42,6 +42,11 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		r.Head("/resource-pack-files/{fileId}", h.PreviewResourcePackFilePDFPublic)
 	})
 
+	r.Route("/api/public/telemetry", func(r chi.Router) {
+		r.Use(normalTimeout)
+		r.Post("/", h.ReportTelemetry)
+	})
+
 	r.With(normalTimeout).Get("/api/public/config", h.GetPublicConfig)
 
 	r.Route("/api/auth", func(r chi.Router) {
@@ -195,6 +200,8 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/", h.Dashboard)
 			r.Get("/stats", h.GetDashboardStats)
 		})
+
+		r.Post("/telemetry", h.ReportTelemetry)
 	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
