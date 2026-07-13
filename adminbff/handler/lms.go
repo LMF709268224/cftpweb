@@ -141,6 +141,10 @@ func validateLmsUploadURLPayload(w http.ResponseWriter, req *lmspb.CreateUploadU
 		return requireRequestFields(w, req.CourseUlid, "course_id", req.ChapterUlid, "chapter_id", req.LessonUlid, "lesson_id")
 	case lmspb.UploadType_UPLOAD_TYPE_QUIZ_ASSET:
 		return requireRequestFields(w, req.CourseUlid, "course_id", req.QuizUlid, "quiz_id")
+	case lmspb.UploadType_UPLOAD_TYPE_RESOURCE_PACK_THUMBNAIL:
+		return requireRequestField(w, req.PackId, "pack_id")
+	case lmspb.UploadType_UPLOAD_TYPE_RESOURCE_PACK_FILE:
+		return requireRequestFields(w, req.PackId, "pack_id", req.ResourcePackFileId, "resource_pack_file_id")
 	default:
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "upload_type is required")
 		return false
