@@ -369,6 +369,90 @@ function nextPage() {
   void loadFiles()
 }
 
+const fileUploading = ref(false)
+const thumbnailUploading = ref(false)
+
+async function computeHash(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer()
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+async function handleFileUpload(event: Event, isThumbnail: boolean) {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  if (!form.value.pack_id) {
+    toast.error(copy.value.toasts?.packRequired || "Please select a Resource Pack first")
+    target.value = ""
+    return
+  }
+  
+  if (isThumbnail) {
+    thumbnailUploading.value = true
+  } else {
+    fileUploading.value = true
+  }
+  
+  try {
+    const fileHash = await computeHash(file)
+    const fileId = form.value.file_id || crypto.randomUUID()
+    
+    const reqBody: JsonRecord = {
+      upload_type: isThumbnail ? 5 : 6,
+      file_name: file.name,
+      content_type: file.type || "application/octet-stream",
+      file_hash: fileHash,
+      pack_id: form.value.pack_id,
+      resource_pack_file_id: fileId,
+    }
+    
+    const res = await apiClient<JsonRecord>("/api/lms/upload-url", {
+      method: "POST",
+      body: JSON.stringify(reqBody)
+    })
+    
+    const uploadUrl = String(res.upload_url || "")
+    const objectKey = String(res.object_key || "")
+    
+    if (!uploadUrl || !objectKey) {
+      throw new Error("Invalid upload URL from server")
+    }
+    
+    await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type || "application/octet-stream"
+      }
+    })
+    
+    if (isThumbnail) {
+      form.value.thumbnail_object_key = objectKey
+      form.value.thumbnail_file_hash = fileHash
+    } else {
+      form.value.file_object_key = objectKey
+      form.value.file_hash = fileHash
+      form.value.file_size = file.size
+      form.value.file_name = file.name
+    }
+    
+    toast.success(copy.value.toasts?.uploadSuccess || "Upload successful")
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, copy.value.toasts?.uploadFailed || "Upload failed"))
+  } finally {
+    if (isThumbnail) {
+      thumbnailUploading.value = false
+    } else {
+      fileUploading.value = false
+    }
+    target.value = ""
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -520,7 +604,23 @@ onMounted(load)
           </label>
           </div>
 
-          <div class="mb-3 mt-5 border-t border-slate-100 pt-5 text-sm font-black text-slate-700">{{ copy.sections.fileThumbnail }}</div>
+          <div class="mb-3 mt-5 border-t border-slate-100 pt-5 flex items-center justify-between">
+            <span class="text-sm font-black text-slate-700">{{ copy.sections.fileThumbnail }}</span>
+            <div class="flex gap-2">
+              <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 transition hover:bg-blue-100" :class="{ 'opacity-50 pointer-events-none': fileUploading }">
+                <Loader2 v-if="fileUploading" class="h-3.5 w-3.5 animate-spin" />
+                <Plus v-else class="h-3.5 w-3.5" />
+                {{ copy.uploadFile || '上传文件' }}
+                <input type="file" class="hidden" @change="handleFileUpload($event, false)" :disabled="fileUploading" />
+              </label>
+              <label class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100" :class="{ 'opacity-50 pointer-events-none': thumbnailUploading }">
+                <Loader2 v-if="thumbnailUploading" class="h-3.5 w-3.5 animate-spin" />
+                <Plus v-else class="h-3.5 w-3.5" />
+                {{ copy.uploadCover || '上传封面' }}
+                <input type="file" accept="image/*" class="hidden" @change="handleFileUpload($event, true)" :disabled="thumbnailUploading" />
+              </label>
+            </div>
+          </div>
           <div class="grid gap-3 md:grid-cols-2">
           <label class="text-sm font-bold">
             {{ copy.fields.fileName }}
