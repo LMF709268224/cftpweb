@@ -838,18 +838,9 @@ onMounted(async () => {
             </form>
           </div>
 
-          <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-5">
-            <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 font-bold" type="button" @click="closeTemplateDialog">{{ templateMode === "detail" ? copy.close : copy.reset }}</button>
-            <button
-              v-if="templateMode === 'detail'"
-              class="inline-flex h-11 min-w-[120px] items-center justify-center rounded-xl border px-5 font-bold disabled:opacity-40"
-              type="button"
-              :disabled="!selectedTemplate"
-              @click="openTemplateEdit(selectedTemplate)"
-            >
-              {{ copy.editTemplate }}
-            </button>
-            <button v-else class="inline-flex h-11 min-w-[120px] items-center justify-center rounded-xl bg-blue-700 px-5 font-bold text-white shadow-sm disabled:opacity-50" :disabled="templateSaving" type="submit" form="mail-template-form">
+          <div v-if="templateMode !== 'detail'" class="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-5">
+            <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 font-bold" type="button" @click="closeTemplateDialog">{{ copy.reset }}</button>
+            <button class="inline-flex h-11 min-w-[120px] items-center justify-center rounded-xl bg-blue-700 px-5 font-bold text-white shadow-sm disabled:opacity-50" :disabled="templateSaving" type="submit" form="mail-template-form">
               {{ templateSaving ? copy.saving : copy.saveTemplate }}
             </button>
           </div>

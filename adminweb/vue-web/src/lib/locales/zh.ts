@@ -1215,6 +1215,8 @@ export const zh = {
       updated_at: "更新时间",
       version: "版本",
       template: "模板内容",
+      detail: "模板详情",
+      summary: "模板摘要",
     },
     saving: "保存中...",
     saveTemplate: "保存模板",
