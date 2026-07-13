@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { FileJson, Info, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
@@ -1297,6 +1297,57 @@ function closeLessonDialog() {
   lessonDialogOpen.value = false
 }
 
+const lessonFileInput = ref<HTMLInputElement | null>(null)
+const uploadingLesson = ref(false)
+
+async function handleLessonFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!selectedCourseId.value || !lessonForm.value.chapter_id || !editingLessonId.value) return
+
+  uploadingLesson.value = true
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    const uploadUrlReq = {
+      upload_type: 3,
+      course_ulid: selectedCourseId.value,
+      chapter_ulid: lessonForm.value.chapter_id,
+      lesson_ulid: editingLessonId.value,
+      file_name: file.name,
+      content_type: file.type || "application/octet-stream",
+      file_hash: hashHex
+    }
+    const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
+    
+    if (!uploadRes.upload_url) throw new Error("Missing upload URL")
+    const uploadResponse = await fetch(String(uploadRes.upload_url), {
+      method: "PUT",
+      body: file,
+      headers: uploadRes.signed_headers as Record<string, string> || {}
+    })
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload failed: ${uploadResponse.status}`)
+    }
+
+    lessonForm.value.asset_object_key = String(uploadRes.object_key)
+    lessonForm.value.asset_file_hash = hashHex
+    
+    await saveLesson()
+    toast.success((copy.value.toasts as any)?.uploadSuccess || "课时资产直传并配置成功")
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, (copy.value.toasts as any)?.uploadFailed || "上传失败"))
+  } finally {
+    uploadingLesson.value = false
+    if (lessonFileInput.value) lessonFileInput.value.value = ""
+  }
+}
+
 async function saveLesson() {
   const targetChapterId = lessonForm.value.chapter_id
   if (!targetChapterId || !lessonForm.value.title.trim()) {
@@ -1573,9 +1624,60 @@ async function confirmDeleteSupplementaryMaterial(deleteInfo: PendingDetailDelet
   }
 }
 
+const materialFileInput = ref<HTMLInputElement | null>(null)
+const uploadingMaterial = ref(false)
+
+async function handleMaterialFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!selectedCourseId.value || !editingMaterialId.value) return
+
+  uploadingMaterial.value = true
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    const uploadUrlReq = {
+      upload_type: 2,
+      course_ulid: selectedCourseId.value,
+      material_ulid: editingMaterialId.value,
+      file_name: file.name,
+      content_type: file.type || "application/octet-stream",
+      file_hash: hashHex
+    }
+    const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
+    
+    if (!uploadRes.upload_url) throw new Error("Missing upload URL")
+    const uploadResponse = await fetch(String(uploadRes.upload_url), {
+      method: "PUT",
+      body: file,
+      headers: uploadRes.signed_headers as Record<string, string> || {}
+    })
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload failed: ${uploadResponse.status}`)
+    }
+
+    materialForm.value.file_object_key = String(uploadRes.object_key)
+    materialForm.value.file_hash = hashHex
+    materialForm.value.file_size = file.size
+    
+    await saveMaterial()
+    toast.success((copy.value.toasts as any)?.uploadSuccess || "文件直传并配置成功")
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, (copy.value.toasts as any)?.uploadFailed || "上传失败"))
+  } finally {
+    uploadingMaterial.value = false
+    if (materialFileInput.value) materialFileInput.value.value = ""
+  }
+}
+
 async function saveMaterial() {
-  if (!selectedCourseId.value || !materialForm.value.title.trim() || !materialForm.value.file_object_key.trim()) {
-    toast.error(copy.value.toasts.materialFileRequired)
+  if (!selectedCourseId.value || !materialForm.value.title.trim()) {
+    toast.error(copy.value.toasts.materialFileRequired || "Title required")
     return
   }
 
@@ -2693,8 +2795,17 @@ onMounted(() => {
               </form>
             </div>
 
-            <div v-if="lessonDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
-              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingLesson || !lessonForm.chapter_id" type="button" @click="saveLesson">
+            <div v-if="lessonDialogMode !== 'detail'" class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-5 py-4 gap-4">
+              <div class="flex-1" v-if="editingLessonId">
+                <input type="file" ref="lessonFileInput" class="hidden" @change="handleLessonFileUpload" />
+                <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 h-10 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
+                  <Loader2 v-if="uploadingLesson" class="h-4 w-4 animate-spin" />
+                  <UploadCloud v-else class="h-4 w-4" />
+                  {{ uploadingLesson ? ((copy as any).uploading || '正在上传文件并生成 Hash...') : ((copy as any).uploadLessonFile || '上传课时资产 (视频/PDF) 并自动配置') }}
+                </button>
+              </div>
+              <div class="flex-1" v-else></div>
+              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingLesson || uploadingLesson || !lessonForm.chapter_id" type="button" @click="saveLesson">
                 <Loader2 v-if="savingLesson" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingLesson ? copy.saving : copy.saveLesson }}
@@ -2988,7 +3099,16 @@ onMounted(() => {
                   <span class="mt-1 block text-xs text-slate-500">{{ copy.sortHint }}</span>
                 </label>
               </div>
-              <button class="h-10 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial" type="submit">
+              <div class="mt-3 flex gap-3" v-if="editingMaterialId">
+                <input type="file" ref="materialFileInput" class="hidden" @change="handleMaterialFileUpload" />
+                <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingMaterial" @click="materialFileInput?.click()">
+                  <Loader2 v-if="uploadingMaterial" class="h-4 w-4 animate-spin" />
+                  <UploadCloud v-else class="h-4 w-4" />
+                  {{ uploadingMaterial ? ((copy as any).uploading || '正在上传文件并生成 Hash...') : ((copy as any).uploadFile || '上传 PDF / 资源文件并自动配置') }}
+                </button>
+              </div>
+              <button class="h-10 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial || uploadingMaterial" type="submit">
+                <Loader2 v-if="savingMaterial" class="inline-block mr-2 h-4 w-4 animate-spin" />
                 {{ savingMaterial ? copy.saving : copy.saveMaterial }}
               </button>
             </div>
