@@ -2197,12 +2197,12 @@ onMounted(() => {
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.respath }}</span>
-              <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+              <input v-model="courseForm.respath" readonly class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-500 cursor-not-allowed" placeholder="/gcc/pipeline/..." />
               <p class="mt-2 text-xs font-semibold text-slate-500">【权限标识】相当于这门课的“房产证号”，用于校验学员的访问权限。保持默认随机值即可，随意修改会导致已购学员无法看课。</p>
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ (copy as any).course_gpath || 'Course Gpath' }}</span>
-              <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+              <input v-model="courseForm.course_gpath" readonly class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-500 cursor-not-allowed" placeholder="/gcc/pipeline/..." />
               <p class="mt-2 text-xs font-semibold text-slate-500">【版本标识】相当于这门课的“身份证号”，用于在升级课程时关联新老版本。保持默认随机值即可，随意修改会导致系统无法识别。</p>
             </label>
             <label class="block">
