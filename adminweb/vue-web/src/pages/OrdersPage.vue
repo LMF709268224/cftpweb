@@ -47,14 +47,13 @@ const activeTab = ref<DetailTab>("summary")
 const candidateUlid = ref("")
 const bizType = ref("")
 const orderStatus = ref("")
-const paymentStatus = ref("")
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => hasMore.value)
 const isBundlePurchase = computed(() => normalizeStatus(biz(selected.value || {})) === "BUNDLE_PURCHASE")
+
 const localizedBizTypeOptions = computed(() => localizeOptions(bizTypeOptions, "bizTypes"))
 const localizedOrderStatusOptions = computed(() => localizeOptions(orderStatusOptions, "orderStatuses"))
-const localizedPaymentStatusOptions = computed(() => localizeOptions(paymentStatusOptions, "paymentStatuses"))
 const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
@@ -241,7 +240,6 @@ async function load(targetPage = page.value) {
     if (candidateUlid.value.trim()) params.set("candidate_ulid", candidateUlid.value.trim())
     if (bizType.value) params.set("biz_type", bizType.value)
     if (orderStatus.value) params.set("order_status", orderStatus.value)
-    if (paymentStatus.value) params.set("payment_status", paymentStatus.value)
 
     const data = await apiClient<JsonRecord>(`/api/mall/orders?${params}`)
     const list = Array.isArray(data.items) ? data.items : Array.isArray(data.orders) ? data.orders : []
@@ -333,7 +331,7 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <form class="grid gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm lg:grid-cols-[1fr_180px_180px_180px_auto]" @submit.prevent="search">
+    <form class="grid gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm lg:grid-cols-[1fr_180px_180px_auto]" @submit.prevent="search">
       <input v-model="candidateUlid" class="h-10 rounded-xl border border-slate-200 px-4 text-sm" :placeholder="copy.candidatePlaceholder" />
       <select v-model="bizType" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
         <option value="">{{ copy.allTypes }}</option>
@@ -342,10 +340,6 @@ onMounted(() => load(1))
       <select v-model="orderStatus" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
         <option value="">{{ copy.allStatuses }}</option>
         <option v-for="option in localizedOrderStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-      </select>
-      <select v-model="paymentStatus" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
-        <option value="">{{ copy.allPaymentStatuses }}</option>
-        <option v-for="option in localizedPaymentStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
       </select>
       <button class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-bold text-white" type="submit">
         <Search class="h-4 w-4" />
