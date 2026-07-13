@@ -2210,7 +2210,7 @@ onMounted(() => {
         <div class="grid gap-4 p-5 2xl:grid-cols-[minmax(0,1fr)_420px]">
           <form class="grid gap-3 lg:grid-cols-2" @submit.prevent="saveCourse">
             <label class="block">
-              <span class="text-sm font-bold">{{ copy.courseTitle }}</span>
+              <span class="text-sm font-bold">{{ copy.courseTitle }} <span class="text-red-500">*</span></span>
               <input v-model="courseForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="block">
@@ -2222,14 +2222,14 @@ onMounted(() => {
               <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">{{ copy.respath }}</span>
+              <span class="text-sm font-bold">{{ copy.respath }} <span class="text-red-500">*</span></span>
               <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
               <p class="mt-2 text-xs font-semibold text-slate-500">{{ copy.respathHint }}</p>
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ (copy as any).course_gpath || 'Course Gpath' }}</span>
               <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-              <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">注意：该 Gpath 已经被其他课程使用，保存后可能会被系统认为是同一个课程的不同版本！</p>
+              <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
               <p class="mt-2 text-xs font-semibold text-slate-500">{{ copy.courseGpathHint }}</p>
             </label>
             <label class="block">

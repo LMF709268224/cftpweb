@@ -260,7 +260,7 @@ onMounted(load)
                   </label>
                   <ReadonlyField v-if="readonlyMode" :label="copy.fields.name" :value="form.name" />
                   <label v-else class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.name }}
+                    <span>{{ copy.fields.name }} <span class="text-red-500">*</span></span>
                     <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
                   </label>
                   <ReadonlyField v-if="readonlyMode" :label="copy.fields.description" :value="form.description" />

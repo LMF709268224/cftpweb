@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Copy, FileBox, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { ApiError, apiClient } from "@/lib/apiClient"
 import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
@@ -406,6 +406,13 @@ function nextPage() {
   void load()
 }
 
+watch(() => form.value.title, (newTitle) => {
+  if (mode.value !== 'create') return
+  if (newTitle && !form.value.respath) {
+    form.value.respath = `/res-packages/${newTitle.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}`
+  }
+})
+
 onMounted(load)
 </script>
 
@@ -580,8 +587,8 @@ onMounted(load)
               <div>
                 <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.basic }}</div>
                 <div class="grid gap-4 md:grid-cols-2">
-                  <label class="text-sm font-bold">
-                    {{ copy.fields.title }}
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.fields.title }} <span class="text-red-500">*</span></span>
                     <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.title" required />
                   </label>
                   <label class="text-sm font-bold">
@@ -602,9 +609,10 @@ onMounted(load)
               <div class="border-t border-slate-100 pt-5">
                 <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.pathThumbnail }}</div>
                 <div class="grid gap-4 md:grid-cols-2">
-                  <label class="text-sm font-bold">
-                    {{ copy.fields.respath }}
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.fields.respath }} <span class="text-red-500">*</span></span>
                     <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.respath" required />
+                    <p class="mt-2 text-xs font-semibold text-slate-500">{{ (copy as any).respathHint || '（选填）将随标题自动生成，用于底层权限校验，建议使用默认生成的路径。' }}</p>
                   </label>
                   <label class="text-sm font-bold">
                     {{ copy.fields.thumbnailObjectKey }}

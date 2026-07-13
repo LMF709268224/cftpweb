@@ -924,6 +924,14 @@ async function clonePipeline() {
 }
 
 watch([categoryFilter, onlyCurrent], () => { pageToken.value = ""; load() })
+
+watch(() => form.value.name, (newName) => {
+  if (!creating.value) return
+  if (newName && !form.value.respath) {
+    form.value.respath = `/gcc/pipeline/${newName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}`
+  }
+})
+
 onMounted(() => {
   void load()
   void loadCourseOptions()
@@ -1045,16 +1053,17 @@ onMounted(() => {
         </div>
         <div class="grid gap-4 md:grid-cols-2">
           <label class="grid gap-2 text-sm font-bold">
-            {{ copy.fields.name }}
+            <span>{{ copy.fields.name }} <span class="text-red-500">*</span></span>
             <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" />
           </label>
           <label class="grid gap-2 text-sm font-bold">
             {{ copy.fields.categoryTips }}
             <input v-model="form.category_tips" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
           </label>
-          <label class="grid gap-2 text-sm font-bold md:col-span-2">
-            Respath
+          <label class="grid gap-2 text-sm font-bold">
+            <span>Respath <span v-if="creating" class="text-red-500">*</span></span>
             <input v-model="form.respath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
+            <p v-if="creating" class="text-xs font-semibold text-slate-500">{{ (copy as any).respathHint || '（选填）将随名称自动生成，用于底层权限校验，建议使用默认生成的路径。' }}</p>
           </label>
         </div>
       </div>
@@ -1217,7 +1226,7 @@ onMounted(() => {
                     <input :value="fieldValue(selectedUnitItem.unit, 'unit_ulid')" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.name }}
+                    <span>{{ copy.fields.name }} <span class="text-red-500">*</span></span>
                     <input :value="fieldValue(selectedUnitItem.unit, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'name', eventValue($event))" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
@@ -1295,7 +1304,7 @@ onMounted(() => {
                 </div>
                 <div class="grid gap-4">
                   <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.certificateQualificationLabel }}
+                    <span>{{ copy.certificateQualificationLabel }} <span class="text-red-500">*</span></span>
                     <select :value="fieldValue(selectedCert, 'qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyQualification(selectedCert, eventValue($event))">
                       <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
                       <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
@@ -1303,7 +1312,7 @@ onMounted(() => {
                     <p class="text-xs font-semibold text-slate-500">{{ copy.qualificationSelectHint }}</p>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.certificatePdfTemplateLabel }}
+                    <span>{{ copy.certificatePdfTemplateLabel }} <span class="text-red-500">*</span></span>
                     <select :value="fieldValue(selectedCert, 'pdf_template_ulid')" :disabled="isStructureLocked() || pdfTemplateOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyPdfTemplate(selectedCert, 'pdf_template_ulid', eventValue($event))">
                       <option value="">{{ pdfTemplateOptionsLoading ? copy.loadingPdfTemplates : copy.selectPdfTemplate }}</option>
                       <option v-for="template in pdfTemplateOptions" :key="pdfTemplateId(template)" :value="pdfTemplateId(template)">{{ pdfTemplateOptionLabel(template) }}</option>
@@ -1359,7 +1368,7 @@ onMounted(() => {
                 </div>
                 <div class="grid gap-4">
                   <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.qualificationDefinitionLabel }}
+                    <span>{{ copy.qualificationDefinitionLabel }} <span class="text-red-500">*</span></span>
                     <select
                       :value="qualificationId(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual)"
                       :disabled="isStructureLocked() || credentialOptionsLoading"
