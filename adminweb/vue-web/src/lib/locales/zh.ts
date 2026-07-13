@@ -1845,6 +1845,7 @@ export const zh = {
       version: "版本",
       created_at: "创建时间",
       updated_at: "更新时间",
+      detail: "模板详情",
     },
     saving: "保存中...",
     saveTemplate: "保存模板",

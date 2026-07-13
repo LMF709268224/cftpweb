@@ -1111,10 +1111,6 @@ onMounted(() => {
               <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.createdAt }}</div>
               <div class="mt-2 text-sm font-bold text-slate-950">{{ formatDate(String(selected?.created_at || "")) }}</div>
             </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.updatedAt }}</div>
-              <div class="mt-2 text-sm font-bold text-slate-950">{{ formatDate(String(selected?.updated_at || "")) }}</div>
-            </div>
           </div>
 
           <div v-else-if="activeLayer === 'stages'" class="grid min-h-[620px] lg:grid-cols-[320px_minmax(0,1fr)]">
@@ -1271,15 +1267,6 @@ onMounted(() => {
                     <textarea :value="jsonValue(selectedUnitItem.unit, 'exemption_quals')" :disabled="isStructureLocked()" class="min-h-[110px] rounded-xl border border-slate-200 px-4 py-3 font-mono text-xs disabled:bg-slate-100 disabled:text-slate-500" @change="setJsonField(selectedUnitItem?.unit, 'exemption_quals', eventValue($event))" />
                   </label>
                 </div>
-                <JsonPreview
-                  :title="copy.jsonPreview"
-                  :value="selectedUnitItem.unit"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="300px"
-                />
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddUnit }}</div>
             </div>
@@ -1328,15 +1315,6 @@ onMounted(() => {
                     <input :value="fieldValue(selectedCert, 'name_hint')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedCert, 'name_hint', eventValue($event))" />
                   </label>
                 </div>
-                <JsonPreview
-                  :title="copy.jsonPreview"
-                  :value="selectedCert"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="360px"
-                />
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddCert }}</div>
             </div>

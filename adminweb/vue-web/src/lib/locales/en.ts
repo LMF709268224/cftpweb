@@ -1847,6 +1847,7 @@ export const en: AdminTranslations = {
       version: "Version",
       created_at: "Created At",
       updated_at: "Updated At",
+      detail: "Template Details",
     },
     saving: "Saving...",
     saveTemplate: "Save Template",

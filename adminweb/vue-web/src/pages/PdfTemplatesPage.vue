@@ -35,6 +35,10 @@ function fieldLabel(key: string) {
   return copy.value.fieldLabels?.[key as keyof typeof copy.value.fieldLabels] || key.replaceAll("_", " ")
 }
 
+function fieldValue(key: string, value: unknown) {
+  return key.endsWith("_at") ? formatDate(value) : value
+}
+
 function templateUlid(template: JsonRecord | null | undefined) {
   return String(pickFirst(template || {}, ["template_ulid", "template_id", "id"]) || "")
 }
@@ -280,7 +284,7 @@ onMounted(load)
                         v-for="(value, key) in selectedFields"
                         :key="key"
                         :label="fieldLabel(String(key))"
-                        :value="value"
+                        :value="fieldValue(String(key), value)"
                         :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
                         :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
                       />

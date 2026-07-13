@@ -381,16 +381,6 @@ onMounted(load)
                     </div>
                   </div>
                 </details>
-
-                <JsonPreview
-                  :title="copy.labels.rawJson"
-                  :value="selected"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="360px"
-                />
               </div>
             </template>
           </section>
