@@ -222,12 +222,6 @@ const duplicateGpathWarning = computed(() => {
   return courses.value.some(c => c.course_gpath === gpath && courseId(c) !== selectedCourseId.value)
 })
 
-watch(() => courseForm.value.title, (newTitle) => {
-  if (isCreatingCourse.value && newTitle && !courseForm.value.course_gpath) {
-    courseForm.value.course_gpath = newTitle.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")
-  }
-})
-
 const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() => parseSupplementaryMaterialItems(normalizeSupplementaryMaterials({
   ...(supplementaryMaterial.value || {}),
   kind: supplementaryMaterialForm.value.kind,
