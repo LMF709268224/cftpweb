@@ -30,7 +30,6 @@ type OrderItem = {
   payment_status?: string
   pipelineId: string
   paymentMethod: string
-  canCancel: boolean
 }
 
 type DetailField = {
@@ -65,6 +64,7 @@ type OrderDetail = {
   order_status_at?: string
   payment_status_at?: string
   discount_unsupported?: boolean
+  business_detail?: Record<string, unknown>
   raw?: unknown
 }
 
@@ -142,18 +142,7 @@ const orderStatusOptions = computed(() => [
   { value: "CLOSED", label: orderStatusFilterLabel("CLOSED") },
 ])
 
-const payableOrderStatuses = new Set([
-  "WAIT_PIPELINE_PAYMENT",
-  "WAIT_STAGE_PAYMENT",
-  "WAIT_RETAKE_PAYMENT",
-  "WAIT_UNLOCK_PAYMENT",
-  "WAIT_BUNDLE_PAYMENT",
-  "WAIT_REVIEW_FEE_PAYMENT",
-  "PENDING_PAYMENT",
-  "WAIT_PAYMENT",
-  "WAIT_PAY",
-  "UNPAID",
-])
+const actionableOrderStatuses = new Set(["WAIT_PAYMENT", "PENDING"])
 
 const detailSummaryFields = computed<DetailField[]>(() => {
   const detail = selectedOrderDetail.value
@@ -177,6 +166,37 @@ const detailExtraFields = computed<DetailField[]>(() => {
     { label: t.value.orders.detailClosedAt, value: detail.closed_at || "" },
   ].filter((field) => field.value !== "")
 })
+
+const businessDetailFields = computed<DetailField[]>(() => {
+  const response = selectedOrderDetail.value?.business_detail
+  if (!response || typeof response !== "object" || Array.isArray(response)) return []
+  const detail = recordValue(response.detail) || response
+  const summary = recordValue(detail.summary)
+  const values = {
+    ...(summary || {}),
+    ...Object.fromEntries(Object.entries(detail).filter(([key]) => key !== "summary")),
+  }
+  return Object.entries(values)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .map(([key, value]) => ({
+      label: key,
+      value: displayBusinessValue(value),
+    }))
+})
+
+function recordValue(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null
+}
+
+function displayBusinessValue(value: unknown) {
+  if (typeof value === "string") return value
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
 
 function orderStatusBadgeClass(order: OrderItem) {
   if (order.order_status === "COMPLETED" || order.order_status === "SUCCESS") {
@@ -262,21 +282,32 @@ function closeOrderDetail() {
 function canContinuePayment(order: OrderItem) {
   if (!order.bizType || !order.bizRefUlid) return false
   const orderStatus = String(order.order_status || "").toUpperCase()
-  if (orderStatus === "COMPLETED" || orderStatus === "SUCCESS") return false
-  return payableOrderStatuses.has(orderStatus)
+  return actionableOrderStatuses.has(orderStatus)
 }
 
 function canCancelOrder(order: OrderItem) {
-  return Boolean(order.canCancel && order.id && !cancelLoading.value)
+  const orderStatus = String(order.order_status || "").toUpperCase()
+  return Boolean(
+    order.bizType
+    && order.bizRefUlid
+    && actionableOrderStatuses.has(orderStatus)
+    && !cancelLoading.value,
+  )
 }
 
 async function cancelOrder(order: OrderItem) {
   if (!canCancelOrder(order)) return
   const confirmed = window.confirm(t.value.orders.cancelOrderConfirm)
   if (!confirmed) return
-  cancelLoading.value = order.id
+  cancelLoading.value = order.bizRefUlid
   try {
-    const res = await apiClient(`/api/orders/${encodeURIComponent(order.id)}/cancel`, { method: "POST" })
+    const res = await apiClient("/api/orders/cancel", {
+      method: "POST",
+      body: JSON.stringify({
+        biz_type: order.bizType,
+        biz_ref_ulid: order.bizRefUlid,
+      }),
+    })
     if (res?.success === false) {
       toast.error(t.value.orders.cancelOrderFailed)
       return
@@ -287,7 +318,7 @@ async function cancelOrder(order: OrderItem) {
     console.error(error)
     toast.error(t.value.orders.cancelOrderFailed)
   } finally {
-    if (cancelLoading.value === order.id) cancelLoading.value = null
+    if (cancelLoading.value === order.bizRefUlid) cancelLoading.value = null
   }
 }
 
@@ -437,7 +468,6 @@ async function fetchOrders(showLoading = true, suppressErrorToast = false) {
         payment_status: o.payment_status,
         pipelineId: o.pipeline_id,
         paymentMethod: o.payment_method,
-        canCancel: Boolean(o.can_cancel),
       }))
     } else {
       orders.value = []
@@ -564,7 +594,7 @@ onMounted(() => {
               <p v-else class="text-lg font-semibold text-card-foreground">{{ order.amount }}</p>
             </div>
             <button v-if="canCancelOrder(order)" @click.stop="cancelOrder(order)" class="flex h-9 w-9 items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50" :title="t.orders.cancelOrder">
-              <Loader2 v-if="cancelLoading === order.id" class="h-4 w-4 animate-spin" />
+              <Loader2 v-if="cancelLoading === order.bizRefUlid" class="h-4 w-4 animate-spin" />
               <XCircle v-else class="h-4 w-4" />
               <span class="sr-only">{{ t.orders.cancelOrder }}</span>
             </button>
@@ -677,6 +707,16 @@ onMounted(() => {
                 <div v-for="field in detailExtraFields" :key="field.label" class="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
                   <dt class="text-xs font-semibold text-slate-500">{{ field.label }}</dt>
                   <dd class="mt-1.5 break-words text-sm font-bold leading-snug text-slate-950">{{ field.value }}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section v-if="businessDetailFields.length" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/60">
+              <h3 class="border-b border-slate-100 bg-white px-4 py-3 font-semibold text-slate-950 sm:px-5">{{ t.orders.detailBusinessInfo }}</h3>
+              <dl class="grid gap-3 p-4 sm:grid-cols-2 sm:p-5">
+                <div v-for="field in businessDetailFields" :key="field.label" class="rounded-2xl border border-slate-100 bg-slate-50/80 px-4 py-3">
+                  <dt class="break-all text-xs font-semibold text-slate-500">{{ field.label }}</dt>
+                  <dd class="mt-1.5 break-all text-sm font-bold leading-snug text-slate-950">{{ field.value }}</dd>
                 </div>
               </dl>
             </section>

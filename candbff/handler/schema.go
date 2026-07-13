@@ -560,7 +560,6 @@ type OrderItem struct {
 	PayOrderUlid         string  `json:"pay_order_ulid,omitempty"`
 	PipelinePayOrderUlid string  `json:"pipeline_pay_order_ulid,omitempty"`
 	CanViewInvoice       bool    `json:"can_view_invoice"`
-	CanCancel            bool    `json:"can_cancel"`
 }
 
 type PurchasePipelineReq struct {
@@ -679,6 +678,7 @@ type OrderSummaryDetail struct {
 type OrderDetailRsp struct {
 	Found               bool               `json:"found"`
 	Summary             OrderSummaryDetail `json:"summary"`
+	BusinessDetail      any                `json:"business_detail,omitempty"`
 	GpayOrderUlid       string             `json:"gpay_order_ulid,omitempty"`
 	HasPaymentKey       bool               `json:"has_payment_key"`
 	PaidAt              string             `json:"paid_at,omitempty"`
@@ -690,6 +690,11 @@ type OrderDetailRsp struct {
 	PaymentStatusAt     string             `json:"payment_status_at,omitempty"`
 	DiscountUnsupported bool               `json:"discount_unsupported"`
 	Raw                 any                `json:"raw,omitempty"`
+}
+
+type CancelOrderReq struct {
+	BizType    string `json:"biz_type"`
+	BizRefUlid string `json:"biz_ref_ulid"`
 }
 
 type CancelOrderRsp struct {

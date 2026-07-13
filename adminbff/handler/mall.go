@@ -65,7 +65,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		CandidateULID: strings.TrimSpace(r.URL.Query().Get("candidate_ulid")),
 		BizType:       strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("biz_type"))),
 		BizRefULID:    strings.TrimSpace(r.URL.Query().Get("biz_ref_ulid")),
-		OrderStatus:   strings.TrimSpace(r.URL.Query().Get("order_status")),
+		OrderStatus:   strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("order_status"))),
 		PaymentStatus: strings.ToUpper(strings.TrimSpace(r.URL.Query().Get("payment_status"))),
 	}
 	page := parseCursorPage(r, 20)
@@ -78,8 +78,8 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			OrderStatus:   query.OrderStatus,
 			PaymentStatus: query.PaymentStatus,
 		},
-		Cursor:   page.Cursor,
-		PageSize: page.PageSize,
+		Cursor:    page.Cursor,
+		PageSize:  page.PageSize,
 		SortOrder: mallpb.SortOrder(page.Sort),
 	}
 
@@ -119,7 +119,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 			AmountMinor:   item.GetAmountMinor(),
 			CurrencyCode:  strings.ToUpper(item.GetCurrencyCode()),
 			OrderStatus:   strings.ToUpper(item.GetOrderStatus()),
-			PaymentStatus: deriveAdminPaymentStatus(item.GetOrderStatus(), item.GetPaymentStatus()),
+			PaymentStatus: strings.ToUpper(strings.TrimSpace(item.GetPaymentStatus())),
 			CreatedAt:     item.GetCreatedAt(),
 		})
 	}
@@ -130,6 +130,7 @@ func (h *Handler) ListOrders(w http.ResponseWriter, r *http.Request) {
 		TotalLabel: total.Label(),
 		TotalExact: total.Exact,
 		NextCursor: resp.GetNextCursor(),
+		PrevCursor: resp.GetPrevCursor(),
 		HasMore:    resp.GetHasMore(),
 	})
 }
@@ -148,6 +149,7 @@ type adminOrderListResponse struct {
 	TotalLabel string              `json:"total_label,omitempty"`
 	TotalExact bool                `json:"total_exact"`
 	NextCursor string              `json:"next_cursor,omitempty"`
+	PrevCursor string              `json:"prev_cursor,omitempty"`
 	HasMore    bool                `json:"has_more"`
 }
 
@@ -165,26 +167,60 @@ type adminOrderSummary struct {
 	CreatedAt     string `json:"created_at"`
 }
 
-func deriveAdminPaymentStatus(orderStatus, paymentStatus string) string {
-	status := strings.ToUpper(strings.TrimSpace(paymentStatus))
-	if status != "" && status != "UNSPECIFIED" {
-		return status
+type adminOrderDetailResponse struct {
+	Summary        *mallpb.OrderSummary `json:"summary"`
+	BusinessDetail any                  `json:"business_detail"`
+}
+
+func (h *Handler) GetOrderDetail(w http.ResponseWriter, r *http.Request) {
+	orderULID := strings.TrimSpace(chi.URLParam(r, "order_ulid"))
+	if !requireRequestField(w, orderULID, "order_ulid") {
+		return
 	}
 
-	status = strings.ToUpper(strings.TrimSpace(orderStatus))
-	switch {
-	case strings.Contains(status, "FAILED"):
-		return "FAILED"
-	case strings.Contains(status, "CANCELLED"):
-		return "CANCELLED"
-	case strings.Contains(status, "EXPIRED"):
-		return "EXPIRED"
-	case strings.Contains(status, "WAIT") || strings.Contains(status, "PENDING"):
-		return "WAIT_PAY"
-	case strings.Contains(status, "PAID") || strings.Contains(status, "COMPLETED"):
-		return "PAID"
+	summaryResp, err := h.Mall.GetOrderSummary(r.Context(), &mallpb.GetOrderSummaryRequest{OrderUlid: orderULID})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+	summary := summaryResp.GetSummary()
+	if !summaryResp.GetFound() || summary == nil {
+		WriteError(w, http.StatusNotFound, ErrNotFound, "order not found")
+		return
+	}
+
+	detail, err := h.adminBusinessOrderDetail(r.Context(), summary.GetBizType(), summary.GetBizRefUlid())
+	if err != nil {
+		if appErr, ok := err.(*AppError); ok {
+			HandleAppError(w, appErr)
+		} else {
+			HandleGrpcError(w, err)
+		}
+		return
+	}
+	WriteJSON(w, http.StatusOK, adminOrderDetailResponse{
+		Summary:        summary,
+		BusinessDetail: detail,
+	})
+}
+
+func (h *Handler) adminBusinessOrderDetail(ctx context.Context, bizType, bizRefULID string) (any, error) {
+	bizRefULID = strings.TrimSpace(bizRefULID)
+	switch strings.ToUpper(strings.TrimSpace(bizType)) {
+	case "PIPELINE_PAYMENT":
+		return h.Mall.GetPipelineOrderDetail(ctx, &mallpb.GetPipelineOrderDetailRequest{PipelineOrderUlid: bizRefULID})
+	case "STAGE_PAYMENT":
+		return h.Mall.GetStageOrderDetail(ctx, &mallpb.GetStageOrderDetailRequest{StageOrderUlid: bizRefULID})
+	case "COURSE_RETAKE_PAYMENT":
+		return h.Mall.GetCourseRetakeOrderDetail(ctx, &mallpb.GetCourseRetakeOrderDetailRequest{CourseRetakeOrderUlid: bizRefULID})
+	case "PIPELINE_UNLOCK":
+		return h.Mall.GetPipelineUnlockOrderDetail(ctx, &mallpb.GetPipelineUnlockOrderDetailRequest{PipelineUnlockOrderUlid: bizRefULID})
+	case "CREDENTIAL_APPLICATION":
+		return h.Mall.GetCredentialApplicationOrderDetail(ctx, &mallpb.GetCredentialApplicationOrderDetailRequest{ApplicationOrderUlid: bizRefULID})
+	case "BUNDLE_PURCHASE":
+		return h.Mall.AdminGetBundleOrderDetail(ctx, &mallpb.AdminGetBundleOrderDetailRequest{BundleOrderUlid: bizRefULID})
 	default:
-		return ""
+		return nil, NewError(http.StatusBadRequest, ErrInvalidRequest, "unsupported biz_type")
 	}
 }
 

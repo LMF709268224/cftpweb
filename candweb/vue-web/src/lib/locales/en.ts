@@ -651,6 +651,7 @@ export const en: AppTranslations = {
     detailClose: "Close",
     detailLoadFailed: "Failed to load order details. Please try again later.",
     detailSummary: "Order summary",
+    detailBusinessInfo: "Business order details",
     detailPaymentInfo: "Payment information",
     detailProductName: "Product name",
     detailOrderId: "Order ID",

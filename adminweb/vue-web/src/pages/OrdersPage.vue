@@ -18,7 +18,7 @@ import {
   pickFirst,
 } from "@/lib/status"
 
-type DetailTab = "summary" | "bundle-detail" | "actions" | "raw"
+type DetailTab = "summary" | "business-detail" | "actions" | "raw"
 type SummaryField = {
   label: string
   value: string
@@ -29,7 +29,7 @@ const copy = computed(() => t.value.orders)
 
 const orders = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
-const bundleDetail = ref<JsonRecord | null>(null)
+const businessDetail = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailLoading = ref(false)
 const detailOpen = ref(false)
@@ -58,7 +58,7 @@ const localizedPaymentStatusOptions = computed(() => localizeOptions(paymentStat
 const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
-  { key: "bundle-detail" as const, title: copy.value.tabs.bundleDetail, count: bundleDetail.value ? 1 : 0 },
+  { key: "business-detail" as const, title: copy.value.tabs.bundleDetail, count: businessDetail.value ? 1 : 0 },
   { key: "actions" as const, title: copy.value.tabs.actions, count: isBundlePurchase.value ? 1 : 0 },
   { key: "raw" as const, title: copy.value.tabs.raw, count: 1 },
 ])
@@ -81,18 +81,18 @@ const orderSummaryFields = computed<SummaryField[]>(() => {
     { label: copy.value.fields.createdAt, value: createdAt(order) },
   ]
 })
-const bundleSummaryFields = computed<SummaryField[]>(() => {
-  const detail = bundleDetail.value
+const businessSummaryFields = computed<SummaryField[]>(() => {
+  const detail = businessDetail.value
   if (!detail) return []
-  const source = bundleDetailSource(detail)
-  return [
-    { label: copy.value.fields.bundleOrderId, value: stringValue(pickFirst(source, ["bundle_order_ulid", "order_ulid"]) || bizRef(selected.value)) },
-    { label: copy.value.fields.bundleId, value: stringValue(pickFirst(source, ["bundle_ulid", "bundle_id"])) },
-    { label: copy.value.fields.candidate, value: stringValue(pickFirst(source, ["candidate_ulid", "candidate_id"]) || candidate(selected.value)) },
-    { label: copy.value.fields.paymentMode, value: stringValue(pickFirst(source, ["payment_mode", "paymentMode"])) },
-    { label: copy.value.fields.orderStatus, value: localizedLabelFor("orderStatuses", pickFirst(source, ["order_status", "orderStatus", "status"]), orderStatusOptions) },
-    { label: copy.value.fields.createdAt, value: formatDate(String(pickFirst(source, ["created_at", "createdAt"]) || "")) || "-" },
-  ]
+  const source = businessDetailSource(detail)
+  const summary = recordValue(source.summary)
+  const values = {
+    ...(summary || {}),
+    ...Object.fromEntries(Object.entries(source).filter(([key]) => key !== "summary")),
+  }
+  return Object.entries(values)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .map(([key, value]) => ({ label: key, value: displayBusinessValue(value) }))
 })
 
 function localizeOptions(options: LabelOption[], group: "bizTypes" | "orderStatuses" | "paymentStatuses") {
@@ -160,7 +160,21 @@ function stringValue(value: unknown) {
   return String(value)
 }
 
-function bundleDetailSource(detail: JsonRecord) {
+function recordValue(value: unknown): JsonRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null
+}
+
+function displayBusinessValue(value: unknown) {
+  if (typeof value === "string") return value
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
+function businessDetailSource(detail: JsonRecord) {
   const nestedDetail = detail.detail
   if (nestedDetail && typeof nestedDetail === "object" && !Array.isArray(nestedDetail)) {
     const summary = (nestedDetail as JsonRecord).summary
@@ -172,16 +186,13 @@ function bundleDetailSource(detail: JsonRecord) {
   return detail
 }
 
-function canPurge(order: JsonRecord | null | undefined) {
-  return normalizeStatus(biz(order || {})) === "BUNDLE_PURCHASE"
-}
-
-async function loadBundleDetail(order: JsonRecord | null) {
-  bundleDetail.value = null
-  if (!order || !canPurge(order) || !bizRef(order)) return
+async function loadBusinessDetail(order: JsonRecord | null) {
+  businessDetail.value = null
+  if (!order || !orderUlid(order)) return
   detailLoading.value = true
   try {
-    bundleDetail.value = await apiClient<JsonRecord>(`/api/mall/bundle-orders/${encodeURIComponent(bizRef(order))}`)
+    const response = await apiClient<JsonRecord>(`/api/mall/orders/${encodeURIComponent(orderUlid(order))}`)
+    businessDetail.value = recordValue(response.business_detail)
   } catch (err) {
     console.error(err)
     toast.error(copy.value.toasts.bundleLoadFailed)
@@ -195,7 +206,7 @@ async function selectOrder(order: JsonRecord, open = true) {
   activeTab.value = "summary"
   showPurgeConfirm.value = false
   detailOpen.value = open
-  await loadBundleDetail(order)
+  await loadBusinessDetail(order)
 }
 
 function closeDetail() {
@@ -249,14 +260,14 @@ nextCursor.value = String(data.next_cursor || "")
       await selectOrder(orders.value[0], detailOpen.value)
     } else {
       selected.value = null
-      bundleDetail.value = null
+      businessDetail.value = null
       detailOpen.value = false
     }
   } catch (err) {
     console.error(err)
     orders.value = []
     selected.value = null
-    bundleDetail.value = null
+    businessDetail.value = null
     detailOpen.value = false
     total.value = 0
     hasMore.value = false
@@ -480,18 +491,15 @@ onMounted(() => load(1))
                 </div>
               </div>
 
-              <div v-else-if="activeTab === 'bundle-detail'" class="space-y-4">
-                <div v-if="!isBundlePurchase" class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">
-                  {{ copy.bundleUnsupported }}
-                </div>
-                <div v-else-if="detailLoading" class="p-12 text-center text-slate-500">
+              <div v-else-if="activeTab === 'business-detail'" class="space-y-4">
+                <div v-if="detailLoading" class="p-12 text-center text-slate-500">
                   <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
                   {{ copy.bundleLoading }}
                 </div>
-                <div v-else-if="bundleDetail" class="space-y-4">
+                <div v-else-if="businessDetail" class="space-y-4">
                   <div class="grid gap-4 md:grid-cols-2">
                     <div
-                      v-for="field in bundleSummaryFields"
+                      v-for="field in businessSummaryFields"
                       :key="field.label"
                       class="rounded-2xl border border-slate-200 bg-slate-50 p-4"
                     >
@@ -501,7 +509,7 @@ onMounted(() => load(1))
                   </div>
                   <JsonPreview
                     :title="copy.bundleRaw"
-                    :value="bundleDetail"
+                    :value="businessDetail"
                     :copy-label="copy.copyJson"
                     :copied-label="copy.copiedJson"
                     :copied-message="copy.toasts.jsonCopied"

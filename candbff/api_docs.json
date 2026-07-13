@@ -674,27 +674,72 @@
       "auth_required": true,
       "request": {
         "params": [],
+        "query": [
+          { "name": "biz_type", "type": "string", "required": false, "description": "业务类型筛选" },
+          { "name": "order_status", "type": "string", "required": false, "description": "通用订单状态筛选" },
+          { "name": "cursor", "type": "string", "required": false, "description": "分页游标" },
+          { "name": "page_size", "type": "int", "required": false, "description": "每页数量，最大 50" }
+        ],
+        "body": null
+      },
+      "response": {
+        "data": {
+          "total_orders": { "type": "int", "description": "总订单数" },
+          "completed": { "type": "int", "description": "已完成数" },
+          "total_amount": { "type": "float", "description": "总消费金额" },
+          "orders": {
+            "type": "array",
+            "items": {
+              "order_id": { "type": "string", "description": "通用订单号" },
+              "product_name": { "type": "string", "description": "来自 Meta.ProductName 的商品名称" },
+              "biz_type": { "type": "string", "description": "业务类型" },
+              "biz_ref_ulid": { "type": "string", "description": "业务订单主键" },
+              "order_status": { "type": "string", "description": "WAIT_PAYMENT / PENDING / COMPLETED / CANCELLED / CLOSED" },
+              "payment_status": { "type": "string", "description": "实际支付状态" },
+              "created_at": { "type": "string", "description": "创建时间" },
+              "amount": { "type": "float", "description": "金额" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders/{orderId}",
+      "description": "订单详情；根据通用订单的 biz_type 和 biz_ref_ulid 查询对应业务订单详情",
+      "auth_required": true,
+      "request": {
+        "params": [
+          { "name": "orderId", "type": "string", "required": true, "description": "通用订单号" }
+        ],
         "query": [],
         "body": null
       },
       "response": {
         "data": {
-          "totalOrders": { "type": "int", "description": "总订单数" },
-          "completed": { "type": "int", "description": "已完成数" },
-          "totalAmount": { "type": "float", "description": "总消费金额" },
-          "orders": {
-            "type": "array",
-            "items": {
-              "orderId": { "type": "string", "description": "订单号" },
-              "productName": { "type": "string", "description": "产品名称" },
-              "status": { "type": "string", "description": "״̬: completed / pending / cancelled" },
-              "createdAt": { "type": "string", "description": "创建时间" },
-              "paymentMethod": { "type": "string", "description": "支付方式" },
-              "amount": { "type": "float", "description": "金额" }
-            }
-          }
-        },
-        "note": "需要 gpay 新增 ListOrders gRPC 接口"
+          "summary": { "type": "object", "description": "通用订单概要" },
+          "business_detail": { "type": "object", "description": "对应业务订单详情" }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/cancel",
+      "description": "取消未支付订单",
+      "auth_required": true,
+      "request": {
+        "params": [],
+        "query": [],
+        "body": {
+          "biz_type": { "type": "string", "required": true, "description": "业务类型" },
+          "biz_ref_ulid": { "type": "string", "required": true, "description": "业务订单主键" }
+        }
+      },
+      "response": {
+        "data": {
+          "success": { "type": "bool", "description": "是否取消成功" },
+          "order_status": { "type": "string", "description": "取消后的订单状态" }
+        }
       }
     },
     {

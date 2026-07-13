@@ -25,28 +25,24 @@ func TestCandidateOrderRawStatus(t *testing.T) {
 	}
 }
 
-func TestCanCancelBusinessOrder(t *testing.T) {
+func TestCanCancelCommonOrderStatus(t *testing.T) {
 	tests := []struct {
-		name    string
-		bizType string
-		status  string
-		want    bool
+		name   string
+		status string
+		want   bool
 	}{
-		{name: "bundle wait payment", bizType: orderBizBundlePurchase, status: "WAIT_PAYMENT", want: true},
-		{name: "bundle paid", bizType: orderBizBundlePurchase, status: "COMPLETED", want: false},
-		{name: "stage exemption selection", bizType: orderBizStagePayment, status: "WAIT_EXEMPTION_SELECTION", want: true},
-		{name: "stage wait payment", bizType: orderBizStagePayment, status: "WAIT_STAGE_PAYMENT", want: true},
-		{name: "retake wait payment", bizType: orderBizCourseRetakePayment, status: "WAIT_PAYMENT", want: true},
-		{name: "unlock wait payment", bizType: orderBizPipelineUnlock, status: "WAIT_PAYMENT", want: true},
-		{name: "credential wait review fee", bizType: orderBizCredentialApply, status: "WAIT_REVIEW_FEE_PAYMENT", want: true},
-		{name: "credential upload ready", bizType: orderBizCredentialApply, status: "UPLOAD_READY", want: false},
-		{name: "pipeline payment unsupported", bizType: orderBizPipelinePayment, status: "WAIT_PAYMENT", want: false},
+		{name: "wait payment", status: "WAIT_PAYMENT", want: true},
+		{name: "pending", status: "PENDING", want: true},
+		{name: "completed", status: "COMPLETED", want: false},
+		{name: "cancelled", status: "CANCELLED", want: false},
+		{name: "closed", status: "CLOSED", want: false},
+		{name: "business wait state is not common state", status: "WAIT_STAGE_PAYMENT", want: false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := canCancelBusinessOrder(tt.bizType, tt.status); got != tt.want {
-				t.Fatalf("canCancelBusinessOrder(%q, %q) = %v, want %v", tt.bizType, tt.status, got, tt.want)
+			if got := canCancelCommonOrderStatus(tt.status); got != tt.want {
+				t.Fatalf("canCancelCommonOrderStatus(%q) = %v, want %v", tt.status, got, tt.want)
 			}
 		})
 	}

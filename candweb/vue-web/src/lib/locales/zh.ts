@@ -649,6 +649,7 @@ export const zh = {
     detailClose: "关闭",
     detailLoadFailed: "订单详情加载失败，请稍后重试。",
     detailSummary: "订单概要",
+    detailBusinessInfo: "业务订单详情",
     detailPaymentInfo: "支付信息",
     detailProductName: "商品名称",
     detailOrderId: "订单 ID",

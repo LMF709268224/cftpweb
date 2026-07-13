@@ -363,7 +363,7 @@ function isFailedStatus(status: unknown) {
 
 function isCancelableOrderStatus(status: unknown) {
   const value = normalizedOrderStatus(status)
-  return value.includes("WAIT") || value.includes("PENDING")
+  return value === "WAIT_PAYMENT" || value === "PENDING"
 }
 
 function isUploadReadyStatus(status: unknown) {
@@ -601,7 +601,13 @@ async function cancelActiveOrder() {
   if (!confirmed) return
   cancelOrderLoading.value = true
   try {
-    const res = await apiClient(`/api/orders/${encodeURIComponent(orderId)}/cancel`, { method: "POST" })
+    const res = await apiClient("/api/orders/cancel", {
+      method: "POST",
+      body: JSON.stringify({
+        biz_type: activeOrder.value?.action === "unlock" ? "PIPELINE_UNLOCK" : "BUNDLE_PURCHASE",
+        biz_ref_ulid: orderId,
+      }),
+    })
     if (res?.success === false) {
       toast.error(copy.value.cancelOrderFailed)
       return
