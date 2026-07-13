@@ -2198,12 +2198,12 @@ onMounted(() => {
             <label class="block">
               <span class="text-sm font-bold">{{ copy.respath }}</span>
               <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-              <p class="mt-2 text-xs font-semibold text-slate-500">资源路径 (Resource Path)：用于关联底层的资源包结构，通常形如 /gcc/pipeline/...，候选人端会据此拉取对应的资源文件</p>
+              <p class="mt-2 text-xs font-semibold text-slate-500">【权限标识】相当于这门课的“房产证号”，用于校验学员的访问权限。保持默认随机值即可，随意修改会导致已购学员无法看课。</p>
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ (copy as any).course_gpath || 'Course Gpath' }}</span>
               <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-              <p class="mt-2 text-xs font-semibold text-slate-500">知识图谱路径 (Graph Path)：用于在学习系统或知识图谱中精确定位该课程</p>
+              <p class="mt-2 text-xs font-semibold text-slate-500">【版本标识】相当于这门课的“身份证号”，用于在升级课程时关联新老版本。保持默认随机值即可，随意修改会导致系统无法识别。</p>
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>
