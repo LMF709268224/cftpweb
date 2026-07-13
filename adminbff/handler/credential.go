@@ -380,15 +380,15 @@ func normalizeApplicationStatus(status string) string {
 	case "", "0", "ALL", "APPLICATION_STATUS_UNSPECIFIED":
 		return ""
 	case "1", "PENDING", "APPLICATION_STATUS_PENDING":
-		return "PENDING"
+		return "Pending"
 	case "2", "APPROVED", "APPLICATION_STATUS_APPROVED":
-		return "APPROVED"
+		return "Approved"
 	case "3", "REJECTED", "APPLICATION_STATUS_REJECTED":
-		return "REJECTED"
+		return "Rejected"
 	case "4", "RESUBMIT", "REUPLOAD", "NEEDS_RESUBMIT", "APPLICATION_STATUS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD":
-		return "RESUBMIT"
+		return "Reupload"
 	default:
-		return strings.ToUpper(strings.TrimSpace(status))
+		return status
 	}
 }
 
