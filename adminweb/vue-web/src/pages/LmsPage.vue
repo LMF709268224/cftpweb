@@ -313,6 +313,7 @@ const courseQuizCount = computed(() => completeCourse.value ? allQuizItems.value
 const courseMaterialCount = computed(() => Math.max(materials.value.length + supplementaryMaterialItems.value.length, positiveCount(courseDetail.value?.material_count)))
 
 function emptyCourseForm(): CourseForm {
+  const defaultPath = `/gcc/pipeline/01${Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase()}`
   return {
     category_tips: "",
     title: "",
@@ -322,8 +323,8 @@ function emptyCourseForm(): CourseForm {
     duration_min: "0",
     certification_enabled: false,
     certification_def_id: "",
-    respath: "",
-    course_gpath: "",
+    respath: defaultPath,
+    course_gpath: defaultPath,
   }
 }
 
@@ -2195,18 +2196,14 @@ onMounted(() => {
               <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold flex items-center gap-1">
-                {{ copy.respath }}
-                <HelpCircle class="h-4 w-4 text-slate-400 cursor-help" title="资源路径 (Resource Path)：用于关联底层的资源包结构，通常形如 /gcc/pipeline/...，候选人端会据此拉取对应的资源文件" />
-              </span>
+              <span class="text-sm font-bold">{{ copy.respath }}</span>
               <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+              <p class="mt-2 text-xs font-semibold text-slate-500">资源路径 (Resource Path)：用于关联底层的资源包结构，通常形如 /gcc/pipeline/...，候选人端会据此拉取对应的资源文件</p>
             </label>
             <label class="block">
-              <span class="text-sm font-bold flex items-center gap-1">
-                {{ (copy as any).course_gpath || 'Course Gpath' }}
-                <HelpCircle class="h-4 w-4 text-slate-400 cursor-help" title="知识图谱路径 (Graph Path)：用于在学习系统或知识图谱中精确定位该课程" />
-              </span>
+              <span class="text-sm font-bold">{{ (copy as any).course_gpath || 'Course Gpath' }}</span>
               <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+              <p class="mt-2 text-xs font-semibold text-slate-500">知识图谱路径 (Graph Path)：用于在学习系统或知识图谱中精确定位该课程</p>
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>
