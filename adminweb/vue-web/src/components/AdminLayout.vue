@@ -41,29 +41,34 @@ const showSidebarText = computed(() => mobileNavOpen.value || !collapsed.value)
 
 const navGroups = computed(() => [
   {
-    label: copy.value.groups.learning,
+    label: copy.value.groups.workbench,
     items: [
       { path: "/dashboard", label: copy.value.nav.dashboard, icon: BarChart3 },
-      { path: "/lms", label: copy.value.nav.lms, icon: BookOpen },
-      { path: "/resource-packs", label: copy.value.nav.resourcePacks, icon: FileText },
-      { path: "/resource-pack-files", label: copy.value.nav.resourcePackFiles, icon: FileText },
     ],
   },
   {
-    label: copy.value.groups.certification,
+    label: copy.value.groups.review,
     items: [
-      { path: "/pipelines", label: copy.value.nav.pipelines, icon: FileBadge },
-      { path: "/prog", label: copy.value.nav.prog, icon: GitBranch },
-      { path: "/exams", label: copy.value.nav.exams, icon: ClipboardCheck },
-      { path: "/credentials", label: copy.value.nav.credentials, icon: ShieldCheck },
       { path: "/applications", label: copy.value.nav.applications, icon: ClipboardCheck },
-      { path: "/permissions", label: copy.value.nav.permissions, icon: GraduationCap },
+      { path: "/exams", label: copy.value.nav.exams, icon: ClipboardCheck },
+      { path: "/prog", label: copy.value.nav.prog, icon: GitBranch },
+    ],
+  },
+  {
+    label: copy.value.groups.config,
+    items: [
+      { path: "/lms", label: copy.value.nav.lms, icon: BookOpen },
+      { path: "/resource-packs", label: copy.value.nav.resourcePacks, icon: FileText },
+      { path: "/resource-pack-files", label: copy.value.nav.resourcePackFiles, icon: FileText },
+      { path: "/pipelines", label: copy.value.nav.pipelines, icon: FileBadge },
+      { path: "/bundles", label: copy.value.nav.bundles, icon: Boxes },
+      { path: "/credentials", label: copy.value.nav.credentials, icon: ShieldCheck },
+      { path: "/pdf-templates", label: copy.value.nav.pdfTemplates, icon: FileText },
     ],
   },
   {
     label: copy.value.groups.commerce,
     items: [
-      { path: "/bundles", label: copy.value.nav.bundles, icon: Boxes },
       { path: "/orders", label: copy.value.nav.orders, icon: CreditCard },
       { path: "/invoices", label: copy.value.nav.invoices, icon: Receipt },
     ],
@@ -78,9 +83,9 @@ const navGroups = computed(() => [
   {
     label: copy.value.groups.operations,
     items: [
+      { path: "/permissions", label: copy.value.nav.permissions, icon: GraduationCap },
       { path: "/admin-ops", label: copy.value.nav.adminOps, icon: Wrench },
       { path: "/audit/logs", label: copy.value.nav.auditLogs, icon: ShieldCheck },
-      { path: "/pdf-templates", label: copy.value.nav.pdfTemplates, icon: FileText },
       { path: "/pdf-requests", label: copy.value.nav.pdfRequests, icon: FileBadge },
     ],
   },
