@@ -1662,7 +1662,7 @@ async function handleMaterialFileUpload(event: Event) {
 
     materialForm.value.file_object_key = String(uploadRes.object_key)
     materialForm.value.file_hash = hashHex
-    materialForm.value.file_size = file.size
+    materialForm.value.file_size = String(file.size)
     
     await saveMaterial()
     toast.success((copy.value.toasts as any)?.uploadSuccess || "文件直传并配置成功")
