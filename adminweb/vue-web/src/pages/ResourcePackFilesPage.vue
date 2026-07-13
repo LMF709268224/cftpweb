@@ -379,6 +379,20 @@ async function computeHash(file: File): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
+function generateULID() {
+  const chars = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+  let ulid = ''
+  let now = Date.now()
+  for (let i = 0; i < 10; i++) {
+    ulid = chars.charAt(now % 32) + ulid
+    now = Math.floor(now / 32)
+  }
+  for (let i = 0; i < 16; i++) {
+    ulid += chars.charAt(Math.floor(Math.random() * 32))
+  }
+  return ulid
+}
+
 async function handleFileUpload(event: Event, isThumbnail: boolean) {
   const target = event.target as HTMLInputElement
   const file = target.files?.[0]
@@ -398,7 +412,7 @@ async function handleFileUpload(event: Event, isThumbnail: boolean) {
   
   try {
     const fileHash = await computeHash(file)
-    const fileId = form.value.file_id || crypto.randomUUID()
+    const fileId = form.value.file_id || generateULID()
     
     const reqBody: JsonRecord = {
       upload_type: isThumbnail ? 5 : 6,
