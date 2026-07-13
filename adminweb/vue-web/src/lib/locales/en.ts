@@ -9,8 +9,9 @@ export const en: AdminTranslations = {
     logoutSuccess: "Logged out",
     language: "EN / 中文",
     groups: {
-      learning: "Courses & Resources",
-      certification: "Certification Flow",
+      workbench: "Workbench",
+      review: "Review & Processing",
+      config: "Configuration",
       commerce: "Commerce & Finance",
       messages: "Messages",
       operations: "Operations",

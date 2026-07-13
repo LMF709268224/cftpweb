@@ -7,8 +7,9 @@ export const zh = {
     logoutSuccess: "已退出登录",
     language: "中文 / EN",
     groups: {
-      learning: "课程与资源",
-      certification: "认证流程",
+      workbench: "工作台",
+      review: "审核处理",
+      config: "配置管理",
       commerce: "商品与财务",
       messages: "消息通知",
       operations: "系统运维",
