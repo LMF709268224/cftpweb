@@ -607,18 +607,25 @@ function backToList() {
   activeTab.value = "overview"
 }
 
-watch([candidateFilter, statusFilter], () => {
+function resetPipelineSearchState() {
   selectedSummary.value = null
   lastPage.value = 1
-
   prevCursor.value = ""
   nextCursor.value = ""
   hasMore.value = false
+}
+
+function searchPipelines() {
+  resetPipelineSearchState()
   if (offset.value !== 0) {
     offset.value = 0
     return
   }
   void loadPipelines()
+}
+
+watch([candidateFilter, statusFilter], () => {
+  searchPipelines()
 })
 watch(offset, () => loadPipelines())
 onMounted(async () => {
@@ -647,18 +654,26 @@ onMounted(async () => {
 
     <div class="grid gap-6">
       <aside class="space-y-4">
-        <div class="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <label class="relative grid gap-2 text-sm font-bold">
-            {{ copy.filters.candidate }}
-            <Search class="absolute bottom-3 left-3 h-4 w-4 text-slate-400" />
-            <input v-model="candidateFilter" class="h-10 rounded-xl border border-slate-200 pl-9 pr-3" :placeholder="copy.filters.candidatePlaceholder" />
-          </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.filters.status }}
-            <select v-model="statusFilter" class="h-10 rounded-xl border border-slate-200 px-3">
-              <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
-          </label>
+        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto]">
+            <label class="grid gap-2 text-sm font-bold">
+              {{ copy.filters.candidate }}
+              <div class="relative">
+                <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input v-model="candidateFilter" class="h-11 w-full rounded-xl border border-slate-200 pl-9 pr-3" :placeholder="copy.filters.candidatePlaceholder" />
+              </div>
+            </label>
+            <label class="grid gap-2 text-sm font-bold">
+              {{ copy.filters.status }}
+              <select v-model="statusFilter" class="h-11 rounded-xl border border-slate-200 px-3">
+                <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+              </select>
+            </label>
+            <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm" type="button" @click="searchPipelines">
+              <Search class="h-4 w-4" />
+              {{ copy.filters.search }}
+            </button>
+          </div>
         </div>
 
         <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">

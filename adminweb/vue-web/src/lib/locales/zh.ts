@@ -1866,6 +1866,7 @@ export const zh = {
       candidate: "考生筛选",
       candidatePlaceholder: "Candidate ULID",
       status: "状态筛选",
+      search: "查询",
     },
     status: {
       all: "全部状态",
