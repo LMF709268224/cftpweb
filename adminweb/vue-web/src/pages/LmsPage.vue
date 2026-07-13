@@ -2220,14 +2220,6 @@ onMounted(() => {
               <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
               <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
-            <label class="inline-flex items-center gap-2 text-sm font-bold text-slate-600">
-              <input v-model="courseForm.certification_enabled" type="checkbox" />
-              {{ copy.enableCertificate }}
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.certificateDefinitionId }}</span>
-              <input v-model="courseForm.certification_def_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
-            </label>
             <div class="flex flex-wrap gap-3 lg:col-span-2">
               <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
