@@ -1477,6 +1477,7 @@ export const en: AdminTranslations = {
     editHint: "Update the resource pack details and save.",
     detailLoading: "Loading details...",
     close: "Close",
+    respathHint: "(Optional) Auto-generated from the title for permission checks. The default generated path is recommended.",
     sections: {
       basic: "Basic Info",
       pathThumbnail: "Path & Thumbnail",
