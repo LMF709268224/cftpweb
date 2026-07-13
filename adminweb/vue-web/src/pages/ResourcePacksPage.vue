@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Copy, FileBox, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
+import { Copy, FileBox, Info, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { ApiError, apiClient } from "@/lib/apiClient"
@@ -610,9 +610,16 @@ onMounted(load)
                 <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.pathThumbnail }}</div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="block">
-                    <span class="text-sm font-bold">{{ copy.fields.respath }} <span class="text-red-500">*</span></span>
+                    <span class="flex items-center gap-1.5 text-sm font-bold">
+                      {{ copy.fields.respath }} <span class="text-red-500">*</span>
+                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
+                        <Info class="h-4 w-4" aria-hidden="true" />
+                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                          {{ copy.respathHint }}
+                        </span>
+                      </span>
+                    </span>
                     <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.respath" required />
-                    <p class="mt-2 text-xs font-semibold text-slate-500">{{ (copy as any).respathHint || '（选填）将随标题自动生成，用于底层权限校验，建议使用默认生成的路径。' }}</p>
                   </label>
                   <label class="text-sm font-bold">
                     {{ copy.fields.thumbnailObjectKey }}

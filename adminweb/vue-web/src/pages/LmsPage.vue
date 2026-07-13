@@ -593,6 +593,14 @@ function displayReadonlyValue(key: string, value: unknown) {
   return displayValue(value)
 }
 
+function courseRecordEntries(record: JsonRecord | null | undefined) {
+  if (!record) return []
+  return Object.entries(record).map(([key, value]) => ({
+    key,
+    value: displayReadonlyValue(key, value),
+  }))
+}
+
 function courseReadonlyFieldLabel(key: string) {
   const labels: Record<string, string> = copy.value.readonlyCourseFieldLabels
   return labels[key] || key
@@ -2291,10 +2299,10 @@ onMounted(() => {
               <h3 class="font-black">{{ copy.readonlyFields }}</h3>
               <p class="mt-1 text-xs text-slate-500">{{ copy.readonlyFieldsHint }}</p>
               <div class="mt-3 max-h-[420px] space-y-2 overflow-y-auto overscroll-contain pr-2">
-                <ReadonlyField v-for="entry in recordEntries(selectedCourse)" :key="`course-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
+                <ReadonlyField v-for="entry in courseRecordEntries(selectedCourse)" :key="`course-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
                 <div v-if="detailLoading || completeLoading" class="text-sm text-slate-500">{{ copy.loadingCompleteCourse }}</div>
-                <ReadonlyField v-for="entry in recordEntries(courseDetail)" :key="`detail-${entry.key}`" :label="courseDetailReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
-                <ReadonlyField v-for="entry in recordEntries(completeCourse)" :key="`complete-${entry.key}`" :label="completeCourseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
+                <ReadonlyField v-for="entry in courseRecordEntries(courseDetail)" :key="`detail-${entry.key}`" :label="courseDetailReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
+                <ReadonlyField v-for="entry in courseRecordEntries(completeCourse)" :key="`complete-${entry.key}`" :label="completeCourseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
               </div>
             </div>
           </aside>
