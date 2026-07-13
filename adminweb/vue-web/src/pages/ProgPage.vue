@@ -329,7 +329,7 @@ function ensureSelections() {
 
 async function loadPipelineCatalog() {
   try {
-    const data = await apiClient<JsonRecord>("/api/pipelines?page_size=200")
+    const data = await apiClient<JsonRecord>("/api/pipelines?page_size=100")
     total.value = Number(data.total) || 0
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
     const next: Record<string, string> = {}

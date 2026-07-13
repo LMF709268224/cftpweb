@@ -640,7 +640,7 @@ async function load() {
 async function loadCourseOptions() {
   courseOptionsLoading.value = true
   try {
-    const data = await apiClient<JsonRecord>("/api/lms/courses?page_size=1000")
+    const data = await apiClient<JsonRecord>("/api/lms/courses?page_size=100")
     const list = Array.isArray(data.courses) ? data.courses : []
     courseOptions.value = list
       .filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))

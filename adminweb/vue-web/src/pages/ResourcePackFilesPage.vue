@@ -173,7 +173,7 @@ async function loadFileDetail(file: JsonRecord | null) {
 }
 
 async function loadPacks() {
-  const data = await apiClient<JsonRecord>("/api/lms/resource-packs?page_size=1000")
+  const data = await apiClient<JsonRecord>("/api/lms/resource-packs?page_size=100")
     total.value = Number(data.total) || 0
   packs.value = asRecordList(data.packs || data.items)
 }
