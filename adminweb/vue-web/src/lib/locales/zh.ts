@@ -1627,8 +1627,6 @@ export const zh = {
     cancel: "取消",
     confirmDeleteAction: "确认删除",
     deleting: "删除中...",
-    uploadFile: "上传文件",
-    uploadCover: "上传封面",
     toasts: {
       detailLoadFailed: "资源文件详情加载失败",
       loadFailed: "资源文件加载失败",
@@ -1642,8 +1640,6 @@ export const zh = {
       deleteRequiresVersion: "删除资源文件需要有效的 file_id 和 version",
       deleted: "资源文件已删除",
       deleteFailed: "资源文件删除失败",
-      uploadSuccess: "文件上传成功",
-      uploadFailed: "文件上传失败",
     },
   },
   adminOps: {

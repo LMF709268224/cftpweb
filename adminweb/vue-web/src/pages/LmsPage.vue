@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileJson, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
+import { FileJson, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X, HelpCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
@@ -2195,11 +2195,17 @@ onMounted(() => {
               <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">{{ copy.respath }}</span>
+              <span class="text-sm font-bold flex items-center gap-1">
+                {{ copy.respath }}
+                <HelpCircle class="h-4 w-4 text-slate-400 cursor-help" title="资源路径 (Resource Path)：用于关联底层的资源包结构，通常形如 /gcc/pipeline/...，候选人端会据此拉取对应的资源文件" />
+              </span>
               <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">{{ (copy as any).course_gpath || 'Course Gpath' }}</span>
+              <span class="text-sm font-bold flex items-center gap-1">
+                {{ (copy as any).course_gpath || 'Course Gpath' }}
+                <HelpCircle class="h-4 w-4 text-slate-400 cursor-help" title="知识图谱路径 (Graph Path)：用于在学习系统或知识图谱中精确定位该课程" />
+              </span>
               <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
             </label>
             <label class="block">
@@ -2213,14 +2219,6 @@ onMounted(() => {
             <label class="block">
               <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
               <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
-            </label>
-            <label class="inline-flex items-center gap-2 text-sm font-bold text-slate-600">
-              <input v-model="courseForm.certification_enabled" type="checkbox" />
-              {{ copy.enableCertificate }}
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.certificateDefinitionId }}</span>
-              <input v-model="courseForm.certification_def_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <div class="flex flex-wrap gap-3 lg:col-span-2">
               <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
