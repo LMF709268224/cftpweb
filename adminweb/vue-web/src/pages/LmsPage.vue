@@ -1367,7 +1367,7 @@ async function saveLesson() {
       media_object_key: type === 7 ? "" : lessonForm.value.asset_object_key.trim(),
       media_file_hash: type === 7 ? "" : lessonForm.value.asset_file_hash.trim(),
       external_url: type === 7 ? lessonForm.value.asset_object_key.trim() : "",
-      version: lessons.value.find((item) => lessonId(item) === editingLessonId.value)?.version || 0,
+      version: selectedLessonRecord.value?.version || 0,
     })
     if (editingLessonId.value) {
       await apiClient(`/api/lms/lessons/${encodeURIComponent(editingLessonId.value)}`, { method: "PUT", body })
