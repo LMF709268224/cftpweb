@@ -18,7 +18,7 @@ import {
   pickFirst,
 } from "@/lib/status"
 
-type DetailTab = "summary" | "business-detail" | "actions" | "raw"
+type DetailTab = "summary" | "business-detail" | "actions"
 type SummaryField = {
   label: string
   value: string
@@ -54,12 +54,10 @@ const isBundlePurchase = computed(() => normalizeStatus(biz(selected.value || {}
 
 const localizedBizTypeOptions = computed(() => localizeOptions(bizTypeOptions, "bizTypes"))
 const localizedOrderStatusOptions = computed(() => localizeOptions(orderStatusOptions, "orderStatuses"))
-const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
   { key: "business-detail" as const, title: copy.value.tabs.bundleDetail, count: businessDetail.value ? 1 : 0 },
   { key: "actions" as const, title: copy.value.tabs.actions, count: isBundlePurchase.value ? 1 : 0 },
-  { key: "raw" as const, title: copy.value.tabs.raw, count: 1 },
 ])
 const orderSummaryFields = computed<SummaryField[]>(() => {
   const order = selected.value
@@ -532,21 +530,7 @@ onMounted(() => load(1))
                 </button>
               </div>
 
-              <div v-else-if="activeTab === 'raw'" class="space-y-4">
-                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  {{ copy.rawNote }}
-                </div>
-                <JsonPreview
-                  :title="copy.rawJson"
-                  :text="selectedJson"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="620px"
-                />
-              </div>
-          </main>
+            </main>
         </section>
       </div>
     </Teleport>

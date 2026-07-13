@@ -381,6 +381,7 @@ export const en: AdminTranslations = {
       order_id: "Order ID",
       order_ulid: "Order ID",
       email: "User Identifier",
+      candidate_name: "Candidate Name",
       amount: "Invoice Amount",
       currency: "Currency",
       status: "Invoice Status",
