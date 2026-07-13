@@ -10,7 +10,8 @@ import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 type ActionKind = "trigger-next-stage" | "terminate-pipeline" | "force-completed" | "force-signup-exam"
-type DetailTab = "overview" | "stages" | "units" | "certificateTasks" | "logs" | "raw"
+type DetailTab = "overview" | "stages" | "units" | "certificateTasks" | "logs"
+type DetailTabItem = { key: DetailTab; title: string; desc: string; count: number }
 
 type PendingAction = {
   kind: ActionKind
@@ -110,24 +111,26 @@ const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => hasMore.value)
 const canPrevLogs = computed(() => logOffset.value > 0)
 const canNextLogs = computed(() => logsHasMore.value)
-const isPipelineCancelled = computed(() => isCancelledPipelineStatus(selectedStatus.value))
-const canViewCertificate = computed(() => Boolean(selectedPipelineUlid.value && selectedCandidateUlid.value && !isPipelineCancelled.value))
-const canTerminatePipeline = computed(() => Boolean(selectedPipelineUlid.value && !["3", "5", "COMPLETED", "CANCELLED"].includes(normalizedPipelineStatus(selectedStatus.value))))
+const canViewCertificate = computed(() => Boolean(selectedPipelineUlid.value && selectedCandidateUlid.value && isCompletedPipelineStatus(selectedStatus.value)))
+const canShowCertificateTasks = computed(() => isCertificateTaskPipelineStatus(selectedStatus.value))
+const canTerminatePipeline = computed(() => Boolean(selectedPipelineUlid.value && !isCompletedPipelineStatus(selectedStatus.value) && !isCancelledPipelineStatus(selectedStatus.value)))
 const canTriggerNextStage = computed(() => {
   const currentStageUlid = String(detailPipelineRecord.value.current_stage_ulid || "")
   const currentStage = stages.value.find((stage) => stageUlid(stage) === currentStageUlid) || stages.value[0]
   return String(selectedStatus.value ?? "") === "1" && String(stageRecord(currentStage).status ?? "") === "3"
 })
-const rawDetailJson = computed(() => JSON.stringify({ detail: detail.value, certificateTasks: certificateTasks.value, certificateTaskDetail: certificateTaskDetail.value, logs: logs.value }, null, 2))
-
-const detailTabs = computed(() => [
-  { key: "overview" as const, title: copy.value.tabs.overview.title, desc: copy.value.tabs.overview.desc, count: selectedSummary.value ? 1 : 0 },
-  { key: "stages" as const, title: copy.value.tabs.stages.title, desc: copy.value.tabs.stages.desc, count: stages.value.length },
-  { key: "units" as const, title: copy.value.tabs.units.title, desc: copy.value.tabs.units.desc, count: units.value.length },
-  { key: "certificateTasks" as const, title: copy.value.tabs.certificateTasks.title, desc: copy.value.tabs.certificateTasks.desc, count: certificateTasks.value.length },
-  { key: "logs" as const, title: copy.value.tabs.logs.title, desc: copy.value.tabs.logs.desc, count: logs.value.length },
-  { key: "raw" as const, title: copy.value.tabs.raw.title, desc: copy.value.tabs.raw.desc, count: 1 },
-])
+const detailTabs = computed<DetailTabItem[]>(() => {
+  const tabs: DetailTabItem[] = [
+    { key: "overview", title: copy.value.tabs.overview.title, desc: copy.value.tabs.overview.desc, count: selectedSummary.value ? 1 : 0 },
+    { key: "stages", title: copy.value.tabs.stages.title, desc: copy.value.tabs.stages.desc, count: stages.value.length },
+    { key: "units", title: copy.value.tabs.units.title, desc: copy.value.tabs.units.desc, count: units.value.length },
+  ]
+  if (canShowCertificateTasks.value) {
+    tabs.push({ key: "certificateTasks", title: copy.value.tabs.certificateTasks.title, desc: copy.value.tabs.certificateTasks.desc, count: certificateTasks.value.length })
+  }
+  tabs.push({ key: "logs", title: copy.value.tabs.logs.title, desc: copy.value.tabs.logs.desc, count: logs.value.length })
+  return tabs
+})
 
 const statusOptions = computed(() => [
   { value: "all", label: copy.value.status.all },
@@ -161,6 +164,14 @@ function normalizedPipelineStatus(value: unknown) {
 
 function isCancelledPipelineStatus(value: unknown) {
   return ["5", "CANCELLED"].includes(normalizedPipelineStatus(value))
+}
+
+function isCompletedPipelineStatus(value: unknown) {
+  return ["3", "COMPLETED"].includes(normalizedPipelineStatus(value))
+}
+
+function isCertificateTaskPipelineStatus(value: unknown) {
+  return ["3", "4", "COMPLETED", "ISSUING_CERT"].includes(normalizedPipelineStatus(value))
 }
 
 function statusLabel(value: unknown, scope: "pipeline" | "stage" | "unit" = "pipeline") {
@@ -469,7 +480,13 @@ async function loadLogDetail(transitionUlid: string) {
 }
 
 async function loadCertificateTasks() {
-  if (!selectedCandidateUlid.value) return
+  if (!selectedCandidateUlid.value || !canShowCertificateTasks.value) {
+    certificateTasks.value = []
+    selectedCertificateTask.value = null
+    certificateTaskDetail.value = null
+    certificateTasksLoading.value = false
+    return
+  }
   certificateTasksLoading.value = true
   try {
     const params = new URLSearchParams({
@@ -628,6 +645,15 @@ watch([candidateFilter, statusFilter], () => {
   searchPipelines()
 })
 watch(offset, () => loadPipelines())
+
+watch(canShowCertificateTasks, (visible) => {
+  if (visible) return
+  certificateTasks.value = []
+  selectedCertificateTask.value = null
+  certificateTaskDetail.value = null
+  if (activeTab.value === "certificateTasks") activeTab.value = "overview"
+})
+
 onMounted(async () => {
   await Promise.all([loadPipelineCatalog(), loadPipelines()])
 })
@@ -822,7 +848,7 @@ onMounted(async () => {
               </div>
             </div>
 
-            <section class="h-[60vh] min-h-[360px] max-h-[620px] min-w-0 overflow-y-auto">
+            <section class="max-h-[60vh] min-w-0 overflow-y-auto">
               <div v-if="detailLoading" class="px-6 py-10 text-center text-slate-500">
                 <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
                 {{ copy.loadingDetails }}
@@ -837,7 +863,7 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <div v-else-if="activeTab === 'stages'" class="grid min-h-[640px] lg:grid-cols-[320px_minmax(0,1fr)]">
+              <div v-else-if="activeTab === 'stages'" class="grid lg:grid-cols-[320px_minmax(0,1fr)]">
                 <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
                   <div class="border-b border-slate-200 p-4">
                     <div class="font-black">{{ copy.stageListTitle }}</div>
@@ -868,21 +894,12 @@ onMounted(async () => {
                         <div class="mt-1 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
                       </div>
                     </div>
-                    <JsonPreview
-                      :title="copy.tabs.stages.title"
-                      :value="selectedStage"
-                      :copy-label="copy.copyJson"
-                      :copied-label="copy.copiedJson"
-                      :copied-message="copy.toasts.jsonCopied"
-                      :copy-error-message="copy.toasts.jsonCopyFailed"
-                      max-height="360px"
-                    />
                   </template>
                   <div v-else class="p-12 text-center text-slate-500">{{ copy.selectStage }}</div>
                 </div>
               </div>
 
-              <div v-else-if="activeTab === 'units'" class="grid min-h-[640px] lg:grid-cols-[360px_minmax(0,1fr)]">
+              <div v-else-if="activeTab === 'units'" class="grid lg:grid-cols-[360px_minmax(0,1fr)]">
                 <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
                   <div class="border-b border-slate-200 p-4">
                     <div class="font-black">{{ copy.unitListTitle }}</div>
@@ -935,21 +952,12 @@ onMounted(async () => {
                         {{ copy.resetExamSignup }}
                       </button>
                     </div>
-                    <JsonPreview
-                      :title="copy.tabs.units.title"
-                      :value="selectedUnit.unit"
-                      :copy-label="copy.copyJson"
-                      :copied-label="copy.copiedJson"
-                      :copied-message="copy.toasts.jsonCopied"
-                      :copy-error-message="copy.toasts.jsonCopyFailed"
-                      max-height="300px"
-                    />
                   </template>
                   <div v-else class="p-12 text-center text-slate-500">{{ copy.selectUnit }}</div>
                 </div>
               </div>
 
-              <div v-else-if="activeTab === 'certificateTasks'" class="grid min-h-[640px] lg:grid-cols-[380px_minmax(0,1fr)]">
+              <div v-else-if="activeTab === 'certificateTasks'" class="grid lg:grid-cols-[380px_minmax(0,1fr)]">
                 <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
                   <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                     <div>
@@ -1032,7 +1040,7 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <div v-else-if="activeTab === 'logs'" class="grid min-h-[640px] lg:grid-cols-[380px_minmax(0,1fr)]">
+              <div v-else-if="activeTab === 'logs'" class="grid lg:grid-cols-[380px_minmax(0,1fr)]">
                 <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
                   <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                     <div>
@@ -1080,32 +1088,8 @@ onMounted(async () => {
                         <div class="mt-2 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
                       </div>
                     </div>
-                    <JsonPreview
-                      :title="copy.logDetailTitle"
-                      :value="logDetail || selectedLog || {}"
-                      :copy-label="copy.copyJson"
-                      :copied-label="copy.copiedJson"
-                      :copied-message="copy.toasts.jsonCopied"
-                      :copy-error-message="copy.toasts.jsonCopyFailed"
-                      max-height="360px"
-                    />
                   </template>
                 </div>
-              </div>
-
-              <div v-else-if="activeTab === 'raw'" class="space-y-5 p-5">
-                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  {{ copy.rawHint }}
-                </div>
-                <JsonPreview
-                  :title="copy.rawJson"
-                  :text="rawDetailJson"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="620px"
-                />
               </div>
             </section>
         </section>
