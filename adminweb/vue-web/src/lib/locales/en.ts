@@ -1622,6 +1622,8 @@ export const en: AdminTranslations = {
     cancel: "Cancel",
     confirmDeleteAction: "Delete",
     deleting: "Deleting...",
+    uploadFile: "Upload File",
+    uploadCover: "Upload Cover",
     toasts: {
       detailLoadFailed: "Failed to load resource file details",
       loadFailed: "Failed to load resource files",
@@ -1635,6 +1637,8 @@ export const en: AdminTranslations = {
       deleteRequiresVersion: "Deleting a resource file requires a valid file_id and version",
       deleted: "Resource file deleted",
       deleteFailed: "Failed to delete resource file",
+      uploadSuccess: "Upload successful",
+      uploadFailed: "Upload failed",
     },
   },
   adminOps: {
