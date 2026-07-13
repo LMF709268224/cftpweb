@@ -439,6 +439,7 @@ export const zh = {
       qual_ulid: "资格定义",
       pdf_template_ulid: "PDF 模板",
       template_ulid: "PDF 模板 ID",
+      template_params: "证书信息",
       issue_date: "签发日期",
       pdf_file_hash: "PDF 文件校验值",
       pdf_object_key: "PDF 文件路径",

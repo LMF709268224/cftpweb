@@ -441,6 +441,7 @@ export const en: AdminTranslations = {
       qual_ulid: "Credential Definition",
       pdf_template_ulid: "PDF Template",
       template_ulid: "PDF Template ID",
+      template_params: "Certificate Details",
       issue_date: "Issue Date",
       pdf_file_hash: "PDF File Hash",
       pdf_object_key: "PDF File Path",
