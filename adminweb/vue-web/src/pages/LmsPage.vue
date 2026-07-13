@@ -215,6 +215,19 @@ const selectedCourseId = computed(() => courseId(selectedCourse.value))
 const isCreatingCourse = computed(() => courseView.value === "detail" && !selectedCourseId.value)
 const selectedChapterId = computed(() => chapterId(selectedChapter.value))
 const selectedMaterialId = computed(() => materialId(selectedMaterial.value))
+
+const duplicateGpathWarning = computed(() => {
+  const gpath = courseForm.value.course_gpath?.trim()
+  if (!gpath) return false
+  return courses.value.some(c => c.course_gpath === gpath && courseId(c) !== selectedCourseId.value)
+})
+
+watch(() => courseForm.value.title, (newTitle) => {
+  if (isCreatingCourse.value && newTitle && !courseForm.value.course_gpath) {
+    courseForm.value.course_gpath = newTitle.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")
+  }
+})
+
 const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() => parseSupplementaryMaterialItems(normalizeSupplementaryMaterials({
   ...(supplementaryMaterial.value || {}),
   kind: supplementaryMaterialForm.value.kind,
@@ -313,7 +326,6 @@ const courseQuizCount = computed(() => completeCourse.value ? allQuizItems.value
 const courseMaterialCount = computed(() => Math.max(materials.value.length + supplementaryMaterialItems.value.length, positiveCount(courseDetail.value?.material_count)))
 
 function emptyCourseForm(): CourseForm {
-  const defaultPath = `/gcc/pipeline/01${Array.from(crypto.getRandomValues(new Uint8Array(12))).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase()}`
   return {
     category_tips: "",
     title: "",
@@ -323,8 +335,8 @@ function emptyCourseForm(): CourseForm {
     duration_min: "0",
     certification_enabled: false,
     certification_def_id: "",
-    respath: defaultPath,
-    course_gpath: defaultPath,
+    respath: "",
+    course_gpath: "",
   }
 }
 
@@ -2082,6 +2094,20 @@ watch([categoryFilter, publishedOnly], () => {
   void loadCourses()
 })
 
+watch(() => courseForm.value.title, (newTitle, oldTitle) => {
+  if (!isCreatingCourse.value) return
+  const generatePath = (t: string) => t ? `/gcc/pipeline/core/${t.trim().toLowerCase().replace(/\s+/g, '_')}` : ''
+  const newPath = generatePath(newTitle)
+  const oldPath = generatePath(oldTitle)
+  
+  if (!courseForm.value.respath || courseForm.value.respath === oldPath) {
+    courseForm.value.respath = newPath
+  }
+  if (!courseForm.value.course_gpath || courseForm.value.course_gpath === oldPath) {
+    courseForm.value.course_gpath = newPath
+  }
+})
+
 onMounted(() => {
   void loadCourses()
 })
@@ -2197,13 +2223,14 @@ onMounted(() => {
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.respath }}</span>
-              <input v-model="courseForm.respath" readonly class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-500 cursor-not-allowed" placeholder="/gcc/pipeline/..." />
-              <p class="mt-2 text-xs font-semibold text-slate-500">【权限标识】相当于这门课的“房产证号”，用于校验学员的访问权限。保持默认随机值即可，随意修改会导致已购学员无法看课。</p>
+              <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+              <p class="mt-2 text-xs font-semibold text-slate-500">{{ copy.respathHint }}</p>
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ (copy as any).course_gpath || 'Course Gpath' }}</span>
-              <input v-model="courseForm.course_gpath" readonly class="mt-2 h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-slate-500 cursor-not-allowed" placeholder="/gcc/pipeline/..." />
-              <p class="mt-2 text-xs font-semibold text-slate-500">【版本标识】相当于这门课的“身份证号”，用于在升级课程时关联新老版本。保持默认随机值即可，随意修改会导致系统无法识别。</p>
+              <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+              <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">注意：该 Gpath 已经被其他课程使用，保存后可能会被系统认为是同一个课程的不同版本！</p>
+              <p class="mt-2 text-xs font-semibold text-slate-500">{{ copy.courseGpathHint }}</p>
             </label>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>

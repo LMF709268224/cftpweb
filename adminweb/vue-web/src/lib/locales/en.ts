@@ -2368,6 +2368,8 @@ export const en: AdminTranslations = {
     categoryTips: "Category Tips",
     description: "Description",
     respath: "Respath",
+    respathHint: "(Optional) Auto-generated from title. Used for permissions. Default recommended. Modifying may break access.",
+    courseGpathHint: "(Optional) Auto-generated from title. Used to link course versions. Default recommended.",
     durationMin: "Duration Minutes",
     thumbnailObjectKey: "Thumbnail Object Key",
     thumbnailFileHash: "Thumbnail File Hash",
