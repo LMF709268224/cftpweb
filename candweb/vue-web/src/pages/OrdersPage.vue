@@ -581,7 +581,7 @@ onMounted(() => {
               <p class="text-sm text-muted-foreground">{{ order.date }}</p>
             </div>
           </div>
-          <div class="grid w-full grid-cols-[1fr_auto_auto_auto_auto_auto] items-center gap-x-3 gap-y-3 pl-16 md:w-auto md:shrink-0 md:grid-cols-[96px_96px_36px_36px_36px_20px] md:gap-x-5 md:pl-0">
+          <div class="grid w-full grid-cols-[1fr_auto_auto_auto_auto] items-center gap-x-3 gap-y-3 pl-16 md:w-auto md:shrink-0 md:grid-cols-[130px_140px_36px_36px_24px] md:gap-x-5 md:pl-0">
             <div class="flex justify-start md:justify-center">
               <span class="badge text-xs" :class="orderStatusBadgeClass(order)">
                 {{ timelineStatusLabelWithDiagnostics(t, 'MALL_ORDER', order.order_status) }}

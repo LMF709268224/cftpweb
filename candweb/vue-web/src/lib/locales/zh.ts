@@ -614,7 +614,7 @@ export const zh = {
     statusCompleted: "已完成",
     statusPending: "待处理",
     statusProcessing: "处理中",
-    statusWaitPayment: "等待支付",
+    statusWaitPayment: "待支付",
     statusWaitInstantiate: "处理中",
     statusWaitExemptionSelection: "等待选择免考",
     statusWaitReview: "等待审核",
