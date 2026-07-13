@@ -270,11 +270,11 @@ onMounted(load)
               <div class="grid gap-5">
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.labels.name }}
+                    <span>{{ copy.labels.name }} <span class="text-red-500">*</span></span>
                     <input v-model="name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="120" :placeholder="copy.placeholders.name" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.labels.category }}
+                    <span>{{ copy.labels.category }} <span class="text-red-500">*</span></span>
                     <select v-model="category" class="rounded-xl border border-slate-200 px-4 py-3">
                       <option value="" disabled>{{ copy.placeholders.category }}</option>
                       <option v-for="option in categoryOptions" :key="option.value" :value="option.value">{{ option.label }}</option>

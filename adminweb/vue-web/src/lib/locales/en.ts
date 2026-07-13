@@ -2370,6 +2370,7 @@ export const en: AdminTranslations = {
     description: "Description",
     respath: "Respath",
     respathHint: "(Optional) Auto-generated from title. Used for permissions. Default recommended. Modifying may break access.",
+    duplicateGpathWarning: "Warning: This Gpath is already used by another course. Saving this may overwrite or be treated as a new version of that course!",
     courseGpathHint: "(Optional) Auto-generated from title. Used to link course versions. Default recommended.",
     durationMin: "Duration Minutes",
     thumbnailObjectKey: "Thumbnail Object Key",

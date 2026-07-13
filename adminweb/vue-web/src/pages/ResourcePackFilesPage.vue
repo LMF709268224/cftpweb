@@ -493,22 +493,22 @@ onMounted(load)
             {{ copy.fields.fileId }}
             <div class="readonly-field readonly-field--compact">{{ displayValue(form.file_id) }}</div>
           </div>
-          <label class="text-sm font-bold">
-            {{ copy.fields.pack }}
-            <div v-if="mode === 'detail'" class="readonly-field">{{ packFieldText(form.pack_id) }}</div>
+          <label class="block">
+            <span class="text-sm font-bold block">{{ copy.fields.pack }} <span class="text-red-500">*</span></span>
+            <div v-if="mode === 'detail'" class="mt-2 readonly-field">{{ packFieldText(form.pack_id) }}</div>
             <select v-else v-model="form.pack_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'">
               <option value="">{{ copy.selectPack }}</option>
               <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
             </select>
           </label>
-          <label class="text-sm font-bold">
-            {{ copy.fields.title }}
-            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.title) }}</div>
+          <label class="block">
+            <span class="text-sm font-bold block">{{ copy.fields.title }} <span class="text-red-500">*</span></span>
+            <div v-if="mode === 'detail'" class="mt-2 readonly-field">{{ displayValue(form.title) }}</div>
             <input v-else v-model="form.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.title" />
           </label>
-          <label class="text-sm font-bold">
-            {{ copy.fields.fileType }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ fileTypeLabel(form.file_type) }}</div>
+          <label class="block">
+            <span class="text-sm font-bold block">{{ copy.fields.fileType }} <span class="text-red-500">*</span></span>
+            <div v-if="mode === 'detail'" class="mt-2 readonly-field readonly-field--compact">{{ fileTypeLabel(form.file_type) }}</div>
             <select v-else v-model.number="form.file_type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
               <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>

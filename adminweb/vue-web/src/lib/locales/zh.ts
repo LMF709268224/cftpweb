@@ -2368,6 +2368,7 @@ export const zh = {
     description: "描述",
     respath: "Respath",
     respathHint: "（选填）将随标题自动生成，用于底层权限校验，建议使用默认生成的路径。任意修改可能导致已购学员无法看课。",
+    duplicateGpathWarning: "注意：该 Gpath 已经被其他课程使用，保存后可能会被系统认为是同一个课程的不同版本！",
     courseGpathHint: "（选填）将随标题自动生成，用于关联课程升级的新老版本。建议使用默认生成的路径。",
     durationMin: "时长分钟",
     thumbnailObjectKey: "封面 Object Key",
