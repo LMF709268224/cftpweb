@@ -218,7 +218,7 @@ type ListApplicationsReq struct {
 // ListApplications 查询考生资格申请
 func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 20)
-	statusFilter := normalizeApplicationStatus(r.URL.Query().Get("status"))
+	statusFilter := strings.TrimSpace(r.URL.Query().Get("status"))
 
 	req := &gcredspb.ListApplicationsRequest{
 		Filters:  &gcredspb.ApplicationFilters{},
@@ -226,7 +226,7 @@ func (h *Handler) ListApplications(w http.ResponseWriter, r *http.Request) {
 		PageSize: page.PageSize,
 		SortOrder: gcredspb.SortOrder(page.Sort),
 	}
-	if statusFilter != "" {
+	if statusFilter != "" && statusFilter != "0" && strings.ToUpper(statusFilter) != "ALL" {
 		req.Filters.Statuses = []string{statusFilter}
 	}
 
@@ -375,22 +375,7 @@ func credentialFilePayload(file *gcredspb.FileInfo) map[string]interface{} {
 	}
 }
 
-func normalizeApplicationStatus(status string) string {
-	switch strings.ToUpper(strings.TrimSpace(status)) {
-	case "", "0", "ALL", "APPLICATION_STATUS_UNSPECIFIED":
-		return ""
-	case "1", "PENDING", "APPLICATION_STATUS_PENDING":
-		return "Pending"
-	case "2", "APPROVED", "APPLICATION_STATUS_APPROVED":
-		return "Approved"
-	case "3", "REJECTED", "APPLICATION_STATUS_REJECTED":
-		return "Rejected"
-	case "4", "RESUBMIT", "REUPLOAD", "NEEDS_RESUBMIT", "APPLICATION_STATUS_RESUBMIT", "APPLICATION_STATUS_REUPLOAD":
-		return "Reupload"
-	default:
-		return status
-	}
-}
+
 
 type AuditApplicationReq struct {
 	ApplicationId   string `json:"application_id"`

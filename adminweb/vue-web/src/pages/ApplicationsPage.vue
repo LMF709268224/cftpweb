@@ -23,7 +23,7 @@ const hasMore = ref(false)
 const nextCursor = ref("")
 const prevCursor = ref("")
 const lastPage = ref(1)
-const statusFilter = ref("0")
+const statusFilter = ref("")
 const auditRemark = ref("")
 const activeTab = ref<DetailTab>("overview")
 const copiedRawJson = ref(false)
@@ -78,11 +78,11 @@ const detailTabs = computed(() => {
   return tabs
 })
 const statusOptions = computed(() => [
-  { value: "0", label: copy.value.statusOptions.all },
-  { value: "1", label: copy.value.statusOptions.pending },
-  { value: "2", label: copy.value.statusOptions.approved },
-  { value: "3", label: copy.value.statusOptions.rejected },
-  { value: "4", label: copy.value.statusOptions.resubmit },
+  { value: "", label: copy.value.statusOptions.all },
+  { value: "Pending", label: copy.value.statusOptions.pending },
+  { value: "Approved", label: copy.value.statusOptions.approved },
+  { value: "Rejected", label: copy.value.statusOptions.rejected },
+  { value: "Reupload", label: copy.value.statusOptions.resubmit },
 ])
 
 function appUlid(app: JsonRecord | null | undefined) {
