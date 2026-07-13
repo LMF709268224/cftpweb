@@ -1217,6 +1217,8 @@ export const en: AdminTranslations = {
       updated_at: "Updated At",
       version: "Version",
       template: "Template Content",
+      detail: "Template Details",
+      summary: "Template Summary",
     },
     saving: "Saving...",
     saveTemplate: "Save Template",

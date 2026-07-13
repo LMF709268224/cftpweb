@@ -2,7 +2,6 @@
 import { FileText, List, Loader2, Plus, RefreshCw, Send, X } from "lucide-vue-next"
 import { computed, nextTick, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
-import JsonPreview from "@/components/JsonPreview.vue"
 import ReadonlyField from "@/components/ReadonlyField.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
@@ -671,14 +670,6 @@ onMounted(async () => {
                 :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
               />
             </div>
-            <JsonPreview
-              :title="copy.rawJson"
-              :value="selectedMessage"
-              :copy-label="copy.copyJson"
-              :copied-label="copy.copiedJson"
-              :copied-message="copy.toasts.jsonCopied"
-              :copy-error-message="copy.toasts.jsonCopyFailed"
-            />
           </div>
         </section>
       </div>
