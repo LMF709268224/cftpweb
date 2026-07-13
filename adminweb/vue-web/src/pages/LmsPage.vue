@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { FileJson, Info, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
@@ -2329,285 +2329,6 @@ onMounted(() => {
         </section>
       </Teleport>
 
-      <Teleport to="body">
-        <section v-if="detailDeleteConfirmOpen && pendingDetailDelete" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-6">
-          <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
-            <h2 class="text-2xl font-black text-slate-950">{{ copy.confirmDeleteAction }}</h2>
-            <p class="mt-3 text-sm font-semibold text-slate-500">{{ pendingDetailDelete.description }}</p>
-            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
-              <div class="break-words font-black text-slate-950">{{ pendingDetailDelete.title }}</div>
-              <div v-if="pendingDetailDelete.id" class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pendingDetailDelete.id }}</div>
-              <div v-if="pendingDetailDelete.version !== undefined" class="mt-1 text-sm font-semibold text-slate-500">{{ copy.readonlyCourseFieldLabels.version }}: {{ pendingDetailDelete.version }}</div>
-            </div>
-            <div class="mt-6 flex justify-end gap-3">
-              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingDetail" @click="closeDetailDeleteConfirm">{{ copy.cancel }}</button>
-              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingDetail" @click="confirmDetailDelete">
-                {{ deletingDetail ? copy.deleting : copy.confirmDeleteAction }}
-              </button>
-            </div>
-          </div>
-        </section>
-      </Teleport>
-
-      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
-        <div class="border-b border-slate-200 px-5 py-4">
-          <div>
-            <h2 class="text-xl font-black">{{ copy.materialsTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.materialsDescription }}</p>
-          </div>
-        </div>
-
-        <div class="space-y-4 p-5">
-          <div class="rounded-2xl border border-slate-200">
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
-              <div>
-                <h3 class="font-black">{{ copy.supplementaryTitle }}</h3>
-                <p class="mt-1 text-sm text-slate-500">{{ copy.supplementaryDescription }}</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">{{ copy.countText(supplementaryMaterialItems.length) }}</span>
-                <button class="h-10 rounded-xl border px-4 text-sm font-bold disabled:opacity-40" :disabled="!selectedCourseId || supplementaryMaterialLoading" type="button" @click="loadSupplementaryMaterial">
-                  {{ copy.refresh }}
-                </button>
-                <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newSupplementaryItem()">
-                  <Plus class="h-4 w-4" />
-                  {{ copy.add }}
-                </button>
-              </div>
-            </div>
-            <div v-if="supplementaryMaterialLoading" class="px-6 py-10 text-center text-slate-500">
-              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-              {{ copy.loading }}
-            </div>
-            <div v-else-if="!supplementaryMaterialItems.length" class="px-6 py-10 text-center text-slate-500">
-              {{ copy.noSupplementaryMaterials }}
-              <div class="mt-2 text-xs">{{ copy.supplementaryEmptyHint }}</div>
-            </div>
-            <div v-else class="overflow-x-auto">
-              <table class="min-w-full text-left text-sm">
-                <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th class="px-4 py-3">{{ copy.supplementaryColumns.chapter }}</th>
-                    <th class="w-24 whitespace-nowrap px-4 py-3 text-center">{{ copy.supplementaryColumns.type }}</th>
-                    <th class="px-4 py-3">{{ copy.supplementaryColumns.titleDescription }}</th>
-                    <th class="px-4 py-3">{{ copy.supplementaryColumns.resourceLink }}</th>
-                    <th class="w-24 px-4 py-3 text-right">{{ copy.columns.action }}</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                  <tr
-                    v-for="item in supplementaryMaterialItems"
-                    :key="item.key"
-                    class="transition hover:bg-sky-50"
-                    :class="item.recordIndex === editingSupplementaryItemIndex ? 'bg-sky-50' : ''"
-                  >
-                    <td class="whitespace-nowrap px-4 py-4 font-semibold text-slate-800">
-                      <span class="mr-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">#{{ item.recordIndex + 1 }}</span>
-                      {{ item.chapter }}
-                    </td>
-                    <td class="w-24 whitespace-nowrap px-4 py-4 text-center">
-                      <span class="inline-flex whitespace-nowrap rounded-full border px-2 py-1 text-xs font-black" :class="supplementaryTypeClass(item.type)">{{ supplementaryTypeLabel(item.type) }}</span>
-                    </td>
-                    <td class="px-4 py-4">
-                      <div class="font-black text-slate-950">{{ item.title }}</div>
-                      <div v-if="item.description" class="mt-1 max-w-2xl text-sm text-slate-500">{{ item.description }}</div>
-                    </td>
-                    <td class="px-4 py-4">
-                      <a v-if="item.url" class="inline-flex max-w-xs items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100" :href="item.url" target="_blank" rel="noreferrer">
-                        <span class="truncate">{{ item.url }}</span>
-                      </a>
-                      <span v-else class="text-slate-400">-</span>
-                    </td>
-                    <td class="w-24 whitespace-nowrap px-4 py-4 text-right">
-                      <button class="whitespace-nowrap text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click.stop="editSupplementaryItem(item)">
-                        {{ copy.edit }}
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <Teleport to="body">
-            <div v-if="supplementaryItemDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-              <form class="flex max-h-[88vh] w-full max-w-[720px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" @submit.prevent="saveSupplementaryItem">
-                <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-5">
-                  <div>
-                    <h3 class="font-black">{{ editingSupplementaryItemIndex >= 0 ? copy.editSupplementaryItem : copy.newSupplementaryItem }}</h3>
-                    <p class="mt-1 text-xs text-slate-500">{{ copy.supplementaryItemDescription }}</p>
-                  </div>
-                  <button
-                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
-                    type="button"
-                    :aria-label="copy.close"
-                    @click="closeSupplementaryItemDialog"
-                  >
-                    <X class="h-5 w-5" />
-                  </button>
-                </div>
-                <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-                  <div class="grid gap-3">
-                    <label class="block">
-                      <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
-                      <input v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.chapterPlaceholder" />
-                    </label>
-                    <div class="grid gap-3 sm:grid-cols-2">
-                      <label class="block">
-                        <span class="text-sm font-bold">{{ copy.materialType }}</span>
-                        <select v-model="supplementaryItemForm.type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
-                          <option value="Article">{{ copy.supplementaryTypes.article }}</option>
-                          <option value="Video">{{ copy.supplementaryTypes.video }}</option>
-                          <option value="PDF">{{ copy.supplementaryTypes.pdf }}</option>
-                          <option value="Link">{{ copy.supplementaryTypes.link }}</option>
-                          <option value="Other">{{ copy.materialTypes.other }}</option>
-                        </select>
-                      </label>
-                      <label class="block">
-                        <span class="text-sm font-bold">{{ copy.durationNote }}</span>
-                        <input v-model="supplementaryItemForm.duration" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.durationPlaceholder" />
-                      </label>
-                    </div>
-                    <label class="block">
-                      <span class="text-sm font-bold">{{ copy.titleField }}</span>
-                      <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
-                    </label>
-                    <label class="block">
-                      <span class="text-sm font-bold">{{ copy.description }}</span>
-                      <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.descriptionPlaceholder" />
-                    </label>
-                    <label class="block">
-                      <span class="text-sm font-bold">{{ copy.resourceLink }}</span>
-                      <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
-                    </label>
-                  </div>
-                </div>
-                <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
-                  <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="closeSupplementaryItemDialog">
-                    {{ copy.cancel }}
-                  </button>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" :disabled="editingSupplementaryItemIndex < 0" type="button" @click="deleteSupplementaryItem">
-                    {{ copy.deleteThisItem }}
-                  </button>
-                  <button class="rounded-xl bg-blue-700 px-4 py-2 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
-                    {{ savingSupplementaryMaterial ? copy.saving : copy.saveThisMaterial }}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </Teleport>
-
-          <div class="rounded-2xl border border-slate-200 p-4">
-            <details>
-              <summary class="cursor-pointer font-black">{{ copy.supplementaryAdvancedTitle }}</summary>
-              <div class="mt-4 grid gap-3">
-                <label class="block">
-                  <span class="text-sm font-bold">{{ copy.kind }}</span>
-                  <input v-model="supplementaryMaterialForm.kind" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="supplementary_materials" />
-                  <span class="mt-1 block text-xs text-slate-500">{{ copy.kindHint }}</span>
-                </label>
-                <label class="block">
-                  <span class="text-sm font-bold">{{ copy.dataJson }}</span>
-                  <textarea v-model="supplementaryMaterialForm.data_json" class="mt-2 min-h-64 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-5" :placeholder="copy.supplementaryJsonPlaceholder" />
-                  <span class="mt-1 block text-xs text-slate-500">{{ copy.supplementaryAdvancedHint }}</span>
-                </label>
-                <div class="grid gap-2 sm:grid-cols-2">
-                  <button class="rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="button" @click="saveSupplementaryMaterial">
-                    {{ savingSupplementaryMaterial ? copy.saving : copy.saveWholeJson }}
-                  </button>
-                  <button class="rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 disabled:opacity-40" :disabled="!supplementaryMaterialId(supplementaryMaterial)" type="button" @click="deleteSupplementaryMaterial">
-                    {{ copy.deleteWholeConfig }}
-                  </button>
-                </div>
-              </div>
-            </details>
-
-            <div v-if="supplementaryMaterial" class="mt-5 border-t border-slate-200 pt-4">
-              <h4 class="font-black">{{ copy.supplementaryRawFields }}</h4>
-              <div class="mt-3 max-h-48 space-y-3 overflow-y-auto pr-1">
-                <ReadonlyField v-for="entry in recordEntries(supplementaryMaterial)" :key="`supplementary-${entry.key}`" :label="entry.key" :text="entry.value" />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="border-t border-slate-200 px-5 pt-4">
-          <div class="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h3 class="font-black">{{ copy.normalMaterialsTitle }}</h3>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.normalMaterialsDescription }}</p>
-            </div>
-            <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">
-              <Plus class="h-4 w-4" />
-              {{ copy.newNormalMaterial }}
-            </button>
-          </div>
-        </div>
-        <div class="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_400px]">
-          <div class="rounded-2xl border border-slate-200">
-            <div v-if="materialsLoading" class="px-6 py-10 text-center text-slate-500">
-              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-              {{ copy.loading }}
-            </div>
-            <div v-else-if="!materials.length" class="px-6 py-10 text-center text-slate-500">{{ copy.emptyMaterials }}</div>
-            <div v-else class="divide-y divide-slate-100">
-              <div v-for="material in materials" :key="materialId(material)" class="grid gap-3 p-4 lg:grid-cols-[1fr_auto]" :class="materialId(material) === selectedMaterialId ? 'bg-sky-50' : ''">
-                <button class="text-left" type="button" @click="editMaterial(material)">
-                  <div class="font-black">{{ materialTitle(material) }}</div>
-                  <div class="mt-1 text-sm text-slate-500">{{ materialTypeLabel(material.material_type) }} · {{ copy.sortMeta(material.sort_order || 0) }}</div>
-                  <div class="mt-1 break-all text-xs text-slate-400">{{ material.file_object_key || "-" }}</div>
-                </button>
-                <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
-              </div>
-            </div>
-          </div>
-          <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveMaterial">
-            <h3 class="font-black">{{ editingMaterialId ? copy.editMaterial : copy.createMaterial }}</h3>
-            <div class="mt-4 grid gap-3">
-              <input v-model="materialForm.title" class="h-10 rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
-              <select v-model="materialForm.material_type" class="h-10 rounded-xl border border-slate-200 px-3">
-                <option value="1">{{ copy.materialTypes.textbook }}</option>
-                <option value="2">{{ copy.materialTypes.slides }}</option>
-                <option value="3">{{ copy.materialTypes.reference }}</option>
-                <option value="4">{{ copy.materialTypes.other }}</option>
-              </select>
-              <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.materialDescriptionPlaceholder" />
-              <label class="block">
-                <span class="text-sm font-bold">{{ copy.fileObjectKey }}</span>
-                <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
-                <span class="mt-1 block text-xs text-slate-500">{{ copy.fileObjectKeyHint }}</span>
-              </label>
-              <label class="block">
-                <span class="text-sm font-bold">{{ copy.fileHash }}</span>
-                <input v-model="materialForm.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileHashPlaceholder" />
-                <span class="mt-1 block text-xs text-slate-500">{{ copy.fileHashHint }}</span>
-              </label>
-              <div class="grid gap-3 sm:grid-cols-2">
-                <label class="block">
-                  <span class="text-sm font-bold">{{ copy.fileSizeBytes }}</span>
-                  <input v-model="materialForm.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileSizePlaceholder" type="number" min="0" />
-                  <span class="mt-1 block text-xs text-slate-500">{{ copy.fileSizeHint }}</span>
-                </label>
-                <label class="block">
-                  <span class="text-sm font-bold">{{ copy.sort }}</span>
-                  <input v-model="materialForm.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
-                  <span class="mt-1 block text-xs text-slate-500">{{ copy.sortHint }}</span>
-                </label>
-              </div>
-              <button class="h-10 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial" type="submit">
-                {{ savingMaterial ? copy.saving : copy.saveMaterial }}
-              </button>
-            </div>
-            <div v-if="selectedMaterialRecord" class="mt-5 border-t border-slate-200 pt-4">
-              <h4 class="font-black">{{ copy.materialRawFields }}</h4>
-              <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
-                <ReadonlyField v-for="entry in recordEntries(selectedMaterialRecord)" :key="`material-${entry.key}`" :label="entry.key" :text="entry.value" />
-              </div>
-            </div>
-          </form>
-        </div>
-      </section>
-
       <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
         <div class="flex items-center justify-between border-b border-slate-200 p-5">
           <div>
@@ -2889,6 +2610,285 @@ onMounted(() => {
         </section>
       </Teleport>
 
+      <Teleport to="body">
+        <section v-if="detailDeleteConfirmOpen && pendingDetailDelete" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-6">
+          <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
+            <h2 class="text-2xl font-black text-slate-950">{{ copy.confirmDeleteAction }}</h2>
+            <p class="mt-3 text-sm font-semibold text-slate-500">{{ pendingDetailDelete.description }}</p>
+            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+              <div class="break-words font-black text-slate-950">{{ pendingDetailDelete.title }}</div>
+              <div v-if="pendingDetailDelete.id" class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pendingDetailDelete.id }}</div>
+              <div v-if="pendingDetailDelete.version !== undefined" class="mt-1 text-sm font-semibold text-slate-500">{{ copy.readonlyCourseFieldLabels.version }}: {{ pendingDetailDelete.version }}</div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingDetail" @click="closeDetailDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingDetail" @click="confirmDetailDelete">
+                {{ deletingDetail ? copy.deleting : copy.confirmDeleteAction }}
+              </button>
+            </div>
+          </div>
+        </section>
+      </Teleport>
+
+      <section class="rounded-2xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
+        <div class="border-b border-slate-200 px-5 py-4">
+          <div>
+            <h2 class="text-xl font-black">{{ copy.materialsTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.materialsDescription }}</p>
+          </div>
+        </div>
+
+        <div class="space-y-4 p-5">
+          <div class="rounded-2xl border border-slate-200">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4">
+              <div>
+                <h3 class="font-black">{{ copy.supplementaryTitle }}</h3>
+                <p class="mt-1 text-sm text-slate-500">{{ copy.supplementaryDescription }}</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black text-slate-600">{{ copy.countText(supplementaryMaterialItems.length) }}</span>
+                <button class="h-10 rounded-xl border px-4 text-sm font-bold disabled:opacity-40" :disabled="!selectedCourseId || supplementaryMaterialLoading" type="button" @click="loadSupplementaryMaterial">
+                  {{ copy.refresh }}
+                </button>
+                <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newSupplementaryItem()">
+                  <Plus class="h-4 w-4" />
+                  {{ copy.add }}
+                </button>
+              </div>
+            </div>
+            <div v-if="supplementaryMaterialLoading" class="px-6 py-10 text-center text-slate-500">
+              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+              {{ copy.loading }}
+            </div>
+            <div v-else-if="!supplementaryMaterialItems.length" class="px-6 py-10 text-center text-slate-500">
+              {{ copy.noSupplementaryMaterials }}
+              <div class="mt-2 text-xs">{{ copy.supplementaryEmptyHint }}</div>
+            </div>
+            <div v-else class="overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.chapter }}</th>
+                    <th class="w-24 whitespace-nowrap px-4 py-3 text-center">{{ copy.supplementaryColumns.type }}</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.titleDescription }}</th>
+                    <th class="px-4 py-3">{{ copy.supplementaryColumns.resourceLink }}</th>
+                    <th class="w-24 px-4 py-3 text-right">{{ copy.columns.action }}</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr
+                    v-for="item in supplementaryMaterialItems"
+                    :key="item.key"
+                    class="transition hover:bg-sky-50"
+                    :class="item.recordIndex === editingSupplementaryItemIndex ? 'bg-sky-50' : ''"
+                  >
+                    <td class="whitespace-nowrap px-4 py-4 font-semibold text-slate-800">
+                      <span class="mr-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">#{{ item.recordIndex + 1 }}</span>
+                      {{ item.chapter }}
+                    </td>
+                    <td class="w-24 whitespace-nowrap px-4 py-4 text-center">
+                      <span class="inline-flex whitespace-nowrap rounded-full border px-2 py-1 text-xs font-black" :class="supplementaryTypeClass(item.type)">{{ supplementaryTypeLabel(item.type) }}</span>
+                    </td>
+                    <td class="px-4 py-4">
+                      <div class="font-black text-slate-950">{{ item.title }}</div>
+                      <div v-if="item.description" class="mt-1 max-w-2xl text-sm text-slate-500">{{ item.description }}</div>
+                    </td>
+                    <td class="px-4 py-4">
+                      <a v-if="item.url" class="inline-flex max-w-xs items-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 hover:bg-blue-100" :href="item.url" target="_blank" rel="noreferrer">
+                        <span class="truncate">{{ item.url }}</span>
+                      </a>
+                      <span v-else class="text-slate-400">-</span>
+                    </td>
+                    <td class="w-24 whitespace-nowrap px-4 py-4 text-right">
+                      <button class="whitespace-nowrap text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click.stop="editSupplementaryItem(item)">
+                        {{ copy.edit }}
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <Teleport to="body">
+            <div v-if="supplementaryItemDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+              <form class="flex max-h-[88vh] w-full max-w-[720px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" @submit.prevent="saveSupplementaryItem">
+                <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-5">
+                  <div>
+                    <h3 class="font-black">{{ editingSupplementaryItemIndex >= 0 ? copy.editSupplementaryItem : copy.newSupplementaryItem }}</h3>
+                    <p class="mt-1 text-xs text-slate-500">{{ copy.supplementaryItemDescription }}</p>
+                  </div>
+                  <button
+                    class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+                    type="button"
+                    :aria-label="copy.close"
+                    @click="closeSupplementaryItemDialog"
+                  >
+                    <X class="h-5 w-5" />
+                  </button>
+                </div>
+                <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                  <div class="grid gap-3">
+                    <label class="block">
+                      <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
+                      <input v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.chapterPlaceholder" />
+                    </label>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                      <label class="block">
+                        <span class="text-sm font-bold">{{ copy.materialType }}</span>
+                        <select v-model="supplementaryItemForm.type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
+                          <option value="Article">{{ copy.supplementaryTypes.article }}</option>
+                          <option value="Video">{{ copy.supplementaryTypes.video }}</option>
+                          <option value="PDF">{{ copy.supplementaryTypes.pdf }}</option>
+                          <option value="Link">{{ copy.supplementaryTypes.link }}</option>
+                          <option value="Other">{{ copy.materialTypes.other }}</option>
+                        </select>
+                      </label>
+                      <label class="block">
+                        <span class="text-sm font-bold">{{ copy.durationNote }}</span>
+                        <input v-model="supplementaryItemForm.duration" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.durationPlaceholder" />
+                      </label>
+                    </div>
+                    <label class="block">
+                      <span class="text-sm font-bold">{{ copy.titleField }}</span>
+                      <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
+                    </label>
+                    <label class="block">
+                      <span class="text-sm font-bold">{{ copy.description }}</span>
+                      <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.descriptionPlaceholder" />
+                    </label>
+                    <label class="block">
+                      <span class="text-sm font-bold">{{ copy.resourceLink }}</span>
+                      <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
+                    </label>
+                  </div>
+                </div>
+                <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                  <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="closeSupplementaryItemDialog">
+                    {{ copy.cancel }}
+                  </button>
+                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" :disabled="editingSupplementaryItemIndex < 0" type="button" @click="deleteSupplementaryItem">
+                    {{ copy.deleteThisItem }}
+                  </button>
+                  <button class="rounded-xl bg-blue-700 px-4 py-2 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="submit">
+                    {{ savingSupplementaryMaterial ? copy.saving : copy.saveThisMaterial }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </Teleport>
+
+          <div class="rounded-2xl border border-slate-200 p-4">
+            <details>
+              <summary class="cursor-pointer font-black">{{ copy.supplementaryAdvancedTitle }}</summary>
+              <div class="mt-4 grid gap-3">
+                <label class="block">
+                  <span class="text-sm font-bold">{{ copy.kind }}</span>
+                  <input v-model="supplementaryMaterialForm.kind" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="supplementary_materials" />
+                  <span class="mt-1 block text-xs text-slate-500">{{ copy.kindHint }}</span>
+                </label>
+                <label class="block">
+                  <span class="text-sm font-bold">{{ copy.dataJson }}</span>
+                  <textarea v-model="supplementaryMaterialForm.data_json" class="mt-2 min-h-64 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-5" :placeholder="copy.supplementaryJsonPlaceholder" />
+                  <span class="mt-1 block text-xs text-slate-500">{{ copy.supplementaryAdvancedHint }}</span>
+                </label>
+                <div class="grid gap-2 sm:grid-cols-2">
+                  <button class="rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingSupplementaryMaterial" type="button" @click="saveSupplementaryMaterial">
+                    {{ savingSupplementaryMaterial ? copy.saving : copy.saveWholeJson }}
+                  </button>
+                  <button class="rounded-xl border border-red-200 px-5 py-3 font-bold text-red-600 disabled:opacity-40" :disabled="!supplementaryMaterialId(supplementaryMaterial)" type="button" @click="deleteSupplementaryMaterial">
+                    {{ copy.deleteWholeConfig }}
+                  </button>
+                </div>
+              </div>
+            </details>
+
+            <div v-if="supplementaryMaterial" class="mt-5 border-t border-slate-200 pt-4">
+              <h4 class="font-black">{{ copy.supplementaryRawFields }}</h4>
+              <div class="mt-3 max-h-48 space-y-3 overflow-y-auto pr-1">
+                <ReadonlyField v-for="entry in recordEntries(supplementaryMaterial)" :key="`supplementary-${entry.key}`" :label="entry.key" :text="entry.value" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-200 px-5 pt-4">
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 class="font-black">{{ copy.normalMaterialsTitle }}</h3>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.normalMaterialsDescription }}</p>
+            </div>
+            <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">
+              <Plus class="h-4 w-4" />
+              {{ copy.newNormalMaterial }}
+            </button>
+          </div>
+        </div>
+        <div class="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_400px]">
+          <div class="rounded-2xl border border-slate-200">
+            <div v-if="materialsLoading" class="px-6 py-10 text-center text-slate-500">
+              <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
+              {{ copy.loading }}
+            </div>
+            <div v-else-if="!materials.length" class="px-6 py-10 text-center text-slate-500">{{ copy.emptyMaterials }}</div>
+            <div v-else class="divide-y divide-slate-100">
+              <div v-for="material in materials" :key="materialId(material)" class="grid gap-3 p-4 lg:grid-cols-[1fr_auto]" :class="materialId(material) === selectedMaterialId ? 'bg-sky-50' : ''">
+                <button class="text-left" type="button" @click="editMaterial(material)">
+                  <div class="font-black">{{ materialTitle(material) }}</div>
+                  <div class="mt-1 text-sm text-slate-500">{{ materialTypeLabel(material.material_type) }} 路 {{ copy.sortMeta(material.sort_order || 0) }}</div>
+                  <div class="mt-1 break-all text-xs text-slate-400">{{ material.file_object_key || "-" }}</div>
+                </button>
+                <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
+              </div>
+            </div>
+          </div>
+          <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveMaterial">
+            <h3 class="font-black">{{ editingMaterialId ? copy.editMaterial : copy.createMaterial }}</h3>
+            <div class="mt-4 grid gap-3">
+              <input v-model="materialForm.title" class="h-10 rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
+              <select v-model="materialForm.material_type" class="h-10 rounded-xl border border-slate-200 px-3">
+                <option value="1">{{ copy.materialTypes.textbook }}</option>
+                <option value="2">{{ copy.materialTypes.slides }}</option>
+                <option value="3">{{ copy.materialTypes.reference }}</option>
+                <option value="4">{{ copy.materialTypes.other }}</option>
+              </select>
+              <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.materialDescriptionPlaceholder" />
+              <label class="block">
+                <span class="text-sm font-bold">{{ copy.fileObjectKey }}</span>
+                <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
+                <span class="mt-1 block text-xs text-slate-500">{{ copy.fileObjectKeyHint }}</span>
+              </label>
+              <label class="block">
+                <span class="text-sm font-bold">{{ copy.fileHash }}</span>
+                <input v-model="materialForm.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileHashPlaceholder" />
+                <span class="mt-1 block text-xs text-slate-500">{{ copy.fileHashHint }}</span>
+              </label>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <label class="block">
+                  <span class="text-sm font-bold">{{ copy.fileSizeBytes }}</span>
+                  <input v-model="materialForm.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileSizePlaceholder" type="number" min="0" />
+                  <span class="mt-1 block text-xs text-slate-500">{{ copy.fileSizeHint }}</span>
+                </label>
+                <label class="block">
+                  <span class="text-sm font-bold">{{ copy.sort }}</span>
+                  <input v-model="materialForm.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
+                  <span class="mt-1 block text-xs text-slate-500">{{ copy.sortHint }}</span>
+                </label>
+              </div>
+              <button class="h-10 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial" type="submit">
+                {{ savingMaterial ? copy.saving : copy.saveMaterial }}
+              </button>
+            </div>
+            <div v-if="selectedMaterialRecord" class="mt-5 border-t border-slate-200 pt-4">
+              <h4 class="font-black">{{ copy.materialRawFields }}</h4>
+              <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
+                <ReadonlyField v-for="entry in recordEntries(selectedMaterialRecord)" :key="`material-${entry.key}`" :label="entry.key" :text="entry.value" />
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
       <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
         <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
           <div>
@@ -3006,7 +3006,7 @@ onMounted(() => {
               <form v-else class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveQuiz">
                 <h3 class="font-black">{{ editingQuizId ? copy.editQuiz : copy.createQuiz }}</h3>
                 <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-                  {{ copy.saveQuizOwner }}{{ quizTarget().label }} · {{ quizTarget().id ? quizTarget().title : copy.unselectedTarget(quizTarget().label) }}
+                  {{ copy.saveQuizOwner }}{{ quizTarget().label }} 路 {{ quizTarget().id ? quizTarget().title : copy.unselectedTarget(quizTarget().label) }}
                 </div>
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
                   <label class="block">
@@ -3028,7 +3028,7 @@ onMounted(() => {
                     <span class="text-sm font-bold">{{ copy.quizOwnerObject }}</span>
                     <select v-model="quizForm.owner_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
                       <option value="">{{ copy.selectLesson }}</option>
-                      <option v-for="item in quizLessonOptions" :key="lessonId(item.lesson)" :value="lessonId(item.lesson)">{{ chapterTitle(item.chapter) }} · {{ lessonTitle(item.lesson) }}</option>
+                      <option v-for="item in quizLessonOptions" :key="lessonId(item.lesson)" :value="lessonId(item.lesson)">{{ chapterTitle(item.chapter) }} 路 {{ lessonTitle(item.lesson) }}</option>
                     </select>
                   </label>
                   <div v-else class="block">
@@ -3140,7 +3140,7 @@ onMounted(() => {
                         <button class="flex-1 text-left" type="button" @click="editOption(option)">
                           <div class="font-black">{{ optionTitle(option) }}</div>
                           <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
-                            {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} · {{ copy.sortMeta(option.sort_order || 0) }}
+                            {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} 路 {{ copy.sortMeta(option.sort_order || 0) }}
                           </div>
                         </button>
                         <button v-if="quizDialogMode !== 'detail'" class="text-xs font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
