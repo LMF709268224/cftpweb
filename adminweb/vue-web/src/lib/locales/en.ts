@@ -1868,6 +1868,7 @@ export const en: AdminTranslations = {
       candidate: "Candidate Filter",
       candidatePlaceholder: "Candidate ULID",
       status: "Status Filter",
+      search: "Search",
     },
     status: {
       all: "All Statuses",
