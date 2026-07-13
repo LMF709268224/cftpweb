@@ -41,6 +41,11 @@ type QuizScope = "course" | "chapter" | "lesson"
 type ChapterDialogMode = "detail" | "edit" | "create"
 type LessonDialogMode = "detail" | "edit" | "create"
 type QuizDialogMode = "detail" | "edit" | "create"
+type CourseCreateContext = {
+  selectedCourse: JsonRecord | null
+  form: CourseForm
+  view: "list" | "detail"
+}
 
 type QuizForm = {
   scope: QuizScope
@@ -167,6 +172,8 @@ const savingOption = ref(false)
 const publishing = ref(false)
 const importing = ref(false)
 const courseView = ref<"list" | "detail">("list")
+const courseCreateOpen = ref(false)
+const courseCreateContext = ref<CourseCreateContext | null>(null)
 const courseDeleteConfirmOpen = ref(false)
 const pendingDeleteCourse = ref<JsonRecord | null>(null)
 const deletingCourse = ref(false)
@@ -212,7 +219,7 @@ const importCategoryTips = ref("")
 const importJson = ref("")
 
 const selectedCourseId = computed(() => courseId(selectedCourse.value))
-const isCreatingCourse = computed(() => courseView.value === "detail" && !selectedCourseId.value)
+const isCreatingCourse = computed(() => courseCreateOpen.value && !selectedCourseId.value)
 const selectedChapterId = computed(() => chapterId(selectedChapter.value))
 const selectedMaterialId = computed(() => materialId(selectedMaterial.value))
 
@@ -945,11 +952,32 @@ async function selectCourse(course: JsonRecord) {
   await Promise.all([loadCourseDetail(), loadCompleteCourse(), loadChapters(), loadMaterials(), loadSupplementaryMaterial()])
 }
 
-function newCourse() {
+function clearCourseSelection() {
   selectedCourse.value = null
   courseForm.value = emptyCourseForm()
   resetContent()
-  courseView.value = "detail"
+}
+
+function newCourse() {
+  courseCreateContext.value = {
+    selectedCourse: selectedCourse.value,
+    form: { ...courseForm.value },
+    view: courseView.value,
+  }
+  selectedCourse.value = null
+  courseForm.value = emptyCourseForm()
+  courseView.value = "list"
+  courseCreateOpen.value = true
+}
+
+function closeCourseCreate() {
+  if (savingCourse.value) return
+  const context = courseCreateContext.value
+  courseCreateOpen.value = false
+  selectedCourse.value = context?.selectedCourse || null
+  courseForm.value = context ? { ...context.form } : emptyCourseForm()
+  courseView.value = context?.view || "list"
+  courseCreateContext.value = null
 }
 
 function backToCourseList() {
@@ -995,6 +1023,7 @@ async function saveCourse() {
   }
 
   savingCourse.value = true
+  const creating = !selectedCourseId.value
   try {
     if (selectedCourseId.value) {
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}`, {
@@ -1008,6 +1037,7 @@ async function saveCourse() {
         body: JSON.stringify(coursePayload()),
       })
       selectedCourse.value = created
+      resetContent()
       toast.success(copy.value.toasts.courseCreated)
     }
     await loadCourses()
@@ -1017,6 +1047,11 @@ async function saveCourse() {
         selectedCourse.value = refreshed
         courseForm.value = courseFormFrom(refreshed)
       }
+    }
+    if (creating) {
+      courseCreateOpen.value = false
+      courseCreateContext.value = null
+      courseView.value = "detail"
     }
     await Promise.all([loadCourseDetail(), loadCompleteCourse(), loadMaterials(), loadSupplementaryMaterial()])
   } catch (err) {
@@ -1070,7 +1105,7 @@ async function confirmDeleteCourse() {
     toast.success(copy.value.toasts.courseDeleted)
     courseDeleteConfirmOpen.value = false
     pendingDeleteCourse.value = null
-    newCourse()
+    clearCourseSelection()
     courseView.value = "list"
     await loadCourses()
   } catch (err) {
@@ -2146,6 +2181,84 @@ onMounted(() => {
         </button>
       </div>
     </header>
+
+    <Teleport to="body">
+      <section v-if="courseCreateOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6" role="dialog" aria-modal="true">
+        <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+            <div>
+              <h2 class="text-2xl font-black text-slate-950">{{ copy.newCourse }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.fillCourseHint }}</p>
+            </div>
+            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50" type="button" :aria-label="copy.close" :disabled="savingCourse" @click="closeCourseCreate">
+              <X class="h-5 w-5" />
+            </button>
+          </div>
+
+          <form class="grid min-h-0 flex-1 gap-4 overflow-y-auto p-6 md:grid-cols-2" @submit.prevent="saveCourse">
+            <label class="block">
+              <span class="text-sm font-bold">{{ copy.courseTitle }} <span class="text-red-500">*</span></span>
+              <input v-model="courseForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
+              <input v-model="courseForm.category_tips" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+            </label>
+            <label class="block md:col-span-2">
+              <span class="text-sm font-bold">{{ copy.description }}</span>
+              <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
+            </label>
+            <label class="block">
+              <span class="flex items-center gap-1.5 text-sm font-bold">
+                {{ copy.respath }} <span class="text-red-500">*</span>
+                <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
+                  <Info class="h-4 w-4" aria-hidden="true" />
+                  <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                    {{ copy.respathHint }}
+                  </span>
+                </span>
+              </span>
+              <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+            </label>
+            <label class="block">
+              <span class="flex items-center gap-1.5 text-sm font-bold">
+                {{ (copy as any).course_gpath || 'Course Gpath' }}
+                <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.courseGpathHint">
+                  <Info class="h-4 w-4" aria-hidden="true" />
+                  <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                    {{ copy.courseGpathHint }}
+                  </span>
+                </span>
+              </span>
+              <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+              <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">注意：该 Gpath 已经被其他课程使用，保存后可能会被系统认为是同一个课程的不同版本！</p>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold">{{ copy.durationMin }}</span>
+              <input v-model="courseForm.duration_min" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold">{{ copy.thumbnailObjectKey }}</span>
+              <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
+              <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+            </label>
+            <div class="flex flex-wrap gap-3 md:col-span-2">
+              <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
+                <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
+                <Save v-else class="h-4 w-4" />
+                {{ savingCourse ? copy.saving : copy.saveCourse }}
+              </button>
+              <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
+                {{ publishing ? copy.publishing : copy.publishCourse }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </Teleport>
 
     <section v-if="courseView === 'list'" class="rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div class="grid gap-3 border-b border-slate-200 bg-slate-50/60 p-4 lg:grid-cols-[1fr_auto]">
