@@ -379,6 +379,7 @@ export const zh = {
       order_id: "订单 ID",
       order_ulid: "订单 ID",
       email: "用户标识",
+      candidate_name: "考生姓名",
       amount: "发票金额",
       currency: "币种",
       status: "发票状态",

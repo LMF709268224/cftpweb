@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Check, Copy as CopyIcon, Loader2, RefreshCw, X } from "lucide-vue-next"
+import { Loader2, RefreshCw, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
-import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, labelFor, normalizeStatus, orderStatusOptions, pickFirst } from "@/lib/status"
@@ -13,7 +12,6 @@ const invoices = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const loading = ref(false)
 const detailOpen = ref(false)
-const copiedJson = ref(false)
 const page = ref(1)
 const total = ref(0)
 const pageSize = 20
@@ -27,7 +25,6 @@ const summaryFieldKeys = new Set(["order_id", "order_ulid", "status"])
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => hasMore.value)
-const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const selectedFields = computed(() =>
   Object.entries(selected.value || {})
     .filter(([key]) => !summaryFieldKeys.has(key))
@@ -76,20 +73,6 @@ function jsonText(value: unknown) {
 function detailFieldText(value: unknown) {
   const text = String(value ?? "").trim()
   return text || "-"
-}
-
-async function copySelectedJson() {
-  try {
-    await copyTextToClipboard(selectedJson.value)
-    copiedJson.value = true
-    toast.success(copy.value.toasts.jsonCopied)
-    window.setTimeout(() => {
-      copiedJson.value = false
-    }, 1600)
-  } catch (err) {
-    console.error(err)
-    toast.error(copy.value.toasts.jsonCopyFailed)
-  }
 }
 
 function openInvoice(invoice: JsonRecord | null, open = true) {
@@ -277,20 +260,6 @@ onMounted(() => load(1))
                 </div>
               </div>
             </div>
-            <details class="rounded-2xl border border-slate-200 bg-white p-4">
-              <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
-              <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                  <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
-                  <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copySelectedJson">
-                    <Check v-if="copiedJson" class="h-3.5 w-3.5" />
-                    <CopyIcon v-else class="h-3.5 w-3.5" />
-                    {{ copiedJson ? copy.copiedJson : copy.copyJson }}
-                  </button>
-                </div>
-                <pre class="max-h-[520px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
-              </div>
-            </details>
           </div>
         </section>
       </div>

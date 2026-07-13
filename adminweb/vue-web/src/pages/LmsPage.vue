@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileJson, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X, HelpCircle } from "lucide-vue-next"
+import { FileJson, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
