@@ -2743,7 +2743,7 @@ onMounted(() => {
 
               <form v-else class="space-y-4" @submit.prevent="saveChapter">
                 <label class="grid gap-2 text-sm font-bold">
-                  {{ copy.chapterTitlePlaceholder }}
+                  <span>{{ copy.chapterTitlePlaceholder }} <span class="text-red-500">*</span></span>
                   <input v-model="chapterForm.title" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.chapterTitlePlaceholder" />
                 </label>
                 <label class="grid gap-2 text-sm font-bold">
@@ -3113,7 +3113,7 @@ onMounted(() => {
                       </label>
                     </div>
                     <label class="block">
-                      <span class="text-sm font-bold">{{ copy.titleField }}</span>
+                      <span class="text-sm font-bold">{{ copy.titleField }} <span class="text-red-500">*</span></span>
                       <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
                     </label>
                     <label class="block">
