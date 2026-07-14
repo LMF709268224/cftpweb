@@ -238,6 +238,19 @@ async function load(targetPage = page.value) {
     if (bizType.value) params.set("biz_type", bizType.value)
     if (orderStatus.value) params.set("order_status", orderStatus.value)
 
+    const isValidUlid = (id: string) => /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i.test(id)
+    if (candidateUlid.value.trim() && !isValidUlid(candidateUlid.value.trim())) {
+      orders.value = []
+      selected.value = null
+      businessDetail.value = null
+      detailOpen.value = false
+      total.value = 0
+      hasMore.value = false
+      nextCursor.value = ""
+      prevCursor.value = ""
+      return
+    }
+
     const data = await apiClient<JsonRecord>(`/api/mall/orders?${params}`)
     const list = Array.isArray(data.items) ? data.items : Array.isArray(data.orders) ? data.orders : []
 
