@@ -343,6 +343,12 @@ function search() {
   void load(1)
 }
 
+function clearCandidateSearch() {
+  if (!candidateUlid.value) return
+  candidateUlid.value = ""
+  search()
+}
+
 onMounted(() => load(1))
 </script>
 
@@ -363,7 +369,19 @@ onMounted(() => load(1))
       <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.candidatePlaceholder }}
-          <input v-model="candidateUlid" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.candidatePlaceholder" />
+          <div class="relative">
+            <input v-model="candidateUlid" class="h-11 w-full rounded-xl border border-slate-200 px-3 pr-10" :placeholder="copy.candidatePlaceholder" />
+            <button
+              v-if="candidateUlid"
+              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              type="button"
+              :aria-label="copy.close"
+              :title="copy.close"
+              @click="clearCandidateSearch"
+            >
+              <X class="h-4 w-4" />
+            </button>
+          </div>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.fields.bizType }}
