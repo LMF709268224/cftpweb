@@ -2581,6 +2581,7 @@ export const en: AdminTranslations = {
     uploadAfterSaveHintMaterial: "Note: Please save the material first. After saving, an 'Upload File' button will appear here for you to automatically upload and fill this in.",
     uploadLessonFile: "Upload lesson asset (Video/PDF) & Auto-configure",
     uploadSupplementaryFile: "Upload supplementary asset (Video/PDF) & Auto-configure",
+    uploadFile: "Upload File (PDF/Video) directly",
     uploading: "Uploading...",
     externalUrl: "External URL",
     assetObjectKeyLabel: "Asset Object Key",

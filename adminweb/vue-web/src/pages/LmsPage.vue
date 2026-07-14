@@ -2908,16 +2908,16 @@ onMounted(() => {
                 <textarea v-model="lessonForm.body" class="min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.lessonBodyPlaceholder" />
                 <template v-if="lessonForm.lesson_type === '7'">
                   <label class="block">
-                    <span class="text-sm font-bold">{{ (copy as any).externalUrl || '外部链接 URL' }} <span class="text-red-500">*</span></span>
+                    <span class="text-sm font-bold">{{ (copy as any).externalUrl }} <span class="text-red-500">*</span></span>
                     <input v-model="lessonForm.asset_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="https://" />
                   </label>
                 </template>
                 <template v-else-if="lessonForm.lesson_type !== '2'">
                   <label class="block">
-                    <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel || '资产 Object Key' }}</span>
+                    <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel }}</span>
                     <input v-model="lessonForm.asset_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetObjectKeyPlaceholder" />
                     <span v-if="!editingLessonId" class="mt-2 block text-xs font-semibold text-amber-600">
-                      {{ (copy as any).uploadAfterSaveHint || '提示：请先点击下方“保存课时”，保存成功后此处会出现“上传文件”按钮，系统将为您自动上传并填写。' }}
+                      {{ (copy as any).uploadAfterSaveHint }}
                     </span>
                   </label>
                   <label class="block">
@@ -2935,7 +2935,7 @@ onMounted(() => {
                 <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 h-10 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
                   <Loader2 v-if="uploadingLesson" class="h-4 w-4 animate-spin" />
                   <UploadCloud v-else class="h-4 w-4" />
-                  {{ uploadingLesson ? ((copy as any).uploading || '正在上传文件并生成 Hash...') : ((copy as any).uploadLessonFile || '上传课时资产 (视频/PDF) 并自动配置') }}
+                  {{ uploadingLesson ? (copy as any).uploading : (copy as any).uploadLessonFile }}
                 </button>
               </div>
               <div class="flex-1" v-else></div>
@@ -3117,16 +3117,16 @@ onMounted(() => {
                     </label>
                     <template v-if="supplementaryItemForm.type === 'Article' || supplementaryItemForm.type === 'Link'">
                       <label class="block">
-                        <span class="text-sm font-bold">{{ (copy as any).externalUrl || '外部链接 URL' }} <span class="text-red-500">*</span></span>
+                        <span class="text-sm font-bold">{{ (copy as any).externalUrl }} <span class="text-red-500">*</span></span>
                         <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
                       </label>
                     </template>
                     <template v-else>
                       <label class="block">
-                        <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel || '资产 Object Key' }} <span class="text-red-500" v-if="supplementaryItemForm.type !== 'Other'">*</span></span>
+                        <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel }} <span class="text-red-500" v-if="supplementaryItemForm.type !== 'Other'">*</span></span>
                         <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
                         <span v-if="editingSupplementaryItemIndex < 0" class="mt-2 block text-xs font-semibold text-amber-600">
-                          {{ (copy as any).uploadAfterSaveHintSupplementary || '提示：请先点击下方“保存本条资料”，保存成功后此处会出现“上传文件”按钮，系统将为您自动上传并填写。' }}
+                          {{ (copy as any).uploadAfterSaveHintSupplementary }}
                         </span>
                       </label>
                       <div class="mt-3 flex gap-3" v-if="editingSupplementaryItemIndex >= 0">
@@ -3134,7 +3134,7 @@ onMounted(() => {
                         <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingSupplementary" @click="supplementaryFileInput?.click()">
                           <Loader2 v-if="uploadingSupplementary" class="h-4 w-4 animate-spin" />
                           <UploadCloud v-else class="h-4 w-4" />
-                          {{ uploadingSupplementary ? ((copy as any).uploading || '正在上传...') : ((copy as any).uploadSupplementaryFile || '上传辅助资料资产并自动配置') }}
+                          {{ uploadingSupplementary ? (copy as any).uploading : (copy as any).uploadSupplementaryFile }}
                         </button>
                       </div>
                     </template>
@@ -3235,7 +3235,7 @@ onMounted(() => {
                 <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
                 <span class="mt-1 block text-xs text-slate-500">{{ copy.fileObjectKeyHint }}</span>
                 <span v-if="!editingMaterialId" class="mt-2 block text-xs font-semibold text-amber-600">
-                  {{ (copy as any).uploadAfterSaveHintMaterial || '提示：请先点击下方“保存资料”，保存成功后此处会出现“上传文件”按钮，系统将为您自动上传并填写。' }}
+                  {{ (copy as any).uploadAfterSaveHintMaterial }}
                 </span>
               </label>
               <label class="block">
@@ -3260,7 +3260,7 @@ onMounted(() => {
                 <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingMaterial" @click="materialFileInput?.click()">
                   <Loader2 v-if="uploadingMaterial" class="h-4 w-4 animate-spin" />
                   <UploadCloud v-else class="h-4 w-4" />
-                  {{ uploadingMaterial ? ((copy as any).uploading || '正在上传文件并生成 Hash...') : ((copy as any).uploadFile || '上传 PDF / 资源文件并自动配置') }}
+                  {{ uploadingMaterial ? (copy as any).uploading : (copy as any).uploadFile }}
                 </button>
               </div>
               <button class="h-10 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial || uploadingMaterial" type="submit">

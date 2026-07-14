@@ -2579,6 +2579,7 @@ export const zh = {
     uploadAfterSaveHintMaterial: "提示：请先点击下方“保存资料”，保存成功后此处会出现“上传文件”按钮，系统将为您自动上传并填写。",
     uploadLessonFile: "上传课时资产 (视频/PDF) 并自动配置",
     uploadSupplementaryFile: "上传辅助资料资产 (视频/PDF) 并自动配置",
+    uploadFile: "上传 PDF / 视频文件直传",
     uploading: "正在上传...",
     externalUrl: "外部链接 URL",
     assetObjectKeyLabel: "资产 Object Key",
