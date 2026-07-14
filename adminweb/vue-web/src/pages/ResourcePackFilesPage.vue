@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { FileText, Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
+import { Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
-import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
+import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 
 const pageSize = 10
@@ -52,9 +52,10 @@ const form = ref({
   video_stream_uid: "",
   sort_order: 1,
   version: 0,
+  created_at: "",
+  updated_at: "",
 })
 
-const selectedEntries = computed(() => Object.entries(selected.value || {}))
 const canPrevious = computed(() => previousTokens.value.length > 0)
 const canNext = computed(() => !!nextPageToken.value)
 const selectedPack = computed(() => packById(form.value.pack_id))
@@ -111,14 +112,6 @@ function fileTypeLabel(value: unknown) {
   return fileTypeOptions.value.find((option) => option.value === numeric)?.label || String(value || "-")
 }
 
-function fileSize(value: unknown) {
-  const size = Number(value || 0)
-  if (!Number.isFinite(size) || size <= 0) return "-"
-  if (size < 1024) return `${size} B`
-  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`
-  return `${(size / 1024 / 1024).toFixed(1)} MB`
-}
-
 function fillForm(file: JsonRecord | null) {
   form.value = {
     file_id: String(file?.file_id || ""),
@@ -135,6 +128,8 @@ function fillForm(file: JsonRecord | null) {
     video_stream_uid: String(file?.video_stream_uid || ""),
     sort_order: Number(file?.sort_order || 1),
     version: Number(file?.version || 0),
+    created_at: String(file?.created_at || ""),
+    updated_at: String(file?.updated_at || ""),
   }
 }
 
@@ -473,7 +468,7 @@ onMounted(load)
           {{ copy.loading }}
         </div>
         <div v-else-if="!files.length" class="px-6 py-10 text-center text-slate-500">{{ copy.empty }}</div>
-        <div v-else class="grid grid-cols-[minmax(0,1fr)_88px_120px_200px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+        <div v-else class="grid grid-cols-[minmax(0,1fr)_72px_130px_280px] gap-5 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
           <span>{{ copy.columns.file }}</span>
           <span class="text-center">{{ copy.columns.sort }}</span>
           <span class="text-center">{{ copy.columns.type }}</span>
@@ -482,7 +477,7 @@ onMounted(load)
         <div
           v-for="file in files"
           :key="fileId(file)"
-          class="grid w-full grid-cols-[minmax(0,1fr)_88px_120px_200px] gap-6 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
+          class="grid w-full grid-cols-[minmax(0,1fr)_72px_130px_280px] gap-5 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
           :class="fileId(selected) === fileId(file) ? 'bg-sky-50' : ''"
         >
           <button class="min-w-0 text-left" type="button" @click="openFileDetail(file)">
@@ -497,7 +492,7 @@ onMounted(load)
           <span class="h-fit self-center justify-self-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
             {{ fileTypeLabel(file.file_type) }}
           </span>
-          <div class="flex items-center justify-start gap-4 lg:justify-center">
+          <div class="flex min-w-0 items-center justify-end gap-4 whitespace-nowrap">
             <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openFileDetail(file)">
               {{ copy.viewDetails }}
             </button>
@@ -632,27 +627,15 @@ onMounted(load)
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.version) }}</div>
             <input v-else v-model.number="form.version" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
           </label>
+          <div v-if="mode !== 'create'" class="text-sm font-bold">
+            {{ copy.fields.createdAt }}
+            <div class="readonly-field readonly-field--compact">{{ formatDate(form.created_at) || "-" }}</div>
           </div>
-
-        <div v-if="selected && mode === 'detail'" class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div class="mb-3 flex items-center gap-2 text-sm font-black">
-            <FileText class="h-4 w-4 text-blue-700" />
-            {{ copy.sections.raw }}
+          <div v-if="mode !== 'create'" class="text-sm font-bold">
+            {{ copy.fields.updatedAt }}
+            <div class="readonly-field readonly-field--compact">{{ formatDate(form.updated_at) || "-" }}</div>
           </div>
-          <div class="grid gap-3 md:grid-cols-2">
-            <div class="rounded-xl bg-white p-3 md:col-span-2">
-              <div class="text-[11px] font-black uppercase text-slate-400">{{ copy.ownerRawTitle }}</div>
-              <div class="mt-1 break-words text-sm font-semibold">{{ ownerText(selected) }}</div>
-            </div>
-            <div v-for="[key, value] in selectedEntries" :key="key" class="rounded-xl bg-white p-3">
-              <div class="text-[11px] font-black uppercase text-slate-400">{{ humanizeKey(key) }}</div>
-              <div v-if="key === 'file_type'" class="mt-1 break-words text-sm font-semibold">{{ fileTypeLabel(value) }}</div>
-              <div v-else-if="key === 'file_size'" class="mt-1 break-words text-sm font-semibold">{{ fileSize(value) }}</div>
-              <div v-else-if="typeof value === 'string' && key.endsWith('_at')" class="mt-1 break-words text-sm font-semibold">{{ formatDate(value) }}</div>
-              <div v-else class="mt-1 break-words text-sm font-semibold">{{ value ?? "-" }}</div>
-            </div>
           </div>
-        </div>
         </div>
 
         <div v-if="mode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
