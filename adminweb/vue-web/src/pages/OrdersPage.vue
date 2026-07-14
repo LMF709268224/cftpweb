@@ -257,6 +257,7 @@ async function load(targetPage = page.value) {
 
     const isValidUlid = (id: string) => /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i.test(id)
     if (candidateUlid.value.trim() && !isValidUlid(candidateUlid.value.trim())) {
+      toast.error(copy.value.invalidCandidateUlid)
       orders.value = []
       selected.value = null
       businessDetail.value = null

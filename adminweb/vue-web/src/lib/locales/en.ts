@@ -111,6 +111,7 @@ export const en: AdminTranslations = {
         allStatuses: "All statuses",
         allPaymentStatuses: "All payment statuses",
         search: "Search",
+        invalidCandidateUlid: "Enter a valid Candidate ULID (26 characters)",
         listTitle: "Order List",
         listDescription: "Click an order to view details and manage it.",
         totalPrefix: "Total",

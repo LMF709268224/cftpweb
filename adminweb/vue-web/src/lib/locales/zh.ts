@@ -109,6 +109,7 @@ export const zh = {
         allStatuses: "全部状态",
         allPaymentStatuses: "全部支付状态",
         search: "查询",
+        invalidCandidateUlid: "请输入有效的考生 ULID（26 位）",
         listTitle: "订单列表",
         listDescription: "点击订单查看详情并处理。",
         totalPrefix: "共",
