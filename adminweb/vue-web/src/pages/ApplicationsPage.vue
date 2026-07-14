@@ -1,15 +1,14 @@
 <script setup lang="ts">
-import { CheckCircle2, Copy, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
+import { CheckCircle2, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
-import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
-type DetailTab = "overview" | "files" | "audit" | "raw"
+type DetailTab = "overview" | "files" | "audit"
 
 const applications = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
@@ -26,7 +25,6 @@ const lastPage = ref(1)
 const statusFilter = ref("")
 const auditRemark = ref("")
 const activeTab = ref<DetailTab>("overview")
-const copiedRawJson = ref(false)
 const pageSize = 20
 let detailRequestId = 0
 const { t } = useAdminLanguage()
@@ -64,7 +62,6 @@ const selectedFields = computed(() => {
     }))
 })
 const selectedFiles = computed(() => files(selected.value || {}))
-const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const isApprovedSelected = computed(() => isApprovedApplication(selected.value))
 const detailTabs = computed(() => {
   const tabs: Array<{ key: DetailTab; title: string; count: number }> = [
@@ -74,7 +71,6 @@ const detailTabs = computed(() => {
   if (!isApprovedSelected.value) {
     tabs.push({ key: "audit" as const, title: copy.value.tabs.audit, count: 3 })
   }
-  tabs.push({ key: "raw" as const, title: copy.value.tabs.raw, count: 1 })
   return tabs
 })
 const statusOptions = computed(() => [
@@ -149,20 +145,6 @@ function isStructuredValue(value: unknown) {
 
 function jsonText(value: unknown) {
   return JSON.stringify(value ?? {}, null, 2)
-}
-
-async function copyRawJson() {
-  try {
-    await copyTextToClipboard(selectedJson.value)
-    copiedRawJson.value = true
-    toast.success(copy.value.toasts.jsonCopied)
-    window.setTimeout(() => {
-      copiedRawJson.value = false
-    }, 1600)
-  } catch (err) {
-    console.error(err)
-    toast.error(copy.value.toasts.jsonCopyFailed)
-  }
 }
 
 function mergeApplicationDetail(appID: string, detail: JsonRecord) {
@@ -527,25 +509,6 @@ onMounted(() => load(1))
                 </div>
               </div>
 
-              <div v-else-if="activeTab === 'raw'" class="space-y-4">
-                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  {{ copy.rawHint }}
-                </div>
-                <details class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.rawJson }}</summary>
-                  <div class="mt-4 overflow-hidden rounded-2xl bg-slate-950">
-                    <div class="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                      <span class="text-xs font-black uppercase text-slate-400">{{ copy.rawJson }}</span>
-                      <button class="inline-flex h-8 items-center gap-2 rounded-lg border border-white/10 px-3 text-xs font-bold text-slate-100 transition hover:bg-white/10" type="button" @click="copyRawJson">
-                        <CheckCircle2 v-if="copiedRawJson" class="h-3.5 w-3.5" />
-                        <Copy v-else class="h-3.5 w-3.5" />
-                        {{ copiedRawJson ? copy.copiedJson : copy.copyJson }}
-                      </button>
-                    </div>
-                    <pre class="max-h-[520px] overflow-auto p-5 text-xs leading-6 text-slate-100">{{ selectedJson }}</pre>
-                  </div>
-                </details>
-              </div>
           </main>
         </template>
         </section>

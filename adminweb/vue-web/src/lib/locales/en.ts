@@ -1380,10 +1380,9 @@ export const en: AdminTranslations = {
       description: "Description",
     },
     saveMeta: "Save Basic Info",
-    jsonValidateHint: "JSON format is validated before saving.",
     pricingPreview: {
       title: "Pricing Preview",
-      description: "Parses items_json and pricing_json into linked items, course-unit prices, optional unlock prices, and coupons.",
+      description: "Shows the product's linked items, course-unit prices, optional unlock prices, and coupons.",
       linkedItems: "Linked Items",
       itemType: "Item Type",
       itemRef: "Reference ID",
