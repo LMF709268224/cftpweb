@@ -1415,9 +1415,9 @@ async function saveLesson() {
     if (editingLessonId.value) {
       await apiClient(`/api/lms/lessons/${encodeURIComponent(editingLessonId.value)}`, { method: "PUT", body })
       toast.success(copy.value.toasts.lessonUpdated)
+      await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
       newLesson()
       closeLessonDialog()
-      await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
     } else {
       const res = await apiClient<JsonRecord>(`/api/lms/chapters/${encodeURIComponent(targetChapterId)}/lessons`, { method: "POST", body })
       toast.success(copy.value.toasts.lessonCreated)
@@ -1426,9 +1426,9 @@ async function saveLesson() {
         toast.info("请继续点击下方按钮上传课时文件 (视频/PDF等)")
         await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
       } else {
+        await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
         newLesson()
         closeLessonDialog()
-        await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
       }
     }
   } catch (err) {
@@ -1460,8 +1460,8 @@ async function confirmDeletePendingLesson() {
     toast.success(copy.value.toasts.lessonDeleted)
     lessonDeleteConfirmOpen.value = false
     pendingDeleteLesson.value = null
-    newLesson()
     await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
+    newLesson()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.lessonDeleteFailed))
@@ -1814,8 +1814,8 @@ async function saveMaterial() {
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/materials`, { method: "POST", body: JSON.stringify(body) })
       toast.success(copy.value.toasts.materialCreated)
     }
-    newMaterial()
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
+    newMaterial()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.materialSaveFailed))
@@ -1842,8 +1842,8 @@ async function confirmDeleteMaterial(deleteInfo: PendingDetailDelete) {
   try {
     await apiClient(`/api/lms/materials/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.materialDeleted)
-    newMaterial()
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
+    newMaterial()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.materialDeleteFailed))
@@ -2074,8 +2074,18 @@ async function loadQuestions(id = selectedQuizId.value) {
   questionsLoading.value = true
   try {
     const data = await apiClient<JsonRecord>(`/api/lms/quizzes/${encodeURIComponent(id)}/questions`)
-    const list = Array.isArray(data.questions) ? data.questions : []
-    questions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    let list = Array.isArray(data.questions) ? data.questions : []
+    list = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    
+    const details = await Promise.all(list.map(async (item) => {
+      try {
+        const detail = await apiClient<JsonRecord>(`/api/lms/questions/${encodeURIComponent(String(item.question_ulid || item.id))}`)
+        return detail.question && typeof detail.question === "object" ? { ...item, ...detail.question } : item
+      } catch (e) {
+        return item
+      }
+    }))
+    questions.value = details
     selectedQuestion.value = null
     options.value = []
     editingQuestionId.value = ""
@@ -2171,8 +2181,8 @@ async function saveQuestion() {
       await apiClient(`/api/lms/quizzes/${encodeURIComponent(selectedQuizId.value)}/questions`, { method: "POST", body: JSON.stringify(body) })
       toast.success(copy.value.toasts.questionCreated)
     }
-    newQuestion()
     await loadQuestions()
+    newQuestion()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.questionSaveFailed))
@@ -2199,8 +2209,8 @@ async function confirmDeleteQuestion(deleteInfo: PendingDetailDelete) {
   try {
     await apiClient(`/api/lms/questions/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.questionDeleted)
-    newQuestion()
     await loadQuestions()
+    newQuestion()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.questionDeleteFailed))
@@ -2213,10 +2223,19 @@ async function loadOptions(id = selectedQuestionId.value) {
   optionsLoading.value = true
   try {
     const data = await apiClient<JsonRecord>(`/api/lms/questions/${encodeURIComponent(id)}/options`)
-    const list = Array.isArray(data.options) ? data.options : []
-    options.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
-    editingOptionId.value = ""
-    optionForm.value = emptyOptionForm()
+    let list = Array.isArray(data.options) ? data.options : []
+    list = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+
+    const details = await Promise.all(list.map(async (item) => {
+      try {
+        const detail = await apiClient<JsonRecord>(`/api/lms/options/${encodeURIComponent(String(item.option_ulid || item.id))}`)
+        return detail.option && typeof detail.option === "object" ? { ...item, ...detail.option } : item
+      } catch (e) {
+        return item
+      }
+    }))
+    options.value = details
+    newOption()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.optionsLoadFailed))
@@ -2268,8 +2287,8 @@ async function saveOption() {
       await apiClient(`/api/lms/questions/${encodeURIComponent(selectedQuestionId.value)}/options`, { method: "POST", body: JSON.stringify(body) })
       toast.success(copy.value.toasts.optionCreated)
     }
-    newOption()
     await loadOptions()
+    newOption()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.optionSaveFailed))
@@ -2296,8 +2315,8 @@ async function confirmDeleteOption(deleteInfo: PendingDetailDelete) {
   try {
     await apiClient(`/api/lms/options/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.optionDeleted)
-    newOption()
     await loadOptions()
+    newOption()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.optionDeleteFailed))
@@ -3538,13 +3557,19 @@ onMounted(() => {
                         <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.questionTextPlaceholder" />
                       </label>
                       <div class="mt-3 grid gap-3 sm:grid-cols-3">
-                        <select v-model="questionForm.question_type" class="rounded-xl border border-slate-200 px-4 py-3">
+                        <select v-model="questionForm.question_type" class="w-full rounded-xl border border-slate-200 px-4 py-3" :title="copy.questionTypePoints">
                           <option value="1">{{ copy.questionTypes.single }}</option>
                           <option value="2">{{ copy.questionTypes.multiple }}</option>
                           <option value="3">{{ copy.questionTypes.judgement }}</option>
                         </select>
-                        <input v-model="questionForm.points" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.pointsPlaceholder" type="number" />
-                        <input v-model="questionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
+                        <div class="relative w-full">
+                          <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.pointsPlaceholder }}</div>
+                          <input v-model="questionForm.points" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.pointsPlaceholder" type="number" />
+                        </div>
+                        <div class="relative w-full">
+                          <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
+                          <input v-model="questionForm.sort_order" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
+                        </div>
                       </div>
                       <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
                         <input v-model="questionForm.is_required" type="checkbox" />
@@ -3597,9 +3622,12 @@ onMounted(() => {
                         </button>
                       </div>
                       <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.optionTextPlaceholder" />
-                      <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                        <input v-model="optionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
-                        <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
+                      <div class="mt-3 flex items-center gap-3">
+                        <div class="relative flex-1">
+                          <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
+                          <input v-model="optionForm.sort_order" class="h-11 w-full rounded-xl border border-slate-200 px-4" :placeholder="copy.sort" type="number" />
+                        </div>
+                        <label class="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600">
                           <input v-model="optionForm.is_correct" type="checkbox" />
                           {{ copy.correctAnswer }}
                         </label>
