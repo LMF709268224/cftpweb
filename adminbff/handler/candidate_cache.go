@@ -201,6 +201,9 @@ func (h *Handler) candidateName(candidateULID string) string {
 }
 
 func (h *Handler) attachCandidateName(payload map[string]interface{}, candidateULID string) {
+	if candidateULID != "" {
+		payload["candidate_ulid"] = candidateULID
+	}
 	name := h.candidateName(candidateULID)
 	if name != "" {
 		payload["candidate_name"] = name
