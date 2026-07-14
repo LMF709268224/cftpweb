@@ -251,6 +251,7 @@ const selectedQuizId = computed(() => quizId(selectedQuiz.value))
 const selectedQuestionId = computed(() => questionId(selectedQuestion.value))
 const selectedCourseStatusBadge = computed(() => courseStatusBadgeValue(selectedCourse.value))
 const canDeleteSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
+const canPublishSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
 const selectedLesson = computed(() => lessons.value.find((item) => lessonId(item) === editingLessonId.value) || null)
 const selectedMaterialRecord = computed(() => materials.value.find((item) => materialId(item) === selectedMaterialId.value) || selectedMaterial.value)
 const courseDetailDialogCourseId = computed(() => courseId(courseDetailTarget.value))
@@ -2725,7 +2726,7 @@ onMounted(() => {
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? copy.saving : copy.saveCourse }}
               </button>
-              <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
+              <button v-if="canPublishSelectedCourse" class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
                 {{ publishing ? copy.publishing : copy.publishCourse }}
               </button>
             </div>
@@ -2926,7 +2927,7 @@ onMounted(() => {
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? copy.saving : copy.saveCourse }}
               </button>
-              <button class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
+              <button v-if="canPublishSelectedCourse" class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
                 {{ publishing ? copy.publishing : copy.publishCourse }}
               </button>
               <button v-if="canDeleteSelectedCourse" class="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 px-4 font-bold text-red-600 disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="deleteCourse">
