@@ -3234,6 +3234,9 @@ onMounted(() => {
                 <span class="text-sm font-bold">{{ copy.fileObjectKey }}</span>
                 <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
                 <span class="mt-1 block text-xs text-slate-500">{{ copy.fileObjectKeyHint }}</span>
+                <span v-if="!editingMaterialId" class="mt-2 block text-xs font-semibold text-amber-600">
+                  {{ (copy as any).uploadAfterSaveHintMaterial || '提示：请先点击下方“保存资料”，保存成功后此处会出现“上传文件”按钮，系统将为您自动上传并填写。' }}
+                </span>
               </label>
               <label class="block">
                 <span class="text-sm font-bold">{{ copy.fileHash }}</span>

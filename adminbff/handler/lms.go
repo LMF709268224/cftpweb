@@ -622,7 +622,7 @@ func (h *Handler) CreateLmsCourseMaterial(w http.ResponseWriter, r *http.Request
 		req.MaterialUlid = newLmsID()
 	}
 	req.CourseUlid = courseID
-	if !requireRequestFields(w, req.Title, "title", req.FileObjectKey, "file_object_key") {
+	if !requireRequestFields(w, req.Title, "title") {
 		return
 	}
 	if req.MaterialType == lmspb.MaterialType_MATERIAL_TYPE_UNSPECIFIED {
@@ -666,7 +666,7 @@ func (h *Handler) UpdateLmsCourseMaterial(w http.ResponseWriter, r *http.Request
 		return
 	}
 	req.MaterialUlid = materialID
-	if !requireRequestFields(w, req.Title, "title", req.FileObjectKey, "file_object_key") || !requirePositiveVersion(w, req.Version) {
+	if !requireRequestFields(w, req.Title, "title") || !requirePositiveVersion(w, req.Version) {
 		return
 	}
 	if req.MaterialType == lmspb.MaterialType_MATERIAL_TYPE_UNSPECIFIED {
