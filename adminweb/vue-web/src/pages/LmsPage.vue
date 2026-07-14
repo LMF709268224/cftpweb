@@ -1117,9 +1117,19 @@ async function publishCourse() {
       if (match && match[1]) {
         const cId = match[1]
         const c = chapters.value.find(ch => chapterId(ch) === cId)
-        customErr = copy.value.toasts.emptyChapterPublishFailed(c ? chapterTitle(c) : cId)
+        const title = c ? chapterTitle(c) : cId
+        const t = (copy.value.toasts as any).emptyChapterPublishFailed
+        if (typeof t === 'function') {
+          customErr = t(title)
+        } else if (typeof t === 'string') {
+          customErr = t.replace('{chapter}', title)
+        } else {
+          customErr = `发布失败：章节「${title}」为空，请至少添加一个课时或测验后再发布！`
+        }
       }
-    } catch(e) {}
+    } catch(e) {
+      console.error("Failed to parse custom error for empty chapter", e)
+    }
     toast.error(customErr || apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
   } finally {
     publishing.value = false
