@@ -1,5 +1,5 @@
-﻿<script setup lang="ts">
-import { Info, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
+<script setup lang="ts">
+import { Info, Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { ApiError, apiClient } from "@/lib/apiClient"
@@ -24,6 +24,9 @@ const currentPage = ref(1)
 let detailRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.resourcePacksAdmin)
+
+const uploadingThumbnail = ref(false)
+const thumbnailFileInput = ref<HTMLInputElement | null>(null)
 
 const form = ref({
   pack_id: "",
@@ -421,6 +424,49 @@ async function deletePack() {
   }
 }
 
+async function handleThumbnailFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!form.value.pack_id) return
+
+  uploadingThumbnail.value = true
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    const uploadUrlReq = {
+      upload_type: 5,
+      pack_id: form.value.pack_id,
+      file_name: file.name,
+      content_type: file.type || "application/octet-stream",
+      file_hash: hashHex
+    }
+    const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
+    
+    if (!uploadRes.upload_url) throw new Error("Missing upload URL")
+    const uploadResponse = await fetch(String(uploadRes.upload_url), {
+      method: "PUT",
+      body: file,
+      headers: uploadRes.signed_headers as Record<string, string> || {}
+    })
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload failed: ${uploadResponse.status}`)
+    }
+
+    form.value.thumbnail_object_key = String(uploadRes.object_key)
+    form.value.thumbnail_file_hash = hashHex
+    toast.success("Thumbnail uploaded successfully")
+  } catch (err: any) {
+    toast.error("Thumbnail upload failed: " + (err.message || String(err)))
+  } finally {
+    uploadingThumbnail.value = false
+    if (input) input.value = ""
+  }
+}
+
 function previousPage() {
   if (!canPrevious.value) return
   pageToken.value = previousTokens.value.pop() || ""
@@ -688,7 +734,15 @@ onMounted(load)
                         </span>
                       </span>
                     </span>
-                    <input v-model="form.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
+                    <div class="mt-2 flex gap-3">
+                      <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailFileUpload" />
+                      <input v-model="form.thumbnail_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
+                      <button type="button" class="shrink-0 flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingThumbnail || !form.pack_id" @click="thumbnailFileInput?.click()">
+                        <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
+                        <UploadCloud v-else class="h-4 w-4" />
+                        {{ uploadingThumbnail ? (copy as any).uploading : (copy as any).uploadThumbnail }}
+                      </button>
+                    </div>
                   </label>
                   <label class="block md:col-span-2">
                     <span class="flex items-center gap-1.5 text-sm font-bold">
