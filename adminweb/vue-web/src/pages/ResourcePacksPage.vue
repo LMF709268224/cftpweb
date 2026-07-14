@@ -573,7 +573,11 @@ onMounted(load)
                   </div>
                   <div class="text-sm font-bold">
                     {{ copy.fields.status }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.status || "-" }}</div>
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">
+                      <span class="inline-flex rounded-full border px-2 py-0.5 text-xs font-black" :class="packStatusClass(form)" :title="String(form.status || '')">
+                        {{ packStatusLabel(form) }}
+                      </span>
+                    </div>
                   </div>
                   <div class="text-sm font-bold">
                     {{ copy.fields.version }}
@@ -641,7 +645,11 @@ onMounted(load)
                   </div>
                   <div class="text-sm font-bold">
                     {{ copy.fields.status }}
-                    <div class="mt-2 min-h-10 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.status || "-" }}</div>
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">
+                      <span class="inline-flex rounded-full border px-2 py-0.5 text-xs font-black" :class="packStatusClass(form)" :title="String(form.status || '')">
+                        {{ packStatusLabel(form) }}
+                      </span>
+                    </div>
                   </div>
                   <label class="text-sm font-bold">
                     {{ copy.fields.version }}
