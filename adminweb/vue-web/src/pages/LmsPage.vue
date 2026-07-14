@@ -1113,8 +1113,8 @@ async function publishCourse() {
     let customErr = ""
     try {
       const msg = String(err?.payload?.message || err?.message || JSON.stringify(err))
-      const match = msg.match(/chapter '([^']+)' must contain at least one/)
-      if (match && match[1]) {
+      const match = msg.match(/([0-9A-Z]{26})/i)
+      if (match && match[1] && msg.toLowerCase().includes("must contain")) {
         const cId = match[1]
         const c = chapters.value.find(ch => chapterId(ch) === cId)
         const title = c ? chapterTitle(c) : cId
