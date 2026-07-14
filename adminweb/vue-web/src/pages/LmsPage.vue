@@ -1091,7 +1091,7 @@ async function publishCourse() {
       if (match && match[1]) {
         const cId = match[1]
         const c = chapters.value.find(ch => chapterId(ch) === cId)
-        customErr = `发布失败：章节「${c ? chapterTitle(c) : cId}」为空，请至少添加一个课时或测验后再发布！`
+        customErr = copy.value.toasts.emptyChapterPublishFailed(c ? chapterTitle(c) : cId)
       }
     } catch(e) {}
     toast.error(customErr || apiErrorMessage(err, copy.value.toasts.coursePublishFailed))

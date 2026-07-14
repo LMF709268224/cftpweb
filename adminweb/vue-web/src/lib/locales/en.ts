@@ -2758,6 +2758,7 @@ export const en: AdminTranslations = {
       courseSaveFailed: "Failed to save course",
       coursePublished: "Course published",
       coursePublishFailed: "Failed to publish course. Please confirm chapters, lessons, and quizzes are complete.",
+      emptyChapterPublishFailed: (chapter: string) => `Publish failed: Chapter '${chapter}' is empty. Please add at least one lesson or quiz before publishing!`,
       courseDeleted: "Course deleted",
       courseDeleteFailed: "Failed to delete course",
       chaptersLoadFailed: "Failed to load chapters",

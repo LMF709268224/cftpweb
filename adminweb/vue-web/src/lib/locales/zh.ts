@@ -2756,6 +2756,7 @@ export const zh = {
       courseSaveFailed: "课程保存失败",
       coursePublished: "课程已发布",
       coursePublishFailed: "课程发布失败，请确认章节、课时和测验配置完整",
+      emptyChapterPublishFailed: (chapter: string) => `发布失败：章节「${chapter}」为空，请至少添加一个课时或测验后再发布！`,
       courseDeleted: "课程已删除",
       courseDeleteFailed: "课程删除失败",
       chaptersLoadFailed: "章节加载失败",
