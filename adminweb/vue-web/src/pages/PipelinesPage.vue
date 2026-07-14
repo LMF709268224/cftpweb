@@ -731,6 +731,7 @@ async function createPipeline() {
         name: form.value.name.trim(),
         category_tips: form.value.category_tips.trim(),
         respath: form.value.respath.trim(),
+        pipeline_gpath: form.value.respath.trim(),
       }),
     })
     toast.success(copy.value.toasts.created)
@@ -906,6 +907,7 @@ async function clonePipeline() {
         name: copy.value.copyName(form.value.name.trim()),
         category_tips: form.value.category_tips.trim(),
         respath: form.value.respath.trim(),
+        pipeline_gpath: form.value.respath.trim(),
         from_pipeline_guid: selected.value.pipeline_guid,
         from_pipeline_id: id,
       }),
