@@ -250,7 +250,7 @@ const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() => p
 const selectedQuizId = computed(() => quizId(selectedQuiz.value))
 const selectedQuestionId = computed(() => questionId(selectedQuestion.value))
 const selectedCourseStatusBadge = computed(() => courseStatusBadgeValue(selectedCourse.value))
-const canDeleteSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) !== "deprecated")
+const canDeleteSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
 const selectedLesson = computed(() => lessons.value.find((item) => lessonId(item) === editingLessonId.value) || null)
 const selectedMaterialRecord = computed(() => materials.value.find((item) => materialId(item) === selectedMaterialId.value) || selectedMaterial.value)
 const courseDetailDialogCourseId = computed(() => courseId(courseDetailTarget.value))
