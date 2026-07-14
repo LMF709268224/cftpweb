@@ -1491,6 +1491,10 @@ export const en: AdminTranslations = {
         detailLoading: "Loading details...",
         close: "Close",
         respathHint: "(Optional) Auto-generated from the title for permission checks. The default generated path is recommended.",
+        categoryHint: "Category classification, e.g., public, member",
+        iconHint: "UI icon identifier, e.g., FileBarChart",
+        objectKeyHint: "The object key returned by the storage service",
+        fileHashHint: "SHA256 hash of the thumbnail file",
         sections: {
             basic: "Basic Info",
             pathThumbnail: "Path & Thumbnail",

@@ -1488,7 +1488,11 @@ export const zh = {
         editHint: "修改资源包信息后保存。",
         detailLoading: "正在加载详情...",
         close: "关闭",
-        respathHint: "（选填）将随标题自动生成，用于底层权限校验，建议使用默认生成的路径。",
+        respathHint: "（可选项）自动生成；如果在底层有权限校验要求，请保持使用默认生成的路径。",
+        categoryHint: "分类，例如 public, member 等",
+        iconHint: "前端界面标识，例如 FileBarChart",
+        objectKeyHint: "上传至存储服务后的对象键",
+        fileHashHint: "封面文件的 SHA256 哈希值",
         sections: {
             basic: "基础信息",
             pathThumbnail: "路径与封面",

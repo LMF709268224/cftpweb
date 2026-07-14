@@ -100,10 +100,10 @@ function fillForm(pack: JsonRecord | null) {
     thumbnail_object_key: String(pack?.thumbnail_object_key || ""),
     thumbnail_file_hash: String(pack?.thumbnail_file_hash || ""),
     respath: String(pack?.respath || ""),
-    status: String(pack?.status || "Active"),
+    status: String(pack?.status || (mode.value === "create" ? "Draft" : "Active")),
     version: Number(pack?.version || 0),
     icon: String(pack?.icon || ""),
-    category: String(pack?.category || ""),
+    category: String(pack?.category || (mode.value === "create" ? "public" : "")),
   }
 }
 
@@ -176,6 +176,33 @@ function selectPack(pack: JsonRecord | null, openDetail = false) {
   void loadPackDetail(pack)
   if (openDetail) detailOpen.value = true
 }
+
+watch(() => mode.value, (m) => {
+  if (m === "create" && !form.value.status) form.value.status = "Draft"
+})
+
+watch(() => form.value.title, (newTitle, oldTitle) => {
+  if (mode.value !== "create") return
+  const cat = form.value.category || "public"
+  const generatePath = (t: string) => t ? `/res-packages/${cat}/${t.trim().toLowerCase().replace(/\s+/g, '_')}` : ''
+  const newPath = generatePath(newTitle)
+  const oldPath = generatePath(oldTitle)
+  if (!form.value.respath || form.value.respath === oldPath) {
+    form.value.respath = newPath
+  }
+})
+
+watch(() => form.value.category, (newCat, oldCat) => {
+  if (mode.value !== "create") return
+  const t = form.value.title
+  if (!t) return
+  const generatePath = (c: string) => c ? `/res-packages/${c}/${t.trim().toLowerCase().replace(/\s+/g, '_')}` : ''
+  const newPath = generatePath(newCat)
+  const oldPath = generatePath(oldCat)
+  if (!form.value.respath || form.value.respath === oldPath) {
+    form.value.respath = newPath
+  }
+})
 
 function openPackDetail(pack: JsonRecord) {
   selectPack(pack, true)
@@ -595,12 +622,28 @@ onMounted(load)
                     <span class="text-sm font-bold">{{ copy.fields.title }} <span class="text-red-500">*</span></span>
                     <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.title" required />
                   </label>
-                  <label class="text-sm font-bold">
-                    {{ copy.fields.category }}
+                  <label class="block">
+                    <span class="flex items-center gap-1.5 text-sm font-bold">
+                      {{ copy.fields.category }}
+                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.categoryHint">
+                        <Info class="h-4 w-4" aria-hidden="true" />
+                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                          {{ copy.categoryHint }}
+                        </span>
+                      </span>
+                    </span>
                     <input v-model="form.category" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.category" />
                   </label>
-                  <label class="text-sm font-bold">
-                    {{ copy.fields.icon }}
+                  <label class="block">
+                    <span class="flex items-center gap-1.5 text-sm font-bold">
+                      {{ copy.fields.icon }}
+                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.iconHint">
+                        <Info class="h-4 w-4" aria-hidden="true" />
+                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                          {{ copy.iconHint }}
+                        </span>
+                      </span>
+                    </span>
                     <input v-model="form.icon" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.icon" />
                   </label>
                   <label class="text-sm font-bold md:col-span-2">
@@ -625,12 +668,28 @@ onMounted(load)
                     </span>
                     <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.respath" required />
                   </label>
-                  <label class="text-sm font-bold">
-                    {{ copy.fields.thumbnailObjectKey }}
+                  <label class="block">
+                    <span class="flex items-center gap-1.5 text-sm font-bold">
+                      {{ copy.fields.thumbnailObjectKey }}
+                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.objectKeyHint">
+                        <Info class="h-4 w-4" aria-hidden="true" />
+                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                          {{ copy.objectKeyHint }}
+                        </span>
+                      </span>
+                    </span>
                     <input v-model="form.thumbnail_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
                   </label>
-                  <label class="text-sm font-bold md:col-span-2">
-                    {{ copy.fields.thumbnailFileHash }}
+                  <label class="block md:col-span-2">
+                    <span class="flex items-center gap-1.5 text-sm font-bold">
+                      {{ copy.fields.thumbnailFileHash }}
+                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.fileHashHint">
+                        <Info class="h-4 w-4" aria-hidden="true" />
+                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                          {{ copy.fileHashHint }}
+                        </span>
+                      </span>
+                    </span>
                     <input v-model="form.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailFileHash" />
                   </label>
                 </div>
