@@ -2857,8 +2857,11 @@ onMounted(() => {
                 </template>
                 <template v-else-if="lessonForm.lesson_type !== '2'">
                   <label class="block">
-                    <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel || '资产 Object Key' }} <span class="text-red-500">*</span></span>
+                    <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel || '资产 Object Key' }}</span>
                     <input v-model="lessonForm.asset_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetObjectKeyPlaceholder" />
+                    <span v-if="!editingLessonId" class="mt-2 block text-xs font-semibold text-amber-600">
+                      {{ (copy as any).uploadAfterSaveHint || '提示：请先点击下方“保存课时”，保存成功后此处会出现“上传文件”按钮，系统将为您自动上传并填写。' }}
+                    </span>
                   </label>
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.assetFileHash }}</span>
