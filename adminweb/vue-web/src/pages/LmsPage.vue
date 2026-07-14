@@ -1407,9 +1407,9 @@ async function saveLesson() {
     if (editingLessonId.value) {
       await apiClient(`/api/lms/lessons/${encodeURIComponent(editingLessonId.value)}`, { method: "PUT", body })
       toast.success(copy.value.toasts.lessonUpdated)
+      await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
       newLesson()
       closeLessonDialog()
-      await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
     } else {
       const res = await apiClient<JsonRecord>(`/api/lms/chapters/${encodeURIComponent(targetChapterId)}/lessons`, { method: "POST", body })
       toast.success(copy.value.toasts.lessonCreated)
@@ -1418,9 +1418,9 @@ async function saveLesson() {
         toast.info("请继续点击下方按钮上传课时文件 (视频/PDF等)")
         await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
       } else {
+        await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
         newLesson()
         closeLessonDialog()
-        await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
       }
     }
   } catch (err) {
@@ -1452,8 +1452,8 @@ async function confirmDeletePendingLesson() {
     toast.success(copy.value.toasts.lessonDeleted)
     lessonDeleteConfirmOpen.value = false
     pendingDeleteLesson.value = null
-    newLesson()
     await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
+    newLesson()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.lessonDeleteFailed))
@@ -1806,8 +1806,8 @@ async function saveMaterial() {
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/materials`, { method: "POST", body: JSON.stringify(body) })
       toast.success(copy.value.toasts.materialCreated)
     }
-    newMaterial()
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
+    newMaterial()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.materialSaveFailed))
@@ -1834,8 +1834,8 @@ async function confirmDeleteMaterial(deleteInfo: PendingDetailDelete) {
   try {
     await apiClient(`/api/lms/materials/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.materialDeleted)
-    newMaterial()
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
+    newMaterial()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.materialDeleteFailed))
@@ -2163,8 +2163,8 @@ async function saveQuestion() {
       await apiClient(`/api/lms/quizzes/${encodeURIComponent(selectedQuizId.value)}/questions`, { method: "POST", body: JSON.stringify(body) })
       toast.success(copy.value.toasts.questionCreated)
     }
-    newQuestion()
     await loadQuestions()
+    newQuestion()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.questionSaveFailed))
@@ -2191,8 +2191,8 @@ async function confirmDeleteQuestion(deleteInfo: PendingDetailDelete) {
   try {
     await apiClient(`/api/lms/questions/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.questionDeleted)
-    newQuestion()
     await loadQuestions()
+    newQuestion()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.questionDeleteFailed))
@@ -2260,8 +2260,8 @@ async function saveOption() {
       await apiClient(`/api/lms/questions/${encodeURIComponent(selectedQuestionId.value)}/options`, { method: "POST", body: JSON.stringify(body) })
       toast.success(copy.value.toasts.optionCreated)
     }
-    newOption()
     await loadOptions()
+    newOption()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.optionSaveFailed))
@@ -2288,8 +2288,8 @@ async function confirmDeleteOption(deleteInfo: PendingDetailDelete) {
   try {
     await apiClient(`/api/lms/options/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.optionDeleted)
-    newOption()
     await loadOptions()
+    newOption()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.optionDeleteFailed))
