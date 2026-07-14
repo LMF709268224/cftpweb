@@ -27,7 +27,11 @@ const form = ref({
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pdfTemplatesAdmin)
 
-const selectedFields = computed(() => selected.value || {})
+const hiddenRawFieldKeys = new Set(["detail", "summary"])
+const selectedFields = computed(() => {
+  const entries = Object.entries(selected.value || {}).filter(([key]) => !hiddenRawFieldKeys.has(key))
+  return Object.fromEntries(entries)
+})
 const previewHtml = computed(() => form.value.html_template || `<p style="color:#64748b">${copy.value.previewEmpty}</p>`)
 const readonlyMode = computed(() => mode.value === "detail")
 
@@ -131,6 +135,10 @@ async function load() {
 async function save() {
   if (!form.value.name.trim()) {
     toast.error(copy.value.toasts.nameRequired)
+    return
+  }
+  if (!form.value.html_template.trim()) {
+    toast.error(copy.value.toasts.htmlTemplateRequired)
     return
   }
   saving.value = true
@@ -260,8 +268,8 @@ onMounted(load)
                   </label>
                   <ReadonlyField v-if="readonlyMode" :label="copy.fields.name" :value="form.name" />
                   <label v-else class="grid gap-2 text-sm font-bold">
-                    <span>{{ copy.fields.name }} <span class="text-red-500">*</span></span>
-                    <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
+                    <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.name }}</span>
+                    <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" required />
                   </label>
                   <ReadonlyField v-if="readonlyMode" :label="copy.fields.description" :value="form.description" />
                   <label v-else class="grid gap-2 text-sm font-bold">
@@ -270,8 +278,8 @@ onMounted(load)
                   </label>
                   <ReadonlyField v-if="readonlyMode" :label="copy.fields.htmlTemplate" :value="form.html_template" mono min-height="460px" max-height="460px" />
                   <label v-else class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.htmlTemplate }}
-                    <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6" />
+                    <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.htmlTemplate }}</span>
+                    <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6" required />
                   </label>
                 </form>
 
