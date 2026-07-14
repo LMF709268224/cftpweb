@@ -502,6 +502,22 @@ function chapterTitle(chapter: JsonRecord | null | undefined) {
   return String(pickFirst(chapter || {}, ["title", "name"]) || chapterId(chapter) || copy.value.fallbacks.chapter)
 }
 
+function isChapterEmpty(chapter: JsonRecord | null | undefined) {
+  if (!chapter) return false
+  const cid = chapterId(chapter)
+  const hasLesson = allLessonItems.value.some(item => chapterId(item.chapter) === cid)
+  const hasQuiz = allQuizItems.value.some(item => chapterId(item.chapter) === cid)
+  return !hasLesson && !hasQuiz
+}
+
+function isLessonEmpty(lesson: JsonRecord | null | undefined) {
+  if (!lesson) return false
+  const type = String(lesson.lesson_type || "")
+  if (type === "2") return !lesson.body
+  if (type === "7") return !lesson.external_url && !lesson.asset_object_key
+  return !lesson.asset_object_key && !lesson.media_object_key && !lesson.media_file_hash
+}
+
 function chapterById(id: string) {
   return chapters.value.find((item) => chapterId(item) === id) || null
 }
@@ -2814,7 +2830,10 @@ onMounted(() => {
             :class="chapterId(chapter) === selectedChapterId ? 'bg-sky-50/70' : ''"
           >
             <div class="min-w-0">
-              <div class="truncate text-lg font-black text-slate-950">{{ chapterTitle(chapter) }}</div>
+              <div class="flex items-center gap-2 overflow-hidden">
+                <span class="truncate text-lg font-black text-slate-950">{{ chapterTitle(chapter) }}</span>
+                <span v-if="isChapterEmpty(chapter)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+              </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ chapterId(chapter) || "-" }}</div>
             </div>
             <div class="text-sm font-bold text-slate-700 lg:text-center">
@@ -2934,7 +2953,10 @@ onMounted(() => {
             :class="lessonId(item.lesson) === editingLessonId ? 'bg-sky-50/70' : ''"
           >
             <div class="min-w-0">
-              <div class="truncate text-lg font-black text-slate-950">{{ lessonTitle(item.lesson) }}</div>
+              <div class="flex items-center gap-2 overflow-hidden">
+                <span class="truncate text-lg font-black text-slate-950">{{ lessonTitle(item.lesson) }}</span>
+                <span v-if="isLessonEmpty(item.lesson)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+              </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ lessonId(item.lesson) || "-" }}</div>
             </div>
             <div class="min-w-0 text-sm font-bold text-slate-700">

@@ -2551,6 +2551,7 @@ export const en: AdminTranslations = {
     },
     viewDetails: "View Details",
     newChapter: "New Chapter",
+    missingConfig: "Missing Config",
     emptyChapters: "No chapters",
     editChapter: "Edit Chapter",
     createChapter: "Create Chapter",
