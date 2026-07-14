@@ -2227,8 +2227,7 @@ async function loadOptions(id = selectedQuestionId.value) {
       }
     }))
     options.value = details
-    editingOptionId.value = ""
-    optionForm.value = emptyOptionForm()
+    newOption()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.optionsLoadFailed))
@@ -3544,13 +3543,19 @@ onMounted(() => {
                         <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.questionTextPlaceholder" />
                       </label>
                       <div class="mt-3 grid gap-3 sm:grid-cols-3">
-                        <select v-model="questionForm.question_type" class="rounded-xl border border-slate-200 px-4 py-3">
+                        <select v-model="questionForm.question_type" class="w-full rounded-xl border border-slate-200 px-4 py-3" :title="copy.questionTypePoints">
                           <option value="1">{{ copy.questionTypes.single }}</option>
                           <option value="2">{{ copy.questionTypes.multiple }}</option>
                           <option value="3">{{ copy.questionTypes.judgement }}</option>
                         </select>
-                        <input v-model="questionForm.points" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.pointsPlaceholder" type="number" />
-                        <input v-model="questionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
+                        <div class="relative w-full">
+                          <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.pointsPlaceholder }}</div>
+                          <input v-model="questionForm.points" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.pointsPlaceholder" type="number" />
+                        </div>
+                        <div class="relative w-full">
+                          <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
+                          <input v-model="questionForm.sort_order" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
+                        </div>
                       </div>
                       <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
                         <input v-model="questionForm.is_required" type="checkbox" />
@@ -3603,9 +3608,12 @@ onMounted(() => {
                         </button>
                       </div>
                       <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.optionTextPlaceholder" />
-                      <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                        <input v-model="optionForm.sort_order" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
-                        <label class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">
+                      <div class="mt-3 flex items-center gap-3">
+                        <div class="relative flex-1">
+                          <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
+                          <input v-model="optionForm.sort_order" class="h-11 w-full rounded-xl border border-slate-200 px-4" :placeholder="copy.sort" type="number" />
+                        </div>
+                        <label class="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600">
                           <input v-model="optionForm.is_correct" type="checkbox" />
                           {{ copy.correctAnswer }}
                         </label>
