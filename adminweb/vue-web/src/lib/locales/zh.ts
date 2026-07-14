@@ -263,6 +263,7 @@ export const zh = {
         placeholders: {
             name: "资格名称",
             category: "请选择资格分类",
+            respath: "请输入资源路径",
             optional: "可选",
             description: "描述",
             filePurpose: "文件用途，例如 Employment Certificate",
@@ -288,14 +289,15 @@ export const zh = {
             text: "文本 / Text",
         },
         categoryOptions: {
-            certification: "认证资格 / Certification",
-            exemption: "免考资格 / Exemption",
-            qualification: "通用资格 / Qualification",
+            certification: "认证资格",
+            exemption: "免考资格",
+            qualification: "通用资格",
         },
         toasts: {
             detailLoadFailed: "资格定义详情加载失败",
             listLoadFailed: "资格定义加载失败",
             nameCategoryRequired: "请填写名称，并选择一个具体分类",
+            requiredCreateFields: "请填写名称、分类、资源路径和描述",
             createSuccess: "资格定义已创建",
             createFailed: "创建失败",
             jsonCopied: "JSON 已复制",
