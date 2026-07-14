@@ -200,6 +200,8 @@ const materialDialogOpen = ref(false)
 const materialDialogMode = ref<MaterialDialogMode>("create")
 const quizDialogOpen = ref(false)
 const quizDialogMode = ref<QuizDialogMode>("detail")
+const questionDialogOpen = ref(false)
+const questionDialogMode = ref<"detail" | "edit" | "create">("detail")
 
 const categoryFilter = ref("")
 const publishedOnly = ref(false)
@@ -2065,6 +2067,8 @@ function quizTargetLessonTitle() {
 }
 
 function clearQuestionState() {
+  questionDialogOpen.value = false
+  questionDialogMode.value = "detail"
   selectedQuestion.value = null
   questions.value = []
   options.value = []
@@ -2131,6 +2135,7 @@ function editQuiz(quiz: JsonRecord, openDialog = true) {
     time_limit: String(quiz.time_limit || 0),
     randomize_questions: Boolean(quiz.randomize_questions),
   }
+  questionDialogOpen.value = false
   void loadQuestions()
   if (openDialog) {
     quizDialogMode.value = "edit"
@@ -2163,6 +2168,7 @@ function changeQuizFormScope() {
 
 function closeQuizDialog() {
   quizDialogOpen.value = false
+  questionDialogOpen.value = false
 }
 
 async function saveQuiz() {
@@ -2281,6 +2287,8 @@ async function loadQuestions(id = selectedQuizId.value) {
 function editQuestion(question: JsonRecord) {
   selectedQuestion.value = question
   editingQuestionId.value = questionId(question)
+  questionDialogMode.value = "edit"
+  questionDialogOpen.value = true
   questionForm.value = {
     question_text: String(question.question_text || ""),
     question_type: String(question.question_type || 1),
@@ -2292,7 +2300,7 @@ function editQuestion(question: JsonRecord) {
   void loadOptions()
 }
 
-function newQuestion() {
+function resetQuestionEditor() {
   selectedQuestion.value = null
   editingQuestionId.value = ""
   questionForm.value = emptyQuestionForm()
@@ -2301,6 +2309,27 @@ function newQuestion() {
   options.value = []
   editingOptionId.value = ""
   optionForm.value = emptyOptionForm()
+}
+
+function newQuestion() {
+  resetQuestionEditor()
+  questionDialogMode.value = "create"
+  questionDialogOpen.value = true
+}
+
+function viewQuestion(question: JsonRecord) {
+  selectedQuestion.value = question
+  editingQuestionId.value = ""
+  editingOptionId.value = ""
+  questionForm.value = emptyQuestionForm()
+  optionForm.value = emptyOptionForm()
+  questionDialogMode.value = "detail"
+  questionDialogOpen.value = true
+  void loadOptions()
+}
+
+function closeQuestionDialog() {
+  questionDialogOpen.value = false
 }
 
 function openMediaConfig() {
@@ -2360,7 +2389,8 @@ async function saveQuestion() {
       toast.success(copy.value.toasts.questionCreated)
     }
     await loadQuestions()
-    newQuestion()
+    resetQuestionEditor()
+    questionDialogOpen.value = false
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.questionSaveFailed))
@@ -2388,7 +2418,8 @@ async function confirmDeleteQuestion(deleteInfo: PendingDetailDelete) {
     await apiClient(`/api/lms/questions/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.questionDeleted)
     await loadQuestions()
-    newQuestion()
+    resetQuestionEditor()
+    questionDialogOpen.value = false
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.questionDeleteFailed))
@@ -3800,144 +3831,59 @@ onMounted(() => {
                 </p>
               </form>
 
-              <section v-if="selectedQuizId && quizDialogMode !== 'create'" class="grid gap-6 2xl:grid-cols-[360px_minmax(0,1fr)]">
-                <aside class="rounded-2xl border border-slate-200">
-                  <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
-                    <div>
-                      <h3 class="font-black">{{ copy.questionListTitle }}</h3>
-                      <p class="mt-1 text-xs text-slate-500">{{ copy.questionListDescription }}</p>
-                    </div>
-                    <button v-if="quizDialogMode !== 'detail'" class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuizId" type="button" @click="newQuestion">
-                      <Plus class="h-3.5 w-3.5" />
-                      {{ copy.newQuestion }}
-                    </button>
+              <section v-if="selectedQuizId && quizDialogMode !== 'create'" class="rounded-2xl border border-slate-200">
+                <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
+                  <div>
+                    <h3 class="font-black">{{ copy.questionListTitle }}</h3>
+                    <p class="mt-1 text-xs text-slate-500">{{ copy.questionListDescription }}</p>
                   </div>
-                  <div v-if="questionsLoading" class="p-6 text-center text-slate-500">
-                    <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
-                    {{ copy.loading }}
+                  <button v-if="quizDialogMode !== 'detail'" class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuizId" type="button" @click="newQuestion">
+                    <Plus class="h-3.5 w-3.5" />
+                    {{ copy.newQuestion }}
+                  </button>
+                </div>
+                <div v-if="questionsLoading" class="p-6 text-center text-slate-500">
+                  <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
+                  {{ copy.loading }}
+                </div>
+                <div v-else-if="!questions.length" class="p-6 text-center text-slate-500">{{ copy.emptyQuestions }}</div>
+                <div v-else class="overflow-hidden">
+                  <div class="hidden grid-cols-[minmax(0,1fr)_180px_110px_220px] gap-5 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+                    <span>{{ copy.questionStemLabel }}</span>
+                    <span>{{ copy.questionTypePoints }}</span>
+                    <span class="text-center">{{ copy.sort }}</span>
+                    <span class="text-right">{{ copy.quizColumns.action }}</span>
                   </div>
-                  <div v-else-if="!questions.length" class="p-6 text-center text-slate-500">{{ copy.emptyQuestions }}</div>
-                  <div v-else class="max-h-96 divide-y divide-slate-100 overflow-y-auto">
-                    <div v-for="question in questions" :key="questionId(question)" class="flex items-center justify-between gap-3 p-4" :class="questionId(question) === selectedQuestionId ? 'bg-sky-50' : ''">
-                      <button class="flex-1 text-left" type="button" @click="editQuestion(question)">
-                        <div class="line-clamp-2 font-black">{{ questionTitle(question) }}</div>
-                        <div class="mt-1 text-xs text-slate-500">{{ copy.questionMeta(questionTypeLabel(question.question_type), question.points || 0) }}</div>
-                      </button>
-                      <button v-if="quizDialogMode !== 'detail'" class="text-xs font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteQuestion(question)">{{ copy.delete }}</button>
-                    </div>
-                  </div>
-                </aside>
-
-                <div class="space-y-6">
-                  <section class="rounded-2xl border border-slate-200">
-                    <div class="border-b border-slate-200 p-4">
-                      <h3 class="font-black">{{ copy.questionDetailTitle }}</h3>
-                      <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? questionTitle(selectedQuestion) : copy.questionDetailEmptyHint }}</p>
-                    </div>
-                    <div class="grid gap-3 p-4 sm:grid-cols-2">
-                      <div class="rounded-2xl bg-blue-50 p-4">
-                        <div class="text-xs font-black text-blue-600">{{ copy.ownerQuiz }}</div>
-                        <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizId ? quizTitle(selectedQuiz) : copy.unselectedQuiz }}</div>
-                        <div class="mt-2 break-all font-mono text-sm font-bold text-blue-900">ID: {{ selectedQuizId || "-" }}</div>
+                  <div class="max-h-96 divide-y divide-slate-100 overflow-y-auto">
+                    <div
+                      v-for="question in questions"
+                      :key="questionId(question)"
+                      class="grid gap-3 px-5 py-4 transition hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_180px_110px_220px] lg:items-center lg:gap-5"
+                      :class="questionId(question) === selectedQuestionId ? 'bg-sky-50/70' : ''"
+                    >
+                      <div class="min-w-0">
+                        <div class="line-clamp-2 font-black text-slate-950">{{ questionTitle(question) }}</div>
+                        <div class="mt-1 break-all font-mono text-xs font-semibold text-slate-500">ID: {{ questionId(question) || "-" }}</div>
                       </div>
-                      <div class="rounded-2xl bg-slate-50 p-4">
-                        <div class="text-xs font-black text-slate-500">{{ copy.questionTypePoints }}</div>
-                        <div class="mt-1 text-lg font-black text-slate-900">{{ copy.questionMeta(selectedQuestion ? questionTypeLabel(selectedQuestion.question_type) : questionTypeLabel(questionForm.question_type), selectedQuestion?.points || questionForm.points || 0) }}</div>
+                      <div class="text-sm font-bold text-slate-700">
+                        <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.questionTypePoints }}</span>{{ copy.questionMeta(questionTypeLabel(question.question_type), question.points || 0) }}
                       </div>
-                    </div>
-                    <form v-if="quizDialogMode !== 'detail'" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
-                      <h4 class="font-black">{{ editingQuestionId ? copy.editQuestion : copy.createQuestion }}</h4>
-                      <label class="block mt-3">
-                        <span class="text-sm font-bold">{{ copy.questionStemLabel }} <span class="text-red-500">*</span></span>
-                        <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.questionTextPlaceholder" />
-                      </label>
-                      <div class="mt-3 grid gap-3 sm:grid-cols-3">
-                        <select v-model="questionForm.question_type" class="w-full rounded-xl border border-slate-200 px-4 py-3" :title="copy.questionTypePoints">
-                          <option value="1">{{ copy.questionTypes.single }}</option>
-                          <option value="2">{{ copy.questionTypes.multiple }}</option>
-                          <option value="3">{{ copy.questionTypes.judgement }}</option>
-                        </select>
-                        <div class="relative w-full">
-                          <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.pointsPlaceholder }}</div>
-                          <input v-model="questionForm.points" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.pointsPlaceholder" type="number" />
-                        </div>
-                        <div class="relative w-full">
-                          <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
-                          <input v-model="questionForm.sort_order" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
-                        </div>
+                      <div class="text-sm font-bold text-slate-700 lg:text-center">
+                        <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.sort }}</span>{{ question.sort_order || 0 }}
                       </div>
-                      <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
-                        <input v-model="questionForm.is_required" type="checkbox" />
-                        {{ copy.required }}
-                      </label>
-                      <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
-                        <div class="flex items-center justify-between">
-                          <div>
-                            <div class="text-sm font-bold text-slate-700">{{ copy.mediaJsonLabel }}</div>
-                            <div class="mt-0.5 text-xs text-slate-500">{{ copy.mediaJsonHint }}</div>
-                          </div>
-                          <button type="button" @click="openMediaConfig" class="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-blue-600 shadow-sm border border-slate-200 hover:bg-slate-50">
-                            {{ copy.configureMediaJson }}
-                          </button>
-                        </div>
-                      </div>
-                      <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
-                        {{ savingQuestion ? copy.saving : copy.saveQuestion }}
-                      </button>
-                    </form>
-                  </section>
-
-                  <section class="rounded-2xl border border-slate-200">
-                    <div class="border-b border-slate-200 p-4">
-                      <h3 class="font-black">{{ copy.optionsTitle }}</h3>
-                      <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? copy.optionsSelectedHint : copy.optionsNeedQuestionHint }}</p>
-                    </div>
-                    <div v-if="optionsLoading" class="p-6 text-center text-slate-500">
-                      <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
-                      {{ copy.loading }}
-                    </div>
-                    <div v-else-if="!options.length" class="p-6 text-center text-slate-500">{{ copy.emptyOptions }}</div>
-                    <div v-else class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
-                      <div v-for="option in options" :key="optionId(option)" class="flex items-center justify-between gap-3 p-4" :class="optionId(option) === editingOptionId ? 'bg-sky-50' : ''">
-                        <button class="flex-1 text-left" type="button" @click="editOption(option)">
-                          <div class="font-black">{{ optionTitle(option) }}</div>
-                          <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
-                            {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} 路 {{ copy.sortMeta(option.sort_order || 0) }}
-                          </div>
+                      <div class="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
+                        <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="viewQuestion(question)">
+                          {{ copy.viewDetails }}
                         </button>
-                        <button v-if="quizDialogMode !== 'detail'" class="text-xs font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
-                      </div>
-                    </div>
-                    <form v-if="quizDialogMode !== 'detail'" class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
-                      <div class="flex items-center justify-between gap-3">
-                        <h4 class="font-black">{{ editingOptionId ? copy.editOption : copy.createOption }}</h4>
-                        <button class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuestionId" type="button" @click="newOption">
-                          <Plus class="h-3.5 w-3.5" />
-                          {{ copy.newOption }}
+                        <button v-if="quizDialogMode !== 'detail'" class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="editQuestion(question)">
+                          {{ copy.edit }}
+                        </button>
+                        <button v-if="quizDialogMode !== 'detail'" class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteQuestion(question)">
+                          {{ copy.delete }}
                         </button>
                       </div>
-                      <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.optionTextPlaceholder" />
-                      <div class="mt-3 flex items-center gap-3">
-                        <div class="relative flex-1">
-                          <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
-                          <input v-model="optionForm.sort_order" class="h-11 w-full rounded-xl border border-slate-200 px-4" :placeholder="copy.sort" type="number" />
-                        </div>
-                        <label class="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600">
-                          <input v-model="optionForm.is_correct" type="checkbox" />
-                          {{ copy.correctAnswer }}
-                        </label>
-                      </div>
-                      <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuestionId || savingOption" type="submit">
-                        {{ savingOption ? copy.saving : copy.saveOption }}
-                      </button>
-                    </form>
-                    <div v-if="selectedQuestion" class="border-t border-slate-200 p-4">
-                      <h4 class="font-black">{{ copy.quizReadonlyFields }}</h4>
-                      <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
-                        <ReadonlyField v-for="entry in questionRecordEntries(selectedQuestion)" :key="`question-${entry.key}`" :label="entry.label" :text="entry.value" />
-                      </div>
                     </div>
-                  </section>
+                  </div>
                 </div>
               </section>
             </div>
@@ -3948,6 +3894,136 @@ onMounted(() => {
                 <Save v-else class="h-4 w-4" />
                 {{ savingQuiz ? copy.saving : quizDialogMode === "create" ? copy.saveQuizAndAddQuestions : copy.saveQuiz }}
               </button>
+            </div>
+          </div>
+        </section>
+      </Teleport>
+
+      <Teleport to="body">
+        <section v-if="questionDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
+          <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <h2 class="text-xl font-black">{{ questionDialogMode === "create" ? copy.createQuestion : questionDialogMode === "edit" ? copy.editQuestion : copy.questionDetailTitle }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ selectedQuestionId ? questionTitle(selectedQuestion) : copy.questionDetailEmptyHint }}</p>
+              </div>
+              <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeQuestionDialog">
+                <X class="h-5 w-5" />
+              </button>
+            </div>
+
+            <div class="min-h-0 flex-1 space-y-6 overflow-y-auto p-5">
+              <section class="rounded-2xl border border-slate-200">
+                <div class="grid gap-3 p-4 sm:grid-cols-2">
+                  <div class="rounded-2xl bg-blue-50 p-4">
+                    <div class="text-xs font-black text-blue-600">{{ copy.ownerQuiz }}</div>
+                    <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizId ? quizTitle(selectedQuiz) : copy.unselectedQuiz }}</div>
+                    <div class="mt-2 break-all font-mono text-sm font-bold text-blue-900">ID: {{ selectedQuizId || "-" }}</div>
+                  </div>
+                  <div class="rounded-2xl bg-slate-50 p-4">
+                    <div class="text-xs font-black text-slate-500">{{ copy.questionTypePoints }}</div>
+                    <div class="mt-1 text-lg font-black text-slate-900">{{ copy.questionMeta(selectedQuestion ? questionTypeLabel(selectedQuestion.question_type) : questionTypeLabel(questionForm.question_type), selectedQuestion?.points || questionForm.points || 0) }}</div>
+                  </div>
+                </div>
+                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
+                  <h4 class="font-black">{{ editingQuestionId ? copy.editQuestion : copy.createQuestion }}</h4>
+                  <label class="mt-3 block">
+                    <span class="text-sm font-bold">{{ copy.questionStemLabel }} <span class="text-red-500">*</span></span>
+                    <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.questionTextPlaceholder" />
+                  </label>
+                  <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                    <select v-model="questionForm.question_type" class="w-full rounded-xl border border-slate-200 px-4 py-3" :title="copy.questionTypePoints">
+                      <option value="1">{{ copy.questionTypes.single }}</option>
+                      <option value="2">{{ copy.questionTypes.multiple }}</option>
+                      <option value="3">{{ copy.questionTypes.judgement }}</option>
+                    </select>
+                    <div class="relative w-full">
+                      <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.pointsPlaceholder }}</div>
+                      <input v-model="questionForm.points" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.pointsPlaceholder" type="number" />
+                    </div>
+                    <div class="relative w-full">
+                      <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
+                      <input v-model="questionForm.sort_order" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
+                    </div>
+                  </div>
+                  <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
+                    <input v-model="questionForm.is_required" type="checkbox" />
+                    {{ copy.required }}
+                  </label>
+                  <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="text-sm font-bold text-slate-700">{{ copy.mediaJsonLabel }}</div>
+                        <div class="mt-0.5 text-xs text-slate-500">{{ copy.mediaJsonHint }}</div>
+                      </div>
+                      <button type="button" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 shadow-sm hover:bg-slate-50" @click="openMediaConfig">
+                        {{ copy.configureMediaJson }}
+                      </button>
+                    </div>
+                  </div>
+                  <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
+                    {{ savingQuestion ? copy.saving : copy.saveQuestion }}
+                  </button>
+                </form>
+              </section>
+
+              <section class="rounded-2xl border border-slate-200">
+                <div class="border-b border-slate-200 p-4">
+                  <h3 class="font-black">{{ copy.optionsTitle }}</h3>
+                  <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? copy.optionsSelectedHint : copy.optionsNeedQuestionHint }}</p>
+                </div>
+                <div v-if="optionsLoading" class="p-6 text-center text-slate-500">
+                  <Loader2 class="mx-auto mb-2 h-5 w-5 animate-spin" />
+                  {{ copy.loading }}
+                </div>
+                <div v-else-if="!options.length" class="p-6 text-center text-slate-500">{{ copy.emptyOptions }}</div>
+                <div v-else class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
+                  <div v-for="option in options" :key="optionId(option)" class="flex items-center justify-between gap-3 p-4" :class="optionId(option) === editingOptionId ? 'bg-sky-50' : ''">
+                    <button v-if="questionDialogMode !== 'detail'" class="flex-1 text-left" type="button" @click="editOption(option)">
+                      <div class="font-black">{{ optionTitle(option) }}</div>
+                      <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
+                        {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} 路 {{ copy.sortMeta(option.sort_order || 0) }}
+                      </div>
+                    </button>
+                    <div v-else class="flex-1">
+                      <div class="font-black">{{ optionTitle(option) }}</div>
+                      <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
+                        {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} 路 {{ copy.sortMeta(option.sort_order || 0) }}
+                      </div>
+                    </div>
+                    <button v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="text-xs font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
+                  </div>
+                </div>
+                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
+                  <div class="flex items-center justify-between gap-3">
+                    <h4 class="font-black">{{ editingOptionId ? copy.editOption : copy.createOption }}</h4>
+                    <button class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuestionId" type="button" @click="newOption">
+                      <Plus class="h-3.5 w-3.5" />
+                      {{ copy.newOption }}
+                    </button>
+                  </div>
+                  <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.optionTextPlaceholder" />
+                  <div class="mt-3 flex items-center gap-3">
+                    <div class="relative flex-1">
+                      <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
+                      <input v-model="optionForm.sort_order" class="h-11 w-full rounded-xl border border-slate-200 px-4" :placeholder="copy.sort" type="number" />
+                    </div>
+                    <label class="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600">
+                      <input v-model="optionForm.is_correct" type="checkbox" />
+                      {{ copy.correctAnswer }}
+                    </label>
+                  </div>
+                  <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuestionId || savingOption" type="submit">
+                    {{ savingOption ? copy.saving : copy.saveOption }}
+                  </button>
+                </form>
+                <div v-if="selectedQuestion" class="border-t border-slate-200 p-4">
+                  <h4 class="font-black">{{ copy.quizReadonlyFields }}</h4>
+                  <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
+                    <ReadonlyField v-for="entry in questionRecordEntries(selectedQuestion)" :key="`question-dialog-${entry.key}`" :label="entry.label" :text="entry.value" />
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         </section>
