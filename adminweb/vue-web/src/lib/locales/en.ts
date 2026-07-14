@@ -1,4 +1,4 @@
-import type { AdminTranslations } from "./zh"
+﻿import type { AdminTranslations } from "./zh"
 
 export const en: AdminTranslations = {
     layout: {
@@ -1490,8 +1490,11 @@ export const en: AdminTranslations = {
         editHint: "Update the resource pack details and save.",
         detailLoading: "Loading details...",
         close: "Close",
-        respathHint: "(Optional) Auto-generated from the title for permission checks. The default generated resource path is recommended.",
-        sections: {
+          respathHint: "(Optional) Auto-generated from the title for permission checks. The default generated resource path is recommended.",
+          categoryHint: "Category classification, e.g., public, member",
+          iconHint: "UI icon identifier, e.g., FileBarChart",
+          objectKeyHint: "The object key returned by the storage service",
+          fileHashHint: "SHA256 hash of the thumbnail file",        sections: {
             basic: "Basic Info",
             pathThumbnail: "Path & Thumbnail",
             system: "System Info",
@@ -2864,3 +2867,4 @@ export const en: AdminTranslations = {
         },
     },
 }
+
