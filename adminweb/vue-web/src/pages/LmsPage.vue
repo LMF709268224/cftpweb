@@ -206,6 +206,8 @@ const supplementaryItemDialogOpen = ref(false)
 const quizForm = ref<QuizForm>(emptyQuizForm())
 const questionForm = ref<QuestionForm>(emptyQuestionForm())
 const optionForm = ref<OptionForm>(emptyOptionForm())
+const advancedMediaDialogOpen = ref(false)
+const parsedMediaItems = ref<any[]>([])
 const editingChapterId = ref("")
 const editingLessonId = ref("")
 const editingMaterialId = ref("")
@@ -2105,6 +2107,25 @@ function newQuestion() {
   optionForm.value = emptyOptionForm()
 }
 
+function openMediaConfig() {
+  try {
+    parsedMediaItems.value = JSON.parse(questionForm.value.media_items_json || "[]")
+    if (!Array.isArray(parsedMediaItems.value)) parsedMediaItems.value = []
+  } catch (e) {
+    parsedMediaItems.value = []
+  }
+  advancedMediaDialogOpen.value = true
+}
+
+function saveMediaConfig() {
+  questionForm.value.media_items_json = JSON.stringify(parsedMediaItems.value)
+  advancedMediaDialogOpen.value = false
+}
+
+function addMediaItem() {
+  parsedMediaItems.value.push({ type: "image", url: "" })
+}
+
 async function saveQuestion() {
   if (!selectedQuizId.value || !questionForm.value.question_text.trim()) {
     toast.error(copy.value.toasts.questionRequired)
@@ -3515,11 +3536,17 @@ onMounted(() => {
                         <input v-model="questionForm.is_required" type="checkbox" />
                         {{ copy.required }}
                       </label>
-                      <label class="block mt-3">
-                        <span class="text-sm font-bold">{{ copy.mediaJsonLabel }}</span>
-                        <textarea v-model="questionForm.media_items_json" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs" :placeholder="copy.mediaJsonPlaceholder" />
-                        <span class="mt-1 block text-xs text-slate-500">{{ copy.mediaJsonHint }}</span>
-                      </label>
+                      <div class="mt-4 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                        <div class="flex items-center justify-between">
+                          <div>
+                            <div class="text-sm font-bold text-slate-700">{{ copy.mediaJsonLabel }}</div>
+                            <div class="mt-0.5 text-xs text-slate-500">{{ copy.mediaJsonHint }}</div>
+                          </div>
+                          <button type="button" @click="openMediaConfig" class="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-blue-600 shadow-sm border border-slate-200 hover:bg-slate-50">
+                            {{ copy.configureMediaJson }}
+                          </button>
+                        </div>
+                      </div>
                       <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
                         {{ savingQuestion ? copy.saving : copy.saveQuestion }}
                       </button>
@@ -3622,4 +3649,45 @@ onMounted(() => {
       </div>
     </div>
   </div>
+  <teleport to="body">
+    <div v-if="advancedMediaDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+      <div class="flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <h2 class="text-lg font-black">{{ copy.mediaJsonLabel }}</h2>
+          <button class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600" @click="advancedMediaDialogOpen = false">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <div class="overflow-y-auto bg-slate-50 px-6 py-5">
+          <div v-if="!parsedMediaItems.length" class="text-center text-sm text-slate-400 py-4">{{ copy.mediaJsonHint }}</div>
+          <div class="grid gap-3">
+            <div v-for="(item, index) in parsedMediaItems" :key="index" class="flex gap-2 items-start bg-white p-3 rounded-xl border border-slate-200">
+              <label class="block w-32 shrink-0">
+                <span class="text-xs font-bold text-slate-500">{{ copy.mediaType }}</span>
+                <select v-model="item.type" class="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm">
+                  <option value="image">Image (图片)</option>
+                  <option value="video">Video (视频)</option>
+                </select>
+              </label>
+              <label class="block flex-1 min-w-0">
+                <span class="text-xs font-bold text-slate-500">{{ copy.mediaUrl }}</span>
+                <input v-model="item.url" class="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm" placeholder="https://" />
+              </label>
+              <button type="button" class="mt-5 rounded-lg p-2 text-red-500 hover:bg-red-50" @click="parsedMediaItems.splice(index, 1)" :title="copy.deleteMedia">
+                <Trash2 class="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          <button type="button" @click="addMediaItem" class="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-white py-3 text-sm font-bold text-slate-500 hover:border-slate-400 hover:bg-slate-50 hover:text-slate-700">
+            <Plus class="h-4 w-4" />
+            {{ copy.addMedia }}
+          </button>
+        </div>
+        <div class="flex justify-end gap-3 border-t border-slate-100 bg-white px-6 py-4">
+          <button class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 font-bold text-slate-600 hover:bg-slate-50" @click="advancedMediaDialogOpen = false">{{ copy.cancelConfig }}</button>
+          <button class="rounded-xl bg-blue-700 px-5 py-2.5 font-bold text-white hover:bg-blue-800" @click="saveMediaConfig">{{ copy.confirmConfig }}</button>
+        </div>
+      </div>
+    </div>
+  </teleport>
 </template>
