@@ -2725,6 +2725,8 @@ export const zh = {
       duplicateChapterSort: "该排序序号已被其他章节使用，请更换",
       duplicateLessonSort: "该章节下已有相同排序的课时，请更换",
       duplicateMaterialSort: "该课程下已有相同排序的资料，请更换",
+      duplicateQuestionSort: "该课检下已有相同排序的题目，请更换",
+      duplicateOptionSort: "该题目下已有相同排序的选项，请更换",
       chapterUpdated: "章节已更新",
       chapterCreated: "章节已创建",
       chapterSaveFailed: "章节保存失败",

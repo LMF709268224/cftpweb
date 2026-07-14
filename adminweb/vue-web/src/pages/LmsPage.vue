@@ -2037,6 +2037,8 @@ function newQuestion() {
   selectedQuestion.value = null
   editingQuestionId.value = ""
   questionForm.value = emptyQuestionForm()
+  const maxSort = questions.value.reduce((max, q) => Math.max(max, Number(q.sort_order) || 0), 0)
+  questionForm.value.sort_order = maxSort + 1
   options.value = []
   editingOptionId.value = ""
   optionForm.value = emptyOptionForm()
@@ -2045,6 +2047,12 @@ function newQuestion() {
 async function saveQuestion() {
   if (!selectedQuizId.value || !questionForm.value.question_text.trim()) {
     toast.error(copy.value.toasts.questionRequired)
+    return
+  }
+  const targetSort = Number(questionForm.value.sort_order || 1)
+  const isConflict = questions.value.some(q => Number(q.sort_order || 0) === targetSort && questionId(q) !== editingQuestionId.value)
+  if (isConflict) {
+    toast.error((copy.value.toasts as any)?.duplicateQuestionSort || "该课检下已有相同排序的题目，请更换")
     return
   }
   const mediaJson = questionForm.value.media_items_json.trim() || "[]"
@@ -2139,11 +2147,19 @@ function editOption(option: JsonRecord) {
 function newOption() {
   editingOptionId.value = ""
   optionForm.value = emptyOptionForm()
+  const maxSort = options.value.reduce((max, o) => Math.max(max, Number(o.sort_order) || 0), 0)
+  optionForm.value.sort_order = maxSort + 1
 }
 
 async function saveOption() {
   if (!selectedQuestionId.value || !optionForm.value.option_text.trim()) {
     toast.error(copy.value.toasts.optionRequired)
+    return
+  }
+  const targetSort = Number(optionForm.value.sort_order || 1)
+  const isConflict = options.value.some(o => Number(o.sort_order || 0) === targetSort && optionId(o) !== editingOptionId.value)
+  if (isConflict) {
+    toast.error((copy.value.toasts as any)?.duplicateOptionSort || "该题目下已有相同排序的选项，请更换")
     return
   }
 

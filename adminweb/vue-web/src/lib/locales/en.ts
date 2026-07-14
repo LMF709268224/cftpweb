@@ -2727,6 +2727,8 @@ export const en: AdminTranslations = {
       duplicateChapterSort: "This sort order is already used by another chapter.",
       duplicateLessonSort: "This sort order is already used by another lesson in the same chapter.",
       duplicateMaterialSort: "This sort order is already used by another material in this course.",
+      duplicateQuestionSort: "This sort order is already used by another question in this quiz.",
+      duplicateOptionSort: "This sort order is already used by another option in this question.",
       chapterUpdated: "Chapter updated",
       chapterCreated: "Chapter created",
       chapterSaveFailed: "Failed to save chapter",
