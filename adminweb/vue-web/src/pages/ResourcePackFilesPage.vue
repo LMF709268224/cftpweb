@@ -542,7 +542,7 @@ onMounted(load)
             <div class="readonly-field readonly-field--compact">{{ displayValue(form.file_id) }}</div>
           </div>
           <label class="block">
-            <span class="text-sm font-bold block">{{ copy.fields.pack }} <span class="text-red-500">*</span></span>
+            <span class="block text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.pack }}</span>
             <div v-if="mode === 'detail'" class="mt-2 readonly-field">{{ packFieldText(form.pack_id) }}</div>
             <select v-else v-model="form.pack_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'">
               <option value="">{{ copy.selectPack }}</option>
@@ -550,12 +550,12 @@ onMounted(load)
             </select>
           </label>
           <label class="block">
-            <span class="text-sm font-bold block">{{ copy.fields.title }} <span class="text-red-500">*</span></span>
+            <span class="block text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
             <div v-if="mode === 'detail'" class="mt-2 readonly-field">{{ displayValue(form.title) }}</div>
             <input v-else v-model="form.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.title" />
           </label>
           <label class="block">
-            <span class="text-sm font-bold block">{{ copy.fields.fileType }} <span class="text-red-500">*</span></span>
+            <span class="block text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.fileType }}</span>
             <div v-if="mode === 'detail'" class="mt-2 readonly-field readonly-field--compact">{{ fileTypeLabel(form.file_type) }}</div>
             <select v-else v-model.number="form.file_type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
               <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
