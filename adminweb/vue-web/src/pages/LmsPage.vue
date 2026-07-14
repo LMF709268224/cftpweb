@@ -557,6 +557,18 @@ function isLessonEmpty(lesson: JsonRecord | null | undefined) {
   return !lesson.asset_object_key && !lesson.media_object_key && !lesson.media_file_hash
 }
 
+function isQuizEmpty(quiz: JsonRecord | null | undefined) {
+  if (!quiz) return false
+  return Number(quiz.question_count || 0) === 0
+}
+
+function isSupplementaryMaterialEmpty(item: SupplementaryMaterialItem | null | undefined) {
+  if (!item) return false
+  const type = String(item.type || "").trim().toLowerCase()
+  if (type === "pdf" || type === "video") return !item.url
+  return false
+}
+
 function chapterById(id: string) {
   return chapters.value.find((item) => chapterId(item) === id) || null
 }
@@ -1216,27 +1228,11 @@ async function publishCourse() {
     if (refreshed) selectedCourse.value = refreshed
   } catch (err: any) {
     console.error(err)
-    let customErr = ""
-    try {
-      const msg = String(err?.payload?.message || err?.message || JSON.stringify(err))
-      const match = msg.match(/([0-9A-Z]{26})/i)
-      if (match && match[1] && msg.toLowerCase().includes("must contain")) {
-        const cId = match[1]
-        const c = chapters.value.find(ch => chapterId(ch) === cId)
-        const title = c ? chapterTitle(c) : cId
-        const t = (copy.value.toasts as any).emptyChapterPublishFailed
-        if (typeof t === 'function') {
-          customErr = t(title)
-        } else if (typeof t === 'string') {
-          customErr = t.replace('{chapter}', title)
-        } else {
-          customErr = `发布失败：章节「${title}」为空，请至少添加一个课时或测验后再发布！`
-        }
-      }
-    } catch(e) {
-      console.error("Failed to parse custom error for empty chapter", e)
+    if (err?.status === 409) {
+      toast.error((copy.value.toasts as any).coursePublishMissingConfig || "课程发布失败，请检查下方带有「缺少内容」标签的章节或课时并完善配置")
+    } else {
+      toast.error(apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
     }
-    toast.error(customErr || apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
   } finally {
     publishing.value = false
   }
@@ -3319,7 +3315,10 @@ onMounted(() => {
                       <span class="inline-flex whitespace-nowrap rounded-full border px-2 py-1 text-xs font-black" :class="supplementaryTypeClass(item.type)">{{ supplementaryTypeLabel(item.type) }}</span>
                     </td>
                     <td class="px-4 py-4">
-                      <div class="font-black text-slate-950">{{ item.title }}</div>
+                      <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="truncate font-black text-slate-950">{{ item.title }}</span>
+                        <span v-if="isSupplementaryMaterialEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+                      </div>
                       <div v-if="item.description" class="mt-1 max-w-2xl text-sm text-slate-500">{{ item.description }}</div>
                     </td>
                     <td class="px-4 py-4">
@@ -3677,7 +3676,10 @@ onMounted(() => {
             :class="quizId(item.quiz) === selectedQuizId ? 'bg-sky-50/70' : ''"
           >
             <div class="min-w-0">
-              <div class="truncate text-lg font-black text-slate-950">{{ quizTitle(item.quiz) }}</div>
+              <div class="flex items-center gap-2 overflow-hidden">
+                <span class="truncate text-lg font-black text-slate-950">{{ quizTitle(item.quiz) }}</span>
+                <span v-if="isQuizEmpty(item.quiz)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+              </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ quizId(item.quiz) || "-" }}</div>
             </div>
             <div class="text-sm font-bold text-slate-700">
