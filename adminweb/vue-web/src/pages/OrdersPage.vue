@@ -358,20 +358,31 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <form class="grid gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-sm lg:grid-cols-[1fr_180px_180px_auto]" @submit.prevent="search">
-      <input v-model="candidateUlid" class="h-10 rounded-xl border border-slate-200 px-4 text-sm" :placeholder="copy.candidatePlaceholder" />
-      <select v-model="bizType" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
-        <option value="">{{ copy.allTypes }}</option>
-        <option v-for="option in localizedBizTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-      </select>
-      <select v-model="orderStatus" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
-        <option value="">{{ copy.allStatuses }}</option>
-        <option v-for="option in localizedOrderStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-      </select>
-      <button class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-bold text-white" type="submit">
-        <Search class="h-4 w-4" />
-        {{ copy.search }}
-      </button>
+    <form class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" @submit.prevent="search">
+      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
+        <label class="grid gap-2 text-sm font-bold">
+          {{ copy.candidatePlaceholder }}
+          <input v-model="candidateUlid" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.candidatePlaceholder" />
+        </label>
+        <label class="grid gap-2 text-sm font-bold">
+          {{ copy.fields.bizType }}
+          <select v-model="bizType" class="h-11 rounded-xl border border-slate-200 px-3">
+            <option value="">{{ copy.allTypes }}</option>
+            <option v-for="option in localizedBizTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+        <label class="grid gap-2 text-sm font-bold">
+          {{ copy.fields.orderStatus }}
+          <select v-model="orderStatus" class="h-11 rounded-xl border border-slate-200 px-3">
+            <option value="">{{ copy.allStatuses }}</option>
+            <option v-for="option in localizedOrderStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+        <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm" type="submit">
+          <Search class="h-4 w-4" />
+          {{ copy.search }}
+        </button>
+      </div>
     </form>
 
     <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
