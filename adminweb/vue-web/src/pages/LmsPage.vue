@@ -819,6 +819,14 @@ function supplementaryItemRecordFromForm(existing?: JsonRecord) {
   return record
 }
 
+function isSupplementaryLinkType(type = supplementaryItemForm.value.type) {
+  return type === "Article" || type === "Link"
+}
+
+function isSupplementaryAssetRequired(type = supplementaryItemForm.value.type) {
+  return (type === "Video" || type === "PDF") && editingSupplementaryItemIndex.value >= 0
+}
+
 function extractQuizRecord(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null
   const record = value as JsonRecord
@@ -1570,11 +1578,11 @@ async function saveSupplementaryItem() {
     return
   }
   const type = supplementaryItemForm.value.type
-  if ((type === 'Article' || type === 'Link') && !supplementaryItemForm.value.url.trim()) {
+  if (isSupplementaryLinkType(type) && !supplementaryItemForm.value.url.trim()) {
     toast.error(copy.value.toasts.materialUrlRequired)
     return
   }
-  if ((type === 'Video' || type === 'PDF') && editingSupplementaryItemIndex.value >= 0 && !supplementaryItemForm.value.url.trim()) {
+  if (isSupplementaryAssetRequired(type) && !supplementaryItemForm.value.url.trim()) {
     toast.error((copy.value.toasts as any)?.externalUrlRequired || "外部链接不能为空 (URL required)")
     return
   }
@@ -2743,7 +2751,7 @@ onMounted(() => {
 
               <form v-else class="space-y-4" @submit.prevent="saveChapter">
                 <label class="grid gap-2 text-sm font-bold">
-                  <span>{{ copy.chapterTitlePlaceholder }} <span class="text-red-500">*</span></span>
+                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.chapterTitlePlaceholder }}</span>
                   <input v-model="chapterForm.title" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.chapterTitlePlaceholder" />
                 </label>
                 <label class="grid gap-2 text-sm font-bold">
@@ -2877,14 +2885,17 @@ onMounted(() => {
                   {{ copy.saveBelongsToChapter }}{{ lessonForm.chapter_id ? chapterTitle(chapterById(lessonForm.chapter_id)) : copy.selectChapter }}
                 </div>
                 <label class="block">
-                  <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
+                  <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.ownerChapter }}</span>
                   <select v-model="lessonForm.chapter_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
                     <option value="">{{ copy.selectChapter }}</option>
                     <option v-for="chapter in chapters" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
                   </select>
                   <span v-if="!chapters.length" class="mt-2 block text-xs font-semibold text-amber-600">{{ copy.noChapterOwnerOptions }}</span>
                 </label>
-                <input v-model="lessonForm.title" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.lessonTitlePlaceholder" />
+                <label class="block">
+                  <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.lessonTitlePlaceholder }}</span>
+                  <input v-model="lessonForm.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.lessonTitlePlaceholder" />
+                </label>
                 <div class="grid items-start gap-3 sm:grid-cols-2">
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.sort }}</span>
@@ -2908,7 +2919,7 @@ onMounted(() => {
                 <textarea v-model="lessonForm.body" class="min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.lessonBodyPlaceholder" />
                 <template v-if="lessonForm.lesson_type === '7'">
                   <label class="block">
-                    <span class="text-sm font-bold">{{ (copy as any).externalUrl }} <span class="text-red-500">*</span></span>
+                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).externalUrl }}</span>
                     <input v-model="lessonForm.asset_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="https://" />
                   </label>
                 </template>
@@ -3113,22 +3124,22 @@ onMounted(() => {
                       </label>
                     </div>
                     <label class="block">
-                      <span class="text-sm font-bold">{{ copy.titleField }} <span class="text-red-500">*</span></span>
+                      <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.titleField }}</span>
                       <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
                     </label>
                     <label class="block">
                       <span class="text-sm font-bold">{{ copy.description }}</span>
                       <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.descriptionPlaceholder" />
                     </label>
-                    <template v-if="supplementaryItemForm.type === 'Article' || supplementaryItemForm.type === 'Link'">
+                    <template v-if="isSupplementaryLinkType()">
                       <label class="block">
-                        <span class="text-sm font-bold">{{ (copy as any).externalUrl }} <span class="text-red-500">*</span></span>
+                        <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).externalUrl }}</span>
                         <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
                       </label>
                     </template>
                     <template v-else>
                       <label class="block">
-                        <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel }} <span class="text-red-500" v-if="supplementaryItemForm.type !== 'Other'">*</span></span>
+                        <span class="text-sm font-bold"><span v-if="isSupplementaryAssetRequired()" class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).assetObjectKeyLabel }}</span>
                         <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
                         <span v-if="editingSupplementaryItemIndex < 0" class="mt-2 block text-xs font-semibold text-amber-600">
                           {{ (copy as any).uploadAfterSaveHintSupplementary }}
@@ -3412,21 +3423,21 @@ onMounted(() => {
                     </select>
                   </label>
                   <label v-if="quizForm.scope === 'chapter'" class="block">
-                    <span class="text-sm font-bold">{{ copy.quizOwnerObject }}</span>
+                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizOwnerObject }}</span>
                     <select v-model="quizForm.owner_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
                       <option value="">{{ copy.selectChapter }}</option>
                       <option v-for="chapter in quizChapterOptions" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
                     </select>
                   </label>
                   <label v-else-if="quizForm.scope === 'lesson'" class="block">
-                    <span class="text-sm font-bold">{{ copy.quizOwnerObject }}</span>
+                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizOwnerObject }}</span>
                     <select v-model="quizForm.owner_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
                       <option value="">{{ copy.selectLesson }}</option>
                       <option v-for="item in quizLessonOptions" :key="lessonId(item.lesson)" :value="lessonId(item.lesson)">{{ chapterTitle(item.chapter) }} 路 {{ lessonTitle(item.lesson) }}</option>
                     </select>
                   </label>
                   <div v-else class="block">
-                    <span class="text-sm font-bold">{{ copy.quizOwnerObject }}</span>
+                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizOwnerObject }}</span>
                     <div class="mt-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-semibold text-slate-700">{{ courseTitle(selectedCourse) }}</div>
                   </div>
                 </div>
@@ -3436,7 +3447,10 @@ onMounted(() => {
                 <p v-if="quizForm.scope === 'lesson' && !quizLessonOptions.length" class="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
                   {{ copy.noLessonOwnerOptions }}
                 </p>
-                <input v-model="quizForm.title" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.quizTitlePlaceholder" />
+                <label class="mt-3 block">
+                  <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizTitlePlaceholder }}</span>
+                  <input v-model="quizForm.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.quizTitlePlaceholder" />
+                </label>
                 <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.description" />
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
                   <input v-model="quizForm.passing_score" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.passingScorePlaceholder" type="number" />

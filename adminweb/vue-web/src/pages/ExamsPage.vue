@@ -139,6 +139,10 @@ function candidateDisplay(item: JsonRecord) {
   return name || String(item.candidate_email || item.candidate_ulid || copy.value.defaults.candidate)
 }
 
+function candidateIdentifier(item: JsonRecord) {
+  return String(pickFirst(item, ["candidate_ulid", "candidate_id"]) || "")
+}
+
 async function loadExams(targetPage = page.value) {
   loading.value = true
   try {
@@ -466,7 +470,7 @@ onMounted(() => loadExams(1))
               </td>
               <td class="px-5 py-4">
                 <div class="font-semibold text-slate-800">{{ candidateDisplay(exam) }}</div>
-                <div class="mt-1 max-w-[220px] truncate font-mono text-xs text-slate-400">{{ field(exam, ["candidate_ulid", "candidate_id"]) }}</div>
+                <div v-if="candidateIdentifier(exam)" class="mt-1 max-w-[220px] truncate font-mono text-xs text-slate-400">{{ candidateIdentifier(exam) }}</div>
               </td>
               <td class="px-5 py-4">
                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
