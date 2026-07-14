@@ -2,7 +2,6 @@
 import { Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import JsonPreview from "@/components/JsonPreview.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { type JsonRecord } from "@/lib/display"
@@ -47,8 +46,6 @@ const categoryOptions = computed(() => [
 ])
 const categoryValues = computed(() => new Set(categoryOptions.value.map((option) => option.value)))
 
-const selectedFields = computed(() => selected.value || {})
-
 function definitionUlid(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
 }
@@ -66,14 +63,11 @@ function fileTypeLabel(type: unknown) {
   return fileTypes.value.find((item) => item.value === Number(type))?.label || String(type || "-")
 }
 
-function isStructuredField(value: unknown) {
-  return Array.isArray(value) || (!!value && typeof value === "object")
-}
-
-function detailFieldText(key: string, value: unknown) {
-  if (key === "name") return definitionName(selected.value)
+function categoryLabel(value: unknown) {
   const text = String(value ?? "").trim()
-  return text || "-"
+  if (!text) return "-"
+  const option = categoryOptions.value.find((item) => item.value.toLowerCase() === text.toLowerCase())
+  return option?.label || text
 }
 
 function resetForm() {
@@ -150,8 +144,8 @@ function addConstraint() {
 }
 
 async function createDefinition() {
-  if (!name.value.trim() || !categoryValues.value.has(category.value.trim())) {
-    toast.error(copy.value.toasts.nameCategoryRequired)
+  if (!name.value.trim() || !categoryValues.value.has(category.value.trim()) || !respath.value.trim() || !description.value.trim()) {
+    toast.error(copy.value.toasts.requiredCreateFields)
     return
   }
   creating.value = true
@@ -239,7 +233,7 @@ onMounted(load)
             <div class="truncate text-lg font-black">{{ definitionName(definition) }}</div>
             <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ definitionUlid(definition) || "-" }}</div>
           </div>
-          <span class="self-center justify-self-center rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">{{ definition.category || "-" }}</span>
+          <span class="self-center justify-self-center rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">{{ categoryLabel(definition.category) }}</span>
           <button class="self-center justify-self-end text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click.stop="selectDefinition(definition)">
             {{ copy.viewDetails }}
           </button>
@@ -270,19 +264,19 @@ onMounted(load)
               <div class="grid gap-5">
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
-                    <span>{{ copy.labels.name }} <span class="text-red-500">*</span></span>
+                    <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.name }}</span>
                     <input v-model="name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="120" :placeholder="copy.placeholders.name" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    <span>{{ copy.labels.category }} <span class="text-red-500">*</span></span>
+                    <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.category }}</span>
                     <select v-model="category" class="rounded-xl border border-slate-200 px-4 py-3">
                       <option value="" disabled>{{ copy.placeholders.category }}</option>
                       <option v-for="option in categoryOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                     </select>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.labels.respath }}
-                    <input v-model="respath" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="240" :placeholder="copy.placeholders.optional" />
+                    <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.respath }}</span>
+                    <input v-model="respath" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="240" :placeholder="copy.placeholders.respath" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.labels.acquisitionMethod }}
@@ -290,7 +284,7 @@ onMounted(load)
                   </label>
                 </div>
                 <label class="grid gap-2 text-sm font-bold">
-                  {{ copy.labels.description }}
+                  <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.description }}</span>
                   <textarea v-model="description" class="min-h-28 rounded-xl border border-slate-200 px-4 py-3" maxlength="1000" :placeholder="copy.placeholders.description" />
                 </label>
                 <div class="rounded-2xl border border-slate-200 p-4">
@@ -332,7 +326,7 @@ onMounted(load)
                   </div>
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.category }}</div>
-                    <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected.category || "-" }}</div>
+                    <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ categoryLabel(selected.category) }}</div>
                   </div>
                   <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.respath }}</div>
@@ -357,30 +351,6 @@ onMounted(load)
                     </div>
                   </div>
                 </div>
-
-                <details class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.labels.completeFields }}</summary>
-                  <div class="mt-4 grid items-start gap-4 md:grid-cols-2">
-                    <div v-for="(value, key) in selectedFields" :key="key" class="grid gap-2 text-sm font-bold" :class="isStructuredField(value) ? 'md:col-span-2' : ''">
-                      <JsonPreview
-                        v-if="isStructuredField(value)"
-                        :title="String(key)"
-                        :value="value"
-                        :copy-label="copy.copyJson"
-                        :copied-label="copy.copiedJson"
-                        :copied-message="copy.toasts.jsonCopied"
-                        :copy-error-message="copy.toasts.jsonCopyFailed"
-                        max-height="256px"
-                      />
-                      <template v-else>
-                        <span class="text-xs font-black uppercase text-slate-400">{{ key }}</span>
-                        <div class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
-                          {{ detailFieldText(String(key), value) }}
-                        </div>
-                      </template>
-                    </div>
-                  </div>
-                </details>
               </div>
             </template>
           </section>
