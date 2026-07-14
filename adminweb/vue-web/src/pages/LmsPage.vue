@@ -1376,6 +1376,10 @@ async function saveLesson() {
     toast.error(copy.value.toasts.lessonRequired)
     return
   }
+  if (lessonForm.value.lesson_type === '7' && !lessonForm.value.asset_object_key.trim()) {
+    toast.error((copy.value.toasts as any)?.externalUrlRequired || "外部链接不能为空 (External URL required)")
+    return
+  }
 
   const targetSort = Number(lessonForm.value.sort_order || 1)
   const isConflict = allLessonItems.value.some(item => chapterId(item.chapter) === targetChapterId && Number(item.lesson.sort_order || 0) === targetSort && lessonId(item.lesson) !== editingLessonId.value)
@@ -2849,17 +2853,31 @@ onMounted(() => {
                   </label>
                 </div>
                 <textarea v-model="lessonForm.body" class="min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.lessonBodyPlaceholder" />
-                <input v-model="lessonForm.asset_object_key" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetObjectKeyPlaceholder" />
-                <label class="block">
-                  <span class="text-sm font-bold">{{ copy.assetFileHash }}</span>
-                  <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" :title="copy.assetHashHint">?</span>
-                  <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetFileHashPlaceholder" />
-                </label>
+                <template v-if="lessonForm.lesson_type === '7'">
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ (copy as any).externalUrl || '外部链接 URL' }} <span class="text-red-500">*</span></span>
+                    <input v-model="lessonForm.asset_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="https://" />
+                  </label>
+                </template>
+                <template v-else-if="lessonForm.lesson_type !== '2'">
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel || '资产 Object Key' }}</span>
+                    <input v-model="lessonForm.asset_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetObjectKeyPlaceholder" />
+                    <span v-if="!editingLessonId" class="mt-2 block text-xs font-semibold text-amber-600">
+                      {{ (copy as any).uploadAfterSaveHint || '提示：请先点击下方“保存课时”，保存成功后此处会出现“上传文件”按钮，系统将为您自动上传并填写。' }}
+                    </span>
+                  </label>
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.assetFileHash }}</span>
+                    <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" :title="copy.assetHashHint">?</span>
+                    <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetFileHashPlaceholder" />
+                  </label>
+                </template>
               </form>
             </div>
 
             <div v-if="lessonDialogMode !== 'detail'" class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-5 py-4 gap-4">
-              <div class="flex-1" v-if="editingLessonId">
+              <div class="flex-1" v-if="editingLessonId && lessonForm.lesson_type !== '7' && lessonForm.lesson_type !== '2'">
                 <input type="file" ref="lessonFileInput" class="hidden" @change="handleLessonFileUpload" />
                 <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 h-10 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
                   <Loader2 v-if="uploadingLesson" class="h-4 w-4 animate-spin" />
