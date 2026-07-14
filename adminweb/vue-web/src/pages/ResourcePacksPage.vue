@@ -458,9 +458,9 @@ async function handleThumbnailFileUpload(event: Event) {
 
     form.value.thumbnail_object_key = String(uploadRes.object_key)
     form.value.thumbnail_file_hash = hashHex
-    toast.success("Thumbnail uploaded successfully")
+    toast.success(copy.value.toasts.thumbnailUploadSuccess)
   } catch (err: any) {
-    toast.error("Thumbnail upload failed: " + (err.message || String(err)))
+    toast.error(copy.value.toasts.thumbnailUploadFailed(err.message || String(err)))
   } finally {
     uploadingThumbnail.value = false
     if (input) input.value = ""
