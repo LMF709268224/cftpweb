@@ -126,6 +126,7 @@ type LessonListItem = {
 
 type QuizListItem = {
   quiz: JsonRecord
+  questionCount: number
   ownerType: number
   owner: JsonRecord | null
   chapter: JsonRecord | null
@@ -302,7 +303,8 @@ const allQuizItems = computed<QuizListItem[]>(() => {
   const courseQuizzes = Array.isArray(complete.quizzes) ? complete.quizzes : []
   for (const quizDetail of courseQuizzes) {
     const quiz = extractQuizRecord(quizDetail)
-    if (quiz) items.push({ quiz, ownerType: 3, owner: selectedCourse.value, chapter: null, lesson: null })
+    const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions : []
+    if (quiz) items.push({ quiz, questionCount: questions.length, ownerType: 3, owner: selectedCourse.value, chapter: null, lesson: null })
   }
   const chapterDetails = Array.isArray(complete.chapters) ? complete.chapters : []
   for (const detail of chapterDetails) {
@@ -312,7 +314,8 @@ const allQuizItems = computed<QuizListItem[]>(() => {
     const chapterQuizzes = Array.isArray(record.quizzes) ? record.quizzes : []
     for (const quizDetail of chapterQuizzes) {
       const quiz = extractQuizRecord(quizDetail)
-      if (quiz) items.push({ quiz, ownerType: 2, owner: chapter, chapter, lesson: null })
+      const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions : []
+      if (quiz) items.push({ quiz, questionCount: questions.length, ownerType: 2, owner: chapter, chapter, lesson: null })
     }
     const lessonDetails = Array.isArray(record.lessons) ? record.lessons : []
     for (const lessonDetail of lessonDetails) {
@@ -322,7 +325,8 @@ const allQuizItems = computed<QuizListItem[]>(() => {
       const lessonQuizzes = Array.isArray(lessonRecord.quizzes) ? lessonRecord.quizzes : []
       for (const quizDetail of lessonQuizzes) {
         const quiz = extractQuizRecord(quizDetail)
-        if (quiz) items.push({ quiz, ownerType: 1, owner: lesson, chapter, lesson })
+        const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions : []
+        if (quiz) items.push({ quiz, questionCount: questions.length, ownerType: 1, owner: lesson, chapter, lesson })
       }
     }
   }
@@ -333,6 +337,7 @@ const allQuizItems = computed<QuizListItem[]>(() => {
     const ownerType = Number(quiz.quizzable_type || target.type)
     items.push({
       quiz,
+      questionCount: Number(quiz.question_count || 0),
       ownerType,
       owner: ownerType === 3 ? selectedCourse.value : ownerType === 2 ? selectedChapter.value : selectedLesson.value,
       chapter: ownerType === 2 ? selectedChapter.value : selectedLessonOwnerChapter.value,
@@ -559,9 +564,9 @@ function isLessonEmpty(lesson: JsonRecord | null | undefined) {
   return !lesson.asset_object_key && !lesson.media_object_key && !lesson.media_file_hash
 }
 
-function isQuizEmpty(quiz: JsonRecord | null | undefined) {
-  if (!quiz) return false
-  return Number(quiz.question_count || 0) === 0
+function isQuizEmpty(item: QuizListItem | null | undefined) {
+  if (!item) return false
+  return item.questionCount === 0
 }
 
 function isSupplementaryMaterialEmpty(item: SupplementaryMaterialItem | null | undefined) {
@@ -3711,7 +3716,7 @@ onMounted(() => {
             <div class="min-w-0">
               <div class="flex items-center gap-2 overflow-hidden">
                 <span class="truncate text-lg font-black text-slate-950">{{ quizTitle(item.quiz) }}</span>
-                <span v-if="isQuizEmpty(item.quiz)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+                <span v-if="isQuizEmpty(item)" class="shrink-0 rounded border border-red-200 bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-600">{{ (copy as any).missingConfig || '缺少内容' }}</span>
               </div>
               <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ quizId(item.quiz) || "-" }}</div>
             </div>
@@ -3725,7 +3730,7 @@ onMounted(() => {
               <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.quizColumns.passingScore }}</span>{{ item.quiz.passing_score || 0 }}
             </div>
             <div class="text-sm font-bold text-slate-700 lg:text-center">
-              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.quizColumns.questions }}</span>{{ item.quiz.question_count || 0 }}
+              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.quizColumns.questions }}</span>{{ item.questionCount }}
             </div>
             <div class="flex items-center justify-start gap-4 lg:justify-center">
               <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openQuizDetail(item.quiz)">
