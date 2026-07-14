@@ -1082,9 +1082,19 @@ async function publishCourse() {
     await loadCourses()
     const refreshed = courses.value.find((item) => courseId(item) === selectedCourseId.value)
     if (refreshed) selectedCourse.value = refreshed
-  } catch (err) {
+  } catch (err: any) {
     console.error(err)
-    toast.error(apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
+    let customErr = ""
+    try {
+      const msg = String(err?.payload?.message || err?.message || JSON.stringify(err))
+      const match = msg.match(/chapter '([^']+)' must contain at least one/)
+      if (match && match[1]) {
+        const cId = match[1]
+        const c = chapters.value.find(ch => chapterId(ch) === cId)
+        customErr = `发布失败：章节「${c ? chapterTitle(c) : cId}」为空，请至少添加一个课时或测验后再发布！`
+      }
+    } catch(e) {}
+    toast.error(customErr || apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
   } finally {
     publishing.value = false
   }
