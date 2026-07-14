@@ -1569,8 +1569,13 @@ async function saveSupplementaryItem() {
     toast.error(copy.value.toasts.materialTitleRequired)
     return
   }
-  if (!supplementaryItemForm.value.url.trim()) {
+  const type = supplementaryItemForm.value.type
+  if ((type === 'Article' || type === 'Link') && !supplementaryItemForm.value.url.trim()) {
     toast.error(copy.value.toasts.materialUrlRequired)
+    return
+  }
+  if ((type === 'Video' || type === 'PDF') && editingSupplementaryItemIndex.value >= 0 && !supplementaryItemForm.value.url.trim()) {
+    toast.error((copy.value.toasts as any)?.externalUrlRequired || "外部链接不能为空 (URL required)")
     return
   }
   const records = supplementaryEditableRecords()
@@ -1716,6 +1721,54 @@ async function handleMaterialFileUpload(event: Event) {
   } finally {
     uploadingMaterial.value = false
     if (materialFileInput.value) materialFileInput.value.value = ""
+  }
+}
+
+const supplementaryFileInput = ref<HTMLInputElement | null>(null)
+const uploadingSupplementary = ref(false)
+
+async function handleSupplementaryFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!selectedCourseId.value) return
+
+  uploadingSupplementary.value = true
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    const uploadUrlReq = {
+      upload_type: 1,
+      course_ulid: selectedCourseId.value,
+      file_name: file.name,
+      content_type: file.type || "application/octet-stream",
+      file_hash: hashHex
+    }
+    const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
+    
+    if (!uploadRes.upload_url) throw new Error("Missing upload URL")
+    const uploadResponse = await fetch(String(uploadRes.upload_url), {
+      method: "PUT",
+      body: file,
+      headers: uploadRes.signed_headers as Record<string, string> || {}
+    })
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload failed: ${uploadResponse.status}`)
+    }
+
+    supplementaryItemForm.value.url = String(uploadRes.object_key)
+    
+    await saveSupplementaryItem()
+    toast.success((copy.value.toasts as any)?.uploadSuccess || "上传成功")
+  } catch (err) {
+    console.error(err)
+    toast.error((copy.value.toasts as any)?.uploadFailed || "上传失败")
+  } finally {
+    uploadingSupplementary.value = false
+    if (supplementaryFileInput.value) supplementaryFileInput.value.value = ""
   }
 }
 
@@ -3062,10 +3115,29 @@ onMounted(() => {
                       <span class="text-sm font-bold">{{ copy.description }}</span>
                       <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.descriptionPlaceholder" />
                     </label>
-                    <label class="block">
-                      <span class="text-sm font-bold">{{ copy.resourceLink }}</span>
-                      <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
-                    </label>
+                    <template v-if="supplementaryItemForm.type === 'Article' || supplementaryItemForm.type === 'Link'">
+                      <label class="block">
+                        <span class="text-sm font-bold">{{ (copy as any).externalUrl || '外部链接 URL' }} <span class="text-red-500">*</span></span>
+                        <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
+                      </label>
+                    </template>
+                    <template v-else>
+                      <label class="block">
+                        <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel || '资产 Object Key' }} <span class="text-red-500" v-if="supplementaryItemForm.type !== 'Other'">*</span></span>
+                        <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
+                        <span v-if="editingSupplementaryItemIndex < 0" class="mt-2 block text-xs font-semibold text-amber-600">
+                          {{ (copy as any).uploadAfterSaveHintSupplementary || '提示：请先点击下方“保存本条资料”，保存成功后此处会出现“上传文件”按钮，系统将为您自动上传并填写。' }}
+                        </span>
+                      </label>
+                      <div class="mt-3 flex gap-3" v-if="editingSupplementaryItemIndex >= 0">
+                        <input type="file" ref="supplementaryFileInput" class="hidden" @change="handleSupplementaryFileUpload" />
+                        <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingSupplementary" @click="supplementaryFileInput?.click()">
+                          <Loader2 v-if="uploadingSupplementary" class="h-4 w-4 animate-spin" />
+                          <UploadCloud v-else class="h-4 w-4" />
+                          {{ uploadingSupplementary ? ((copy as any).uploading || '正在上传...') : ((copy as any).uploadSupplementaryFile || '上传辅助资料资产并自动配置') }}
+                        </button>
+                      </div>
+                    </template>
                   </div>
                 </div>
                 <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
