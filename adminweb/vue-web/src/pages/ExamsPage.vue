@@ -144,6 +144,19 @@ async function loadExams(targetPage = page.value) {
     if (appliedConfirmationFilter.value) params.set("confirmation_number", appliedConfirmationFilter.value)
     if (appliedCourseUnitFilter.value) params.set("course_unit_ulid", appliedCourseUnitFilter.value)
 
+    const isValidUlid = (id: string) => /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i.test(id)
+    if (
+      (candidateFilter.value.trim() && !isValidUlid(candidateFilter.value.trim())) ||
+      (courseUnitFilter.value.trim() && !isValidUlid(courseUnitFilter.value.trim()))
+    ) {
+      exams.value = []
+      total.value = 0
+      hasMore.value = false
+      nextCursor.value = ""
+      prevCursor.value = ""
+      return
+    }
+
     const data = await apiClient<JsonRecord>(`/api/exams?${params}`)
     total.value = Number(data.total) || 0
     exams.value = asArray(data.exams)

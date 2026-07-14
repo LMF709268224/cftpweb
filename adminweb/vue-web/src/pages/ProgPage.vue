@@ -372,8 +372,18 @@ async function loadPipelines() {
     if (cursor) params.set("cursor", cursor)
 
 
-    if (appliedCandidateFilter.value) params.set("candidate_ulid", appliedCandidateFilter.value)
-    if (appliedStatusFilter.value !== "all") params.set("status", appliedStatusFilter.value)
+    if (candidateFilter.value.trim()) params.set("candidate_ulid", candidateFilter.value.trim())
+    if (statusFilter.value !== "all") params.set("status", statusFilter.value)
+
+    const isValidUlid = (id: string) => /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i.test(id)
+    if (candidateFilter.value.trim() && !isValidUlid(candidateFilter.value.trim())) {
+      pipelines.value = []
+      hasMore.value = false
+      nextCursor.value = ""
+      prevCursor.value = ""
+      return
+    }
+
     const data = await apiClient<JsonRecord>(`/api/prog/pipelines?${params}`)
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
 
