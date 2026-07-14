@@ -1166,7 +1166,7 @@ function newChapter() {
   resetChapterState()
   chapterDialogMode.value = "create"
   const maxSort = chapters.value.reduce((max, c) => Math.max(max, Number(c.sort_order) || 0), 0)
-  chapterForm.value.sort_order = maxSort + 1
+  chapterForm.value.sort_order = String(maxSort + 1)
   chapterDialogOpen.value = true
 }
 
@@ -1293,9 +1293,9 @@ function newLesson() {
     const maxSort = allLessonItems.value
       .filter(item => chapterId(item.chapter) === targetChapterId)
       .reduce((max, item) => Math.max(max, Number(item.lesson.sort_order) || 0), 0)
-    lessonForm.value.sort_order = maxSort + 1
+    lessonForm.value.sort_order = String(maxSort + 1)
   } else {
-    lessonForm.value.sort_order = 1
+    lessonForm.value.sort_order = "1"
   }
 }
 
@@ -1516,7 +1516,7 @@ function newMaterial() {
   editingMaterialId.value = ""
   materialForm.value = emptyMaterialForm()
   const maxSort = materials.value.reduce((max, m) => Math.max(max, Number(m.sort_order) || 0), 0)
-  materialForm.value.sort_order = maxSort + 1
+  materialForm.value.sort_order = String(maxSort + 1)
 }
 
 function editSupplementaryItem(item: SupplementaryMaterialItem, openDialog = true) {
@@ -2038,7 +2038,7 @@ function newQuestion() {
   editingQuestionId.value = ""
   questionForm.value = emptyQuestionForm()
   const maxSort = questions.value.reduce((max, q) => Math.max(max, Number(q.sort_order) || 0), 0)
-  questionForm.value.sort_order = maxSort + 1
+  questionForm.value.sort_order = String(maxSort + 1)
   options.value = []
   editingOptionId.value = ""
   optionForm.value = emptyOptionForm()
@@ -2148,7 +2148,7 @@ function newOption() {
   editingOptionId.value = ""
   optionForm.value = emptyOptionForm()
   const maxSort = options.value.reduce((max, o) => Math.max(max, Number(o.sort_order) || 0), 0)
-  optionForm.value.sort_order = maxSort + 1
+  optionForm.value.sort_order = String(maxSort + 1)
 }
 
 async function saveOption() {
