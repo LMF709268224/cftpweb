@@ -3498,7 +3498,10 @@ onMounted(() => {
                     </div>
                     <form v-if="quizDialogMode !== 'detail'" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
                       <h4 class="font-black">{{ editingQuestionId ? copy.editQuestion : copy.createQuestion }}</h4>
-                      <textarea v-model="questionForm.question_text" class="mt-3 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.questionTextPlaceholder" />
+                      <label class="block mt-3">
+                        <span class="text-sm font-bold">{{ copy.questionStemLabel }} <span class="text-red-500">*</span></span>
+                        <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.questionTextPlaceholder" />
+                      </label>
                       <div class="mt-3 grid gap-3 sm:grid-cols-3">
                         <select v-model="questionForm.question_type" class="rounded-xl border border-slate-200 px-4 py-3">
                           <option value="1">{{ copy.questionTypes.single }}</option>
@@ -3512,7 +3515,11 @@ onMounted(() => {
                         <input v-model="questionForm.is_required" type="checkbox" />
                         {{ copy.required }}
                       </label>
-                      <textarea v-model="questionForm.media_items_json" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs" :placeholder="copy.mediaJsonPlaceholder" />
+                      <label class="block mt-3">
+                        <span class="text-sm font-bold">{{ copy.mediaJsonLabel }}</span>
+                        <textarea v-model="questionForm.media_items_json" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs" :placeholder="copy.mediaJsonPlaceholder" />
+                        <span class="mt-1 block text-xs text-slate-500">{{ copy.mediaJsonHint }}</span>
+                      </label>
                       <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
                         {{ savingQuestion ? copy.saving : copy.saveQuestion }}
                       </button>
