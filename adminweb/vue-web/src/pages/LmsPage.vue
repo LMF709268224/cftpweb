@@ -643,7 +643,7 @@ function supplementaryTypeClass(type: string) {
   const normalized = type.trim().toLowerCase()
   if (normalized === "video") return "border-violet-200 bg-violet-50 text-violet-700"
   if (normalized === "article") return "border-blue-200 bg-blue-50 text-blue-700"
-  if (normalized === "pdf") return "border-red-200 bg-red-50 text-red-700"
+  if (normalized === "pdf") return "border-orange-200 bg-orange-50 text-orange-700"
   return "border-slate-200 bg-slate-50 text-slate-700"
 }
 
