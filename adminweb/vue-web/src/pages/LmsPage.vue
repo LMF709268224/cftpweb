@@ -303,7 +303,7 @@ const allQuizItems = computed<QuizListItem[]>(() => {
   const courseQuizzes = Array.isArray(complete.quizzes) ? complete.quizzes : []
   for (const quizDetail of courseQuizzes) {
     const quiz = extractQuizRecord(quizDetail)
-    const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions : []
+    const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions as unknown[] : []
     if (quiz) items.push({ quiz, questionCount: questions.length, ownerType: 3, owner: selectedCourse.value, chapter: null, lesson: null })
   }
   const chapterDetails = Array.isArray(complete.chapters) ? complete.chapters : []
@@ -314,7 +314,7 @@ const allQuizItems = computed<QuizListItem[]>(() => {
     const chapterQuizzes = Array.isArray(record.quizzes) ? record.quizzes : []
     for (const quizDetail of chapterQuizzes) {
       const quiz = extractQuizRecord(quizDetail)
-      const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions : []
+      const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions as unknown[] : []
       if (quiz) items.push({ quiz, questionCount: questions.length, ownerType: 2, owner: chapter, chapter, lesson: null })
     }
     const lessonDetails = Array.isArray(record.lessons) ? record.lessons : []
@@ -325,7 +325,7 @@ const allQuizItems = computed<QuizListItem[]>(() => {
       const lessonQuizzes = Array.isArray(lessonRecord.quizzes) ? lessonRecord.quizzes : []
       for (const quizDetail of lessonQuizzes) {
         const quiz = extractQuizRecord(quizDetail)
-        const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions : []
+        const questions = quizDetail && typeof quizDetail === "object" && Array.isArray((quizDetail as JsonRecord).questions) ? (quizDetail as JsonRecord).questions as unknown[] : []
         if (quiz) items.push({ quiz, questionCount: questions.length, ownerType: 1, owner: lesson, chapter, lesson })
       }
     }
