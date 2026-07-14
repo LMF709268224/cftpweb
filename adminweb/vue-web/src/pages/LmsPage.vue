@@ -2066,8 +2066,18 @@ async function loadQuestions(id = selectedQuizId.value) {
   questionsLoading.value = true
   try {
     const data = await apiClient<JsonRecord>(`/api/lms/quizzes/${encodeURIComponent(id)}/questions`)
-    const list = Array.isArray(data.questions) ? data.questions : []
-    questions.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    let list = Array.isArray(data.questions) ? data.questions : []
+    list = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    
+    const details = await Promise.all(list.map(async (item) => {
+      try {
+        const detail = await apiClient<JsonRecord>(`/api/lms/questions/${encodeURIComponent(String(item.question_ulid || item.id))}`)
+        return detail.question && typeof detail.question === "object" ? { ...item, ...detail.question } : item
+      } catch (e) {
+        return item
+      }
+    }))
+    questions.value = details
     selectedQuestion.value = null
     options.value = []
     editingQuestionId.value = ""
@@ -2205,8 +2215,18 @@ async function loadOptions(id = selectedQuestionId.value) {
   optionsLoading.value = true
   try {
     const data = await apiClient<JsonRecord>(`/api/lms/questions/${encodeURIComponent(id)}/options`)
-    const list = Array.isArray(data.options) ? data.options : []
-    options.value = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+    let list = Array.isArray(data.options) ? data.options : []
+    list = list.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item))
+
+    const details = await Promise.all(list.map(async (item) => {
+      try {
+        const detail = await apiClient<JsonRecord>(`/api/lms/options/${encodeURIComponent(String(item.option_ulid || item.id))}`)
+        return detail.option && typeof detail.option === "object" ? { ...item, ...detail.option } : item
+      } catch (e) {
+        return item
+      }
+    }))
+    options.value = details
     editingOptionId.value = ""
     optionForm.value = emptyOptionForm()
   } catch (err) {
