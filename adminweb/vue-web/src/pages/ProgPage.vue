@@ -377,6 +377,7 @@ async function loadPipelines() {
 
     const isValidUlid = (id: string) => /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i.test(id)
     if (candidateFilter.value.trim() && !isValidUlid(candidateFilter.value.trim())) {
+      toast.error(copy.value.filters.invalidCandidateUlid)
       pipelines.value = []
       hasMore.value = false
       nextCursor.value = ""
