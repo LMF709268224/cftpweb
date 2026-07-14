@@ -1165,6 +1165,8 @@ function editChapter(chapter: JsonRecord) {
 function newChapter() {
   resetChapterState()
   chapterDialogMode.value = "create"
+  const maxSort = chapters.value.reduce((max, c) => Math.max(max, Number(c.sort_order) || 0), 0)
+  chapterForm.value.sort_order = maxSort + 1
   chapterDialogOpen.value = true
 }
 
@@ -1175,6 +1177,13 @@ function closeChapterDialog() {
 async function saveChapter() {
   if (!selectedCourseId.value || !chapterForm.value.title.trim()) {
     toast.error(copy.value.toasts.chapterRequired)
+    return
+  }
+
+  const targetSort = Number(chapterForm.value.sort_order || 1)
+  const isConflict = chapters.value.some(c => Number(c.sort_order || 0) === targetSort && chapterId(c) !== editingChapterId.value)
+  if (isConflict) {
+    toast.error((copy.value.toasts as any)?.duplicateChapterSort || "该排序序号已被其他章节使用，请更换")
     return
   }
 
@@ -1279,6 +1288,15 @@ function newLesson() {
   editingLessonId.value = ""
   lessonForm.value = emptyLessonForm()
   lessonForm.value.chapter_id = selectedChapterId.value
+  const targetChapterId = selectedChapterId.value
+  if (targetChapterId) {
+    const maxSort = allLessonItems.value
+      .filter(item => chapterId(item.chapter) === targetChapterId)
+      .reduce((max, item) => Math.max(max, Number(item.lesson.sort_order) || 0), 0)
+    lessonForm.value.sort_order = maxSort + 1
+  } else {
+    lessonForm.value.sort_order = 1
+  }
 }
 
 function openLessonDetail(lesson: JsonRecord) {
@@ -1355,6 +1373,13 @@ async function saveLesson() {
     return
   }
 
+  const targetSort = Number(lessonForm.value.sort_order || 1)
+  const isConflict = allLessonItems.value.some(item => chapterId(item.chapter) === targetChapterId && Number(item.lesson.sort_order || 0) === targetSort && lessonId(item.lesson) !== editingLessonId.value)
+  if (isConflict) {
+    toast.error((copy.value.toasts as any)?.duplicateLessonSort || "该章节下已有相同排序的课时，请更换")
+    return
+  }
+
   savingLesson.value = true
   try {
     const type = Number(lessonForm.value.lesson_type || 2)
@@ -1372,13 +1397,22 @@ async function saveLesson() {
     if (editingLessonId.value) {
       await apiClient(`/api/lms/lessons/${encodeURIComponent(editingLessonId.value)}`, { method: "PUT", body })
       toast.success(copy.value.toasts.lessonUpdated)
+      newLesson()
+      closeLessonDialog()
+      await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
     } else {
-      await apiClient(`/api/lms/chapters/${encodeURIComponent(targetChapterId)}/lessons`, { method: "POST", body })
+      const res = await apiClient<JsonRecord>(`/api/lms/chapters/${encodeURIComponent(targetChapterId)}/lessons`, { method: "POST", body })
       toast.success(copy.value.toasts.lessonCreated)
+      if ([1, 3, 4, 5, 6].includes(type)) {
+        editingLessonId.value = String(res.lesson_ulid)
+        toast.info("请继续点击下方按钮上传课时文件 (视频/PDF等)")
+        await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
+      } else {
+        newLesson()
+        closeLessonDialog()
+        await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
+      }
     }
-    newLesson()
-    closeLessonDialog()
-    await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.lessonSaveFailed))
@@ -1481,6 +1515,8 @@ function newMaterial() {
   selectedMaterial.value = null
   editingMaterialId.value = ""
   materialForm.value = emptyMaterialForm()
+  const maxSort = materials.value.reduce((max, m) => Math.max(max, Number(m.sort_order) || 0), 0)
+  materialForm.value.sort_order = maxSort + 1
 }
 
 function editSupplementaryItem(item: SupplementaryMaterialItem, openDialog = true) {
@@ -1678,6 +1714,13 @@ async function handleMaterialFileUpload(event: Event) {
 async function saveMaterial() {
   if (!selectedCourseId.value || !materialForm.value.title.trim()) {
     toast.error(copy.value.toasts.materialFileRequired || "Title required")
+    return
+  }
+
+  const targetSort = Number(materialForm.value.sort_order || 1)
+  const isConflict = materials.value.some(m => Number(m.sort_order || 0) === targetSort && materialId(m) !== editingMaterialId.value)
+  if (isConflict) {
+    toast.error((copy.value.toasts as any)?.duplicateMaterialSort || "该课程下已有相同排序的资料，请更换")
     return
   }
 
