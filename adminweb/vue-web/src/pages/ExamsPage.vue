@@ -108,6 +108,32 @@ function resultStatusLabel(value: unknown, passed?: unknown) {
   return status || "-"
 }
 
+function transitionStatusTypeLabel(value: unknown) {
+  const type = normalizedStatus(value)
+  if (type.includes("EXAM")) return copy.value.transitionStatusTypes.exam
+  if (type.includes("RESULT")) return copy.value.transitionStatusTypes.result
+  return label(value)
+}
+
+function transitionEventLabel(value: unknown) {
+  const event = String(value || "").trim().toLowerCase()
+  const labels: Record<string, string> = {
+    appointment_scheduled: copy.value.transitionEvents.appointmentScheduled,
+    appointment_rescheduled: copy.value.transitionEvents.appointmentRescheduled,
+    appointment_cancelled: copy.value.transitionEvents.appointmentCancelled,
+    result_created: copy.value.transitionEvents.resultCreated,
+    result_fetched: copy.value.transitionEvents.resultFetched,
+  }
+  return labels[event] || label(value)
+}
+
+function transitionStatusLabel(transition: JsonRecord, value: unknown) {
+  const type = normalizedStatus(transition.status_type)
+  if (type.includes("EXAM")) return examStatusLabel(value)
+  if (type.includes("RESULT")) return resultStatusLabel(value)
+  return label(value)
+}
+
 function candidateDisplay(item: JsonRecord) {
   const name = [item.candidate_first_name, item.candidate_middle_name, item.candidate_last_name].filter(Boolean).join(" ")
   return name || String(item.candidate_email || item.candidate_ulid || copy.value.defaults.candidate)
@@ -145,10 +171,14 @@ async function loadExams(targetPage = page.value) {
     if (appliedCourseUnitFilter.value) params.set("course_unit_ulid", appliedCourseUnitFilter.value)
 
     const isValidUlid = (id: string) => /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i.test(id)
-    if (
-      (candidateFilter.value.trim() && !isValidUlid(candidateFilter.value.trim())) ||
-      (courseUnitFilter.value.trim() && !isValidUlid(courseUnitFilter.value.trim()))
-    ) {
+    let invalidUlidMessage = ""
+    if (candidateFilter.value.trim() && !isValidUlid(candidateFilter.value.trim())) {
+      invalidUlidMessage = copy.value.filters.invalidCandidateUlid
+    } else if (courseUnitFilter.value.trim() && !isValidUlid(courseUnitFilter.value.trim())) {
+      invalidUlidMessage = copy.value.filters.invalidCourseUnitUlid
+    }
+    if (invalidUlidMessage) {
+      toast.error(invalidUlidMessage)
       exams.value = []
       total.value = 0
       hasMore.value = false
@@ -598,11 +628,11 @@ onMounted(() => loadExams(1))
             <div v-else class="divide-y divide-slate-100">
               <div v-for="transition in transitions" :key="String(transition.msg_fp || transition.transitioned_at)" class="grid gap-3 px-4 py-4 lg:grid-cols-[160px_minmax(0,1fr)_180px]">
                 <div>
-                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ label(transition.status_type) }}</span>
-                  <p class="mt-2 font-bold">{{ label(transition.event_type) }}</p>
+                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ transitionStatusTypeLabel(transition.status_type) }}</span>
+                  <p class="mt-2 font-bold">{{ transitionEventLabel(transition.event_type) }}</p>
                 </div>
                 <div class="min-w-0">
-                  <p class="font-bold">{{ label(transition.from_status) }} → {{ label(transition.to_status) }}</p>
+                  <p class="font-bold">{{ transitionStatusLabel(transition, transition.from_status) }} → {{ transitionStatusLabel(transition, transition.to_status) }}</p>
                   <p class="mt-1 break-all font-mono text-xs text-blue-700">{{ label(transition.msg_fp) }}</p>
                 </div>
                 <div class="text-sm font-bold text-slate-500">{{ formatDate(String(transition.transitioned_at || transition.created_at || "")) || "-" }}</div>
