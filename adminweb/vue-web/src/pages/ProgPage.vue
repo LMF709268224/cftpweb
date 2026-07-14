@@ -56,6 +56,8 @@ const retryingCertificateTask = ref("")
 
 const candidateFilter = ref("")
 const statusFilter = ref("all")
+const appliedCandidateFilter = ref("")
+const appliedStatusFilter = ref("all")
 const offset = ref(0)
 const logOffset = ref(0)
 const hasMore = ref(false)
@@ -370,8 +372,8 @@ async function loadPipelines() {
     if (cursor) params.set("cursor", cursor)
 
 
-    if (candidateFilter.value.trim()) params.set("candidate_ulid", candidateFilter.value.trim())
-    if (statusFilter.value !== "all") params.set("status", statusFilter.value)
+    if (appliedCandidateFilter.value) params.set("candidate_ulid", appliedCandidateFilter.value)
+    if (appliedStatusFilter.value !== "all") params.set("status", appliedStatusFilter.value)
     const data = await apiClient<JsonRecord>(`/api/prog/pipelines?${params}`)
     const list = Array.isArray(data.pipelines) ? data.pipelines : []
 
@@ -633,6 +635,8 @@ function resetPipelineSearchState() {
 }
 
 function searchPipelines() {
+  appliedCandidateFilter.value = candidateFilter.value.trim()
+  appliedStatusFilter.value = statusFilter.value
   resetPipelineSearchState()
   if (offset.value !== 0) {
     offset.value = 0
@@ -641,9 +645,13 @@ function searchPipelines() {
   void loadPipelines()
 }
 
-watch([candidateFilter, statusFilter], () => {
-  searchPipelines()
-})
+function clearCandidateFilter() {
+  const shouldSearch = Boolean(appliedCandidateFilter.value)
+  candidateFilter.value = ""
+  if (shouldSearch) searchPipelines()
+}
+
+watch(statusFilter, () => searchPipelines())
 watch(offset, () => loadPipelines())
 
 watch(canShowCertificateTasks, (visible) => {
@@ -685,8 +693,17 @@ onMounted(async () => {
             <label class="grid gap-2 text-sm font-bold">
               {{ copy.filters.candidate }}
               <div class="relative">
-                <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input v-model="candidateFilter" class="h-11 w-full rounded-xl border border-slate-200 pl-9 pr-3" :placeholder="copy.filters.candidatePlaceholder" />
+                <input v-model="candidateFilter" class="h-11 w-full rounded-xl border border-slate-200 px-3 pr-10" :placeholder="copy.filters.candidatePlaceholder" />
+                <button
+                  v-if="candidateFilter"
+                  class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                  type="button"
+                  :aria-label="copy.filters.clearInput"
+                  :title="copy.filters.clearInput"
+                  @click="clearCandidateFilter"
+                >
+                  <X class="h-4 w-4" />
+                </button>
               </div>
             </label>
             <label class="grid gap-2 text-sm font-bold">

@@ -1009,6 +1009,7 @@ export const zh = {
       confirmationPlaceholder: "请输入确认号",
       courseUnitUlid: "课程单元 ULID",
       courseUnitPlaceholder: "请输入课程单元 ULID",
+      clearInput: "清除输入",
       search: "查询",
     },
     statusOptions: {
@@ -1868,7 +1869,8 @@ export const zh = {
     refresh: "刷新",
     filters: {
       candidate: "考生筛选",
-      candidatePlaceholder: "Candidate ULID",
+      candidatePlaceholder: "请输入考生 ULID",
+      clearInput: "清除输入",
       status: "状态筛选",
       search: "查询",
     },
