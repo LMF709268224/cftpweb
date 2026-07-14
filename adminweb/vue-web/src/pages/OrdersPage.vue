@@ -2,7 +2,6 @@
 import { Loader2, RefreshCw, Search, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
-import JsonPreview from "@/components/JsonPreview.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -499,15 +498,6 @@ onMounted(() => load(1))
                       <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
                     </div>
                   </div>
-                  <JsonPreview
-                    :title="copy.bundleRaw"
-                    :value="businessDetail"
-                    :copy-label="copy.copyJson"
-                    :copied-label="copy.copiedJson"
-                    :copied-message="copy.toasts.jsonCopied"
-                    :copy-error-message="copy.toasts.jsonCopyFailed"
-                    max-height="520px"
-                  />
                 </div>
                 <div v-else class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">{{ copy.bundleEmpty }}</div>
               </div>

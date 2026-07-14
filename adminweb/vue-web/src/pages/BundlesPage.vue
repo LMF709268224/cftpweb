@@ -20,7 +20,7 @@ type BundleForm = {
   thumbnail_file_hash: string
 }
 
-type DetailTab = "summary" | "meta" | "pricing" | "schema" | "actions" | "raw"
+type DetailTab = "summary" | "meta" | "pricing" | "schema" | "actions"
 type Mode = "detail" | "create"
 type BundleItemType = "pipeline" | "membership" | "resource_pack"
 type SummaryField = {
@@ -112,7 +112,6 @@ const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => hasMore.value)
 const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value || duplicating.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
-const selectedJson = computed(() => JSON.stringify(selected.value || {}, null, 2))
 const schemasJson = computed(() => JSON.stringify(schemas.value || {}, null, 2))
 const createItemTypeOptions = computed(() => [
   { value: "pipeline" as const, label: copy.value.createItemTypes.pipeline },
@@ -141,7 +140,6 @@ const detailTabs = computed(() => [
   { key: "pricing" as const, title: copy.value.tabs.pricing, count: 2 },
   { key: "schema" as const, title: copy.value.tabs.schema, count: schemas.value ? 1 : 0 },
   { key: "actions" as const, title: copy.value.tabs.actions, count: 4 },
-  { key: "raw" as const, title: copy.value.tabs.raw, count: 1 },
 ])
 const summaryFields = computed<SummaryField[]>(() => {
   const bundle = selected.value
@@ -198,7 +196,7 @@ const pricingPreview = computed<PricingPreviewView | null>(() => {
 const selectedFields = computed<DetailField[]>(() => {
   if (!selected.value) return []
   return Object.entries(selected.value)
-    .filter(([key]) => key !== "version")
+    .filter(([key]) => !["version", "items_json", "pricing_json"].includes(key))
     .map(([key, value]) => ({
       key,
       label: copy.value.fieldLabels[key as keyof typeof copy.value.fieldLabels] || key.replaceAll("_", " "),
@@ -220,6 +218,14 @@ function bundleStatus(bundle: JsonRecord | null | undefined) {
 
 function normalizeItemType(value: unknown) {
   return String(value || "").trim().toLowerCase().replace(/-/g, "_")
+}
+
+function linkedItemTypeLabel(value: unknown) {
+  const type = normalizeItemType(value)
+  if (type.includes("pipeline")) return copy.value.createItemTypes.pipeline
+  if (type.includes("membership")) return copy.value.createItemTypes.membership
+  if (type.includes("resource")) return copy.value.createItemTypes.resourcePack
+  return String(value || "-")
 }
 
 function itemReference(record: JsonRecord) {
@@ -360,7 +366,8 @@ function jsonText(value: unknown) {
   return JSON.stringify(value ?? {}, null, 2)
 }
 
-function detailFieldText(value: unknown) {
+function detailFieldText(key: string, value: unknown) {
+  if (key.endsWith("_at")) return formatDate(String(value || "")) || "-"
   const text = String(value ?? "").trim()
   return text || "-"
 }
@@ -1065,14 +1072,14 @@ onMounted(load)
               </div>
               <div class="mt-4 grid gap-4 md:grid-cols-2">
                 <label class="grid gap-2 text-sm font-bold">
-                  {{ copy.fields.itemType }}
+                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.itemType }}</span>
                   <select v-model="createItemType" class="rounded-xl border border-slate-200 bg-white px-4 py-3">
                     <option v-for="option in createItemTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
                   </select>
                   <p class="text-xs font-semibold text-slate-500">{{ copy.itemTypeHint }}</p>
                 </label>
                 <label class="grid gap-2 text-sm font-bold">
-                  {{ copy.fields.linkedTarget }}
+                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.linkedTarget }}</span>
                   <select v-model="createItemRef" class="rounded-xl border border-slate-200 bg-white px-4 py-3" :disabled="targetOptionsLoading || !createTargetOptions.length">
                     <option value="" disabled>{{ targetOptionsLoading ? copy.loadingTargets : copy.selectLinkedTarget }}</option>
                     <option v-for="option in createTargetOptions" :key="option.id" :value="option.id">{{ option.title }} · {{ option.subtitle }}</option>
@@ -1092,12 +1099,12 @@ onMounted(load)
               <p class="mt-1 text-sm text-slate-500">{{ copy.createSections.basicInfoDesc }}</p>
               <div class="mt-4 grid gap-4 md:grid-cols-2">
                 <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
-                  {{ copy.fields.bundleGpath }}
+                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.bundleGpath }}</span>
                   <input v-model="form.bundle_gpath" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.bundleGpath" />
                   <p class="text-xs font-semibold text-slate-500">{{ copy.bundleGpathHint }}</p>
                 </label>
                 <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
-                  {{ copy.fields.name }}
+                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.name }}</span>
                   <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" :placeholder="copy.placeholders.name" />
                   <span aria-hidden="true"></span>
                 </label>
@@ -1204,7 +1211,7 @@ onMounted(load)
                       class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
                     >{{ jsonText(field.value) }}</pre>
                     <div v-else class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
-                      {{ detailFieldText(field.value) }}
+                      {{ detailFieldText(field.key, field.value) }}
                     </div>
                   </div>
                 </div>
@@ -1246,9 +1253,6 @@ onMounted(load)
               </div>
 
               <div v-else-if="activeTab === 'pricing'" class="space-y-5">
-                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  {{ copy.jsonValidateHint }}
-                </div>
                 <section class="rounded-2xl border border-sky-200 bg-sky-50 p-5">
                   <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
@@ -1299,7 +1303,7 @@ onMounted(load)
                       <h4 class="font-black text-slate-900">{{ copy.pricingPreview.linkedItems }}</h4>
                       <div v-if="linkedItemsPreview.length" class="mt-3 grid gap-2">
                         <div v-for="item in linkedItemsPreview" :key="`${item.type}-${item.ref}`" class="rounded-xl bg-slate-50 p-3 text-sm">
-                          <div class="font-bold text-slate-600">{{ copy.pricingPreview.itemType }}: {{ item.type }}</div>
+                            <div class="font-bold text-slate-600">{{ copy.pricingPreview.itemType }}: {{ linkedItemTypeLabel(item.type) }}</div>
                           <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ copy.pricingPreview.itemRef }}: {{ item.ref }}</div>
                         </div>
                       </div>
@@ -1380,16 +1384,6 @@ onMounted(load)
                     </div>
                   </div>
                 </section>
-                <div class="grid gap-4 xl:grid-cols-2">
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.itemsJson }}
-                    <textarea v-model="form.items_json" class="min-h-[420px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.pricingJson }}
-                    <textarea v-model="form.pricing_json" class="min-h-[420px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
-                  </label>
-                </div>
                 <div class="flex justify-end">
                   <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePricing">
                     <Send class="h-4 w-4" />
@@ -1443,20 +1437,6 @@ onMounted(load)
                 </div>
               </div>
 
-              <div v-else-if="activeTab === 'raw'" class="space-y-4">
-                <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  {{ copy.rawReadonlyHint }}
-                </div>
-                <JsonPreview
-                  :title="copy.rawJson"
-                  :text="selectedJson"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="620px"
-                />
-              </div>
             </main>
           </div>
         </template>
