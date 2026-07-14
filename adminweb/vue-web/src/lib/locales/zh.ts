@@ -1,4 +1,4 @@
-﻿export const zh = {
+export const zh = {
     layout: {
         systemName: "管理系统",
         roleName: "Admin",
@@ -124,7 +124,10 @@
         orderPrefix: "订单：",
         viewDetails: "查看详情",
         loading: "正在加载...",
-        empty: "暂无订单",
+        empty: "暂无文件",
+        uploading: "上传中...",
+        uploadFile: "上传文件并自动填写",
+        uploadThumbnail: "上传缩略图",
         pagePrefix: "第",
         pageSuffix: "页",
         prev: "上一页",
@@ -1488,6 +1491,9 @@
         editHint: "修改资源包信息后保存。",
         detailLoading: "正在加载详情...",
         close: "关闭",
+        uploading: "上传中...",
+        uploadFile: "上传并自动填写",
+        uploadThumbnail: "上传封面图",
           respathHint: "（选填）将随标题自动生成，用于底层权限校验，建议使用默认生成的资源路径。",
           categoryHint: "分类，例如 public, member 等",
           iconHint: "前端界面标识，例如 FileBarChart",

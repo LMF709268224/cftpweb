@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileText, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
+import { FileText, Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -27,6 +27,10 @@ const packFilter = ref("")
 let detailRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.resourcePackFilesAdmin)
+
+const uploadingFile = ref(false)
+const fileInput = ref<HTMLInputElement | null>(null)
+
 const fileTypeOptions = computed(() => [
   { value: 1, label: copy.value.fileTypes.video },
   { value: 2, label: copy.value.fileTypes.pdf },
@@ -354,6 +358,55 @@ function changePackFilter() {
   void loadFiles()
 }
 
+async function handleFileUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!form.value.pack_id || !form.value.file_id) {
+    toast.error("Please save the file record first before uploading.")
+    return
+  }
+
+  uploadingFile.value = true
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    const uploadUrlReq = {
+      upload_type: 6,
+      pack_id: form.value.pack_id,
+      resource_pack_file_id: form.value.file_id,
+      file_name: file.name,
+      content_type: file.type || "application/octet-stream",
+      file_hash: hashHex
+    }
+    const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
+    
+    if (!uploadRes.upload_url) throw new Error("Missing upload URL")
+    const uploadResponse = await fetch(String(uploadRes.upload_url), {
+      method: "PUT",
+      body: file,
+      headers: uploadRes.signed_headers as Record<string, string> || {}
+    })
+    if (!uploadResponse.ok) {
+      throw new Error(`Upload failed: ${uploadResponse.status}`)
+    }
+
+    form.value.file_object_key = String(uploadRes.object_key)
+    form.value.file_hash = hashHex
+    form.value.file_name = file.name
+    form.value.file_size = file.size
+    toast.success("File uploaded successfully")
+  } catch (err: any) {
+    toast.error("File upload failed: " + (err.message || String(err)))
+  } finally {
+    uploadingFile.value = false
+    if (input) input.value = ""
+  }
+}
+
 function previousPage() {
   if (!canPrevious.value) return
   pageToken.value = previousTokens.value.pop() || ""
@@ -527,17 +580,25 @@ onMounted(load)
             <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_name) }}</div>
             <input v-else v-model="form.file_name" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileName" />
           </label>
-          <label class="text-sm font-bold">
+          <label class="text-sm font-bold" v-if="form.file_type !== 1">
             {{ copy.fields.fileSize }}
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.file_size) }}</div>
             <input v-else v-model.number="form.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
           </label>
-          <label class="text-sm font-bold">
+          <label class="text-sm font-bold" v-if="form.file_type !== 1">
             {{ copy.fields.fileObjectKey }}
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_object_key) }}</div>
-            <input v-else v-model="form.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileObjectKey" />
+            <div v-else class="mt-2 flex gap-3">
+              <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
+              <input v-model="form.file_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.fileObjectKey" />
+              <button type="button" class="shrink-0 flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="fileInput?.click()">
+                <Loader2 v-if="uploadingFile" class="h-4 w-4 animate-spin" />
+                <UploadCloud v-else class="h-4 w-4" />
+                {{ uploadingFile ? (copy as any).uploading : (copy as any).uploadFile }}
+              </button>
+            </div>
           </label>
-          <label class="text-sm font-bold">
+          <label class="text-sm font-bold" v-if="form.file_type !== 1">
             {{ copy.fields.fileHash }}
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_hash) }}</div>
             <input v-else v-model="form.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileHash" />
@@ -556,7 +617,7 @@ onMounted(load)
 
           <div class="mb-3 mt-5 border-t border-slate-100 pt-5 text-sm font-black text-slate-700">{{ copy.sections.orderVersion }}</div>
           <div class="grid gap-3 md:grid-cols-3">
-          <label class="text-sm font-bold">
+          <label class="text-sm font-bold" v-if="form.file_type === 1">
             {{ copy.fields.videoStreamUid }}
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.video_stream_uid) }}</div>
             <input v-else v-model="form.video_stream_uid" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.videoStreamUid" />

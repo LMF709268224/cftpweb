@@ -1,4 +1,4 @@
-﻿import type { AdminTranslations } from "./zh"
+import type { AdminTranslations } from "./zh"
 
 export const en: AdminTranslations = {
     layout: {
