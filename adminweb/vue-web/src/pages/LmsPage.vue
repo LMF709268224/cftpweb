@@ -41,6 +41,7 @@ type QuizScope = "course" | "chapter" | "lesson"
 type ChapterDialogMode = "detail" | "edit" | "create"
 type LessonDialogMode = "detail" | "edit" | "create"
 type QuizDialogMode = "detail" | "edit" | "create"
+type MaterialDialogMode = "detail" | "edit" | "create"
 type CourseCreateContext = {
   selectedCourse: JsonRecord | null
   form: CourseForm
@@ -190,6 +191,8 @@ const deletingLesson = ref(false)
 const detailDeleteConfirmOpen = ref(false)
 const pendingDetailDelete = ref<PendingDetailDelete | null>(null)
 const deletingDetail = ref(false)
+const materialDialogOpen = ref(false)
+const materialDialogMode = ref<MaterialDialogMode>("create")
 const quizDialogOpen = ref(false)
 const quizDialogMode = ref<QuizDialogMode>("detail")
 
@@ -645,6 +648,29 @@ function lessonRecordEntries(record: JsonRecord | null | undefined) {
     key,
     label: lessonReadonlyFieldLabel(key),
     value: lessonReadonlyValue(key, value),
+  }))
+}
+
+function materialReadonlyFieldLabel(key: string) {
+  const labels: Record<string, string> = copy.value.materialFieldLabels
+  return labels[key] || lessonReadonlyFieldLabel(key)
+}
+
+function materialReadonlyValue(key: string, value: unknown) {
+  if (key === "material_type") return materialTypeLabel(value)
+  return displayReadonlyValue(key, value)
+}
+
+function materialReadonlyMinHeight(key: string) {
+  return key === "file_object_key" || key === "file_size" ? "84px" : "44px"
+}
+
+function materialRecordEntries(record: JsonRecord | null | undefined) {
+  if (!record) return []
+  return Object.entries(record).map(([key, value]) => ({
+    key,
+    label: materialReadonlyFieldLabel(key),
+    value: materialReadonlyValue(key, value),
   }))
 }
 
@@ -1515,6 +1541,20 @@ async function loadSupplementaryMaterial() {
   }
 }
 
+function resetMaterialEditor() {
+  selectedMaterial.value = null
+  editingMaterialId.value = ""
+  materialForm.value = emptyMaterialForm()
+  if (materialFileInput.value) materialFileInput.value.value = ""
+}
+
+function viewMaterial(material: JsonRecord) {
+  selectedMaterial.value = material
+  editingMaterialId.value = ""
+  materialDialogMode.value = "detail"
+  materialDialogOpen.value = true
+}
+
 function editMaterial(material: JsonRecord) {
   selectedMaterial.value = material
   editingMaterialId.value = materialId(material)
@@ -1527,14 +1567,22 @@ function editMaterial(material: JsonRecord) {
     file_size: String(material.file_size || 0),
     sort_order: String(material.sort_order || 1),
   }
+  materialDialogMode.value = "edit"
+  materialDialogOpen.value = true
 }
 
 function newMaterial() {
-  selectedMaterial.value = null
-  editingMaterialId.value = ""
-  materialForm.value = emptyMaterialForm()
+  resetMaterialEditor()
   const maxSort = materials.value.reduce((max, m) => Math.max(max, Number(m.sort_order) || 0), 0)
   materialForm.value.sort_order = String(maxSort + 1)
+  materialDialogMode.value = "create"
+  materialDialogOpen.value = true
+}
+
+function closeMaterialDialog() {
+  if (savingMaterial.value || uploadingMaterial.value) return
+  materialDialogOpen.value = false
+  resetMaterialEditor()
 }
 
 function editSupplementaryItem(item: SupplementaryMaterialItem, openDialog = true) {
@@ -1814,8 +1862,9 @@ async function saveMaterial() {
       await apiClient(`/api/lms/courses/${encodeURIComponent(selectedCourseId.value)}/materials`, { method: "POST", body: JSON.stringify(body) })
       toast.success(copy.value.toasts.materialCreated)
     }
+    materialDialogOpen.value = false
+    resetMaterialEditor()
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
-    newMaterial()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.materialSaveFailed))
@@ -1842,8 +1891,11 @@ async function confirmDeleteMaterial(deleteInfo: PendingDetailDelete) {
   try {
     await apiClient(`/api/lms/materials/${encodeURIComponent(deleteInfo.id)}?version=${deleteInfo.version || 0}`, { method: "DELETE" })
     toast.success(copy.value.toasts.materialDeleted)
+    if (deleteInfo.id === selectedMaterialId.value) {
+      materialDialogOpen.value = false
+      resetMaterialEditor()
+    }
     await Promise.all([loadMaterials(), loadCourseDetail(), loadCompleteCourse()])
-    newMaterial()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.materialDeleteFailed))
@@ -3257,81 +3309,153 @@ onMounted(() => {
             </button>
           </div>
         </div>
-        <div class="grid gap-4 p-5 xl:grid-cols-[minmax(0,1fr)_400px]">
-          <div class="rounded-2xl border border-slate-200">
+        <div class="p-5">
+          <div class="overflow-hidden rounded-2xl border border-slate-200">
             <div v-if="materialsLoading" class="px-6 py-10 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
               {{ copy.loading }}
             </div>
             <div v-else-if="!materials.length" class="px-6 py-10 text-center text-slate-500">{{ copy.emptyMaterials }}</div>
-            <div v-else class="divide-y divide-slate-100">
-              <div v-for="material in materials" :key="materialId(material)" class="grid gap-3 p-4 lg:grid-cols-[1fr_auto]" :class="materialId(material) === selectedMaterialId ? 'bg-sky-50' : ''">
-                <button class="text-left" type="button" @click="editMaterial(material)">
-                  <div class="font-black">{{ materialTitle(material) }}</div>
-                  <div class="mt-1 text-sm text-slate-500">{{ materialTypeLabel(material.material_type) }} 路 {{ copy.sortMeta(material.sort_order || 0) }}</div>
-                  <div class="mt-1 break-all text-xs text-slate-400">{{ material.file_object_key || "-" }}</div>
-                </button>
-                <button class="rounded-xl border border-red-200 px-3 py-2 text-sm font-bold text-red-600" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
-              </div>
+            <div v-else class="overflow-x-auto">
+              <table class="min-w-full text-left text-sm">
+                <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th class="px-5 py-3">{{ copy.materialTitlePlaceholder }}</th>
+                    <th class="px-5 py-3">{{ copy.materialType }}</th>
+                    <th class="px-5 py-3">{{ copy.fileObjectKey }}</th>
+                    <th class="px-5 py-3">{{ copy.sort }}</th>
+                    <th class="w-48 px-5 py-3 text-right">{{ copy.chapterColumns.action }}</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  <tr v-for="material in materials" :key="materialId(material)" class="transition hover:bg-sky-50">
+                    <td class="px-5 py-4">
+                      <div class="font-black text-slate-950">{{ materialTitle(material) }}</div>
+                      <div v-if="material.description" class="mt-1 line-clamp-2 text-xs font-semibold text-slate-500">{{ material.description }}</div>
+                    </td>
+                    <td class="px-5 py-4 font-semibold text-slate-700">{{ materialTypeLabel(material.material_type) }}</td>
+                    <td class="max-w-[520px] px-5 py-4">
+                      <div class="break-all font-mono text-xs font-semibold text-slate-500">{{ material.file_object_key || "-" }}</div>
+                    </td>
+                    <td class="px-5 py-4 font-semibold text-slate-700">{{ material.sort_order || 0 }}</td>
+                    <td class="w-48 whitespace-nowrap px-5 py-4 text-right">
+                      <div class="inline-flex items-center justify-end gap-3">
+                        <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="viewMaterial(material)">{{ copy.viewDetails }}</button>
+                        <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="editMaterial(material)">{{ copy.edit }}</button>
+                        <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-          <form class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveMaterial">
-            <h3 class="font-black">{{ editingMaterialId ? copy.editMaterial : copy.createMaterial }}</h3>
-            <div class="mt-4 grid gap-3">
-              <input v-model="materialForm.title" class="h-10 rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
-              <select v-model="materialForm.material_type" class="h-10 rounded-xl border border-slate-200 px-3">
-                <option value="1">{{ copy.materialTypes.textbook }}</option>
-                <option value="2">{{ copy.materialTypes.slides }}</option>
-                <option value="3">{{ copy.materialTypes.reference }}</option>
-                <option value="4">{{ copy.materialTypes.other }}</option>
-              </select>
-              <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.materialDescriptionPlaceholder" />
-              <label class="block">
-                <span class="text-sm font-bold">{{ copy.fileObjectKey }}</span>
-                <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
-                <span class="mt-1 block text-xs text-slate-500">{{ copy.fileObjectKeyHint }}</span>
-                <span v-if="!editingMaterialId" class="mt-2 block text-xs font-semibold text-amber-600">
-                  {{ (copy as any).uploadAfterSaveHintMaterial }}
-                </span>
-              </label>
-              <label class="block">
-                <span class="text-sm font-bold">{{ copy.fileHash }}</span>
-                <input v-model="materialForm.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileHashPlaceholder" />
-                <span class="mt-1 block text-xs text-slate-500">{{ copy.fileHashHint }}</span>
-              </label>
-              <div class="grid gap-3 sm:grid-cols-2">
-                <label class="block">
-                  <span class="text-sm font-bold">{{ copy.fileSizeBytes }}</span>
-                  <input v-model="materialForm.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileSizePlaceholder" type="number" min="0" />
-                  <span class="mt-1 block text-xs text-slate-500">{{ copy.fileSizeHint }}</span>
-                </label>
-                <label class="block">
-                  <span class="text-sm font-bold">{{ copy.sort }}</span>
-                  <input v-model="materialForm.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
-                  <span class="mt-1 block text-xs text-slate-500">{{ copy.sortHint }}</span>
-                </label>
-              </div>
-              <div class="mt-3 flex gap-3" v-if="editingMaterialId">
-                <input type="file" ref="materialFileInput" class="hidden" @change="handleMaterialFileUpload" />
-                <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingMaterial" @click="materialFileInput?.click()">
-                  <Loader2 v-if="uploadingMaterial" class="h-4 w-4 animate-spin" />
-                  <UploadCloud v-else class="h-4 w-4" />
-                  {{ uploadingMaterial ? (copy as any).uploading : (copy as any).uploadFile }}
+        </div>
+
+        <Teleport to="body">
+          <section v-if="materialDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
+            <div v-if="materialDialogMode === 'detail'" class="flex max-h-[88vh] w-full max-w-[860px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+              <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+                <div>
+                  <h2 class="text-xl font-black">{{ copy.materialRawFields }}</h2>
+                  <p class="mt-1 break-all text-sm text-slate-500">{{ materialTitle(selectedMaterialRecord) }}</p>
+                </div>
+                <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeMaterialDialog">
+                  <X class="h-5 w-5" />
                 </button>
               </div>
-              <button class="h-10 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial || uploadingMaterial" type="submit">
-                <Loader2 v-if="savingMaterial" class="inline-block mr-2 h-4 w-4 animate-spin" />
-                {{ savingMaterial ? copy.saving : copy.saveMaterial }}
-              </button>
-            </div>
-            <div v-if="selectedMaterialRecord" class="mt-5 border-t border-slate-200 pt-4">
-              <h4 class="font-black">{{ copy.materialRawFields }}</h4>
-              <div class="mt-3 max-h-72 space-y-3 overflow-y-auto pr-1">
-                <ReadonlyField v-for="entry in recordEntries(selectedMaterialRecord)" :key="`material-${entry.key}`" :label="entry.key" :text="entry.value" />
+              <div class="min-h-0 flex-1 overflow-y-auto p-5">
+                <div v-if="selectedMaterialRecord" class="grid gap-3 md:grid-cols-2">
+                  <ReadonlyField
+                    v-for="entry in materialRecordEntries(selectedMaterialRecord)"
+                    :key="`material-detail-${entry.key}`"
+                    :label="entry.label"
+                    :text="entry.value"
+                    :min-height="materialReadonlyMinHeight(entry.key)"
+                  />
+                </div>
+                <div v-else class="p-10 text-center text-slate-500">{{ copy.emptyMaterials }}</div>
               </div>
             </div>
-          </form>
-        </div>
+
+            <form v-else class="flex max-h-[88vh] w-full max-w-[760px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" @submit.prevent="saveMaterial">
+              <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+                <div>
+                  <h2 class="text-xl font-black">{{ materialDialogMode === "edit" ? copy.editMaterial : copy.createMaterial }}</h2>
+                  <p class="mt-1 text-sm text-slate-500">{{ copy.normalMaterialsDescription }}</p>
+                </div>
+                <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeMaterialDialog">
+                  <X class="h-5 w-5" />
+                </button>
+              </div>
+              <div class="min-h-0 flex-1 overflow-y-auto p-5">
+                <div class="grid gap-3">
+                  <input v-model="materialForm.title" class="h-10 rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
+                  <select v-model="materialForm.material_type" class="h-10 rounded-xl border border-slate-200 px-3">
+                    <option value="1">{{ copy.materialTypes.textbook }}</option>
+                    <option value="2">{{ copy.materialTypes.slides }}</option>
+                    <option value="3">{{ copy.materialTypes.reference }}</option>
+                    <option value="4">{{ copy.materialTypes.other }}</option>
+                  </select>
+                  <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.materialDescriptionPlaceholder" />
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.fileObjectKey }}</span>
+                    <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
+                    <span class="mt-1 block text-xs text-slate-500">{{ copy.fileObjectKeyHint }}</span>
+                    <span v-if="!editingMaterialId" class="mt-2 block text-xs font-semibold text-amber-600">
+                      {{ (copy as any).uploadAfterSaveHintMaterial }}
+                    </span>
+                  </label>
+                  <label class="block">
+                    <span class="text-sm font-bold">{{ copy.fileHash }}</span>
+                    <input v-model="materialForm.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileHashPlaceholder" />
+                    <span class="mt-1 block text-xs text-slate-500">{{ copy.fileHashHint }}</span>
+                  </label>
+                  <div class="grid gap-3 sm:grid-cols-2">
+                    <label class="block">
+                      <span class="text-sm font-bold">{{ copy.fileSizeBytes }}</span>
+                      <input v-model="materialForm.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileSizePlaceholder" type="number" min="0" />
+                      <span class="mt-1 block text-xs text-slate-500">{{ copy.fileSizeHint }}</span>
+                    </label>
+                    <label class="block">
+                      <span class="text-sm font-bold">{{ copy.sort }}</span>
+                      <input v-model="materialForm.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
+                      <span class="mt-1 block text-xs text-slate-500">{{ copy.sortHint }}</span>
+                    </label>
+                  </div>
+                  <div v-if="selectedMaterialRecord" class="border-t border-slate-200 pt-4">
+                    <h4 class="font-black">{{ copy.materialRawFields }}</h4>
+                    <div class="mt-3 max-h-56 space-y-3 overflow-y-auto pr-1">
+                      <ReadonlyField
+                        v-for="entry in materialRecordEntries(selectedMaterialRecord)"
+                        :key="`material-edit-${entry.key}`"
+                        :label="entry.label"
+                        :text="entry.value"
+                        :min-height="materialReadonlyMinHeight(entry.key)"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-4">
+                <div class="min-w-0 flex-1">
+                  <div v-if="editingMaterialId" class="flex gap-3">
+                    <input type="file" ref="materialFileInput" class="hidden" @change="handleMaterialFileUpload" />
+                    <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingMaterial" @click="materialFileInput?.click()">
+                      <Loader2 v-if="uploadingMaterial" class="h-4 w-4 animate-spin" />
+                      <UploadCloud v-else class="h-4 w-4" />
+                      {{ uploadingMaterial ? (copy as any).uploading : (copy as any).uploadFile }}
+                    </button>
+                  </div>
+                </div>
+                <button class="h-10 min-w-[140px] rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingMaterial || uploadingMaterial" type="submit">
+                  <Loader2 v-if="savingMaterial" class="mr-2 inline-block h-4 w-4 animate-spin" />
+                  {{ savingMaterial ? copy.saving : copy.saveMaterial }}
+                </button>
+              </div>
+            </form>
+          </section>
+        </Teleport>
       </section>
 
       <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
