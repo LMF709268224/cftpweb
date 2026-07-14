@@ -88,7 +88,7 @@ const businessSummaryFields = computed<SummaryField[]>(() => {
   }
   return Object.entries(values)
     .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .map(([key, value]) => ({ label: key, value: displayBusinessValue(value) }))
+    .map(([key, value]) => ({ label: businessFieldLabel(key), value: displayBusinessValue(key, value) }))
 })
 
 function localizeOptions(options: LabelOption[], group: "bizTypes" | "orderStatuses" | "paymentStatuses") {
@@ -156,11 +156,28 @@ function stringValue(value: unknown) {
   return String(value)
 }
 
+function isTimeField(key: string) {
+  return /(^|_)(created|updated|paid|expired|completed)_at$|At$/i.test(key)
+}
+
+function businessFieldLabel(key: string) {
+  return copy.value.businessFields?.[key as keyof typeof copy.value.businessFields] || key.replaceAll("_", " ")
+}
+
+function dateValue(value: unknown) {
+  if (typeof value === "number") {
+    const ms = value > 1_000_000_000_000 ? value : value * 1000
+    return formatDate(new Date(ms).toISOString())
+  }
+  return formatDate(String(value || ""))
+}
+
 function recordValue(value: unknown): JsonRecord | null {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null
 }
 
-function displayBusinessValue(value: unknown) {
+function displayBusinessValue(key: string, value: unknown) {
+  if (isTimeField(key)) return dateValue(value)
   if (typeof value === "string") return value
   if (typeof value === "number" || typeof value === "boolean") return String(value)
   try {
