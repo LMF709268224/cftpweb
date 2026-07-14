@@ -358,7 +358,7 @@ async function handleFileUpload(event: Event) {
   const file = input.files?.[0]
   if (!file) return
   if (!form.value.pack_id || !form.value.file_id) {
-    toast.error("Please save the file record first before uploading.")
+    toast.error(copy.value.toasts.fileSaveFirst)
     return
   }
 
@@ -393,9 +393,9 @@ async function handleFileUpload(event: Event) {
     form.value.file_hash = hashHex
     form.value.file_name = file.name
     form.value.file_size = file.size
-    toast.success("File uploaded successfully")
+    toast.success(copy.value.toasts.fileUploadSuccess)
   } catch (err: any) {
-    toast.error("File upload failed: " + (err.message || String(err)))
+    toast.error(copy.value.toasts.fileUploadFailed(err.message || String(err)))
   } finally {
     uploadingFile.value = false
     if (input) input.value = ""
