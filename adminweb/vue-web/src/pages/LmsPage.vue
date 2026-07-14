@@ -669,11 +669,16 @@ function displayReadonlyValue(key: string, value: unknown) {
   return displayValue(value)
 }
 
+function courseReadonlyValue(record: JsonRecord, key: string, value: unknown) {
+  if (key === "status" || key === "raw_status") return courseStatusLabel({ ...record, status: value, raw_status: value })
+  return displayReadonlyValue(key, value)
+}
+
 function courseRecordEntries(record: JsonRecord | null | undefined) {
   if (!record) return []
   return Object.entries(record).map(([key, value]) => ({
     key,
-    value: displayReadonlyValue(key, value),
+    value: courseReadonlyValue(record, key, value),
   }))
 }
 
@@ -2738,9 +2743,6 @@ onMounted(() => {
               <p class="mt-1 break-all text-sm text-slate-500">{{ courseDetailDialogCourseId || "-" }}</p>
             </div>
             <div class="flex shrink-0 items-center gap-3">
-              <span v-if="courseDetailTarget" class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(courseStatusBadgeValue(courseDetailTarget))">
-                {{ courseStatusLabel(courseDetailTarget) }}
-              </span>
               <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeCourseDetailDialog">
                 <X class="h-5 w-5" />
               </button>
