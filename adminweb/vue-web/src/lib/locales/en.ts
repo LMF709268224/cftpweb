@@ -2571,6 +2571,7 @@ export const en: AdminTranslations = {
       file_object_key: "File Object Key",
       file_hash: "File Hash",
       external_url: "External URL",
+      meta_json: "Metadata JSON",
       version: "Version",
       created_at: "Created At",
       updated_at: "Updated At",

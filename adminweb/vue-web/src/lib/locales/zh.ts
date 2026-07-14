@@ -2569,6 +2569,7 @@ export const zh = {
       file_object_key: "文件 Object Key",
       file_hash: "文件 Hash",
       external_url: "外部链接",
+      meta_json: "元数据 JSON",
       version: "版本",
       created_at: "创建时间",
       updated_at: "更新时间",
