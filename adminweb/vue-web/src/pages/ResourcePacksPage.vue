@@ -1,9 +1,9 @@
-<script setup lang="ts">
-import { Copy, FileBox, Info, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
+﻿<script setup lang="ts">
+import { Info, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { ApiError, apiClient } from "@/lib/apiClient"
-import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
+import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 
 const pageSize = 10
@@ -36,9 +36,10 @@ const form = ref({
   version: 0,
   icon: "",
   category: "",
+  created_at: "",
+  updated_at: "",
 })
 
-const selectedEntries = computed(() => Object.entries(selected.value || {}))
 const canPrevious = computed(() => previousTokens.value.length > 0)
 const canNext = computed(() => !!nextPageToken.value)
 
@@ -103,7 +104,9 @@ function fillForm(pack: JsonRecord | null) {
     status: String(pack?.status || (mode.value === "create" ? "Draft" : "Active")),
     version: Number(pack?.version || 0),
     icon: String(pack?.icon || ""),
-    category: String(pack?.category || (mode.value === "create" ? "public" : "")),
+      category: String(pack?.category || (mode.value === "create" ? "public" : "")),
+      created_at: String(pack?.created_at || ""),
+      updated_at: String(pack?.updated_at || ""),
   }
 }
 
@@ -509,8 +512,7 @@ onMounted(load)
               <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openPackEditor(pack)">
                 {{ copy.editPack }}
               </button>
-              <button class="inline-flex items-center gap-1 text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="duplicatePack(pack)">
-                <Copy class="size-4" />
+              <button class="text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="duplicatePack(pack)">
                 {{ copy.copyPack }}
               </button>
               <button v-if="canPublishPack(pack)" class="text-sm font-bold text-emerald-700 transition hover:underline disabled:opacity-50" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'publish')">
@@ -610,6 +612,14 @@ onMounted(load)
                     {{ copy.fields.version }}
                     <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.version || 0 }}</div>
                   </div>
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.createdAt }}
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ formatDate(form.created_at) || "-" }}</div>
+                  </div>
+                  <div class="text-sm font-bold">
+                    {{ copy.fields.updatedAt }}
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ formatDate(form.updated_at) || "-" }}</div>
+                  </div>
                 </div>
               </div>
             </template>
@@ -619,7 +629,7 @@ onMounted(load)
                 <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.basic }}</div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="block">
-                    <span class="text-sm font-bold">{{ copy.fields.title }} <span class="text-red-500">*</span></span>
+                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
                     <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.title" required />
                   </label>
                   <label class="block">
@@ -658,7 +668,7 @@ onMounted(load)
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="block">
                     <span class="flex items-center gap-1.5 text-sm font-bold">
-                      {{ copy.fields.respath }} <span class="text-red-500">*</span>
+                      <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.respath }}</span>
                       <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
                         <Info class="h-4 w-4" aria-hidden="true" />
                         <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
@@ -714,24 +724,18 @@ onMounted(load)
                     {{ copy.fields.version }}
                     <input v-model.number="form.version" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
                   </label>
+                  <div v-if="mode !== 'create'" class="text-sm font-bold">
+                    {{ copy.fields.createdAt }}
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ formatDate(form.created_at) || "-" }}</div>
+                  </div>
+                  <div v-if="mode !== 'create'" class="text-sm font-bold">
+                    {{ copy.fields.updatedAt }}
+                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ formatDate(form.updated_at) || "-" }}</div>
+                  </div>
                 </div>
               </div>
 
             </template>
-
-            <div v-if="selected && mode === 'detail'" class="rounded-2xl border border-slate-200 bg-slate-50">
-              <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-black">
-                <FileBox class="h-4 w-4 text-blue-700" />
-                {{ copy.sections.raw }}
-              </div>
-              <div class="divide-y divide-slate-200 px-4">
-                <div v-for="[key, value] in selectedEntries" :key="key" class="grid gap-2 py-2.5 text-sm md:grid-cols-[170px_1fr]">
-                  <div class="text-[11px] font-black uppercase text-slate-400">{{ humanizeKey(key) }}</div>
-                  <div v-if="typeof value === 'string' && key.endsWith('_at')" class="break-words font-semibold text-slate-700">{{ formatDate(value) }}</div>
-                  <div v-else class="break-words font-semibold text-slate-700">{{ value ?? "-" }}</div>
-                </div>
-              </div>
-            </div>
           </div>
 
           <div v-if="mode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
@@ -785,3 +789,5 @@ onMounted(load)
   white-space: pre-wrap;
 }
 </style>
+
+
