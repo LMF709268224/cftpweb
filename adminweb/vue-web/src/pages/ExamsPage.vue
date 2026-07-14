@@ -31,6 +31,9 @@ const resultStatusFilter = ref("")
 const candidateFilter = ref("")
 const confirmationFilter = ref("")
 const courseUnitFilter = ref("")
+const appliedCandidateFilter = ref("")
+const appliedConfirmationFilter = ref("")
+const appliedCourseUnitFilter = ref("")
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.exams)
 
@@ -137,9 +140,9 @@ async function loadExams(targetPage = page.value) {
 
     if (statusFilter.value) params.set("status", statusFilter.value)
     if (resultStatusFilter.value) params.set("result_status", resultStatusFilter.value)
-    if (candidateFilter.value.trim()) params.set("candidate_ulid", candidateFilter.value.trim())
-    if (confirmationFilter.value.trim()) params.set("confirmation_number", confirmationFilter.value.trim())
-    if (courseUnitFilter.value.trim()) params.set("course_unit_ulid", courseUnitFilter.value.trim())
+    if (appliedCandidateFilter.value) params.set("candidate_ulid", appliedCandidateFilter.value)
+    if (appliedConfirmationFilter.value) params.set("confirmation_number", appliedConfirmationFilter.value)
+    if (appliedCourseUnitFilter.value) params.set("course_unit_ulid", appliedCourseUnitFilter.value)
 
     const isValidUlid = (id: string) => /^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i.test(id)
     if (
@@ -236,10 +239,41 @@ async function syncExamResult() {
   }
 }
 
-async function search() {
+async function executeSearch() {
   clearSelection()
   resetCursorPagination()
   await loadExams(1)
+}
+
+async function search() {
+  appliedCandidateFilter.value = candidateFilter.value.trim()
+  appliedConfirmationFilter.value = confirmationFilter.value.trim()
+  appliedCourseUnitFilter.value = courseUnitFilter.value.trim()
+  await executeSearch()
+}
+
+async function clearCandidateSearch() {
+  const shouldSearch = Boolean(appliedCandidateFilter.value)
+  candidateFilter.value = ""
+  if (!shouldSearch) return
+  appliedCandidateFilter.value = ""
+  await executeSearch()
+}
+
+async function clearConfirmationSearch() {
+  const shouldSearch = Boolean(appliedConfirmationFilter.value)
+  confirmationFilter.value = ""
+  if (!shouldSearch) return
+  appliedConfirmationFilter.value = ""
+  await executeSearch()
+}
+
+async function clearCourseUnitSearch() {
+  const shouldSearch = Boolean(appliedCourseUnitFilter.value)
+  courseUnitFilter.value = ""
+  if (!shouldSearch) return
+  appliedCourseUnitFilter.value = ""
+  await executeSearch()
 }
 
 async function refreshAll() {
@@ -313,15 +347,51 @@ onMounted(() => loadExams(1))
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.candidateUlid }}
-          <input v-model="candidateFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.candidatePlaceholder" @keyup.enter="search" />
+          <div class="relative">
+            <input v-model="candidateFilter" class="h-11 w-full rounded-xl border border-slate-200 px-3 pr-10" :placeholder="copy.filters.candidatePlaceholder" @keyup.enter="search" />
+            <button
+              v-if="candidateFilter"
+              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              type="button"
+              :aria-label="copy.filters.clearInput"
+              :title="copy.filters.clearInput"
+              @click="clearCandidateSearch"
+            >
+              <X class="h-4 w-4" />
+            </button>
+          </div>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.confirmationNumber }}
-          <input v-model="confirmationFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.confirmationPlaceholder" @keyup.enter="search" />
+          <div class="relative">
+            <input v-model="confirmationFilter" class="h-11 w-full rounded-xl border border-slate-200 px-3 pr-10" :placeholder="copy.filters.confirmationPlaceholder" @keyup.enter="search" />
+            <button
+              v-if="confirmationFilter"
+              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              type="button"
+              :aria-label="copy.filters.clearInput"
+              :title="copy.filters.clearInput"
+              @click="clearConfirmationSearch"
+            >
+              <X class="h-4 w-4" />
+            </button>
+          </div>
         </label>
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.courseUnitUlid }}
-          <input v-model="courseUnitFilter" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.filters.courseUnitPlaceholder" @keyup.enter="search" />
+          <div class="relative">
+            <input v-model="courseUnitFilter" class="h-11 w-full rounded-xl border border-slate-200 px-3 pr-10" :placeholder="copy.filters.courseUnitPlaceholder" @keyup.enter="search" />
+            <button
+              v-if="courseUnitFilter"
+              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              type="button"
+              :aria-label="copy.filters.clearInput"
+              :title="copy.filters.clearInput"
+              @click="clearCourseUnitSearch"
+            >
+              <X class="h-4 w-4" />
+            </button>
+          </div>
         </label>
         <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm" type="button" @click="search">
           <Search class="h-4 w-4" />

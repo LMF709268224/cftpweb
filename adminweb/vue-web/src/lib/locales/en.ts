@@ -1011,6 +1011,7 @@ export const en: AdminTranslations = {
       confirmationPlaceholder: "Confirmation Number",
       courseUnitUlid: "Course Unit ULID",
       courseUnitPlaceholder: "Course Unit ULID",
+      clearInput: "Clear input",
       search: "Search",
     },
     statusOptions: {
@@ -1870,7 +1871,8 @@ export const en: AdminTranslations = {
     refresh: "Refresh",
     filters: {
       candidate: "Candidate Filter",
-      candidatePlaceholder: "Candidate ULID",
+      candidatePlaceholder: "Enter candidate ULID",
+      clearInput: "Clear input",
       status: "Status Filter",
       search: "Search",
     },
