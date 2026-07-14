@@ -2453,6 +2453,7 @@ export const en: AdminTranslations = {
     supplementaryItemDescription: "This edits one record inside data_json. Saving submits the whole supplementary material config.",
     close: "Close",
     ownerChapter: "Chapter",
+    globalSupplementaryOption: "None (Global Material)",
     chapterPlaceholder: "e.g. Chapter 1: Overview of Fintech",
     materialType: "Material Type",
     supplementaryTypes: { article: "Article", video: "Video", pdf: "PDF", link: "Link", material: "Material" },

@@ -3089,7 +3089,12 @@ onMounted(() => {
                   <div class="grid gap-3">
                     <label class="block">
                       <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
-                      <input v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.chapterPlaceholder" />
+                      <select v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
+                        <option value="">{{ copy.globalSupplementaryOption }}</option>
+                        <option v-for="ch in chapters" :key="chapterId(ch)" :value="chapterTitle(ch)">
+                          {{ chapterTitle(ch) }}
+                        </option>
+                      </select>
                     </label>
                     <div class="grid gap-3 sm:grid-cols-2">
                       <label class="block">

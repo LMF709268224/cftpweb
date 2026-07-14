@@ -2451,6 +2451,7 @@ export const zh = {
     supplementaryItemDescription: "这里改的是 data_json 里的单条记录，保存后会整体提交辅助资料配置。",
     close: "关闭",
     ownerChapter: "所属章节",
+    globalSupplementaryOption: "不指定 (作为全局资料)",
     chapterPlaceholder: "例如 Chapter 1: Overview of Fintech",
     materialType: "资料类型",
     supplementaryTypes: { article: "文章", video: "视频", pdf: "PDF", link: "链接", material: "资料" },
