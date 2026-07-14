@@ -1364,8 +1364,8 @@ async function saveLesson() {
       sort_order: Number(lessonForm.value.sort_order || 1),
       lesson_type: type,
       body: lessonForm.value.body,
-      media_object_key: type === 7 ? "" : lessonForm.value.asset_object_key.trim(),
-      media_file_hash: type === 7 ? "" : lessonForm.value.asset_file_hash.trim(),
+      media_object_key: (type === 7 || type === 2) ? "" : lessonForm.value.asset_object_key.trim(),
+      media_file_hash: (type === 7 || type === 2) ? "" : lessonForm.value.asset_file_hash.trim(),
       external_url: type === 7 ? lessonForm.value.asset_object_key.trim() : "",
       version: selectedLessonRecord.value?.version || 0,
     })
