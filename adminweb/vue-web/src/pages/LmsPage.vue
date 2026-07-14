@@ -175,6 +175,11 @@ const importing = ref(false)
 const courseView = ref<"list" | "detail">("list")
 const courseCreateOpen = ref(false)
 const courseCreateContext = ref<CourseCreateContext | null>(null)
+const courseDetailDialogOpen = ref(false)
+const courseDetailDialogLoading = ref(false)
+const courseDetailTarget = ref<JsonRecord | null>(null)
+const courseDetailDialogDetail = ref<JsonRecord | null>(null)
+const courseDetailDialogComplete = ref<JsonRecord | null>(null)
 const courseDeleteConfirmOpen = ref(false)
 const pendingDeleteCourse = ref<JsonRecord | null>(null)
 const deletingCourse = ref(false)
@@ -245,12 +250,23 @@ const selectedCourseStatusBadge = computed(() => courseStatusBadgeValue(selected
 const canDeleteSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) !== "deprecated")
 const selectedLesson = computed(() => lessons.value.find((item) => lessonId(item) === editingLessonId.value) || null)
 const selectedMaterialRecord = computed(() => materials.value.find((item) => materialId(item) === selectedMaterialId.value) || selectedMaterial.value)
+const courseDetailDialogCourseId = computed(() => courseId(courseDetailTarget.value))
 const completeCourseRecord = computed(() => {
   const value = completeCourse.value?.complete_course
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : completeCourse.value
 })
+const courseDetailDialogCompleteRecord = computed(() => {
+  const value = courseDetailDialogComplete.value?.complete_course
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : courseDetailDialogComplete.value
+})
 const completeChapterRecords = computed(() => {
   const chapterDetails = Array.isArray(completeCourseRecord.value?.chapters) ? completeCourseRecord.value.chapters : []
+  return chapterDetails
+    .filter(isJsonRecord)
+    .map((record) => record.chapter && isJsonRecord(record.chapter) ? record.chapter : record)
+})
+const courseDetailDialogChapterRecords = computed(() => {
+  const chapterDetails = Array.isArray(courseDetailDialogCompleteRecord.value?.chapters) ? courseDetailDialogCompleteRecord.value.chapters : []
   return chapterDetails
     .filter(isJsonRecord)
     .map((record) => record.chapter && isJsonRecord(record.chapter) ? record.chapter : record)
@@ -326,10 +342,33 @@ const allQuizItems = computed<QuizListItem[]>(() => {
 const selectedQuizItem = computed(() => allQuizItems.value.find((item) => quizId(item.quiz) === selectedQuizId.value) || null)
 const quizChapterOptions = computed(() => chapters.value.length ? chapters.value : completeChapterRecords.value)
 const quizLessonOptions = computed(() => allLessonItems.value)
-const courseChapterCount = computed(() => completeCourse.value ? completeChapterRecords.value.length : Math.max(chapters.value.length, positiveCount(courseDetail.value?.chapter_count)))
-const courseLessonCount = computed(() => completeCourse.value ? allLessonItems.value.length : Math.max(lessons.value.length, positiveCount(courseDetail.value?.lesson_count)))
-const courseQuizCount = computed(() => completeCourse.value ? allQuizItems.value.length : Math.max(quizzes.value.length, positiveCount(courseDetail.value?.quiz_count)))
-const courseMaterialCount = computed(() => Math.max(materials.value.length + supplementaryMaterialItems.value.length, positiveCount(courseDetail.value?.material_count)))
+const courseDetailDialogChapterCount = computed(() => courseDetailDialogComplete.value ? courseDetailDialogChapterRecords.value.length : positiveCount(courseDetailDialogDetail.value?.chapter_count))
+const courseDetailDialogLessonCount = computed(() => {
+  if (!courseDetailDialogComplete.value) return positiveCount(courseDetailDialogDetail.value?.lesson_count)
+  return (Array.isArray(courseDetailDialogCompleteRecord.value?.chapters) ? courseDetailDialogCompleteRecord.value.chapters : [])
+    .filter(isJsonRecord)
+    .reduce((total, chapter) => total + (Array.isArray(chapter.lessons) ? chapter.lessons.length : 0), 0)
+})
+const courseDetailDialogQuizCount = computed(() => {
+  if (!courseDetailDialogComplete.value) return positiveCount(courseDetailDialogDetail.value?.quiz_count)
+  const complete = courseDetailDialogCompleteRecord.value || {}
+  let total = Array.isArray(complete.quizzes) ? complete.quizzes.length : 0
+  const chapters = Array.isArray(complete.chapters) ? complete.chapters.filter(isJsonRecord) : []
+  for (const chapter of chapters) {
+    total += Array.isArray(chapter.quizzes) ? chapter.quizzes.length : 0
+    const lessons = Array.isArray(chapter.lessons) ? chapter.lessons.filter(isJsonRecord) : []
+    for (const lesson of lessons) total += Array.isArray(lesson.quizzes) ? lesson.quizzes.length : 0
+  }
+  return total
+})
+const courseDetailDialogMaterialCount = computed(() => {
+  if (!courseDetailDialogComplete.value) return positiveCount(courseDetailDialogDetail.value?.material_count)
+  const complete = courseDetailDialogCompleteRecord.value || {}
+  return Math.max(
+    Array.isArray(complete.materials) ? complete.materials.length : 0,
+    positiveCount(courseDetailDialogDetail.value?.material_count),
+  )
+})
 
 function emptyCourseForm(): CourseForm {
   return {
@@ -595,11 +634,6 @@ function displayValue(value: unknown) {
   return String(value)
 }
 
-function recordEntries(record: JsonRecord | null | undefined) {
-  if (!record) return []
-  return Object.entries(record).map(([key, value]) => ({ key, value: displayValue(value) }))
-}
-
 function displayReadonlyValue(key: string, value: unknown) {
   if (key.endsWith("_at") || key.endsWith("_time")) return formatDate(value) || displayValue(value)
   return displayValue(value)
@@ -659,6 +693,31 @@ function materialReadonlyFieldLabel(key: string) {
 function materialReadonlyValue(key: string, value: unknown) {
   if (key === "material_type") return materialTypeLabel(value)
   return displayReadonlyValue(key, value)
+}
+
+function supplementaryReadonlyFieldLabel(key: string) {
+  const labels: Record<string, string> = copy.value.supplementaryFieldLabels
+  return labels[key] || materialReadonlyFieldLabel(key)
+}
+
+function supplementaryKindValue(value: unknown) {
+  const kind = String(value || "")
+  if (kind === "supplementary_materials") return copy.value.supplementaryKindValues.supplementaryMaterials
+  return displayValue(value)
+}
+
+function supplementaryReadonlyValue(key: string, value: unknown) {
+  if (key === "kind") return supplementaryKindValue(value)
+  return displayReadonlyValue(key, value)
+}
+
+function supplementaryRecordEntries(record: JsonRecord | null | undefined) {
+  if (!record) return []
+  return Object.entries(record).map(([key, value]) => ({
+    key,
+    label: supplementaryReadonlyFieldLabel(key),
+    value: supplementaryReadonlyValue(key, value),
+  }))
 }
 
 function materialReadonlyMinHeight(key: string) {
@@ -980,6 +1039,37 @@ async function selectCourse(course: JsonRecord) {
   resetContent()
   courseView.value = "detail"
   await Promise.all([loadCourseDetail(), loadCompleteCourse(), loadChapters(), loadMaterials(), loadSupplementaryMaterial()])
+}
+
+async function openCourseDetailDialog(course: JsonRecord) {
+  const id = courseId(course)
+  if (!id) return
+  courseDetailTarget.value = course
+  courseDetailDialogDetail.value = null
+  courseDetailDialogComplete.value = null
+  courseDetailDialogOpen.value = true
+  courseDetailDialogLoading.value = true
+  try {
+    const [detailResult, completeResult] = await Promise.allSettled([
+      apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/detail`),
+      apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/complete`),
+    ])
+    if (courseDetailDialogCourseId.value !== id) return
+    if (detailResult.status === "fulfilled") courseDetailDialogDetail.value = detailResult.value
+    else console.error(detailResult.reason)
+    if (completeResult.status === "fulfilled") courseDetailDialogComplete.value = completeResult.value
+    else console.error(completeResult.reason)
+  } finally {
+    if (courseDetailDialogCourseId.value === id) courseDetailDialogLoading.value = false
+  }
+}
+
+function closeCourseDetailDialog() {
+  courseDetailDialogOpen.value = false
+  courseDetailDialogLoading.value = false
+  courseDetailTarget.value = null
+  courseDetailDialogDetail.value = null
+  courseDetailDialogComplete.value = null
 }
 
 function clearCourseSelection() {
@@ -2576,6 +2666,62 @@ onMounted(() => {
       </section>
     </Teleport>
 
+    <Teleport to="body">
+      <section v-if="courseDetailDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6" role="dialog" aria-modal="true">
+        <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+            <div>
+              <h2 class="text-2xl font-black text-slate-950">{{ copy.courseTopData }}</h2>
+              <p class="mt-1 break-all text-sm text-slate-500">{{ courseDetailDialogCourseId || "-" }}</p>
+            </div>
+            <div class="flex shrink-0 items-center gap-3">
+              <span v-if="courseDetailTarget" class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(courseStatusBadgeValue(courseDetailTarget))">
+                {{ courseStatusLabel(courseDetailTarget) }}
+              </span>
+              <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeCourseDetailDialog">
+                <X class="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          <div class="min-h-0 flex-1 overflow-y-auto p-6">
+            <div class="grid gap-3 sm:grid-cols-4">
+              <div class="rounded-xl bg-slate-50 p-3">
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.chapters }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseDetailDialogChapterCount }}</div>
+              </div>
+              <div class="rounded-xl bg-slate-50 p-3">
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.lessons }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseDetailDialogLessonCount }}</div>
+              </div>
+              <div class="rounded-xl bg-slate-50 p-3">
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.quizzes }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseDetailDialogQuizCount }}</div>
+              </div>
+              <div class="rounded-xl bg-slate-50 p-3">
+                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.materials }}</div>
+                <div class="mt-1 text-xl font-black">{{ courseDetailDialogMaterialCount }}</div>
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-xl border border-slate-200 p-4">
+              <h3 class="font-black">{{ copy.readonlyFields }}</h3>
+              <p class="mt-1 text-xs text-slate-500">{{ copy.readonlyFieldsHint }}</p>
+              <div class="mt-3 max-h-[56vh] space-y-3 overflow-y-auto overscroll-contain pr-2">
+                <ReadonlyField v-for="entry in courseRecordEntries(courseDetailTarget)" :key="`course-dialog-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
+                <div v-if="courseDetailDialogLoading" class="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
+                  <Loader2 class="h-4 w-4 animate-spin" />
+                  {{ copy.loadingCompleteCourse }}
+                </div>
+                <ReadonlyField v-for="entry in courseRecordEntries(courseDetailDialogDetail)" :key="`course-dialog-detail-${entry.key}`" :label="courseDetailReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
+                <ReadonlyField v-for="entry in courseRecordEntries(courseDetailDialogComplete)" :key="`course-dialog-complete-${entry.key}`" :label="completeCourseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </Teleport>
+
     <section v-if="courseView === 'list'" class="rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div class="grid gap-3 border-b border-slate-200 bg-slate-50/60 p-4 lg:grid-cols-[1fr_auto]">
         <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" :placeholder="copy.categoryPlaceholder" />
@@ -2591,21 +2737,24 @@ onMounted(() => {
       </div>
       <div v-else-if="!courses.length" class="p-12 text-center text-slate-500">{{ copy.emptyCourses }}</div>
       <div v-else>
-        <div class="hidden grid-cols-[minmax(0,1fr)_120px_260px_120px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+        <div class="hidden grid-cols-[minmax(0,1fr)_120px_260px_120px_180px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
           <span>{{ copy.columns.course }}</span>
           <span>{{ copy.columns.version }}</span>
           <span>{{ copy.columns.updatedAt }}</span>
           <span class="text-right">{{ copy.columns.status }}</span>
+          <span class="text-right">{{ copy.columns.action }}</span>
         </div>
-        <button
+        <div
           v-for="course in courses"
           :key="courseId(course)"
-          class="block w-full border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
+          class="block w-full cursor-pointer border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
           :class="courseId(course) === selectedCourseId ? 'bg-sky-50/70' : ''"
-          type="button"
+          role="button"
+          tabindex="0"
           @click="selectCourse(course)"
+          @keyup.enter="selectCourse(course)"
         >
-          <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_120px_260px_120px] lg:items-center lg:gap-6">
+          <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_120px_260px_120px_180px] lg:items-center lg:gap-6">
             <div class="min-w-0">
               <div class="truncate text-base font-black text-slate-950">{{ courseTitle(course) }}</div>
               <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
@@ -2622,8 +2771,16 @@ onMounted(() => {
             <span class="justify-self-start rounded-full border px-3 py-1 text-xs font-black lg:justify-self-end" :class="badgeClass(courseStatusBadgeValue(course))">
               {{ courseStatusLabel(course) }}
             </span>
+            <div class="flex items-center gap-3 lg:justify-end">
+              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click.stop="openCourseDetailDialog(course)">
+                {{ copy.viewDetails }}
+              </button>
+              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click.stop="selectCourse(course)">
+                {{ copy.edit }}
+              </button>
+            </div>
           </div>
-        </button>
+        </div>
       </div>
       <div v-if="nextPageToken" class="border-t border-slate-200 p-4">
         <button class="w-full rounded-xl border px-4 py-3 font-bold transition hover:bg-slate-50 disabled:cursor-default disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400 disabled:opacity-100" type="button" :disabled="!nextPageToken || loading" @click="loadCourses(nextPageToken)">
@@ -2644,7 +2801,7 @@ onMounted(() => {
           </span>
         </div>
 
-        <div class="grid gap-4 p-5 2xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div class="p-5">
           <form class="grid gap-3 lg:grid-cols-2" @submit.prevent="saveCourse">
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
@@ -2710,37 +2867,6 @@ onMounted(() => {
               </button>
             </div>
           </form>
-
-          <aside class="space-y-3">
-            <div class="grid gap-3 sm:grid-cols-2">
-              <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.chapters }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseChapterCount }}</div>
-              </div>
-              <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.lessons }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseLessonCount }}</div>
-              </div>
-              <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.quizzes }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseQuizCount }}</div>
-              </div>
-              <div class="rounded-xl bg-slate-50 p-3">
-                <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.materials }}</div>
-                <div class="mt-1 text-xl font-black">{{ courseMaterialCount }}</div>
-              </div>
-            </div>
-            <div class="rounded-xl border border-slate-200 p-3">
-              <h3 class="font-black">{{ copy.readonlyFields }}</h3>
-              <p class="mt-1 text-xs text-slate-500">{{ copy.readonlyFieldsHint }}</p>
-              <div class="mt-3 max-h-[420px] space-y-2 overflow-y-auto overscroll-contain pr-2">
-                <ReadonlyField v-for="entry in courseRecordEntries(selectedCourse)" :key="`course-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
-                <div v-if="detailLoading || completeLoading" class="text-sm text-slate-500">{{ copy.loadingCompleteCourse }}</div>
-                <ReadonlyField v-for="entry in courseRecordEntries(courseDetail)" :key="`detail-${entry.key}`" :label="courseDetailReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
-                <ReadonlyField v-for="entry in courseRecordEntries(completeCourse)" :key="`complete-${entry.key}`" :label="completeCourseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
-              </div>
-            </div>
-          </aside>
         </div>
       </section>
 
@@ -3291,7 +3417,7 @@ onMounted(() => {
             <div v-if="supplementaryMaterial" class="mt-5 border-t border-slate-200 pt-4">
               <h4 class="font-black">{{ copy.supplementaryRawFields }}</h4>
               <div class="mt-3 max-h-48 space-y-3 overflow-y-auto pr-1">
-                <ReadonlyField v-for="entry in recordEntries(supplementaryMaterial)" :key="`supplementary-${entry.key}`" :label="entry.key" :text="entry.value" />
+                <ReadonlyField v-for="entry in supplementaryRecordEntries(supplementaryMaterial)" :key="`supplementary-${entry.key}`" :label="entry.label" :text="entry.value" />
               </div>
             </div>
           </div>
@@ -3390,7 +3516,10 @@ onMounted(() => {
               </div>
               <div class="min-h-0 flex-1 overflow-y-auto p-5">
                 <div class="grid gap-3">
-                  <input v-model="materialForm.title" class="h-10 rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
+                  <label class="block">
+                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.materialTitlePlaceholder }}</span>
+                    <input v-model="materialForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
+                  </label>
                   <select v-model="materialForm.material_type" class="h-10 rounded-xl border border-slate-200 px-3">
                     <option value="1">{{ copy.materialTypes.textbook }}</option>
                     <option value="2">{{ copy.materialTypes.slides }}</option>
