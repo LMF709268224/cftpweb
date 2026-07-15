@@ -1326,7 +1326,9 @@ onMounted(() => {
                     <div v-if="boolValue(selectedUnitItem.unit, 'allow_exemption')" class="mt-4 border-t border-slate-200 pt-4">
                       <div class="mb-2 flex items-center gap-1 text-sm font-bold text-slate-700">
                         {{ copy.exemptionQualificationsJsonLabel || '豁免资格' }}
-                        <Info class="h-4 w-4 text-slate-400" :title="(copy as any).exemptionQualificationsTooltip || '只需满足任一勾选的资格即可免考'" />
+                        <span :title="(copy as any).exemptionQualificationsTooltip || '只需满足任一勾选的资格即可免考'" class="cursor-help flex items-center">
+                          <Info class="h-4 w-4 text-slate-400" />
+                        </span>
                       </div>
                       <div v-if="credentialOptionsLoading" class="text-xs text-slate-500">{{ copy.loadingQualifications }}</div>
                       <div v-else-if="!credentialOptions.length" class="text-xs text-slate-500">（无可用资格）</div>
