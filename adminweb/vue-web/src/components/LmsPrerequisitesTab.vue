@@ -101,7 +101,7 @@ async function loadPrerequisites() {
     const res = await apiClient<any>(`/api/lms/prerequisites?target_entity_type=${props.targetEntityType}&target_entity_id=${props.targetEntityId}`, {
       method: 'GET'
     })
-    prerequisites.value = res.data.prerequisites || []
+    prerequisites.value = res?.prerequisites || []
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, props.copy.loadFailed || 'Load failed'))
