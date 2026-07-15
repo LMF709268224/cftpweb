@@ -3478,7 +3478,7 @@ onMounted(() => {
             </div>
           </Teleport>
 
-          <div class="rounded-2xl border border-slate-200 p-4">
+          <div v-if="false" class="rounded-2xl border border-slate-200 p-4">
             <details>
               <summary class="cursor-pointer font-black">{{ copy.supplementaryAdvancedTitle }}</summary>
               <div class="mt-4 grid gap-3">
