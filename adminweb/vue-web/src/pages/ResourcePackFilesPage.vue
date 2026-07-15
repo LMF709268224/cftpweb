@@ -471,13 +471,13 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight text-slate-950">{{ copy.title }}</h1>
+      <div class="min-w-0">
+        <h1 class="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
-      <div class="flex gap-3">
+      <div class="flex flex-wrap gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" :disabled="loading" @click="load">
           <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
           <RefreshCw v-else class="h-4 w-4" />
@@ -490,13 +490,13 @@ onMounted(load)
       </div>
     </header>
 
-    <div class="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-5">
       <div class="flex flex-wrap items-center justify-between gap-4">
-        <div>
+        <div class="min-w-0">
           <h2 class="text-lg font-black">{{ copy.filterTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.filterDescription }}</p>
         </div>
-        <select v-model="packFilter" class="h-10 min-w-[360px] rounded-xl border border-slate-200 px-3 text-sm font-bold" @change="changePackFilter">
+        <select v-model="packFilter" class="h-10 w-full min-w-0 rounded-xl border border-slate-200 px-3 text-sm font-bold sm:w-auto sm:min-w-[360px]" @change="changePackFilter">
           <option value="">{{ copy.allPacks }}</option>
           <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
         </select>
@@ -505,20 +505,20 @@ onMounted(load)
 
     <div class="grid gap-6">
       <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-5">
+          <div class="min-w-0">
             <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
           </div>
           
           </div>
 
-        <div v-if="loading" class="px-6 py-10 text-center text-slate-500">
+        <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:px-6">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
           {{ copy.loading }}
         </div>
-        <div v-else-if="!files.length" class="px-6 py-10 text-center text-slate-500">{{ copy.empty }}</div>
-        <div v-else class="grid grid-cols-[minmax(0,1fr)_72px_130px_280px] gap-5 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+        <div v-else-if="!files.length" class="px-4 py-10 text-center text-slate-500 md:px-6">{{ copy.empty }}</div>
+        <div v-else class="hidden grid-cols-[minmax(0,1fr)_72px_130px_280px] gap-5 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
           <span>{{ copy.columns.file }}</span>
           <span class="text-center">{{ copy.columns.sort }}</span>
           <span class="text-center">{{ copy.columns.type }}</span>
@@ -527,46 +527,52 @@ onMounted(load)
         <div
           v-for="file in files"
           :key="fileId(file)"
-          class="grid w-full grid-cols-[minmax(0,1fr)_72px_130px_280px] gap-5 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
+          class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_72px_130px_280px] md:gap-5 md:px-5"
           :class="fileId(selected) === fileId(file) ? 'bg-sky-50' : ''"
         >
           <button class="min-w-0 text-left" type="button" @click="openFileDetail(file)">
-            <div class="truncate text-lg font-black text-slate-950">{{ fileTitle(file) }}</div>
+            <div class="break-words text-lg font-black text-slate-950 md:truncate">{{ fileTitle(file) }}</div>
             <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ file.description || "-" }}</div>
             <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
               <span class="max-w-full truncate rounded-full bg-blue-50 px-2 py-1 text-blue-700">{{ copy.ownerPrefix }}{{ ownerText(file) }}</span>
               <span class="rounded-full bg-slate-100 px-2 py-1">Version: {{ file.version || 0 }}</span>
             </div>
           </button>
-          <span class="self-center text-center text-sm font-black text-slate-700">{{ file.sort_order || 0 }}</span>
-          <span class="h-fit self-center justify-self-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
-            {{ fileTypeLabel(file.file_type) }}
+          <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:rounded-none md:bg-transparent md:p-0 md:text-center">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.sort }}</span>
+            <span class="text-sm font-black text-slate-700">{{ file.sort_order || 0 }}</span>
           </span>
-          <div class="flex min-w-0 items-center justify-end gap-4 whitespace-nowrap">
-            <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openFileDetail(file)">
+          <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.type }}</span>
+            <span class="inline-flex h-fit whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
+              {{ fileTypeLabel(file.file_type) }}
+            </span>
+          </span>
+          <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:justify-end md:items-center md:gap-4">
+            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openFileDetail(file)">
               {{ copy.viewDetails }}
             </button>
-            <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openFileEditor(file)">
+            <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-[#ffba00] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openFileEditor(file)">
               {{ copy.editFile }}
             </button>
-            <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="requestDeleteFile(file)">
+            <button class="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-[#ff4949] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="requestDeleteFile(file)">
               {{ copy.deleteFile }}
             </button>
           </div>
         </div>
 
-        <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
-          <span class="mr-auto text-sm font-bold text-slate-500">{{ `${currentPage} / ${Math.max(1, Math.ceil(total / pageSize))}` }}</span>
+        <div class="flex flex-col items-stretch justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-5">
+          <span class="text-center text-sm font-bold text-slate-500 sm:mr-auto sm:text-left">{{ `${currentPage} / ${Math.max(1, Math.ceil(total / pageSize))}` }}</span>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
         </div>
       </section>
 
-      <section v-if="detailOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-        <div class="flex max-h-[88vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-          <div>
-            <h2 class="text-xl font-black">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
+      <section v-if="detailOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <div class="flex h-full max-h-none w-full max-w-[1100px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-5">
+          <div class="min-w-0">
+            <h2 class="break-words text-xl font-black">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ mode === "detail" ? copy.readonlyHint : mode === "create" ? copy.createHint : copy.editHint }}</p>
             <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
               <Loader2 class="h-3.5 w-3.5 animate-spin" />
@@ -578,7 +584,7 @@ onMounted(load)
           </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-5">
+        <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
           <div class="mb-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
             <div class="text-xs font-black uppercase text-blue-600">{{ copy.ownerCardTitle }}</div>
             <div class="mt-1 text-lg font-black text-slate-950">{{ selectedPack ? packTitle(selectedPack) : copy.selectPack }}</div>
@@ -633,10 +639,10 @@ onMounted(load)
           <label class="text-sm font-bold" v-if="form.file_type !== 1">
             {{ copy.fields.fileObjectKey }}
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_object_key) }}</div>
-            <div v-else class="mt-2 flex gap-3">
+            <div v-else class="mt-2 flex flex-col gap-3 sm:flex-row">
               <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
               <input v-model="form.file_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.fileObjectKey" />
-              <button type="button" class="shrink-0 flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="fileInput?.click()">
+              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="fileInput?.click()">
                 <Loader2 v-if="uploadingFile" class="h-4 w-4 animate-spin" />
                 <UploadCloud v-else class="h-4 w-4" />
                 {{ uploadingFile ? (copy as any).uploading : (copy as any).uploadFile }}
@@ -651,10 +657,10 @@ onMounted(load)
           <label class="text-sm font-bold">
             {{ copy.fields.thumbnailObjectKey }}
             <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.thumbnail_object_key) }}</div>
-            <div v-else class="mt-2 flex gap-3">
+            <div v-else class="mt-2 flex flex-col gap-3 sm:flex-row">
               <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailFileUpload" />
               <input v-model="form.thumbnail_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
-              <button type="button" class="shrink-0 flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingThumbnail || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="thumbnailFileInput?.click()">
+              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingThumbnail || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="thumbnailFileInput?.click()">
                 <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
                 <UploadCloud v-else class="h-4 w-4" />
                 {{ uploadingThumbnail ? (copy as any).uploading : (copy as any).uploadFile }}
@@ -696,8 +702,8 @@ onMounted(load)
           </div>
         </div>
 
-        <div v-if="mode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
-          <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="saveFile">
+        <div v-if="mode !== 'detail'" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
+          <button class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="saveFile">
             <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
             <Save v-else class="h-4 w-4" />
             {{ mode === "create" ? copy.createFile : copy.saveFile }}
@@ -707,15 +713,15 @@ onMounted(load)
       </section>
 
       <Teleport to="body">
-        <div v-if="deleteConfirmOpen && selected" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
-          <section class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
-            <h2 class="text-2xl font-black text-slate-950">{{ copy.deleteConfirmTitle }}</h2>
+        <div v-if="deleteConfirmOpen && selected" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
+          <section class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+            <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
             <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
             <div class="mt-5 rounded-2xl bg-slate-50 p-4">
               <div class="break-words font-black text-slate-950">{{ fileTitle(selected) }}</div>
               <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ fileId(selected) }}</div>
             </div>
-            <div class="mt-6 flex justify-end gap-3">
+            <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
               <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="saving" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
               <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="deleteFile">
                 {{ saving ? copy.deleting : copy.confirmDeleteAction }}
