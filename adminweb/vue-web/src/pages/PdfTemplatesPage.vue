@@ -171,13 +171,13 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+      <div class="min-w-0">
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
-      <div class="flex gap-3">
+      <div class="flex flex-wrap gap-3">
         <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
@@ -191,17 +191,17 @@ onMounted(load)
 
     <div class="grid gap-6">
       <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 p-5">
-          <div>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:p-5">
+          <div class="min-w-0">
             <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
           </div>
         </div>
-        <div v-if="loading" class="p-12 text-center text-slate-500">
+        <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:p-12">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
           {{ copy.loading }}
         </div>
-        <div v-else-if="!templates.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
+        <div v-else-if="!templates.length" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
         <div v-else>
           <div class="hidden grid-cols-[minmax(0,1fr)_96px_150px_150px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
             <span>{{ copy.columns.template }}</span>
@@ -212,25 +212,27 @@ onMounted(load)
           <div
             v-for="template in templates"
             :key="templateUlid(template)"
-            class="grid w-full gap-3 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50 lg:grid-cols-[minmax(0,1fr)_96px_150px_150px] lg:items-center lg:gap-6"
+            class="grid w-full gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:px-5 lg:grid-cols-[minmax(0,1fr)_96px_150px_150px] lg:items-center lg:gap-6"
             :class="templateUlid(selected) === templateUlid(template) ? 'bg-sky-50/70' : ''"
           >
             <div class="min-w-0">
-              <div class="truncate text-lg font-black text-slate-950">{{ templateName(template) }}</div>
+              <div class="break-words text-lg font-black text-slate-950 lg:truncate">{{ templateName(template) }}</div>
               <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ template.description || copy.noDescription }}</div>
-              <div class="mt-1 truncate font-mono text-xs font-semibold text-slate-500">ID: {{ templateUlid(template) || "-" }}</div>
+              <div class="mt-1 break-all font-mono text-xs font-semibold text-slate-500 lg:truncate">ID: {{ templateUlid(template) || "-" }}</div>
             </div>
-            <div class="text-sm font-bold text-slate-700">
-              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.version }}</span>v{{ template.version || 1 }}
+            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 lg:block lg:rounded-none lg:bg-transparent lg:p-0">
+              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.version }}</span>
+              <span>v{{ template.version || 1 }}</span>
             </div>
-            <div class="text-sm font-bold text-slate-500">
-              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.createdAt }}</span>{{ formatDate(String(template.created_at || "")) }}
+            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-500 lg:block lg:rounded-none lg:bg-transparent lg:p-0">
+              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.createdAt }}</span>
+              <span class="text-right">{{ formatDate(String(template.created_at || "")) }}</span>
             </div>
-            <div class="flex items-center justify-start gap-4 lg:justify-center">
-              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openTemplateDetail(template)">
+            <div class="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:justify-start lg:justify-center">
+              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openTemplateDetail(template)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openTemplateEditor(template)">
+              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-[#ffba00] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openTemplateEditor(template)">
                 {{ copy.edit }}
               </button>
             </div>
@@ -239,10 +241,10 @@ onMounted(load)
       </section>
 
       <Teleport to="body">
-        <section v-if="dialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-          <div class="flex max-h-[88vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
-              <div>
+        <section v-if="dialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+          <div class="flex h-full max-h-none w-full max-w-[1100px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:p-5">
+              <div class="min-w-0">
                 <h2 class="text-xl font-black">
                   {{ mode === "create" ? copy.newTemplate : mode === "edit" ? copy.editTitle : copy.detailTitle }}
                 </h2>
@@ -252,7 +254,7 @@ onMounted(load)
                 <X class="h-5 w-5" />
               </button>
             </div>
-            <div class="relative flex-1 overflow-y-auto p-5">
+            <div class="relative min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
               <div v-if="detailLoading" class="absolute inset-0 z-10 flex items-center justify-center bg-white/80 backdrop-blur-[2px]">
                 <div class="flex flex-col items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-5 text-sm font-bold text-slate-600 shadow-xl">
                   <Loader2 class="h-8 w-8 animate-spin text-blue-700" />
@@ -279,7 +281,7 @@ onMounted(load)
                   <ReadonlyField v-if="readonlyMode" :label="copy.fields.htmlTemplate" :value="form.html_template" mono min-height="460px" max-height="460px" />
                   <label v-else class="grid gap-2 text-sm font-bold">
                     <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.htmlTemplate }}</span>
-                    <textarea v-model="form.html_template" class="min-h-[460px] rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6" required />
+                    <textarea v-model="form.html_template" class="min-h-80 rounded-xl border border-slate-200 p-4 font-mono text-sm leading-6 md:min-h-[460px]" required />
                   </label>
                 </form>
 
@@ -300,13 +302,13 @@ onMounted(load)
                   </div>
                   <div class="rounded-2xl border border-slate-200 bg-white p-4">
                     <h3 class="font-black">{{ copy.preview }}</h3>
-                    <iframe class="mt-4 h-[520px] w-full rounded-xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="previewHtml" />
+                    <iframe class="mt-4 h-80 w-full rounded-xl border border-slate-200 bg-white md:h-[520px]" sandbox="allow-same-origin" :srcdoc="previewHtml" />
                   </div>
                 </div>
               </div>
             </div>
-            <div v-if="!readonlyMode" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
-              <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="submit" form="pdf-template-form" :disabled="saving || detailLoading">
+            <div v-if="!readonlyMode" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
+              <button class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="submit" form="pdf-template-form" :disabled="saving || detailLoading">
                 <Save class="h-4 w-4" />
                 {{ saving ? copy.saving : copy.saveTemplate }}
               </button>

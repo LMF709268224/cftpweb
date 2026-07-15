@@ -181,24 +181,24 @@ watch([keyword, roleFilter, statusFilter], () => {
 </script>
 
 <template>
-  <main class="mx-auto max-w-[1600px] px-6 py-8">
-    <header class="mb-6 flex flex-wrap items-center justify-between gap-4">
-      <div>
+  <main class="mx-auto max-w-[1600px] px-4 py-5 md:px-6 md:py-8">
+    <header class="mb-5 flex flex-wrap items-start justify-between gap-4 md:mb-6 md:items-center">
+      <div class="min-w-0">
         <div class="mb-2 text-xs font-black uppercase tracking-wide text-slate-400">{{ copy.eyebrow }}</div>
-        <h1 class="text-4xl font-black tracking-tight text-slate-950">{{ copy.title }}</h1>
+        <h1 class="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-sm text-slate-500">{{ copy.subtitle }}</p>
       </div>
-      <div class="flex flex-wrap gap-3">
-        <RouterLink to="/audit/logs" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
+      <div class="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap">
+        <RouterLink to="/audit/logs" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
           <Activity class="h-4 w-4" />
           {{ copy.auditLogs }}
         </RouterLink>
-        <RouterLink to="/mails" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
+        <RouterLink to="/mails" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
           <Mail class="h-4 w-4" />
           {{ copy.emailActivity }}
         </RouterLink>
         <button
-          class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold shadow-sm transition hover:border-slate-500 disabled:opacity-50"
+          class="col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold shadow-sm transition hover:border-slate-500 disabled:opacity-50 sm:col-span-1"
           type="button"
           :disabled="loading"
           @click="loadDashboard(userPage)"
@@ -210,7 +210,7 @@ watch([keyword, roleFilter, statusFilter], () => {
       </div>
     </header>
 
-    <section class="mb-5 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm">
+    <section class="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-5">
       <div class="mb-2 flex items-center justify-between text-sm font-black text-slate-700">
         <span>{{ copy.profileCompletion }}</span>
         <span class="text-[#0b579b]">{{ profileCompletion }}%</span>
@@ -220,34 +220,34 @@ watch([keyword, roleFilter, statusFilter], () => {
       </div>
     </section>
 
-    <section class="mb-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-      <article v-for="card in summaryCards" :key="card.label" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-5">
+      <article v-for="card in summaryCards" :key="card.label" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
         <div class="flex items-center justify-between">
           <p class="text-sm font-bold text-slate-600">{{ card.label }}</p>
           <component :is="card.icon" class="h-5 w-5 text-slate-300" />
         </div>
-        <p class="mt-5 text-4xl font-black" :class="card.tone">{{ card.value }}</p>
+        <p class="mt-4 text-3xl font-black md:mt-5 md:text-4xl" :class="card.tone">{{ card.value }}</p>
       </article>
     </section>
 
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div class="border-b border-slate-100 px-6 py-5">
+      <div class="border-b border-slate-100 px-4 py-4 md:px-6 md:py-5">
         <div class="flex flex-wrap items-end justify-between gap-4">
-          <div>
+          <div class="min-w-0">
             <h2 class="text-xl font-black text-slate-950">{{ copy.userManagement }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.userManagementHint }}</p>
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.userPageText(userPage, userTotal) }}</span>
         </div>
-        <div class="mt-5 flex flex-wrap gap-3 rounded-2xl bg-slate-50 p-3">
-          <div class="relative min-w-[280px] flex-1">
+        <div class="mt-5 flex flex-col gap-3 rounded-2xl bg-slate-50 p-3 md:flex-row md:flex-wrap">
+          <div class="relative min-w-0 flex-1 md:min-w-[280px]">
             <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input v-model="keyword" class="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-[#0b579b]" :placeholder="copy.filters.searchPlaceholder" />
           </div>
-          <select v-model="roleFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b579b]">
+          <select v-model="roleFilter" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b579b] md:w-auto">
             <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
-          <select v-model="statusFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b579b]">
+          <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b579b] md:w-auto">
             <option value="all">{{ copy.filters.allStatus }}</option>
             <option value="active">{{ copy.filters.active }}</option>
             <option value="inactive">{{ copy.filters.inactive }}</option>
@@ -256,7 +256,50 @@ watch([keyword, roleFilter, statusFilter], () => {
         </div>
       </div>
 
-      <div class="overflow-x-auto">
+      <div class="md:hidden">
+        <div v-if="loading" class="px-4 py-10 text-center text-slate-400">
+          <Loader2 class="mr-2 inline h-5 w-5 animate-spin" />
+          {{ copy.loading }}
+        </div>
+        <div v-else-if="filteredUsers.length === 0" class="px-4 py-10 text-center text-slate-400">{{ copy.noUsers }}</div>
+        <div v-else class="divide-y divide-slate-100">
+          <article v-for="user in filteredUsers" :key="user.id" class="px-4 py-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0">
+                <div class="break-words font-bold text-slate-950">{{ user.name || "-" }}</div>
+                <div class="mt-1 break-all text-xs text-slate-500">{{ user.phone || user.candidate_ulid || "-" }}</div>
+              </div>
+              <span class="inline-flex shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
+            </div>
+            <div class="mt-3 grid gap-2 text-sm">
+              <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.table.email }}</span>
+                <span class="break-all text-right text-slate-700">{{ user.email || "-" }}</span>
+              </div>
+              <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.table.location }}</span>
+                <span class="break-words text-right text-slate-700">{{ user.location || "-" }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.table.role }}</span>
+                <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.table.emailVerified }}</span>
+                <span :class="['inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
+                  {{ user.email_verified ? copy.verified : copy.unverified }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.table.created }}</span>
+                <span class="text-right text-slate-700">{{ formatDate(user.created_at) }}</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="hidden overflow-x-auto md:block">
         <table class="w-full min-w-[1120px] text-left text-sm">
           <thead class="border-b border-slate-100 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
             <tr>
@@ -304,11 +347,11 @@ watch([keyword, roleFilter, statusFilter], () => {
           </tbody>
         </table>
       </div>
-      <div class="flex items-center justify-end gap-3 border-t border-slate-100 px-6 py-4">
+      <div class="flex flex-col items-stretch justify-end gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:items-center md:px-6">
         <button class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="loading || !canPrevUsers" @click="loadUserPage(userPage - 1)">
           {{ copy.prev }}
         </button>
-        <span class="text-sm font-bold text-slate-500">{{ copy.pageText(userPage) }}</span>
+        <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pageText(userPage) }}</span>
         <button class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="loading || !canNextUsers" @click="loadUserPage(userPage + 1)">
           {{ copy.next }}
         </button>
