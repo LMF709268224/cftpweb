@@ -63,7 +63,7 @@ function statusBadgeClass(value: unknown) {
 
 function formatFieldValue(key: string, value: unknown) {
   if (key === "status") return statusLabel(value)
-  if (key.endsWith("_at")) return formatDate(value)
+  if (key.endsWith("_at") || key.endsWith("_date")) return formatDate(value)
   if (value === null || value === undefined || value === "") return "-"
   return String(value)
 }

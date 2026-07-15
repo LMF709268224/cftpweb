@@ -216,6 +216,26 @@ function bundleStatus(bundle: JsonRecord | null | undefined) {
   return pickFirst(bundle || {}, ["status", "raw_status"])
 }
 
+function bundleStatusKey(bundle: JsonRecord | null | undefined) {
+  const normalized = String(bundleStatus(bundle) || "").trim().toLowerCase()
+  if (normalized === "active" || normalized === "published") return "published"
+  if (normalized === "deprecated" || normalized === "deprecate") return "deprecated"
+  if (normalized === "draft" || normalized === "inactive") return "draft"
+  return normalized || "draft"
+}
+
+function bundleStatusLabel(bundle: JsonRecord | null | undefined) {
+  const key = bundleStatusKey(bundle)
+  return copy.value.statusLabels[key as keyof typeof copy.value.statusLabels] || String(bundleStatus(bundle) || "-")
+}
+
+function bundleStatusBadgeValue(bundle: JsonRecord | null | undefined) {
+  const key = bundleStatusKey(bundle)
+  if (key === "published") return "COMPLETED"
+  if (key === "deprecated") return "DEPRECATED"
+  return "PENDING"
+}
+
 function normalizeItemType(value: unknown) {
   return String(value || "").trim().toLowerCase().replace(/-/g, "_")
 }
@@ -1030,7 +1050,7 @@ onMounted(load)
                 <span class="rounded-full bg-slate-100 px-2 py-1">{{ copy.fields.idPrefix }}{{ bundleUlid(bundle) || "-" }}</span>
               </div>
             </div>
-            <span class="self-center justify-self-center rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatus(bundle))">{{ bundleStatus(bundle) || "-" }}</span>
+            <span class="self-center justify-self-center rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatusBadgeValue(bundle))">{{ bundleStatusLabel(bundle) }}</span>
             <span class="self-center text-center text-sm font-black text-slate-700">{{ copy.fields.versionPrefix }} {{ bundle.version || 0 }}</span>
             <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</span>
             <button class="self-center justify-self-end text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click.stop="selectBundle(bundle)">
