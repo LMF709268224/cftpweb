@@ -1,4 +1,4 @@
-import type { AdminTranslations } from "./zh"
+﻿import type { AdminTranslations } from "./zh"
 
 export const en: AdminTranslations = {
     layout: {
@@ -2310,7 +2310,7 @@ export const en: AdminTranslations = {
             units: { title: "Course Units", desc: "Units belonging to a stage" },
             certs: { title: "Certificates", desc: "Certificates issued after completion" },
             unlockQuals: { title: "Unlock Qualifications", desc: "Prerequisites before entering the pipeline" },
-            certQuals: { title: "Completion Qualifications", desc: "Certificate/completion qualification requirements" },
+            certQuals: { title: "Graduation Prerequisites", desc: "Additional qualifications required to complete the pipeline (e.g., Work Experience Proof)." },
             raw: { title: "Complete Structure JSON", desc: "Advanced editing" },
         },
         status: {
@@ -2380,7 +2380,7 @@ export const en: AdminTranslations = {
         qualListDescription: "Maintain qualification requirements for the current pipeline",
         add: "Add",
         unlockQualFallback: (index: number) => `Unlock Qualification ${index}`,
-        certQualFallback: (index: number) => `Completion Qualification ${index}`,
+        certQualFallback: (index: number) => `Graduation Prerequisite ${index}`,
         noUnlockQuals: "No unlock qualifications",
         noCertQuals: "No completion qualifications",
         qualDetailTitle: "Qualification Details",
@@ -2962,4 +2962,5 @@ export const en: AdminTranslations = {
         },
     },
 }
+
 
