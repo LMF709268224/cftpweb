@@ -35,6 +35,9 @@ const selectedFields = computed(() => {
 const previewHtml = computed(() => form.value.html_template || `<p style="color:#64748b">${copy.value.previewEmpty}</p>`)
 const readonlyMode = computed(() => mode.value === "detail")
 
+let detailRequestController: AbortController | null = null
+let detailRequestSeq = 0
+
 function fieldLabel(key: string) {
   return copy.value.fieldLabels?.[key as keyof typeof copy.value.fieldLabels] || key.replaceAll("_", " ")
 }
@@ -60,14 +63,26 @@ function formFromTemplate(template: JsonRecord | null) {
   }
 }
 
-async function loadTemplateDetail(template: JsonRecord) {
+function isAbortError(err: unknown) {
+  return Boolean(err && typeof err === "object" && "name" in err && err.name === "AbortError")
+}
+
+function cancelTemplateDetailRequest() {
+  detailRequestSeq += 1
+  detailRequestController?.abort()
+  detailRequestController = null
+  detailLoading.value = false
+}
+
+async function loadTemplateDetail(template: JsonRecord, signal?: AbortSignal) {
   const id = templateUlid(template)
   if (!id) return template
-  const detail = await apiClient<JsonRecord>(`/api/pdf-templates/detail?template_id=${encodeURIComponent(id)}`)
+  const detail = await apiClient<JsonRecord>(`/api/pdf-templates/detail?template_id=${encodeURIComponent(id)}`, { signal })
   return { ...template, ...detail }
 }
 
 function openCreate() {
+  cancelTemplateDetailRequest()
   mode.value = "create"
   selected.value = null
   form.value = { template_id: "", name: "", description: "", html_template: "" }
@@ -75,19 +90,31 @@ function openCreate() {
 }
 
 async function openTemplate(template: JsonRecord, nextMode: Exclude<Mode, "create">) {
+  cancelTemplateDetailRequest()
+  const requestSeq = detailRequestSeq
+  const controller = new AbortController()
+  detailRequestController = controller
   selected.value = template
   mode.value = nextMode
   form.value = formFromTemplate(template)
   dialogOpen.value = true
   detailLoading.value = true
   try {
-    selected.value = await loadTemplateDetail(template)
+    const detail = await loadTemplateDetail(template, controller.signal)
+    if (requestSeq !== detailRequestSeq || controller.signal.aborted) return
+    selected.value = detail
     form.value = formFromTemplate(selected.value)
   } catch (err) {
+    if (isAbortError(err) || requestSeq !== detailRequestSeq) return
     console.error(err)
     toast.error(copy.value.toasts.loadFailed)
   } finally {
-    detailLoading.value = false
+    if (requestSeq === detailRequestSeq) {
+      detailLoading.value = false
+      if (detailRequestController === controller) {
+        detailRequestController = null
+      }
+    }
   }
 }
 
@@ -100,7 +127,10 @@ function openTemplateEditor(template: JsonRecord) {
 }
 
 function closeDialog() {
-  if (detailLoading.value || saving.value) return
+  if (saving.value) return
+  if (detailLoading.value) {
+    cancelTemplateDetailRequest()
+  }
   dialogOpen.value = false
 }
 
@@ -250,7 +280,7 @@ onMounted(load)
                 </h2>
                 <p class="mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? copy.createDescription : templateUlid(selected) }}</p>
               </div>
-              <button class="rounded-full border border-slate-200 p-2 text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" type="button" :aria-label="copy.close" :disabled="detailLoading || saving" @click="closeDialog">
+              <button class="rounded-full border border-slate-200 p-2 text-slate-500 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" type="button" :aria-label="copy.close" :disabled="saving" @click="closeDialog">
                 <X class="h-5 w-5" />
               </button>
             </div>
