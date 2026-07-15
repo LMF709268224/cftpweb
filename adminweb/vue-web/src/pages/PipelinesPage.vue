@@ -1321,24 +1321,32 @@ onMounted(() => {
                     <input :checked="boolValue(selectedUnitItem.unit, 'allow_exemption')" :disabled="isStructureLocked()" type="checkbox" @change="setField(selectedUnitItem?.unit, 'allow_exemption', eventChecked($event))" />
                     {{ copy.fields.allowExemption }}
                   </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.unitCertificateQualificationLabel }}
-                    <select :value="fieldValue(selectedUnitItem.unit, 'cert_qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCertificateQualification(selectedUnitItem?.unit, eventValue($event))">
-                      <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
-                      <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
-                    </select>
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.unitCertificatePdfTemplateLabel }}
-                    <select :value="fieldValue(selectedUnitItem.unit, 'cert_pdf_template_ulid')" :disabled="isStructureLocked() || pdfTemplateOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyPdfTemplate(selectedUnitItem?.unit, 'cert_pdf_template_ulid', eventValue($event))">
-                      <option value="">{{ pdfTemplateOptionsLoading ? copy.loadingPdfTemplates : copy.selectPdfTemplate }}</option>
-                      <option v-for="template in pdfTemplateOptions" :key="pdfTemplateId(template)" :value="pdfTemplateId(template)">{{ pdfTemplateOptionLabel(template) }}</option>
-                    </select>
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.exemptionQualificationsJsonLabel }}
-                    <textarea :value="jsonValue(selectedUnitItem.unit, 'exemption_quals')" :disabled="isStructureLocked()" class="min-h-[110px] rounded-xl border border-slate-200 px-4 py-3 font-mono text-xs disabled:bg-slate-100 disabled:text-slate-500" @change="setJsonField(selectedUnitItem?.unit, 'exemption_quals', eventValue($event))" />
-                  </label>
+                  <details class="group md:col-span-2">
+                    <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                      {{ (copy as any).certConfig || '资格证书配置' }}
+                      <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
+                    </summary>
+                    <div class="mt-4 grid gap-4 md:grid-cols-2 rounded-xl border border-slate-100 bg-slate-50 p-4">
+                      <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                        {{ copy.unitCertificateQualificationLabel }}
+                        <select :value="fieldValue(selectedUnitItem.unit, 'cert_qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 bg-white px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCertificateQualification(selectedUnitItem?.unit, eventValue($event))">
+                          <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
+                          <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
+                        </select>
+                      </label>
+                      <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                        {{ copy.unitCertificatePdfTemplateLabel }}
+                        <select :value="fieldValue(selectedUnitItem.unit, 'cert_pdf_template_ulid')" :disabled="isStructureLocked() || pdfTemplateOptionsLoading" class="rounded-xl border border-slate-200 bg-white px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyPdfTemplate(selectedUnitItem?.unit, 'cert_pdf_template_ulid', eventValue($event))">
+                          <option value="">{{ pdfTemplateOptionsLoading ? copy.loadingPdfTemplates : copy.selectPdfTemplate }}</option>
+                          <option v-for="template in pdfTemplateOptions" :key="pdfTemplateId(template)" :value="pdfTemplateId(template)">{{ pdfTemplateOptionLabel(template) }}</option>
+                        </select>
+                      </label>
+                      <label class="grid gap-2 text-sm font-bold md:col-span-2">
+                        {{ copy.exemptionQualificationsJsonLabel }}
+                        <textarea :value="jsonValue(selectedUnitItem.unit, 'exemption_quals')" :disabled="isStructureLocked()" class="min-h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 font-mono text-xs disabled:bg-slate-100 disabled:text-slate-500" @change="setJsonField(selectedUnitItem?.unit, 'exemption_quals', eventValue($event))" />
+                      </label>
+                    </div>
+                  </details>
                 </div>
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddUnit }}</div>

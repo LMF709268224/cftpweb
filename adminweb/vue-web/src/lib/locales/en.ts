@@ -1,4 +1,4 @@
-﻿import type { AdminTranslations } from "./zh"
+import type { AdminTranslations } from "./zh"
 
 export const en: AdminTranslations = {
     layout: {
@@ -2306,6 +2306,7 @@ export const en: AdminTranslations = {
         },
         createDraft: "Create Draft",
         saveBasic: "Save Basic Info",
+        certConfig: "Certificate Configuration",
         layerTitle: "Config Levels",
         layerDescription: "Select a level on the left, then view and maintain details on the right.",
         structureLockedHint: "This structure is not editable. Create the draft first when adding a certification; clone a new version before editing a published one.",
