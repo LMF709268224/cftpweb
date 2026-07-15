@@ -353,10 +353,10 @@ onMounted(() => load(1))
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.pageTitle }}</h1>
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.pageTitle }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.pageDescription }}</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
@@ -365,7 +365,7 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <form class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" @submit.prevent="search">
+    <form class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5" @submit.prevent="search">
       <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.candidatePlaceholder }}
@@ -397,22 +397,22 @@ onMounted(() => load(1))
             <option v-for="option in localizedOrderStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </label>
-        <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm" type="submit">
+        <button class="mt-0 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm xl:mt-7" type="submit">
           <Search class="h-4 w-4" />
           {{ copy.search }}
         </button>
       </div>
     </form>
 
-    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 p-5">
-        <div>
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 md:p-5">
+        <div class="min-w-0">
           <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalPrefix }} {{ total }} {{ copy.totalSuffix }}</span>
+        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalPrefix }} {{ total }} {{ copy.totalSuffix }}</span>
       </div>
-      <div class="grid grid-cols-[minmax(0,1fr)_160px_140px_150px_170px_112px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+      <div class="hidden grid-cols-[minmax(0,1fr)_160px_140px_150px_170px_112px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 md:grid">
         <span>{{ copy.columns.order }}</span>
         <span>{{ copy.columns.candidate }}</span>
         <span class="text-right">{{ copy.columns.amount }}</span>
@@ -420,7 +420,7 @@ onMounted(() => load(1))
         <span>{{ copy.columns.createdAt }}</span>
         <span class="text-right">{{ copy.columns.action }}</span>
       </div>
-      <div v-if="loading" class="p-12 text-center text-slate-500">
+      <div v-if="loading" class="p-8 text-center text-slate-500 md:p-12">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
         {{ copy.loading }}
       </div>
@@ -428,7 +428,7 @@ onMounted(() => load(1))
         <div
           v-for="order in orders"
           :key="orderUlid(order)"
-          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_160px_140px_150px_170px_112px] items-center gap-4 px-5 py-4 transition hover:bg-sky-50"
+          class="flex cursor-pointer flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_160px_140px_150px_170px_112px] md:items-center md:gap-4 md:px-5"
           :class="orderUlid(selected) === orderUlid(order) ? 'bg-sky-50' : ''"
           role="button"
           tabindex="0"
@@ -437,23 +437,33 @@ onMounted(() => load(1))
           @keydown.space.prevent="selectOrder(order)"
         >
           <div class="min-w-0">
-            <div class="truncate font-black text-slate-950">{{ productName(order) }}</div>
+            <div class="break-words font-black text-slate-950 md:truncate">{{ productName(order) }}</div>
             <div class="mt-1 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
               <span>{{ localizedLabelFor("bizTypes", biz(order), bizTypeOptions) }}</span>
               <span class="break-all rounded-full bg-slate-100 px-2 py-1">{{ copy.orderPrefix }} {{ orderUlid(order) || "-" }}</span>
             </div>
           </div>
-          <div class="min-w-0 break-all text-sm font-semibold text-slate-600">{{ candidate(order) }}</div>
-          <div class="text-right text-sm font-black">{{ amountText(order) }}</div>
-          <div class="flex items-center justify-center gap-2">
+          <div class="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.candidate }}</span>
+            <span class="break-all text-right text-sm font-semibold text-slate-600 md:text-left">{{ candidate(order) }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.amount }}</span>
+            <span class="text-right text-sm font-black">{{ amountText(order) }}</span>
+          </div>
+          <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:justify-center md:rounded-none md:bg-transparent md:p-0">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
             <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(order))">
               {{ localizedLabelFor("orderStatuses", status(order), orderStatusOptions) }}
             </span>
           </div>
-          <div class="text-sm font-semibold text-slate-500">{{ createdAt(order) }}</div>
+          <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.createdAt }}</span>
+            <span class="text-right text-sm font-semibold text-slate-500 md:text-left">{{ createdAt(order) }}</span>
+          </div>
           <div class="text-right">
             <button
-              class="text-sm font-bold text-[#1890ff] transition hover:underline"
+              class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
               type="button"
               @click.stop="selectOrder(order)"
             >
@@ -462,10 +472,10 @@ onMounted(() => load(1))
           </div>
         </div>
       </div>
-      <div v-else class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
-      <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-        <span class="text-sm font-bold text-slate-500">{{ copy.pagePrefix }} {{ page }} {{ copy.pageSuffix }}</span>
-        <div class="flex gap-3">
+      <div v-else class="p-8 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
+      <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center md:p-5">
+        <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pagePrefix }} {{ page }} {{ copy.pageSuffix }}</span>
+        <div class="flex flex-col gap-3 sm:flex-row">
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">{{ copy.prev }}</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">{{ copy.next }}</button>
         </div>
@@ -473,11 +483,11 @@ onMounted(() => load(1))
     </section>
 
     <Teleport to="body">
-      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-        <section class="flex max-h-[88vh] w-full max-w-[1280px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <section class="flex h-full max-h-none w-full max-w-[1280px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
-              <h2 class="truncate text-2xl font-black text-slate-950">{{ productName(selected) }}</h2>
+              <h2 class="break-words text-xl font-black text-slate-950 md:truncate md:text-2xl">{{ productName(selected) }}</h2>
               <p class="mt-1 break-all text-sm text-slate-500">{{ orderUlid(selected) }}</p>
             </div>
             <div class="flex shrink-0 items-center gap-2">
@@ -492,12 +502,12 @@ onMounted(() => load(1))
             </div>
           </div>
 
-          <div class="border-b border-slate-200 px-5 py-4">
+          <div class="border-b border-slate-200 px-4 py-3 md:px-5 md:py-4">
             <div class="flex gap-2 overflow-x-auto">
               <button
                 v-for="tab in detailTabs"
                 :key="tab.key"
-                class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-sm font-black transition"
+                class="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border px-3 text-sm font-black transition md:gap-3 md:px-4"
                 :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 text-slate-950' : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'"
                 type="button"
                 @click="activeTab = tab.key"
@@ -508,13 +518,13 @@ onMounted(() => load(1))
             </div>
           </div>
 
-          <main class="h-[60vh] min-h-[360px] max-h-[620px] min-w-0 overflow-y-auto p-5">
+          <main class="min-h-0 flex-1 overflow-y-auto p-4 md:h-[60vh] md:min-h-[360px] md:max-h-[620px] md:p-5">
               <div v-if="activeTab === 'summary'" class="space-y-5">
                 <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
                   <div class="flex flex-wrap items-start justify-between gap-4">
                     <div class="min-w-0">
                       <div class="text-xs font-black text-blue-600">{{ copy.currentOrder }}</div>
-                      <div class="mt-1 truncate text-xl font-black text-slate-950">{{ productName(selected) }}</div>
+                      <div class="mt-1 break-words text-xl font-black text-slate-950 md:truncate">{{ productName(selected) }}</div>
                       <div class="mt-2 flex flex-wrap items-center gap-2">
                         <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(selected))">
                           {{ localizedLabelFor("orderStatuses", status(selected), orderStatusOptions) }}
@@ -524,7 +534,7 @@ onMounted(() => load(1))
                         </span>
                       </div>
                     </div>
-                    <div class="rounded-2xl border border-blue-100 bg-white px-5 py-4 text-right shadow-sm">
+                    <div class="w-full rounded-2xl border border-blue-100 bg-white px-5 py-4 text-left shadow-sm sm:w-auto sm:text-right">
                       <div class="text-xs font-black text-slate-400">{{ copy.orderAmount }}</div>
                       <div class="mt-1 text-2xl font-black text-[#0b4ea2]">{{ amountText(selected) }}</div>
                     </div>
@@ -570,7 +580,7 @@ onMounted(() => load(1))
                   </p>
                 </div>
                 <button
-                  class="inline-flex h-11 items-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-bold text-white shadow-sm shadow-red-200 disabled:opacity-50"
+                  class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-bold text-white shadow-sm shadow-red-200 disabled:opacity-50 sm:w-auto"
                   type="button"
                   :disabled="!isBundlePurchase || Boolean(purging)"
                   @click="showPurgeConfirm = true"
@@ -585,15 +595,15 @@ onMounted(() => load(1))
       </div>
     </Teleport>
 
-    <div v-if="showPurgeConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
-      <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
-        <h2 class="text-2xl font-black">{{ copy.confirmTitle }}</h2>
+    <div v-if="showPurgeConfirm" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
+      <div class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+        <h2 class="text-xl font-black md:text-2xl">{{ copy.confirmTitle }}</h2>
         <p class="mt-3 text-sm text-slate-600">{{ copy.confirmDescription }}</p>
         <div class="mt-5 rounded-2xl bg-slate-50 p-4">
           <div class="font-black">{{ productName(selected) }}</div>
           <div class="mt-1 break-all text-xs text-slate-500">{{ bizRef(selected) }}</div>
         </div>
-        <div class="mt-6 flex items-center justify-end gap-3">
+        <div class="mt-6 flex flex-col items-stretch justify-end gap-3 sm:flex-row sm:items-center">
           <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:opacity-50" type="button" :disabled="Boolean(purging)" @click="showPurgeConfirm = false">{{ copy.cancel }}</button>
           <button class="inline-flex h-11 min-w-[112px] items-center justify-center rounded-xl bg-red-600 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="Boolean(purging)" @click="purgeSelected">
             {{ purging ? copy.purging : copy.confirmPurge }}
