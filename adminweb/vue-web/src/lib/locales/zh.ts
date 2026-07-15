@@ -1,4 +1,4 @@
-export const zh = {
+﻿export const zh = {
     layout: {
         systemName: "管理系统",
         roleName: "Admin",
@@ -2308,7 +2308,7 @@ export const zh = {
             units: { title: "课程单元", desc: "属于某个阶段的单元" },
             certs: { title: "证书", desc: "完成后可签发的证书" },
             unlockQuals: { title: "解锁资格", desc: "进入管线前置资格" },
-            certQuals: { title: "结业资格", desc: "证书/结业资格要求" },
+            certQuals: { title: "结业要求", desc: "必须在完成所有课程后额外满足的资格（如：工作经验证明），否则无法毕业发证。" },
             raw: { title: "完整结构 JSON", desc: "高级编辑" },
         },
         status: {
@@ -2374,13 +2374,13 @@ export const zh = {
         deleteCert: "删除证书",
         selectOrAddCert: "请选择或新增证书",
         unlockQualListTitle: "解锁资格列表",
-        certQualListTitle: "结业资格列表",
+        certQualListTitle: "结业要求列表",
         qualListDescription: "维护当前管线的资格要求",
         add: "新增",
         unlockQualFallback: (index: number) => `解锁资格 ${index}`,
-        certQualFallback: (index: number) => `结业资格 ${index}`,
+        certQualFallback: (index: number) => `结业要求 ${index}`,
         noUnlockQuals: "暂无解锁资格",
-        noCertQuals: "暂无结业资格",
+        noCertQuals: "暂无结业要求",
         qualDetailTitle: "资格详情",
         deleteQual: "删除资格",
         selectOrAddQual: "请选择或新增资格",
@@ -2962,4 +2962,6 @@ export const zh = {
 }
 
 export type AdminTranslations = typeof zh
+
+
 
