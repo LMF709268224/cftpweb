@@ -486,25 +486,10 @@ function boolValue(item: JsonRecord | null | undefined, key: string) {
   return Boolean(item?.[key])
 }
 
-function jsonValue(item: JsonRecord | null | undefined, key: string) {
-  const value = item?.[key]
-  return JSON.stringify(value ?? [], null, 2)
-}
-
 function setField(item: JsonRecord | null | undefined, key: string, value: unknown) {
   if (!item || isStructureLocked()) return
   item[key] = value
   syncStructureJson()
-}
-
-function setJsonField(item: JsonRecord | null | undefined, key: string, value: string) {
-  if (!item || isStructureLocked()) return
-  try {
-    item[key] = JSON.parse(value || "[]")
-    syncStructureJson()
-  } catch {
-    toast.error(copy.value.toasts.fieldInvalidJson(key))
-  }
 }
 
 function addStage() {
