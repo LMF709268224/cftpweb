@@ -25,7 +25,7 @@ const availableEntities = computed(() => {
   
   const entities: { id: string; type: string; title: string; result: string }[] = []
   
-  const chapters = props.course.chapters || []
+  const chapters = (props.course.chapters || []) as any[]
   chapters.forEach((chapterDetail: any) => {
     const chapter = chapterDetail.chapter
     if (chapter && chapter.chapter_ulid !== props.targetEntityId) {
@@ -37,7 +37,7 @@ const availableEntities = computed(() => {
       })
     }
     
-    const lessons = chapterDetail.lessons || []
+    const lessons = (chapterDetail.lessons || []) as any[]
     lessons.forEach((lessonDetail: any) => {
       const lesson = lessonDetail.lesson
       if (lesson && lesson.lesson_ulid !== props.targetEntityId) {
@@ -49,7 +49,7 @@ const availableEntities = computed(() => {
         })
       }
       
-      const quizzes = lessonDetail.quizzes || []
+      const quizzes = (lessonDetail.quizzes || []) as any[]
       quizzes.forEach((quizDetail: any) => {
         const quiz = quizDetail.quiz
         if (quiz && quiz.quiz_ulid !== props.targetEntityId) {
@@ -63,7 +63,7 @@ const availableEntities = computed(() => {
       })
     })
     
-    const chapterQuizzes = chapterDetail.quizzes || []
+    const chapterQuizzes = (chapterDetail.quizzes || []) as any[]
     chapterQuizzes.forEach((quizDetail: any) => {
       const quiz = quizDetail.quiz
       if (quiz && quiz.quiz_ulid !== props.targetEntityId) {
@@ -77,7 +77,7 @@ const availableEntities = computed(() => {
     })
   })
   
-  const courseQuizzes = props.course.quizzes || []
+  const courseQuizzes = (props.course.quizzes || []) as any[]
   courseQuizzes.forEach((quizDetail: any) => {
     const quiz = quizDetail.quiz
     if (quiz && quiz.quiz_ulid !== props.targetEntityId) {
@@ -98,11 +98,8 @@ async function loadPrerequisites() {
   
   loading.value = true
   try {
-    const res = await apiClient.get("/api/lms/prerequisites", {
-      params: {
-        target_entity_type: props.targetEntityType,
-        target_entity_id: props.targetEntityId
-      }
+    const res = await apiClient<any>(`/api/lms/prerequisites?target_entity_type=${props.targetEntityType}&target_entity_id=${props.targetEntityId}`, {
+      method: 'GET'
     })
     prerequisites.value = res.data.prerequisites || []
   } catch (err) {
@@ -121,12 +118,15 @@ async function addPrerequisite() {
   
   adding.value = true
   try {
-    await apiClient.post("/api/lms/prerequisites", {
-      required_entity_type: entity.type,
-      required_entity_id: entity.id,
-      required_result: entity.result,
-      target_entity_type: props.targetEntityType,
-      target_entity_id: props.targetEntityId
+    await apiClient("/api/lms/prerequisites", {
+      method: "POST",
+      body: JSON.stringify({
+        required_entity_type: entity.type,
+        required_entity_id: entity.id,
+        required_result: entity.result,
+        target_entity_type: props.targetEntityType,
+        target_entity_id: props.targetEntityId
+      })
     })
     toast.success(props.copy.addSuccess || 'Added successfully')
     formRequiredEntity.value = ""
@@ -143,7 +143,7 @@ async function deletePrerequisite(prerequisite: JsonRecord) {
   if (!confirm(props.copy.deleteConfirm || 'Are you sure?')) return
   
   try {
-    await apiClient.delete(`/api/lms/prerequisites/${prerequisite.prerequisite_id}`)
+    await apiClient(`/api/lms/prerequisites/${prerequisite.prerequisite_id}`, { method: "DELETE" })
     toast.success(props.copy.deleteSuccess || 'Deleted successfully')
     await loadPrerequisites()
   } catch (err) {

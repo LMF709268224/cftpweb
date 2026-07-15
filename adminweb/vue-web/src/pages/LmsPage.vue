@@ -3301,7 +3301,7 @@ onMounted(() => {
               </form>
               </div>
               <div v-if="lessonActiveTab === 'prerequisites' && lessonDialogMode !== 'create'" class="mt-2">
-                <LmsPrerequisitesTab targetEntityType="ENTITY_TYPE_LESSON" :targetEntityId="selectedLessonId" :course="completeCourse" :copy="copy" />
+                <LmsPrerequisitesTab targetEntityType="ENTITY_TYPE_LESSON" :targetEntityId="editingLessonId" :course="completeCourse" :copy="copy" />
               </div>
             </div>
 
