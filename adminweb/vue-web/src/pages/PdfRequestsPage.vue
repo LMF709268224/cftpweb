@@ -150,10 +150,10 @@ onMounted(() => load(1))
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
-    <header class="flex items-start justify-between gap-4">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
+    <header class="flex flex-wrap items-start justify-between gap-4">
+      <div class="min-w-0">
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load()">
@@ -162,46 +162,46 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 p-5">
-        <div>
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:p-5">
+        <div class="min-w-0">
           <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
         
       </div>
-      <div class="grid grid-cols-[minmax(0,1fr)_160px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+      <div class="flex flex-wrap gap-x-4 gap-y-2 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-black text-slate-500 md:grid md:grid-cols-[minmax(0,1fr)_160px_180px_112px] md:gap-5 md:px-5">
         <span>{{ copy.columns.request }}</span>
-        <span class="text-center">{{ copy.columns.status }}</span>
-        <span class="text-right">{{ copy.columns.createdAt }}</span>
-        <span class="text-right">{{ copy.columns.action }}</span>
+        <span class="md:text-center">{{ copy.columns.status }}</span>
+        <span class="md:text-right">{{ copy.columns.createdAt }}</span>
+        <span class="md:text-right">{{ copy.columns.action }}</span>
       </div>
 
-      <div v-if="loading" class="p-12 text-center text-slate-500">
+      <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:p-12">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
         {{ copy.loading }}
       </div>
-      <div v-else-if="!requests.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
+      <div v-else-if="!requests.length" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
       <div v-else class="divide-y divide-slate-100">
         <div
           v-for="request in requests"
           :key="requestUlid(request)"
-          class="grid grid-cols-[minmax(0,1fr)_160px_180px_112px] items-center gap-5 px-5 py-4"
+          class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_160px_180px_112px] md:items-center md:gap-5 md:px-5"
           :class="detailOpen && requestUlid(selected || {}) === requestUlid(request) ? 'bg-sky-50' : ''"
         >
           <div class="min-w-0">
-            <div class="truncate text-base font-black">{{ getDisplayTitle(request) }}</div>
-            <div class="mt-1 truncate text-sm font-bold text-slate-600">{{ requestUlid(request) || "-" }}</div>
+            <div class="break-words text-base font-black md:truncate">{{ getDisplayTitle(request) }}</div>
+            <div class="mt-1 break-all text-sm font-bold text-slate-600 md:truncate">{{ requestUlid(request) || "-" }}</div>
           </div>
-          <div class="min-w-0 text-center">
+          <div class="min-w-0 md:text-center">
             <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="statusBadgeClass(request.status)">
               {{ statusLabel(request.status) }}
             </span>
           </div>
-          <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(request.created_at) || copy.noCreatedAt }}</div>
-          <div class="text-right">
+          <div class="text-sm font-semibold text-slate-500 md:text-right">{{ formatDate(request.created_at) || copy.noCreatedAt }}</div>
+          <div class="md:text-right">
             <button
-              class="text-sm font-bold text-[#1890ff] transition hover:underline"
+              class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
               type="button"
               @click.stop="openRequest(request)"
             >
@@ -211,11 +211,11 @@ onMounted(() => load(1))
         </div>
       </div>
 
-      <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-        <div></div>
-        <div class="flex gap-3">
+      <div class="flex items-center justify-between gap-3 border-t border-slate-200 px-4 py-4 md:p-5">
+        <div class="hidden md:block"></div>
+        <div class="flex w-full gap-3 md:w-auto">
           <button
-            class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40 md:flex-none"
             type="button"
             :disabled="page <= 1 || loading"
             @click="goPage(page - 1)"
@@ -224,7 +224,7 @@ onMounted(() => load(1))
             {{ copy.prev }}
           </button>
           <button
-            class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
+            class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40 md:flex-none"
             type="button"
             :disabled="!hasMore || loading"
             @click="goPage(page + 1)"
@@ -237,15 +237,15 @@ onMounted(() => load(1))
     </section>
 
     <Teleport to="body">
-      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-        <section class="flex max-h-[88vh] w-full max-w-[1120px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <section class="flex h-full max-h-none w-full max-w-[1120px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="flex min-w-0 items-start gap-3">
               <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
                 <FileBadge class="h-5 w-5" />
               </span>
               <div class="min-w-0">
-              <h2 class="text-2xl font-black text-slate-950">{{ copy.detailTitle }}</h2>
+              <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.detailTitle }}</h2>
               </div>
             </div>
             <button
@@ -258,7 +258,7 @@ onMounted(() => load(1))
             </button>
           </div>
 
-          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
             <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
               <div class="text-sm font-black text-blue-700">{{ copy.currentRequest }}</div>
               <div class="mt-1 break-all text-lg font-black text-slate-950">{{ requestUlid(selected) || "-" }}</div>

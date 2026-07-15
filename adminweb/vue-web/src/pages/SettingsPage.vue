@@ -179,10 +179,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+      <div class="min-w-0">
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadProfile">
@@ -191,40 +191,40 @@ onMounted(() => {
       </button>
     </header>
 
-    <div class="flex flex-col gap-6">
-      <section class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
+    <div class="flex flex-col gap-5 md:gap-6">
+      <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:rounded-3xl">
         <div class="grid gap-3 md:grid-cols-2">
         <button
           v-for="section in sections"
           :key="section.key"
-          class="grid min-h-20 w-full grid-cols-[1fr_auto] items-center gap-4 rounded-2xl border border-transparent px-5 py-4 text-left transition hover:bg-sky-50"
+          class="grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border border-transparent px-4 py-4 text-left transition hover:bg-sky-50 md:px-5"
           :class="activeSection === section.key ? 'border-sky-200 bg-sky-50 shadow-sm shadow-sky-100' : ''"
           type="button"
           @click="activeSection = section.key"
         >
-          <div>
-            <div class="font-black">{{ section.title }}</div>
-            <div class="mt-1 text-sm text-slate-500">{{ section.description }}</div>
+          <div class="min-w-0">
+            <div class="break-words font-black">{{ section.title }}</div>
+            <div class="mt-1 break-words text-sm text-slate-500">{{ section.description }}</div>
           </div>
-          <span class="h-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ section.count }}</span>
+          <span class="h-fit shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ section.count }}</span>
         </button>
         </div>
       </section>
 
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <div>
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
+        <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-4 md:px-5">
+          <div class="min-w-0">
             <h2 class="text-xl font-black">{{ activeSection === "profile" ? copy.sections.profile.title : copy.sections.password.title }}</h2>
             <p class="mt-1 text-sm text-slate-500">
               {{ activeSection === "profile" ? copy.sections.profile.detail : copy.sections.password.detail }}
             </p>
           </div>
-          <UserRound v-if="activeSection === 'profile'" class="h-5 w-5 text-blue-600" />
-          <Shield v-else class="h-5 w-5 text-blue-600" />
+          <UserRound v-if="activeSection === 'profile'" class="h-5 w-5 shrink-0 text-blue-600" />
+          <Shield v-else class="h-5 w-5 shrink-0 text-blue-600" />
         </div>
 
-        <form v-if="activeSection === 'profile'" class="space-y-6 p-5" @submit.prevent="saveProfile">
-          <div v-if="profileLoading" class="rounded-2xl bg-slate-50 p-8 text-center text-slate-500">
+        <form v-if="activeSection === 'profile'" class="space-y-5 p-4 md:space-y-6 md:p-5" @submit.prevent="saveProfile">
+          <div v-if="profileLoading" class="rounded-2xl bg-slate-50 px-4 py-8 text-center text-slate-500 md:p-8">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
             {{ copy.loadingProfile }}
           </div>
@@ -277,14 +277,14 @@ onMounted(() => {
             </label>
           </div>
 
-          <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="profileSaving" type="submit">
+          <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 md:w-auto" :disabled="profileSaving" type="submit">
             <Loader2 v-if="profileSaving" class="h-4 w-4 animate-spin" />
             <Save v-else class="h-4 w-4" />
             {{ profileSaving ? copy.saving : copy.saveProfile }}
           </button>
         </form>
 
-        <form v-else class="space-y-6 p-5" @submit.prevent="savePassword">
+        <form v-else class="space-y-5 p-4 md:space-y-6 md:p-5" @submit.prevent="savePassword">
           <div class="grid gap-4 md:grid-cols-2">
             <label class="block">
               <span class="text-sm font-bold">{{ copy.labels.oldPassword }}</span>
@@ -301,7 +301,7 @@ onMounted(() => {
             </label>
           </div>
 
-          <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="passwordSaving" type="submit">
+          <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 md:w-auto" :disabled="passwordSaving" type="submit">
             <Loader2 v-if="passwordSaving" class="h-4 w-4 animate-spin" />
             <Shield v-else class="h-4 w-4" />
             {{ passwordSaving ? copy.updating : copy.updatePassword }}

@@ -272,7 +272,7 @@ onUnmounted(() => {
       </div>
     </aside>
 
-    <main class="min-h-screen pt-8 transition-all duration-200 md:pt-0" :class="collapsed ? 'md:pl-[76px]' : 'md:pl-[256px]'">
+    <main class="min-h-screen pt-14 transition-all duration-200 md:pt-0" :class="collapsed ? 'md:pl-[76px]' : 'md:pl-[256px]'">
       <RouterView />
     </main>
   </div>
