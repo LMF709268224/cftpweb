@@ -2304,6 +2304,7 @@ export const zh = {
         },
         createDraft: "创建草稿",
         saveBasic: "保存基础信息",
+        examConfig: "考试配置",
         certConfig: "资格证书配置",
         layerTitle: "配置层级",
         layerDescription: "左侧选择层级，右侧查看和维护详情。",

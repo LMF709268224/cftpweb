@@ -2306,6 +2306,7 @@ export const en: AdminTranslations = {
         },
         createDraft: "Create Draft",
         saveBasic: "Save Basic Info",
+        examConfig: "Exam Configuration",
         certConfig: "Certificate Configuration",
         layerTitle: "Config Levels",
         layerDescription: "Select a level on the left, then view and maintain details on the right.",
