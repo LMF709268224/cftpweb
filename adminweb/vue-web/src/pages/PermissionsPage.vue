@@ -171,10 +171,10 @@ onMounted(loadDefinitions)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+      <div class="min-w-0">
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadDefinitions">
@@ -184,7 +184,7 @@ onMounted(loadDefinitions)
     </header>
 
     <div class="grid gap-6">
-      <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
         <h2 class="text-xl font-black">{{ copy.targetTitle }}</h2>
         <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
           <label class="grid gap-2 text-sm font-bold">
@@ -211,14 +211,14 @@ onMounted(loadDefinitions)
         </div>
       </section>
 
-      <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 p-5">
-          <div>
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:p-5">
+          <div class="min-w-0">
             <h2 class="text-xl font-black">{{ copy.definitionsTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.definitionsDescription }}</p>
           </div>
         </div>
-        <div v-if="definitionsLoading" class="p-10 text-center text-slate-500">
+        <div v-if="definitionsLoading" class="px-4 py-10 text-center text-slate-500 md:p-10">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
           {{ copy.loading }}
         </div>
@@ -226,29 +226,29 @@ onMounted(loadDefinitions)
           <div
             v-for="definition in definitions"
             :key="definitionUlid(definition)"
-            class="grid cursor-pointer gap-4 px-5 py-4 hover:bg-sky-50 md:grid-cols-[minmax(0,1fr)_120px] md:items-center"
+            class="grid cursor-pointer gap-4 px-4 py-4 hover:bg-sky-50 md:grid-cols-[minmax(0,1fr)_120px] md:items-center md:px-5"
             :class="definitionUlid(selectedDefinition) === definitionUlid(definition) ? 'bg-sky-50' : ''"
             @click="selectDefinition(definition)"
           >
             <div class="min-w-0">
-              <div class="font-black">{{ definitionName(definition) }}</div>
+              <div class="break-words font-black">{{ definitionName(definition) }}</div>
               <div class="mt-1 text-sm text-slate-500">{{ definition.category || "-" }}</div>
               <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ definitionUlid(definition) || "-" }}</div>
             </div>
-            <button class="justify-self-start text-sm font-bold text-blue-700 hover:text-blue-900 md:justify-self-end" type="button" @click.stop="openDetail(definition)">
+            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:text-blue-900 md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="openDetail(definition)">
               {{ viewDetailLabel }}
             </button>
           </div>
         </div>
-        <div v-if="!definitionsLoading && !definitions.length" class="p-10 text-center text-slate-500">{{ copy.emptyDefinitions }}</div>
+        <div v-if="!definitionsLoading && !definitions.length" class="px-4 py-10 text-center text-slate-500 md:p-10">{{ copy.emptyDefinitions }}</div>
       </section>
     </div>
 
-    <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
-      <div class="flex max-h-[88vh] w-full max-w-[1180px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
+    <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+      <div class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6">
           <div class="min-w-0">
-            <h2 class="truncate text-2xl font-black">{{ detailDialogTitle }}</h2>
+            <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ detailDialogTitle }}</h2>
             <p class="mt-1 break-all text-sm text-slate-500">{{ definitionName(selectedDefinition) }}</p>
           </div>
           <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="closeLabel" @click="detailOpen = false">
@@ -256,12 +256,12 @@ onMounted(loadDefinitions)
           </button>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-5">
+        <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
           <div class="space-y-6">
-            <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
               <div class="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 class="text-2xl font-black">{{ copy.currentTarget }}</h2>
+                <div class="min-w-0">
+                  <h2 class="text-xl font-black md:text-2xl">{{ copy.currentTarget }}</h2>
                   <p class="mt-1 text-sm text-slate-500">{{ copy.currentTargetDescription }}</p>
                 </div>
                 <span v-if="checkResult" class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(resultStatus())">
@@ -282,9 +282,9 @@ onMounted(loadDefinitions)
             </section>
 
             <section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
                 <h2 class="mb-4 text-xl font-black">{{ copy.resultTitle }}</h2>
-                <div v-if="!checkResult" class="p-12 text-center text-slate-500">{{ copy.emptyResult }}</div>
+                <div v-if="!checkResult" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.emptyResult }}</div>
                 <div v-else class="space-y-5">
                   <div class="grid gap-4 md:grid-cols-2">
                     <label v-for="(value, key) in resultFields" :key="key" class="grid gap-2 text-sm font-bold">
@@ -314,7 +314,7 @@ onMounted(loadDefinitions)
                 </div>
               </div>
 
-              <aside class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+              <aside class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
                 <h2 class="text-xl font-black">{{ copy.actionTitle }}</h2>
                 <p class="mt-1 text-sm text-slate-500">{{ copy.actionDescription }}</p>
                 <label class="mt-4 grid gap-2 text-sm font-bold">

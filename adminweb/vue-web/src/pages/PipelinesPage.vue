@@ -106,6 +106,7 @@ const units = computed<UnitListItem[]>(() => {
 })
 
 const selectedStage = computed(() => stages.value[selectedStageIndex.value] || null)
+const selectedStageUnits = computed(() => selectedStage.value ? asArray(selectedStage.value.units) : [])
 const selectedUnitItem = computed(() => units.value.find((item) => item.path === selectedUnitPath.value) || units.value[0] || null)
 const selectedCert = computed(() => certs.value[selectedCertIndex.value] || null)
 const selectedUnlockQual = computed(() => unlockQuals.value[selectedUnlockQualIndex.value] || null)
@@ -118,7 +119,6 @@ const layerItems = computed(() => [
   { key: "certs" as const, title: copy.value.layers.certs.title, desc: copy.value.layers.certs.desc, count: certs.value.length },
   { key: "unlock_quals" as const, title: copy.value.layers.unlockQuals.title, desc: copy.value.layers.unlockQuals.desc, count: unlockQuals.value.length },
   { key: "certs_quals" as const, title: copy.value.layers.certQuals.title, desc: copy.value.layers.certQuals.desc, count: certQuals.value.length },
-  { key: "raw" as const, title: copy.value.layers.raw.title, desc: copy.value.layers.raw.desc, count: 1 },
 ])
 
 function asArray(value: unknown): JsonRecord[] {
@@ -201,8 +201,9 @@ function courseCanBeConfigured(course: JsonRecord) {
 function courseOptionLabel(course: JsonRecord) {
   const id = courseId(course)
   const status = courseStatusValue(course)
+  const statusText = status ? pipelineStatusLabel(status) : ""
   const version = course.version ? `v${course.version}` : ""
-  return [courseTitle(course), version, status, id].filter(Boolean).join(" · ")
+  return [courseTitle(course), version, statusText, id].filter(Boolean).join(" · ")
 }
 
 function courseById(id: string) {
@@ -211,6 +212,13 @@ function courseById(id: string) {
 
 function unitCourseId(unit: JsonRecord | null | undefined) {
   return String(pickFirst(unit || {}, ["glms_course_ulid", "glms_course_id"]) || "")
+}
+
+function unitCourseLabel(unit: JsonRecord | null | undefined) {
+  const id = unitCourseId(unit)
+  if (!id) return copy.value.stageUnitSummaryCourseMissing
+  const course = courseById(id)
+  return course ? courseTitle(course) : id
 }
 
 function credentialId(definition: JsonRecord | null | undefined) {
@@ -1175,7 +1183,7 @@ onMounted(() => {
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
-                    Stage ID
+                    {{ copy.fields.stageId }}
                     <input :value="fieldValue(selectedStage, 'stage_ulid')" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
@@ -1187,15 +1195,51 @@ onMounted(() => {
                     <input :value="fieldValue(selectedStage, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'name', eventValue($event))" />
                   </label>
                 </div>
-                <JsonPreview
-                  :title="copy.jsonPreview"
-                  :value="selectedStage"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="360px"
-                />
+                <section class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h5 class="font-black text-slate-950">{{ copy.stageUnitsSummaryTitle }}</h5>
+                      <p class="mt-1 text-sm text-slate-500">{{ copy.stageUnitsSummaryDescription(selectedStageUnits.length) }}</p>
+                    </div>
+                    <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">{{ selectedStageUnits.length }}</span>
+                  </div>
+                  <div v-if="selectedStageUnits.length" class="mt-4 grid gap-3 xl:grid-cols-2">
+                    <article
+                      v-for="(unit, unitIndex) in selectedStageUnits"
+                      :key="`${itemId(unit, ['unit_ulid'])}-${unitIndex}`"
+                      class="rounded-2xl border border-slate-200 bg-white p-4"
+                    >
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <div class="truncate font-black text-slate-950">{{ itemTitle(unit, copy.unitFallback(unitIndex + 1)) }}</div>
+                          <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ copy.stageUnitSummaryId(itemId(unit, ['unit_ulid'])) }}</div>
+                        </div>
+                        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.stageUnitSummarySort(numberValue(unit, 'sort_order') || unitIndex + 1) }}</span>
+                      </div>
+                      <dl class="mt-4 grid gap-2 text-xs sm:grid-cols-2">
+                        <div class="rounded-xl bg-slate-50 p-3">
+                          <dt class="font-black text-slate-400">{{ copy.fields.glmsCourse }}</dt>
+                          <dd class="mt-1 break-all font-bold text-slate-700">{{ unitCourseLabel(unit) }}</dd>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 p-3">
+                          <dt class="font-black text-slate-400">{{ copy.fields.examCode }}</dt>
+                          <dd class="mt-1 break-all font-bold text-slate-700">{{ fieldValue(unit, 'exam_ulid') || "-" }}</dd>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 p-3">
+                          <dt class="font-black text-slate-400">{{ copy.fields.formCode }}</dt>
+                          <dd class="mt-1 break-all font-bold text-slate-700">{{ fieldValue(unit, 'form_code') || "-" }}</dd>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 p-3">
+                          <dt class="font-black text-slate-400">{{ copy.fields.allowExemption }}</dt>
+                          <dd class="mt-1 font-bold text-slate-700">{{ boolValue(unit, 'allow_exemption') ? copy.stageUnitSummaryExemptionEnabled : copy.stageUnitSummaryExemptionDisabled }}</dd>
+                        </div>
+                      </dl>
+                    </article>
+                  </div>
+                  <div v-else class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">
+                    {{ copy.stageUnitsSummaryEmpty }}
+                  </div>
+                </section>
               </template>
               <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddStage }}</div>
             </div>
@@ -1241,7 +1285,7 @@ onMounted(() => {
                     </select>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    Unit ID
+                    {{ copy.fields.unitId }}
                     <input :value="fieldValue(selectedUnitItem.unit, 'unit_ulid')" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
@@ -1261,15 +1305,15 @@ onMounted(() => {
                     <p class="text-xs font-semibold text-slate-500">{{ copy.glmsCourseHint }}</p>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    Program
+                    {{ copy.fields.program }}
                     <input :value="fieldValue(selectedUnitItem.unit, 'program')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'program', eventValue($event))" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    Exam ULID
+                    {{ copy.fields.examCode }}
                     <input :value="fieldValue(selectedUnitItem.unit, 'exam_ulid')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'exam_ulid', eventValue($event))" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
-                    Form Code
+                    {{ copy.fields.formCode }}
                     <input :value="fieldValue(selectedUnitItem.unit, 'form_code')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'form_code', eventValue($event))" />
                   </label>
                   <label class="inline-flex items-center gap-2 text-sm font-bold">

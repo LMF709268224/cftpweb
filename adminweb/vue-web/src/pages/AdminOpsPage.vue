@@ -501,26 +501,26 @@ void loadList()
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-5 px-8 py-6">
-    <header class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-      <div>
+  <section class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-5 px-4 py-5 md:px-8 md:py-6">
+    <header class="flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between">
+      <div class="min-w-0">
         <p class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{{ copy.eyebrow }}</p>
         <h1 class="mt-2 text-3xl font-black text-slate-950">{{ copy.title }}</h1>
         <p class="mt-2 text-sm font-medium text-slate-500">{{ copy.subtitle }}</p>
       </div>
-      <button class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-900 shadow-sm hover:border-slate-500" @click="loadList(true)">
+      <button class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-900 shadow-sm hover:border-slate-500" @click="loadList(true)">
         {{ copy.refresh }}
       </button>
     </header>
 
-    <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm space-y-5">
+    <div class="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
       <div v-for="group in moduleGroups" :key="group.key">
         <div class="mb-2 text-xs font-black tracking-wider text-slate-400 uppercase">{{ (copy.groups as Record<string, string>)[group.key] }}</div>
         <div class="flex flex-wrap gap-2">
           <button
             v-for="module in group.modules"
             :key="module.key"
-            class="min-h-10 rounded-xl border px-3.5 py-2 text-left text-sm font-black transition"
+            class="min-h-10 min-w-[128px] flex-1 rounded-xl border px-3.5 py-2 text-left text-sm font-black transition md:flex-none"
             :class="module.key === activeKey ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'"
             @click="activeKey = module.key"
           >
@@ -530,8 +530,8 @@ void loadList()
       </div>
     </div>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div>
+    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+      <div class="min-w-0">
         <h2 class="text-xl font-black text-slate-950">{{ activeModule.label }}</h2>
         <p class="mt-1 text-sm font-medium text-slate-500">{{ activeModule.description }}</p>
       </div>
@@ -554,8 +554,8 @@ void loadList()
     </section>
 
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-5 py-4">
-        <div>
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-5">
+        <div class="min-w-0">
           <h2 class="text-xl font-black text-slate-950">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm font-medium text-slate-500">{{ copy.listDescription }}</p>
         </div>
@@ -568,32 +568,32 @@ void loadList()
       <div v-else-if="loading" class="px-6 py-14 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
       <div v-else-if="!items.length" class="px-6 py-14 text-center text-sm font-bold text-slate-500">{{ copy.empty }}</div>
       <div v-else>
-        <div class="grid grid-cols-[minmax(0,1fr)_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+        <div class="grid grid-cols-[minmax(0,1fr)_96px] gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs font-black text-slate-500 md:grid-cols-[minmax(0,1fr)_112px] md:gap-4 md:px-5">
           <span>{{ copy.record }}</span>
           <span class="text-right">{{ copy.operation }}</span>
         </div>
         <button
           v-for="item in items"
           :key="getItemID(item) || stringify(item)"
-          class="grid w-full grid-cols-[minmax(0,1fr)_112px] items-center gap-4 border-b border-slate-100 p-5 text-left transition last:border-b-0 hover:bg-slate-50"
+          class="grid w-full gap-3 border-b border-slate-100 p-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_112px] md:items-center md:gap-4 md:p-5"
           :class="getItemID(item) === getItemID(selected) ? 'bg-sky-50' : ''"
           @click="openItem(item)"
         >
           <span class="min-w-0">
-            <span class="block font-black text-slate-950">{{ getTitle(item) }}</span>
+            <span class="block break-words font-black text-slate-950">{{ getTitle(item) }}</span>
             <span class="mt-1 block break-all text-xs font-bold text-blue-700">{{ getItemID(item) || "-" }}</span>
-            <span class="mt-1 block text-xs font-semibold text-slate-500">{{ getSubtitle(item) || "-" }}</span>
+            <span class="mt-1 block break-words text-xs font-semibold text-slate-500">{{ getSubtitle(item) || "-" }}</span>
           </span>
-          <span class="text-right text-sm font-bold text-blue-700">{{ copy.viewDetail }}</span>
+          <span class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-right">{{ copy.viewDetail }}</span>
         </button>
       </div>
 
-      <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
-        <div class="flex gap-2">
-          <button class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold disabled:opacity-40" :disabled="page <= 1 && offset <= 0" @click="previousPage">
+      <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-4 py-4 md:px-5">
+        <div class="flex w-full gap-2 md:w-auto">
+          <button class="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold disabled:opacity-40 md:flex-none" :disabled="page <= 1 && offset <= 0" @click="previousPage">
             {{ copy.previous }}
           </button>
-          <button class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold" :disabled="items.length < pageSize" @click="nextPage">
+          <button class="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold md:flex-none" :disabled="items.length < pageSize" @click="nextPage">
             {{ copy.next }}
           </button>
         </div>
@@ -601,11 +601,11 @@ void loadList()
     </section>
 
     <Teleport to="body">
-      <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
-        <div class="flex max-h-[88vh] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-            <div>
-              <h2 class="text-2xl font-black text-slate-950">{{ copy.detailTitle }}</h2>
+      <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <div class="flex h-full max-h-none w-full max-w-6xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
+            <div class="min-w-0">
+              <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.detailTitle }}</h2>
               <p class="mt-1 break-all text-xs font-bold text-blue-700">{{ getItemID(selected) || "-" }}</p>
             </div>
             <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-xl leading-none text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetailModal">
@@ -613,12 +613,12 @@ void loadList()
             </button>
           </div>
 
-          <div class="flex-1 overflow-auto p-6">
+          <div class="min-h-0 flex-1 overflow-auto p-4 md:p-6">
             <div v-if="activeModule.actions?.length && selected" class="mb-5 flex flex-wrap justify-end gap-2">
               <template v-for="action in activeModule.actions" :key="action.key">
                 <button
                   v-if="!action.showIf || action.showIf(selected)"
-                  class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-black hover:border-slate-500 disabled:opacity-50"
+                  class="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-black hover:border-slate-500 disabled:opacity-50 md:w-auto"
                   :disabled="!!actionLoading"
                   @click="runAction(action)"
                 >
@@ -631,7 +631,7 @@ void loadList()
               {{ detailNotice }}
             </div>
             <div v-if="detailLoading" class="mt-10 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
-            <pre v-else class="mt-6 max-h-[64vh] overflow-auto rounded-2xl bg-slate-950 p-5 text-xs font-semibold leading-relaxed text-slate-100">{{ stringify(detail || selected || {}) }}</pre>
+            <pre v-else class="mt-6 max-h-[60vh] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs font-semibold leading-relaxed text-slate-100 md:max-h-[64vh] md:p-5">{{ stringify(detail || selected || {}) }}</pre>
           </div>
         </div>
       </div>
