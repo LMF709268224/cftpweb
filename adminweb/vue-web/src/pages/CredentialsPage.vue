@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
@@ -77,6 +77,20 @@ function resetForm() {
   respath.value = ""
   acquisitionMethod.value = ""
   constraints.value = []
+  respathEdited = false
+}
+
+let respathEdited = false
+
+watch(name, (val) => {
+  if (mode.value === "create" && !respathEdited) {
+    const slug = val.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
+    respath.value = slug ? `/gcc/credential/${slug}` : ""
+  }
+})
+
+function onRespathInput() {
+  respathEdited = true
 }
 
 function startCreate() {
@@ -276,7 +290,7 @@ onMounted(load)
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.respath }}</span>
-                    <input v-model="respath" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="240" :placeholder="copy.placeholders.respath" />
+                    <input v-model="respath" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="240" :placeholder="copy.placeholders.respath" @input="onRespathInput" />
                     <div class="text-xs font-normal text-slate-500">{{ copy.respathHint }}</div>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
