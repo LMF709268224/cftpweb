@@ -277,6 +277,7 @@ onMounted(load)
                   <label class="grid gap-2 text-sm font-bold">
                     <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.respath }}</span>
                     <input v-model="respath" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="240" :placeholder="copy.placeholders.respath" />
+                    <div class="text-xs font-normal text-slate-500">{{ copy.respathHint }}</div>
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.labels.acquisitionMethod }}
