@@ -35,7 +35,7 @@ const emptyStructure = () => ({
 
 const emptyForm: PipelineForm = {
   name: "",
-  category_tips: "",
+  category_tips: "default",
   respath: "",
   structure_json: JSON.stringify(emptyStructure(), null, 2),
 }
@@ -935,10 +935,11 @@ async function clonePipeline() {
 
 watch([categoryFilter, onlyCurrent], () => { pageToken.value = ""; load() })
 
-watch(() => form.value.name, (newName) => {
+watch(() => form.value.name, (newName, oldName) => {
   if (!creating.value) return
-  if (newName && !form.value.respath) {
-    form.value.respath = `/gcc/pipeline/${newName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}`
+  const autoOld = oldName ? `/gcc/pipeline/${oldName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}` : ""
+  if (!form.value.respath || form.value.respath === autoOld) {
+    form.value.respath = newName ? `/gcc/pipeline/${newName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}` : ""
   }
 })
 
