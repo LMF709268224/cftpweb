@@ -141,10 +141,10 @@ onMounted(() => load(1))
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
@@ -153,22 +153,22 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 p-5">
-        <div>
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 md:p-5">
+        <div class="min-w-0">
           <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
-      <div class="grid grid-cols-[minmax(0,1fr)_120px_240px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+      <div class="hidden grid-cols-[minmax(0,1fr)_120px_240px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 md:grid">
         <span>{{ copy.columns.invoice }}</span>
         <span class="text-right">{{ copy.columns.amount }}</span>
         <span class="text-center">{{ copy.columns.status }}</span>
         <span class="text-right">{{ copy.columns.createdAt }}</span>
         <span class="text-right">{{ copy.columns.action }}</span>
       </div>
-      <div v-if="loading" class="p-12 text-center text-slate-500">
+      <div v-if="loading" class="p-8 text-center text-slate-500 md:p-12">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
         {{ copy.loading }}
       </div>
@@ -176,7 +176,7 @@ onMounted(() => load(1))
         <div
           v-for="invoice in invoices"
           :key="invoiceId(invoice)"
-          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_120px_240px_180px_112px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
+          class="flex cursor-pointer flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_120px_240px_180px_112px] md:items-center md:gap-5 md:px-5"
           :class="invoiceId(selected) === invoiceId(invoice) ? 'bg-sky-50' : ''"
           role="button"
           tabindex="0"
@@ -185,17 +185,24 @@ onMounted(() => load(1))
           @keydown.space.prevent="openInvoice(invoice)"
         >
           <div class="min-w-0">
-            <div class="truncate font-black text-slate-950">{{ invoiceId(invoice) || "-" }}</div>
+            <div class="break-all font-black text-slate-950 md:truncate">{{ invoiceId(invoice) || "-" }}</div>
             <div class="mt-1 break-all text-sm text-slate-500">{{ copy.orderPrefix }}{{ orderId(invoice) }}</div>
           </div>
-          <div class="text-right text-sm font-black">{{ amountText(invoice) }}</div>
-          <div class="min-w-0 text-center">
+          <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.amount }}</span>
+            <span class="text-right text-sm font-black">{{ amountText(invoice) }}</span>
+          </div>
+          <div class="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:justify-center md:rounded-none md:bg-transparent md:p-0">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
             <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(normalizedInvoiceStatus(invoice.status))">{{ invoiceStatusLabel(invoice.status) }}</span>
           </div>
-          <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(invoice.created_at || "")) }}</div>
+          <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0">
+            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.createdAt }}</span>
+            <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(invoice.created_at || "")) }}</span>
+          </div>
           <div class="text-right">
             <button
-              class="text-sm font-bold text-[#1890ff] transition hover:underline"
+              class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
               type="button"
               @click.stop="openInvoice(invoice)"
             >
@@ -204,10 +211,10 @@ onMounted(() => load(1))
           </div>
         </div>
       </div>
-      <div v-else class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
-      <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-        <span class="text-sm font-bold text-slate-500">{{ copy.pageText(page) }}</span>
-        <div class="flex gap-3">
+      <div v-else class="p-8 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
+      <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center md:p-5">
+        <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pageText(page) }}</span>
+        <div class="flex flex-col gap-3 sm:flex-row">
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">{{ copy.prev }}</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">{{ copy.next }}</button>
         </div>
@@ -215,11 +222,11 @@ onMounted(() => load(1))
     </section>
 
     <Teleport to="body">
-      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-        <section class="flex max-h-[88vh] w-full max-w-[1120px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <section class="flex h-full max-h-none w-full max-w-[1120px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
-              <h2 class="text-2xl font-black text-slate-950">{{ copy.detailTitle }}</h2>
+              <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.detailTitle }}</h2>
               <p class="mt-1 break-all text-sm text-slate-500">{{ invoiceId(selected) || "-" }}</p>
             </div>
             <button
@@ -231,7 +238,7 @@ onMounted(() => load(1))
               <X class="h-5 w-5" />
             </button>
           </div>
-          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
             <div class="grid gap-4 md:grid-cols-3">
               <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.order }}</div>

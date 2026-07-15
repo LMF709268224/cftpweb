@@ -679,10 +679,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
@@ -699,7 +699,7 @@ onMounted(async () => {
 
     <div class="grid gap-6">
       <aside class="space-y-4">
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
           <div class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto]">
             <label class="grid gap-2 text-sm font-bold">
               {{ copy.filters.candidate }}
@@ -723,7 +723,7 @@ onMounted(async () => {
                 <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
               </select>
             </label>
-            <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm" type="button" @click="searchPipelines">
+            <button class="mt-0 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm lg:mt-7" type="button" @click="searchPipelines">
               <Search class="h-4 w-4" />
               {{ copy.filters.search }}
             </button>
@@ -731,19 +731,19 @@ onMounted(async () => {
         </div>
 
         <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-            <div>
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-5">
+            <div class="min-w-0">
               <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
             </div>
           
             </div>
-          <div v-if="loading" class="px-6 py-10 text-center text-slate-500">
+          <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:px-6">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
             {{ copy.loading }}
           </div>
           <template v-else-if="pipelines.length">
-            <div class="grid grid-cols-[minmax(0,1fr)_150px_180px_110px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+            <div class="hidden grid-cols-[minmax(0,1fr)_150px_180px_110px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
               <span>{{ copy.columns.pipeline }}</span>
               <span class="text-center">{{ copy.columns.status }}</span>
               <span class="text-right">{{ copy.columns.startedAt }}</span>
@@ -752,13 +752,13 @@ onMounted(async () => {
             <button
               v-for="pipeline in pipelines"
               :key="pipelineUlid(pipeline)"
-              class="grid w-full grid-cols-[minmax(0,1fr)_150px_180px_110px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50"
+              class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_150px_180px_110px] md:gap-4 md:px-5"
               :class="pipelineUlid(pipeline) === selectedPipelineUlid ? 'bg-sky-50' : ''"
               type="button"
               @click="openPipeline(pipeline)"
             >
               <div class="min-w-0">
-                <div class="truncate text-lg font-black">{{ pipelineDisplayName(pipeline) }}</div>
+                <div class="break-words text-lg font-black md:truncate">{{ pipelineDisplayName(pipeline) }}</div>
                 <div class="mt-1 break-all text-sm text-slate-500">
                   <div class="font-semibold text-slate-800">{{ copy.candidatePrefix }}{{ pipeline.candidate_name || "-" }}</div>
                   <div class="font-mono text-xs text-slate-400">{{ pipeline.candidate_ulid || pipeline.candidate_id || "-" }}</div>
@@ -768,13 +768,19 @@ onMounted(async () => {
                   <div class="break-all">{{ copy.currentStagePrefix }}{{ pipeline.current_stage_ulid || "-" }}</div>
                 </div>
               </div>
-              <span class="self-center justify-self-center whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(pipeline.status))">{{ statusLabel(pipeline.status) }}</span>
-              <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(pipeline.started_at || pipeline.created_at || "")) }}</span>
-              <span class="self-center justify-self-end text-sm font-bold text-[#1890ff] transition hover:underline">{{ copy.viewDetails }}</span>
+              <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
+                <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
+                <span class="inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(pipeline.status))">{{ statusLabel(pipeline.status) }}</span>
+              </span>
+              <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-end md:rounded-none md:bg-transparent md:p-0">
+                <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.startedAt }}</span>
+                <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pipeline.started_at || pipeline.created_at || "")) }}</span>
+              </span>
+              <span class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0">{{ copy.viewDetails }}</span>
             </button>
           </template>
-          <div v-else class="px-6 py-10 text-center text-slate-500">{{ copy.empty }}</div>
-          <div class="flex justify-end gap-3 border-t border-slate-200 px-5 py-4">
+          <div v-else class="px-4 py-10 text-center text-slate-500 md:px-6">{{ copy.empty }}</div>
+          <div class="flex flex-col justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row md:px-5">
             <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - pageSize)">{{ copy.prev }}</button>
             <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += pageSize">{{ copy.next }}</button>
           </div>
@@ -782,23 +788,23 @@ onMounted(async () => {
       </aside>
     </div>
 
-    <div v-if="selectedSummary" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-      <div class="flex max-h-[88vh] w-full max-w-[1200px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-4">
-          <div>
-            <h2 class="text-2xl font-black">{{ copy.detailTitle }}</h2>
+    <div v-if="selectedSummary" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+      <div class="flex h-full max-h-none w-full max-w-[1200px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6">
+          <div class="min-w-0">
+            <h2 class="text-xl font-black md:text-2xl">{{ copy.detailTitle }}</h2>
             <p class="mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
           </div>
           <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="backToList">
             <X class="h-5 w-5" />
           </button>
         </div>
-        <div class="flex-1 overflow-y-auto p-5">
+        <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
           <main class="min-w-0 space-y-6">
-        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
           <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <h2 class="text-2xl font-black">{{ pipelineDisplayName(selectedSummary) }}</h2>
+            <div class="min-w-0">
+              <h2 class="break-words text-xl font-black md:text-2xl">{{ pipelineDisplayName(selectedSummary) }}</h2>
               <p class="mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
             </div>
             <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(selectedStatus))">
@@ -833,7 +839,7 @@ onMounted(async () => {
                 <button
                   v-for="tab in detailTabs"
                   :key="tab.key"
-                  class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-sm font-black transition"
+                  class="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border px-3 text-sm font-black transition md:gap-3 md:px-4"
                   :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 text-slate-950' : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'"
                   type="button"
                   @click="activeTab = tab.key"
@@ -848,7 +854,7 @@ onMounted(async () => {
                 <p class="mt-1 text-xs text-slate-500">{{ copy.manualActionsDescription }}</p>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <button
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 sm:w-auto"
                     type="button"
                     :disabled="!canTriggerNextStage"
                     @click="openAction({ kind: 'trigger-next-stage', pipelineUlid: selectedPipelineUlid })"
@@ -857,7 +863,7 @@ onMounted(async () => {
                     {{ copy.actions["trigger-next-stage"] }}
                   </button>
                   <button
-                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 sm:w-auto"
                     type="button"
                     :disabled="!canTerminatePipeline"
                     @click="openAction({ kind: 'terminate-pipeline', pipelineUlid: selectedPipelineUlid })"
@@ -867,7 +873,7 @@ onMounted(async () => {
                   </button>
                   <button
                     v-if="canViewCertificate"
-                    class="inline-flex items-center justify-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-bold disabled:opacity-40"
+                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-bold disabled:opacity-40 sm:w-auto"
                     type="button"
                     :disabled="certificateLoading"
                     @click="viewCertificate"
@@ -879,13 +885,13 @@ onMounted(async () => {
               </div>
             </div>
 
-            <section class="max-h-[60vh] min-w-0 overflow-y-auto">
-              <div v-if="detailLoading" class="px-6 py-10 text-center text-slate-500">
+            <section class="max-h-none min-w-0 overflow-y-auto md:max-h-[60vh]">
+              <div v-if="detailLoading" class="px-4 py-10 text-center text-slate-500 md:px-6">
                 <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
                 {{ copy.loadingDetails }}
               </div>
 
-              <div v-else-if="activeTab === 'overview'" class="space-y-4 p-5">
+              <div v-else-if="activeTab === 'overview'" class="space-y-4 p-4 md:p-5">
                 <div class="grid gap-3 md:grid-cols-2">
                   <div v-for="entry in detailEntries('overview', detailPipelineRecord)" :key="entry.key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
                     <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
@@ -917,7 +923,7 @@ onMounted(async () => {
                   </button>
                   <div v-if="!stages.length" class="px-6 py-10 text-center text-slate-500">{{ copy.noStages }}</div>
                 </div>
-                <div class="space-y-5 p-5">
+                <div class="space-y-5 p-4 md:p-5">
                   <template v-if="selectedStage">
                     <div class="grid gap-3 md:grid-cols-2">
                       <div v-for="entry in detailEntries('stage', stageRecord(selectedStage))" :key="entry.key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
@@ -953,7 +959,7 @@ onMounted(async () => {
                   </button>
                   <div v-if="!units.length" class="px-6 py-10 text-center text-slate-500">{{ copy.noUnits }}</div>
                 </div>
-                <div class="space-y-5 p-5">
+                <div class="space-y-5 p-4 md:p-5">
                   <template v-if="selectedUnit">
                     <div class="rounded-xl border border-sky-100 bg-sky-50 p-3">
                       <div class="text-xs font-black uppercase text-sky-600">{{ copy.parentStage }}</div>
@@ -967,7 +973,7 @@ onMounted(async () => {
                     </div>
                     <div class="flex flex-wrap gap-3">
                       <button
-                        class="rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40"
+                        class="w-full rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40 sm:w-auto"
                         type="button"
                         :disabled="!courseUnitUlid(selectedUnit.unit)"
                         @click="openAction({ kind: 'force-completed', pipelineUlid: selectedPipelineUlid, courseUnitUlid: courseUnitUlid(selectedUnit.unit) })"
@@ -975,7 +981,7 @@ onMounted(async () => {
                         {{ copy.forceCompleted }}
                       </button>
                       <button
-                        class="rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40"
+                        class="w-full rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40 sm:w-auto"
                         type="button"
                         :disabled="!courseUnitUlid(selectedUnit.unit)"
                         @click="openAction({ kind: 'force-signup-exam', pipelineUlid: selectedPipelineUlid, courseUnitUlid: courseUnitUlid(selectedUnit.unit) })"
@@ -1021,14 +1027,14 @@ onMounted(async () => {
                   </button>
                   <div v-if="!certificateTasksLoading && !certificateTasks.length" class="p-10 text-center text-slate-500">{{ copy.certificateTasks.empty }}</div>
                 </div>
-                <div class="space-y-5 p-5">
+                <div class="space-y-5 p-4 md:p-5">
                   <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h4 class="text-lg font-black">{{ copy.certificateTasks.detailTitle }}</h4>
                       <p class="mt-1 break-all text-sm text-slate-500">{{ certificateTaskUlid(selectedCertificateTask) || "-" }}</p>
                     </div>
                     <button
-                      class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40"
+                      class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 sm:w-auto"
                       type="button"
                       :disabled="!selectedCertificateTask || retryingCertificateTask === certificateTaskUlid(selectedCertificateTask)"
                       @click="selectedCertificateTask && retryCertificateTask(selectedCertificateTask)"
@@ -1098,15 +1104,15 @@ onMounted(async () => {
                     <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</div>
                   </button>
                   <div v-if="!logsLoading && !logs.length" class="p-10 text-center text-slate-500">{{ copy.noLogs }}</div>
-                  <div class="flex items-center justify-between border-t border-slate-200 px-5 py-4">
+                  <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-5">
                     <span class="text-sm font-bold text-slate-500">{{ Math.floor(logOffset / logPageSize) + 1 }} / {{ Math.max(1, Math.ceil(logsTotal / logPageSize)) }}</span>
-                    <div class="flex gap-3">
+                    <div class="flex flex-col gap-3 sm:flex-row">
                     <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevLogs" @click="loadLogs(selectedPipelineUlid, Math.max(0, logOffset - logPageSize))">{{ copy.prev }}</button>
                     <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNextLogs" @click="loadLogs(selectedPipelineUlid, logOffset + logPageSize)">{{ copy.next }}</button>
                     </div>
                   </div>
                 </div>
-                <div class="space-y-5 p-5">
+                <div class="space-y-5 p-4 md:p-5">
                   <h4 class="text-lg font-black">{{ copy.logDetailTitle }}</h4>
                   <div v-if="logDetailLoading" class="p-10 text-center text-slate-500">
                     <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
@@ -1129,12 +1135,12 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="pendingAction" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
-      <div class="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
-        <h2 class="text-2xl font-black">{{ copy.confirmTitle }}</h2>
+    <div v-if="pendingAction" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
+      <div class="w-full max-w-lg rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+        <h2 class="text-xl font-black md:text-2xl">{{ copy.confirmTitle }}</h2>
         <p class="mt-2 text-sm text-slate-600">{{ copy.confirmDescription(actionLabel(pendingAction.kind)) }}</p>
         <textarea v-model="actionReason" class="mt-5 min-h-28 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.reasonPlaceholder" />
-        <div class="mt-5 flex items-center justify-end gap-3">
+        <div class="mt-5 flex flex-col items-stretch justify-end gap-3 sm:flex-row sm:items-center">
           <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:opacity-50" type="button" :disabled="actionLoading" @click="pendingAction = null">{{ copy.cancel }}</button>
           <button class="inline-flex h-11 min-w-[112px] items-center justify-center rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="actionLoading" @click="submitAction">
             {{ actionLoading ? copy.submitting : copy.confirmSubmit }}
