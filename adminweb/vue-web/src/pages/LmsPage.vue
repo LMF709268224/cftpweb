@@ -3,6 +3,7 @@ import { ChevronDown, FileJson, Info, Loader2, Plus, RefreshCw, Save, Trash2, Up
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import LmsPrerequisitesTab from "@/components/LmsPrerequisitesTab.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -184,6 +185,9 @@ const courseDetailDialogComplete = ref<JsonRecord | null>(null)
 const courseDeleteConfirmOpen = ref(false)
 const pendingDeleteCourse = ref<JsonRecord | null>(null)
 const deletingCourse = ref(false)
+const chapterActiveTab = ref<"basic" | "prerequisites">("basic")
+const lessonActiveTab = ref<"basic" | "prerequisites">("basic")
+const quizActiveTab = ref<"basic" | "prerequisites">("basic")
 const chapterDialogOpen = ref(false)
 const chapterDialogMode = ref<ChapterDialogMode>("detail")
 const chapterDeleteConfirmOpen = ref(false)
@@ -1327,12 +1331,14 @@ function resetChapterState() {
 
 function openChapterDetail(chapter: JsonRecord) {
   selectChapterForContext(chapter)
+  chapterActiveTab.value = "basic"
   chapterDialogMode.value = "detail"
   chapterDialogOpen.value = true
 }
 
 function editChapter(chapter: JsonRecord) {
   selectChapterForContext(chapter, true)
+  chapterActiveTab.value = "basic"
   chapterDialogMode.value = "edit"
   chapterDialogOpen.value = true
 }
@@ -1476,12 +1482,14 @@ function newLesson() {
 
 function openLessonDetail(lesson: JsonRecord) {
   editLesson(lesson, false)
+  lessonActiveTab.value = "basic"
   lessonDialogMode.value = "detail"
   lessonDialogOpen.value = true
 }
 
 function openNewLesson() {
   newLesson()
+  lessonActiveTab.value = "basic"
   lessonDialogMode.value = "create"
   lessonDialogOpen.value = true
 }
@@ -2163,12 +2171,14 @@ function newQuiz(scope: QuizScope = "course") {
 
 function openQuizDetail(quiz: JsonRecord) {
   editQuiz(quiz, false)
+  quizActiveTab.value = "basic"
   quizDialogMode.value = "detail"
   quizDialogOpen.value = true
 }
 
 function openNewQuiz() {
   newQuiz()
+  quizActiveTab.value = "basic"
   quizDialogMode.value = "create"
   quizDialogOpen.value = true
 }
@@ -3069,7 +3079,12 @@ onMounted(() => {
             </div>
 
             <div class="flex-1 overflow-y-auto p-5">
-              <div v-if="chapterDialogMode === 'detail'" class="rounded-2xl border border-slate-200 p-4">
+              <div v-if="chapterDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
+                <button :class="chapterActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
+                <button :class="chapterActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
+              </div>
+              <div v-show="chapterActiveTab === 'basic'">
+                <div v-if="chapterDialogMode === 'detail'" class="rounded-2xl border border-slate-200 p-4">
                 <h3 class="font-black">{{ copy.chapterRawFields }}</h3>
                 <p class="mt-1 text-xs text-slate-500">{{ copy.systemReadonlyHint }}</p>
                 <div v-if="!selectedChapterId" class="p-8 text-center text-slate-500">{{ copy.noSelectedChapter }}</div>
@@ -3088,9 +3103,13 @@ onMounted(() => {
                   <input v-model="chapterForm.sort_order" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" min="1" />
                 </label>
               </form>
+              </div>
+              <div v-if="chapterActiveTab === 'prerequisites' && chapterDialogMode !== 'create'" class="mt-2">
+                <LmsPrerequisitesTab targetEntityType="ENTITY_TYPE_CHAPTER" :targetEntityId="selectedChapterId" :course="completeCourse" :copy="copy" />
+              </div>
             </div>
 
-            <div v-if="chapterDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+            <div v-if="chapterDialogMode !== 'detail' && chapterActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
               <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="button" @click="saveChapter">
                 <Loader2 v-if="savingChapter" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
@@ -3196,7 +3215,12 @@ onMounted(() => {
             </div>
 
             <div class="flex-1 overflow-y-auto p-5">
-              <div v-if="lessonDialogMode === 'detail'" class="space-y-5">
+              <div v-if="lessonDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
+                <button :class="lessonActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
+                <button :class="lessonActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
+              </div>
+              <div v-show="lessonActiveTab === 'basic'">
+                <div v-if="lessonDialogMode === 'detail'" class="space-y-5">
                 <div class="rounded-2xl bg-blue-50 p-4">
                   <div class="text-xs font-black text-blue-600">{{ copy.ownerChapter }}</div>
                   <div class="mt-1 text-lg font-black text-slate-900">{{ selectedLessonOwnerChapter ? chapterTitle(selectedLessonOwnerChapter) : (selectedChapterId ? chapterTitle(selectedChapter) : copy.unselectedChapter) }}</div>
@@ -3275,9 +3299,13 @@ onMounted(() => {
                   </label>
                 </template>
               </form>
+              </div>
+              <div v-if="lessonActiveTab === 'prerequisites' && lessonDialogMode !== 'create'" class="mt-2">
+                <LmsPrerequisitesTab targetEntityType="ENTITY_TYPE_LESSON" :targetEntityId="selectedLessonId" :course="completeCourse" :copy="copy" />
+              </div>
             </div>
 
-            <div v-if="lessonDialogMode !== 'detail'" class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-5 py-4 gap-4">
+            <div v-if="lessonDialogMode !== 'detail' && lessonActiveTab === 'basic'" class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-5 py-4 gap-4">
               <div class="flex-1" v-if="editingLessonId && lessonForm.lesson_type !== '7' && lessonForm.lesson_type !== '2'">
                 <input type="file" ref="lessonFileInput" class="hidden" @change="handleLessonFileUpload" />
                 <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 h-10 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
@@ -3938,9 +3966,13 @@ onMounted(() => {
                   </div>
                 </div>
               </section>
+              </div>
+              <div v-if="quizActiveTab === 'prerequisites' && quizDialogMode !== 'create'" class="mt-2">
+                <LmsPrerequisitesTab targetEntityType="ENTITY_TYPE_QUIZ" :targetEntityId="selectedQuizId" :course="completeCourse" :copy="copy" />
+              </div>
             </div>
 
-            <div v-if="quizDialogMode !== 'detail'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+            <div v-if="quizDialogMode !== 'detail' && quizActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
               <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingQuiz || !quizTarget().id" type="button" @click="saveQuiz">
                 <Loader2 v-if="savingQuiz" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
