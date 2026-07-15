@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { FileJson, Info, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
@@ -2684,7 +2684,7 @@ onMounted(() => {
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
               <input v-model="courseForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
-            <label class="block">
+            <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
               <input v-model="courseForm.category_tips" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
@@ -2721,11 +2721,11 @@ onMounted(() => {
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>
               <input v-model="courseForm.duration_min" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
             </label>
-            <label class="block">
+            <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.thumbnailObjectKey }}</span>
               <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
-            <label class="block">
+            <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
               <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
@@ -2882,7 +2882,7 @@ onMounted(() => {
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
               <input v-model="courseForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
-            <label class="block">
+            <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
               <input v-model="courseForm.category_tips" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
@@ -2919,11 +2919,11 @@ onMounted(() => {
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>
               <input v-model="courseForm.duration_min" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
             </label>
-            <label class="block">
+            <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.thumbnailObjectKey }}</span>
               <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
-            <label class="block">
+            <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
               <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
