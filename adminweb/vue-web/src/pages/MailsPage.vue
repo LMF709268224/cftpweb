@@ -542,10 +542,10 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
@@ -560,7 +560,7 @@ onMounted(async () => {
       </div>
     </header>
 
-    <div v-if="statsCards.length" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div v-if="statsCards.length" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
       <div class="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 class="text-xl font-black">{{ copy.statsTitle }}</h2>
@@ -577,18 +577,18 @@ onMounted(async () => {
       </div>
     </div>
 
-    <section class="rounded-3xl border border-slate-200 bg-white p-3 shadow-sm">
-      <div class="flex flex-wrap gap-3">
+    <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:rounded-3xl">
+      <div class="grid grid-cols-3 gap-2 md:flex md:flex-wrap md:gap-3">
         <button
           v-for="tab in tabs"
           :key="tab.key"
-          class="min-h-12 flex-1 rounded-2xl border px-4 py-3 text-left transition md:flex-none md:min-w-48"
+          class="min-h-16 rounded-2xl border px-2 py-2 text-center transition md:min-h-12 md:flex-none md:min-w-48 md:px-4 md:py-3 md:text-left"
           :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 shadow-sm' : 'border-slate-100 hover:bg-slate-50'"
           type="button"
           @click="activeTab = tab.key"
         >
-          <div class="flex items-center justify-between gap-3">
-            <span class="inline-flex items-center gap-2 font-black">
+          <div class="flex h-full items-center justify-center md:justify-between">
+            <span class="inline-flex flex-col items-center justify-center gap-1 whitespace-nowrap text-xs font-black leading-4 md:flex-row md:gap-2 md:text-base">
               <component :is="tab.icon" class="h-4 w-4" />
               {{ tab.label }}
             </span>
@@ -601,7 +601,7 @@ onMounted(async () => {
     <div>
 
       <main class="min-w-0">
-        <section v-if="activeTab === 'send'" class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section v-if="activeTab === 'send'" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-6">
           <h2 class="text-xl font-black">{{ copy.sendTitle }}</h2>
           <div class="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
             <div>
@@ -612,7 +612,7 @@ onMounted(async () => {
                   <button class="font-bold text-slate-500" type="button" @click="selectedUserIds = []">{{ copy.clear }}</button>
                 </div>
               </div>
-              <div class="max-h-[520px] overflow-y-auto rounded-2xl border border-slate-200 p-3">
+              <div class="max-h-[360px] overflow-y-auto rounded-2xl border border-slate-200 p-3 md:max-h-[520px]">
                 <label v-for="user in users" :key="userId(user)" class="flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2 hover:bg-slate-50">
                   <input v-model="selectedUserIds" class="h-4 w-4" type="checkbox" :value="userId(user)" />
                   <span class="font-semibold">{{ userName(user) }}</span>
@@ -641,7 +641,7 @@ onMounted(async () => {
                 <span class="font-bold">{{ templatePath ? copy.payloadLabel : copy.bodyLabel }}</span>
                 <textarea v-model="payload" class="mt-2 min-h-52 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" />
               </label>
-              <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="sending" type="button" @click="sendMail">
+              <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="sending" type="button" @click="sendMail">
                 <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
                 <Mail v-else class="h-4 w-4" />
                 {{ sending ? copy.sending : copy.sendMail }}
@@ -650,27 +650,27 @@ onMounted(async () => {
           </div>
         </section>
 
-        <section v-else-if="activeTab === 'sent'" class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
-            <div>
+        <section v-else-if="activeTab === 'sent'" class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-4 md:p-5">
+            <div class="min-w-0">
               <h2 class="text-xl font-black">{{ copy.sentTitle }}</h2>
               
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
               <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
-              <select v-model="statusFilter" class="h-10 rounded-xl border border-slate-200 px-4 text-sm">
+              <select v-model="statusFilter" class="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 px-4 text-sm sm:flex-none">
               <option v-for="option in statusOptions" :key="option.value || 'all'" :value="option.value">{{ option.label }}</option>
             </select>
             </div>
           </div>
-          <div class="grid grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+          <div class="hidden grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 md:grid">
             <span>{{ copy.columns.mail }}</span>
             <span>{{ copy.columns.recipient }}</span>
             <span class="text-center">{{ copy.columns.status }}</span>
             <span class="text-right">{{ copy.columns.time }}</span>
             <span class="text-right">{{ copy.columns.action }}</span>
           </div>
-          <div v-if="mailsLoading" class="p-12 text-center text-slate-500">
+          <div v-if="mailsLoading" class="p-8 text-center text-slate-500 md:p-12">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
             {{ copy.loading }}
           </div>
@@ -678,7 +678,7 @@ onMounted(async () => {
             <div
               v-for="mail in mails"
               :key="mailId(mail)"
-              class="grid cursor-pointer grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
+              class="flex cursor-pointer flex-col gap-3 px-4 py-4 transition hover:bg-sky-50 md:grid md:grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] md:items-center md:gap-5 md:px-5"
               :class="mailId(selectedMail) === mailId(mail) ? 'bg-sky-50' : ''"
               role="button"
               tabindex="0"
@@ -687,17 +687,24 @@ onMounted(async () => {
               @keydown.space.prevent="openMail(mail)"
             >
               <div class="min-w-0">
-                <div class="truncate font-black text-slate-950">{{ pickFirst(mail, ["subject", "template_path", "mail_id"]) || copy.defaults.mail }}</div>
+                <div class="break-words font-black text-slate-950 md:truncate">{{ pickFirst(mail, ["subject", "template_path", "mail_id"]) || copy.defaults.mail }}</div>
                 <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ copy.mailIdPrefix }}{{ mailId(mail) || "-" }}</div>
               </div>
-              <div class="min-w-0 break-all text-sm font-semibold text-slate-500">{{ pickFirst(mail, ["to_email", "recipient_email", "user_email"]) || "-" }}</div>
-              <div class="text-center">
+              <div class="flex min-w-0 items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0">
+                <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.recipient }}</span>
+                <span class="break-all text-right text-sm font-semibold text-slate-500 md:text-left">{{ pickFirst(mail, ["to_email", "recipient_email", "user_email"]) || "-" }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0 md:text-center">
+                <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
                 <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(mailStatus(mail))">{{ mailStatusLabel(mailStatus(mail)) }}</span>
               </div>
-              <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(mail, ["created_at", "sent_at", "updated_at"]) || "")) }}</div>
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0">
+                <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.time }}</span>
+                <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(mail, ["created_at", "sent_at", "updated_at"]) || "")) }}</span>
+              </div>
               <div class="text-right">
                 <button
-                  class="text-sm font-bold text-[#1890ff] transition hover:underline"
+                  class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
                   type="button"
                   @click.stop="openMail(mail)"
                 >
@@ -706,37 +713,37 @@ onMounted(async () => {
               </div>
             </div>
           </div>
-          <div v-else class="p-12 text-center text-slate-500">{{ copy.emptySent }}</div>
-          <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-            <span class="text-sm font-bold text-slate-500">{{ copy.pageText(mailPage, totalPages) }}</span>
-            <div class="flex gap-3">
+          <div v-else class="p-8 text-center text-slate-500 md:p-12">{{ copy.emptySent }}</div>
+          <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center md:p-5">
+            <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pageText(mailPage, totalPages) }}</span>
+            <div class="flex flex-col gap-3 sm:flex-row">
               <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="mailPage <= 1" @click="mailPage--">{{ copy.prev }}</button>
               <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!mailHasMore" @click="mailPage++">{{ copy.next }}</button>
             </div>
           </div>
         </section>
 
-        <section v-else class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex items-start justify-between gap-3 border-b border-slate-200 p-5">
-            <div>
+        <section v-else class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
+          <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 p-4 md:p-5">
+            <div class="min-w-0">
               <h2 class="text-xl font-black">{{ copy.templateListTitle }}</h2>
               
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
               <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ totalTemplates || templates.length }} 条</span>
-              <button class="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm" type="button" @click="startCreateTemplate">
+              <button class="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm sm:flex-none" type="button" @click="startCreateTemplate">
               <Plus class="h-4 w-4" />
               {{ copy.createTemplate }}
             </button>
           </div>
           </div>
-          <div class="grid grid-cols-[minmax(0,1fr)_140px_180px_160px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+          <div class="hidden grid-cols-[minmax(0,1fr)_140px_180px_160px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500 md:grid">
             <span>{{ copy.template }}</span>
             <span class="text-center">{{ copy.templateColumns.version }}</span>
             <span class="text-right">{{ copy.templateColumns.updatedAt }}</span>
             <span class="text-right">{{ copy.templateColumns.action }}</span>
           </div>
-          <div v-if="templatesLoading" class="p-12 text-center text-slate-500">
+          <div v-if="templatesLoading" class="p-8 text-center text-slate-500 md:p-12">
             <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
             {{ copy.loading }}
           </div>
@@ -744,28 +751,32 @@ onMounted(async () => {
             <div
               v-for="template in templates"
               :key="pathOf(template)"
-              class="grid grid-cols-[minmax(0,1fr)_140px_180px_160px] items-center gap-5 px-5 py-4 transition hover:bg-slate-50"
+              class="flex flex-col gap-3 px-4 py-4 transition hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_140px_180px_160px] md:items-center md:gap-5 md:px-5"
               :class="pathOf(selectedTemplate) === pathOf(template) ? 'bg-sky-50' : ''"
             >
               <div class="min-w-0">
-                <div class="truncate font-black text-slate-950">{{ nameOf(template) }}</div>
+                <div class="break-words font-black text-slate-950 md:truncate">{{ nameOf(template) }}</div>
                 <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pathOf(template) }}</div>
-                <div v-if="template.description" class="mt-1 truncate text-xs font-semibold text-slate-400">{{ template.description }}</div>
+                <div v-if="template.description" class="mt-1 break-words text-xs font-semibold text-slate-400 md:truncate">{{ template.description }}</div>
               </div>
-              <div class="text-center">
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0 md:text-center">
+                <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.templateColumns.version }}</span>
                 <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">v{{ String(template.version || "-") }}</span>
               </div>
-              <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(template, ["updated_at", "created_at"]) || "")) }}</div>
-              <div class="flex justify-end gap-3">
-                <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openTemplateDetail(template)">{{ copy.viewDetails }}</button>
-                <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="openTemplateEdit(template)">{{ copy.editTemplate }}</button>
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:rounded-none md:bg-transparent md:p-0">
+                <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.templateColumns.updatedAt }}</span>
+                <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(template, ["updated_at", "created_at"]) || "")) }}</span>
+              </div>
+              <div class="flex flex-col justify-end gap-3 sm:flex-row">
+                <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openTemplateDetail(template)">{{ copy.viewDetails }}</button>
+                <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-[#ffba00] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openTemplateEdit(template)">{{ copy.editTemplate }}</button>
               </div>
             </div>
           </div>
-          <div v-else class="p-12 text-center text-slate-500">{{ copy.emptyTemplates }}</div>
-          <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-            <span class="text-sm font-bold text-slate-500">{{ copy.pageText(templatePage, templateTotalPages) }}</span>
-            <div class="flex gap-3">
+          <div v-else class="p-8 text-center text-slate-500 md:p-12">{{ copy.emptyTemplates }}</div>
+          <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 p-4 sm:flex-row sm:items-center md:p-5">
+            <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pageText(templatePage, templateTotalPages) }}</span>
+            <div class="flex flex-col gap-3 sm:flex-row">
               <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="templatePage <= 1 || templatesLoading" @click="templatePage--">{{ copy.prev }}</button>
               <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!templateHasMore || templatesLoading" @click="templatePage++">{{ copy.next }}</button>
             </div>
@@ -775,11 +786,11 @@ onMounted(async () => {
     </div>
 
     <Teleport to="body">
-      <div v-if="templateDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-        <section class="flex max-h-[88vh] w-full max-w-[1120px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+      <div v-if="templateDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <section class="flex h-full max-h-none w-full max-w-[1120px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
-              <h2 class="truncate text-2xl font-black text-slate-950">
+              <h2 class="break-words text-xl font-black text-slate-950 md:truncate md:text-2xl">
                 {{ templateMode === "detail" ? copy.templateDetails : editingTemplatePath ? copy.editTemplate : copy.createTemplate }}
               </h2>
               <p v-if="templateMode === 'detail' && selectedTemplate" class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pathOf(selectedTemplate) }}</p>
@@ -795,7 +806,7 @@ onMounted(async () => {
             </button>
           </div>
 
-          <div class="min-h-0 flex-1 overflow-y-auto p-5">
+          <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
             <template v-if="templateMode === 'detail'">
               <div v-if="!selectedTemplate" class="p-10 text-center text-slate-500">{{ copy.selectTemplate }}</div>
               <div v-else class="grid gap-4 md:grid-cols-2">
@@ -838,7 +849,7 @@ onMounted(async () => {
             </form>
           </div>
 
-          <div v-if="templateMode !== 'detail'" class="flex items-center justify-end gap-3 border-t border-slate-200 px-6 py-5">
+          <div v-if="templateMode !== 'detail'" class="flex flex-col items-stretch justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-6 md:py-5">
             <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 font-bold" type="button" @click="closeTemplateDialog">{{ copy.reset }}</button>
             <button class="inline-flex h-11 min-w-[120px] items-center justify-center rounded-xl bg-blue-700 px-5 font-bold text-white shadow-sm disabled:opacity-50" :disabled="templateSaving" type="submit" form="mail-template-form">
               {{ templateSaving ? copy.saving : copy.saveTemplate }}
@@ -849,16 +860,16 @@ onMounted(async () => {
     </Teleport>
 
     <Teleport to="body">
-      <div v-if="mailDetailOpen && selectedMail" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-        <section class="flex max-h-[88vh] w-full max-w-[1280px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+      <div v-if="mailDetailOpen && selectedMail" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <section class="flex h-full max-h-none w-full max-w-[1280px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
-              <h2 class="truncate text-2xl font-black text-slate-950">{{ copy.detailTitle }}</h2>
+              <h2 class="break-words text-xl font-black text-slate-950 md:truncate md:text-2xl">{{ copy.detailTitle }}</h2>
             </div>
-            <div class="flex shrink-0 items-center gap-3">
+            <div class="flex w-full shrink-0 flex-wrap items-center gap-3 sm:w-auto">
               <button
                 v-if="selectedMailCanCancel"
-                class="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                class="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50 sm:flex-none"
                 type="button"
                 :disabled="!selectedMail || canceling"
                 @click="cancelMail"
@@ -877,7 +888,7 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
             <div v-if="mailDetailLoading" class="p-10 text-center text-slate-500">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
               {{ copy.loading }}
@@ -893,7 +904,7 @@ onMounted(async () => {
                 :copy-error-message="copy.toasts.jsonCopyFailed"
                 max-height="144px"
               />
-              <iframe v-if="selectedMailHtml" class="h-[440px] w-full rounded-2xl border border-slate-200 bg-white" sandbox="allow-same-origin" :srcdoc="selectedMailHtml" />
+              <iframe v-if="selectedMailHtml" class="h-[320px] w-full rounded-2xl border border-slate-200 bg-white md:h-[440px]" sandbox="allow-same-origin" :srcdoc="selectedMailHtml" />
               <JsonPreview
                 :title="copy.rawJson"
                 :value="selectedMailRecord"
