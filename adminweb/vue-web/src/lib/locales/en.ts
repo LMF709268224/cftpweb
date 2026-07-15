@@ -303,6 +303,7 @@ export const en: AdminTranslations = {
             certification: "Certification",
             exemption: "Exemption",
             qualification: "Qualification",
+            academic: "Academic",
         },
         toasts: {
             detailLoadFailed: "Failed to load credential definition details",

@@ -301,6 +301,7 @@ export const zh = {
             certification: "认证资格",
             exemption: "免考资格",
             qualification: "通用资格",
+            academic: "学业类",
         },
         toasts: {
             detailLoadFailed: "资格定义详情加载失败",

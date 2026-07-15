@@ -43,6 +43,7 @@ const categoryOptions = computed(() => [
   { value: "Certification", label: copy.value.categoryOptions.certification },
   { value: "Exemption", label: copy.value.categoryOptions.exemption },
   { value: "Qualification", label: copy.value.categoryOptions.qualification },
+  { value: "Academic", label: copy.value.categoryOptions.academic },
 ])
 const categoryValues = computed(() => new Set(categoryOptions.value.map((option) => option.value)))
 
@@ -67,7 +68,9 @@ function categoryLabel(value: unknown) {
   const text = String(value ?? "").trim()
   if (!text) return "-"
   const option = categoryOptions.value.find((item) => item.value.toLowerCase() === text.toLowerCase())
-  return option?.label || text
+  if (option) return option.label
+  if (text === "学业类") return copy.value.categoryOptions.academic
+  return text
 }
 
 function resetForm() {
