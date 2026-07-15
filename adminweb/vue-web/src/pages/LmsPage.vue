@@ -2641,10 +2641,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6 px-8 py-8">
+  <div class="space-y-5 px-4 py-5 md:space-y-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+      <div class="min-w-0">
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
@@ -2667,11 +2667,11 @@ onMounted(() => {
     </header>
 
     <Teleport to="body">
-      <section v-if="courseCreateOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6" role="dialog" aria-modal="true">
-        <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-            <div>
-              <h2 class="text-2xl font-black text-slate-950">{{ copy.newCourse }}</h2>
+      <section v-if="courseCreateOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+        <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
+            <div class="min-w-0">
+              <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.newCourse }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.fillCourseHint }}</p>
             </div>
             <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50" type="button" :aria-label="copy.close" :disabled="savingCourse" @click="closeCourseCreate">
@@ -2679,7 +2679,7 @@ onMounted(() => {
             </button>
           </div>
 
-          <form class="grid min-h-0 flex-1 gap-4 overflow-y-auto p-6 md:grid-cols-2" @submit.prevent="saveCourse">
+          <form class="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 md:grid-cols-2 md:p-6" @submit.prevent="saveCourse">
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
               <input v-model="courseForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
@@ -2729,13 +2729,13 @@ onMounted(() => {
               <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
               <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
-            <div class="flex flex-wrap gap-3 md:col-span-2">
-              <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
+            <div class="flex flex-col gap-3 sm:flex-row md:col-span-2">
+              <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? copy.saving : copy.saveCourse }}
               </button>
-              <button v-if="canPublishSelectedCourse" class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
+              <button v-if="canPublishSelectedCourse" class="h-10 w-full rounded-xl border px-4 font-bold disabled:opacity-40 sm:w-auto" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
                 {{ publishing ? copy.publishing : copy.publishCourse }}
               </button>
             </div>
@@ -2745,11 +2745,11 @@ onMounted(() => {
     </Teleport>
 
     <Teleport to="body">
-      <section v-if="courseDetailDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6" role="dialog" aria-modal="true">
-        <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-            <div>
-              <h2 class="text-2xl font-black text-slate-950">{{ copy.courseTopData }}</h2>
+      <section v-if="courseDetailDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+        <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
+            <div class="min-w-0">
+              <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.courseTopData }}</h2>
               <p class="mt-1 break-all text-sm text-slate-500">{{ courseDetailDialogCourseId || "-" }}</p>
             </div>
             <div class="flex shrink-0 items-center gap-3">
@@ -2759,8 +2759,8 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="min-h-0 flex-1 overflow-y-auto p-6">
-            <div class="grid gap-3 sm:grid-cols-4">
+          <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div class="rounded-xl bg-slate-50 p-3">
                 <div class="text-xs font-black uppercase text-slate-400">{{ copy.stats.chapters }}</div>
                 <div class="mt-1 text-xl font-black">{{ courseDetailDialogChapterCount }}</div>
@@ -2782,7 +2782,7 @@ onMounted(() => {
             <div class="mt-4 rounded-xl border border-slate-200 p-4">
               <h3 class="font-black">{{ copy.readonlyFields }}</h3>
               <p class="mt-1 text-xs text-slate-500">{{ copy.readonlyFieldsHint }}</p>
-              <div class="mt-3 max-h-[56vh] space-y-3 overflow-y-auto overscroll-contain pr-2">
+              <div class="mt-3 max-h-[56vh] space-y-3 overflow-y-auto overscroll-contain pr-0 md:pr-2">
                 <ReadonlyField v-for="entry in courseRecordEntries(courseDetailTarget)" :key="`course-dialog-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
                 <div v-if="courseDetailDialogLoading" class="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
                   <Loader2 class="h-4 w-4 animate-spin" />
@@ -2797,7 +2797,7 @@ onMounted(() => {
       </section>
     </Teleport>
 
-    <section v-if="courseView === 'list'" class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <section v-if="courseView === 'list'" class="rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
       <div class="grid gap-3 border-b border-slate-200 bg-slate-50/60 p-4 lg:grid-cols-[1fr_auto]">
         <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" :placeholder="copy.categoryPlaceholder" />
         <label class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm">
@@ -2806,11 +2806,11 @@ onMounted(() => {
         </label>
       </div>
 
-      <div v-if="loading && !courses.length" class="p-12 text-center text-slate-500">
+      <div v-if="loading && !courses.length" class="px-4 py-10 text-center text-slate-500 md:p-12">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
         {{ copy.loading }}
       </div>
-      <div v-else-if="!courses.length" class="p-12 text-center text-slate-500">{{ copy.emptyCourses }}</div>
+      <div v-else-if="!courses.length" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.emptyCourses }}</div>
       <div v-else>
         <div class="hidden grid-cols-[minmax(0,1fr)_120px_260px_120px_180px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
           <span>{{ copy.columns.course }}</span>
@@ -2822,7 +2822,7 @@ onMounted(() => {
         <div
           v-for="course in courses"
           :key="courseId(course)"
-          class="block w-full cursor-pointer border-b border-slate-100 px-5 py-3 text-left transition last:border-b-0 hover:bg-slate-50"
+          class="block w-full cursor-pointer border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:px-5 md:py-3"
           :class="courseId(course) === selectedCourseId ? 'bg-sky-50/70' : ''"
           role="button"
           tabindex="0"
@@ -2831,26 +2831,31 @@ onMounted(() => {
         >
           <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_120px_260px_120px_180px] lg:items-center lg:gap-6">
             <div class="min-w-0">
-              <div class="truncate text-base font-black text-slate-950">{{ courseTitle(course) }}</div>
+              <div class="break-words text-base font-black text-slate-950 lg:truncate">{{ courseTitle(course) }}</div>
               <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                <span>{{ course.category_tips || copy.uncategorized }}</span>
-                <span class="font-mono">ID: {{ courseId(course) || "-" }}</span>
+                <span class="max-w-full break-words">{{ course.category_tips || copy.uncategorized }}</span>
+                <span class="max-w-full break-all font-mono">ID: {{ courseId(course) || "-" }}</span>
               </div>
             </div>
-            <div class="text-sm font-bold text-slate-700">
-              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.version }}</span>{{ course.version || 0 }}
+            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 lg:block lg:rounded-none lg:bg-transparent lg:p-0">
+              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.version }}</span>
+              <span>{{ course.version || 0 }}</span>
             </div>
-            <div class="text-sm text-slate-500">
-              <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.updatedShort }}</span>{{ formatDate(String(course.updated_at || course.created_at || "")) }}
+            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm text-slate-500 lg:block lg:rounded-none lg:bg-transparent lg:p-0">
+              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.updatedShort }}</span>
+              <span>{{ formatDate(String(course.updated_at || course.created_at || "")) }}</span>
             </div>
-            <span class="justify-self-start rounded-full border px-3 py-1 text-xs font-black lg:justify-self-end" :class="badgeClass(courseStatusBadgeValue(course))">
-              {{ courseStatusLabel(course) }}
+            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 lg:block lg:justify-self-end lg:rounded-none lg:bg-transparent lg:p-0">
+              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.status }}</span>
+              <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(courseStatusBadgeValue(course))">
+                {{ courseStatusLabel(course) }}
+              </span>
             </span>
-            <div class="flex items-center gap-3 lg:justify-end">
-              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click.stop="openCourseDetailDialog(course)">
+            <div class="flex flex-col gap-3 sm:flex-row lg:items-center lg:justify-end">
+              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click.stop="openCourseDetailDialog(course)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click.stop="selectCourse(course)">
+              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-[#ffba00] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click.stop="selectCourse(course)">
                 {{ copy.edit }}
               </button>
             </div>
@@ -2866,8 +2871,8 @@ onMounted(() => {
 
     <main v-else class="space-y-6">
       <section class="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
-          <div>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-5">
+          <div class="min-w-0">
             <h2 class="text-xl font-black">{{ selectedCourseId ? copy.courseTopData : copy.newCourse }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ selectedCourseId || copy.fillCourseHint }}</p>
           </div>
@@ -2876,7 +2881,7 @@ onMounted(() => {
           </span>
         </div>
 
-        <div class="p-5">
+        <div class="p-4 md:p-5">
           <form class="grid gap-3 lg:grid-cols-2" @submit.prevent="saveCourse">
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
@@ -2927,16 +2932,16 @@ onMounted(() => {
               <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
               <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
             </label>
-            <div class="flex flex-wrap gap-3 lg:col-span-2">
-              <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingCourse" type="submit">
+            <div class="flex flex-col gap-3 sm:flex-row lg:col-span-2">
+              <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? copy.saving : copy.saveCourse }}
               </button>
-              <button v-if="canPublishSelectedCourse" class="h-10 rounded-xl border px-4 font-bold disabled:opacity-40" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
+              <button v-if="canPublishSelectedCourse" class="h-10 w-full rounded-xl border px-4 font-bold disabled:opacity-40 sm:w-auto" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
                 {{ publishing ? copy.publishing : copy.publishCourse }}
               </button>
-              <button v-if="canDeleteSelectedCourse" class="inline-flex h-10 items-center gap-2 rounded-xl border border-red-200 px-4 font-bold text-red-600 disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="deleteCourse">
+              <button v-if="canDeleteSelectedCourse" class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-red-200 px-4 font-bold text-red-600 disabled:opacity-40 sm:w-auto" :disabled="!selectedCourseId" type="button" @click="deleteCourse">
                 <Trash2 class="h-4 w-4" />
                 {{ copy.deleteCourse }}
               </button>
@@ -2946,16 +2951,16 @@ onMounted(() => {
       </section>
 
       <Teleport to="body">
-        <section v-if="courseDeleteConfirmOpen && pendingDeleteCourse" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
-          <div class="w-full max-w-[460px] rounded-3xl bg-white p-6 shadow-2xl">
-            <h2 class="text-2xl font-black text-slate-950">{{ copy.courseDeleteConfirmTitle }}</h2>
+        <section v-if="courseDeleteConfirmOpen && pendingDeleteCourse" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
+          <div class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+            <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.courseDeleteConfirmTitle }}</h2>
             <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.courseDeleteConfirmDescription }}</p>
             <div class="mt-5 rounded-2xl bg-slate-50 p-4">
               <div class="break-words font-black text-slate-950">{{ courseTitle(pendingDeleteCourse) }}</div>
               <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ courseId(pendingDeleteCourse) }}</div>
               <div class="mt-1 text-sm font-semibold text-slate-500">{{ copy.readonlyCourseFieldLabels.version }}: {{ versionOf(pendingDeleteCourse) }}</div>
             </div>
-            <div class="mt-6 flex justify-end gap-3">
+            <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
               <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="closeCourseDeleteConfirm">{{ copy.cancel }}</button>
               <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="confirmDeleteCourse">
                 {{ deletingCourse ? copy.deleting : copy.confirmDeleteAction }}
@@ -4049,12 +4054,13 @@ onMounted(() => {
       </Teleport>
     </main>
 
-    <div v-if="importOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-6" @click.self="importOpen = false">
-      <div class="w-full max-w-3xl rounded-3xl bg-white p-6 shadow-2xl">
-        <div class="mb-5 flex items-center justify-between">
-          <h2 class="text-2xl font-black">{{ copy.importTitle }}</h2>
+    <div v-if="importOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-0 md:p-6" @click.self="importOpen = false">
+      <div class="flex h-full max-h-none w-full max-w-3xl flex-col overflow-hidden rounded-none bg-white p-4 shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl md:p-6">
+        <div class="mb-5 flex items-center justify-between gap-4">
+          <h2 class="min-w-0 text-xl font-black md:text-2xl">{{ copy.importTitle }}</h2>
           <button class="rounded-xl border px-3 py-2 font-bold" type="button" @click="importOpen = false">{{ copy.close }}</button>
         </div>
+        <div class="min-h-0 flex-1 overflow-y-auto">
         <div class="grid gap-4 sm:grid-cols-2">
           <label>
             <span class="text-sm font-bold">{{ copy.importType }}</span>
@@ -4072,8 +4078,9 @@ onMounted(() => {
           <span class="text-sm font-bold">{{ copy.jsonFile }}</span>
           <input class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" type="file" accept=".json,application/json" @change="loadImportFile" />
         </label>
-        <textarea v-model="importJson" class="mt-4 min-h-80 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm" :placeholder="copy.pasteJsonPlaceholder" />
-        <button class="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="importing" type="button" @click="importLmsJson">
+        <textarea v-model="importJson" class="mt-4 min-h-64 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm md:min-h-80" :placeholder="copy.pasteJsonPlaceholder" />
+        </div>
+        <button class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="importing" type="button" @click="importLmsJson">
           <Loader2 v-if="importing" class="h-4 w-4 animate-spin" />
           <UploadCloud v-else class="h-4 w-4" />
           {{ importing ? copy.importing : copy.startImport }}
