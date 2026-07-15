@@ -556,6 +556,7 @@ export const zh = {
         targetTitle: "查询目标",
         candidateUlid: "Candidate ULID",
         candidatePlaceholder: "Candidate ULID",
+        clearInput: "清除输入",
         checkPermission: "检查权限",
         definitionsTitle: "资格定义",
         definitionsDescription: "选择一个定义后再查询考生。",

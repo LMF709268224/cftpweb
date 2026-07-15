@@ -812,19 +812,19 @@ onMounted(async () => {
 
             <form v-else id="mail-template-form" class="space-y-4" @submit.prevent="saveTemplate">
               <label class="block">
-                <span class="text-sm font-bold">{{ copy.fields.path }}</span>
+                <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.path }}</span>
                 <input v-model="formPath" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100" :disabled="!!editingTemplatePath" />
               </label>
               <label class="block">
-                <span class="text-sm font-bold">{{ copy.fields.name }}</span>
+                <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.name }}</span>
                 <input v-model="formName" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
               </label>
               <label class="block">
-                <span class="text-sm font-bold">{{ copy.fields.subjectTemplate }}</span>
+                <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.subjectTemplate }}</span>
                 <input v-model="formSubject" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
               </label>
               <label class="block">
-                <span class="text-sm font-bold">{{ copy.fields.htmlBody }}</span>
+                <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.htmlBody }}</span>
                 <textarea v-model="formContent" class="mt-2 min-h-56 w-full rounded-xl border border-slate-200 p-4" />
               </label>
               <label class="block">
