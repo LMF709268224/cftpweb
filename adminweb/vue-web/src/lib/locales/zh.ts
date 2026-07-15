@@ -1,4 +1,4 @@
-﻿export const zh = {
+export const zh = {
     layout: {
         systemName: "管理系统",
         roleName: "Admin",
@@ -2602,12 +2602,14 @@
             allowRetake: "允许重考",
             allowExemption: "允许免考",
             glmsCourse: "关联课程",
-            program: "项目代码",
-            examCode: "考试编号",
-            formCode: "表单代码",
+            program: "考试科目 (Program)",
+            examCode: "考试代码 (Exam Code)",
+            formCode: "试卷代码 (Form Code)",
         },
         createDraft: "创建草稿",
         saveBasic: "保存基础信息",
+        examConfig: "考试配置",
+        certConfig: "资格证书配置",
         layerTitle: "配置层级",
         layerDescription: "左侧选择层级，右侧查看和维护详情。",
         structureLockedHint: "当前结构不可编辑：新建时请先创建草稿；已发布版本请先克隆新版本再修改。",
@@ -2668,7 +2670,8 @@
         glmsCourseHint: "这里只显示可绑定的已发布课程；草稿、已下架或未启用的课程不能绑定到认证。",
         unitCertificateQualificationLabel: "单元完成后签发的资格",
         unitCertificatePdfTemplateLabel: "单元证书 PDF 模板",
-        exemptionQualificationsJsonLabel: "豁免资格配置 JSON",
+        exemptionQualificationsJsonLabel: "豁免资格配置",
+        exemptionQualificationsTooltip: "只需满足任一勾选的资格即可免考",
         selectQualification: "请选择资格定义",
         loadingQualifications: "正在加载资格定义...",
         qualificationSelectHint: "选项来自“资格定义”，选择后会自动填入资格 ID 和名称提示。",
