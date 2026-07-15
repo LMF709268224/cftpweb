@@ -1,4 +1,4 @@
-import type { AdminTranslations } from "./zh"
+﻿import type { AdminTranslations } from "./zh"
 
 export const en: AdminTranslations = {
     layout: {
@@ -1082,7 +1082,7 @@ export const en: AdminTranslations = {
         pageText: (page: number, totalPages: number) => `Page ${page} / ${totalPages}`,
         detailTitle: "Exam Details",
         detailDescription: "Shows exam ownership, appointment, result, and status transitions.",
-        syncResult: "Sync / Simulate Result",
+        syncResult: "Sync Result",
         loadingDetail: "Loading details...",
         selectExam: "Select an exam record on the left",
         currentExam: "Current Exam",
@@ -1531,11 +1531,11 @@ export const en: AdminTranslations = {
         uploading: "Uploading...",
         uploadFile: "Upload and auto-fill",
         uploadThumbnail: "Upload Thumbnail",
-          respathHint: "(Optional) Auto-generated from the title for permission checks. The default generated resource path is recommended.",
-          categoryHint: "Category classification, e.g., public, member",
-          iconHint: "UI icon identifier, e.g., FileBarChart",
-          objectKeyHint: "The object key returned by the storage service",
-          fileHashHint: "SHA256 hash of the thumbnail file",        sections: {
+        respathHint: "(Optional) Auto-generated from the title for permission checks. The default generated resource path is recommended.",
+        categoryHint: "Category classification, e.g., public, member",
+        iconHint: "UI icon identifier, e.g., FileBarChart",
+        objectKeyHint: "The object key returned by the storage service",
+        fileHashHint: "SHA256 hash of the thumbnail file", sections: {
             basic: "Basic Info",
             pathThumbnail: "Path & Thumbnail",
             system: "System Info",
@@ -2310,7 +2310,7 @@ export const en: AdminTranslations = {
             units: { title: "Course Units", desc: "Units belonging to a stage" },
             certs: { title: "Certificates", desc: "Certificates issued after completion" },
             unlockQuals: { title: "Unlock Qualifications", desc: "Prerequisites before entering the pipeline" },
-            certQuals: { title: "Completion Qualifications", desc: "Certificate/completion qualification requirements" },
+            certQuals: { title: "Graduation Prerequisites", desc: "Additional qualifications required to complete the pipeline (e.g., Work Experience Proof)." },
             raw: { title: "Complete Structure JSON", desc: "Advanced editing" },
         },
         status: {
@@ -2380,7 +2380,7 @@ export const en: AdminTranslations = {
         qualListDescription: "Maintain qualification requirements for the current pipeline",
         add: "Add",
         unlockQualFallback: (index: number) => `Unlock Qualification ${index}`,
-        certQualFallback: (index: number) => `Completion Qualification ${index}`,
+        certQualFallback: (index: number) => `Graduation Prerequisite ${index}`,
         noUnlockQuals: "No unlock qualifications",
         noCertQuals: "No completion qualifications",
         qualDetailTitle: "Qualification Details",
@@ -2962,4 +2962,5 @@ export const en: AdminTranslations = {
         },
     },
 }
+
 
