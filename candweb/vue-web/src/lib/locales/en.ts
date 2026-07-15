@@ -969,6 +969,7 @@ export const en: AppTranslations = {
     checking: "Checking",
     missingQualification: "Missing unlock qualification",
     alreadyPurchased: "Already purchased",
+    partiallyOwnedBundle: "You already own part of this bundle, so it cannot be purchased again",
     inProgressPurchase: "Order in progress",
     pipelineNotFound: "No longer available",
     estimatedPrice: "Estimated price",

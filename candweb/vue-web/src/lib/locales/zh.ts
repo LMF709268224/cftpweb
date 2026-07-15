@@ -966,6 +966,7 @@ export const zh = {
     checking: "检查中",
     missingQualification: "缺少解锁资格",
     alreadyPurchased: "已购买",
+    partiallyOwnedBundle: "已拥有套餐中的部分权益，当前不能重复购买",
     inProgressPurchase: "有未完成订单",
     pipelineNotFound: "认证已不可用",
     estimatedPrice: "预估价格",

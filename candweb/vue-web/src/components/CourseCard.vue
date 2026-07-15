@@ -56,19 +56,31 @@ const currentActiveMembership = computed<Record<string, unknown> | null>(() => f
 const blockers = computed(() => currentEligibility.value?.blockers || [])
 const isPipelineProduct = computed(() => Boolean(props.isPipelineBundle && props.pipelineId))
 const isMembershipProduct = computed(() => Boolean(props.isMembershipBundle || props.itemTypes?.some((type) => String(type).includes("membership"))))
-const effectivePurchased = computed(() =>
-  Boolean(props.isPurchased || currentActiveMembership.value || blockers.value.some((blocker) => blocker.blocker_type === "ALREADY_PURCHASED")),
+const isCombinationProduct = computed(() => isPipelineProduct.value && isMembershipProduct.value)
+const isMembershipOnlyProduct = computed(() => isMembershipProduct.value && !isPipelineProduct.value)
+const alreadyPurchasedBlockers = computed(() => blockers.value.filter((blocker) => blocker.blocker_type === "ALREADY_PURCHASED"))
+const hasPurchasedPipeline = computed(() => alreadyPurchasedBlockers.value.some((blocker) => String(blocker.description || "").toLowerCase().includes("pipeline")))
+const hasPurchasedMembership = computed(() =>
+  Boolean(currentActiveMembership.value) ||
+  alreadyPurchasedBlockers.value.some((blocker) => String(blocker.description || "").toLowerCase().includes("membership")),
 )
+const effectivePurchased = computed(() => {
+  if (props.isPurchased) return true
+  if (isCombinationProduct.value) return hasPurchasedPipeline.value && hasPurchasedMembership.value
+  if (isPipelineProduct.value) return hasPurchasedPipeline.value
+  if (isMembershipProduct.value) return hasPurchasedMembership.value
+  return alreadyPurchasedBlockers.value.length > 0
+})
 const hasInProgressOrder = computed(() => Boolean(currentActiveOrder.value) || blockers.value.some((blocker) => blocker.blocker_type === "IN_PROGRESS_PURCHASE"))
 const resolvedStatusLabel = computed(() =>
   props.statusValue !== undefined ? statusLabel(t.value, CANDIDATE_PIPELINE_STATUS_LABELS, props.statusValue) : props.statusLabel,
 )
-const purchasedTarget = computed(() => isMembershipProduct.value ? "/membership" : `/certifications/${encodeURIComponent(props.pipelineId || props.id)}`)
+const purchasedTarget = computed(() => isPipelineProduct.value ? `/certifications/${encodeURIComponent(props.pipelineId || props.id)}` : "/membership")
 
 const cardCopy = computed(() => t.value.courseCard)
 
 const actionCopy = computed(() => {
-  if (effectivePurchased.value) return isMembershipProduct.value ? cardCopy.value.membershipCenter : cardCopy.value.enterCertification
+  if (effectivePurchased.value) return isPipelineProduct.value ? cardCopy.value.enterCertification : cardCopy.value.membershipCenter
   if (statusRefreshing.value) return cardCopy.value.checking
   if (hasInProgressOrder.value) return cardCopy.value.continuePayment
   if (currentEligibility.value?.can_unlock) return cardCopy.value.unlockAction
@@ -87,6 +99,7 @@ const actionClass = computed(() => {
 
 function blockerText(blocker?: EligibilityBlocker) {
   if (!blocker) return ""
+  if (isCombinationProduct.value && (hasPurchasedPipeline.value !== hasPurchasedMembership.value)) return cardCopy.value.partiallyOwnedBundle
   if (blocker.blocker_type === "MISSING_UNLOCK_QUALIFICATION") return cardCopy.value.missingQualification
   if (blocker.blocker_type === "ALREADY_PURCHASED") return cardCopy.value.alreadyPurchased
   if (blocker.blocker_type === "IN_PROGRESS_PURCHASE") return cardCopy.value.inProgressPurchase
@@ -100,7 +113,7 @@ const accessState = computed(() => {
     return { label: cardCopy.value.checking, icon: Clock, className: "border-slate-200 bg-slate-50 text-slate-700", hint: "" }
   }
   if (currentEligibility.value?.can_purchase || hasInProgressOrder.value) {
-    return { label: isMembershipProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
+    return { label: isMembershipOnlyProduct.value ? cardCopy.value.readyMembership : cardCopy.value.ready, icon: ShoppingCart, className: "border-emerald-200 bg-emerald-50 text-emerald-700", hint: "" }
   }
   if (currentEligibility.value?.can_unlock) {
     return { label: cardCopy.value.unlock, icon: Lock, className: "border-blue-200 bg-blue-50 text-blue-700", hint: "" }
