@@ -3832,7 +3832,12 @@ onMounted(() => {
             </div>
 
             <div class="flex-1 space-y-5 overflow-y-auto p-5">
-              <div class="grid gap-4 lg:grid-cols-3">
+              <div v-if="quizDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
+                <button :class="quizActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
+                <button :class="quizActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
+              </div>
+              <div v-show="quizActiveTab === 'basic'">
+                <div class="grid gap-4 lg:grid-cols-3">
                 <div class="rounded-2xl bg-blue-50 p-4">
                   <div class="text-xs font-black text-blue-600">{{ copy.owner }}</div>
                   <div class="mt-1 text-lg font-black text-slate-900">{{ selectedQuizItem ? quizzableTypeLabel(selectedQuizItem.ownerType) : copy.ownerLevelQuiz(quizTarget().label) }}</div>
