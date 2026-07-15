@@ -2470,6 +2470,7 @@ export const en: AdminTranslations = {
         backToList: "Back to List",
         newCourse: "New Course",
         categoryPlaceholder: "Filter by category, e.g. CFtP/CFtA",
+        clearCategoryFilter: "Clear category filter",
         publishedOnly: "Published only",
         loading: "Loading...",
         emptyCourses: "No courses",

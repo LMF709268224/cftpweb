@@ -2799,7 +2799,19 @@ onMounted(() => {
 
     <section v-if="courseView === 'list'" class="rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
       <div class="grid gap-3 border-b border-slate-200 bg-slate-50/60 p-4 lg:grid-cols-[1fr_auto]">
-        <input v-model="categoryFilter" class="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" :placeholder="copy.categoryPlaceholder" />
+        <div class="relative min-w-0">
+          <input v-model="categoryFilter" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" :placeholder="copy.categoryPlaceholder" />
+          <button
+            v-if="categoryFilter"
+            type="button"
+            class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            :aria-label="copy.clearCategoryFilter"
+            :title="copy.clearCategoryFilter"
+            @click="categoryFilter = ''"
+          >
+            <X class="h-4 w-4" />
+          </button>
+        </div>
         <label class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-600 shadow-sm">
           <input v-model="publishedOnly" type="checkbox" />
           {{ copy.publishedOnly }}

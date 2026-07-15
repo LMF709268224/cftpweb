@@ -2468,6 +2468,7 @@
         backToList: "返回列表",
         newCourse: "新建课程",
         categoryPlaceholder: "分类筛选，例如 CFtP/CFtA",
+        clearCategoryFilter: "清除分类筛选",
         publishedOnly: "仅看已发布",
         loading: "正在加载...",
         emptyCourses: "暂无课程",
