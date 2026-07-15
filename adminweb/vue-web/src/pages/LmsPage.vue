@@ -3105,7 +3105,7 @@ onMounted(() => {
               </form>
               </div>
               <div v-if="chapterActiveTab === 'prerequisites' && chapterDialogMode !== 'create'" class="mt-2">
-                <LmsPrerequisitesTab targetEntityType="ENTITY_TYPE_CHAPTER" :targetEntityId="selectedChapterId" :course="completeCourse" :copy="copy" />
+                <LmsPrerequisitesTab :targetEntityType="3" :targetEntityId="selectedChapterId" :course="completeCourse" :copy="copy" />
               </div>
             </div>
 
@@ -3301,7 +3301,7 @@ onMounted(() => {
               </form>
               </div>
               <div v-if="lessonActiveTab === 'prerequisites' && lessonDialogMode !== 'create'" class="mt-2">
-                <LmsPrerequisitesTab targetEntityType="ENTITY_TYPE_LESSON" :targetEntityId="editingLessonId" :course="completeCourse" :copy="copy" />
+                <LmsPrerequisitesTab :targetEntityType="1" :targetEntityId="editingLessonId" :course="completeCourse" :copy="copy" />
               </div>
             </div>
 
@@ -3973,7 +3973,7 @@ onMounted(() => {
               </section>
               </div>
               <div v-if="quizActiveTab === 'prerequisites' && quizDialogMode !== 'create'" class="mt-2">
-                <LmsPrerequisitesTab targetEntityType="ENTITY_TYPE_QUIZ" :targetEntityId="selectedQuizId" :course="completeCourse" :copy="copy" />
+                <LmsPrerequisitesTab :targetEntityType="2" :targetEntityId="selectedQuizId" :course="completeCourse" :copy="copy" />
               </div>
             </div>
 

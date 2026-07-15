@@ -7,7 +7,7 @@ import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import type { JsonRecord } from "@/lib/display"
 
 const props = defineProps<{
-  targetEntityType: "ENTITY_TYPE_CHAPTER" | "ENTITY_TYPE_LESSON" | "ENTITY_TYPE_QUIZ"
+  targetEntityType: 1 | 2 | 3 // 1: LESSON, 2: QUIZ, 3: CHAPTER
   targetEntityId: string
   course: JsonRecord | null // The CompleteCourse
   copy: any
@@ -23,7 +23,7 @@ const formRequiredEntity = ref("")
 const availableEntities = computed(() => {
   if (!props.course) return []
   
-  const entities: { id: string; type: string; title: string; result: string }[] = []
+  const entities: { id: string; type: number; title: string; result: number }[] = []
   
   const chapters = (props.course.chapters || []) as any[]
   chapters.forEach((chapterDetail: any) => {
@@ -31,9 +31,9 @@ const availableEntities = computed(() => {
     if (chapter && chapter.chapter_ulid !== props.targetEntityId) {
       entities.push({
         id: chapter.chapter_ulid,
-        type: "ENTITY_TYPE_CHAPTER",
+        type: 3, // CHAPTER
         title: `[${props.copy.chapter || '章节'}] ${chapter.title}`,
-        result: "PREREQUISITE_RESULT_COMPLETED"
+        result: 1 // COMPLETED
       })
     }
     
@@ -43,9 +43,9 @@ const availableEntities = computed(() => {
       if (lesson && lesson.lesson_ulid !== props.targetEntityId) {
         entities.push({
           id: lesson.lesson_ulid,
-          type: "ENTITY_TYPE_LESSON",
+          type: 1, // LESSON
           title: `[${props.copy.lesson || '课时'}] ${lesson.title}`,
-          result: "PREREQUISITE_RESULT_COMPLETED"
+          result: 1 // COMPLETED
         })
       }
       
@@ -55,9 +55,9 @@ const availableEntities = computed(() => {
         if (quiz && quiz.quiz_ulid !== props.targetEntityId) {
           entities.push({
             id: quiz.quiz_ulid,
-            type: "ENTITY_TYPE_QUIZ",
+            type: 2, // QUIZ
             title: `[${props.copy.quiz || '测验'}] ${quiz.title}`,
-            result: "PREREQUISITE_RESULT_PASSED"
+            result: 2 // PASSED
           })
         }
       })
@@ -69,9 +69,9 @@ const availableEntities = computed(() => {
       if (quiz && quiz.quiz_ulid !== props.targetEntityId) {
         entities.push({
           id: quiz.quiz_ulid,
-          type: "ENTITY_TYPE_QUIZ",
+          type: 2, // QUIZ
           title: `[${props.copy.quiz || '测验'}] ${quiz.title}`,
-          result: "PREREQUISITE_RESULT_PASSED"
+          result: 2 // PASSED
         })
       }
     })
@@ -83,9 +83,9 @@ const availableEntities = computed(() => {
     if (quiz && quiz.quiz_ulid !== props.targetEntityId) {
       entities.push({
         id: quiz.quiz_ulid,
-        type: "ENTITY_TYPE_QUIZ",
+        type: 2, // QUIZ
         title: `[${props.copy.quiz || '测验'}] ${quiz.title}`,
-        result: "PREREQUISITE_RESULT_PASSED"
+        result: 2 // PASSED
       })
     }
   })
@@ -189,7 +189,7 @@ onMounted(() => {
           <div>
             <div class="font-bold text-slate-700">{{ entityName(String(item.required_entity_id)) }}</div>
             <div class="mt-0.5 text-xs text-slate-500">
-              {{ item.required_result === 'PREREQUISITE_RESULT_PASSED' ? (copy.mustPass || '必须通过') : (copy.mustComplete || '必须完成') }}
+              {{ item.required_result === 2 || item.required_result === 'PREREQUISITE_RESULT_PASSED' ? (copy.mustPass || '必须通过') : (copy.mustComplete || '必须完成') }}
             </div>
           </div>
           <button class="shrink-0 rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-red-500" :aria-label="copy.delete" @click="deletePrerequisite(item)">
