@@ -1403,6 +1403,22 @@ onMounted(load)
                       <div v-else class="p-5 text-center text-sm text-slate-500">{{ copy.pricingPreview.notConfigured }}</div>
                     </div>
                   </div>
+
+                  <details class="mt-5 rounded-2xl border border-slate-200 bg-white p-5">
+                    <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.advancedJsonTitle }}</summary>
+                    <p class="mt-2 text-sm text-slate-500">{{ copy.advancedJsonHint }}</p>
+                    <div class="mt-4 grid gap-4 xl:grid-cols-2">
+                      <label class="grid gap-2 text-sm font-bold">
+                        {{ copy.fields.itemsJson }}
+                        <textarea v-model="form.items_json" class="min-h-[180px] rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-6" />
+                      </label>
+                      <label class="grid gap-2 text-sm font-bold">
+                        {{ copy.fields.pricingJson }}
+                        <textarea v-model="form.pricing_json" class="min-h-[180px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
+                        <p class="text-xs font-semibold text-slate-500">{{ copy.pricingJsonCreateHint }}</p>
+                      </label>
+                    </div>
+                  </details>
                 </section>
                 <div class="flex justify-end">
                   <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="savePricing">
@@ -1485,3 +1501,4 @@ onMounted(load)
     </Teleport>
   </section>
 </template>
+
