@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
+import { ChevronDown, Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -1079,11 +1079,19 @@ onMounted(() => {
             <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.categoryTips }}</span>
             <input v-model="form.category_tips" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.respath }}</span>
-            <input v-model="form.respath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
-            <p v-if="creating" class="text-xs font-semibold text-slate-500">{{ copy.respathHint }}</p>
-          </label>
+          <details class="group md:col-span-2">
+            <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+              {{ (copy as any).advancedConfig || '高级配置' }}
+              <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
+            </summary>
+            <div class="mt-4 grid gap-4 md:grid-cols-2">
+              <label class="grid gap-2 text-sm font-bold">
+                <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.respath }}</span>
+                <input v-model="form.respath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
+                <p v-if="creating" class="text-xs font-semibold text-slate-500">{{ copy.respathHint }}</p>
+              </label>
+            </div>
+          </details>
         </div>
       </div>
 

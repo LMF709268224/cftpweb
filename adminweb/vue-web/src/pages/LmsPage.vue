@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileJson, Info, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
+import { ChevronDown, FileJson, Info, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
@@ -2692,31 +2692,39 @@ onMounted(() => {
               <span class="text-sm font-bold">{{ copy.description }}</span>
               <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
             </label>
-            <label class="block">
-              <span class="flex items-center gap-1.5 text-sm font-bold">
-                <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.respath }}</span>
-                <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
-                  <Info class="h-4 w-4" aria-hidden="true" />
-                  <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                    {{ copy.respathHint }}
+            <details class="group md:col-span-2">
+              <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                {{ (copy as any).advancedConfig || '高级配置' }}
+                <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
+              </summary>
+              <div class="mt-4 grid gap-3 md:grid-cols-2">
+                <label class="block">
+                  <span class="flex items-center gap-1.5 text-sm font-bold">
+                    <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.respath }}</span>
+                    <span class="group/tooltip relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
+                      <Info class="h-4 w-4" aria-hidden="true" />
+                      <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover/tooltip:opacity-100 group-focus/tooltip:opacity-100">
+                        {{ copy.respathHint }}
+                      </span>
+                    </span>
                   </span>
-                </span>
-              </span>
-              <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-            </label>
-            <label class="block">
-              <span class="flex items-center gap-1.5 text-sm font-bold">
-                <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseGpath }}</span>
-                <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.courseGpathHint">
-                  <Info class="h-4 w-4" aria-hidden="true" />
-                  <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                    {{ copy.courseGpathHint }}
+                  <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+                </label>
+                <label class="block">
+                  <span class="flex items-center gap-1.5 text-sm font-bold">
+                    <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseGpath }}</span>
+                    <span class="group/tooltip relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.courseGpathHint">
+                      <Info class="h-4 w-4" aria-hidden="true" />
+                      <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover/tooltip:opacity-100 group-focus/tooltip:opacity-100">
+                        {{ copy.courseGpathHint }}
+                      </span>
+                    </span>
                   </span>
-                </span>
-              </span>
-              <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-              <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
-            </label>
+                  <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+                  <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
+                </label>
+              </div>
+            </details>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>
               <input v-model="courseForm.duration_min" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
@@ -2907,31 +2915,39 @@ onMounted(() => {
               <span class="text-sm font-bold">{{ copy.description }}</span>
               <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
             </label>
-            <label class="block">
-              <span class="flex items-center gap-1.5 text-sm font-bold">
-                <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.respath }}</span>
-                <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
-                  <Info class="h-4 w-4" aria-hidden="true" />
-                  <span role="tooltip" class="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                    {{ copy.respathHint }}
+            <details class="group lg:col-span-2">
+              <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                {{ (copy as any).advancedConfig || '高级配置' }}
+                <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
+              </summary>
+              <div class="mt-4 grid gap-3 lg:grid-cols-2">
+                <label class="block">
+                  <span class="flex items-center gap-1.5 text-sm font-bold">
+                    <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.respath }}</span>
+                    <span class="group/tooltip relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
+                      <Info class="h-4 w-4" aria-hidden="true" />
+                      <span role="tooltip" class="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover/tooltip:opacity-100 group-focus/tooltip:opacity-100">
+                        {{ copy.respathHint }}
+                      </span>
+                    </span>
                   </span>
-                </span>
-              </span>
-              <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-            </label>
-            <label class="block">
-              <span class="flex items-center gap-1.5 text-sm font-bold">
-                <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseGpath }}</span>
-                <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.courseGpathHint">
-                  <Info class="h-4 w-4" aria-hidden="true" />
-                  <span role="tooltip" class="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                    {{ copy.courseGpathHint }}
+                  <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+                </label>
+                <label class="block">
+                  <span class="flex items-center gap-1.5 text-sm font-bold">
+                    <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseGpath }}</span>
+                    <span class="group/tooltip relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.courseGpathHint">
+                      <Info class="h-4 w-4" aria-hidden="true" />
+                      <span role="tooltip" class="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover/tooltip:opacity-100 group-focus/tooltip:opacity-100">
+                        {{ copy.courseGpathHint }}
+                      </span>
+                    </span>
                   </span>
-                </span>
-              </span>
-              <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-              <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
-            </label>
+                  <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+                  <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
+                </label>
+              </div>
+            </details>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>
               <input v-model="courseForm.duration_min" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
