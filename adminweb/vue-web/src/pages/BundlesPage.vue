@@ -3,6 +3,7 @@ import { Copy, FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from 
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import PricingEditor from "@/components/PricingEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -22,7 +23,12 @@ type BundleForm = {
 
 type DetailTab = "summary" | "meta" | "pricing" | "schema" | "actions"
 type Mode = "detail" | "create"
-type BundleItemType = "pipeline" | "membership" | "resource_pack"
+type BundleItemType = "pipeline" | "membership"
+type CreateBundleItem = {
+  key: number
+  item_type: BundleItemType
+  ref_ulid: string
+}
 type SummaryField = {
   label: string
   value: string
@@ -62,6 +68,12 @@ type TargetOption = {
   title: string
   subtitle: string
 }
+type PricingSelectOption = {
+  id: string
+  label: string
+  subtitle?: string
+  durationMonths?: number
+}
 
 const emptyForm: BundleForm = {
   bundle_ulid: "",
@@ -77,12 +89,12 @@ const emptyForm: BundleForm = {
 const bundles = ref<JsonRecord[]>([])
 const selected = ref<JsonRecord | null>(null)
 const form = ref<BundleForm>({ ...emptyForm })
-const createItemType = ref<BundleItemType>("pipeline")
-const createItemRef = ref("")
+const createItems = ref<CreateBundleItem[]>([])
 const pipelineOptions = ref<JsonRecord[]>([])
 const membershipOptions = ref<JsonRecord[]>([])
-const resourcePackOptions = ref<JsonRecord[]>([])
+const linkedUnitOptions = ref<PricingSelectOption[]>([])
 const targetOptionsLoading = ref(false)
+const pricingTargetsLoading = ref(false)
 const loading = ref(false)
 const saving = ref(false)
 const publishing = ref(false)
@@ -103,6 +115,7 @@ const mode = ref<Mode>("detail")
 const showDeleteConfirm = ref(false)
 const replacementPipelineId = ref("")
 const limit = 10
+let nextCreateItemKey = 1
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.bundlesAdmin)
 
@@ -116,23 +129,13 @@ const schemasJson = computed(() => JSON.stringify(schemas.value || {}, null, 2))
 const createItemTypeOptions = computed(() => [
   { value: "pipeline" as const, label: copy.value.createItemTypes.pipeline },
   { value: "membership" as const, label: copy.value.createItemTypes.membership },
-  { value: "resource_pack" as const, label: copy.value.createItemTypes.resourcePack },
 ])
-const createTargetOptions = computed<TargetOption[]>(() => {
-  if (createItemType.value === "membership") return membershipOptions.value.map(membershipTargetOption).filter(hasTargetId)
-  if (createItemType.value === "resource_pack") return resourcePackOptions.value.map(resourcePackTargetOption).filter(hasTargetId)
-  return pipelineOptions.value.map(pipelineTargetOption).filter(hasTargetId)
-})
 const replacementPipelineOptions = computed<TargetOption[]>(() => pipelineOptions.value.map(pipelineTargetOption).filter(hasTargetId))
-const selectedCreateTarget = computed(() => createTargetOptions.value.find((option) => option.id === createItemRef.value) || null)
 const createItemsJson = computed(() => {
-  if (!createItemRef.value.trim()) return "[]"
-  return JSON.stringify([
-    {
-      item_type: createItemType.value,
-      ref_ulid: createItemRef.value.trim(),
-    },
-  ], null, 2)
+  return JSON.stringify(createItems.value.map((item) => ({
+    item_type: item.item_type,
+    ref_ulid: item.ref_ulid.trim(),
+  })), null, 2)
 })
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
@@ -161,6 +164,26 @@ const linkedItemsPreview = computed<LinkedItemView[]>(() => {
 })
 const currentPipelineRefs = computed(() => pipelineRefsFromItemsJson(form.value.items_json))
 const currentPipelineRef = computed(() => currentPipelineRefs.value[0] || "")
+const currentMembershipRefs = computed(() => membershipRefsFromItemsJson(form.value.items_json))
+const linkedPipelinePricingOptions = computed<PricingSelectOption[]>(() => currentPipelineRefs.value.map((id) => {
+  const target = pipelineOptions.value.find((item) => pipelineTargetOption(item).id === id)
+  const option = target ? pipelineTargetOption(target) : null
+  return {
+    id,
+    label: option?.title || id,
+    subtitle: option?.subtitle || id,
+  }
+}))
+const linkedMembershipPricingOptions = computed<PricingSelectOption[]>(() => currentMembershipRefs.value.map((id) => {
+  const target = membershipOptions.value.find((item) => membershipTargetOption(item).id === id)
+  const option = target ? membershipTargetOption(target) : null
+  return {
+    id,
+    label: option?.title || id,
+    subtitle: option?.subtitle || id,
+    durationMonths: Number(pickFirst(target || {}, ["duration_in_months", "duration_months"])) || 0,
+  }
+}))
 const pricingPreview = computed<PricingPreviewView | null>(() => {
   const parsed = asRecord(parseJsonSilently(form.value.pricing_json))
   if (!parsed) return null
@@ -244,17 +267,21 @@ function linkedItemTypeLabel(value: unknown) {
   const type = normalizeItemType(value)
   if (type.includes("pipeline")) return copy.value.createItemTypes.pipeline
   if (type.includes("membership")) return copy.value.createItemTypes.membership
-  if (type.includes("resource")) return copy.value.createItemTypes.resourcePack
   return String(value || "-")
 }
 
 function itemReference(record: JsonRecord) {
-  return String(pickFirst(record, ["ref_ulid", "ref_id", "ulid", "id", "item_id", "pipeline_id", "pipeline_cc_ulid", "membership_id", "resource_pack_id"]) || "").trim()
+  return String(pickFirst(record, ["ref_ulid", "ref_id", "ulid", "id", "item_id", "pipeline_id", "pipeline_cc_ulid", "membership_id"]) || "").trim()
 }
 
 function isPipelineItem(record: JsonRecord) {
   const type = normalizeItemType(pickFirst(record, ["item_type", "type", "itemType", "kind"]))
   return type.includes("pipeline") || !!String(pickFirst(record, ["pipeline_id", "pipeline_cc_ulid"]) || "").trim()
+}
+
+function isMembershipItem(record: JsonRecord) {
+  const type = normalizeItemType(pickFirst(record, ["item_type", "type", "itemType", "kind"]))
+  return type.includes("membership") || !!String(pickFirst(record, ["membership_id", "membership_ulid"]) || "").trim()
 }
 
 function pipelineRefsFromItemsJson(value: string) {
@@ -264,6 +291,19 @@ function pipelineRefsFromItemsJson(value: string) {
   for (const item of items) {
     const record = asRecord(item)
     if (!record || !isPipelineItem(record)) continue
+    const ref = itemReference(record)
+    if (ref) refs.add(ref)
+  }
+  return Array.from(refs)
+}
+
+function membershipRefsFromItemsJson(value: string) {
+  const parsed = parseJsonSilently(value)
+  const items = Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" ? [parsed] : []
+  const refs = new Set<string>()
+  for (const item of items) {
+    const record = asRecord(item)
+    if (!record || !isMembershipItem(record)) continue
     const ref = itemReference(record)
     if (ref) refs.add(ref)
   }
@@ -296,25 +336,28 @@ function pipelineUnitIds(value: unknown) {
 
 function bundleTargetSummary(bundle: JsonRecord | null | undefined) {
   const directPipelineId = String(pickFirst(bundle || {}, ["pipeline_id", "pipeline_cc_ulid"]) || "")
-  if (directPipelineId) return `${copy.value.createItemTypes.pipeline} · ${directPipelineId}`
-
   const directMembershipId = String(pickFirst(bundle || {}, ["membership_id", "membership_ulid"]) || "")
-  if (directMembershipId) return `${copy.value.createItemTypes.membership} · ${directMembershipId}`
+  const directSummaries = [
+    directPipelineId ? `${copy.value.createItemTypes.pipeline} · ${directPipelineId}` : "",
+    directMembershipId ? `${copy.value.createItemTypes.membership} · ${directMembershipId}` : "",
+  ].filter(Boolean)
+  if (directSummaries.length) return directSummaries.join(" + ")
 
   const parsed = parseJsonSilently(String(bundle?.items_json || ""))
   const items = Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" ? [parsed] : []
+  const summaries: string[] = []
   for (const item of items) {
     const record = asRecord(item)
     if (!record) continue
     const itemType = String(record.item_type || record.type || record.itemType || record.kind || "").toLowerCase()
-    const ref = String(record.ref_ulid || record.item_id || record.id || record.pipeline_id || record.pipeline_cc_ulid || record.membership_id || record.resource_pack_id || "").trim()
+    const ref = String(record.ref_ulid || record.item_id || record.id || record.pipeline_id || record.pipeline_cc_ulid || record.membership_id || "").trim()
     if (!ref) continue
-    if (itemType.includes("pipeline")) return `${copy.value.createItemTypes.pipeline} · ${ref}`
-    if (itemType.includes("membership")) return `${copy.value.createItemTypes.membership} · ${ref}`
-    if (itemType.includes("resource")) return `${copy.value.createItemTypes.resourcePack} · ${ref}`
-    return `${itemType || copy.value.fields.linkedTarget} · ${ref}`
+    if (itemType.includes("pipeline")) summaries.push(`${copy.value.createItemTypes.pipeline} · ${ref}`)
+    else if (itemType.includes("membership")) summaries.push(`${copy.value.createItemTypes.membership} · ${ref}`)
+    else summaries.push(`${itemType || copy.value.fields.linkedTarget} · ${ref}`)
   }
-  return ""
+  if (summaries.length <= 2) return summaries.join(" + ")
+  return `${summaries.slice(0, 2).join(" + ")} + ${copy.value.moreLinkedItems(summaries.length - 2)}`
 }
 
 function displayPrice(bundle: JsonRecord | null | undefined) {
@@ -368,14 +411,42 @@ function membershipTargetOption(target: JsonRecord): TargetOption {
   }
 }
 
-function resourcePackTargetOption(target: JsonRecord): TargetOption {
-  const id = String(pickFirst(target, ["pack_id", "resource_pack_ulid", "resource_pack_id"]) || "")
-  const title = String(pickFirst(target, ["title", "name", "respath"]) || id || copy.value.unnamedTarget)
-  return {
-    id,
-    title,
-    subtitle: targetSubtitle([String(pickFirst(target, ["category", "respath"]) || ""), targetVersionText(target), targetStatusText(target), id]),
+function createTargetOptions(itemType: BundleItemType) {
+  if (itemType === "membership") return membershipOptions.value.map(membershipTargetOption).filter(hasTargetId)
+  return pipelineOptions.value.map(pipelineTargetOption).filter(hasTargetId)
+}
+
+function selectedCreateTarget(item: CreateBundleItem) {
+  return createTargetOptions(item.item_type).find((option) => option.id === item.ref_ulid) || null
+}
+
+function createBundleItem(itemType: BundleItemType = "pipeline"): CreateBundleItem {
+  const item = {
+    key: nextCreateItemKey,
+    item_type: itemType,
+    ref_ulid: "",
   }
+  nextCreateItemKey += 1
+  return item
+}
+
+function addCreateItem() {
+  if (createItems.value.length >= 2) return
+  const itemType: BundleItemType = createItems.value.some((item) => item.item_type === "pipeline") ? "membership" : "pipeline"
+  createItems.value.push(createBundleItem(itemType))
+}
+
+function removeCreateItem(index: number) {
+  if (createItems.value.length <= 1) return
+  createItems.value.splice(index, 1)
+}
+
+function changeCreateItemType(item: CreateBundleItem) {
+  item.ref_ulid = ""
+}
+
+function createItemTypeDisabled(item: CreateBundleItem, itemType: BundleItemType) {
+  return createItems.value.some((candidate) => candidate.key !== item.key && candidate.item_type === itemType)
 }
 
 function isStructuredValue(value: unknown) {
@@ -435,12 +506,37 @@ function validateItemsJson() {
     return false
   }
 
+  const seen = new Set<string>()
+  let pipelineCount = 0
+  let membershipCount = 0
   for (const [index, item] of parsed.entries()) {
     const record = asRecord(item)
     if (!record || isBlank(record.item_type) || isBlank(record.ref_ulid)) {
       toast.error(copy.value.toasts.itemRequired(index + 1))
       return false
     }
+    const itemType = normalizeItemType(record.item_type)
+    const ref = String(record.ref_ulid).trim()
+    if (itemType !== "pipeline" && itemType !== "membership") {
+      toast.error(copy.value.toasts.itemTypeUnsupported(index + 1))
+      return false
+    }
+    if (itemType === "pipeline") pipelineCount += 1
+    if (itemType === "membership") membershipCount += 1
+    const key = `${itemType}:${ref}`
+    if (seen.has(key)) {
+      toast.error(copy.value.toasts.itemDuplicate(index + 1))
+      return false
+    }
+    seen.add(key)
+  }
+  if (pipelineCount > 1) {
+    toast.error(copy.value.toasts.pipelineLimit)
+    return false
+  }
+  if (membershipCount > 1) {
+    toast.error(copy.value.toasts.membershipLimit)
+    return false
   }
   return true
 }
@@ -480,7 +576,45 @@ function validatePricingJson() {
   const unlocks = asRecord(pricing.unlocks)
   if (unlocks) {
     for (const [targetId, value] of Object.entries(unlocks)) {
+      if (isBlank(targetId)) {
+        toast.error(copy.value.toasts.unlockTargetRequired)
+        return false
+      }
+      if (!currentPipelineRefs.value.includes(targetId)) {
+        toast.error(copy.value.toasts.unlockTargetNotLinked(targetId))
+        return false
+      }
       if (!validatePriceObject(value, copy.value.toasts.unlockPriceLabel(targetId))) return false
+    }
+  }
+
+  if (Array.isArray(pricing.memberships)) {
+    if (pricing.memberships.length > 1) {
+      toast.error(copy.value.toasts.membershipPricingLimit)
+      return false
+    }
+    for (const [index, value] of pricing.memberships.entries()) {
+      const membership = asRecord(value)
+      if (!membership || isBlank(membership.membership_id) || Number(membership.duration_months) < 1) {
+        toast.error(copy.value.toasts.membershipPricingRequired(index + 1))
+        return false
+      }
+      if (!currentMembershipRefs.value.includes(String(membership.membership_id).trim())) {
+        toast.error(copy.value.toasts.membershipPricingNotLinked(index + 1))
+        return false
+      }
+      if (!validatePriceObject(membership, copy.value.toasts.membershipPriceLabel(index + 1))) return false
+    }
+  }
+
+  if (Array.isArray(pricing.qual_reviews)) {
+    for (const [index, value] of pricing.qual_reviews.entries()) {
+      const review = asRecord(value)
+      if (!review || isBlank(review.qual_id)) {
+        toast.error(copy.value.toasts.qualReviewRequired(index + 1))
+        return false
+      }
+      if (!validatePriceObject(review, copy.value.toasts.qualReviewPriceLabel(index + 1))) return false
     }
   }
 
@@ -590,20 +724,51 @@ async function loadCreateTargetOptions() {
     }
   }
   try {
-    const [pipelines, memberships, packs] = await Promise.all([
+    const [pipelines, memberships] = await Promise.all([
       loadRecords("pipelines", apiClient<JsonRecord>("/api/pipelines?page_size=100&only_current=true"), ["pipelines", "items"]),
       loadRecords("memberships", apiClient<JsonRecord>("/api/memberships?page=1&page_size=100"), ["memberships", "membership_configs", "items"]),
-      loadRecords("resource-packs", apiClient<JsonRecord>("/api/lms/resource-packs?page_size=100"), ["packs", "items"]),
     ])
     pipelineOptions.value = pipelines.filter(targetUsable)
     membershipOptions.value = memberships.filter(targetUsable)
-    resourcePackOptions.value = packs.filter(targetUsable)
   } finally {
     if (failures.length) {
       console.warn("Some product target options failed to load", failures)
       toast.error(copy.value.toasts.targetOptionsLoadFailed)
     }
     targetOptionsLoading.value = false
+  }
+}
+
+async function loadPricingTargets() {
+  const pipelineRefs = currentPipelineRefs.value
+  linkedUnitOptions.value = []
+  if (!pipelineRefs.length) return
+
+  pricingTargetsLoading.value = true
+  try {
+    const results = await Promise.allSettled(
+      pipelineRefs.map((pipelineId) => apiClient<JsonRecord>(`/api/pipelines/${encodeURIComponent(pipelineId)}`)),
+    )
+    const options: PricingSelectOption[] = []
+    results.forEach((result, index) => {
+      if (result.status !== "fulfilled") {
+        console.error("Failed to load linked pipeline pricing targets", result.reason)
+        return
+      }
+      const pipelineId = pipelineRefs[index]
+      const pipelineTarget = pipelineOptions.value.find((item) => pipelineTargetOption(item).id === pipelineId)
+      const pipelineLabel = pipelineTarget ? pipelineTargetOption(pipelineTarget).title : pipelineId
+      for (const unitId of pipelineUnitIds(result.value)) {
+        options.push({
+          id: unitId,
+          label: `${pipelineLabel} · ${unitId}`,
+          subtitle: pipelineId,
+        })
+      }
+    })
+    linkedUnitOptions.value = options
+  } finally {
+    pricingTargetsLoading.value = false
   }
 }
 
@@ -633,8 +798,7 @@ function newBundle() {
   mode.value = "create"
   activeTab.value = "meta"
   showDeleteConfirm.value = false
-  createItemType.value = "pipeline"
-  createItemRef.value = ""
+  createItems.value = [createBundleItem()]
   form.value = { ...emptyForm }
   void loadCreateTargetOptions()
 }
@@ -650,7 +814,7 @@ async function createBundle() {
     toast.error(copy.value.toasts.createRequired)
     return
   }
-  if (!createItemRef.value.trim()) {
+  if (!createItems.value.length || createItems.value.some((item) => !item.ref_ulid.trim())) {
     toast.error(copy.value.toasts.targetRequired)
     return
   }
@@ -967,14 +1131,15 @@ watch(offset, () => {
   selected.value = null
   void load()
 })
-watch(createItemType, () => {
-  createItemRef.value = ""
-})
 watch(createItemsJson, (value) => {
   if (mode.value === "create") form.value.items_json = value
 })
 watch(activeTab, (tab) => {
-  if (tab === "pricing" && !pipelineOptions.value.length) void loadCreateTargetOptions()
+  if (tab !== "pricing") return
+  void loadCreateTargetOptions().then(loadPricingTargets)
+})
+watch(() => form.value.items_json, () => {
+  if (mode.value === "detail" && activeTab.value === "pricing") void loadPricingTargets()
 })
 onMounted(load)
 </script>
@@ -1088,29 +1253,44 @@ onMounted(load)
                   <h3 class="text-lg font-black text-slate-950">{{ copy.createSections.linkTarget }}</h3>
                   <p class="mt-1 text-sm text-slate-500">{{ copy.createSections.linkTargetDesc }}</p>
                 </div>
-                <Loader2 v-if="targetOptionsLoading" class="h-5 w-5 animate-spin text-slate-400" />
+                <div class="flex items-center gap-3">
+                  <Loader2 v-if="targetOptionsLoading" class="h-5 w-5 animate-spin text-slate-400" />
+                  <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="createItems.length >= 2" @click="addCreateItem">
+                    <Plus class="h-4 w-4" />
+                    {{ copy.addLinkedItem }}
+                  </button>
+                </div>
               </div>
-              <div class="mt-4 grid gap-4 md:grid-cols-2">
-                <label class="grid gap-2 text-sm font-bold">
-                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.itemType }}</span>
-                  <select v-model="createItemType" class="rounded-xl border border-slate-200 bg-white px-4 py-3">
-                    <option v-for="option in createItemTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                  </select>
-                  <p class="text-xs font-semibold text-slate-500">{{ copy.itemTypeHint }}</p>
-                </label>
-                <label class="grid gap-2 text-sm font-bold">
-                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.linkedTarget }}</span>
-                  <select v-model="createItemRef" class="rounded-xl border border-slate-200 bg-white px-4 py-3" :disabled="targetOptionsLoading || !createTargetOptions.length">
-                    <option value="" disabled>{{ targetOptionsLoading ? copy.loadingTargets : copy.selectLinkedTarget }}</option>
-                    <option v-for="option in createTargetOptions" :key="option.id" :value="option.id">{{ option.title }} · {{ option.subtitle }}</option>
-                  </select>
-                  <p class="text-xs font-semibold text-slate-500">{{ createTargetOptions.length ? copy.linkedTargetHint : copy.noLinkedTargets }}</p>
-                </label>
-              </div>
-              <div v-if="selectedCreateTarget" class="mt-4 rounded-2xl border border-sky-100 bg-white p-4">
-                <div class="text-xs font-black uppercase tracking-wide text-slate-400">{{ copy.selectedTarget }}</div>
-                <div class="mt-2 text-base font-black text-slate-950">{{ selectedCreateTarget.title }}</div>
-                <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ selectedCreateTarget.subtitle }}</div>
+              <div class="mt-4 grid gap-4">
+                <div v-for="(item, index) in createItems" :key="item.key" class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="grid gap-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_auto]">
+                    <label class="grid gap-2 text-sm font-bold">
+                      <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.itemType }}</span>
+                      <select v-model="item.item_type" class="rounded-xl border border-slate-200 bg-white px-4 py-3" @change="changeCreateItemType(item)">
+                        <option v-for="option in createItemTypeOptions" :key="option.value" :value="option.value" :disabled="createItemTypeDisabled(item, option.value)">
+                          {{ option.label }}
+                        </option>
+                      </select>
+                      <p class="text-xs font-semibold text-slate-500">{{ copy.itemTypeHint }}</p>
+                    </label>
+                    <label class="grid gap-2 text-sm font-bold">
+                      <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.linkedTarget }}</span>
+                      <select v-model="item.ref_ulid" class="rounded-xl border border-slate-200 bg-white px-4 py-3" :disabled="targetOptionsLoading || !createTargetOptions(item.item_type).length">
+                        <option value="" disabled>{{ targetOptionsLoading ? copy.loadingTargets : copy.selectLinkedTarget }}</option>
+                        <option v-for="option in createTargetOptions(item.item_type)" :key="option.id" :value="option.id">{{ option.title }} · {{ option.subtitle }}</option>
+                      </select>
+                      <p class="text-xs font-semibold text-slate-500">{{ createTargetOptions(item.item_type).length ? copy.linkedTargetHint : copy.noLinkedTargets }}</p>
+                    </label>
+                    <button class="mt-7 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40" type="button" :disabled="createItems.length <= 1" :aria-label="copy.removeLinkedItem" @click="removeCreateItem(index)">
+                      <Trash2 class="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div v-if="selectedCreateTarget(item)" class="mt-4 rounded-xl border border-sky-100 bg-sky-50 p-4">
+                    <div class="text-xs font-black uppercase tracking-wide text-slate-400">{{ copy.selectedTarget }}</div>
+                    <div class="mt-2 text-base font-black text-slate-950">{{ selectedCreateTarget(item)?.title }}</div>
+                    <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ selectedCreateTarget(item)?.subtitle }}</div>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -1306,6 +1486,24 @@ onMounted(load)
                       </button>
                     </div>
                   </div>
+                </section>
+                <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 class="text-lg font-black text-slate-950">{{ copy.pricingEditorTitle }}</h3>
+                      <p class="mt-1 text-sm font-semibold text-slate-600">{{ copy.pricingEditorDescription }}</p>
+                    </div>
+                    <div v-if="pricingTargetsLoading" class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500">
+                      <Loader2 class="h-4 w-4 animate-spin" />
+                      {{ copy.loadingPricingTargets }}
+                    </div>
+                  </div>
+                  <PricingEditor
+                    v-model="form.pricing_json"
+                    :unit-options="linkedUnitOptions"
+                    :pipeline-options="linkedPipelinePricingOptions"
+                    :membership-options="linkedMembershipPricingOptions"
+                  />
                 </section>
                 <section class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                   <div class="flex flex-wrap items-start justify-between gap-3">
