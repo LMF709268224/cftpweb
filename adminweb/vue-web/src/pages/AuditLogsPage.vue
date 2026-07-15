@@ -197,50 +197,48 @@ onMounted(load)
       </button>
     </header>
 
-    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div class="grid gap-3 md:grid-cols-4">
-        <label class="text-sm font-bold text-slate-700">
+    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.keyword }}
-          <input v-model="filters.keyword" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.keyword" @keydown.enter="resetAndLoad" />
+          <input v-model="filters.keyword" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.keyword" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="text-sm font-bold text-slate-700">
+        <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.sourceService }}
-          <input v-model="filters.source_service" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.sourceService" @keydown.enter="resetAndLoad" />
+          <input v-model="filters.source_service" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.sourceService" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="text-sm font-bold text-slate-700">
+        <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.action }}
-          <input v-model="filters.action" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.action" @keydown.enter="resetAndLoad" />
+          <input v-model="filters.action" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.action" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="text-sm font-bold text-slate-700">
+        <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.status }}
-          <input v-model="filters.status" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.status" @keydown.enter="resetAndLoad" />
+          <input v-model="filters.status" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.status" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="text-sm font-bold text-slate-700">
+        <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.operator }}
-          <input v-model="filters.operator_id" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.operator" @keydown.enter="resetAndLoad" />
+          <input v-model="filters.operator_id" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.operator" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="text-sm font-bold text-slate-700">
+        <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.resourceType }}
-          <input v-model="filters.resource_type" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.resourceType" @keydown.enter="resetAndLoad" />
+          <input v-model="filters.resource_type" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.resourceType" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="text-sm font-bold text-slate-700">
+        <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.resourceId }}
-          <input v-model="filters.resource_id" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.resourceId" @keydown.enter="resetAndLoad" />
+          <input v-model="filters.resource_id" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.resourceId" @keydown.enter="resetAndLoad" />
         </label>
-        <div class="flex items-end">
-          <button class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-black text-white" type="button" @click="resetAndLoad">
-            <Search class="h-4 w-4" />
-            {{ copy.search }}
-          </button>
-        </div>
-        <label class="text-sm font-bold text-slate-700 md:col-span-2">
+        <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.startTime }}
-          <input v-model="filters.start_time" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="datetime-local" />
+          <input v-model="filters.start_time" class="h-11 w-full rounded-xl border border-slate-200 px-3" type="datetime-local" />
         </label>
-        <label class="text-sm font-bold text-slate-700 md:col-span-2">
+        <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.endTime }}
-          <input v-model="filters.end_time" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="datetime-local" />
+          <input v-model="filters.end_time" class="h-11 w-full rounded-xl border border-slate-200 px-3" type="datetime-local" />
         </label>
+        <button class="mt-7 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm" type="button" @click="resetAndLoad">
+          <Search class="h-4 w-4" />
+          {{ copy.search }}
+        </button>
       </div>
     </section>
 
