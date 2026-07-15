@@ -40,6 +40,19 @@ type OpsModule = {
   actions?: OpsAction[]
 }
 
+type DetailEntry = {
+  key: string
+  label: string
+  value: string
+  mono?: boolean
+}
+
+type DetailSection = {
+  key: string
+  title: string
+  entries: DetailEntry[]
+}
+
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.adminOps)
 
@@ -310,6 +323,7 @@ const missingRequiredFilters = computed(() =>
 )
 const missingRequiredFilterLabels = computed(() => missingRequiredFilters.value.map(fieldLabel))
 const canLoad = computed(() => missingRequiredFilters.value.length === 0)
+const structuredDetailSections = computed(() => buildStructuredDetailSections(detail.value || selected.value))
 
 const moduleGroups = computed(() => {
   const groupsMap: Record<string, OpsModule[]> = {
@@ -339,6 +353,13 @@ function isRecord(value: unknown): value is JsonRecord {
 
 function getField(item: JsonRecord | null, keys: string[]): unknown {
   if (!item) return undefined
+  for (const key of keys) {
+    if (item[key] !== undefined && item[key] !== null && item[key] !== "") return item[key]
+  }
+  return undefined
+}
+
+function getDetailField(item: JsonRecord, keys: string[]): unknown {
   for (const key of keys) {
     if (item[key] !== undefined && item[key] !== null && item[key] !== "") return item[key]
   }
@@ -379,6 +400,780 @@ function extractItems(data: JsonRecord, module: OpsModule) {
 
 function stringify(value: unknown) {
   return JSON.stringify(value, null, 2)
+}
+
+function unwrapMallMailTaskDetail(value: unknown) {
+  if (!isRecord(value)) return null
+  const root = value
+  const detailRecord = isRecord(root.detail) ? root.detail : root
+  const summaryRecord = isRecord(detailRecord.summary) ? detailRecord.summary : {}
+  return { ...detailRecord, ...summaryRecord }
+}
+
+function unwrapPayWebhookDetail(value: unknown) {
+  if (!isRecord(value)) return null
+  const root = value
+  const detailRecord = isRecord(root.detail) ? root.detail : root
+  const eventRecord = isRecord(detailRecord.event) ? detailRecord.event : detailRecord
+  const payload = parseJsonValue(getDetailField(eventRecord, ["payload_json", "payloadJson"]))
+  const payloadRecord = isRecord(payload) ? payload : {}
+  const dataRecord = isRecord(payloadRecord.data) ? payloadRecord.data : {}
+  const objectRecord = isRecord(dataRecord.object) ? dataRecord.object : {}
+  const objectType = getDetailField(objectRecord, ["object"])
+  const invoiceID =
+    objectType === "invoice" ? getDetailField(objectRecord, ["id"]) : getDetailField(objectRecord, ["invoice", "invoice_id", "invoiceId"])
+
+  return {
+    ...detailRecord,
+    ...eventRecord,
+    event_id: getDetailField(eventRecord, ["event_id", "eventId", "stripe_event_id", "stripeEventId"]) || getDetailField(payloadRecord, ["id"]),
+    event_type: getDetailField(eventRecord, ["event_type", "eventType"]) || getDetailField(payloadRecord, ["type"]),
+    stripe_created_at: getDetailField(payloadRecord, ["created"]),
+    object_type: objectType,
+    object_id: getDetailField(objectRecord, ["id"]),
+    amount_paid: getDetailField(objectRecord, ["amount_paid", "amountPaid", "amount_total", "amountTotal", "amount"]),
+    amount_due: getDetailField(objectRecord, ["amount_due", "amountDue", "total"]),
+    billing_reason: getDetailField(objectRecord, ["billing_reason", "billingReason"]),
+    currency: getDetailField(objectRecord, ["currency"]),
+    customer_email: getDetailField(objectRecord, ["customer_email", "customerEmail"]),
+    customer_id: getDetailField(objectRecord, ["customer", "customer_id", "customerId"]),
+    customer_name: getDetailField(objectRecord, ["customer_name", "customerName"]),
+    invoice_id: invoiceID,
+    invoice_number: getDetailField(objectRecord, ["number"]),
+    livemode: getDetailField(payloadRecord, ["livemode"]) ?? getDetailField(objectRecord, ["livemode"]),
+    paid: getDetailField(objectRecord, ["paid"]),
+    payment_status: getDetailField(objectRecord, ["payment_status", "paymentStatus", "status"]),
+    subscription_id: getDetailField(objectRecord, ["subscription", "subscription_id", "subscriptionId"]),
+  }
+}
+
+function unwrapMallNatsDetail(value: unknown) {
+  if (!isRecord(value)) return null
+  const root = value
+  const detailRecord = isRecord(root.detail) ? root.detail : root
+  const summaryRecord = isRecord(detailRecord.summary) ? detailRecord.summary : {}
+  return { ...detailRecord, ...summaryRecord }
+}
+
+function unwrapProgDriverEventDetail(value: unknown) {
+  if (!isRecord(value)) return null
+  const root = value
+  const detailRecord = isRecord(root.detail) ? root.detail : root
+  const summaryRecord = isRecord(detailRecord.summary) ? detailRecord.summary : {}
+  return { ...detailRecord, ...summaryRecord }
+}
+
+function unwrapProgNatsDetail(value: unknown) {
+  if (!isRecord(value)) return null
+  const root = value
+  const detailRecord = isRecord(root.detail) ? root.detail : root
+  const summaryRecord = isRecord(detailRecord.summary) ? detailRecord.summary : {}
+  return { ...detailRecord, ...summaryRecord }
+}
+
+function unwrapExamTransitionDetail(value: unknown) {
+  if (!isRecord(value)) return null
+  const root = value
+  const detailRecord = isRecord(root.detail) ? root.detail : root
+  const summaryRecord = isRecord(detailRecord.summary) ? detailRecord.summary : {}
+  return { ...detailRecord, ...summaryRecord }
+}
+
+function unwrapExamAuditDetail(value: unknown) {
+  if (!isRecord(value)) return null
+  const root = value
+  const detailRecord = isRecord(root.detail) ? root.detail : root
+  const messageRecord = isRecord(detailRecord.message) ? detailRecord.message : detailRecord
+  const summaryRecord = isRecord(detailRecord.summary) ? detailRecord.summary : {}
+  return { ...detailRecord, ...messageRecord, ...summaryRecord }
+}
+
+function unwrapMbrMailTaskDetail(value: unknown) {
+  if (!isRecord(value)) return null
+  const root = value
+  const detailRecord = isRecord(root.detail) ? root.detail : root
+  const mailRecord = isRecord(detailRecord.mail) ? detailRecord.mail : detailRecord
+  return { ...detailRecord, ...mailRecord }
+}
+
+function unwrapExamReminderDetail(value: unknown) {
+  if (!isRecord(value)) return null
+  const root = value
+  const detailRecord = isRecord(root.detail) ? root.detail : root
+  const mailRecord = isRecord(detailRecord.mail) ? detailRecord.mail : detailRecord
+  return { ...detailRecord, ...mailRecord }
+}
+
+function parseJsonValue(value: unknown) {
+  if (typeof value !== "string") return value
+  const trimmed = value.trim()
+  if (!trimmed) return value
+  try {
+    return JSON.parse(trimmed)
+  } catch {
+    return value
+  }
+}
+
+function formatDetailValue(key: string, value: unknown) {
+  if (value === undefined || value === null || value === "") return "-"
+  if (key.endsWith("_at")) return formatDate(value)
+  if (typeof value === "boolean") return value ? copy.value.booleanLabels.true : copy.value.booleanLabels.false
+  if (key === "task_status" || key === "delivery_status" || key === "receive_status" || key === "event_status") {
+    return (copy.value.statusLabels as Record<string, string>)[String(value)] || String(value)
+  }
+  const parsedValue = key.endsWith("_json") || key === "message_payload" ? parseJsonValue(value) : value
+  if (typeof parsedValue === "object") return stringify(parsedValue)
+  return String(parsedValue)
+}
+
+function formatStripeAmount(value: unknown, currency: unknown) {
+  const amount = typeof value === "number" ? value : Number(value)
+  if (!Number.isFinite(amount)) return formatDetailValue("", value)
+  const currencyCode = String(currency || "").toUpperCase()
+  const zeroDecimalCurrencies = new Set(["BIF", "CLP", "DJF", "GNF", "JPY", "KMF", "KRW", "MGA", "PYG", "RWF", "UGX", "VND", "VUV", "XAF", "XOF", "XPF"])
+  const fractionDigits = zeroDecimalCurrencies.has(currencyCode) ? 0 : 2
+  const divisor = fractionDigits === 0 ? 1 : 100
+  const formatted = (amount / divisor).toLocaleString("zh-CN", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })
+  return currencyCode ? `${currencyCode} ${formatted}` : formatted
+}
+
+function formatStripeTimestamp(value: unknown) {
+  const timestamp = typeof value === "number" ? value : Number(value)
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return formatDetailValue("", value)
+  return new Date(timestamp * 1000).toLocaleString("zh-CN", { hour12: false })
+}
+
+function normalizeDetailCode(value: unknown) {
+  return String(value || "").trim().toUpperCase()
+}
+
+function lookupDetailLabel(value: unknown, labels: Record<string, string>, prefixes: string[] = []) {
+  const code = normalizeDetailCode(value)
+  if (!code) return "-"
+  const normalizedCodes = [code, ...prefixes.map((prefix) => code.replace(new RegExp(`^${prefix}`), ""))]
+  for (const normalizedCode of normalizedCodes) {
+    if (labels[normalizedCode]) return labels[normalizedCode]
+  }
+  return String(value)
+}
+
+function formatExamTransitionDetailValue(record: JsonRecord, key: string, value: unknown) {
+  if (key === "event_type") {
+    const labels = copy.value.examTransitionDetail.eventTypes as Record<string, string>
+    const event = String(value || "").trim().toLowerCase()
+    return event ? labels[event] || String(value) : "-"
+  }
+  if (key === "status_type") {
+    const labels = copy.value.examTransitionDetail.statusTypes as Record<string, string>
+    const type = normalizeDetailCode(value)
+    if (type.includes("EXAM")) return labels.EXAM
+    if (type.includes("RESULT")) return labels.RESULT
+    return type || "-"
+  }
+  if (key === "from_status" || key === "to_status") {
+    const type = normalizeDetailCode(getDetailField(record, ["status_type", "statusType"]))
+    if (type.includes("EXAM")) {
+      return lookupDetailLabel(value, copy.value.examTransitionDetail.examStatuses as Record<string, string>, ["EXAM_STATUS_"])
+    }
+    if (type.includes("RESULT")) {
+      return lookupDetailLabel(value, copy.value.examTransitionDetail.resultStatuses as Record<string, string>, ["RESULT_STATUS_"])
+    }
+  }
+  return formatDetailValue(key, value)
+}
+
+function formatPayWebhookDetailValue(record: JsonRecord, key: string, value: unknown) {
+  if (key === "event_type") {
+    const labels = copy.value.payWebhookDetail.eventTypes as Record<string, string>
+    const event = String(value || "").trim()
+    return event ? labels[event] || event : "-"
+  }
+  if (key === "processed_status") {
+    const labels = copy.value.payWebhookDetail.processedStatuses as Record<string, string>
+    const status = String(value || "").trim().toLowerCase()
+    return status ? labels[status] || String(value) : "-"
+  }
+  if (key === "payment_status") {
+    const labels = copy.value.payWebhookDetail.paymentStatuses as Record<string, string>
+    const status = String(value || "").trim().toLowerCase()
+    return status ? labels[status] || String(value) : "-"
+  }
+  if (key === "billing_reason") {
+    const labels = copy.value.payWebhookDetail.billingReasons as Record<string, string>
+    const reason = String(value || "").trim()
+    return reason ? labels[reason] || String(value) : "-"
+  }
+  if (key === "object_type") {
+    const labels = copy.value.payWebhookDetail.objectTypes as Record<string, string>
+    const type = String(value || "").trim()
+    return type ? labels[type] || String(value) : "-"
+  }
+  if (key === "amount_paid" || key === "amount_due") return formatStripeAmount(value, getDetailField(record, ["currency"]))
+  if (key === "currency") return String(value || "-").toUpperCase()
+  if (key === "stripe_created_at") return formatStripeTimestamp(value)
+  return formatDetailValue(key, value)
+}
+
+function formatExamAuditDetailValue(key: string, value: unknown) {
+  if (key === "event_type") {
+    const labels = copy.value.examAuditDetail.eventTypes as Record<string, string>
+    const event = String(value || "").trim().toLowerCase()
+    return event ? labels[event] || String(value) : "-"
+  }
+  if (key === "audit_status") {
+    const labels = copy.value.examAuditDetail.auditStatuses as Record<string, string>
+    const status = String(value || "").trim().toLowerCase()
+    return status ? labels[status] || String(value) : "-"
+  }
+  if (key === "processed_status") {
+    const labels = copy.value.examAuditDetail.processedStatuses as Record<string, string>
+    const status = normalizeDetailCode(value)
+    return status ? labels[status] || String(value) : "-"
+  }
+  if (key === "event_timestamp" || key === "audit_date") return formatDate(value)
+  return formatDetailValue(key, value)
+}
+
+function buildStructuredDetailSections(value: unknown): DetailSection[] {
+  if (activeModule.value.key === "payWebhooks") return buildPayWebhookDetailSections(value)
+  if (activeModule.value.key === "mallMailTasks") return buildMallMailTaskDetailSections(value)
+  if (activeModule.value.key === "mallNats") return buildMallNatsDetailSections(value)
+  if (activeModule.value.key === "progDriverEvents") return buildProgDriverEventDetailSections(value)
+  if (activeModule.value.key === "progNats") return buildProgNatsDetailSections(value)
+  if (activeModule.value.key === "mbrMailTasks") return buildMbrMailTaskDetailSections(value)
+  if (activeModule.value.key === "examTransitions") return buildExamTransitionDetailSections(value)
+  if (activeModule.value.key === "examAudit") return buildExamAuditDetailSections(value)
+  if (activeModule.value.key === "examReminders") return buildExamReminderDetailSections(value)
+  return []
+}
+
+function buildPayWebhookDetailSections(value: unknown): DetailSection[] {
+  const record = unwrapPayWebhookDetail(value)
+  if (!record) return []
+
+  const fieldLabels = copy.value.payWebhookDetail.fields as Record<string, string>
+  const sections = copy.value.payWebhookDetail.sections
+  const definitions = [
+    {
+      key: "event",
+      title: sections.event,
+      fields: [
+        ["event_id", ["event_id", "eventId", "stripe_event_id", "stripeEventId"]],
+        ["event_type", ["event_type", "eventType"]],
+        ["processed_status", ["processed_status", "processedStatus"]],
+        ["stripe_created_at", ["stripe_created_at"]],
+      ],
+    },
+    {
+      key: "payment",
+      title: sections.payment,
+      fields: [
+        ["object_type", ["object_type"]],
+        ["payment_status", ["payment_status"]],
+        ["amount_paid", ["amount_paid"]],
+        ["amount_due", ["amount_due"]],
+        ["paid", ["paid"]],
+        ["livemode", ["livemode"]],
+      ],
+    },
+    {
+      key: "customer",
+      title: sections.customer,
+      fields: [
+        ["customer_email", ["customer_email"]],
+        ["customer_name", ["customer_name"]],
+        ["customer_id", ["customer_id"]],
+      ],
+    },
+    {
+      key: "invoice",
+      title: sections.invoice,
+      fields: [
+        ["invoice_id", ["invoice_id"]],
+        ["invoice_number", ["invoice_number"]],
+        ["subscription_id", ["subscription_id"]],
+        ["billing_reason", ["billing_reason"]],
+      ],
+    },
+    {
+      key: "system",
+      title: sections.system,
+      fields: [
+        ["created_at", ["created_at", "createdAt"]],
+        ["processed_at", ["processed_at", "processedAt"]],
+        ["updated_at", ["updated_at", "updatedAt"]],
+        ["error_message", ["error_message", "errorMessage", "last_error", "lastError"]],
+      ],
+    },
+  ] as const
+
+  return definitions
+    .map((section) => ({
+      key: section.key,
+      title: section.title,
+      entries: section.fields
+        .map(([key, keys]) => ({
+          key,
+          label: fieldLabels[key] || key.replaceAll("_", " "),
+          value: formatPayWebhookDetailValue(record, key, getDetailField(record, [...keys])),
+          mono: key.endsWith("_id") || key.endsWith("_email") || key === "event_id",
+        }))
+        .filter((entry) => entry.value !== "-"),
+    }))
+    .filter((section) => section.entries.length > 0)
+}
+
+function buildMallMailTaskDetailSections(value: unknown): DetailSection[] {
+  if (activeModule.value.key !== "mallMailTasks") return []
+  const record = unwrapMallMailTaskDetail(value)
+  if (!record) return []
+
+  const fieldLabels = copy.value.mallMailTaskDetail.fields as Record<string, string>
+  const sections = copy.value.mallMailTaskDetail.sections
+  const definitions = [
+    {
+      key: "task",
+      title: sections.task,
+      fields: [
+        ["mail_task_ulid", ["mail_task_ulid", "mailTaskUlid", "mail_ulid", "mailUlid"]],
+        ["task_status", ["task_status", "taskStatus"]],
+        ["mail_type", ["mail_type", "mailType"]],
+        ["subject", ["subject"]],
+      ],
+    },
+    {
+      key: "business",
+      title: sections.business,
+      fields: [
+        ["candidate_ulid", ["candidate_ulid", "candidateUlid"]],
+        ["order_ulid", ["order_ulid", "orderUlid"]],
+        ["template_path", ["template_path", "templatePath"]],
+        ["template_params_json", ["template_params_json", "templateParamsJson"]],
+      ],
+    },
+    {
+      key: "recipient",
+      title: sections.recipient,
+      fields: [
+        ["recipient_name", ["recipient_name", "recipientName"]],
+        ["recipient_email", ["recipient_email", "recipientEmail", "to_email", "toEmail"]],
+      ],
+    },
+    {
+      key: "system",
+      title: sections.system,
+      fields: [
+        ["version", ["version"]],
+        ["created_at", ["created_at", "createdAt"]],
+        ["final_at", ["final_at", "finalAt"]],
+        ["last_reconciled_at", ["last_reconciled_at", "lastReconciledAt"]],
+        ["updated_at", ["updated_at", "updatedAt"]],
+      ],
+    },
+  ] as const
+
+  return definitions
+    .map((section) => ({
+      key: section.key,
+      title: section.title,
+      entries: section.fields.map(([key, keys]) => ({
+        key,
+        label: fieldLabels[key] || key.replaceAll("_", " "),
+        value: formatDetailValue(key, getDetailField(record, [...keys])),
+        mono: key.endsWith("_ulid") || key === "recipient_email" || key === "template_params_json",
+      })),
+    }))
+    .filter((section) => section.entries.some((entry) => entry.value !== "-"))
+}
+
+function buildMallNatsDetailSections(value: unknown): DetailSection[] {
+  const record = unwrapMallNatsDetail(value)
+  if (!record) return []
+
+  const fieldLabels = copy.value.mallNatsDetail.fields as Record<string, string>
+  const sections = copy.value.mallNatsDetail.sections
+  const definitions = [
+    {
+      key: "message",
+      title: sections.message,
+      fields: [
+        ["message_ulid", ["message_ulid", "messageUlid"]],
+        ["subject", ["subject"]],
+        ["source_service", ["source_service", "sourceService"]],
+        ["message_type", ["message_type", "messageType"]],
+      ],
+    },
+    {
+      key: "processing",
+      title: sections.processing,
+      fields: [
+        ["receive_status", ["receive_status", "receiveStatus"]],
+        ["process_attempts", ["process_attempts", "processAttempts"]],
+        ["received_at", ["received_at", "receivedAt"]],
+        ["last_processing_at", ["last_processing_at", "lastProcessingAt"]],
+      ],
+    },
+    {
+      key: "payload",
+      title: sections.payload,
+      fields: [["message_payload", ["message_payload", "messagePayload"]]],
+    },
+    {
+      key: "system",
+      title: sections.system,
+      fields: [
+        ["created_at", ["created_at", "createdAt"]],
+        ["updated_at", ["updated_at", "updatedAt"]],
+      ],
+    },
+  ] as const
+
+  return definitions
+    .map((section) => ({
+      key: section.key,
+      title: section.title,
+      entries: section.fields.map(([key, keys]) => ({
+        key,
+        label: fieldLabels[key] || key.replaceAll("_", " "),
+        value: formatDetailValue(key, getDetailField(record, [...keys])),
+        mono: key.endsWith("_ulid") || key === "message_payload",
+      })),
+    }))
+    .filter((section) => section.entries.some((entry) => entry.value !== "-"))
+}
+
+function buildProgDriverEventDetailSections(value: unknown): DetailSection[] {
+  const record = unwrapProgDriverEventDetail(value)
+  if (!record) return []
+
+  const fieldLabels = copy.value.progDriverEventDetail.fields as Record<string, string>
+  const sections = copy.value.progDriverEventDetail.sections
+  const definitions = [
+    {
+      key: "event",
+      title: sections.event,
+      fields: [
+        ["event_ulid", ["event_ulid", "eventUlid"]],
+        ["event_type", ["event_type", "eventType"]],
+        ["event_status", ["event_status", "eventStatus"]],
+        ["source", ["source"]],
+      ],
+    },
+    {
+      key: "entity",
+      title: sections.entity,
+      fields: [
+        ["entity_type", ["entity_type", "entityType"]],
+        ["entity_ulid", ["entity_ulid", "entityUlid"]],
+      ],
+    },
+    {
+      key: "system",
+      title: sections.system,
+      fields: [
+        ["created_at", ["created_at", "createdAt"]],
+        ["last_reconciled_at", ["last_reconciled_at", "lastReconciledAt"]],
+        ["updated_at", ["updated_at", "updatedAt"]],
+      ],
+    },
+  ] as const
+
+  return definitions
+    .map((section) => ({
+      key: section.key,
+      title: section.title,
+      entries: section.fields.map(([key, keys]) => ({
+        key,
+        label: fieldLabels[key] || key.replaceAll("_", " "),
+        value: formatDetailValue(key, getDetailField(record, [...keys])),
+        mono: key.endsWith("_ulid"),
+      })),
+    }))
+    .filter((section) => section.entries.some((entry) => entry.value !== "-"))
+}
+
+function buildProgNatsDetailSections(value: unknown): DetailSection[] {
+  const record = unwrapProgNatsDetail(value)
+  if (!record) return []
+
+  const fieldLabels = copy.value.progNatsDetail.fields as Record<string, string>
+  const sections = copy.value.progNatsDetail.sections
+  const definitions = [
+    {
+      key: "message",
+      title: sections.message,
+      fields: [
+        ["message_ulid", ["message_ulid", "messageUlid"]],
+        ["subject", ["subject"]],
+        ["source_service", ["source_service", "sourceService"]],
+        ["message_type", ["message_type", "messageType"]],
+      ],
+    },
+    {
+      key: "processing",
+      title: sections.processing,
+      fields: [
+        ["receive_status", ["receive_status", "receiveStatus"]],
+        ["process_attempts", ["process_attempts", "processAttempts"]],
+        ["received_at", ["received_at", "receivedAt"]],
+        ["last_processing_at", ["last_processing_at", "lastProcessingAt"]],
+      ],
+    },
+    {
+      key: "payload",
+      title: sections.payload,
+      fields: [["message_payload", ["message_payload", "messagePayload"]]],
+    },
+    {
+      key: "system",
+      title: sections.system,
+      fields: [
+        ["created_at", ["created_at", "createdAt"]],
+        ["updated_at", ["updated_at", "updatedAt"]],
+      ],
+    },
+  ] as const
+
+  return definitions
+    .map((section) => ({
+      key: section.key,
+      title: section.title,
+      entries: section.fields.map(([key, keys]) => ({
+        key,
+        label: fieldLabels[key] || key.replaceAll("_", " "),
+        value: formatDetailValue(key, getDetailField(record, [...keys])),
+        mono: key.endsWith("_ulid") || key === "message_payload",
+      })),
+    }))
+    .filter((section) => section.entries.some((entry) => entry.value !== "-"))
+}
+
+function buildMbrMailTaskDetailSections(value: unknown): DetailSection[] {
+  const record = unwrapMbrMailTaskDetail(value)
+  if (!record) return []
+
+  const fieldLabels = copy.value.mbrMailTaskDetail.fields as Record<string, string>
+  const sections = copy.value.mbrMailTaskDetail.sections
+  const definitions = [
+    {
+      key: "task",
+      title: sections.task,
+      fields: [
+        ["mail_ulid", ["mail_ulid", "mailUlid", "mail_task_ulid", "mailTaskUlid"]],
+        ["task_status", ["task_status", "taskStatus"]],
+        ["notification_type", ["notification_type", "notificationType"]],
+        ["subject", ["subject"]],
+      ],
+    },
+    {
+      key: "business",
+      title: sections.business,
+      fields: [
+        ["candidate_ulid", ["candidate_ulid", "candidateUlid"]],
+        ["membership_record_ulid", ["membership_record_ulid", "membershipRecordUlid"]],
+        ["reference_id", ["reference_id", "referenceId"]],
+        ["payload_json", ["payload_json", "payloadJson"]],
+      ],
+    },
+    {
+      key: "recipient",
+      title: sections.recipient,
+      fields: [
+        ["to_name", ["to_name", "toName", "recipient_name", "recipientName"]],
+        ["to_email", ["to_email", "toEmail", "recipient_email", "recipientEmail"]],
+      ],
+    },
+    {
+      key: "system",
+      title: sections.system,
+      fields: [
+        ["created_at", ["created_at", "createdAt"]],
+        ["updated_at", ["updated_at", "updatedAt"]],
+      ],
+    },
+  ] as const
+
+  return definitions
+    .map((section) => ({
+      key: section.key,
+      title: section.title,
+      entries: section.fields.map(([key, keys]) => ({
+        key,
+        label: fieldLabels[key] || key.replaceAll("_", " "),
+        value: formatDetailValue(key, getDetailField(record, [...keys])),
+        mono: key.endsWith("_ulid") || key.endsWith("_email") || key.endsWith("_json"),
+      })),
+    }))
+    .filter((section) => section.entries.some((entry) => entry.value !== "-"))
+}
+
+function buildExamTransitionDetailSections(value: unknown): DetailSection[] {
+  const record = unwrapExamTransitionDetail(value)
+  if (!record) return []
+
+  const fieldLabels = copy.value.examTransitionDetail.fields as Record<string, string>
+  const sections = copy.value.examTransitionDetail.sections
+  const definitions = [
+    {
+      key: "transition",
+      title: sections.transition,
+      fields: [
+        ["transition_ulid", ["transition_ulid", "transitionUlid", "id"]],
+        ["msg_fp", ["msg_fp", "msgFp"]],
+        ["event_type", ["event_type", "eventType"]],
+        ["status_type", ["status_type", "statusType"]],
+      ],
+    },
+    {
+      key: "exam",
+      title: sections.exam,
+      fields: [
+        ["exam_ulid", ["exam_ulid", "examUlid"]],
+        ["from_status", ["from_status", "fromStatus"]],
+        ["to_status", ["to_status", "toStatus"]],
+        ["transitioned_at", ["transitioned_at", "transitionedAt"]],
+      ],
+    },
+    {
+      key: "metadata",
+      title: sections.metadata,
+      fields: [["metadata_json", ["metadata_json", "metadataJson"]]],
+    },
+    {
+      key: "system",
+      title: sections.system,
+      fields: [
+        ["created_at", ["created_at", "createdAt"]],
+        ["updated_at", ["updated_at", "updatedAt"]],
+      ],
+    },
+  ] as const
+
+  return definitions
+    .map((section) => ({
+      key: section.key,
+      title: section.title,
+      entries: section.fields.map(([key, keys]) => ({
+        key,
+        label: fieldLabels[key] || key.replaceAll("_", " "),
+        value: formatExamTransitionDetailValue(record, key, getDetailField(record, [...keys])),
+        mono: key.endsWith("_ulid") || key.endsWith("_json") || key === "msg_fp",
+      })),
+    }))
+    .filter((section) => section.entries.some((entry) => entry.value !== "-"))
+}
+
+function buildExamAuditDetailSections(value: unknown): DetailSection[] {
+  const record = unwrapExamAuditDetail(value)
+  if (!record) return []
+
+  const fieldLabels = copy.value.examAuditDetail.fields as Record<string, string>
+  const sections = copy.value.examAuditDetail.sections
+  const definitions = [
+    {
+      key: "message",
+      title: sections.message,
+      fields: [
+        ["message_ulid", ["message_ulid", "messageUlid"]],
+        ["event_type", ["event_type", "eventType"]],
+      ],
+    },
+    {
+      key: "status",
+      title: sections.status,
+      fields: [
+        ["audit_status", ["audit_status", "auditStatus"]],
+        ["processed_status", ["processed_status", "processedStatus"]],
+        ["event_timestamp", ["event_timestamp", "eventTimestamp"]],
+        ["audit_date", ["audit_date", "auditDate"]],
+      ],
+    },
+    {
+      key: "system",
+      title: sections.system,
+      fields: [
+        ["id", ["id"]],
+        ["created_at", ["created_at", "createdAt"]],
+        ["updated_at", ["updated_at", "updatedAt"]],
+      ],
+    },
+  ] as const
+
+  return definitions
+    .map((section) => ({
+      key: section.key,
+      title: section.title,
+      entries: section.fields.map(([key, keys]) => ({
+        key,
+        label: fieldLabels[key] || key.replaceAll("_", " "),
+        value: formatExamAuditDetailValue(key, getDetailField(record, [...keys])),
+        mono: key === "message_ulid",
+      })),
+    }))
+    .filter((section) => section.entries.some((entry) => entry.value !== "-"))
+}
+
+function buildExamReminderDetailSections(value: unknown): DetailSection[] {
+  const record = unwrapExamReminderDetail(value)
+  if (!record) return []
+
+  const fieldLabels = copy.value.examReminderDetail.fields as Record<string, string>
+  const sections = copy.value.examReminderDetail.sections
+  const definitions = [
+    {
+      key: "task",
+      title: sections.task,
+      fields: [
+        ["mail_ulid", ["mail_ulid", "mailUlid"]],
+        ["task_status", ["task_status", "taskStatus"]],
+        ["delivery_status", ["delivery_status", "deliveryStatus"]],
+        ["reminder_type", ["reminder_type", "reminderType"]],
+        ["subject", ["subject"]],
+      ],
+    },
+    {
+      key: "exam",
+      title: sections.exam,
+      fields: [
+        ["exam_ulid", ["exam_ulid", "examUlid"]],
+        ["scheduled_at", ["scheduled_at", "scheduledAt"]],
+        ["payload_json", ["payload_json", "payloadJson"]],
+      ],
+    },
+    {
+      key: "recipient",
+      title: sections.recipient,
+      fields: [
+        ["to_name", ["to_name", "toName", "recipient_name", "recipientName"]],
+        ["to_email", ["to_email", "toEmail", "recipient_email", "recipientEmail"]],
+      ],
+    },
+    {
+      key: "system",
+      title: sections.system,
+      fields: [
+        ["created_at", ["created_at", "createdAt"]],
+        ["updated_at", ["updated_at", "updatedAt"]],
+      ],
+    },
+  ] as const
+
+  return definitions
+    .map((section) => ({
+      key: section.key,
+      title: section.title,
+      entries: section.fields.map(([key, keys]) => ({
+        key,
+        label: fieldLabels[key] || key.replaceAll("_", " "),
+        value: formatDetailValue(key, getDetailField(record, [...keys])),
+        mono: key.endsWith("_ulid") || key.endsWith("_email") || key.endsWith("_json"),
+      })),
+    }))
+    .filter((section) => section.entries.some((entry) => entry.value !== "-"))
 }
 
 function buildListURL(module: OpsModule) {
@@ -631,7 +1426,37 @@ void loadList()
               {{ detailNotice }}
             </div>
             <div v-if="detailLoading" class="mt-10 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
-            <pre v-else class="mt-6 max-h-[60vh] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs font-semibold leading-relaxed text-slate-100 md:max-h-[64vh] md:p-5">{{ stringify(detail || selected || {}) }}</pre>
+            <div v-else class="mt-6 space-y-5">
+              <div v-if="structuredDetailSections.length" class="space-y-4">
+                <section
+                  v-for="section in structuredDetailSections"
+                  :key="section.key"
+                  class="rounded-2xl border border-slate-200 bg-white p-4"
+                >
+                  <h3 class="text-sm font-black text-slate-950">{{ section.title }}</h3>
+                  <dl class="mt-3 grid gap-3 md:grid-cols-2">
+                    <div
+                      v-for="entry in section.entries"
+                      :key="entry.key"
+                      class="rounded-xl bg-slate-50 px-3 py-2"
+                      :class="entry.key.endsWith('_json') || entry.key === 'message_payload' ? 'md:col-span-2' : ''"
+                    >
+                      <dt class="text-xs font-black text-slate-500">{{ entry.label }}</dt>
+                      <dd
+                        class="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900"
+                        :class="entry.mono ? 'font-mono text-xs leading-relaxed' : ''"
+                      >
+                        {{ entry.value }}
+                      </dd>
+                    </div>
+                  </dl>
+                </section>
+              </div>
+              <div>
+                <h3 v-if="structuredDetailSections.length" class="mb-3 text-sm font-black text-slate-700">{{ copy.rawJson }}</h3>
+                <pre class="max-h-[60vh] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs font-semibold leading-relaxed text-slate-100 md:max-h-[64vh] md:p-5">{{ stringify(detail || selected || {}) }}</pre>
+              </div>
+            </div>
           </div>
         </div>
       </div>
