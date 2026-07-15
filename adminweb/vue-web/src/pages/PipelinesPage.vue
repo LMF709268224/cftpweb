@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
+import { ChevronDown, Copy, Info, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -1324,7 +1324,10 @@ onMounted(() => {
                     </div>
 
                     <div v-if="boolValue(selectedUnitItem.unit, 'allow_exemption')" class="mt-4 border-t border-slate-200 pt-4">
-                      <div class="mb-2 text-sm font-bold text-slate-700">{{ copy.exemptionQualificationsJsonLabel || '豁免资格' }}</div>
+                      <div class="mb-2 flex items-center gap-1 text-sm font-bold text-slate-700">
+                        {{ copy.exemptionQualificationsJsonLabel || '豁免资格' }}
+                        <Info class="h-4 w-4 text-slate-400" :title="(copy as any).exemptionQualificationsTooltip || '只需满足任一勾选的资格即可免考'" />
+                      </div>
                       <div v-if="credentialOptionsLoading" class="text-xs text-slate-500">{{ copy.loadingQualifications }}</div>
                       <div v-else-if="!credentialOptions.length" class="text-xs text-slate-500">（无可用资格）</div>
                       <div v-else class="grid gap-2 md:grid-cols-2">
