@@ -729,15 +729,15 @@ onMounted(async () => {
 
           <div class="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
             <label class="block">
-              <span class="text-sm font-bold">{{ copy.templates.path }}</span>
+              <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.path }}</span>
               <input v-model="formPath" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100" :disabled="!!editingTemplatePath" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">{{ copy.templates.titleTemplate }}</span>
+              <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.titleTemplate }}</span>
               <input ref="templateTitleInputRef" v-model="formTitle" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">{{ copy.templates.contentTemplate }}</span>
+              <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.contentTemplate }}</span>
               <textarea v-model="formContent" class="mt-2 min-h-56 w-full rounded-xl border border-slate-200 p-4" />
             </label>
             <label class="block">

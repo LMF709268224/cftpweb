@@ -558,6 +558,7 @@ export const en: AdminTranslations = {
         targetTitle: "Query Target",
         candidateUlid: "Candidate ULID",
         candidatePlaceholder: "Candidate ULID",
+        clearInput: "Clear input",
         checkPermission: "Check Permission",
         definitionsTitle: "Credential Definitions",
         definitionsDescription: "Select a definition before checking a candidate.",

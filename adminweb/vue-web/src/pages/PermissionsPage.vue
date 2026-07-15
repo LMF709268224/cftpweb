@@ -29,6 +29,7 @@ const resultFields = computed(() => checkResult.value || {})
 const viewDetailLabel = computed(() => copy.value.viewDetail || (isZh.value ? "查看详情" : "View Details"))
 const detailDialogTitle = computed(() => copy.value.detailDialogTitle || (isZh.value ? "权限详情" : "Permission Details"))
 const closeLabel = computed(() => copy.value.close || (isZh.value ? "关闭" : "Close"))
+const clearInputLabel = computed(() => copy.value.clearInput || (isZh.value ? "清除输入" : "Clear input"))
 
 const actions = computed(() => [
   {
@@ -84,6 +85,12 @@ function openDetail(definition: JsonRecord) {
   detailOpen.value = true
 }
 
+function clearCandidate() {
+  candidateUlid.value = ""
+  checkResult.value = null
+  detailOpen.value = false
+}
+
 function resultStatus() {
   return pickFirst(checkResult.value || {}, ["credential_status", "status", "state", "eligible"])
 }
@@ -110,11 +117,15 @@ async function check() {
     toast.error(copy.value.toasts.checkRequired)
     return
   }
+  const targetCandidateUlid = candidateUlid.value.trim()
+  const targetCredDefUlid = credDefUlid.value
   loading.value = true
   try {
-    checkResult.value = await apiClient<JsonRecord>(
-      `/api/permissions/check?candidate_ulid=${encodeURIComponent(candidateUlid.value.trim())}&cred_def_ulid=${encodeURIComponent(credDefUlid.value)}`,
+    const result = await apiClient<JsonRecord>(
+      `/api/permissions/check?candidate_ulid=${encodeURIComponent(targetCandidateUlid)}&cred_def_ulid=${encodeURIComponent(targetCredDefUlid)}`,
     )
+    if (candidateUlid.value.trim() !== targetCandidateUlid || credDefUlid.value !== targetCredDefUlid) return
+    checkResult.value = result
     detailOpen.value = true
   } catch (err) {
     console.error(err)
@@ -178,7 +189,19 @@ onMounted(loadDefinitions)
         <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
           <label class="grid gap-2 text-sm font-bold">
             {{ copy.candidateUlid }}
-            <input v-model="candidateUlid" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="64" :placeholder="copy.candidatePlaceholder" />
+            <span class="relative block">
+              <input v-model="candidateUlid" class="w-full rounded-xl border border-slate-200 px-4 py-3 pr-11" maxlength="64" :placeholder="copy.candidatePlaceholder" />
+              <button
+                v-if="candidateUlid"
+                class="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                type="button"
+                :aria-label="clearInputLabel"
+                :title="clearInputLabel"
+                @click="clearCandidate"
+              >
+                <X class="h-4 w-4" />
+              </button>
+            </span>
           </label>
           <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="loading || !canCheck" @click="check">
             <Loader2 v-if="loading && !activeAction" class="h-4 w-4 animate-spin" />

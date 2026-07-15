@@ -351,10 +351,10 @@ onMounted(() => loadExams(1))
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
@@ -365,7 +365,7 @@ onMounted(() => loadExams(1))
       </div>
     </header>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
       <div class="grid gap-4 xl:grid-cols-[1fr_1fr_1.2fr_1.2fr_1.2fr_auto]">
         <label class="grid gap-2 text-sm font-bold">
           {{ copy.filters.flowStatus }}
@@ -427,7 +427,7 @@ onMounted(() => loadExams(1))
             </button>
           </div>
         </label>
-        <button class="mt-7 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm" type="button" @click="search">
+        <button class="mt-0 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm xl:mt-7" type="button" @click="search">
           <Search class="h-4 w-4" />
           {{ copy.filters.search }}
         </button>
@@ -435,77 +435,115 @@ onMounted(() => loadExams(1))
     </section>
 
     <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-        <div>
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-5">
+        <div class="min-w-0">
           <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
           
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
 
-      <div v-if="loading" class="px-6 py-14 text-center text-slate-500">
+      <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:px-6 md:py-14">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
         {{ copy.loadingList }}
       </div>
-      <div v-else-if="!exams.length" class="px-6 py-14 text-center text-slate-500">{{ copy.emptyList }}</div>
-      <div v-else class="overflow-x-auto">
-        <table class="min-w-full text-left text-sm">
-          <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
-            <tr>
-              <th class="px-5 py-3">{{ copy.columns.exam }}</th>
-              <th class="px-5 py-3">{{ copy.columns.candidate }}</th>
-              <th class="px-5 py-3">{{ copy.columns.result }}</th>
-              <th class="px-5 py-3">{{ copy.columns.confirmation }}</th>
-              <th class="px-5 py-3">{{ copy.columns.appointment }}</th>
-              <th class="px-5 py-3">{{ copy.columns.status }}</th>
-              <th class="w-32 whitespace-nowrap px-5 py-3 text-right">{{ copy.columns.action }}</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-for="exam in exams" :key="examUlid(exam)" class="transition hover:bg-sky-50" :class="examUlid(exam) === selectedExamUlid ? 'bg-sky-50' : ''">
-              <td class="px-5 py-4">
-                <div class="font-black text-slate-950">{{ field(exam, ["exam_code", "program_code", "exam_ulid"]) }}</div>
-                <div class="mt-1 max-w-[220px] truncate font-mono text-xs font-bold text-blue-700">{{ examUlid(exam) }}</div>
-              </td>
-              <td class="px-5 py-4">
-                <div class="font-semibold text-slate-800">{{ candidateDisplay(exam) }}</div>
-                <div v-if="candidateIdentifier(exam)" class="mt-1 max-w-[220px] truncate font-mono text-xs text-slate-400">{{ candidateIdentifier(exam) }}</div>
-              </td>
-              <td class="px-5 py-4">
+      <div v-else-if="!exams.length" class="px-4 py-10 text-center text-slate-500 md:px-6 md:py-14">{{ copy.emptyList }}</div>
+      <div v-else>
+        <div class="divide-y divide-slate-100 md:hidden">
+          <div v-for="exam in exams" :key="examUlid(exam)" class="space-y-3 px-4 py-4 transition hover:bg-sky-50" :class="examUlid(exam) === selectedExamUlid ? 'bg-sky-50' : ''">
+            <div class="min-w-0">
+              <div class="break-words text-lg font-black text-slate-950">{{ field(exam, ["exam_code", "program_code", "exam_ulid"]) }}</div>
+              <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ examUlid(exam) }}</div>
+            </div>
+            <div class="rounded-2xl bg-slate-50 px-3 py-2">
+              <div class="text-xs font-black text-slate-400">{{ copy.columns.candidate }}</div>
+              <div class="mt-1 break-words text-sm font-semibold text-slate-800">{{ candidateDisplay(exam) }}</div>
+              <div v-if="candidateIdentifier(exam)" class="mt-1 break-all font-mono text-xs text-slate-500">{{ candidateIdentifier(exam) }}</div>
+            </div>
+            <div class="grid gap-2">
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.columns.result }}</span>
                 <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
-              </td>
-              <td class="px-5 py-4">
+              </div>
+              <div class="grid gap-1 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.columns.confirmation }}</span>
                 <span class="break-all font-mono text-xs font-bold text-slate-600">{{ label(exam.confirmation_number) }}</span>
-              </td>
-              <td class="whitespace-nowrap px-5 py-4 font-semibold text-slate-700">{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</td>
-              <td class="px-5 py-4">
+              </div>
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.columns.appointment }}</span>
+                <span class="text-right text-sm font-semibold text-slate-700">{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
+                <span class="text-xs font-black text-slate-400">{{ copy.columns.status }}</span>
                 <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(exam.exam_status)">
                   {{ examStatusLabel(exam.exam_status) }}
                 </span>
-              </td>
-              <td class="w-32 whitespace-nowrap px-5 py-4 text-right">
-                <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openExam(exam)">
-                  {{ copy.viewDetails }}
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+            <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openExam(exam)">
+              {{ copy.viewDetails }}
+            </button>
+          </div>
+        </div>
+        <div class="hidden overflow-x-auto md:block">
+          <table class="min-w-full text-left text-sm">
+            <thead class="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+              <tr>
+                <th class="px-5 py-3">{{ copy.columns.exam }}</th>
+                <th class="px-5 py-3">{{ copy.columns.candidate }}</th>
+                <th class="px-5 py-3">{{ copy.columns.result }}</th>
+                <th class="px-5 py-3">{{ copy.columns.confirmation }}</th>
+                <th class="px-5 py-3">{{ copy.columns.appointment }}</th>
+                <th class="px-5 py-3">{{ copy.columns.status }}</th>
+                <th class="w-32 whitespace-nowrap px-5 py-3 text-right">{{ copy.columns.action }}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr v-for="exam in exams" :key="examUlid(exam)" class="transition hover:bg-sky-50" :class="examUlid(exam) === selectedExamUlid ? 'bg-sky-50' : ''">
+                <td class="px-5 py-4">
+                  <div class="font-black text-slate-950">{{ field(exam, ["exam_code", "program_code", "exam_ulid"]) }}</div>
+                  <div class="mt-1 max-w-[220px] truncate font-mono text-xs font-bold text-blue-700">{{ examUlid(exam) }}</div>
+                </td>
+                <td class="px-5 py-4">
+                  <div class="font-semibold text-slate-800">{{ candidateDisplay(exam) }}</div>
+                  <div v-if="candidateIdentifier(exam)" class="mt-1 max-w-[220px] truncate font-mono text-xs text-slate-400">{{ candidateIdentifier(exam) }}</div>
+                </td>
+                <td class="px-5 py-4">
+                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
+                </td>
+                <td class="px-5 py-4">
+                  <span class="break-all font-mono text-xs font-bold text-slate-600">{{ label(exam.confirmation_number) }}</span>
+                </td>
+                <td class="whitespace-nowrap px-5 py-4 font-semibold text-slate-700">{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</td>
+                <td class="px-5 py-4">
+                  <span class="whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(exam.exam_status)">
+                    {{ examStatusLabel(exam.exam_status) }}
+                  </span>
+                </td>
+                <td class="w-32 whitespace-nowrap px-5 py-4 text-right">
+                  <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openExam(exam)">
+                    {{ copy.viewDetails }}
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
+      <div class="flex flex-col items-stretch justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-5">
         <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="changePage(page - 1)">{{ copy.prev }}</button>
-        <span class="text-sm font-bold text-slate-600">{{ copy.pageText(page, totalPages) }}</span>
+        <span class="text-center text-sm font-bold text-slate-600 sm:text-left">{{ copy.pageText(page, totalPages) }}</span>
         <button class="rounded-xl border px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="changePage(page + 1)">{{ copy.next }}</button>
       </div>
     </section>
 
     <Teleport to="body">
-      <div v-if="detailDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-        <section class="flex max-h-[88vh] w-full max-w-[1180px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-5">
-            <div>
+      <div v-if="detailDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
+        <section class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+          <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
+            <div class="min-w-0">
               <h2 class="text-xl font-black">{{ copy.detailTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
             </div>
@@ -522,16 +560,16 @@ onMounted(() => loadExams(1))
           </div>
 
           <div class="min-h-0 flex-1 overflow-y-auto">
-            <div v-if="detailLoading" class="px-6 py-16 text-center text-slate-500">
+            <div v-if="detailLoading" class="px-4 py-12 text-center text-slate-500 md:px-6 md:py-16">
               <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
               {{ copy.loadingDetail }}
             </div>
-            <div v-else-if="selectedSummary" class="space-y-5 p-5">
-          <div class="rounded-2xl bg-blue-50 p-5">
+            <div v-else-if="selectedSummary" class="space-y-4 p-4 md:space-y-5 md:p-5">
+          <div class="rounded-2xl bg-blue-50 p-4 md:p-5">
             <div class="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p class="text-xs font-black uppercase text-blue-600">{{ copy.currentExam }}</p>
-                <h3 class="mt-1 break-all text-2xl font-black">{{ field(detail || selectedSummary, ["exam_code", "exam_ulid"]) }}</h3>
+                <h3 class="mt-1 break-all text-xl font-black md:text-2xl">{{ field(detail || selectedSummary, ["exam_code", "exam_ulid"]) }}</h3>
                 <p class="mt-1 break-all font-mono text-sm font-bold text-blue-800">{{ selectedExamUlid }}</p>
               </div>
               <span class="rounded-full border px-3 py-1 text-sm font-black" :class="badgeClass((detail || selectedSummary)?.exam_status)">
@@ -647,9 +685,9 @@ onMounted(() => loadExams(1))
             </div>
           </div>
 
-          <div v-if="selectedExamUlid" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-6 py-4">
+          <div v-if="selectedExamUlid" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-6">
             <button
-              class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-black text-white shadow-sm disabled:opacity-50"
+              class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-black text-white shadow-sm disabled:opacity-50 sm:w-auto"
               type="button"
               :disabled="actionLoading"
               @click="syncExamResult"
