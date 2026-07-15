@@ -1272,8 +1272,13 @@ export const en: AdminTranslations = {
         allStatus: "All Statuses",
         statusOptions: {
             Draft: "Draft",
-            Active: "Active",
+            Active: "Published",
             Deprecated: "Deprecated",
+        },
+        statusLabels: {
+            draft: "Draft",
+            published: "Published",
+            deprecated: "Deprecated",
         },
         loading: "Loading...",
         empty: "No products",

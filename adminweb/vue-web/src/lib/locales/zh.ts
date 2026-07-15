@@ -1271,7 +1271,12 @@ export const zh = {
         statusOptions: {
             Draft: "草稿",
             Active: "已发布",
-            Deprecated: "已下架",
+            Deprecated: "已弃用",
+        },
+        statusLabels: {
+            draft: "草稿",
+            published: "已发布",
+            deprecated: "已弃用",
         },
         loading: "正在加载...",
         empty: "暂无商品",
