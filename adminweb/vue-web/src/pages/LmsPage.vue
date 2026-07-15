@@ -1543,8 +1543,13 @@ async function handleLessonFileUpload(event: Event) {
 
 async function saveLesson() {
   const targetChapterId = lessonForm.value.chapter_id
+  const type = Number(lessonForm.value.lesson_type || 2)
   if (!targetChapterId || !lessonForm.value.title.trim()) {
     toast.error(copy.value.toasts.lessonRequired)
+    return
+  }
+  if (type === 2 && !lessonForm.value.body.trim()) {
+    toast.error(copy.value.toasts.lessonBodyRequired)
     return
   }
   if (lessonForm.value.lesson_type === '7' && !lessonForm.value.asset_object_key.trim()) {
@@ -1561,7 +1566,6 @@ async function saveLesson() {
 
   savingLesson.value = true
   try {
-    const type = Number(lessonForm.value.lesson_type || 2)
     const body = JSON.stringify({
       chapter_id: targetChapterId,
       title: lessonForm.value.title.trim(),
@@ -3211,7 +3215,12 @@ onMounted(() => {
                     <span class="mt-1 block text-xs text-transparent select-none">{{ copy.sortOrderHint }}</span>
                   </label>
                 </div>
-                <textarea v-model="lessonForm.body" class="min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.lessonBodyPlaceholder" />
+                <label class="block">
+                  <span class="text-sm font-bold">
+                    <span v-if="lessonForm.lesson_type === '2'" class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.lessonFieldLabels.body }}
+                  </span>
+                  <textarea v-model="lessonForm.body" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.lessonBodyPlaceholder" />
+                </label>
                 <template v-if="lessonForm.lesson_type === '7'">
                   <label class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).externalUrl }}</span>

@@ -2839,6 +2839,7 @@ export const zh = {
             chapterDeleteFailed: "章节删除失败",
             lessonsLoadFailed: "课时加载失败",
             lessonRequired: "请先选择章节并填写课时标题",
+            lessonBodyRequired: "请填写文本课时正文内容",
             lessonUpdated: "课时已更新",
             lessonCreated: "课时已创建",
             lessonSaveFailed: "课时保存失败",

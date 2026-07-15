@@ -2841,6 +2841,7 @@ export const en: AdminTranslations = {
             chapterDeleteFailed: "Failed to delete chapter",
             lessonsLoadFailed: "Failed to load lessons",
             lessonRequired: "Please select a chapter and fill in lesson title",
+            lessonBodyRequired: "Please fill in the text lesson body",
             lessonUpdated: "Lesson updated",
             lessonCreated: "Lesson created",
             lessonSaveFailed: "Failed to save lesson",
