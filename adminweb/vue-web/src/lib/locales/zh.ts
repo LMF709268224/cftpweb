@@ -1,4 +1,4 @@
-﻿export const zh = {
+export const zh = {
     layout: {
         systemName: "管理系统",
         roleName: "Admin",
@@ -2298,9 +2298,9 @@
             allowRetake: "允许重考",
             allowExemption: "允许免考",
             glmsCourse: "关联课程",
-            program: "项目代码",
-            examCode: "考试编号",
-            formCode: "表单代码",
+            program: "考试科目 (Program)",
+            examCode: "考试代码 (Exam Code)",
+            formCode: "试卷代码 (Form Code)",
         },
         createDraft: "创建草稿",
         saveBasic: "保存基础信息",
