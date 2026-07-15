@@ -58,10 +58,10 @@ const navGroups = computed(() => [
     label: copy.value.groups.config,
     items: [
       { path: "/lms", label: copy.value.nav.lms, icon: BookOpen },
-      { path: "/resource-packs", label: copy.value.nav.resourcePacks, icon: FileText },
-      { path: "/resource-pack-files", label: copy.value.nav.resourcePackFiles, icon: FileText },
       { path: "/pipelines", label: copy.value.nav.pipelines, icon: FileBadge },
       { path: "/bundles", label: copy.value.nav.bundles, icon: Boxes },
+      { path: "/resource-packs", label: copy.value.nav.resourcePacks, icon: FileText },
+      { path: "/resource-pack-files", label: copy.value.nav.resourcePackFiles, icon: FileText },
       { path: "/credentials", label: copy.value.nav.credentials, icon: ShieldCheck },
       { path: "/pdf-templates", label: copy.value.nav.pdfTemplates, icon: FileText },
     ],
