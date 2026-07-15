@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
@@ -27,7 +27,7 @@ const form = ref({
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pdfTemplatesAdmin)
 
-const hiddenRawFieldKeys = new Set(["detail", "summary"])
+const hiddenRawFieldKeys = new Set(["detail", "summary", "template_id", "template_ulid", "name", "description", "html_template"])
 const selectedFields = computed(() => {
   const entries = Object.entries(selected.value || {}).filter(([key]) => !hiddenRawFieldKeys.has(key))
   return Object.fromEntries(entries)
@@ -317,3 +317,4 @@ onMounted(load)
     </div>
   </section>
 </template>
+
