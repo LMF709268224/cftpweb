@@ -305,10 +305,10 @@ onMounted(() => load(1))
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1520px] flex-col gap-6 px-8 py-8">
+  <section class="mx-auto flex min-h-screen w-full max-w-[1520px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
     <header class="flex flex-wrap items-start justify-between gap-4">
       <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
+        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
@@ -317,27 +317,27 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-5">
-          <div class="flex items-center gap-3">
+    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-4 md:p-5">
+          <div class="flex min-w-0 flex-wrap items-center gap-3">
             <div>
               <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
             </div>
-            <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+            <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
           </div>
           <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">
             <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </div>
 
-        <div v-if="loading" class="p-12 text-center text-slate-500">
+        <div v-if="loading" class="p-8 text-center text-slate-500 md:p-12">
           <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
           {{ copy.loading }}
         </div>
-        <div v-else-if="!applications.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
+        <div v-else-if="!applications.length" class="p-8 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
         <template v-else>
-          <div class="grid grid-cols-[minmax(0,1fr)_160px_170px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500">
+          <div class="hidden grid-cols-[minmax(0,1fr)_160px_170px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
             <span>{{ copy.columns.application }}</span>
             <span class="text-center">{{ copy.columns.status }}</span>
             <span class="text-right">{{ copy.columns.submittedAt }}</span>
@@ -346,7 +346,7 @@ onMounted(() => load(1))
           <div
             v-for="app in applications"
             :key="appUlid(app)"
-            class="grid w-full cursor-pointer grid-cols-[minmax(0,1fr)_160px_170px_112px] gap-4 border-b border-slate-100 px-5 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
+            class="flex w-full cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 md:grid md:grid-cols-[minmax(0,1fr)_160px_170px_112px] md:gap-4 md:px-5"
             :class="appUlid(selected) === appUlid(app) ? 'bg-sky-50' : ''"
             role="button"
             tabindex="0"
@@ -355,32 +355,38 @@ onMounted(() => load(1))
             @keydown.space.prevent="selectApplication(app)"
           >
             <div class="min-w-0">
-              <div class="truncate text-lg font-black text-slate-950">{{ credential(app) }}</div>
+              <div class="break-words text-lg font-black text-slate-950 md:truncate">{{ credential(app) }}</div>
               <div class="mt-1 break-all text-sm text-slate-500">{{ copy.candidatePrefix }}{{ candidate(app) }}</div>
               <div class="mt-2 break-all text-xs font-semibold text-slate-500">{{ copy.appIdPrefix }}{{ appUlid(app) || "-" }}</div>
             </div>
-            <span class="self-center justify-self-center rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(app))">
-              {{ applicationLabel(status(app)) }}
+            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
+              <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
+              <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(app))">
+                {{ applicationLabel(status(app)) }}
+              </span>
             </span>
-            <span class="self-center justify-self-end text-sm font-semibold text-slate-500">{{ formatDate(String(app.created_at || "")) }}</span>
-            <button class="self-center justify-self-end text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click.stop="selectApplication(app)">
+            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-end md:rounded-none md:bg-transparent md:p-0">
+              <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.submittedAt }}</span>
+              <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(app.created_at || "")) }}</span>
+            </span>
+            <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectApplication(app)">
               {{ copy.viewDetails }}
             </button>
           </div>
         </template>
 
-        <div class="flex justify-end gap-3 border-t border-slate-200 p-5">
+        <div class="flex flex-col justify-end gap-3 border-t border-slate-200 p-4 sm:flex-row md:p-5">
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">{{ copy.prev }}</button>
           <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">{{ copy.next }}</button>
         </div>
     </section>
 
     <Teleport to="body">
-      <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-6">
-        <section class="flex max-h-[88vh] w-full max-w-[1280px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div v-if="!selected" class="flex items-start justify-between gap-4 p-6">
+      <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-0 md:p-6">
+        <section class="flex h-full max-h-none w-full max-w-[1280px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <div v-if="!selected" class="flex items-start justify-between gap-4 p-4 md:p-6">
           <div>
-            <h2 class="text-2xl font-black">{{ copy.detailTitle }}</h2>
+            <h2 class="text-xl font-black md:text-2xl">{{ copy.detailTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.selectApplication }}</p>
           </div>
           <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
@@ -388,10 +394,10 @@ onMounted(() => load(1))
           </button>
         </div>
         <template v-else>
-          <div class="border-b border-slate-200 p-5">
+          <div class="border-b border-slate-200 p-4 md:p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h2 class="text-2xl font-black">{{ credential(selected) }}</h2>
+              <div class="min-w-0">
+                <h2 class="break-words text-xl font-black md:text-2xl">{{ credential(selected) }}</h2>
                 <p class="mt-1 break-all text-sm text-slate-500">{{ appUlid(selected) }}</p>
               </div>
               <div class="flex items-center gap-3">
@@ -403,12 +409,12 @@ onMounted(() => load(1))
             </div>
           </div>
 
-          <div class="border-b border-slate-200 px-5 py-4">
+          <div class="border-b border-slate-200 px-4 py-3 md:px-5 md:py-4">
             <div class="flex gap-2 overflow-x-auto">
                 <button
                   v-for="tab in detailTabs"
                   :key="tab.key"
-                  class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-left text-sm font-black transition"
+                  class="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border px-3 text-left text-sm font-black transition md:gap-3 md:px-4"
                   :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
                   type="button"
                   @click="activeTab = tab.key"
@@ -419,7 +425,7 @@ onMounted(() => load(1))
             </div>
           </div>
 
-          <main class="h-[60vh] min-h-[360px] max-h-[620px] min-w-0 overflow-y-auto p-5">
+          <main class="min-h-0 flex-1 overflow-y-auto p-4 md:h-[60vh] md:min-h-[360px] md:max-h-[620px] md:p-5">
               <div v-if="activeTab === 'overview'" class="grid gap-4 md:grid-cols-2">
                 <div v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
                   <span class="text-xs font-black uppercase text-slate-400">{{ field.label }}</span>
@@ -441,7 +447,7 @@ onMounted(() => load(1))
                 <div v-else-if="!selectedFiles.length" class="rounded-xl border border-dashed border-slate-200 bg-white p-5 text-sm text-slate-500">
                   {{ copy.noFiles }}
                 </div>
-                <div v-for="file in selectedFiles" v-else :key="String(file.file_hash || file.file_name || file.name)" class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div v-for="file in selectedFiles" v-else :key="String(file.file_hash || file.file_name || file.name)" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
                   <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div class="min-w-0">
                       <div class="flex items-center gap-2 text-sm font-black text-slate-900">
@@ -461,7 +467,7 @@ onMounted(() => load(1))
                     <div class="flex shrink-0 flex-wrap gap-2 sm:justify-end">
                       <a
                         v-if="fileUrl(file)"
-                        class="inline-flex h-9 items-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-black text-blue-700 hover:bg-blue-100"
+                        class="inline-flex h-9 w-full items-center justify-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-black text-blue-700 hover:bg-blue-100 sm:w-auto"
                         :href="fileUrl(file)"
                         target="_blank"
                         rel="noopener noreferrer"
@@ -471,14 +477,14 @@ onMounted(() => load(1))
                       </a>
                       <a
                         v-if="fileUrl(file)"
-                        class="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700 hover:bg-slate-50"
+                        class="inline-flex h-9 w-full items-center justify-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700 hover:bg-slate-50 sm:w-auto"
                         :href="fileUrl(file)"
                         :download="fileName(file)"
                       >
                         <Download class="h-4 w-4" />
                         {{ copy.download }}
                       </a>
-                      <span v-else class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700">{{ copy.missingLink }}</span>
+                      <span v-else class="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-black text-amber-700 sm:w-auto">{{ copy.missingLink }}</span>
                     </div>
                   </div>
                 </div>
