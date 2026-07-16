@@ -63,6 +63,7 @@ export const zh = {
             inactive: "停用",
             deleted: "已删除",
             searchPlaceholder: "搜索用户姓名或邮箱...",
+            clearInput: "清除输入",
         },
         userManagement: "用户管理",
         userManagementHint: "搜索和筛选用户，查看账号状态与角色。",

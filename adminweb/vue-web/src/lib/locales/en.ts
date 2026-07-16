@@ -65,6 +65,7 @@ export const en: AdminTranslations = {
             inactive: "Inactive",
             deleted: "Deleted",
             searchPlaceholder: "Search users by name or email...",
+            clearInput: "Clear input",
         },
         userManagement: "User Management",
         userManagementHint: "Search and filter users to review account status and roles.",
