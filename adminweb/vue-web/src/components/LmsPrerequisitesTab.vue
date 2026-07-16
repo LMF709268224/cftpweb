@@ -149,7 +149,8 @@ async function deletePrerequisite(prerequisite: JsonRecord) {
   
   try {
     const pId = prerequisite.prerequisite_id || prerequisite.prerequisite_ulid
-    await apiClient(`/api/lms/prerequisites/${pId}`, { method: "DELETE" })
+    const version = prerequisite.version || 1
+    await apiClient(`/api/lms/prerequisites/${pId}?version=${version}`, { method: "DELETE" })
     toast.success(props.copy.deleteSuccess || 'Deleted successfully')
     await loadPrerequisites()
   } catch (err) {

@@ -45,37 +45,9 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 		PipelineGpath      string `json:"pipeline_gpath"`
 		ThumbnailObjectKey string `json:"thumbnail_object_key"`
 		ThumbnailFileHash  string `json:"thumbnail_file_hash"`
-		FromPipelineUlid   string `json:"from_pipeline_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
-		return
-	}
-
-	fromPipelineID := strings.TrimSpace(input.FromPipelineUlid)
-	if fromPipelineID == "" {
-		fromPipelineID = strings.TrimSpace(r.URL.Query().Get("from_pipeline_id"))
-	}
-
-	if fromPipelineID != "" {
-		name := strings.TrimSpace(input.Name)
-		if name == "" {
-			name = "Pipeline Copy"
-		}
-		req := &gccpb.DuplicatePipelineDraftRequest{
-			FromPipelineUlid: fromPipelineID,
-			PipelineUlid:     newLmsID(),
-			Name:             name,
-		}
-		if !requireRequestFields(w, req.FromPipelineUlid, "from_pipeline_id", req.PipelineUlid, "pipeline_id", req.Name, "name") {
-			return
-		}
-		resp, err := h.Gcc.DuplicatePipelineDraft(r.Context(), req)
-		if err != nil {
-			HandleGrpcError(w, err)
-			return
-		}
-		WriteJSON(w, http.StatusOK, resp)
 		return
 	}
 
@@ -100,6 +72,42 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	WriteJSON(w, http.StatusOK, resp)
+}
+
+// DuplicatePipelineDraft POST /api/pipelines/{pipeline_id}/duplicate
+func (h *Handler) DuplicatePipelineDraft(w http.ResponseWriter, r *http.Request) {
+	fromPipelineID, ok := requiredURLParam(w, r, "pipeline_id")
+	if !ok {
+		return
+	}
+
+	var input struct {
+		Name string `json:"name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		WriteError(w, http.StatusBadRequest, ErrInvalidRequest, "invalid body")
+		return
+	}
+
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		name = "Pipeline Copy"
+	}
+	req := &gccpb.DuplicatePipelineDraftRequest{
+		FromPipelineUlid: fromPipelineID,
+		PipelineUlid:     newLmsID(),
+		Name:             name,
+	}
+	if !requireRequestFields(w, req.FromPipelineUlid, "from_pipeline_id", req.PipelineUlid, "pipeline_id", req.Name, "name") {
+		return
+	}
+
+	resp, err := h.Gcc.DuplicatePipelineDraft(r.Context(), req)
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
 	WriteJSON(w, http.StatusOK, resp)
 }
 
