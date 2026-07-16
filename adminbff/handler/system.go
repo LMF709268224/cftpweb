@@ -22,7 +22,7 @@ func (h *Handler) GetSystemRedDots(w http.ResponseWriter, r *http.Request) {
 		countResult, err := countCursorAll(ctx, func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
 			res, err := h.Creds.GetApplicationCount(ctx, &gcredspb.GetApplicationCountRequest{
 				Filters: &gcredspb.ApplicationFilters{
-					Statuses: []string{"PENDING", "RESUBMITTED", "WAITING_REVIEW"},
+					Statuses: []string{"Pending", "Reupload"},
 				},
 				Limit:  limit,
 				Cursor: cursor,
