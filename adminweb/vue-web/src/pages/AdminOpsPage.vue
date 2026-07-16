@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue"
-import { Search } from "lucide-vue-next"
+import { Search, X } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
@@ -14,6 +14,9 @@ type OpsFilter = {
   key: string
   label: string
   placeholder?: string
+  options?: { value: string; label: string }[]
+  inputType?: "text" | "datetime-local"
+  queryFormat?: "rfc3339" | "unixSeconds"
 }
 
 type OpsAction = {
@@ -61,6 +64,188 @@ function fieldLabel(key: string) {
   return labels[key] || key
 }
 
+function statusLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.statusLabels as Record<string, string>
+  return labels[raw] || labels[raw.toUpperCase()] || raw
+}
+
+function mailTaskStatusOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["SENT", "FAILED", "PENDING", "IGNORED", "CANCELLED"].map((value) => ({ value, label: statusLabel(value) })),
+  ]
+}
+
+function deliveryStatusOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["PENDING", "DELIVERED", "FAILED"].map((value) => ({ value, label: statusLabel(value) })),
+  ]
+}
+
+function receiveStatusOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["PROCESSED", "FAILED", "PENDING", "IGNORED", "SKIPPED"].map((value) => ({ value, label: statusLabel(value) })),
+  ]
+}
+
+function natsMessageTypeLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.natsMessageTypeLabels as Record<string, string>
+  return labels[raw] || labels[raw.toUpperCase()] || labels[raw.toLowerCase()] || raw
+}
+
+function mallNatsMessageTypeOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["status_update"].map((value) => ({ value, label: natsMessageTypeLabel(value) })),
+  ]
+}
+
+function payWebhookEventTypeOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...Object.entries(copy.value.payWebhookDetail.eventTypes as Record<string, string>).map(([value, label]) => ({ value, label })),
+  ]
+}
+
+function payWebhookProcessedStatusLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.payWebhookDetail.processedStatuses as Record<string, string>
+  return labels[raw] || labels[raw.toLowerCase()] || raw
+}
+
+function payWebhookProcessedStatusOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...Object.keys(copy.value.payWebhookDetail.processedStatuses as Record<string, string>).map((value) => ({ value, label: payWebhookProcessedStatusLabel(value) })),
+  ]
+}
+
+function examAuditEventTypeLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.examAuditDetail.eventTypes as Record<string, string>
+  return labels[raw] || labels[raw.toLowerCase()] || raw
+}
+
+function examAuditEventTypeOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...Object.keys(copy.value.examAuditDetail.eventTypes as Record<string, string>).map((value) => ({ value, label: examAuditEventTypeLabel(value) })),
+  ]
+}
+
+function examAuditProcessedStatusLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.examAuditDetail.processedStatuses as Record<string, string>
+  return labels[raw] || labels[raw.toUpperCase()] || raw
+}
+
+function examAuditProcessedStatusOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...Object.keys(copy.value.examAuditDetail.processedStatuses as Record<string, string>).map((value) => ({ value, label: examAuditProcessedStatusLabel(value) })),
+  ]
+}
+
+function mailTypeLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.mailTypeLabels as Record<string, string>
+  return labels[raw] || labels[raw.toUpperCase()] || raw
+}
+
+function mallMailTypeOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["BUNDLE_PAYMENT_REQUIRED"].map((value) => ({ value, label: mailTypeLabel(value) })),
+  ]
+}
+
+function notificationTypeLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.notificationTypeLabels as Record<string, string>
+  return labels[raw] || labels[raw.toLowerCase()] || raw
+}
+
+function membershipNotificationTypeOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["membership_activated"].map((value) => ({ value, label: notificationTypeLabel(value) })),
+  ]
+}
+
+function reminderTypeLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.reminderTypeLabels as Record<string, string>
+  return labels[raw] || labels[raw.toUpperCase()] || raw
+}
+
+function examReminderTypeOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["ONE_HOUR"].map((value) => ({ value, label: reminderTypeLabel(value) })),
+  ]
+}
+
+function driverEntityTypeLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.driverEntityTypeLabels as Record<string, string>
+  return labels[raw] || labels[raw.toUpperCase()] || raw
+}
+
+function driverEntityTypeOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["PIPELINE", "STAGE", "COURSE_UNIT", "EXAM", "RESULT"].map((value) => ({ value, label: driverEntityTypeLabel(value) })),
+  ]
+}
+
+function driverEventStatusOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["PROCESSED", "FAILED", "PENDING", "IGNORED", "SKIPPED"].map((value) => ({ value, label: statusLabel(value) })),
+  ]
+}
+
+function driverEventTypeLabel(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+  const labels = copy.value.driverEventTypeLabels as Record<string, string>
+  return labels[raw] || labels[raw.toUpperCase()] || raw
+}
+
+function driverEventTypeOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["PIPELINE_NEXT_STAGE"].map((value) => ({ value, label: driverEventTypeLabel(value) })),
+  ]
+}
+
+function examTransitionStatusTypeLabel(value: unknown) {
+  const raw = String(value || "").trim().toUpperCase()
+  if (!raw) return ""
+  const labels = copy.value.examTransitionDetail.statusTypes as Record<string, string>
+  return labels[raw] || raw
+}
+
+function examTransitionStatusTypeOptions() {
+  return [
+    { value: "", label: copy.value.all },
+    ...["EXAM", "RESULT"].map((value) => ({ value, label: examTransitionStatusTypeLabel(value) })),
+  ]
+}
+
 const modules = computed<OpsModule[]>(() => [
   {
     key: "paySubscriptions",
@@ -87,10 +272,10 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["event_id", "eventId", "stripe_event_id", "stripeEventId"],
     pagination: "page",
     filters: [
-      { key: "event_type", label: fieldLabel("event_type") },
-      { key: "processed_status", label: fieldLabel("processed_status") },
-      { key: "start_time", label: fieldLabel("start_time") },
-      { key: "end_time", label: fieldLabel("end_time") },
+      { key: "event_type", label: fieldLabel("event_type"), options: payWebhookEventTypeOptions() },
+      { key: "processed_status", label: fieldLabel("processed_status"), options: payWebhookProcessedStatusOptions() },
+      { key: "start_time", label: fieldLabel("start_time"), inputType: "datetime-local", queryFormat: "unixSeconds" },
+      { key: "end_time", label: fieldLabel("end_time"), inputType: "datetime-local", queryFormat: "unixSeconds" },
     ],
   },
   {
@@ -118,8 +303,8 @@ const modules = computed<OpsModule[]>(() => [
     filters: [
       { key: "candidate_ulid", label: fieldLabel("candidate_ulid") },
       { key: "order_ulid", label: fieldLabel("order_ulid") },
-      { key: "task_status", label: fieldLabel("task_status") },
-      { key: "mail_type", label: fieldLabel("mail_type") },
+      { key: "task_status", label: fieldLabel("task_status"), options: mailTaskStatusOptions() },
+      { key: "mail_type", label: fieldLabel("mail_type"), options: mallMailTypeOptions() },
     ],
     actions: [
       { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/mall/mail-tasks/${encodeURIComponent(id)}/retry`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" },
@@ -138,8 +323,8 @@ const modules = computed<OpsModule[]>(() => [
     pagination: "page",
     filters: [
       { key: "candidate_ulid", label: fieldLabel("candidate_ulid") },
-      { key: "task_status", label: fieldLabel("task_status") },
-      { key: "notification_type", label: fieldLabel("notification_type") },
+      { key: "task_status", label: fieldLabel("task_status"), options: mailTaskStatusOptions() },
+      { key: "notification_type", label: fieldLabel("notification_type"), options: membershipNotificationTypeOptions() },
     ],
     actions: [
       { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/memberships/mails/${encodeURIComponent(id)}/retry`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" },
@@ -157,10 +342,10 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["message_ulid", "messageUlid"],
     pagination: "offset",
     filters: [
-      { key: "receive_status", label: fieldLabel("receive_status") },
+      { key: "receive_status", label: fieldLabel("receive_status"), options: receiveStatusOptions() },
       { key: "source_service", label: fieldLabel("source_service") },
       { key: "subject", label: fieldLabel("subject") },
-      { key: "message_type", label: fieldLabel("message_type") },
+      { key: "message_type", label: fieldLabel("message_type"), options: mallNatsMessageTypeOptions() },
     ],
   },
   {
@@ -224,10 +409,10 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["event_ulid", "eventUlid"],
     pagination: "offset",
     filters: [
-      { key: "entity_type", label: fieldLabel("entity_type") },
+      { key: "entity_type", label: fieldLabel("entity_type"), options: driverEntityTypeOptions() },
       { key: "entity_ulid", label: fieldLabel("entity_ulid") },
-      { key: "event_status", label: fieldLabel("event_status") },
-      { key: "event_type", label: fieldLabel("event_type") },
+      { key: "event_status", label: fieldLabel("event_status"), options: driverEventStatusOptions() },
+      { key: "event_type", label: fieldLabel("event_type"), options: driverEventTypeOptions() },
     ],
   },
   {
@@ -241,7 +426,7 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["message_ulid", "messageUlid"],
     pagination: "offset",
     filters: [
-      { key: "receive_status", label: fieldLabel("receive_status") },
+      { key: "receive_status", label: fieldLabel("receive_status"), options: receiveStatusOptions() },
       { key: "source_service", label: fieldLabel("source_service") },
     ],
   },
@@ -257,10 +442,8 @@ const modules = computed<OpsModule[]>(() => [
     idKeys: ["message_ulid", "messageUlid"],
     pagination: "page",
     filters: [
-      { key: "processed_status", label: fieldLabel("processed_status") },
-      { key: "event_type", label: fieldLabel("event_type") },
-      { key: "start_time", label: fieldLabel("start_time") },
-      { key: "end_time", label: fieldLabel("end_time") },
+      { key: "processed_status", label: fieldLabel("processed_status"), options: examAuditProcessedStatusOptions() },
+      { key: "event_type", label: fieldLabel("event_type"), options: examAuditEventTypeOptions() },
     ],
   },
   {
@@ -274,7 +457,7 @@ const modules = computed<OpsModule[]>(() => [
     pagination: "page",
     filters: [
       { key: "exam_ulid", label: fieldLabel("exam_ulid") },
-      { key: "status_type", label: fieldLabel("status_type") },
+      { key: "status_type", label: fieldLabel("status_type"), options: examTransitionStatusTypeOptions() },
     ],
   },
   {
@@ -289,10 +472,10 @@ const modules = computed<OpsModule[]>(() => [
     pagination: "page",
     filters: [
       { key: "exam_ulid", label: fieldLabel("exam_ulid") },
-      { key: "task_status", label: fieldLabel("task_status") },
-      { key: "delivery_status", label: fieldLabel("delivery_status") },
+      { key: "task_status", label: fieldLabel("task_status"), options: mailTaskStatusOptions() },
+      { key: "delivery_status", label: fieldLabel("delivery_status"), options: deliveryStatusOptions() },
       { key: "candidate_email", label: fieldLabel("candidate_email") },
-      { key: "reminder_type", label: fieldLabel("reminder_type") },
+      { key: "reminder_type", label: fieldLabel("reminder_type"), options: examReminderTypeOptions() },
     ],
     actions: [
       { key: "retry", label: copy.value.actions.retry, path: (id) => `/api/exam-ops/reminder-mails/${encodeURIComponent(id)}/retry`, showIf: (item) => item.task_status === "FAILED" || item.taskStatus === "FAILED" || item.delivery_status === "FAILED" || item.deliveryStatus === "FAILED" },
@@ -324,6 +507,21 @@ const missingRequiredFilters = computed(() =>
 const missingRequiredFilterLabels = computed(() => missingRequiredFilters.value.map(fieldLabel))
 const canLoad = computed(() => missingRequiredFilters.value.length === 0)
 const structuredDetailSections = computed(() => buildStructuredDetailSections(detail.value || selected.value))
+
+function ensureOptionFilterDefaults(module = activeModule.value) {
+  const moduleFilters = filters[module.key] || (filters[module.key] = {})
+  for (const filter of module.filters || []) {
+    if (!filter.options?.length || moduleFilters[filter.key] !== undefined) continue
+    const defaultOption = filter.options.find((option) => option.value === "") || filter.options[0]
+    moduleFilters[filter.key] = defaultOption?.value || ""
+  }
+}
+
+function clearFilterInput(key: string) {
+  if (!activeFilters.value[key]) return
+  activeFilters.value[key] = ""
+  void loadList(true)
+}
 
 const moduleGroups = computed(() => {
   const groupsMap: Record<string, OpsModule[]> = {
@@ -376,13 +574,27 @@ function isULID(value: string) {
 }
 
 function getTitle(item: JsonRecord) {
+  if (activeModule.value.key === "progDriverEvents") {
+    const eventType = getField(item, ["event_type", "eventType"])
+    if (eventType !== undefined) return driverEventTypeLabel(eventType)
+  }
+  if (activeModule.value.key === "examAudit") {
+    const eventType = getField(item, ["event_type", "eventType"])
+    if (eventType !== undefined) return examAuditEventTypeLabel(eventType)
+  }
   const title = getField(item, ["title", "name", "subject", "event_type", "eventType", "message_type", "messageType"])
   return title === undefined ? getItemID(item) || copy.value.untitled : String(title)
 }
 
 function getSubtitle(item: JsonRecord) {
   const rawStatus = getField(item, ["task_status", "taskStatus", "processed_status", "processedStatus", "event_status", "eventStatus", "status"])
-  const mappedStatus = rawStatus ? ((copy.value.statusLabels as Record<string, string>)?.[String(rawStatus)] || String(rawStatus)) : undefined
+  const mappedStatus = rawStatus
+    ? activeModule.value.key === "payWebhooks"
+      ? payWebhookProcessedStatusLabel(rawStatus)
+      : activeModule.value.key === "examAudit"
+        ? examAuditProcessedStatusLabel(rawStatus)
+        : statusLabel(rawStatus)
+    : undefined
   const time = getField(item, ["created_at", "createdAt", "scheduled_at", "scheduledAt"])
   const parts = [mappedStatus, formatDate(time)].filter((value) => value !== undefined && value !== "")
   return parts.map(String).join(" · ")
@@ -520,11 +732,21 @@ function formatDetailValue(key: string, value: unknown) {
   if (key.endsWith("_at")) return formatDate(value)
   if (typeof value === "boolean") return value ? copy.value.booleanLabels.true : copy.value.booleanLabels.false
   if (key === "task_status" || key === "delivery_status" || key === "receive_status" || key === "event_status") {
-    return (copy.value.statusLabels as Record<string, string>)[String(value)] || String(value)
+    return statusLabel(value)
   }
+  if (key === "mail_type") return mailTypeLabel(value)
+  if (key === "notification_type") return notificationTypeLabel(value)
+  if (key === "reminder_type") return reminderTypeLabel(value)
+  if (key === "message_type") return natsMessageTypeLabel(value)
   const parsedValue = key.endsWith("_json") || key === "message_payload" ? parseJsonValue(value) : value
   if (typeof parsedValue === "object") return stringify(parsedValue)
   return String(parsedValue)
+}
+
+function formatProgDriverEventDetailValue(key: string, value: unknown) {
+  if (key === "entity_type") return driverEntityTypeLabel(value)
+  if (key === "event_type") return driverEventTypeLabel(value)
+  return formatDetailValue(key, value)
 }
 
 function formatStripeAmount(value: unknown, currency: unknown) {
@@ -593,9 +815,7 @@ function formatPayWebhookDetailValue(record: JsonRecord, key: string, value: unk
     return event ? labels[event] || event : "-"
   }
   if (key === "processed_status") {
-    const labels = copy.value.payWebhookDetail.processedStatuses as Record<string, string>
-    const status = String(value || "").trim().toLowerCase()
-    return status ? labels[status] || String(value) : "-"
+    return payWebhookProcessedStatusLabel(value) || "-"
   }
   if (key === "payment_status") {
     const labels = copy.value.payWebhookDetail.paymentStatuses as Record<string, string>
@@ -620,9 +840,7 @@ function formatPayWebhookDetailValue(record: JsonRecord, key: string, value: unk
 
 function formatExamAuditDetailValue(key: string, value: unknown) {
   if (key === "event_type") {
-    const labels = copy.value.examAuditDetail.eventTypes as Record<string, string>
-    const event = String(value || "").trim().toLowerCase()
-    return event ? labels[event] || String(value) : "-"
+    return examAuditEventTypeLabel(value) || "-"
   }
   if (key === "audit_status") {
     const labels = copy.value.examAuditDetail.auditStatuses as Record<string, string>
@@ -630,9 +848,7 @@ function formatExamAuditDetailValue(key: string, value: unknown) {
     return status ? labels[status] || String(value) : "-"
   }
   if (key === "processed_status") {
-    const labels = copy.value.examAuditDetail.processedStatuses as Record<string, string>
-    const status = normalizeDetailCode(value)
-    return status ? labels[status] || String(value) : "-"
+    return examAuditProcessedStatusLabel(value) || "-"
   }
   if (key === "event_timestamp" || key === "audit_date") return formatDate(value)
   return formatDetailValue(key, value)
@@ -889,7 +1105,7 @@ function buildProgDriverEventDetailSections(value: unknown): DetailSection[] {
       entries: section.fields.map(([key, keys]) => ({
         key,
         label: fieldLabels[key] || key.replaceAll("_", " "),
-        value: formatDetailValue(key, getDetailField(record, [...keys])),
+        value: formatProgDriverEventDetailValue(key, getDetailField(record, [...keys])),
         mono: key.endsWith("_ulid"),
       })),
     }))
@@ -1176,11 +1392,20 @@ function buildExamReminderDetailSections(value: unknown): DetailSection[] {
     .filter((section) => section.entries.some((entry) => entry.value !== "-"))
 }
 
+function filterQueryValue(filter: OpsFilter, value: string) {
+  if (!filter.queryFormat) return value
+  const timestamp = new Date(value).getTime()
+  if (!Number.isFinite(timestamp)) return ""
+  if (filter.queryFormat === "rfc3339") return new Date(timestamp).toISOString()
+  return String(Math.floor(timestamp / 1000))
+}
+
 function buildListURL(module: OpsModule) {
   const params = new URLSearchParams()
   for (const filter of module.filters || []) {
     const value = String(activeFilters.value[filter.key] || "").trim()
-    if (value) params.set(filter.key, value)
+    const queryValue = value ? filterQueryValue(filter, value) : ""
+    if (queryValue) params.set(filter.key, queryValue)
   }
   if (module.pagination === "page") {
     params.set("page", String(page.value))
@@ -1193,6 +1418,7 @@ function buildListURL(module: OpsModule) {
 }
 
 async function loadList(reset = false) {
+  ensureOptionFilterDefaults()
   if (reset) {
     page.value = 1
     offset.value = 0
@@ -1334,12 +1560,33 @@ void loadList()
       <div v-if="activeModule.filters?.length" class="mt-4 flex flex-wrap items-end gap-3">
         <div v-for="filter in activeModule.filters" :key="filter.key" class="w-full space-y-1 sm:w-[200px] 2xl:w-[220px]">
           <label class="text-xs font-black text-slate-500">{{ filter.label }}</label>
-          <input
+          <select
+            v-if="filter.options?.length"
             v-model="activeFilters[filter.key]"
-            class="h-11 w-full rounded-xl border border-slate-200 px-3 text-sm font-bold outline-none focus:border-sky-400"
-            :placeholder="filter.placeholder || copy.placeholders.optional"
-            @keyup.enter="loadList(true)"
-          />
+            class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-sky-400"
+            @change="loadList(true)"
+          >
+            <option v-for="option in filter.options" :key="option.value || 'all'" :value="option.value">{{ option.label }}</option>
+          </select>
+          <div v-else class="relative">
+            <input
+              v-model="activeFilters[filter.key]"
+              class="h-11 w-full rounded-xl border border-slate-200 px-3 pr-10 text-sm font-bold outline-none focus:border-sky-400"
+              :type="filter.inputType || 'text'"
+              :placeholder="filter.placeholder || ''"
+              @keyup.enter="loadList(true)"
+            />
+            <button
+              v-if="activeFilters[filter.key]"
+              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              type="button"
+              :aria-label="copy.clearInput"
+              :title="copy.clearInput"
+              @click="clearFilterInput(filter.key)"
+            >
+              <X class="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <button class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white hover:bg-blue-800 sm:w-auto" type="button" @click="loadList(true)">
           <Search class="h-4 w-4" />

@@ -287,16 +287,25 @@ onMounted(() => {
         <form v-else class="space-y-5 p-4 md:space-y-6 md:p-5" @submit.prevent="savePassword">
           <div class="grid gap-4 md:grid-cols-2">
             <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.oldPassword }}</span>
+              <span class="inline-flex items-center text-sm font-bold">
+                <span class="mr-1 text-red-500" aria-hidden="true">*</span>
+                {{ copy.labels.oldPassword }}
+              </span>
               <input v-model="oldPassword" autocomplete="current-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" required type="password" />
             </label>
             <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.newPassword }}</span>
+              <span class="inline-flex items-center text-sm font-bold">
+                <span class="mr-1 text-red-500" aria-hidden="true">*</span>
+                {{ copy.labels.newPassword }}
+              </span>
               <input v-model="newPassword" autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" minlength="8" required type="password" />
               <span class="mt-1 block text-xs text-slate-400">{{ copy.passwordHint }}</span>
             </label>
             <label class="block md:col-span-2">
-              <span class="text-sm font-bold">{{ copy.labels.confirmPassword }}</span>
+              <span class="inline-flex items-center text-sm font-bold">
+                <span class="mr-1 text-red-500" aria-hidden="true">*</span>
+                {{ copy.labels.confirmPassword }}
+              </span>
               <input v-model="confirmPassword" autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" minlength="8" required type="password" />
             </label>
           </div>

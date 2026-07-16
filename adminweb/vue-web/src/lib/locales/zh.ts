@@ -1730,6 +1730,8 @@ export const zh = {
         processing: "处理中...",
         previous: "上一页",
         next: "下一页",
+        all: "全部",
+        clearInput: "清除输入",
         requiredPrefix: "请先填写必填筛选项：",
         invalidDetailId: (id: string) => `详情接口需要 ULID，当前记录返回的是 ${id}；已显示列表记录，未继续请求详情。`,
         total: (count: number) => `共 ${count} 条`,
@@ -1782,6 +1784,28 @@ export const zh = {
             SKIPPED: "已跳过",
             DELIVERED: "已投递",
         },
+        mailTypeLabels: {
+            BUNDLE_PAYMENT_REQUIRED: "套餐支付提醒",
+        },
+        notificationTypeLabels: {
+            membership_activated: "会员开通通知",
+        },
+        reminderTypeLabels: {
+            ONE_HOUR: "考前 1 小时提醒",
+        },
+        natsMessageTypeLabels: {
+            status_update: "状态更新",
+        },
+        driverEntityTypeLabels: {
+            PIPELINE: "认证",
+            STAGE: "阶段",
+            COURSE_UNIT: "课程单元",
+            EXAM: "考试",
+            RESULT: "成绩",
+        },
+        driverEventTypeLabels: {
+            PIPELINE_NEXT_STAGE: "推进到下一阶段",
+        },
         booleanLabels: {
             true: "是",
             false: "否",
@@ -1819,6 +1843,7 @@ export const zh = {
             },
             eventTypes: {
                 "checkout.session.completed": "结账已完成",
+                "checkout.session.expired": "结账已过期",
                 "customer.subscription.created": "订阅已创建",
                 "customer.subscription.deleted": "订阅已取消",
                 "customer.subscription.updated": "订阅已更新",

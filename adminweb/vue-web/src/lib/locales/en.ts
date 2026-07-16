@@ -1732,6 +1732,8 @@ export const en: AdminTranslations = {
         processing: "Processing...",
         previous: "Previous",
         next: "Next",
+        all: "All",
+        clearInput: "Clear input",
         requiredPrefix: "Please fill required filters first:",
         invalidDetailId: (id: string) => `The detail API requires a ULID, but this record returned ${id}; showing the list record without requesting detail.`,
         total: (count: number) => `${count} records`,
@@ -1784,6 +1786,28 @@ export const en: AdminTranslations = {
             SKIPPED: "Skipped",
             DELIVERED: "Delivered",
         },
+        mailTypeLabels: {
+            BUNDLE_PAYMENT_REQUIRED: "Bundle payment reminder",
+        },
+        notificationTypeLabels: {
+            membership_activated: "Membership activated",
+        },
+        reminderTypeLabels: {
+            ONE_HOUR: "One-hour reminder",
+        },
+        natsMessageTypeLabels: {
+            status_update: "Status update",
+        },
+        driverEntityTypeLabels: {
+            PIPELINE: "Certification",
+            STAGE: "Stage",
+            COURSE_UNIT: "Course Unit",
+            EXAM: "Exam",
+            RESULT: "Result",
+        },
+        driverEventTypeLabels: {
+            PIPELINE_NEXT_STAGE: "Advance to next stage",
+        },
         booleanLabels: {
             true: "Yes",
             false: "No",
@@ -1821,6 +1845,7 @@ export const en: AdminTranslations = {
             },
             eventTypes: {
                 "checkout.session.completed": "Checkout Completed",
+                "checkout.session.expired": "Checkout Expired",
                 "customer.subscription.created": "Subscription Created",
                 "customer.subscription.deleted": "Subscription Cancelled",
                 "customer.subscription.updated": "Subscription Updated",
