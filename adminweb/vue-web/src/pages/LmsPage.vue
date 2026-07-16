@@ -554,7 +554,7 @@ function chapterTitle(chapter: JsonRecord | null | undefined) {
 }
 
 function isChapterEmpty(chapter: JsonRecord | null | undefined) {
-  if (!chapter) return false
+  if (!chapter || completeLoading.value || !completeCourseRecord.value) return false
   const cid = chapterId(chapter)
   const hasLesson = allLessonItems.value.some(item => chapterId(item.chapter) === cid)
   const hasQuiz = allQuizItems.value.some(item => chapterId(item.chapter) === cid)
@@ -2660,7 +2660,7 @@ onMounted(() => {
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button v-if="!isCreatingCourse" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm disabled:opacity-60" type="button" :disabled="loading" @click="loadCourses()">
+        <button v-if="courseView === 'list' && !isCreatingCourse" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 font-bold shadow-sm disabled:opacity-60" type="button" :disabled="loading" @click="loadCourses()">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
