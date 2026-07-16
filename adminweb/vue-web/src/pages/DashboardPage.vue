@@ -267,7 +267,7 @@ watch([keyword, roleFilter, statusFilter], () => {
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="break-words font-bold text-slate-950">{{ user.name || "-" }}</div>
-                <div class="mt-1 break-all text-xs text-slate-500">{{ user.phone || user.candidate_ulid || "-" }}</div>
+                <div class="mt-1 break-all text-xs text-slate-500">{{ user.candidate_ulid || "-" }}</div>
               </div>
               <span class="inline-flex shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
             </div>
@@ -326,7 +326,7 @@ watch([keyword, roleFilter, statusFilter], () => {
               <tr v-for="user in filteredUsers" :key="user.id" class="transition hover:bg-sky-50/60">
                 <td class="px-6 py-4">
                   <div class="font-bold text-slate-950">{{ user.name || "-" }}</div>
-                  <div class="text-xs text-slate-500">{{ user.phone || user.candidate_ulid || "-" }}</div>
+                  <div class="text-xs text-slate-500">{{ user.candidate_ulid || "-" }}</div>
                 </td>
                 <td class="whitespace-nowrap px-6 py-4 text-slate-700">{{ user.email || "-" }}</td>
                 <td class="px-6 py-4 text-slate-700">{{ user.location || "-" }}</td>
