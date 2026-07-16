@@ -16,6 +16,8 @@ const submitting = ref(false)
 const paper = ref<any>(null)
 const answers = ref<Record<string, string[]>>({})
 const result = ref<any>(null)
+const detailedAnswers = ref<any[]>([])
+const showDetail = ref(false)
 
 const questions = computed(() => paper.value?.questions || [])
 const allAnswered = computed(() => questions.value.every((q: any) => (answers.value[questionIdOf(q)]?.length || 0) > 0))
@@ -101,6 +103,22 @@ async function submitQuiz() {
   }
 }
 
+async function loadAttemptDetail() {
+  try {
+    const res = await apiClient(`/api/quizzes/attempts/${attemptId.value}/detail`)
+    if (res && res.answers_json) {
+      detailedAnswers.value = JSON.parse(res.answers_json) || []
+      showDetail.value = true
+    }
+  } catch (err) {
+    toast.error("加载批改结果失败")
+  }
+}
+
+function getAnswerDetail(questionId: string) {
+  return detailedAnswers.value.find((a: any) => a.question_id === questionId || a.questionUlid === questionId)
+}
+
 onMounted(loadPaper)
 </script>
 
@@ -143,7 +161,59 @@ onMounted(loadPaper)
             {{ quizPassed ? t.learning?.quizPassed : t.learning?.quizFailed }}
           </div>
         </div>
-        <button class="btn btn-primary cursor-pointer px-8" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
+        <div class="flex flex-col gap-3 justify-center sm:flex-row">
+          <button class="btn btn-outline cursor-pointer px-6" @click="router.back()"><ChevronLeft class="h-4 w-4" /> {{ t.learning?.quizReturn }}</button>
+          <button v-if="!showDetail" class="btn btn-primary cursor-pointer px-6" @click="loadAttemptDetail">查看详细批改结果</button>
+        </div>
+      </div>
+
+      <!-- 详细批改结果区块 -->
+      <div v-if="showDetail" class="mt-8 space-y-6 text-left">
+        <h2 class="text-xl font-bold">详细批改结果</h2>
+        <div v-for="(question, index) in questions" :key="question.question_id" class="overflow-hidden rounded-md bg-white shadow-sm border border-border">
+          <div class="flex items-center justify-between border-b bg-muted/30 px-6 py-3 text-sm font-medium text-muted-foreground">
+            <span>{{ formatQuizQuestionCount(Number(index) + 1, questions.length) }}</span>
+            <span class="rounded border bg-background px-2 py-0.5 text-xs">{{ question.points || 0 }} {{ t.learning?.quizPts }}</span>
+          </div>
+          <div class="p-6">
+            <h3 class="mb-6 text-lg font-medium leading-relaxed text-foreground">{{ question.question_text }}</h3>
+            <div class="space-y-3">
+              <div
+                v-for="option in question.options || []"
+                :key="option.option_id"
+                :class="[
+                  'flex w-full items-start gap-3 rounded-md border p-4 text-left',
+                  getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id) ? 'border-emerald-200 bg-emerald-50' : 
+                  (getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id) ? 'border-rose-200 bg-rose-50' : 'border-border bg-slate-50 opacity-60')
+                ]"
+              >
+                <div :class="[
+                  'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center border',
+                  question.question_type === 2 ? 'rounded-md' : 'rounded-full',
+                  getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id) ? 'border-emerald-600 bg-emerald-600' :
+                  (getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id) ? 'border-rose-600 bg-rose-600' : 'border-muted-foreground/30 bg-background')
+                ]">
+                  <span v-if="getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id)" class="h-2.5 w-2.5 rounded-full bg-white" />
+                  <span v-else-if="getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id)" class="h-2.5 w-2.5 rounded-full bg-white" />
+                </div>
+                <div class="flex flex-col">
+                  <span :class="['text-sm', getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id) ? 'font-medium text-emerald-800' : (getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id) ? 'font-medium text-rose-800' : 'text-muted-foreground')]">
+                    {{ option.option_text }}
+                  </span>
+                  <span v-if="getAnswerDetail(question.question_id)?.correct_option_ids?.includes(option.option_id)" class="text-xs text-emerald-600 mt-1">正确答案</span>
+                  <span v-else-if="getAnswerDetail(question.question_id)?.selected_option_ids?.includes(option.option_id)" class="text-xs text-rose-600 mt-1">你的选择 (错误)</span>
+                </div>
+              </div>
+            </div>
+            <div v-if="getAnswerDetail(question.question_id)?.explanation" class="mt-6 rounded-md bg-blue-50 p-4 border border-blue-100">
+              <div class="flex items-center gap-2 text-blue-800 font-semibold mb-2">
+                <AlertCircle class="h-4 w-4" />
+                <span>解答说明</span>
+              </div>
+              <p class="text-sm text-blue-900 leading-relaxed whitespace-pre-wrap">{{ getAnswerDetail(question.question_id)?.explanation }}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
