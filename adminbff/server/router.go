@@ -50,6 +50,9 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 		// ===== 运营看板 =====
 		r.Get("/dashboard/ops", h.OpsDashboard)
 
+		// ===== System =====
+		r.Get("/system/reddots", h.GetSystemRedDots)
+
 		// ===== 课程与认证 (GCC) =====
 		r.Route("/pipelines", func(r chi.Router) {
 			r.Get("/", h.ListPipelines)

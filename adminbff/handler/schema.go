@@ -506,3 +506,13 @@ type CertificateItem struct {
 type ListCertificatesRsp struct {
 	Certificates []CertificateItem `json:"certificates"`
 }
+
+
+type SystemRedDotsRsp struct {
+	Applications uint32 `json:"applications"`
+	Exams        uint32 `json:"exams"`
+	Prog         uint32 `json:"prog"`
+	Orders       uint32 `json:"orders"`
+	Invoices     uint32 `json:"invoices"`
+	Messages     uint32 `json:"messages"`
+}

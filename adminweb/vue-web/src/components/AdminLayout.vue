@@ -38,6 +38,30 @@ const userMenuRef = ref<HTMLElement | null>(null)
 const { lang, t, setAdminLanguage } = useAdminLanguage()
 const copy = computed(() => t.value.layout)
 const showSidebarText = computed(() => mobileNavOpen.value || !collapsed.value)
+const redDots = ref<Record<string, number>>({})
+
+function getDotCount(path: string): number {
+  switch (path) {
+    case "/applications": return redDots.value.applications || 0
+    case "/exams": return redDots.value.exams || 0
+    case "/prog": return redDots.value.prog || 0
+    case "/orders": return redDots.value.orders || 0
+    case "/invoices": return redDots.value.invoices || 0
+    case "/messages": return redDots.value.messages || 0
+    case "/mails": return redDots.value.messages || 0
+    default: return 0
+  }
+}
+
+async function fetchRedDots() {
+  try {
+    const res = await apiClient("/api/system/reddots") as Response
+    const data = await res.json()
+    redDots.value = data
+  } catch (err) {
+    console.error("Failed to fetch red dots", err)
+  }
+}
 
 const navGroups = computed(() => [
   {
@@ -125,14 +149,23 @@ async function logout() {
   }
 }
 
+let redDotsTimer: ReturnType<typeof setInterval>
+
 onMounted(() => {
   window.addEventListener("storage", refreshUserName)
   document.addEventListener("pointerdown", closeUserMenuOnOutsideClick)
+  
+  fetchRedDots()
+  redDotsTimer = setInterval(fetchRedDots, 5 * 60 * 1000)
+  router.afterEach(() => {
+    fetchRedDots()
+  })
 })
 
 onUnmounted(() => {
   window.removeEventListener("storage", refreshUserName)
   document.removeEventListener("pointerdown", closeUserMenuOnOutsideClick)
+  if (redDotsTimer) clearInterval(redDotsTimer)
 })
 </script>
 
@@ -200,12 +233,16 @@ onUnmounted(() => {
               v-for="item in group.items"
               :key="item.path"
               :to="item.path"
-              class="flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
+              class="relative flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
               :class="isActivePath(item.path) ? 'bg-blue-200 text-[#0b4ea2] shadow-none hover:bg-blue-200 md:!bg-[#0b4ea2] md:!text-white md:shadow-lg md:shadow-sky-200 md:hover:!bg-[#0b4ea2]' : ''"
               @click="mobileNavOpen = false"
             >
               <component :is="item.icon" class="h-5 w-5 shrink-0" />
-              <span v-if="showSidebarText">{{ item.label }}</span>
+              <span v-if="showSidebarText" class="flex-1">{{ item.label }}</span>
+              <span v-if="showSidebarText && getDotCount(item.path) > 0" class="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
+                {{ getDotCount(item.path) > 99 ? '99+' : getDotCount(item.path) }}
+              </span>
+              <div v-else-if="!showSidebarText && getDotCount(item.path) > 0" class="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 shadow-sm border border-white"></div>
             </RouterLink>
           </div>
         </div>
