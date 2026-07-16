@@ -334,8 +334,12 @@ func (h *Handler) DeleteMailTemplate(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) ListMailTemplates(w http.ResponseWriter, r *http.Request) {
 	page := parseCursorPage(r, 10)
+	var bu *string
+	if val := strings.TrimSpace(r.URL.Query().Get("business_unit")); val != "" && val != "all" {
+		bu = &val
+	}
 	filters := &gmailpb.TemplateFilters{
-		BusinessUnit: optionalString(firstNonEmpty(r.URL.Query().Get("business_unit"), "adminserver")),
+		BusinessUnit: bu,
 	}
 	resp, err := h.Gmail.ListTemplates(r.Context(), &gmailpb.ListTemplatesRequest{
 		Filters:   filters,
