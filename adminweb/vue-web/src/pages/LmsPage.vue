@@ -3044,9 +3044,9 @@ onMounted(() => {
       </section>
 
       <Teleport to="body">
-        <section v-if="chapterDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-          <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+        <section v-if="chapterDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+          <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
               <div>
                 <h2 class="text-xl font-black">{{ chapterDialogMode === "create" ? copy.createChapter : chapterDialogMode === "edit" ? copy.editChapter : copy.chapterDetailTitle }}</h2>
                 <p class="mt-1 text-sm text-slate-500">{{ chapterDialogMode === "detail" ? chapterTitle(selectedChapter) : copy.chapterDetailEmptyHint }}</p>
@@ -3056,7 +3056,7 @@ onMounted(() => {
               </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-5">
+            <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
               <div v-if="chapterDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
                 <button :class="chapterActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
                 <button :class="chapterActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="chapterActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
@@ -3087,7 +3087,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="chapterDialogMode !== 'detail' && chapterActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+            <div v-if="chapterDialogMode !== 'detail' && chapterActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-5">
               <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="button" @click="saveChapter">
                 <Loader2 v-if="savingChapter" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
@@ -3180,9 +3180,9 @@ onMounted(() => {
       </section>
 
       <Teleport to="body">
-        <section v-if="lessonDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-          <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+        <section v-if="lessonDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+          <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
               <div>
                 <h2 class="text-xl font-black">{{ lessonDialogMode === "create" ? copy.createLesson : lessonDialogMode === "edit" ? copy.editLesson : copy.lessonDetailTitle }}</h2>
                 <p class="mt-1 text-sm text-slate-500">{{ lessonDialogMode === "detail" ? lessonTitle(selectedLessonRecord) : copy.lessonDetailEmptyHint }}</p>
@@ -3192,7 +3192,7 @@ onMounted(() => {
               </button>
             </div>
 
-            <div class="flex-1 overflow-y-auto p-5">
+            <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
               <div v-if="lessonDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
                 <button :class="lessonActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
                 <button :class="lessonActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="lessonActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
@@ -3283,16 +3283,16 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="lessonDialogMode !== 'detail' && lessonActiveTab === 'basic'" class="flex shrink-0 items-center justify-between border-t border-slate-200 bg-white px-5 py-4 gap-4">
-              <div class="flex-1" v-if="editingLessonId && lessonForm.lesson_type !== '7' && lessonForm.lesson_type !== '2'">
+            <div v-if="lessonDialogMode !== 'detail' && lessonActiveTab === 'basic'" class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-5">
+                <div class="min-w-0 flex-1" v-if="editingLessonId && lessonForm.lesson_type !== '7' && lessonForm.lesson_type !== '2'">
                 <input type="file" ref="lessonFileInput" class="hidden" @change="handleLessonFileUpload" />
-                <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 h-10 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
+                <button type="button" class="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
                   <Loader2 v-if="uploadingLesson" class="h-4 w-4 animate-spin" />
                   <UploadCloud v-else class="h-4 w-4" />
                   {{ uploadingLesson ? (copy as any).uploading : (copy as any).uploadLessonFile }}
                 </button>
               </div>
-              <div class="flex-1" v-else></div>
+              <div class="min-w-0 flex-1" v-else></div>
               <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingLesson || uploadingLesson || !lessonForm.chapter_id" type="button" @click="saveLesson">
                 <Loader2 v-if="savingLesson" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
@@ -3426,9 +3426,9 @@ onMounted(() => {
           </div>
 
           <Teleport to="body">
-            <div v-if="supplementaryItemDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-              <form class="flex max-h-[88vh] w-full max-w-[720px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" @submit.prevent="saveSupplementaryItem">
-                <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-5">
+            <div v-if="supplementaryItemDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+              <form class="flex h-full max-h-none w-full max-w-[720px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl" @submit.prevent="saveSupplementaryItem">
+                <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
                   <div>
                     <h3 class="font-black">{{ editingSupplementaryItemIndex >= 0 ? copy.editSupplementaryItem : copy.newSupplementaryItem }}</h3>
                     <p class="mt-1 text-xs text-slate-500">{{ copy.supplementaryItemDescription }}</p>
@@ -3442,7 +3442,7 @@ onMounted(() => {
                     <X class="h-5 w-5" />
                   </button>
                 </div>
-                <div class="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+                <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-6 md:py-5">
                   <div class="grid gap-3">
                     <label class="block">
                       <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
@@ -3502,7 +3502,7 @@ onMounted(() => {
                     </template>
                   </div>
                 </div>
-                <div class="flex justify-end gap-3 border-t border-slate-200 px-6 py-4">
+                <div class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-6">
                   <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="closeSupplementaryItemDialog">
                     {{ copy.cancel }}
                   </button>
@@ -3607,9 +3607,9 @@ onMounted(() => {
         </div>
 
         <Teleport to="body">
-          <section v-if="materialDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-            <div v-if="materialDialogMode === 'detail'" class="flex max-h-[88vh] w-full max-w-[860px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-              <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+          <section v-if="materialDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+            <div v-if="materialDialogMode === 'detail'" class="flex h-full max-h-none w-full max-w-[860px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+              <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
                 <div>
                   <h2 class="text-xl font-black">{{ copy.materialRawFields }}</h2>
                   <p class="mt-1 break-all text-sm text-slate-500">{{ materialTitle(selectedMaterialRecord) }}</p>
@@ -3618,7 +3618,7 @@ onMounted(() => {
                   <X class="h-5 w-5" />
                 </button>
               </div>
-              <div class="min-h-0 flex-1 overflow-y-auto p-5">
+              <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
                 <div v-if="selectedMaterialRecord" class="grid gap-3 md:grid-cols-2">
                   <ReadonlyField
                     v-for="entry in materialRecordEntries(selectedMaterialRecord)"
@@ -3632,8 +3632,8 @@ onMounted(() => {
               </div>
             </div>
 
-            <form v-else class="flex max-h-[88vh] w-full max-w-[760px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl" @submit.prevent="saveMaterial">
-              <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+            <form v-else class="flex h-full max-h-none w-full max-w-[760px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl" @submit.prevent="saveMaterial">
+              <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
                 <div>
                   <h2 class="text-xl font-black">{{ materialDialogMode === "edit" ? copy.editMaterial : copy.createMaterial }}</h2>
                   <p class="mt-1 text-sm text-slate-500">{{ copy.normalMaterialsDescription }}</p>
@@ -3642,7 +3642,7 @@ onMounted(() => {
                   <X class="h-5 w-5" />
                 </button>
               </div>
-              <div class="min-h-0 flex-1 overflow-y-auto p-5">
+              <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
                 <div class="grid gap-3">
                   <label class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.materialTitlePlaceholder }}</span>
@@ -3694,7 +3694,7 @@ onMounted(() => {
                   </div>
                 </div>
               </div>
-              <div class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-5 py-4">
+              <div class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-5">
                 <div class="min-w-0 flex-1">
                   <div v-if="editingMaterialId" class="flex gap-3">
                     <input type="file" ref="materialFileInput" class="hidden" @change="handleMaterialFileUpload" />
@@ -3797,9 +3797,9 @@ onMounted(() => {
       </section>
 
       <Teleport to="body">
-        <section v-if="quizDialogOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-          <div class="flex max-h-[88vh] w-full max-w-[1180px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+        <section v-if="quizDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+          <div class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
               <div>
                 <h2 class="text-xl font-black">{{ quizDialogMode === "create" ? copy.createQuiz : quizDialogMode === "edit" ? copy.editQuiz : copy.quizDetailTitle }}</h2>
                 <p class="mt-1 text-sm text-slate-500">{{ quizDialogMode === "create" ? copy.quizDetailEmptyHint : quizTitle(selectedQuiz) }}</p>
@@ -3809,7 +3809,7 @@ onMounted(() => {
               </button>
             </div>
 
-            <div class="flex-1 space-y-5 overflow-y-auto p-5">
+            <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
               <div v-if="quizDialogMode !== 'create'" class="mb-4 flex gap-4 border-b border-slate-200">
                 <button :class="quizActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
                 <button :class="quizActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
@@ -3955,7 +3955,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="quizDialogMode !== 'detail' && quizActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-4">
+            <div v-if="quizDialogMode !== 'detail' && quizActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-5">
               <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingQuiz || !quizTarget().id" type="button" @click="saveQuiz">
                 <Loader2 v-if="savingQuiz" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
@@ -3967,9 +3967,9 @@ onMounted(() => {
       </Teleport>
 
       <Teleport to="body">
-        <section v-if="questionDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-6">
-          <div class="flex max-h-[88vh] w-full max-w-[980px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div class="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+        <section v-if="questionDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
+          <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
               <div>
                 <h2 class="text-xl font-black">{{ questionDialogMode === "create" ? copy.createQuestion : questionDialogMode === "edit" ? copy.editQuestion : copy.questionDetailTitle }}</h2>
                 <p class="mt-1 text-sm text-slate-500">{{ selectedQuestionId ? questionTitle(selectedQuestion) : copy.questionDetailEmptyHint }}</p>
@@ -3979,7 +3979,7 @@ onMounted(() => {
               </button>
             </div>
 
-            <div class="min-h-0 flex-1 space-y-6 overflow-y-auto p-5">
+            <div class="min-h-0 flex-1 space-y-6 overflow-y-auto p-4 md:p-5">
               <section class="rounded-2xl border border-slate-200">
                 <div class="grid gap-3 p-4 sm:grid-cols-2">
                   <div class="rounded-2xl bg-blue-50 p-4">
@@ -4136,15 +4136,15 @@ onMounted(() => {
     </div>
   </div>
   <teleport to="body">
-    <div v-if="advancedMediaDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div class="flex max-h-full w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+    <div v-if="advancedMediaDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-0 backdrop-blur-sm md:p-6" role="dialog" aria-modal="true">
+      <div class="flex h-full max-h-none w-full max-w-2xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <div class="flex items-center justify-between border-b border-slate-100 px-4 py-4 md:px-6">
           <h2 class="text-lg font-black">{{ copy.mediaJsonLabel }}</h2>
           <button class="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600" @click="advancedMediaDialogOpen = false">
             <X class="h-5 w-5" />
           </button>
         </div>
-        <div class="overflow-y-auto bg-slate-50 px-6 py-5">
+        <div class="min-h-0 flex-1 overflow-y-auto bg-slate-50 px-4 py-4 md:px-6 md:py-5">
           <div v-if="!parsedMediaItems.length" class="text-center text-sm text-slate-400 py-4">{{ copy.mediaJsonHint }}</div>
           <div class="grid gap-3">
             <div v-for="(item, index) in parsedMediaItems" :key="index" class="flex gap-2 items-start bg-white p-3 rounded-xl border border-slate-200">
@@ -4169,7 +4169,7 @@ onMounted(() => {
             {{ copy.addMedia }}
           </button>
         </div>
-        <div class="flex justify-end gap-3 border-t border-slate-100 bg-white px-6 py-4">
+        <div class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-slate-100 bg-white px-4 py-4 md:px-6">
           <button class="rounded-xl border border-slate-200 bg-white px-5 py-2.5 font-bold text-slate-600 hover:bg-slate-50" @click="advancedMediaDialogOpen = false">{{ copy.cancelConfig }}</button>
           <button class="rounded-xl bg-blue-700 px-5 py-2.5 font-bold text-white hover:bg-blue-800" @click="saveMediaConfig">{{ copy.confirmConfig }}</button>
         </div>

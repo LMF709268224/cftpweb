@@ -282,7 +282,7 @@ onMounted(load)
           <section class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
             <template v-if="mode === 'create'">
               <div class="grid gap-5">
-                <div class="grid gap-4 md:grid-cols-2">
+                <div class="grid items-start gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
                     <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.name }}</span>
                     <input v-model="name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="120" :placeholder="copy.placeholders.name" />
