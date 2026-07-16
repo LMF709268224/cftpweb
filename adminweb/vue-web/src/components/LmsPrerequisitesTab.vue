@@ -28,9 +28,10 @@ const availableEntities = computed(() => {
   const chapters = (props.course.chapters || []) as any[]
   chapters.forEach((chapterDetail: any) => {
     const chapter = chapterDetail.chapter
-    if (chapter && chapter.chapter_ulid !== props.targetEntityId) {
+    const chapterIdStr = String(chapter?.chapter_id || chapter?.chapter_ulid || "")
+    if (chapter && chapterIdStr !== props.targetEntityId) {
       entities.push({
-        id: chapter.chapter_ulid,
+        id: chapterIdStr,
         type: 3, // CHAPTER
         title: `[${props.copy.chapter || '章节'}] ${chapter.title}`,
         result: 1 // COMPLETED
@@ -40,9 +41,10 @@ const availableEntities = computed(() => {
     const lessons = (chapterDetail.lessons || []) as any[]
     lessons.forEach((lessonDetail: any) => {
       const lesson = lessonDetail.lesson
-      if (lesson && lesson.lesson_ulid !== props.targetEntityId) {
+      const lessonIdStr = String(lesson?.lesson_id || lesson?.lesson_ulid || "")
+      if (lesson && lessonIdStr !== props.targetEntityId) {
         entities.push({
-          id: lesson.lesson_ulid,
+          id: lessonIdStr,
           type: 1, // LESSON
           title: `[${props.copy.lesson || '课时'}] ${lesson.title}`,
           result: 1 // COMPLETED
@@ -52,9 +54,10 @@ const availableEntities = computed(() => {
       const quizzes = (lessonDetail.quizzes || []) as any[]
       quizzes.forEach((quizDetail: any) => {
         const quiz = quizDetail.quiz
-        if (quiz && quiz.quiz_ulid !== props.targetEntityId) {
+        const quizIdStr = String(quiz?.quiz_id || quiz?.quiz_ulid || "")
+        if (quiz && quizIdStr !== props.targetEntityId) {
           entities.push({
-            id: quiz.quiz_ulid,
+            id: quizIdStr,
             type: 2, // QUIZ
             title: `[${props.copy.quiz || '测验'}] ${quiz.title}`,
             result: 2 // PASSED
@@ -66,9 +69,10 @@ const availableEntities = computed(() => {
     const chapterQuizzes = (chapterDetail.quizzes || []) as any[]
     chapterQuizzes.forEach((quizDetail: any) => {
       const quiz = quizDetail.quiz
-      if (quiz && quiz.quiz_ulid !== props.targetEntityId) {
+      const quizIdStr = String(quiz?.quiz_id || quiz?.quiz_ulid || "")
+      if (quiz && quizIdStr !== props.targetEntityId) {
         entities.push({
-          id: quiz.quiz_ulid,
+          id: quizIdStr,
           type: 2, // QUIZ
           title: `[${props.copy.quiz || '测验'}] ${quiz.title}`,
           result: 2 // PASSED
@@ -80,9 +84,10 @@ const availableEntities = computed(() => {
   const courseQuizzes = (props.course.quizzes || []) as any[]
   courseQuizzes.forEach((quizDetail: any) => {
     const quiz = quizDetail.quiz
-    if (quiz && quiz.quiz_ulid !== props.targetEntityId) {
+    const quizIdStr = String(quiz?.quiz_id || quiz?.quiz_ulid || "")
+    if (quiz && quizIdStr !== props.targetEntityId) {
       entities.push({
-        id: quiz.quiz_ulid,
+        id: quizIdStr,
         type: 2, // QUIZ
         title: `[${props.copy.quiz || '测验'}] ${quiz.title}`,
         result: 2 // PASSED
