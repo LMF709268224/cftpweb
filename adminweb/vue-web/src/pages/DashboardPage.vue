@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Activity, BarChart3, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users } from "lucide-vue-next"
+import { Activity, BarChart3, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
@@ -170,6 +170,11 @@ function loadUserPage(page: number) {
   void loadDashboard(page)
 }
 
+function clearUserKeyword() {
+  if (!keyword.value) return
+  keyword.value = ""
+}
+
 onMounted(loadDashboard)
 
 watch([keyword, roleFilter, statusFilter], () => {
@@ -239,20 +244,39 @@ watch([keyword, roleFilter, statusFilter], () => {
           </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.userPageText(userPage, userTotal) }}</span>
         </div>
-        <div class="mt-5 flex flex-col gap-3 rounded-2xl bg-slate-50 p-3 md:flex-row md:flex-wrap">
-          <div class="relative min-w-0 flex-1 md:min-w-[280px]">
-            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input v-model="keyword" class="h-10 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-4 text-sm outline-none focus:border-[#0b579b]" :placeholder="copy.filters.searchPlaceholder" />
-          </div>
-          <select v-model="roleFilter" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b579b] md:w-auto">
-            <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-          </select>
-          <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none focus:border-[#0b579b] md:w-auto">
-            <option value="all">{{ copy.filters.allStatus }}</option>
-            <option value="active">{{ copy.filters.active }}</option>
-            <option value="inactive">{{ copy.filters.inactive }}</option>
-            <option value="deleted">{{ copy.filters.deleted }}</option>
-          </select>
+        <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr_1fr]">
+          <label class="grid gap-2 text-sm font-bold">
+            {{ copy.table.user }}
+            <div class="relative">
+              <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input v-model="keyword" class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10" :placeholder="copy.filters.searchPlaceholder" />
+              <button
+                v-if="keyword"
+                class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                type="button"
+                :aria-label="copy.filters.clearInput"
+                :title="copy.filters.clearInput"
+                @click="clearUserKeyword"
+              >
+                <X class="h-4 w-4" />
+              </button>
+            </div>
+          </label>
+          <label class="grid gap-2 text-sm font-bold">
+            {{ copy.table.role }}
+            <select v-model="roleFilter" class="h-11 rounded-xl border border-slate-200 bg-white px-3">
+              <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+            </select>
+          </label>
+          <label class="grid gap-2 text-sm font-bold">
+            {{ copy.table.status }}
+            <select v-model="statusFilter" class="h-11 rounded-xl border border-slate-200 bg-white px-3">
+              <option value="all">{{ copy.filters.allStatus }}</option>
+              <option value="active">{{ copy.filters.active }}</option>
+              <option value="inactive">{{ copy.filters.inactive }}</option>
+              <option value="deleted">{{ copy.filters.deleted }}</option>
+            </select>
+          </label>
         </div>
       </div>
 
