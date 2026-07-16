@@ -18,6 +18,7 @@ const prerequisites = ref<JsonRecord[]>([])
 
 const adding = ref(false)
 const formRequiredEntity = ref("")
+const formRequiredResult = ref<number>(1)
 
 // Flatten all available entities from the course tree
 const availableEntities = computed(() => {
@@ -98,6 +99,18 @@ const availableEntities = computed(() => {
   return entities
 })
 
+const selectedEntityType = computed(() => {
+  const entity = availableEntities.value.find(e => e.id === formRequiredEntity.value)
+  return entity ? entity.type : 0
+})
+
+watch(formRequiredEntity, () => {
+  const entity = availableEntities.value.find(e => e.id === formRequiredEntity.value)
+  if (entity) {
+    formRequiredResult.value = entity.type === 2 ? 2 : 1
+  }
+})
+
 async function loadPrerequisites() {
   if (!props.targetEntityId) return
   
@@ -128,7 +141,7 @@ async function addPrerequisite() {
       body: JSON.stringify({
         required_entity_type: entity.type,
         required_entity_ulid: entity.id,
-        required_result: entity.result,
+        required_result: formRequiredResult.value,
         target_entity_type: props.targetEntityType,
         target_entity_ulid: props.targetEntityId
       })
@@ -206,14 +219,21 @@ onMounted(() => {
       </div>
     </div>
     
-    <form class="flex items-end gap-3 border-t border-slate-200 pt-5" @submit.prevent="addPrerequisite">
-      <label class="flex-1 space-y-2 text-sm font-bold">
+    <form class="flex flex-wrap items-end gap-3 border-t border-slate-200 pt-5" @submit.prevent="addPrerequisite">
+      <label class="flex-1 space-y-2 text-sm font-bold min-w-[200px]">
         <span>{{ copy.requireEntity || '要求完成项' }}</span>
         <select v-model="formRequiredEntity" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>
           <option value="" disabled>{{ copy.selectRequireEntity || '请选择一个课时/章节/测验' }}</option>
           <option v-for="entity in availableEntities" :key="entity.id" :value="entity.id">
             {{ entity.title }}
           </option>
+        </select>
+      </label>
+      <label v-if="selectedEntityType === 2" class="space-y-2 text-sm font-bold w-[140px]">
+        <span>要求标准</span>
+        <select v-model="formRequiredResult" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>
+          <option :value="2">{{ copy.mustPass || '必须通过' }}</option>
+          <option :value="1">{{ copy.mustComplete || '必须完成' }}</option>
         </select>
       </label>
       <button class="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" type="submit" :disabled="!formRequiredEntity || adding">
