@@ -2691,60 +2691,62 @@ onMounted(() => {
             </button>
           </div>
 
-          <form class="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 md:grid-cols-2 md:p-6" @submit.prevent="saveCourse">
-            <label class="block">
-              <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
-              <input v-model="courseForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
-            </label>
-            <label v-if="false" class="block">
-              <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
-              <input v-model="courseForm.category_tips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
-            </label>
-            <label class="block md:col-span-2">
-              <span class="text-sm font-bold">{{ copy.description }}</span>
-              <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
-            </label>
-            <details class="group md:col-span-2">
-              <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-                {{ (copy as any).advancedConfig || '高级配置' }}
-                <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
-              </summary>
-              <div class="mt-4 grid gap-3 md:grid-cols-1">
-                <label class="block">
-                  <span class="flex items-center gap-1.5 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseGpath }}</span>
-                    <span class="group/tooltip relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.courseGpathHint">
-                      <Info class="h-4 w-4" aria-hidden="true" />
-                      <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover/tooltip:opacity-100 group-focus/tooltip:opacity-100">
-                        {{ copy.courseGpathHint }}
+          <form class="flex min-h-0 flex-1 flex-col" @submit.prevent="saveCourse">
+            <div class="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 md:grid-cols-2 md:p-6">
+              <label class="block">
+                <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
+                <input v-model="courseForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
+              </label>
+              <label v-if="false" class="block">
+                <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
+                <input v-model="courseForm.category_tips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
+              </label>
+              <label class="block md:col-span-2">
+                <span class="text-sm font-bold">{{ copy.description }}</span>
+                <textarea v-model="courseForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" />
+              </label>
+              <details class="group md:col-span-2">
+                <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                  {{ (copy as any).advancedConfig || '高级配置' }}
+                  <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
+                </summary>
+                <div class="mt-4 grid gap-3 md:grid-cols-1">
+                  <label class="block">
+                    <span class="flex items-center gap-1.5 text-sm font-bold">
+                      <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseGpath }}</span>
+                      <span class="group/tooltip relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.courseGpathHint">
+                        <Info class="h-4 w-4" aria-hidden="true" />
+                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover/tooltip:opacity-100 group-focus/tooltip:opacity-100">
+                          {{ copy.courseGpathHint }}
+                        </span>
                       </span>
                     </span>
-                  </span>
-                  <input v-model="courseForm.course_gpath" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-                  <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
-                </label>
-              </div>
-            </details>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.durationMin }}</span>
-              <input v-model="courseForm.duration_min" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
-            </label>
-            <label v-if="false" class="block">
-              <span class="text-sm font-bold">{{ copy.thumbnailObjectKey }}</span>
-              <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
-            </label>
-            <label v-if="false" class="block">
-              <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
-              <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
-            </label>
-            <div class="flex flex-col gap-3 sm:flex-row md:col-span-2">
+                    <input v-model="courseForm.course_gpath" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+                    <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
+                  </label>
+                </div>
+              </details>
+              <label class="block">
+                <span class="text-sm font-bold">{{ copy.durationMin }}</span>
+                <input v-model="courseForm.duration_min" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
+              </label>
+              <label v-if="false" class="block">
+                <span class="text-sm font-bold">{{ copy.thumbnailObjectKey }}</span>
+                <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
+              </label>
+              <label v-if="false" class="block">
+                <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
+                <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
+              </label>
+            </div>
+            <div class="flex shrink-0 flex-col justify-end gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-6">
+              <button v-if="canPublishSelectedCourse" class="h-10 w-full rounded-xl border px-4 font-bold disabled:opacity-40 sm:w-auto" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
+                {{ publishing ? copy.publishing : copy.publishCourse }}
+              </button>
               <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse" type="submit">
                 <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
                 {{ savingCourse ? copy.saving : copy.saveCourse }}
-              </button>
-              <button v-if="canPublishSelectedCourse" class="h-10 w-full rounded-xl border px-4 font-bold disabled:opacity-40 sm:w-auto" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
-                {{ publishing ? copy.publishing : copy.publishCourse }}
               </button>
             </div>
           </form>
@@ -3992,7 +3994,7 @@ onMounted(() => {
                     <div class="mt-1 text-lg font-black text-slate-900">{{ copy.questionMeta(selectedQuestion ? questionTypeLabel(selectedQuestion.question_type) : questionTypeLabel(questionForm.question_type), selectedQuestion?.points || questionForm.points || 0) }}</div>
                   </div>
                 </div>
-                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
+                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-question-form" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
                   <h4 class="font-black">{{ editingQuestionId ? copy.editQuestion : copy.createQuestion }}</h4>
                   <label class="mt-3 block">
                     <span class="text-sm font-bold">{{ copy.questionStemLabel }} <span class="text-red-500">*</span></span>
@@ -4032,9 +4034,6 @@ onMounted(() => {
                       </button>
                     </div>
                   </div>
-                  <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuizId || savingQuestion" type="submit">
-                    {{ savingQuestion ? copy.saving : copy.saveQuestion }}
-                  </button>
                 </form>
               </section>
 
@@ -4065,7 +4064,7 @@ onMounted(() => {
                     <button v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="text-xs font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
                   </div>
                 </div>
-                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
+                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-option-form" class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
                   <div class="flex items-center justify-between gap-3">
                     <h4 class="font-black">{{ editingOptionId ? copy.editOption : copy.createOption }}</h4>
                     <button class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuestionId" type="button" @click="newOption">
@@ -4084,9 +4083,6 @@ onMounted(() => {
                       {{ copy.correctAnswer }}
                     </label>
                   </div>
-                  <button class="mt-3 w-full rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" :disabled="!selectedQuestionId || savingOption" type="submit">
-                    {{ savingOption ? copy.saving : copy.saveOption }}
-                  </button>
                 </form>
                 <div v-if="selectedQuestion" class="border-t border-slate-200 p-4">
                   <h4 class="font-black">{{ copy.quizReadonlyFields }}</h4>
@@ -4096,42 +4092,52 @@ onMounted(() => {
                 </div>
               </section>
             </div>
+            <div v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
+              <button class="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 px-4 font-bold text-slate-700 disabled:opacity-50 sm:w-auto" :disabled="!selectedQuestionId || savingOption" form="lms-option-form" type="submit">
+                {{ savingOption ? copy.saving : copy.saveOption }}
+              </button>
+              <button class="inline-flex h-10 w-full items-center justify-center rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="!selectedQuizId || savingQuestion" form="lms-question-form" type="submit">
+                {{ savingQuestion ? copy.saving : copy.saveQuestion }}
+              </button>
+            </div>
           </div>
         </section>
       </Teleport>
     </main>
 
     <div v-if="importOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-0 md:p-6" @click.self="importOpen = false">
-      <div class="flex h-full max-h-none w-full max-w-3xl flex-col overflow-hidden rounded-none bg-white p-4 shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl md:p-6">
-        <div class="mb-5 flex items-center justify-between gap-4">
+      <div class="flex h-full max-h-none w-full max-w-3xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+        <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
           <h2 class="min-w-0 text-xl font-black md:text-2xl">{{ copy.importTitle }}</h2>
           <button class="rounded-xl border px-3 py-2 font-bold" type="button" @click="importOpen = false">{{ copy.close }}</button>
         </div>
-        <div class="min-h-0 flex-1 overflow-y-auto">
-        <div class="grid gap-4 sm:grid-cols-2">
-          <label>
-            <span class="text-sm font-bold">{{ copy.importType }}</span>
-            <select v-model="importScope" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
-              <option value="course">{{ copy.importCourse }}</option>
-              <option value="quiz">{{ copy.importChapterQuiz }}</option>
-            </select>
+        <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label>
+              <span class="text-sm font-bold">{{ copy.importType }}</span>
+              <select v-model="importScope" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
+                <option value="course">{{ copy.importCourse }}</option>
+                <option value="quiz">{{ copy.importChapterQuiz }}</option>
+              </select>
+            </label>
+            <label>
+              <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
+              <input v-model="importCategoryTips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.importCategoryPlaceholder" />
+            </label>
+          </div>
+          <label class="mt-4 block">
+            <span class="text-sm font-bold">{{ copy.jsonFile }}</span>
+            <input class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="file" accept=".json,application/json" @change="loadImportFile" />
           </label>
-          <label>
-            <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
-            <input v-model="importCategoryTips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.importCategoryPlaceholder" />
-          </label>
+          <textarea v-model="importJson" class="mt-4 min-h-64 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm md:min-h-80" :placeholder="copy.pasteJsonPlaceholder" />
         </div>
-        <label class="mt-4 block">
-          <span class="text-sm font-bold">{{ copy.jsonFile }}</span>
-          <input class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="file" accept=".json,application/json" @change="loadImportFile" />
-        </label>
-        <textarea v-model="importJson" class="mt-4 min-h-64 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm md:min-h-80" :placeholder="copy.pasteJsonPlaceholder" />
+        <div class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-6">
+          <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="importing" type="button" @click="importLmsJson">
+            <Loader2 v-if="importing" class="h-4 w-4 animate-spin" />
+            <UploadCloud v-else class="h-4 w-4" />
+            {{ importing ? copy.importing : copy.startImport }}
+          </button>
         </div>
-        <button class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="importing" type="button" @click="importLmsJson">
-          <Loader2 v-if="importing" class="h-4 w-4 animate-spin" />
-          <UploadCloud v-else class="h-4 w-4" />
-          {{ importing ? copy.importing : copy.startImport }}
-        </button>
       </div>
     </div>
   </div>
