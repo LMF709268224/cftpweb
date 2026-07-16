@@ -127,10 +127,10 @@ async function addPrerequisite() {
       method: "POST",
       body: JSON.stringify({
         required_entity_type: entity.type,
-        required_entity_id: entity.id,
+        required_entity_ulid: entity.id,
         required_result: entity.result,
         target_entity_type: props.targetEntityType,
-        target_entity_id: props.targetEntityId
+        target_entity_ulid: props.targetEntityId
       })
     })
     toast.success(props.copy.addSuccess || 'Added successfully')
@@ -148,7 +148,8 @@ async function deletePrerequisite(prerequisite: JsonRecord) {
   if (!confirm(props.copy.deleteConfirm || 'Are you sure?')) return
   
   try {
-    await apiClient(`/api/lms/prerequisites/${prerequisite.prerequisite_id}`, { method: "DELETE" })
+    const pId = prerequisite.prerequisite_id || prerequisite.prerequisite_ulid
+    await apiClient(`/api/lms/prerequisites/${pId}`, { method: "DELETE" })
     toast.success(props.copy.deleteSuccess || 'Deleted successfully')
     await loadPrerequisites()
   } catch (err) {
@@ -190,9 +191,9 @@ onMounted(() => {
         {{ copy.noPrerequisites || '尚未添加前置条件' }}
       </div>
       <div v-else class="space-y-3">
-        <div v-for="item in prerequisites" :key="String(item.prerequisite_id)" class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div v-for="item in prerequisites" :key="String(item.prerequisite_id || item.prerequisite_ulid)" class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
           <div>
-            <div class="font-bold text-slate-700">{{ entityName(String(item.required_entity_id)) }}</div>
+            <div class="font-bold text-slate-700">{{ entityName(String(item.required_entity_id || item.required_entity_ulid)) }}</div>
             <div class="mt-0.5 text-xs text-slate-500">
               {{ item.required_result === 2 || item.required_result === 'PREREQUISITE_RESULT_PASSED' ? (copy.mustPass || '必须通过') : (copy.mustComplete || '必须完成') }}
             </div>
