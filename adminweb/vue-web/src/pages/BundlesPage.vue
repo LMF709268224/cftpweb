@@ -1635,12 +1635,6 @@ onMounted(load)
                     </div>
                   </details>
                 </section>
-                <div class="flex justify-stretch sm:justify-end">
-                  <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="savePricing">
-                    <Send class="h-4 w-4" />
-                    {{ copy.savePricing }}
-                  </button>
-                </div>
               </div>
 
               <div v-else-if="activeTab === 'actions'" class="space-y-5">
@@ -1671,6 +1665,12 @@ onMounted(load)
               </div>
 
             </main>
+          </div>
+          <div v-if="activeTab === 'pricing'" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
+            <button class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="savePricing">
+              <Send class="h-4 w-4" />
+              {{ copy.savePricing }}
+            </button>
           </div>
         </template>
         </section>

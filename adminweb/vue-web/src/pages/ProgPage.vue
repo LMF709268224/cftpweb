@@ -657,7 +657,7 @@ function searchPipelines() {
 }
 
 function clearCandidateFilter() {
-  const shouldSearch = Boolean(appliedCandidateFilter.value)
+  const shouldSearch = Boolean(candidateFilter.value.trim() || appliedCandidateFilter.value)
   candidateFilter.value = ""
   if (shouldSearch) searchPipelines()
 }
