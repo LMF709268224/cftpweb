@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 
 	gcredspb "github.com/afnandelfin620-star/cftptest/cftp/gcreds"
+	gmailpb "github.com/afnandelfin620-star/cftptest/cftp/gmail"
 )
 
 // GetSystemRedDots 聚合全站侧边栏红点数据
@@ -49,6 +50,29 @@ func (h *Handler) GetSystemRedDots(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: 等待微服务团队在 cftp/gmsg 的 MessageStatus 补充 FAILED 状态，目前只有 READ/UNREAD 等
 	// atomic.AddUint32(&rsp.Messages, 0)
+
+	// Mails (gmail) - 支持 FAILED 过滤
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		failedStatus := "FAILED"
+		countResult, err := countCursorAll(ctx, func(ctx context.Context, cursor string, limit uint32) (uint32, string, error) {
+			res, err := h.Gmail.GetMailCount(ctx, &gmailpb.GetMailCountRequest{
+				Filters: &gmailpb.MailFilters{
+					Status: &failedStatus,
+				},
+				Limit:  limit,
+				Cursor: cursor,
+			})
+			if err != nil {
+				return 0, "", err
+			}
+			return res.GetCount(), res.GetNextCursor(), nil
+		})
+		if err == nil {
+			atomic.AddUint32(&rsp.Messages, countResult.Total)
+		}
+	}()
 
 	wg.Wait()
 
