@@ -36,7 +36,7 @@ const emptyStructure = () => ({
 const emptyForm: PipelineForm = {
   name: "",
   pipeline_gpath: "",
-  category_tips: "",
+  category_tips: "default",
   structure_json: JSON.stringify(emptyStructure(), null, 2),
 }
 
@@ -1074,13 +1074,9 @@ onMounted(() => {
           </div>
         </div>
         <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm font-bold">
+          <label class="grid gap-2 text-sm font-bold md:col-span-2">
             <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
             <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" />
-          </label>
-          <label class="grid gap-2 text-sm font-bold">
-            <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.categoryTips }}</span>
-            <input v-model="form.category_tips" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
           </label>
           <details class="group md:col-span-2">
             <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
@@ -1088,6 +1084,10 @@ onMounted(() => {
               <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
             </summary>
             <div class="mt-4 grid gap-4 md:grid-cols-2">
+              <label class="grid gap-2 text-sm font-bold">
+                <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.categoryTips }}</span>
+                <input v-model="form.category_tips" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
+              </label>
               <label class="grid gap-2 text-sm font-bold">
                 <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.respath }}</span>
                 <input v-model="form.pipeline_gpath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
