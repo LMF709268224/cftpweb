@@ -1412,6 +1412,18 @@ onMounted(load)
                   <div class="text-xs font-black uppercase text-slate-400">{{ copy.summary.description }}</div>
                   <p class="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">{{ form.description || "-" }}</p>
                 </div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div class="mb-3 text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.linkedItems }}</div>
+                  <div v-if="linkedItemsPreview.length" class="grid gap-2 md:grid-cols-2">
+                    <div v-for="item in linkedItemsPreview" :key="`${item.type}-${item.ref}`" class="rounded-xl bg-slate-50 p-3 text-sm">
+                        <div class="font-bold text-slate-600">{{ copy.pricingPreview.itemType }}: {{ linkedItemTypeLabel(item.type) }}</div>
+                      <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ copy.pricingPreview.itemRef }}: {{ item.ref }}</div>
+                    </div>
+                  </div>
+                  <div v-else class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+                    {{ copy.pricingPreview.emptyJson }}
+                  </div>
+                </div>
                 <div class="grid gap-4 md:grid-cols-2">
                   <div v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
                     <span class="text-xs font-black uppercase text-slate-400">{{ field.label }}</span>
