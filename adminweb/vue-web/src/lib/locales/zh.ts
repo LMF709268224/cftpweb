@@ -3111,6 +3111,8 @@ export const zh = {
         editQuestion: "编辑题目",
         createQuestion: "创建题目",
         questionStemLabel: "题干",
+        explanationLabel: "解答说明",
+        explanationPlaceholder: "输入解答说明（最多 1024 字符）...",
         questionTextPlaceholder: "题干",
         pointsPlaceholder: "分值",
         required: "必答",

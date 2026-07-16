@@ -3113,6 +3113,8 @@ export const en: AdminTranslations = {
         editQuestion: "Edit Question",
         createQuestion: "Create Question",
         questionStemLabel: "Question Stem",
+        explanationLabel: "Explanation",
+        explanationPlaceholder: "Enter explanation (max 1024 characters)...",
         questionTextPlaceholder: "Question text",
         pointsPlaceholder: "Points",
         required: "Required",
