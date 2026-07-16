@@ -55,9 +55,8 @@ function getDotCount(path: string): number {
 
 async function fetchRedDots() {
   try {
-    const res = await apiClient("/api/system/reddots") as Response
-    const data = await res.json()
-    redDots.value = data
+    const res = await apiClient<any>("/api/system/reddots")
+    redDots.value = res?.data || {}
   } catch (err) {
     console.error("Failed to fetch red dots", err)
   }
