@@ -902,24 +902,12 @@ async function clonePipeline() {
   if (!selected.value) return
   const id = selectedId.value
   if (!id) return
-  if (!form.value.pipeline_gpath.trim()) {
-    toast.error(copy.value.toasts.respathRequired)
-    return
-  }
-  if (!form.value.name.trim() || !form.value.category_tips.trim()) {
-    toast.error(copy.value.toasts.requiredCreateFields)
-    return
-  }
   saving.value = true
   try {
-    const data = await apiClient<JsonRecord>("/api/pipelines", {
+    const data = await apiClient<JsonRecord>(`/api/pipelines/${id}/duplicate`, {
       method: "POST",
       body: JSON.stringify({
-        name: copy.value.copyName(form.value.name.trim()),
-        category_tips: form.value.category_tips.trim(),
-        pipeline_gpath: form.value.pipeline_gpath.trim(),
-        from_pipeline_guid: selected.value.pipeline_guid,
-        from_pipeline_id: id,
+        name: copy.value.copyName(form.value.name.trim() || selectedTitle.value),
       }),
     })
     toast.success(copy.value.toasts.cloned)

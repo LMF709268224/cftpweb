@@ -55,6 +55,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 			r.Get("/", h.ListPipelines)
 			r.Get("/{pipeline_id}", h.GetPipeline)
 			r.Post("/", h.CreatePipelineDraft)
+			r.Post("/{pipeline_id}/duplicate", h.DuplicatePipelineDraft)
 			r.Put("/{pipeline_id}/structure", h.UpdatePipelineStructure)
 			r.Put("/{pipeline_id}/metadata", h.UpdatePipelineMetadata)
 			r.Post("/{pipeline_id}/publish", h.PublishPipeline)
