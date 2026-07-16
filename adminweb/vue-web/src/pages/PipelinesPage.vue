@@ -11,8 +11,8 @@ import { badgeClass, pickFirst } from "@/lib/status"
 
 type PipelineForm = {
   name: string
+  pipeline_gpath: string
   category_tips: string
-  respath: string
   structure_json: string
 }
 
@@ -35,8 +35,9 @@ const emptyStructure = () => ({
 
 const emptyForm: PipelineForm = {
   name: "",
-  category_tips: "default",
-  respath: "",
+  pipeline_gpath: "",
+  category_tips: "",
+  thumbnail_object_key: "",
   structure_json: JSON.stringify(emptyStructure(), null, 2),
 }
 
@@ -333,7 +334,8 @@ function formFromPipeline(pipeline: JsonRecord | null): PipelineForm {
   return {
     name: String(pipeline.name || ""),
     category_tips: String(pipeline.category_tips || ""),
-    respath: String(pipeline.respath || pipeline.pipeline_gpath || ""),
+    pipeline_gpath: String(pipeline.pipeline_gpath || ""),
+    thumbnail_object_key: String(pipeline.thumbnail_object_key || ""),
     structure_json: JSON.stringify(structureFromPipeline(pipeline), null, 2),
   }
 }
@@ -724,8 +726,8 @@ function back() {
 }
 
 async function createPipeline() {
-  if (!form.value.name.trim() || !form.value.category_tips.trim() || !form.value.respath.trim()) {
-    toast.error(copy.value.toasts.requiredCreateFields)
+  if (!form.value.name.trim() || !form.value.category_tips.trim() || !form.value.pipeline_gpath.trim()) {
+    toast.error(copy.value.toasts.fillRequired)
     return
   }
   saving.value = true
@@ -735,8 +737,8 @@ async function createPipeline() {
       body: JSON.stringify({
         name: form.value.name.trim(),
         category_tips: form.value.category_tips.trim(),
-        respath: form.value.respath.trim(),
-        pipeline_gpath: form.value.respath.trim(),
+        pipeline_gpath: form.value.pipeline_gpath.trim(),
+        thumbnail_object_key: form.value.thumbnail_object_key,
       }),
     })
     toast.success(copy.value.toasts.created)
@@ -900,7 +902,7 @@ async function clonePipeline() {
   if (!selected.value) return
   const id = selectedId.value
   if (!id) return
-  if (!form.value.respath.trim()) {
+  if (!form.value.pipeline_gpath.trim()) {
     toast.error(copy.value.toasts.respathRequired)
     return
   }
@@ -911,8 +913,7 @@ async function clonePipeline() {
       body: JSON.stringify({
         name: copy.value.copyName(form.value.name.trim()),
         category_tips: form.value.category_tips.trim(),
-        respath: form.value.respath.trim(),
-        pipeline_gpath: form.value.respath.trim(),
+        pipeline_gpath: form.value.pipeline_gpath.trim(),
         from_pipeline_guid: selected.value.pipeline_guid,
         from_pipeline_id: id,
       }),
@@ -935,8 +936,8 @@ watch([categoryFilter, onlyCurrent], () => { pageToken.value = ""; load() })
 watch(() => form.value.name, (newName, oldName) => {
   if (!creating.value) return
   const autoOld = oldName ? `/gcc/pipeline/${oldName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}` : ""
-  if (!form.value.respath || form.value.respath === autoOld) {
-    form.value.respath = newName ? `/gcc/pipeline/${newName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}` : ""
+  if (!form.value.pipeline_gpath || form.value.pipeline_gpath === autoOld) {
+    form.value.pipeline_gpath = newName ? `/gcc/pipeline/${newName.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}` : ""
   }
 })
 
@@ -1085,7 +1086,7 @@ onMounted(() => {
             <div class="mt-4 grid gap-4 md:grid-cols-2">
               <label class="grid gap-2 text-sm font-bold">
                 <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.respath }}</span>
-                <input v-model="form.respath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
+                <input v-model="form.pipeline_gpath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
                 <p v-if="creating" class="text-xs font-semibold text-slate-500">{{ copy.respathHint }}</p>
               </label>
             </div>

@@ -19,7 +19,6 @@ type CourseForm = {
   duration_min: string
   certification_enabled: boolean
   certification_def_id: string
-  respath: string
   course_gpath: string
 }
 
@@ -65,6 +64,7 @@ type QuestionForm = {
   points: string
   sort_order: string
   is_required: boolean
+  explanation: string
   media_items_json: string
 }
 
@@ -392,7 +392,6 @@ function emptyCourseForm(): CourseForm {
     duration_min: "0",
     certification_enabled: false,
     certification_def_id: "",
-    respath: "",
     course_gpath: "",
   }
 }
@@ -462,6 +461,7 @@ function emptyQuestionForm(): QuestionForm {
     points: "10",
     sort_order: "1",
     is_required: true,
+    explanation: "",
     media_items_json: "[]",
   }
 }
@@ -989,7 +989,6 @@ function courseFormFrom(course: JsonRecord): CourseForm {
     duration_min: String(course.duration_min || 0),
     certification_enabled: Boolean(course.certification_enabled),
     certification_def_id: String(course.certification_def_ulid || ""),
-    respath: String(course.respath || course.course_gpath || ""),
     course_gpath: String(course.course_gpath || ""),
   }
 }
@@ -1004,7 +1003,6 @@ function coursePayload(version?: unknown) {
     duration_min: Number(courseForm.value.duration_min || 0),
     certification_enabled: courseForm.value.certification_enabled,
     certification_def_id: courseForm.value.certification_def_id.trim(),
-    respath: courseForm.value.respath.trim(),
     course_gpath: courseForm.value.course_gpath.trim(),
   }
   if (version !== undefined) payload.version = Number(version || 0)
@@ -1182,12 +1180,8 @@ async function saveCourse() {
     toast.error(copy.value.toasts.courseTitleRequired)
     return
   }
-  if (!courseForm.value.respath.trim()) {
-    toast.error(copy.value.toasts.respathRequired)
-    return
-  }
   if (!courseForm.value.course_gpath.trim()) {
-    toast.error(copy.value.toasts.courseGpathRequired)
+    toast.error(copy.value.toasts.respathRequired)
     return
   }
 
@@ -2316,6 +2310,7 @@ function editQuestion(question: JsonRecord) {
     points: String(question.points || 10),
     sort_order: String(question.sort_order || 1),
     is_required: question.is_required !== false,
+    explanation: String(question.explanation || ""),
     media_items_json: String(question.media_items_json || "[]"),
   }
   void loadOptions()
@@ -2399,6 +2394,7 @@ async function saveQuestion() {
       points: Number(questionForm.value.points || 0),
       sort_order: Number(questionForm.value.sort_order || 1),
       is_required: questionForm.value.is_required,
+      explanation: questionForm.value.explanation.trim(),
       media_items_json: mediaJson,
     }
     if (editingQuestionId.value) {
@@ -2637,9 +2633,6 @@ watch(() => courseForm.value.title, (newTitle, oldTitle) => {
   const newPath = generatePath(newTitle)
   const oldPath = generatePath(oldTitle)
   
-  if (!courseForm.value.respath || courseForm.value.respath === oldPath) {
-    courseForm.value.respath = newPath
-  }
   if (!courseForm.value.course_gpath || courseForm.value.course_gpath === oldPath) {
     courseForm.value.course_gpath = newPath
   }
@@ -2707,19 +2700,7 @@ onMounted(() => {
                 {{ (copy as any).advancedConfig || '高级配置' }}
                 <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
               </summary>
-              <div class="mt-4 grid gap-3 md:grid-cols-2">
-                <label class="block">
-                  <span class="flex items-center gap-1.5 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.respath }}</span>
-                    <span class="group/tooltip relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
-                      <Info class="h-4 w-4" aria-hidden="true" />
-                      <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover/tooltip:opacity-100 group-focus/tooltip:opacity-100">
-                        {{ copy.respathHint }}
-                      </span>
-                    </span>
-                  </span>
-                  <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-                </label>
+              <div class="mt-4 grid gap-3 md:grid-cols-1">
                 <label class="block">
                   <span class="flex items-center gap-1.5 text-sm font-bold">
                     <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseGpath }}</span>
@@ -2930,19 +2911,7 @@ onMounted(() => {
                 {{ (copy as any).advancedConfig || '高级配置' }}
                 <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
               </summary>
-              <div class="mt-4 grid gap-3 lg:grid-cols-2">
-                <label class="block">
-                  <span class="flex items-center gap-1.5 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.respath }}</span>
-                    <span class="group/tooltip relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
-                      <Info class="h-4 w-4" aria-hidden="true" />
-                      <span role="tooltip" class="pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover/tooltip:opacity-100 group-focus/tooltip:opacity-100">
-                        {{ copy.respathHint }}
-                      </span>
-                    </span>
-                  </span>
-                  <input v-model="courseForm.respath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
-                </label>
+              <div class="mt-4 grid gap-3 lg:grid-cols-1">
                 <label class="block">
                   <span class="flex items-center gap-1.5 text-sm font-bold">
                     <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseGpath }}</span>
@@ -3105,7 +3074,7 @@ onMounted(() => {
               </form>
               </div>
               <div v-if="chapterActiveTab === 'prerequisites' && chapterDialogMode !== 'create'" class="mt-2">
-                <LmsPrerequisitesTab :targetEntityType="3" :targetEntityId="selectedChapterId" :course="completeCourse" :copy="copy" />
+                <LmsPrerequisitesTab :targetEntityType="3" :targetEntityId="selectedChapterId" :course="completeCourseRecord" :copy="copy" />
               </div>
             </div>
 
@@ -3301,7 +3270,7 @@ onMounted(() => {
               </form>
               </div>
               <div v-if="lessonActiveTab === 'prerequisites' && lessonDialogMode !== 'create'" class="mt-2">
-                <LmsPrerequisitesTab :targetEntityType="1" :targetEntityId="editingLessonId" :course="completeCourse" :copy="copy" />
+                <LmsPrerequisitesTab :targetEntityType="1" :targetEntityId="editingLessonId" :course="completeCourseRecord" :copy="copy" />
               </div>
             </div>
 
@@ -3973,7 +3942,7 @@ onMounted(() => {
               </section>
               </div>
               <div v-if="quizActiveTab === 'prerequisites' && quizDialogMode !== 'create'" class="mt-2">
-                <LmsPrerequisitesTab :targetEntityType="2" :targetEntityId="selectedQuizId" :course="completeCourse" :copy="copy" />
+                <LmsPrerequisitesTab :targetEntityType="2" :targetEntityId="selectedQuizId" :course="completeCourseRecord" :copy="copy" />
               </div>
             </div>
 
@@ -4019,6 +3988,10 @@ onMounted(() => {
                   <label class="mt-3 block">
                     <span class="text-sm font-bold">{{ copy.questionStemLabel }} <span class="text-red-500">*</span></span>
                     <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.questionTextPlaceholder" />
+                  </label>
+                  <label class="mt-3 block">
+                    <span class="text-sm font-bold">{{ copy.explanationLabel || '解答说明' }}</span>
+                    <textarea v-model="questionForm.explanation" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.explanationPlaceholder || '输入解答说明（最多 1024 字符）...'" maxlength="1024" />
                   </label>
                   <div class="mt-3 grid gap-3 sm:grid-cols-3">
                     <select v-model="questionForm.question_type" class="w-full rounded-xl border border-slate-200 px-4 py-3" :title="copy.questionTypePoints">
