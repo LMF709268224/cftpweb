@@ -907,7 +907,7 @@ async function clonePipeline() {
     const data = await apiClient<JsonRecord>(`/api/pipelines/${id}/duplicate`, {
       method: "POST",
       body: JSON.stringify({
-        name: copy.value.copyName(form.value.name.trim() || selectedTitle.value),
+        name: copy.value.copyName(form.value.name.trim() || String(selected.value.name || '')),
       }),
     })
     toast.success(copy.value.toasts.cloned)
