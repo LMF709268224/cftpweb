@@ -110,6 +110,17 @@ function fileUrl(file: JsonRecord) {
   return String(pickFirst(file, ["view_url", "download_url", "url"]) || "")
 }
 
+function previewUrl(file: JsonRecord) {
+  const url = fileUrl(file)
+  if (!url) return ""
+  
+  const ext = String(file.file_ext || "").toLowerCase()
+  if ([".xlsx", ".xls", ".docx", ".doc", ".pptx", ".ppt"].includes(ext)) {
+    return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(url)}`
+  }
+  return url
+}
+
 function fileUsage(file: JsonRecord) {
   return String(pickFirst(file, ["file_usage", "usage"]) || copy.value.defaults.usage)
 }
@@ -297,6 +308,35 @@ function resetCursorPagination() {
   hasMore.value = false
 }
 
+const downloadingFile = ref<string | null>(null)
+
+async function handleDownload(file: JsonRecord) {
+  const url = fileUrl(file)
+  if (!url) return
+  const name = fileName(file)
+  const hash = String(file.file_hash || file.file_name || file.name)
+  
+  downloadingFile.value = hash
+  try {
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const blob = await res.blob()
+    const blobUrl = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = blobUrl
+    a.download = name
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+  } catch (err) {
+    console.error("Fetch download failed (likely CORS or network error), falling back to window.open:", err)
+    window.open(url, "_blank")
+  } finally {
+    downloadingFile.value = null
+  }
+}
+
 watch(statusFilter, () => {
   resetCursorPagination()
   void load(1)
@@ -466,24 +506,26 @@ onMounted(() => load(1))
                     </div>
                     <div class="flex shrink-0 flex-wrap gap-2 sm:justify-end">
                       <a
-                        v-if="fileUrl(file)"
+                        v-if="previewUrl(file)"
                         class="inline-flex h-9 w-full items-center justify-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-black text-blue-700 hover:bg-blue-100 sm:w-auto"
-                        :href="fileUrl(file)"
+                        :href="previewUrl(file)"
                         target="_blank"
                         rel="noopener noreferrer"
                       >
                         <Eye class="h-4 w-4" />
                         {{ copy.preview }}
                       </a>
-                      <a
+                      <button
                         v-if="fileUrl(file)"
-                        class="inline-flex h-9 w-full items-center justify-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700 hover:bg-slate-50 sm:w-auto"
-                        :href="fileUrl(file)"
-                        :download="fileName(file)"
+                        class="inline-flex h-9 w-full items-center justify-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700 hover:bg-slate-50 sm:w-auto disabled:opacity-50"
+                        type="button"
+                        :disabled="downloadingFile === String(file.file_hash || file.file_name || file.name)"
+                        @click="handleDownload(file)"
                       >
-                        <Download class="h-4 w-4" />
+                        <Loader2 v-if="downloadingFile === String(file.file_hash || file.file_name || file.name)" class="h-4 w-4 animate-spin" />
+                        <Download v-else class="h-4 w-4" />
                         {{ copy.download }}
-                      </a>
+                      </button>
                       <span v-else class="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-black text-amber-700 sm:w-auto">{{ copy.missingLink }}</span>
                     </div>
                   </div>
