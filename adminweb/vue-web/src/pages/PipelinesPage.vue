@@ -37,7 +37,6 @@ const emptyForm: PipelineForm = {
   name: "",
   pipeline_gpath: "",
   category_tips: "",
-  thumbnail_object_key: "",
   structure_json: JSON.stringify(emptyStructure(), null, 2),
 }
 
@@ -335,7 +334,6 @@ function formFromPipeline(pipeline: JsonRecord | null): PipelineForm {
     name: String(pipeline.name || ""),
     category_tips: String(pipeline.category_tips || ""),
     pipeline_gpath: String(pipeline.pipeline_gpath || ""),
-    thumbnail_object_key: String(pipeline.thumbnail_object_key || ""),
     structure_json: JSON.stringify(structureFromPipeline(pipeline), null, 2),
   }
 }
@@ -727,7 +725,7 @@ function back() {
 
 async function createPipeline() {
   if (!form.value.name.trim() || !form.value.category_tips.trim() || !form.value.pipeline_gpath.trim()) {
-    toast.error(copy.value.toasts.fillRequired)
+    toast.error(copy.value.toasts.requiredCreateFields)
     return
   }
   saving.value = true
@@ -738,7 +736,6 @@ async function createPipeline() {
         name: form.value.name.trim(),
         category_tips: form.value.category_tips.trim(),
         pipeline_gpath: form.value.pipeline_gpath.trim(),
-        thumbnail_object_key: form.value.thumbnail_object_key,
       }),
     })
     toast.success(copy.value.toasts.created)
@@ -904,6 +901,10 @@ async function clonePipeline() {
   if (!id) return
   if (!form.value.pipeline_gpath.trim()) {
     toast.error(copy.value.toasts.respathRequired)
+    return
+  }
+  if (!form.value.name.trim() || !form.value.category_tips.trim()) {
+    toast.error(copy.value.toasts.requiredCreateFields)
     return
   }
   saving.value = true
