@@ -2694,11 +2694,11 @@ onMounted(() => {
           <form class="grid min-h-0 flex-1 gap-4 overflow-y-auto p-4 md:grid-cols-2 md:p-6" @submit.prevent="saveCourse">
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
-              <input v-model="courseForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+              <input v-model="courseForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
-              <input v-model="courseForm.category_tips" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+              <input v-model="courseForm.category_tips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="block md:col-span-2">
               <span class="text-sm font-bold">{{ copy.description }}</span>
@@ -2720,22 +2720,22 @@ onMounted(() => {
                       </span>
                     </span>
                   </span>
-                  <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+                  <input v-model="courseForm.course_gpath" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
                   <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
                 </label>
               </div>
             </details>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>
-              <input v-model="courseForm.duration_min" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
+              <input v-model="courseForm.duration_min" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
             </label>
             <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.thumbnailObjectKey }}</span>
-              <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+              <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
-              <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+              <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <div class="flex flex-col gap-3 sm:flex-row md:col-span-2">
               <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse" type="submit">
@@ -2808,7 +2808,7 @@ onMounted(() => {
     <section v-if="courseView === 'list'" class="rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
       <div class="grid gap-3 border-b border-slate-200 bg-slate-50/60 p-4 lg:grid-cols-[1fr_auto]">
         <div class="relative min-w-0">
-          <input v-model="categoryFilter" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-4 pr-10 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" :placeholder="copy.categoryPlaceholder" />
+          <input v-model="categoryFilter" class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 pr-10 text-sm shadow-sm outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100" :placeholder="copy.categoryPlaceholder" />
           <button
             v-if="categoryFilter"
             type="button"
@@ -2905,11 +2905,11 @@ onMounted(() => {
           <form class="grid gap-3 lg:grid-cols-2" @submit.prevent="saveCourse">
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.courseTitle }}</span>
-              <input v-model="courseForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+              <input v-model="courseForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
-              <input v-model="courseForm.category_tips" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+              <input v-model="courseForm.category_tips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label class="block lg:col-span-2">
               <span class="text-sm font-bold">{{ copy.description }}</span>
@@ -2931,22 +2931,22 @@ onMounted(() => {
                       </span>
                     </span>
                   </span>
-                  <input v-model="courseForm.course_gpath" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
+                  <input v-model="courseForm.course_gpath" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="/gcc/pipeline/..." />
                   <p v-if="duplicateGpathWarning" class="mt-2 text-xs font-semibold text-red-500">{{ copy.duplicateGpathWarning }}</p>
                 </label>
               </div>
             </details>
             <label class="block">
               <span class="text-sm font-bold">{{ copy.durationMin }}</span>
-              <input v-model="courseForm.duration_min" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
+              <input v-model="courseForm.duration_min" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
             </label>
             <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.thumbnailObjectKey }}</span>
-              <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+              <input v-model="courseForm.thumbnail_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <label v-if="false" class="block">
               <span class="text-sm font-bold">{{ copy.thumbnailFileHash }}</span>
-              <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" />
+              <input v-model="courseForm.thumbnail_file_hash" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" />
             </label>
             <div class="flex flex-col gap-3 sm:flex-row lg:col-span-2">
               <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="savingCourse" type="submit">
@@ -3074,11 +3074,11 @@ onMounted(() => {
               <form v-else class="space-y-4" @submit.prevent="saveChapter">
                 <label class="grid gap-2 text-sm font-bold">
                   <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.chapterTitlePlaceholder }}</span>
-                  <input v-model="chapterForm.title" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.chapterTitlePlaceholder" />
+                  <input v-model="chapterForm.title" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.chapterTitlePlaceholder" />
                 </label>
                 <label class="grid gap-2 text-sm font-bold">
                   {{ copy.sort }}
-                  <input v-model="chapterForm.sort_order" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" min="1" />
+                  <input v-model="chapterForm.sort_order" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.sort" type="number" min="1" />
                 </label>
               </form>
               </div>
@@ -3220,7 +3220,7 @@ onMounted(() => {
                 </div>
                 <label class="block">
                   <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.ownerChapter }}</span>
-                  <select v-model="lessonForm.chapter_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                  <select v-model="lessonForm.chapter_id" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
                     <option value="">{{ copy.selectChapter }}</option>
                     <option v-for="chapter in chapters" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
                   </select>
@@ -3228,17 +3228,17 @@ onMounted(() => {
                 </label>
                 <label class="block">
                   <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.lessonTitlePlaceholder }}</span>
-                  <input v-model="lessonForm.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.lessonTitlePlaceholder" />
+                  <input v-model="lessonForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.lessonTitlePlaceholder" />
                 </label>
                 <div class="grid items-start gap-3 sm:grid-cols-2">
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.sort }}</span>
-                    <input v-model="lessonForm.sort_order" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="1" type="number" min="1" />
+                    <input v-model="lessonForm.sort_order" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
                     <span class="mt-1 block text-xs text-slate-500">{{ copy.sortOrderHint }}</span>
                   </label>
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.lessonColumns.type }}</span>
-                    <select v-model="lessonForm.lesson_type" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                    <select v-model="lessonForm.lesson_type" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
                       <option value="1">{{ copy.lessonTypes.video }}</option>
                       <option value="2">{{ copy.lessonTypes.text }}</option>
                       <option value="3">{{ copy.lessonTypes.pdf }}</option>
@@ -3254,18 +3254,18 @@ onMounted(() => {
                   <span class="text-sm font-bold">
                     <span v-if="lessonForm.lesson_type === '2'" class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.lessonFieldLabels.body }}
                   </span>
-                  <textarea v-model="lessonForm.body" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.lessonBodyPlaceholder" />
+                  <textarea v-model="lessonForm.body" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.lessonBodyPlaceholder" />
                 </label>
                 <template v-if="lessonForm.lesson_type === '7'">
                   <label class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).externalUrl }}</span>
-                    <input v-model="lessonForm.asset_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="https://" />
+                    <input v-model="lessonForm.asset_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="https://" />
                   </label>
                 </template>
                 <template v-else-if="lessonForm.lesson_type !== '2'">
                   <label class="block">
                     <span class="text-sm font-bold">{{ (copy as any).assetObjectKeyLabel }}</span>
-                    <input v-model="lessonForm.asset_object_key" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetObjectKeyPlaceholder" />
+                    <input v-model="lessonForm.asset_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
                     <span v-if="!editingLessonId" class="mt-2 block text-xs font-semibold text-amber-600">
                       {{ (copy as any).uploadAfterSaveHint }}
                     </span>
@@ -3273,7 +3273,7 @@ onMounted(() => {
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.assetFileHash }}</span>
                     <span class="ml-2 cursor-help rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-500" :title="copy.assetHashHint">?</span>
-                    <input v-model="lessonForm.asset_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.assetFileHashPlaceholder" />
+                    <input v-model="lessonForm.asset_file_hash" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetFileHashPlaceholder" />
                   </label>
                 </template>
               </form>
@@ -3446,7 +3446,7 @@ onMounted(() => {
                   <div class="grid gap-3">
                     <label class="block">
                       <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
-                      <select v-model="supplementaryItemForm.chapter" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
+                      <select v-model="supplementaryItemForm.chapter" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
                         <option value="">{{ copy.globalSupplementaryOption }}</option>
                         <option v-for="ch in chapters" :key="chapterId(ch)" :value="chapterTitle(ch)">
                           {{ chapterTitle(ch) }}
@@ -3456,7 +3456,7 @@ onMounted(() => {
                     <div class="grid gap-3 sm:grid-cols-2">
                       <label class="block">
                         <span class="text-sm font-bold">{{ copy.materialType }}</span>
-                        <select v-model="supplementaryItemForm.type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
+                        <select v-model="supplementaryItemForm.type" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
                           <option value="Article">{{ copy.supplementaryTypes.article }}</option>
                           <option value="Video">{{ copy.supplementaryTypes.video }}</option>
                           <option value="PDF">{{ copy.supplementaryTypes.pdf }}</option>
@@ -3466,12 +3466,12 @@ onMounted(() => {
                       </label>
                       <label class="block">
                         <span class="text-sm font-bold">{{ copy.durationNote }}</span>
-                        <input v-model="supplementaryItemForm.duration" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.durationPlaceholder" />
+                        <input v-model="supplementaryItemForm.duration" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.durationPlaceholder" />
                       </label>
                     </div>
                     <label class="block">
                       <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.titleField }}</span>
-                      <input v-model="supplementaryItemForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
+                      <input v-model="supplementaryItemForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
                     </label>
                     <label class="block">
                       <span class="text-sm font-bold">{{ copy.description }}</span>
@@ -3480,13 +3480,13 @@ onMounted(() => {
                     <template v-if="isSupplementaryLinkType()">
                       <label class="block">
                         <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).externalUrl }}</span>
-                        <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
+                        <input v-model="supplementaryItemForm.url" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
                       </label>
                     </template>
                     <template v-else>
                       <label class="block">
                         <span class="text-sm font-bold"><span v-if="isSupplementaryAssetRequired()" class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).assetObjectKeyLabel }}</span>
-                        <input v-model="supplementaryItemForm.url" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
+                        <input v-model="supplementaryItemForm.url" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
                         <span v-if="editingSupplementaryItemIndex < 0" class="mt-2 block text-xs font-semibold text-amber-600">
                           {{ (copy as any).uploadAfterSaveHintSupplementary }}
                         </span>
@@ -3523,12 +3523,12 @@ onMounted(() => {
               <div class="mt-4 grid gap-3">
                 <label class="block">
                   <span class="text-sm font-bold">{{ copy.kind }}</span>
-                  <input v-model="supplementaryMaterialForm.kind" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" placeholder="supplementary_materials" />
+                  <input v-model="supplementaryMaterialForm.kind" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="supplementary_materials" />
                   <span class="mt-1 block text-xs text-slate-500">{{ copy.kindHint }}</span>
                 </label>
                 <label class="block">
                   <span class="text-sm font-bold">{{ copy.dataJson }}</span>
-                  <textarea v-model="supplementaryMaterialForm.data_json" class="mt-2 min-h-64 w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-5" :placeholder="copy.supplementaryJsonPlaceholder" />
+                  <textarea v-model="supplementaryMaterialForm.data_json" class="mt-2 min-h-64 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-xs leading-5" :placeholder="copy.supplementaryJsonPlaceholder" />
                   <span class="mt-1 block text-xs text-slate-500">{{ copy.supplementaryAdvancedHint }}</span>
                 </label>
                 <div class="grid gap-2 sm:grid-cols-2">
@@ -3646,9 +3646,9 @@ onMounted(() => {
                 <div class="grid gap-3">
                   <label class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.materialTitlePlaceholder }}</span>
-                    <input v-model="materialForm.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
+                    <input v-model="materialForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
                   </label>
-                  <select v-model="materialForm.material_type" class="h-10 rounded-xl border border-slate-200 px-3">
+                  <select v-model="materialForm.material_type" class="h-11 rounded-xl border border-slate-200 px-3">
                     <option value="1">{{ copy.materialTypes.textbook }}</option>
                     <option value="2">{{ copy.materialTypes.slides }}</option>
                     <option value="3">{{ copy.materialTypes.reference }}</option>
@@ -3657,7 +3657,7 @@ onMounted(() => {
                   <textarea v-model="materialForm.description" class="min-h-20 rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.materialDescriptionPlaceholder" />
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.fileObjectKey }}</span>
-                    <input v-model="materialForm.file_object_key" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
+                    <input v-model="materialForm.file_object_key" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileObjectKeyPlaceholder" />
                     <span class="mt-1 block text-xs text-slate-500">{{ copy.fileObjectKeyHint }}</span>
                     <span v-if="!editingMaterialId" class="mt-2 block text-xs font-semibold text-amber-600">
                       {{ (copy as any).uploadAfterSaveHintMaterial }}
@@ -3665,18 +3665,18 @@ onMounted(() => {
                   </label>
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.fileHash }}</span>
-                    <input v-model="materialForm.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileHashPlaceholder" />
+                    <input v-model="materialForm.file_hash" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileHashPlaceholder" />
                     <span class="mt-1 block text-xs text-slate-500">{{ copy.fileHashHint }}</span>
                   </label>
                   <div class="grid gap-3 sm:grid-cols-2">
                     <label class="block">
                       <span class="text-sm font-bold">{{ copy.fileSizeBytes }}</span>
-                      <input v-model="materialForm.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileSizePlaceholder" type="number" min="0" />
+                      <input v-model="materialForm.file_size" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.fileSizePlaceholder" type="number" min="0" />
                       <span class="mt-1 block text-xs text-slate-500">{{ copy.fileSizeHint }}</span>
                     </label>
                     <label class="block">
                       <span class="text-sm font-bold">{{ copy.sort }}</span>
-                      <input v-model="materialForm.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
+                      <input v-model="materialForm.sort_order" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="1" type="number" min="1" />
                       <span class="mt-1 block text-xs text-slate-500">{{ copy.sortHint }}</span>
                     </label>
                   </div>
@@ -3845,7 +3845,7 @@ onMounted(() => {
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
                   <label class="block">
                     <span class="text-sm font-bold">{{ copy.quizOwnerType }}</span>
-                    <select v-model="quizForm.scope" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" @change="changeQuizFormScope">
+                    <select v-model="quizForm.scope" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" @change="changeQuizFormScope">
                       <option value="course">{{ copy.quizScopes.course }}</option>
                       <option value="chapter">{{ copy.quizScopes.chapter }}</option>
                       <option value="lesson">{{ copy.quizScopes.lesson }}</option>
@@ -3853,14 +3853,14 @@ onMounted(() => {
                   </label>
                   <label v-if="quizForm.scope === 'chapter'" class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizOwnerObject }}</span>
-                    <select v-model="quizForm.owner_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                    <select v-model="quizForm.owner_id" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
                       <option value="">{{ copy.selectChapter }}</option>
                       <option v-for="chapter in quizChapterOptions" :key="chapterId(chapter)" :value="chapterId(chapter)">{{ chapterTitle(chapter) }}</option>
                     </select>
                   </label>
                   <label v-else-if="quizForm.scope === 'lesson'" class="block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizOwnerObject }}</span>
-                    <select v-model="quizForm.owner_id" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                    <select v-model="quizForm.owner_id" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
                       <option value="">{{ copy.selectLesson }}</option>
                       <option v-for="item in quizLessonOptions" :key="lessonId(item.lesson)" :value="lessonId(item.lesson)">{{ chapterTitle(item.chapter) }} 路 {{ lessonTitle(item.lesson) }}</option>
                     </select>
@@ -3878,12 +3878,12 @@ onMounted(() => {
                 </p>
                 <label class="mt-3 block">
                   <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizTitlePlaceholder }}</span>
-                  <input v-model="quizForm.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.quizTitlePlaceholder" />
+                  <input v-model="quizForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.quizTitlePlaceholder" />
                 </label>
-                <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.description" />
+                <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.description" />
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                  <input v-model="quizForm.passing_score" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.passingScorePlaceholder" type="number" />
-                  <input v-model="quizForm.time_limit" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.timeLimitPlaceholder" type="number" />
+                  <input v-model="quizForm.passing_score" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.passingScorePlaceholder" type="number" />
+                  <input v-model="quizForm.time_limit" class="h-11 rounded-xl border border-slate-200 px-3" :placeholder="copy.timeLimitPlaceholder" type="number" />
                 </div>
                 <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
                   <input v-model="quizForm.randomize_questions" type="checkbox" />
@@ -3996,25 +3996,25 @@ onMounted(() => {
                   <h4 class="font-black">{{ editingQuestionId ? copy.editQuestion : copy.createQuestion }}</h4>
                   <label class="mt-3 block">
                     <span class="text-sm font-bold">{{ copy.questionStemLabel }} <span class="text-red-500">*</span></span>
-                    <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.questionTextPlaceholder" />
+                    <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.questionTextPlaceholder" />
                   </label>
                   <label class="mt-3 block">
                     <span class="text-sm font-bold">{{ copy.explanationLabel || '解答说明' }}</span>
-                    <textarea v-model="questionForm.explanation" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.explanationPlaceholder || '输入解答说明（最多 1024 字符）...'" maxlength="1024" />
+                    <textarea v-model="questionForm.explanation" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.explanationPlaceholder || '输入解答说明（最多 1024 字符）...'" maxlength="1024" />
                   </label>
                   <div class="mt-3 grid gap-3 sm:grid-cols-3">
-                    <select v-model="questionForm.question_type" class="w-full rounded-xl border border-slate-200 px-4 py-3" :title="copy.questionTypePoints">
+                    <select v-model="questionForm.question_type" class="h-11 w-full rounded-xl border border-slate-200 px-3" :title="copy.questionTypePoints">
                       <option value="1">{{ copy.questionTypes.single }}</option>
                       <option value="2">{{ copy.questionTypes.multiple }}</option>
                       <option value="3">{{ copy.questionTypes.judgement }}</option>
                     </select>
                     <div class="relative w-full">
                       <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.pointsPlaceholder }}</div>
-                      <input v-model="questionForm.points" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.pointsPlaceholder" type="number" />
+                      <input v-model="questionForm.points" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.pointsPlaceholder" type="number" />
                     </div>
                     <div class="relative w-full">
                       <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
-                      <input v-model="questionForm.sort_order" class="w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.sort" type="number" />
+                      <input v-model="questionForm.sort_order" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.sort" type="number" />
                     </div>
                   </div>
                   <label class="mt-3 inline-flex items-center gap-2 text-sm font-bold text-slate-600">
@@ -4073,11 +4073,11 @@ onMounted(() => {
                       {{ copy.newOption }}
                     </button>
                   </div>
-                  <input v-model="optionForm.option_text" class="mt-3 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.optionTextPlaceholder" />
+                  <input v-model="optionForm.option_text" class="mt-3 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.optionTextPlaceholder" />
                   <div class="mt-3 flex items-center gap-3">
                     <div class="relative flex-1">
                       <div class="absolute -top-2 left-3 bg-white px-1 text-[10px] font-bold leading-none text-slate-500">{{ copy.sort }}</div>
-                      <input v-model="optionForm.sort_order" class="h-11 w-full rounded-xl border border-slate-200 px-4" :placeholder="copy.sort" type="number" />
+                      <input v-model="optionForm.sort_order" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.sort" type="number" />
                     </div>
                     <label class="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-600">
                       <input v-model="optionForm.is_correct" type="checkbox" />
@@ -4111,21 +4111,21 @@ onMounted(() => {
         <div class="grid gap-4 sm:grid-cols-2">
           <label>
             <span class="text-sm font-bold">{{ copy.importType }}</span>
-            <select v-model="importScope" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+            <select v-model="importScope" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
               <option value="course">{{ copy.importCourse }}</option>
               <option value="quiz">{{ copy.importChapterQuiz }}</option>
             </select>
           </label>
           <label>
             <span class="text-sm font-bold">{{ copy.categoryTips }}</span>
-            <input v-model="importCategoryTips" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.importCategoryPlaceholder" />
+            <input v-model="importCategoryTips" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.importCategoryPlaceholder" />
           </label>
         </div>
         <label class="mt-4 block">
           <span class="text-sm font-bold">{{ copy.jsonFile }}</span>
-          <input class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" type="file" accept=".json,application/json" @change="loadImportFile" />
+          <input class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" type="file" accept=".json,application/json" @change="loadImportFile" />
         </label>
-        <textarea v-model="importJson" class="mt-4 min-h-64 w-full rounded-xl border border-slate-200 p-4 font-mono text-sm md:min-h-80" :placeholder="copy.pasteJsonPlaceholder" />
+        <textarea v-model="importJson" class="mt-4 min-h-64 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm md:min-h-80" :placeholder="copy.pasteJsonPlaceholder" />
         </div>
         <button class="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="importing" type="button" @click="importLmsJson">
           <Loader2 v-if="importing" class="h-4 w-4 animate-spin" />
@@ -4150,14 +4150,14 @@ onMounted(() => {
             <div v-for="(item, index) in parsedMediaItems" :key="index" class="flex gap-2 items-start bg-white p-3 rounded-xl border border-slate-200">
               <label class="block w-32 shrink-0">
                 <span class="text-xs font-bold text-slate-500">{{ copy.mediaType }}</span>
-                <select v-model="item.type" class="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm">
+                <select v-model="item.type" class="mt-1 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm">
                   <option value="image">Image (图片)</option>
                   <option value="video">Video (视频)</option>
                 </select>
               </label>
               <label class="block flex-1 min-w-0">
                 <span class="text-xs font-bold text-slate-500">{{ copy.mediaUrl }}</span>
-                <input v-model="item.url" class="mt-1 h-9 w-full rounded-lg border border-slate-200 px-2 text-sm" placeholder="https://" />
+                <input v-model="item.url" class="mt-1 h-11 w-full rounded-lg border border-slate-200 px-3 text-sm" placeholder="https://" />
               </label>
               <button type="button" class="mt-5 rounded-lg p-2 text-red-500 hover:bg-red-50" @click="parsedMediaItems.splice(index, 1)" :title="copy.deleteMedia">
                 <Trash2 class="h-4 w-4" />
