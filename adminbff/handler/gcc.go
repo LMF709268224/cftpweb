@@ -42,7 +42,6 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 		CategoryTips       string `json:"category_tips"`
 		Name               string `json:"name"`
 		PipelineUlid       string `json:"pipeline_id"`
-		Respath            string `json:"respath"`
 		PipelineGpath      string `json:"pipeline_gpath"`
 		ThumbnailObjectKey string `json:"thumbnail_object_key"`
 		ThumbnailFileHash  string `json:"thumbnail_file_hash"`
@@ -85,14 +84,13 @@ func (h *Handler) CreatePipelineDraft(w http.ResponseWriter, r *http.Request) {
 		Name:               strings.TrimSpace(input.Name),
 		PipelineUlid:       strings.TrimSpace(input.PipelineUlid),
 		PipelineGpath:      strings.TrimSpace(input.PipelineGpath),
-		Respath:            strings.TrimSpace(input.Respath),
 		ThumbnailObjectKey: strings.TrimSpace(input.ThumbnailObjectKey),
 		ThumbnailFileHash:  strings.TrimSpace(input.ThumbnailFileHash),
 	}
 	if req.PipelineUlid == "" {
 		req.PipelineUlid = newLmsID()
 	}
-	if !requireRequestFields(w, req.CategoryTips, "category_tips", req.Name, "name", req.Respath, "respath", req.PipelineGpath, "pipeline_gpath") {
+	if !requireRequestFields(w, req.CategoryTips, "category_tips", req.Name, "name", req.PipelineGpath, "pipeline_gpath") {
 		return
 	}
 
