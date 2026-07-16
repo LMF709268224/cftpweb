@@ -514,7 +514,8 @@ function addUnit(stageIndex = selectedStageIndex.value) {
   if (!stages.value.length) addStage()
   const stage = stages.value[stageIndex] || stages.value[0]
   const list = asMutableArray(stage, "units")
-  list.push({ unit_ulid: "", name: copy.value.defaults.unitName, sort_order: list.length + 1, glms_course_ulid: "", exemption_quals: [], allow_exemption: false })
+  const maxSort = list.reduce((max, u) => Math.max(max, Number(u.sort_order) || 0), 0)
+  list.push({ unit_ulid: "", name: copy.value.defaults.unitName, sort_order: maxSort + 1, glms_course_ulid: "", exemption_quals: [], allow_exemption: false })
   selectedUnitPath.value = `${Math.max(0, stageIndex)}:${list.length - 1}`
   activeLayer.value = "units"
   syncStructureJson()
@@ -536,6 +537,8 @@ function moveSelectedUnit(targetStageIndex: number) {
   if (!targetStage) return
   asMutableArray(item.stage, "units").splice(item.unitIndex, 1)
   const targetUnits = asMutableArray(targetStage, "units")
+  const maxSort = targetUnits.reduce((max, u) => Math.max(max, Number(u.sort_order) || 0), 0)
+  item.unit.sort_order = maxSort + 1
   targetUnits.push(item.unit)
   selectedUnitPath.value = `${targetStageIndex}:${targetUnits.length - 1}`
   syncStructureJson()

@@ -2638,6 +2638,15 @@ watch(() => courseForm.value.title, (newTitle, oldTitle) => {
   }
 })
 
+watch(() => lessonForm.value.chapter_id, (newId, oldId) => {
+  if (lessonDialogMode.value !== "create") return
+  if (!newId || newId === oldId) return
+  const maxSort = allLessonItems.value
+    .filter(item => chapterId(item.chapter) === newId)
+    .reduce((max, item) => Math.max(max, Number(item.lesson.sort_order) || 0), 0)
+  lessonForm.value.sort_order = String(maxSort + 1)
+})
+
 onMounted(() => {
   void loadCourses()
 })
