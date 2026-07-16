@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Copy, FileJson, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
+import { Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
-import JsonPreview from "@/components/JsonPreview.vue"
+
 import PricingEditor from "@/components/PricingEditor.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
@@ -109,7 +109,7 @@ const hasMore = ref(false)
 const nextCursor = ref("")
 const prevCursor = ref("")
 const lastPage = ref(1)
-const schemas = ref<JsonRecord | null>(null)
+
 const activeTab = ref<DetailTab>("summary")
 const mode = ref<Mode>("detail")
 const showDeleteConfirm = ref(false)
@@ -125,7 +125,7 @@ const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => hasMore.value)
 const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value || duplicating.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
-const schemasJson = computed(() => JSON.stringify(schemas.value || {}, null, 2))
+
 const createItemTypeOptions = computed(() => [
   { value: "pipeline" as const, label: copy.value.createItemTypes.pipeline },
   { value: "membership" as const, label: copy.value.createItemTypes.membership },
@@ -141,7 +141,6 @@ const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
   { key: "meta" as const, title: copy.value.tabs.meta, count: 1 },
   { key: "pricing" as const, title: copy.value.tabs.pricing, count: 2 },
-  { key: "schema" as const, title: copy.value.tabs.schema, count: schemas.value ? 1 : 0 },
   { key: "actions" as const, title: copy.value.tabs.actions, count: 4 },
 ])
 const summaryFields = computed<SummaryField[]>(() => {
@@ -1109,10 +1108,7 @@ async function syncDisplayPricing() {
   await refreshSelectedBundleDetail()
 }
 
-async function loadSchemas() {
-  schemas.value = await apiClient<JsonRecord>("/api/mall/bundles/schemas")
-  activeTab.value = "schema"
-}
+
 
 watch(statusFilter, () => {
   selected.value = null
@@ -1645,24 +1641,6 @@ onMounted(load)
                     {{ copy.savePricing }}
                   </button>
                 </div>
-              </div>
-
-              <div v-else-if="activeTab === 'schema'" class="space-y-4">
-                <button class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold" type="button" @click="loadSchemas">
-                  <FileJson class="h-4 w-4" />
-                  {{ copy.loadSchema }}
-                </button>
-                <JsonPreview
-                  v-if="schemas"
-                  :title="copy.schemaJson"
-                  :text="schemasJson"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="620px"
-                />
-                <div v-else class="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-slate-500">{{ copy.emptySchema }}</div>
               </div>
 
               <div v-else-if="activeTab === 'actions'" class="space-y-5">
