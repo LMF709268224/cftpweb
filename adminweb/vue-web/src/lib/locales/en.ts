@@ -246,6 +246,7 @@ export const en: AdminTranslations = {
         newCredential: "New Credential",
         listTitle: "Credential List",
         listDescription: "Click a row or button to view details.",
+        total: (count: number) => `${count} records`,
         loading: "Loading...",
         empty: "No credential definitions",
         columns: {
@@ -654,6 +655,7 @@ export const en: AdminTranslations = {
         sent: {
             title: "Send History",
             summary: (pageSize: number, total: number) => `${pageSize} per page, ${total} total.`,
+            totalText: (total: number) => `${total} total`,
             allStatus: "All Status",
             unread: "Unread",
             read: "Read",
@@ -697,6 +699,7 @@ export const en: AdminTranslations = {
         templates: {
             listTitle: "Template List",
             listDescription: "View, create, and update templates.",
+            totalText: (total: number) => `${total} total`,
             loading: "Loading...",
             empty: "No templates",
             detailTitle: "Template Details",
@@ -1201,6 +1204,7 @@ export const en: AdminTranslations = {
         sendMail: "Send Email",
         sentTitle: "Sent Records",
         sentDescription: (pageSize: number, total: number) => `${pageSize} per page, ${total} total.`,
+        totalText: (total: number) => `${total} total`,
         columns: {
             mail: "Email",
             recipient: "Recipient",
@@ -1290,6 +1294,7 @@ export const en: AdminTranslations = {
         viewDetails: "View Details",
         prev: "Previous",
         next: "Next",
+        totalText: (total: number) => `${total} total`,
         pageText: (page: number, totalPages: number, total: number) => `Page ${page} / ${totalPages} · ${total} total`,
         createTitle: "New Product",
         createDescription: "Choose what this product sells, then fill in display information. System fields are generated automatically.",

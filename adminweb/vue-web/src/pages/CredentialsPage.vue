@@ -222,7 +222,7 @@ onMounted(load)
           <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ definitions.length }} 条</span>
+        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.total(definitions.length) }}</span>
       </div>
       <div v-if="loading" class="p-8 text-center text-slate-500 md:p-12">
         <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />

@@ -2874,10 +2874,10 @@ onMounted(() => {
               </span>
             </span>
             <div class="flex flex-col gap-3 sm:flex-row lg:items-center lg:justify-end">
-              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click.stop="openCourseDetailDialog(course)">
+              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click.stop="openCourseDetailDialog(course)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-[#ffba00] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click.stop="selectCourse(course)">
+              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click.stop="selectCourse(course)">
                 {{ copy.edit }}
               </button>
             </div>
@@ -3031,13 +3031,13 @@ onMounted(() => {
               <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.chapterColumns.version }}</span>{{ chapter.version || 0 }}
             </div>
             <div class="flex items-center justify-start gap-4 lg:justify-center">
-              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openChapterDetail(chapter)">
+              <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openChapterDetail(chapter)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="editChapter(chapter)">
+              <button class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editChapter(chapter)">
                 {{ copy.editChapter }}
               </button>
-              <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteChapter(chapter)">
+              <button class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteChapter(chapter)">
                 {{ copy.delete }}
               </button>
             </div>
@@ -3167,13 +3167,13 @@ onMounted(() => {
               <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.lessonColumns.type }}</span>{{ lessonTypeLabel(item.lesson.lesson_type) }}
             </div>
             <div class="flex items-center justify-start gap-4 lg:justify-center">
-              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openLessonDetail(item.lesson)">
+              <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openLessonDetail(item.lesson)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="editLesson(item.lesson)">
+              <button class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editLesson(item.lesson)">
                 {{ copy.editLesson }}
               </button>
-              <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteLesson(item.lesson)">
+              <button class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteLesson(item.lesson)">
                 {{ copy.delete }}
               </button>
             </div>
@@ -3417,7 +3417,7 @@ onMounted(() => {
                       <span v-else class="text-slate-400">-</span>
                     </td>
                     <td class="w-24 whitespace-nowrap px-4 py-4 text-right">
-                      <button class="whitespace-nowrap text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click.stop="editSupplementaryItem(item)">
+                      <button class="whitespace-nowrap text-sm font-bold text-amber-600 transition hover:underline" type="button" @click.stop="editSupplementaryItem(item)">
                         {{ copy.edit }}
                       </button>
                     </td>
@@ -3596,9 +3596,9 @@ onMounted(() => {
                     <td class="px-5 py-4 font-semibold text-slate-700">{{ material.sort_order || 0 }}</td>
                     <td class="w-48 whitespace-nowrap px-5 py-4 text-right">
                       <div class="inline-flex items-center justify-end gap-3">
-                        <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="viewMaterial(material)">{{ copy.viewDetails }}</button>
-                        <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="editMaterial(material)">{{ copy.edit }}</button>
-                        <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
+                        <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="viewMaterial(material)">{{ copy.viewDetails }}</button>
+                        <button class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editMaterial(material)">{{ copy.edit }}</button>
+                        <button class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
                       </div>
                     </td>
                   </tr>
@@ -3784,13 +3784,13 @@ onMounted(() => {
               <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.quizColumns.questions }}</span>{{ item.questionCount }}
             </div>
             <div class="flex items-center justify-start gap-4 lg:justify-center">
-              <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openQuizDetail(item.quiz)">
+              <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openQuizDetail(item.quiz)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="editQuiz(item.quiz)">
+              <button class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editQuiz(item.quiz)">
                 {{ copy.editQuiz }}
               </button>
-              <button class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteQuiz(item.quiz)">
+              <button class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteQuiz(item.quiz)">
                 {{ copy.delete }}
               </button>
             </div>
@@ -3937,13 +3937,13 @@ onMounted(() => {
                         <span class="mr-2 text-xs font-bold text-slate-400 lg:hidden">{{ copy.sort }}</span>{{ question.sort_order || 0 }}
                       </div>
                       <div class="flex flex-wrap items-center justify-start gap-3 lg:justify-end">
-                        <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="viewQuestion(question)">
+                        <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="viewQuestion(question)">
                           {{ copy.viewDetails }}
                         </button>
-                        <button v-if="quizDialogMode !== 'detail'" class="text-sm font-bold text-[#ffba00] transition hover:underline" type="button" @click="editQuestion(question)">
+                        <button v-if="quizDialogMode !== 'detail'" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editQuestion(question)">
                           {{ copy.edit }}
                         </button>
-                        <button v-if="quizDialogMode !== 'detail'" class="text-sm font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteQuestion(question)">
+                        <button v-if="quizDialogMode !== 'detail'" class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteQuestion(question)">
                           {{ copy.delete }}
                         </button>
                       </div>
@@ -4061,7 +4061,7 @@ onMounted(() => {
                         {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} 路 {{ copy.sortMeta(option.sort_order || 0) }}
                       </div>
                     </div>
-                    <button v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="text-xs font-bold text-[#ff4949] transition hover:underline" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
+                    <button v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="text-xs font-bold text-red-600 transition hover:underline" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
                   </div>
                 </div>
                 <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-option-form" class="border-t border-slate-200 p-4" @submit.prevent="saveOption">

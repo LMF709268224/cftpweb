@@ -244,6 +244,7 @@ export const zh = {
         newCredential: "新建资格",
         listTitle: "资格列表",
         listDescription: "点击行或按钮查看详情。",
+        total: (count: number) => `共 ${count} 条`,
         loading: "正在加载...",
         empty: "暂无资格定义",
         columns: {
@@ -652,6 +653,7 @@ export const zh = {
         sent: {
             title: "发送记录",
             summary: (pageSize: number, total: number) => `每页 ${pageSize} 条，总计 ${total} 条。`,
+            totalText: (total: number) => `共 ${total} 条`,
             allStatus: "全部状态",
             unread: "未读",
             read: "已读",
@@ -695,6 +697,7 @@ export const zh = {
         templates: {
             listTitle: "模板列表",
             listDescription: "可查看、创建和更新模板。",
+            totalText: (total: number) => `共 ${total} 条`,
             loading: "正在加载...",
             empty: "暂无模板",
             detailTitle: "模板详情",
@@ -1199,6 +1202,7 @@ export const zh = {
         sendMail: "发送邮件",
         sentTitle: "发送记录",
         sentDescription: (pageSize: number, total: number) => `每页 ${pageSize} 条，总计 ${total} 条。`,
+        totalText: (total: number) => `共 ${total} 条`,
         columns: {
             mail: "邮件",
             recipient: "收件人",
@@ -1288,6 +1292,7 @@ export const zh = {
         viewDetails: "查看详情",
         prev: "上一页",
         next: "下一页",
+        totalText: (total: number) => `共 ${total} 条`,
         pageText: (page: number, totalPages: number, total: number) => `第 ${page} / ${totalPages} 页 · 共 ${total} 条`,
         createTitle: "新建商品",
         createDescription: "先选择商品要售卖的内容，再填写展示信息；系统字段会自动生成。",

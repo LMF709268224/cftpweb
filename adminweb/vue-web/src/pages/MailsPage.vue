@@ -657,7 +657,7 @@ onMounted(async () => {
               
             </div>
             <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-              <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ total }} 条</span>
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
               <select v-model="statusFilter" class="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 px-4 text-sm sm:flex-none">
               <option v-for="option in statusOptions" :key="option.value || 'all'" :value="option.value">{{ option.label }}</option>
             </select>
@@ -730,7 +730,7 @@ onMounted(async () => {
               
             </div>
             <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-              <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">共 {{ totalTemplates || templates.length }} 条</span>
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(totalTemplates || templates.length) }}</span>
               <button class="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm sm:flex-none" type="button" @click="startCreateTemplate">
               <Plus class="h-4 w-4" />
               {{ copy.createTemplate }}
