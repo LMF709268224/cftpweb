@@ -264,8 +264,9 @@ const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() => p
 const selectedQuizId = computed(() => quizId(selectedQuiz.value))
 const selectedQuestionId = computed(() => questionId(selectedQuestion.value))
 const editingOptionRecord = computed(() => options.value.find((item) => optionId(item) === editingOptionId.value) || null)
+const showQuestionOptionsSection = computed(() => questionDialogMode.value !== "create" || Boolean(selectedQuestionId.value))
 const hasUnsavedCurrentOption = computed(() => {
-  if (quizDialogMode.value === "detail" || questionDialogMode.value === "detail") return false
+  if (!showQuestionOptionsSection.value || quizDialogMode.value === "detail" || questionDialogMode.value === "detail") return false
   const optionText = optionForm.value.option_text.trim()
   if (!editingOptionId.value) return Boolean(optionText)
 
@@ -279,6 +280,7 @@ const questionSaveButtonLabel = computed(() => hasUnsavedCurrentOption.value ? c
 const selectedCourseStatusBadge = computed(() => courseStatusBadgeValue(selectedCourse.value))
 const canDeleteSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
 const canPublishSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
+const showCourseContentSections = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
 const selectedLesson = computed(() => lessons.value.find((item) => lessonId(item) === editingLessonId.value) || null)
 const selectedMaterialRecord = computed(() => materials.value.find((item) => materialId(item) === selectedMaterialId.value) || selectedMaterial.value)
 const courseDetailDialogCourseId = computed(() => courseId(courseDetailTarget.value))
@@ -3080,25 +3082,26 @@ onMounted(() => {
         </div>
       </section>
 
-      <Teleport to="body">
-        <section v-if="courseDeleteConfirmOpen && pendingDeleteCourse" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-          <div class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
-            <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.courseDeleteConfirmTitle }}</h2>
-            <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.courseDeleteConfirmDescription }}</p>
-            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
-              <div class="break-words font-black text-slate-950">{{ courseTitle(pendingDeleteCourse) }}</div>
-              <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ courseId(pendingDeleteCourse) }}</div>
-              <div class="mt-1 text-sm font-semibold text-slate-500">{{ copy.readonlyCourseFieldLabels.version }}: {{ versionOf(pendingDeleteCourse) }}</div>
+      <template v-if="showCourseContentSections">
+        <Teleport to="body">
+          <section v-if="courseDeleteConfirmOpen && pendingDeleteCourse" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
+            <div class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
+              <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.courseDeleteConfirmTitle }}</h2>
+              <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.courseDeleteConfirmDescription }}</p>
+              <div class="mt-5 rounded-2xl bg-slate-50 p-4">
+                <div class="break-words font-black text-slate-950">{{ courseTitle(pendingDeleteCourse) }}</div>
+                <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ courseId(pendingDeleteCourse) }}</div>
+                <div class="mt-1 text-sm font-semibold text-slate-500">{{ copy.readonlyCourseFieldLabels.version }}: {{ versionOf(pendingDeleteCourse) }}</div>
+              </div>
+              <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
+                <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="closeCourseDeleteConfirm">{{ copy.cancel }}</button>
+                <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="confirmDeleteCourse">
+                  {{ deletingCourse ? copy.deleting : copy.confirmDeleteAction }}
+                </button>
+              </div>
             </div>
-            <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
-              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="closeCourseDeleteConfirm">{{ copy.cancel }}</button>
-              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingCourse" @click="confirmDeleteCourse">
-                {{ deletingCourse ? copy.deleting : copy.confirmDeleteAction }}
-              </button>
-            </div>
-          </div>
-        </section>
-      </Teleport>
+          </section>
+        </Teleport>
 
       <section class="rounded-3xl border border-slate-200 bg-white shadow-sm" :class="!selectedCourseId ? 'opacity-50' : ''">
         <div class="flex items-center justify-between border-b border-slate-200 p-5">
@@ -4156,7 +4159,7 @@ onMounted(() => {
                 </form>
               </section>
 
-              <section class="rounded-2xl border border-slate-200">
+              <section v-if="showQuestionOptionsSection" class="rounded-2xl border border-slate-200">
                 <div class="border-b border-slate-200 p-4">
                   <h3 class="font-black">{{ copy.optionsTitle }}</h3>
                   <p class="mt-1 text-xs text-slate-500">{{ selectedQuestionId ? copy.optionsSelectedHint : copy.optionsNeedQuestionHint }}</p>
@@ -4226,6 +4229,7 @@ onMounted(() => {
           </div>
         </section>
       </Teleport>
+      </template>
     </main>
 
     <div v-if="importOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-0 md:p-6" @click.self="importOpen = false">
