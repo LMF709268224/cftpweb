@@ -3188,6 +3188,7 @@ export const zh = {
             question_ulid: "题目 ID",
             quiz_ulid: "所属测验 ID",
             question_text: "题干",
+            explanation: "解答说明",
             question_type: "题目类型",
             points: "分值",
             sort_order: "排序",

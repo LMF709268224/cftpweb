@@ -3846,7 +3846,7 @@ onMounted(() => {
                 <button :class="quizActiveTab === 'basic' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'basic'">{{ (copy as any).basicInfo || '基本信息' }}</button>
                 <button :class="quizActiveTab === 'prerequisites' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500'" class="border-b-2 px-1 pb-2 font-bold transition-colors" type="button" @click="quizActiveTab = 'prerequisites'">{{ (copy as any).prerequisites || '前置条件' }}</button>
               </div>
-              <div v-show="quizActiveTab === 'basic'">
+              <div v-show="quizActiveTab === 'basic'" class="space-y-5 md:space-y-6">
                 <div class="grid gap-4 lg:grid-cols-3">
                 <div class="rounded-2xl bg-blue-50 p-4">
                   <div class="text-xs font-black text-blue-600">{{ copy.owner }}</div>
@@ -3862,14 +3862,14 @@ onMounted(() => {
                 </div>
               </div>
 
-              <section v-if="quizDialogMode === 'detail'" class="rounded-2xl border border-slate-200 p-4">
+              <section v-if="quizDialogMode === 'detail'" class="rounded-2xl border border-slate-200 p-4 md:p-5">
                 <h3 class="font-black">{{ copy.quizReadonlyFields }}</h3>
                 <div class="mt-3 grid gap-3 md:grid-cols-2">
                   <ReadonlyField v-for="entry in quizRecordEntries(selectedQuiz)" :key="`quiz-detail-${entry.key}`" :label="entry.label" :text="entry.value" />
                 </div>
               </section>
 
-              <form v-else class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveQuiz">
+              <form v-else class="rounded-2xl border border-slate-200 p-4 md:p-5" @submit.prevent="saveQuiz">
                 <h3 class="font-black">{{ editingQuizId ? copy.editQuiz : copy.createQuiz }}</h3>
                 <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
                   {{ copy.saveQuizOwner }}{{ quizTarget().label }} - {{ quizTarget().id ? quizTarget().title : copy.unselectedTarget(quizTarget().label) }}
@@ -3933,7 +3933,7 @@ onMounted(() => {
                 </p>
               </form>
 
-              <section v-if="selectedQuizId && quizDialogMode !== 'create'" class="rounded-2xl border border-slate-200">
+              <section v-if="selectedQuizId && quizDialogMode !== 'create'" class="overflow-hidden rounded-2xl border border-slate-200">
                 <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
                   <div>
                     <h3 class="font-black">{{ copy.questionListTitle }}</h3>
@@ -4034,7 +4034,7 @@ onMounted(() => {
                 <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-question-form" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
                   <h4 class="font-black">{{ editingQuestionId ? copy.editQuestion : copy.createQuestion }}</h4>
                   <label class="mt-3 block">
-                    <span class="text-sm font-bold">{{ copy.questionStemLabel }} <span class="text-red-500">*</span></span>
+                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.questionStemLabel }}</span>
                     <textarea v-model="questionForm.question_text" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.questionTextPlaceholder" />
                   </label>
                   <label class="mt-3 block">
