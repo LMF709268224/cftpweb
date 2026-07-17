@@ -1295,7 +1295,7 @@ async function publishCourse() {
   } catch (err: any) {
     console.error(err)
     if (err?.status === 409) {
-      toast.error((copy.value.toasts as any).coursePublishMissingConfig || "课程发布失败，请检查下方带有「缺少内容」标签的章节或课时并完善配置")
+      toast.error(apiErrorMessage(err, (copy.value.toasts as any).coursePublishMissingConfig || "课程发布失败，请检查下方带有「缺少内容」标签的章节或课时并完善配置"))
     } else {
       toast.error(apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
     }
