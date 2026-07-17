@@ -97,3 +97,22 @@ func (h *Handler) GetQuizAttemptDetail(w http.ResponseWriter, r *http.Request) {
 
 	WriteJSON(w, http.StatusOK, resp.GetAttempt())
 }
+
+func (h *Handler) CompleteLmsQuiz(w http.ResponseWriter, r *http.Request) {
+	candidateID := CandidateID(r)
+	quizID := strings.TrimSpace(chi.URLParam(r, "quizId"))
+	if !requireRequestFields(w, candidateID, "candidate_id", quizID, "quiz_id") {
+		return
+	}
+
+	resp, err := h.Lms.CompleteQuiz(r.Context(), &lmspb.CompleteQuizRequest{
+		CandidateUlid: candidateID,
+		QuizUlid:      quizID,
+	})
+	if err != nil {
+		HandleGrpcError(w, err)
+		return
+	}
+
+	WriteJSON(w, http.StatusOK, resp)
+}

@@ -138,6 +138,7 @@ type QuizTask = {
   chapterTitle?: string
   lessonId?: string
   lessonTitle?: string
+  quizType?: number
   completed?: boolean
 }
 
@@ -386,6 +387,7 @@ const quizTasks = computed<QuizTask[]>(() => {
       scopeLabel: t.value.learning.quizScopeCourse,
       ownerTitle: course.value?.title || t.value.common.unknownCourse,
       completed: quizCompleted(quizId),
+      quizType: Number(quiz.quiz_type || 1),
     })
   })
   chapters.value.forEach((chapter, chapterIndex) => {
@@ -404,6 +406,7 @@ const quizTasks = computed<QuizTask[]>(() => {
         chapterId,
         chapterTitle,
         completed: quizCompleted(quizId),
+        quizType: Number(quiz.quiz_type || 1),
       })
     })
     ;(chapter.lessons || []).forEach((lessonDetail, lessonIndex) => {
@@ -423,6 +426,7 @@ const quizTasks = computed<QuizTask[]>(() => {
           lessonId: lessonIdOf(lessonDetail.lesson),
           lessonTitle,
           completed: quizCompleted(quizId),
+          quizType: Number(quiz.quiz_type || 1),
         })
       })
     })
@@ -1225,6 +1229,22 @@ async function startQuiz(quizId: string) {
   }
 }
 
+const completingQuizId = ref("")
+async function completeQuiz(quizId: string) {
+  if (!quizId || completingQuizId.value) return
+  completingQuizId.value = quizId
+  try {
+    await apiClient(`/api/quizzes/${quizId}/complete`, { method: "POST" })
+    toast.success("测验已标记为完成")
+    // Reload course data to update progress
+    await loadCourse(true)
+  } catch (err: any) {
+    toast.error(err?.message || "标记完成失败")
+  } finally {
+    completingQuizId.value = ""
+  }
+}
+
 async function handleScheduleExam() {
   if (pipelineCancelled.value) return
   const targetPipelineUlid = runtime.value?.instance?.pipeline_ulid
@@ -1851,10 +1871,14 @@ watch(selectedMaterial, () => {
                     </span>
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
-                  <div class="mt-auto pt-3">
-                    <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
+                  <div class="mt-auto flex items-center gap-2 pt-3">
+                    <button class="btn btn-primary flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
                       <Loader2 v-if="task.quizId && startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
+                    </button>
+                    <button v-if="!task.completed && task.quizType === 2" class="btn border border-emerald-500 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || Boolean(completingQuizId)" @click="completeQuiz(task.quizId)">
+                      <Loader2 v-if="task.quizId && completingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
+                      标记完成
                     </button>
                   </div>
                 </div>
@@ -1880,10 +1904,14 @@ watch(selectedMaterial, () => {
                     </span>
                   </div>
                   <div class="text-sm font-medium text-foreground">{{ index + 1 }}. {{ task.title }}</div>
-                  <div class="mt-auto pt-3">
-                    <button class="btn btn-primary rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
+                  <div class="mt-auto flex items-center gap-2 pt-3">
+                    <button class="btn btn-primary flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
                       <Loader2 v-if="task.quizId && startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
+                    </button>
+                    <button v-if="!task.completed && task.quizType === 2" class="btn border border-emerald-500 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || Boolean(completingQuizId)" @click="completeQuiz(task.quizId)">
+                      <Loader2 v-if="task.quizId && completingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
+                      标记完成
                     </button>
                   </div>
                 </div>
