@@ -1,4 +1,5 @@
 import { ApiError } from "./apiClient"
+import { useAdminLanguage } from "./language"
 
 type JsonRecord = Record<string, unknown>
 
@@ -110,6 +111,7 @@ function friendlyDetail(message: string, status?: number): string {
   const text = message.trim()
   if (!text) return ""
   const lower = text.toLowerCase()
+  const { isZh } = useAdminLanguage()
 
   if (lower.includes("thumbnail") && (lower.includes("required") || lower.includes("missing"))) {
     return "缺少封面，请先配置封面 Object Key 或封面 File Hash 后再操作"
@@ -138,7 +140,17 @@ function friendlyDetail(message: string, status?: number): string {
   if (lower.includes("precondition")) {
     return "当前数据还不满足操作条件，请先补齐必填信息后再操作"
   }
-  if (lower.includes("invalid json") || lower.includes("json")) {
+  if (lower.includes("only one-time type is allowed for non-membership items")) {
+    return isZh.value 
+      ? "Stripe Price ID 类型错误：当前项要求一次性支付（One-time），请检查是否误填了周期性订阅（Recurring）的 Price ID"
+      : "Invalid Stripe Price ID: A one-time payment price is required, but a recurring subscription price was provided."
+  }
+  if (lower.includes("only recurring type is allowed for membership items")) {
+    return isZh.value
+      ? "Stripe Price ID 类型错误：会员资格要求周期性订阅（Recurring），请检查是否误填了一次性支付（One-time）的 Price ID"
+      : "Invalid Stripe Price ID: A recurring subscription price is required for membership items, but a one-time payment price was provided."
+  }
+  if (lower.includes("invalid json format") || lower.match(/invalid json.*syntax/)) {
     return "JSON 格式不正确，请检查后重试"
   }
   if (lower.includes("required") || lower.includes("missing")) {

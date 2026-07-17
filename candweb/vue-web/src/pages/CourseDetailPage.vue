@@ -185,6 +185,7 @@ const finalQualificationIds = computed(() => {
     : []
 })
 const finalQualificationIdsKey = computed(() => finalQualificationIds.value.join(","))
+const pipelineHasCertificate = computed(() => finalQualificationIds.value.length > 0)
 const pipelineWaitsFinalEligibility = computed(() => {
   const raw = String(pipelineStatus.value ?? "").trim()
   return raw === "2" || raw.toUpperCase().includes("WAIT_FINAL_ELIG")
@@ -211,7 +212,8 @@ const certificateAvailable = computed(() =>
   Boolean(instancePipelineId.value) &&
   (nextStepAction.value === "view_certificate" || pipelineCompleted.value) &&
   !pipelineIssuingCertificate.value &&
-  !pipelineCancelled.value,
+  !pipelineCancelled.value &&
+  pipelineHasCertificate.value,
 )
 const certificateDescription = computed(() => {
   if (certificateAvailable.value) {
@@ -759,7 +761,7 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
       </section>
 
       <section
-        v-if="purchased"
+        v-if="purchased && pipelineHasCertificate"
         class="mb-4 rounded-md border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.04)]"
       >
         <div v-if="certificateAvailable" class="space-y-5">
