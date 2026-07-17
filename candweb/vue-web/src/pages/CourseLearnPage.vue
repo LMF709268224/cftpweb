@@ -371,9 +371,6 @@ const totalQuizzesCount = computed(() => {
 })
 
 function quizCompleted(quizId?: string, quizType: number = 1, unitStatus?: any) {
-  if (quizType === 2 && quizId && completedOfflineQuizIds.value.has(quizId)) {
-    return true
-  }
   if (quizType === 2 && unitStatus) {
     const s = normalizeEnumValueUpper(unitStatus)
     if (s === "7" || s === "COMPLETED" || s.includes("COMPLETED")) return true
@@ -1151,7 +1148,6 @@ async function loadProgress() {
   } catch {
     progressRecords.value = []
   }
-  loadCompletedOfflineQuizzes()
 }
 
 async function loadRuntime(suppressErrorToast = false) {
@@ -1240,40 +1236,6 @@ async function startQuiz(quizId: string) {
     toast.error(t.value.common.error)
   } finally {
     startingQuizId.value = ""
-  }
-}
-const completingQuizId = ref("")
-
-const LOCAL_STORAGE_QUIZ_KEY = "completed_offline_quizzes"
-const completedOfflineQuizIds = ref<Set<string>>(new Set())
-
-function loadCompletedOfflineQuizzes() {
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_QUIZ_KEY)
-    if (raw) completedOfflineQuizIds.value = new Set(JSON.parse(raw))
-  } catch {
-    // ignore
-  }
-}
-function addCompletedOfflineQuiz(quizId: string) {
-  completedOfflineQuizIds.value.add(quizId)
-  localStorage.setItem(LOCAL_STORAGE_QUIZ_KEY, JSON.stringify(Array.from(completedOfflineQuizIds.value)))
-}
-async function completeQuiz(quizId: string) {
-  if (!quizId || completingQuizId.value) return
-  completingQuizId.value = quizId
-  try {
-    const res = await apiClient(`/api/quizzes/${quizId}/complete`, { method: "POST" })
-    toast.success("测验已标记为完成")
-    if (res?.quiz_status === "completed" || res?.quiz_status === "QUIZ_ATTEMPT_STATUS_COMPLETED") {
-      addCompletedOfflineQuiz(quizId)
-    }
-    // Reload course data to update progress
-    await loadCourse(true)
-  } catch (err: any) {
-    toast.error(err?.message || "标记完成失败")
-  } finally {
-    completingQuizId.value = ""
   }
 }
 
@@ -1908,10 +1870,6 @@ watch(selectedMaterial, () => {
                       <Loader2 v-if="task.quizId && startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
                     </button>
-                    <button v-if="!task.completed && task.quizType === 2" class="btn border border-emerald-500 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || Boolean(completingQuizId)" @click="completeQuiz(task.quizId)">
-                      <Loader2 v-if="task.quizId && completingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
-                      标记完成
-                    </button>
                   </div>
                 </div>
               </div>
@@ -1940,10 +1898,6 @@ watch(selectedMaterial, () => {
                     <button class="btn btn-primary flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || task.completed || Boolean(startingQuizId)" @click="startQuiz(task.quizId)">
                       <Loader2 v-if="task.quizId && startingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
                       {{ task.completed ? t.learning.completedTag : t.learning.takeQuiz }}
-                    </button>
-                    <button v-if="!task.completed && task.quizType === 2" class="btn border border-emerald-500 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 flex-1 rounded-lg py-1.5 text-xs" :disabled="!task.quizId || Boolean(completingQuizId)" @click="completeQuiz(task.quizId)">
-                      <Loader2 v-if="task.quizId && completingQuizId === task.quizId" class="h-4 w-4 animate-spin" />
-                      标记完成
                     </button>
                   </div>
                 </div>
