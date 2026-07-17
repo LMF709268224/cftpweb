@@ -125,6 +125,17 @@ const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => hasMore.value)
 const statusActionBusy = computed(() => publishing.value || deprecating.value || deleting.value || duplicating.value)
 const selectedId = computed(() => selected.value ? bundleUlid(selected.value) : "")
+const selectedStatusKey = computed(() => bundleStatusKey(selected.value))
+const canCloneSelectedBundle = computed(() => !!selectedId.value)
+const canPublishSelectedBundle = computed(() => !!selectedId.value && selectedStatusKey.value === "draft")
+const canDeprecateSelectedBundle = computed(() => !!selectedId.value && selectedStatusKey.value === "published")
+const canDeleteSelectedBundle = computed(() => !!selectedId.value && selectedStatusKey.value === "draft")
+const statusActionCount = computed(() => [
+  canCloneSelectedBundle.value,
+  canPublishSelectedBundle.value,
+  canDeprecateSelectedBundle.value,
+  canDeleteSelectedBundle.value,
+].filter(Boolean).length)
 
 const createItemTypeOptions = computed(() => [
   { value: "pipeline" as const, label: copy.value.createItemTypes.pipeline },
@@ -141,7 +152,7 @@ const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
   { key: "meta" as const, title: copy.value.tabs.meta, count: 1 },
   { key: "pricing" as const, title: copy.value.tabs.pricing, count: 2 },
-  { key: "actions" as const, title: copy.value.tabs.actions, count: 4 },
+  { key: "actions" as const, title: copy.value.tabs.actions, count: statusActionCount.value },
 ])
 const summaryFields = computed<SummaryField[]>(() => {
   const bundle = selected.value
@@ -983,7 +994,7 @@ async function savePricing() {
 }
 
 async function duplicateBundle() {
-  if (!selected.value || !selectedId.value || statusActionBusy.value) return
+  if (!selected.value || !canCloneSelectedBundle.value || statusActionBusy.value) return
   duplicating.value = true
   try {
     const data = await apiClient<JsonRecord>(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/duplicate`, {
@@ -1107,14 +1118,14 @@ async function replaceAndSavePipelineBinding() {
 }
 
 async function publish() {
-  if (!selectedId.value) return
-  if (statusActionBusy.value) return
+  if (!canPublishSelectedBundle.value || statusActionBusy.value) return
   if (!validateStructureJson()) return
   publishing.value = true
   try {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/publish`, { method: "POST" })
     toast.success(copy.value.toasts.published)
     await load()
+    await refreshSelectedBundleDetail()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.publishFailed))
@@ -1124,13 +1135,13 @@ async function publish() {
 }
 
 async function deprecate() {
-  if (!selectedId.value) return
-  if (statusActionBusy.value) return
+  if (!canDeprecateSelectedBundle.value || statusActionBusy.value) return
   deprecating.value = true
   try {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}/deprecate`, { method: "POST" })
     toast.success(copy.value.toasts.deprecated)
     await load()
+    await refreshSelectedBundleDetail()
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.deprecateFailed))
@@ -1140,8 +1151,10 @@ async function deprecate() {
 }
 
 async function removeBundle() {
-  if (!selectedId.value) return
-  if (statusActionBusy.value) return
+  if (!canDeleteSelectedBundle.value || statusActionBusy.value) {
+    showDeleteConfirm.value = false
+    return
+  }
   deleting.value = true
   try {
     await apiClient(`/api/mall/bundles/${encodeURIComponent(selectedId.value)}`, { method: "DELETE" })
@@ -1741,20 +1754,20 @@ onMounted(load)
                   <h3 class="font-black">{{ copy.actionsTitle }}</h3>
                   <p class="mt-1 text-sm text-slate-500">{{ copy.actionsDescription }}</p>
                   <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="duplicateBundle">
+                    <button v-if="canCloneSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="duplicateBundle">
                       <Loader2 v-if="duplicating" class="h-4 w-4 animate-spin" />
                       <Copy v-else class="h-4 w-4" />
                       {{ duplicating ? copy.duplicating : copy.duplicateDraft }}
                     </button>
-                    <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="publish">
+                    <button v-if="canPublishSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="publish">
                       <Loader2 v-if="publishing" class="h-4 w-4 animate-spin" />
                       {{ publishing ? copy.publishing : copy.publish }}
                     </button>
-                    <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="deprecate">
+                    <button v-if="canDeprecateSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="deprecate">
                       <Loader2 v-if="deprecating" class="h-4 w-4 animate-spin" />
                       {{ deprecating ? copy.deprecating : copy.deprecate }}
                     </button>
-                    <button class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-white shadow-sm shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="showDeleteConfirm = true">
+                    <button v-if="canDeleteSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-white shadow-sm shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="showDeleteConfirm = true">
                       <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
                       <Trash2 v-else class="h-4 w-4" />
                       {{ deleting ? copy.deleting : copy.delete }}
@@ -1777,7 +1790,7 @@ onMounted(load)
     </Teleport>
 
     <Teleport to="body">
-      <div v-if="showDeleteConfirm" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 md:p-6">
+      <div v-if="showDeleteConfirm && canDeleteSelectedBundle" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 md:p-6">
         <div class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
           <h2 class="text-xl font-black md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
           <p class="mt-3 text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
