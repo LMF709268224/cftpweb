@@ -2233,6 +2233,7 @@ async function saveQuiz() {
       passing_score: Number(quizForm.value.passing_score || 0),
       time_limit: Number(quizForm.value.time_limit || 0),
       randomize_questions: quizForm.value.randomize_questions,
+      quiz_type: Number(quizForm.value.quiz_type || 1),
     }
     if (editingQuizId.value) {
       body.version = quizzes.value.find((item) => quizId(item) === editingQuizId.value)?.version || 0
