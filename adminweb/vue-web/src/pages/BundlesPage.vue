@@ -865,9 +865,7 @@ async function handleThumbnailUpload(event: Event) {
     const uploadRes = await fetch(uploadUrl, {
       method: "PUT",
       body: file,
-      headers: {
-        "Content-Type": file.type || "application/octet-stream",
-      },
+      headers: uploadUrlRes.signed_headers as Record<string, string> || {},
     })
 
     if (!uploadRes.ok) {
