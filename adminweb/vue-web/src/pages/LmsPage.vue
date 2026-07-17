@@ -189,7 +189,6 @@ const courseView = ref<"list" | "detail">("list")
 const courseCreateOpen = ref(false)
 const courseCreateContext = ref<CourseCreateContext | null>(null)
 const courseDetailDialogOpen = ref(false)
-const courseDetailDialogLoading = ref(false)
 const courseDetailTarget = ref<JsonRecord | null>(null)
 const courseDetailDialogDetail = ref<JsonRecord | null>(null)
 const courseDetailDialogComplete = ref<JsonRecord | null>(null)
@@ -841,14 +840,6 @@ function questionRecordEntries(record: JsonRecord | null | undefined) {
   }))
 }
 
-function courseDetailReadonlyFieldLabel(key: string) {
-  return `${copy.value.detailReadonlyPrefix}${courseReadonlyFieldLabel(key)}`
-}
-
-function completeCourseReadonlyFieldLabel(key: string) {
-  return `${copy.value.completeReadonlyPrefix}${courseReadonlyFieldLabel(key)}`
-}
-
 function normalizeSupplementaryMaterials(raw: unknown): JsonRecord[] {
   if (!raw) return []
   if (Array.isArray(raw)) return raw.filter(isJsonRecord)
@@ -1116,25 +1107,19 @@ async function openCourseDetailDialog(course: JsonRecord) {
   courseDetailDialogDetail.value = null
   courseDetailDialogComplete.value = null
   courseDetailDialogOpen.value = true
-  courseDetailDialogLoading.value = true
-  try {
-    const [detailResult, completeResult] = await Promise.allSettled([
-      apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/detail`),
-      apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/complete`),
-    ])
-    if (courseDetailDialogCourseId.value !== id) return
-    if (detailResult.status === "fulfilled") courseDetailDialogDetail.value = detailResult.value
-    else console.error(detailResult.reason)
-    if (completeResult.status === "fulfilled") courseDetailDialogComplete.value = completeResult.value
-    else console.error(completeResult.reason)
-  } finally {
-    if (courseDetailDialogCourseId.value === id) courseDetailDialogLoading.value = false
-  }
+  const [detailResult, completeResult] = await Promise.allSettled([
+    apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/detail`),
+    apiClient<JsonRecord>(`/api/lms/courses/${encodeURIComponent(id)}/complete`),
+  ])
+  if (courseDetailDialogCourseId.value !== id) return
+  if (detailResult.status === "fulfilled") courseDetailDialogDetail.value = detailResult.value
+  else console.error(detailResult.reason)
+  if (completeResult.status === "fulfilled") courseDetailDialogComplete.value = completeResult.value
+  else console.error(completeResult.reason)
 }
 
 function closeCourseDetailDialog() {
   courseDetailDialogOpen.value = false
-  courseDetailDialogLoading.value = false
   courseDetailTarget.value = null
   courseDetailDialogDetail.value = null
   courseDetailDialogComplete.value = null
@@ -2900,16 +2885,8 @@ onMounted(() => {
             </div>
 
             <div class="mt-4 rounded-xl border border-slate-200 p-4">
-              <h3 class="font-black">{{ copy.readonlyFields }}</h3>
-              <p class="mt-1 text-xs text-slate-500">{{ copy.readonlyFieldsHint }}</p>
-              <div class="mt-3 max-h-[56vh] space-y-3 overflow-y-auto overscroll-contain pr-0 md:pr-2">
+              <div class="max-h-[56vh] space-y-3 overflow-y-auto overscroll-contain pr-0 md:pr-2">
                 <ReadonlyField v-for="entry in courseRecordEntries(courseDetailTarget)" :key="`course-dialog-${entry.key}`" :label="courseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
-                <div v-if="courseDetailDialogLoading" class="flex items-center gap-2 rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-500">
-                  <Loader2 class="h-4 w-4 animate-spin" />
-                  {{ copy.loadingCompleteCourse }}
-                </div>
-                <ReadonlyField v-for="entry in courseRecordEntries(courseDetailDialogDetail)" :key="`course-dialog-detail-${entry.key}`" :label="courseDetailReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
-                <ReadonlyField v-for="entry in courseRecordEntries(courseDetailDialogComplete)" :key="`course-dialog-complete-${entry.key}`" :label="completeCourseReadonlyFieldLabel(entry.key)" :text="entry.value" min-height="48px" />
               </div>
             </div>
           </div>
