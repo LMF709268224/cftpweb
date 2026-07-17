@@ -776,7 +776,7 @@ onMounted(async () => {
                 <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.startedAt }}</span>
                 <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pipeline.started_at || pipeline.created_at || "")) }}</span>
               </span>
-              <span class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0">{{ copy.viewDetails }}</span>
+              <span class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0">{{ copy.viewDetails }}</span>
             </button>
           </template>
           <div v-else class="px-4 py-10 text-center text-slate-500 md:px-6">{{ copy.empty }}</div>

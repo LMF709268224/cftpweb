@@ -202,7 +202,7 @@ onMounted(() => load(1))
           </div>
           <div class="text-right">
             <button
-              class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
+              class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
               type="button"
               @click.stop="openInvoice(invoice)"
             >

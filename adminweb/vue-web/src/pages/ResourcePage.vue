@@ -248,7 +248,7 @@ onMounted(load)
           >
             {{ item.status || item.raw_status || item.payment_status }}
           </span>
-          <span v-else class="text-sm font-bold text-[#1890ff] transition hover:underline">{{ copy.viewDetails }}</span>
+          <span v-else class="text-sm font-bold text-blue-700 transition hover:underline">{{ copy.viewDetails }}</span>
         </button>
       </div>
 
@@ -320,7 +320,7 @@ onMounted(load)
             :copy-error-message="copy.jsonCopyFailed"
             max-height="720px"
           />
-          <textarea v-else v-model="draftJson" class="min-h-[500px] w-full rounded-2xl bg-slate-950 p-5 font-mono text-xs leading-6 text-slate-100 outline-none focus:ring-2 focus:ring-[#0b7bdc]"></textarea>
+          <textarea v-else v-model="draftJson" class="min-h-[500px] w-full rounded-2xl bg-slate-950 p-5 font-mono text-xs leading-6 text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
         </div>
       </div>
     </div>

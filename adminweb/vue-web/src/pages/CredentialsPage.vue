@@ -254,7 +254,7 @@ onMounted(load)
             <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.category }}</span>
             <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">{{ categoryLabel(definition.category) }}</span>
           </span>
-          <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectDefinition(definition)">
+          <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectDefinition(definition)">
             {{ copy.viewDetails }}
           </button>
         </div>

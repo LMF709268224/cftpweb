@@ -409,7 +409,7 @@ onMounted(() => load(1))
               <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.submittedAt }}</span>
               <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(app.created_at || "")) }}</span>
             </span>
-            <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectApplication(app)">
+            <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectApplication(app)">
               {{ copy.viewDetails }}
             </button>
           </div>
