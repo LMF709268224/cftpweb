@@ -556,10 +556,10 @@ onMounted(load)
               </span>
             </span>
             <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-start lg:justify-center">
-              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openPackDetail(pack)">
+              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openPackDetail(pack)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-[#ffba00] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openPackEditor(pack)">
+              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openPackEditor(pack)">
                 {{ copy.editPack }}
               </button>
               <button class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" :disabled="saving" @click.stop="duplicatePack(pack)">
@@ -571,7 +571,7 @@ onMounted(load)
               <button v-if="canRevertPack(pack)" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'revert-to-draft')">
                 {{ copy.revertPack }}
               </button>
-              <button v-if="canDeletePack(pack)" class="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-[#ff4949] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="requestDeletePack(pack)">
+              <button v-if="canDeletePack(pack)" class="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="requestDeletePack(pack)">
                 {{ copy.deletePack }}
               </button>
             </div>

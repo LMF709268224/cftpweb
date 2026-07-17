@@ -99,7 +99,7 @@ const summaryCards = computed(() => [
   { label: copy.value.summary.totalUsers, value: userStats.value.total, tone: "text-slate-950", icon: Users },
   { label: copy.value.summary.activeUsers, value: userStats.value.active, tone: "text-emerald-600", icon: UserCheck },
   { label: copy.value.summary.admins, value: userStats.value.admins, tone: "text-blue-600", icon: Shield },
-  { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-[#0b579b]", icon: Users },
+  { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-blue-700", icon: Users },
   { label: copy.value.summary.members, value: userStats.value.members, tone: "text-cyan-600", icon: Users },
 ])
 
@@ -218,10 +218,10 @@ watch([keyword, roleFilter, statusFilter], () => {
     <section class="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-5">
       <div class="mb-2 flex items-center justify-between text-sm font-black text-slate-700">
         <span>{{ copy.profileCompletion }}</span>
-        <span class="text-[#0b579b]">{{ profileCompletion }}%</span>
+        <span class="text-blue-700">{{ profileCompletion }}%</span>
       </div>
       <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-        <div class="h-full rounded-full bg-[#0b579b] transition-all" :style="{ width: `${profileCompletion}%` }" />
+        <div class="h-full rounded-full bg-blue-700 transition-all" :style="{ width: `${profileCompletion}%` }" />
       </div>
     </section>
 

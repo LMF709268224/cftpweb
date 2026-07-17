@@ -1223,7 +1223,7 @@ onMounted(load)
               <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
               <span class="text-sm font-semibold text-slate-500">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</span>
             </span>
-            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectBundle(bundle)">
+            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectBundle(bundle)">
               {{ copy.viewDetails }}
             </button>
           </div>

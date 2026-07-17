@@ -481,7 +481,7 @@ onMounted(() => loadExams(1))
                 </span>
               </div>
             </div>
-            <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openExam(exam)">
+            <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openExam(exam)">
               {{ copy.viewDetails }}
             </button>
           </div>
@@ -522,7 +522,7 @@ onMounted(() => loadExams(1))
                   </span>
                 </td>
                 <td class="w-32 whitespace-nowrap px-5 py-4 text-right">
-                  <button class="text-sm font-bold text-[#1890ff] transition hover:underline" type="button" @click="openExam(exam)">
+                  <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openExam(exam)">
                     {{ copy.viewDetails }}
                   </button>
                 </td>

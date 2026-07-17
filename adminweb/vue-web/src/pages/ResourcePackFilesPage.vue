@@ -549,13 +549,13 @@ onMounted(load)
             </span>
           </span>
           <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:justify-end md:items-center md:gap-4">
-            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openFileDetail(file)">
+            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openFileDetail(file)">
               {{ copy.viewDetails }}
             </button>
-            <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-[#ffba00] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openFileEditor(file)">
+            <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openFileEditor(file)">
               {{ copy.editFile }}
             </button>
-            <button class="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-[#ff4949] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="requestDeleteFile(file)">
+            <button class="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="requestDeleteFile(file)">
               {{ copy.deleteFile }}
             </button>
           </div>

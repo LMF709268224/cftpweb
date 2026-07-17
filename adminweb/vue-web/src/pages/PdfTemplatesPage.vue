@@ -259,10 +259,10 @@ onMounted(load)
               <span class="text-right">{{ formatDate(String(template.created_at || "")) }}</span>
             </div>
             <div class="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:justify-start lg:justify-center">
-              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openTemplateDetail(template)">
+              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openTemplateDetail(template)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-[#ffba00] transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openTemplateEditor(template)">
+              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openTemplateEditor(template)">
                 {{ copy.edit }}
               </button>
             </div>

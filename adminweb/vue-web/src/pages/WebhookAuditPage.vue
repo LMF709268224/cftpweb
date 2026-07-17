@@ -340,7 +340,7 @@ onMounted(() => load(1))
           <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(message.created_at) || copy.noCreatedAt }}</div>
           <div class="text-right">
             <button
-              class="text-sm font-bold text-[#1890ff] transition hover:underline"
+              class="text-sm font-bold text-blue-700 transition hover:underline"
               type="button"
               @click.stop="loadDetail(message)"
             >

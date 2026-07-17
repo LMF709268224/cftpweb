@@ -471,7 +471,7 @@ onMounted(async () => {
               <div class="mb-2 flex items-center justify-between">
                 <label class="font-bold">{{ copy.send.recipients }}</label>
                 <div class="flex gap-3 text-sm">
-                  <button class="font-bold text-[#0b7bdc]" type="button" @click="selectedUserIds = users.map(userId).filter(Boolean)">{{ copy.send.selectAll }}</button>
+                  <button class="font-bold text-blue-700" type="button" @click="selectedUserIds = users.map(userId).filter(Boolean)">{{ copy.send.selectAll }}</button>
                   <button class="font-bold text-slate-500" type="button" @click="selectedUserIds = []">{{ copy.send.clear }}</button>
                 </div>
               </div>
@@ -568,7 +568,7 @@ onMounted(async () => {
               </div>
               <div class="text-right">
                 <button
-                  class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
+                  class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:border-0 md:bg-transparent md:px-0 md:py-0"
                   type="button"
                   @click.stop="openMessage(message)"
                 >
@@ -632,8 +632,8 @@ onMounted(async () => {
                 <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pickFirst(template, ["updated_at", "created_at"]) || "")) }}</span>
               </div>
               <div class="flex flex-col justify-end gap-3 sm:flex-row">
-                <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-[#1890ff] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openTemplateDetail(template)">{{ copy.templates.viewDetails }}</button>
-                <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-[#ffba00] transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="startTemplateEdit(template)">{{ copy.templates.edit }}</button>
+                <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openTemplateDetail(template)">{{ copy.templates.viewDetails }}</button>
+                <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="startTemplateEdit(template)">{{ copy.templates.edit }}</button>
               </div>
             </div>
           </div>
