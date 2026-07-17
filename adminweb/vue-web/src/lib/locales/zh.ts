@@ -3252,6 +3252,8 @@ export const zh = {
         quizTypeSkippable: "可跳过/自助完成测验",
         advancedConfig: "高级配置",
         toasts: {
+            judgementMaxOptions: "判断题最多只能有 2 个选项",
+            singleCorrectOptionLimit: "该题型只能有一个正确选项，请先取消其他选项的正确答案状态",
             courseCloneSuccess: "课程克隆成功",
             courseCloneFailed: "课程克隆失败",
             lessonUploadFilePrompt: "请继续点击下方按钮上传课时文件 (视频/PDF等)",

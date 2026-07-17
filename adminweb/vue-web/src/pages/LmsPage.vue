@@ -2584,6 +2584,20 @@ async function saveOptionForQuestion(questionIdValue = selectedQuestionId.value,
     toast.error(copy.value.toasts.optionRequired)
     return false
   }
+
+  const qType = Number(selectedQuestion.value?.question_type || 0)
+  if (qType === 3 && !editingOptionId.value && options.value.length >= 2) {
+    toast.error((copy.value.toasts as any)?.judgementMaxOptions || "判断题最多只能有 2 个选项")
+    return false
+  }
+
+  if ((qType === 1 || qType === 3) && optionForm.value.is_correct) {
+    const hasOtherCorrect = options.value.some(o => o.is_correct && optionId(o) !== editingOptionId.value)
+    if (hasOtherCorrect) {
+      toast.error((copy.value.toasts as any)?.singleCorrectOptionLimit || "该题型只能有一个正确选项，请先取消其他选项的正确答案状态")
+      return false
+    }
+  }
   const targetSort = Number(optionForm.value.sort_order || 1)
   const isConflict = options.value.some(o => Number(o.sort_order || 0) === targetSort && optionId(o) !== editingOptionId.value)
   if (isConflict) {

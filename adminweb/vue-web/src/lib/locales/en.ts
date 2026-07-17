@@ -3254,6 +3254,8 @@ export const en: AdminTranslations = {
         quizTypeSkippable: "Skippable/Self-paced Quiz",
         advancedConfig: "Advanced Config",
         toasts: {
+            judgementMaxOptions: "Judgement questions can have a maximum of 2 options",
+            singleCorrectOptionLimit: "This question type can only have one correct option. Please unmark other options first.",
             courseCloneSuccess: "Course successfully cloned",
             courseCloneFailed: "Failed to clone course",
             lessonUploadFilePrompt: "Please click the button below to upload lesson file (Video/PDF, etc.)",
