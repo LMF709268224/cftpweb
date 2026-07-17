@@ -34,6 +34,13 @@ const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => hasMore.value)
 const applicationFieldLabels = computed<Record<string, string>>(() => copy.value.fieldLabels || {})
 const applicationIdKeys = new Set(["app_ulid", "app_id", "application_ulid", "application_id"])
+const hiddenOverviewFieldKeys = new Set([
+  "files",
+  "application_files",
+  "application_materials",
+  "supporting_documents",
+  "attachments",
+])
 const selectedFields = computed(() => {
   const current = selected.value || {}
   let hasApplicationId = false
@@ -44,6 +51,7 @@ const selectedFields = computed(() => {
 
   return Object.entries(current)
     .filter(([key, value]) => {
+      if (hiddenOverviewFieldKeys.has(key)) return false
       if (hasDuplicateCredentialName && key === "credential_name") return false
       if (!applicationIdKeys.has(key)) return true
       const currentValue = String(value ?? "")

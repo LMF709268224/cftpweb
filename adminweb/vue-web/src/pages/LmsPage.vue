@@ -280,7 +280,8 @@ const questionSaveButtonLabel = computed(() => hasUnsavedCurrentOption.value ? c
 const selectedCourseStatusBadge = computed(() => courseStatusBadgeValue(selectedCourse.value))
 const canDeleteSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
 const canPublishSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
-const showCourseContentSections = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
+const canEditCourseContent = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
+const showCourseContentSections = computed(() => !!selectedCourseId.value)
 const selectedLesson = computed(() => lessons.value.find((item) => lessonId(item) === editingLessonId.value) || null)
 const selectedMaterialRecord = computed(() => materials.value.find((item) => materialId(item) === selectedMaterialId.value) || selectedMaterial.value)
 const courseDetailDialogCourseId = computed(() => courseId(courseDetailTarget.value))
@@ -3109,7 +3110,7 @@ onMounted(() => {
             <h2 class="text-xl font-black">{{ copy.chapterListTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.chapterListDescription }}</p>
           </div>
-          <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newChapter">
+          <button v-if="canEditCourseContent" class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newChapter">
             <Plus class="h-4 w-4" />
             {{ copy.newChapter }}
           </button>
@@ -3149,10 +3150,10 @@ onMounted(() => {
               <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openChapterDetail(chapter)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editChapter(chapter)">
+              <button v-if="canEditCourseContent" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editChapter(chapter)">
                 {{ copy.editChapter }}
               </button>
-              <button class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteChapter(chapter)">
+              <button v-if="canEditCourseContent" class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteChapter(chapter)">
                 {{ copy.delete }}
               </button>
             </div>
@@ -3204,7 +3205,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="chapterDialogMode !== 'detail' && chapterActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-5">
+            <div v-if="canEditCourseContent && chapterDialogMode !== 'detail' && chapterActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-5">
               <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="!selectedCourseId || savingChapter" type="button" @click="saveChapter">
                 <Loader2 v-if="savingChapter" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
@@ -3240,7 +3241,7 @@ onMounted(() => {
             <h2 class="text-xl font-black">{{ copy.lessonListTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.lessonListDescription }}</p>
           </div>
-          <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="openNewLesson">
+          <button v-if="canEditCourseContent" class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="openNewLesson">
             <Plus class="h-4 w-4" />
             {{ copy.newLesson }}
           </button>
@@ -3285,10 +3286,10 @@ onMounted(() => {
               <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openLessonDetail(item.lesson)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editLesson(item.lesson)">
+              <button v-if="canEditCourseContent" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editLesson(item.lesson)">
                 {{ copy.editLesson }}
               </button>
-              <button class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteLesson(item.lesson)">
+              <button v-if="canEditCourseContent" class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteLesson(item.lesson)">
                 {{ copy.delete }}
               </button>
             </div>
@@ -3400,7 +3401,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="lessonDialogMode !== 'detail' && lessonActiveTab === 'basic'" class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-5">
+            <div v-if="canEditCourseContent && lessonDialogMode !== 'detail' && lessonActiveTab === 'basic'" class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-5">
                 <div class="min-w-0 flex-1" v-if="editingLessonId && lessonForm.lesson_type !== '7' && lessonForm.lesson_type !== '2'">
                 <input type="file" ref="lessonFileInput" class="hidden" @change="handleLessonFileUpload" />
                 <button type="button" class="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingLesson" @click="lessonFileInput?.click()">
@@ -3479,7 +3480,7 @@ onMounted(() => {
                 <button class="h-10 rounded-xl border px-4 text-sm font-bold disabled:opacity-40" :disabled="!selectedCourseId || supplementaryMaterialLoading" type="button" @click="loadSupplementaryMaterial">
                   {{ copy.refresh }}
                 </button>
-                <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newSupplementaryItem()">
+                <button v-if="canEditCourseContent" class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newSupplementaryItem()">
                   <Plus class="h-4 w-4" />
                   {{ copy.add }}
                 </button>
@@ -3532,8 +3533,8 @@ onMounted(() => {
                       <span v-else class="text-slate-400">-</span>
                     </td>
                     <td class="w-24 whitespace-nowrap px-4 py-4 text-right">
-                      <button class="whitespace-nowrap text-sm font-bold text-amber-600 transition hover:underline" type="button" @click.stop="editSupplementaryItem(item)">
-                        {{ copy.edit }}
+                      <button class="whitespace-nowrap text-sm font-bold transition hover:underline" :class="canEditCourseContent ? 'text-amber-600' : 'text-blue-700'" type="button" @click.stop="editSupplementaryItem(item)">
+                        {{ canEditCourseContent ? copy.edit : copy.viewDetails }}
                       </button>
                     </td>
                   </tr>
@@ -3544,10 +3545,10 @@ onMounted(() => {
 
           <Teleport to="body">
             <div v-if="supplementaryItemDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6" role="dialog" aria-modal="true">
-              <form class="flex h-full max-h-none w-full max-w-[720px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl" @submit.prevent="saveSupplementaryItem">
+              <form class="flex h-full max-h-none w-full max-w-[720px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl" @submit.prevent="canEditCourseContent && saveSupplementaryItem()">
                 <div class="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
                   <div>
-                    <h3 class="font-black">{{ editingSupplementaryItemIndex >= 0 ? copy.editSupplementaryItem : copy.newSupplementaryItem }}</h3>
+                    <h3 class="font-black">{{ !canEditCourseContent ? copy.viewDetails : editingSupplementaryItemIndex >= 0 ? copy.editSupplementaryItem : copy.newSupplementaryItem }}</h3>
                     <p class="mt-1 text-xs text-slate-500">{{ copy.supplementaryItemDescription }}</p>
                   </div>
                   <button
@@ -3563,7 +3564,7 @@ onMounted(() => {
                   <div class="grid gap-3">
                     <label class="block">
                       <span class="text-sm font-bold">{{ copy.ownerChapter }}</span>
-                      <select v-model="supplementaryItemForm.chapter" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
+                      <select v-model="supplementaryItemForm.chapter" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-50 disabled:text-slate-500" :disabled="!canEditCourseContent">
                         <option value="">{{ copy.globalSupplementaryOption }}</option>
                         <option v-for="ch in chapters" :key="chapterId(ch)" :value="chapterTitle(ch)">
                           {{ chapterTitle(ch) }}
@@ -3573,7 +3574,7 @@ onMounted(() => {
                     <div class="grid gap-3 sm:grid-cols-2">
                       <label class="block">
                         <span class="text-sm font-bold">{{ copy.materialType }}</span>
-                        <select v-model="supplementaryItemForm.type" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
+                        <select v-model="supplementaryItemForm.type" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-50 disabled:text-slate-500" :disabled="!canEditCourseContent">
                           <option value="Article">{{ copy.supplementaryTypes.article }}</option>
                           <option value="Video">{{ copy.supplementaryTypes.video }}</option>
                           <option value="PDF">{{ copy.supplementaryTypes.pdf }}</option>
@@ -3583,32 +3584,32 @@ onMounted(() => {
                       </label>
                       <label class="block">
                         <span class="text-sm font-bold">{{ copy.durationNote }}</span>
-                        <input v-model="supplementaryItemForm.duration" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.durationPlaceholder" />
+                        <input v-model="supplementaryItemForm.duration" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-50 disabled:text-slate-500" :placeholder="copy.durationPlaceholder" :disabled="!canEditCourseContent" />
                       </label>
                     </div>
                     <label class="block">
                       <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.titleField }}</span>
-                      <input v-model="supplementaryItemForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.materialTitlePlaceholder" />
+                      <input v-model="supplementaryItemForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-50 disabled:text-slate-500" :placeholder="copy.materialTitlePlaceholder" :disabled="!canEditCourseContent" />
                     </label>
                     <label class="block">
                       <span class="text-sm font-bold">{{ copy.description }}</span>
-                      <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.descriptionPlaceholder" />
+                      <textarea v-model="supplementaryItemForm.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-50 disabled:text-slate-500" :placeholder="copy.descriptionPlaceholder" :disabled="!canEditCourseContent" />
                     </label>
                     <template v-if="isSupplementaryLinkType()">
                       <label class="block">
                         <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).externalUrl }}</span>
-                        <input v-model="supplementaryItemForm.url" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" placeholder="https://..." />
+                        <input v-model="supplementaryItemForm.url" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-50 disabled:text-slate-500" placeholder="https://..." :disabled="!canEditCourseContent" />
                       </label>
                     </template>
                     <template v-else>
                       <label class="block">
                         <span class="text-sm font-bold"><span v-if="isSupplementaryAssetRequired()" class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).assetObjectKeyLabel }}</span>
-                        <input v-model="supplementaryItemForm.url" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.assetObjectKeyPlaceholder" />
+                        <input v-model="supplementaryItemForm.url" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-50 disabled:text-slate-500" :placeholder="copy.assetObjectKeyPlaceholder" :disabled="!canEditCourseContent" />
                         <span v-if="editingSupplementaryItemIndex < 0" class="mt-2 block text-xs font-semibold text-amber-600">
                           {{ (copy as any).uploadAfterSaveHintSupplementary }}
                         </span>
                       </label>
-                      <div class="mt-3 flex gap-3" v-if="editingSupplementaryItemIndex >= 0">
+                      <div v-if="canEditCourseContent && editingSupplementaryItemIndex >= 0" class="mt-3 flex gap-3">
                         <input type="file" ref="supplementaryFileInput" class="hidden" @change="handleSupplementaryFileUpload" />
                         <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50" :disabled="uploadingSupplementary" @click="supplementaryFileInput?.click()">
                           <Loader2 v-if="uploadingSupplementary" class="h-4 w-4 animate-spin" />
@@ -3619,7 +3620,7 @@ onMounted(() => {
                     </template>
                   </div>
                 </div>
-                <div class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-6">
+                <div v-if="canEditCourseContent" class="flex shrink-0 flex-wrap justify-end gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-6">
                   <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="closeSupplementaryItemDialog">
                     {{ copy.cancel }}
                   </button>
@@ -3674,7 +3675,7 @@ onMounted(() => {
               <h3 class="font-black">{{ copy.normalMaterialsTitle }}</h3>
               <p class="mt-1 text-sm text-slate-500">{{ copy.normalMaterialsDescription }}</p>
             </div>
-            <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">
+            <button v-if="canEditCourseContent" class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedCourseId" type="button" @click="newMaterial">
               <Plus class="h-4 w-4" />
               {{ copy.newNormalMaterial }}
             </button>
@@ -3712,8 +3713,8 @@ onMounted(() => {
                     <td class="w-48 whitespace-nowrap px-5 py-4 text-right">
                       <div class="inline-flex items-center justify-end gap-3">
                         <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="viewMaterial(material)">{{ copy.viewDetails }}</button>
-                        <button class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editMaterial(material)">{{ copy.edit }}</button>
-                        <button class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
+                        <button v-if="canEditCourseContent" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editMaterial(material)">{{ copy.edit }}</button>
+                        <button v-if="canEditCourseContent" class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
                       </div>
                     </td>
                   </tr>
@@ -3749,7 +3750,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <form v-else class="flex h-full max-h-none w-full max-w-[760px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl" @submit.prevent="saveMaterial">
+            <form v-else class="flex h-full max-h-none w-full max-w-[760px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl" @submit.prevent="canEditCourseContent && saveMaterial()">
               <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
                 <div>
                   <h2 class="text-xl font-black">{{ materialDialogMode === "edit" ? copy.editMaterial : copy.createMaterial }}</h2>
@@ -3811,7 +3812,7 @@ onMounted(() => {
                   </div>
                 </div>
               </div>
-              <div class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-5">
+              <div v-if="canEditCourseContent" class="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white px-4 py-4 md:px-5">
                 <div class="min-w-0 flex-1">
                   <div v-if="editingMaterialId" class="flex gap-3">
                     <input type="file" ref="materialFileInput" class="hidden" @change="handleMaterialFileUpload" />
@@ -3848,6 +3849,7 @@ onMounted(() => {
               {{ copy.loadQuizzes }}
             </button>
             <button
+              v-if="canEditCourseContent"
               class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm disabled:opacity-40"
               :disabled="!selectedCourseId"
               type="button"
@@ -3902,10 +3904,10 @@ onMounted(() => {
               <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="openQuizDetail(item.quiz)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editQuiz(item.quiz)">
+              <button v-if="canEditCourseContent" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editQuiz(item.quiz)">
                 {{ copy.editQuiz }}
               </button>
-              <button class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteQuiz(item.quiz)">
+              <button v-if="canEditCourseContent" class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteQuiz(item.quiz)">
                 {{ copy.delete }}
               </button>
             </div>
@@ -3954,7 +3956,7 @@ onMounted(() => {
                 </div>
               </section>
 
-              <form v-else class="rounded-2xl border border-slate-200 p-4 md:p-5" @submit.prevent="saveQuiz">
+              <form v-else class="rounded-2xl border border-slate-200 p-4 md:p-5" @submit.prevent="canEditCourseContent && saveQuiz()">
                 <h3 class="font-black">{{ editingQuizId ? copy.editQuiz : copy.createQuiz }}</h3>
                 <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
                   {{ copy.saveQuizOwner }}{{ quizTarget().label }} - {{ quizTarget().id ? quizTarget().title : copy.unselectedTarget(quizTarget().label) }}
@@ -4024,7 +4026,7 @@ onMounted(() => {
                     <h3 class="font-black">{{ copy.questionListTitle }}</h3>
                     <p class="mt-1 text-xs text-slate-500">{{ copy.questionListDescription }}</p>
                   </div>
-                  <button v-if="quizDialogMode !== 'detail'" class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuizId" type="button" @click="newQuestion">
+                  <button v-if="canEditCourseContent && quizDialogMode !== 'detail'" class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuizId" type="button" @click="newQuestion">
                     <Plus class="h-3.5 w-3.5" />
                     {{ copy.newQuestion }}
                   </button>
@@ -4062,10 +4064,10 @@ onMounted(() => {
                         <button class="text-sm font-bold text-blue-700 transition hover:underline" type="button" @click="viewQuestion(question)">
                           {{ copy.viewDetails }}
                         </button>
-                        <button v-if="quizDialogMode !== 'detail'" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editQuestion(question)">
+                        <button v-if="canEditCourseContent && quizDialogMode !== 'detail'" class="text-sm font-bold text-amber-600 transition hover:underline" type="button" @click="editQuestion(question)">
                           {{ copy.edit }}
                         </button>
-                        <button v-if="quizDialogMode !== 'detail'" class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteQuestion(question)">
+                        <button v-if="canEditCourseContent && quizDialogMode !== 'detail'" class="text-sm font-bold text-red-600 transition hover:underline" type="button" @click="deleteQuestion(question)">
                           {{ copy.delete }}
                         </button>
                       </div>
@@ -4079,7 +4081,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="quizDialogMode !== 'detail' && quizActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-5">
+            <div v-if="canEditCourseContent && quizDialogMode !== 'detail' && quizActiveTab === 'basic'" class="flex shrink-0 justify-end border-t border-slate-200 bg-white px-4 py-4 md:px-5">
               <button class="inline-flex h-10 min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" :disabled="savingQuiz || !quizTarget().id" type="button" @click="saveQuiz">
                 <Loader2 v-if="savingQuiz" class="h-4 w-4 animate-spin" />
                 <Save v-else class="h-4 w-4" />
@@ -4116,7 +4118,7 @@ onMounted(() => {
                     <div class="mt-1 text-lg font-black text-slate-900">{{ copy.questionMeta(selectedQuestion ? questionTypeLabel(selectedQuestion.question_type) : questionTypeLabel(questionForm.question_type), selectedQuestion?.points || questionForm.points || 0) }}</div>
                   </div>
                 </div>
-                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-question-form" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestionWithCurrentOption">
+                <form v-if="canEditCourseContent && quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-question-form" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestionWithCurrentOption">
                   <h4 class="font-black">{{ editingQuestionId ? copy.editQuestion : copy.createQuestion }}</h4>
                   <label class="mt-3 block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.questionStemLabel }}</span>
@@ -4171,7 +4173,7 @@ onMounted(() => {
                 <div v-else-if="!options.length" class="p-6 text-center text-slate-500">{{ copy.emptyOptions }}</div>
                 <div v-else class="max-h-72 divide-y divide-slate-100 overflow-y-auto">
                   <div v-for="option in options" :key="optionId(option)" class="flex items-center justify-between gap-3 p-4" :class="optionId(option) === editingOptionId ? 'bg-sky-50' : ''">
-                    <button v-if="questionDialogMode !== 'detail'" class="flex-1 text-left" type="button" @click="editOption(option)">
+                    <button v-if="canEditCourseContent && questionDialogMode !== 'detail'" class="flex-1 text-left" type="button" @click="editOption(option)">
                       <div class="font-black">{{ optionTitle(option) }}</div>
                       <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
                         {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} - {{ copy.sortMeta(option.sort_order || 0) }}
@@ -4183,10 +4185,10 @@ onMounted(() => {
                         {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} - {{ copy.sortMeta(option.sort_order || 0) }}
                       </div>
                     </div>
-                    <button v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="text-xs font-bold text-red-600 transition hover:underline" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
+                    <button v-if="canEditCourseContent && quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="text-xs font-bold text-red-600 transition hover:underline" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
                   </div>
                 </div>
-                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-option-form" class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
+                <form v-if="canEditCourseContent && quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-option-form" class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
                   <div class="flex items-center justify-between gap-3">
                     <h4 class="font-black">{{ editingOptionId ? copy.editOption : copy.createOption }}</h4>
                     <button class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuestionId || savingOption || savingQuestion" type="button" @click="newOption">
@@ -4221,7 +4223,7 @@ onMounted(() => {
                 </div>
               </section>
             </div>
-            <div v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
+            <div v-if="canEditCourseContent && quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
               <button class="inline-flex h-10 w-full items-center justify-center rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="!selectedQuizId || savingQuestion || savingOption" type="button" @click="saveQuestionWithCurrentOption">
                 {{ savingQuestion || savingOption ? copy.saving : questionSaveButtonLabel }}
               </button>
