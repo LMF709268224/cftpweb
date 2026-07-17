@@ -2236,7 +2236,7 @@ async function saveQuiz() {
       quiz_type: Number(quizForm.value.quiz_type || 1),
     }
     if (editingQuizId.value) {
-      body.version = quizzes.value.find((item) => quizId(item) === editingQuizId.value)?.version || 0
+      body.version = Number(selectedQuiz.value?.version || quizzes.value.find((item) => quizId(item) === editingQuizId.value)?.version || 0)
       await apiClient(`/api/lms/quizzes/${encodeURIComponent(editingQuizId.value)}`, { method: "PUT", body: JSON.stringify(body) })
       toast.success(copy.value.toasts.quizUpdated)
       const scope = quizForm.value.scope
