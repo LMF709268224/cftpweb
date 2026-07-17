@@ -429,11 +429,11 @@ onMounted(async () => {
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadUsers">
+        <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm" type="button" @click="loadUsers">
           <RefreshCw class="h-4 w-4" :class="usersLoading ? 'animate-spin' : ''" />
           {{ copy.refreshUsers }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadTemplates">
+        <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm" type="button" @click="loadTemplates">
           <RefreshCw class="h-4 w-4" :class="templatesLoading ? 'animate-spin' : ''" />
           {{ copy.refreshTemplates }}
         </button>
@@ -489,7 +489,7 @@ onMounted(async () => {
             <div class="space-y-4">
               <label class="block">
                 <span class="font-bold">{{ copy.send.template }}</span>
-                <select v-model="templatePath" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                <select v-model="templatePath" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4">
                   <option value="">{{ copy.send.selectTemplate }}</option>
                   <option v-for="template in templates" :key="pathOf(template)" :value="pathOf(template)">
                     {{ titleOf(template) }} ({{ pathOf(template) }})
@@ -499,7 +499,7 @@ onMounted(async () => {
 
               <label class="block">
                 <span class="font-bold">{{ copy.send.messageType }}</span>
-                <select v-model.number="msgType" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
+                <select v-model.number="msgType" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4">
                   <option :value="1">{{ copy.send.messageTypes.system }}</option>
                   <option :value="2">{{ copy.send.messageTypes.announcement }}</option>
                   <option :value="3">{{ copy.send.messageTypes.marketing }}</option>
@@ -530,7 +530,7 @@ onMounted(async () => {
             </div>
             <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
               <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.sent.totalText(total) }}</span>
-              <select v-model="statusFilter" class="h-10 min-w-0 flex-1 rounded-xl border border-slate-200 px-4 text-sm sm:flex-none">
+              <select v-model="statusFilter" class="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-4 text-sm sm:flex-none">
               <option value="">{{ copy.sent.allStatus }}</option>
               <option value="1">{{ copy.sent.unread }}</option>
               <option value="2">{{ copy.sent.read }}</option>
@@ -737,11 +737,11 @@ onMounted(async () => {
           <div class="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 md:p-5">
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.path }}</span>
-              <input v-model="formPath" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100" :disabled="!!editingTemplatePath" />
+              <input v-model="formPath" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4 disabled:bg-slate-100" :disabled="!!editingTemplatePath" />
             </label>
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.titleTemplate }}</span>
-              <input ref="templateTitleInputRef" v-model="formTitle" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" />
+              <input ref="templateTitleInputRef" v-model="formTitle" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-4" />
             </label>
             <label class="block">
               <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.templates.contentTemplate }}</span>

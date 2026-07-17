@@ -1148,15 +1148,15 @@ onMounted(load)
         <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newBundle">
+        <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm" type="button" @click="newBundle">
           <Plus class="h-4 w-4" />
           {{ copy.newBundle }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="syncDisplayPricing">
+        <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm" type="button" @click="syncDisplayPricing">
           <RefreshCw class="h-4 w-4" />
           {{ copy.syncDisplayPricing }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
+        <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm" type="button" @click="load">
           <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
@@ -1172,7 +1172,7 @@ onMounted(load)
             </div>
           <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
           </div>
-          <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">
+          <select v-model="statusFilter" class="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">
             <option value="">{{ copy.allStatus }}</option>
             <option value="Draft">{{ copy.statusOptions.Draft }}</option>
             <option value="Active">{{ copy.statusOptions.Active }}</option>
@@ -1271,7 +1271,7 @@ onMounted(load)
                   <div class="grid gap-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_auto]">
                     <label class="grid gap-2 text-sm font-bold">
                       <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.itemType }}</span>
-                      <select v-model="item.item_type" class="rounded-xl border border-slate-200 bg-white px-4 py-3" @change="changeCreateItemType(item)">
+                      <select v-model="item.item_type" class="h-11 rounded-xl border border-slate-200 bg-white px-4" @change="changeCreateItemType(item)">
                         <option v-for="option in createItemTypeOptions" :key="option.value" :value="option.value" :disabled="createItemTypeDisabled(item, option.value)">
                           {{ option.label }}
                         </option>
@@ -1280,7 +1280,7 @@ onMounted(load)
                     </label>
                     <label class="grid gap-2 text-sm font-bold">
                       <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.linkedTarget }}</span>
-                      <select v-model="item.ref_ulid" class="rounded-xl border border-slate-200 bg-white px-4 py-3" :disabled="targetOptionsLoading || !createTargetOptions(item.item_type).length">
+                      <select v-model="item.ref_ulid" class="h-11 rounded-xl border border-slate-200 bg-white px-4" :disabled="targetOptionsLoading || !createTargetOptions(item.item_type).length">
                         <option value="" disabled>{{ targetOptionsLoading ? copy.loadingTargets : copy.selectLinkedTarget }}</option>
                         <option v-for="option in createTargetOptions(item.item_type)" :key="option.id" :value="option.id">{{ option.title }} · {{ option.subtitle }}</option>
                       </select>
@@ -1305,22 +1305,22 @@ onMounted(load)
               <div class="mt-4 grid gap-4 md:grid-cols-2">
                 <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
                   <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.bundleGpath }}</span>
-                  <input v-model="form.bundle_gpath" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.bundleGpath" />
+                  <input v-model="form.bundle_gpath" class="h-11 rounded-xl border border-slate-200 px-4" :placeholder="copy.placeholders.bundleGpath" />
                   <p class="text-xs font-semibold text-slate-500">{{ copy.bundleGpathHint }}</p>
                 </label>
                 <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
                   <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.name }}</span>
-                  <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" :placeholder="copy.placeholders.name" />
+                  <input v-model="form.name" class="h-11 rounded-xl border border-slate-200 px-4" maxlength="160" :placeholder="copy.placeholders.name" />
                   <span aria-hidden="true"></span>
                 </label>
                 <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
                   {{ copy.fields.thumbnailObjectKey }}
-                  <input v-model="form.thumbnail_object_key" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.thumbnailObjectKey" />
+                  <input v-model="form.thumbnail_object_key" class="h-11 rounded-xl border border-slate-200 px-4" :placeholder="copy.placeholders.thumbnailObjectKey" />
                   <p class="text-xs font-semibold text-slate-500">{{ copy.optionalImageHint }}</p>
                 </label>
                 <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
                   {{ copy.fields.thumbnailFileHash }}
-                  <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" :placeholder="copy.placeholders.thumbnailFileHash" />
+                  <input v-model="form.thumbnail_file_hash" class="h-11 rounded-xl border border-slate-200 px-4" :placeholder="copy.placeholders.thumbnailFileHash" />
                   <span aria-hidden="true"></span>
                 </label>
                 <label class="grid gap-2 text-sm font-bold md:col-span-2">
@@ -1347,7 +1347,7 @@ onMounted(load)
             </details>
           </div>
           <div class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
-            <button class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="createBundle">
+            <button class="inline-flex h-11 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="createBundle">
               <Plus class="h-4 w-4" />
               {{ copy.createDraft }}
             </button>
@@ -1438,19 +1438,19 @@ onMounted(load)
                 <div class="grid gap-4 md:grid-cols-2">
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.bundleUlid }}
-                    <input v-model="form.bundle_ulid" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3" />
+                    <input v-model="form.bundle_ulid" disabled class="h-11 rounded-xl border border-slate-200 bg-slate-100 px-4" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.bundleGpath }}
-                    <input v-model="form.bundle_gpath" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3" />
+                    <input v-model="form.bundle_gpath" disabled class="h-11 rounded-xl border border-slate-200 bg-slate-100 px-4" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.name }}
-                    <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="160" />
+                    <input v-model="form.name" class="h-11 rounded-xl border border-slate-200 px-4" maxlength="160" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold">
                     {{ copy.fields.thumbnailObjectKey }}
-                    <input v-model="form.thumbnail_object_key" class="rounded-xl border border-slate-200 px-4 py-3" />
+                    <input v-model="form.thumbnail_object_key" class="h-11 rounded-xl border border-slate-200 px-4" />
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     {{ copy.fields.description }}
@@ -1458,7 +1458,7 @@ onMounted(load)
                   </label>
                   <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     {{ copy.fields.thumbnailFileHash }}
-                    <input v-model="form.thumbnail_file_hash" class="rounded-xl border border-slate-200 px-4 py-3" />
+                    <input v-model="form.thumbnail_file_hash" class="h-11 rounded-xl border border-slate-200 px-4" />
                   </label>
                 </div>
                 <div class="flex justify-stretch sm:justify-end">
@@ -1489,7 +1489,7 @@ onMounted(load)
                     </div>
                     <label class="grid gap-2 text-sm font-bold">
                       {{ copy.relink.newPipeline }}
-                      <select v-model="replacementPipelineId" class="h-12 rounded-xl border border-slate-200 bg-white px-4" :disabled="!currentPipelineRef || targetOptionsLoading">
+                      <select v-model="replacementPipelineId" class="h-11 rounded-xl border border-slate-200 bg-white px-4" :disabled="!currentPipelineRef || targetOptionsLoading">
                         <option value="">{{ copy.relink.selectNewPipeline }}</option>
                         <option v-for="option in replacementPipelineOptions" :key="option.id" :value="option.id">
                           {{ option.title }} · {{ option.subtitle }}
@@ -1497,7 +1497,7 @@ onMounted(load)
                       </select>
                     </label>
                     <div class="flex flex-wrap items-end">
-                      <button class="h-12 rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replaceAndSavePipelineBinding">
+                      <button class="inline-flex h-10 items-center justify-center rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replaceAndSavePipelineBinding">
                         <Loader2 v-if="saving" class="mr-2 inline h-4 w-4 animate-spin" />
                         {{ copy.relink.save }}
                       </button>
@@ -1667,7 +1667,7 @@ onMounted(load)
             </main>
           </div>
           <div v-if="activeTab === 'pricing'" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
-            <button class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="savePricing">
+            <button class="inline-flex h-11 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="savePricing">
               <Send class="h-4 w-4" />
               {{ copy.savePricing }}
             </button>
