@@ -3190,6 +3190,7 @@ export const en: AdminTranslations = {
             question_ulid: "Question ID",
             quiz_ulid: "Quiz ID",
             question_text: "Question Text",
+            explanation: "Explanation",
             question_type: "Question Type",
             points: "Points",
             sort_order: "Sort Order",
