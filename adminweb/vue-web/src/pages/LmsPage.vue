@@ -1227,6 +1227,29 @@ async function saveCourse() {
   }
 }
 
+const cloningCourseId = ref("")
+async function cloneCourse(course: JsonRecord) {
+  const id = courseId(course)
+  if (!id || cloningCourseId.value) return
+  cloningCourseId.value = id
+  try {
+    await apiClient<JsonRecord>("/api/lms/courses", {
+      method: "POST",
+      body: JSON.stringify({
+        title: courseTitle(course) + " (副本)",
+        from_course_id: id,
+      })
+    })
+    toast.success("课程克隆成功")
+    await loadCourses()
+  } catch (err) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, "课程克隆失败"))
+  } finally {
+    cloningCourseId.value = ""
+  }
+}
+
 async function publishCourse() {
   if (!selectedCourseId.value) return
   publishing.value = true
@@ -2882,6 +2905,10 @@ onMounted(() => {
               </button>
               <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click.stop="selectCourse(course)">
                 {{ copy.edit }}
+              </button>
+              <button class="inline-flex items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0 disabled:opacity-50" type="button" :disabled="cloningCourseId === courseId(course)" @click.stop="cloneCourse(course)">
+                <Loader2 v-if="cloningCourseId === courseId(course)" class="mr-1 h-3 w-3 animate-spin lg:hidden" />
+                克隆
               </button>
             </div>
           </div>
