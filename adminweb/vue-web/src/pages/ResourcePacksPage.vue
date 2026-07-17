@@ -590,7 +590,7 @@ onMounted(load)
               <button v-if="canRevertPack(pack)" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'revert-to-draft')">
                 {{ copy.revertPack }}
               </button>
-              <button v-if="canDeletePack(pack)" class="ui-btn ui-btn-sm text-danger-600 hover:bg-red-50" type="button" @click="requestDeletePack(pack)">
+              <button v-if="canDeletePack(pack)" class="ui-btn ui-btn-ghost ui-btn-sm text-red-600 hover:bg-red-50 hover:text-red-700" type="button" @click="requestDeletePack(pack)">
                 {{ copy.deletePack }}
               </button>
             </div>
@@ -703,7 +703,7 @@ onMounted(load)
                   <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.basic }}</div>
                   <div class="grid gap-4 md:grid-cols-2">
                     <label class="grid content-start gap-1.5">
-                      <span class="ui-label"><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
+                      <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
                       <input v-model="form.title" class="ui-input" :placeholder="copy.placeholders.title" required />
                     </label>
                     <label class="grid content-start gap-1.5">
@@ -742,7 +742,7 @@ onMounted(load)
                   <div class="grid gap-4 md:grid-cols-2">
                     <label class="grid content-start gap-1.5">
                       <span class="ui-label flex items-center gap-1.5">
-                        <span><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.respath }}</span>
+                        <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.respath }}</span>
                         <span class="group relative inline-flex cursor-help rounded-full text-slate-400 outline-none transition-colors hover:text-slate-600 focus-visible:text-slate-600 focus-visible:ring-4 focus-visible:ring-primary-500/20" tabindex="0" :aria-label="copy.respathHint">
                           <Info class="h-4 w-4" aria-hidden="true" />
                           <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">

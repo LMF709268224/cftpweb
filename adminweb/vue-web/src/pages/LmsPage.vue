@@ -3000,10 +3000,10 @@ onMounted(() => {
               <button class="inline-flex items-center justify-center rounded-[10px] bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 lg:bg-transparent lg:p-0 lg:hover:bg-transparent lg:hover:text-primary-600" type="button" @click.stop="openCourseDetailDialog(course)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-[10px] bg-amber-50 px-3 py-2 text-sm font-medium text-amber-600 transition-colors hover:bg-amber-100 lg:bg-transparent lg:p-0 lg:hover:bg-transparent lg:hover:text-amber-700" type="button" @click.stop="selectCourse(course)">
+              <button class="inline-flex items-center justify-center rounded-[10px] bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 lg:bg-transparent lg:p-0 lg:hover:bg-transparent lg:hover:text-primary-600" type="button" @click.stop="selectCourse(course)">
                 {{ copy.edit }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-[10px] bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-600 transition-colors hover:bg-emerald-100 disabled:opacity-50 lg:bg-transparent lg:p-0 lg:hover:bg-transparent lg:hover:text-emerald-700" type="button" :disabled="cloningCourseId === courseId(course)" @click.stop="cloneCourse(course)">
+              <button class="inline-flex items-center justify-center rounded-[10px] bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 disabled:opacity-50 lg:bg-transparent lg:p-0 lg:hover:bg-transparent lg:hover:text-primary-600" type="button" :disabled="cloningCourseId === courseId(course)" @click.stop="cloneCourse(course)">
                 <Loader2 v-if="cloningCourseId === courseId(course)" class="mr-1 h-3 w-3 animate-spin lg:hidden" />
                 克隆
               </button>
@@ -3173,7 +3173,7 @@ onMounted(() => {
               <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openChapterDetail(chapter)">
                 {{ copy.viewDetails }}
               </button>
-              <button v-if="canEditCourseContent" class="text-sm font-medium text-amber-600 transition-colors hover:text-amber-700" type="button" @click="editChapter(chapter)">
+              <button v-if="canEditCourseContent" class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="editChapter(chapter)">
                 {{ copy.editChapter }}
               </button>
               <button v-if="canEditCourseContent" class="text-sm font-medium text-red-600 transition-colors hover:text-red-700" type="button" @click="deleteChapter(chapter)">
@@ -3327,7 +3327,7 @@ onMounted(() => {
               <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openLessonDetail(item.lesson)">
                 {{ copy.viewDetails }}
               </button>
-              <button v-if="canEditCourseContent" class="text-sm font-medium text-amber-600 transition-colors hover:text-amber-700" type="button" @click="editLesson(item.lesson)">
+              <button v-if="canEditCourseContent" class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="editLesson(item.lesson)">
                 {{ copy.editLesson }}
               </button>
               <button v-if="canEditCourseContent" class="text-sm font-medium text-red-600 transition-colors hover:text-red-700" type="button" @click="deleteLesson(item.lesson)">
@@ -3596,7 +3596,7 @@ onMounted(() => {
                       <span v-else class="text-slate-400">-</span>
                     </td>
                     <td class="w-24 whitespace-nowrap px-4 py-3.5 text-right">
-                      <button class="whitespace-nowrap text-sm font-medium transition-colors" :class="canEditCourseContent ? 'text-amber-600 hover:text-amber-700' : 'text-primary-700 hover:text-primary-600'" type="button" @click.stop="editSupplementaryItem(item)">
+                      <button class="whitespace-nowrap text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click.stop="editSupplementaryItem(item)">
                         {{ canEditCourseContent ? copy.edit : copy.viewDetails }}
                       </button>
                     </td>
@@ -3785,7 +3785,7 @@ onMounted(() => {
                     <td class="w-48 whitespace-nowrap px-4 py-3.5 text-right">
                       <div class="inline-flex items-center justify-end gap-3">
                         <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="viewMaterial(material)">{{ copy.viewDetails }}</button>
-                        <button v-if="canEditCourseContent" class="text-sm font-medium text-amber-600 transition-colors hover:text-amber-700" type="button" @click="editMaterial(material)">{{ copy.edit }}</button>
+                        <button v-if="canEditCourseContent" class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="editMaterial(material)">{{ copy.edit }}</button>
                         <button v-if="canEditCourseContent" class="text-sm font-medium text-red-600 transition-colors hover:text-red-700" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
                       </div>
                     </td>
@@ -3990,7 +3990,7 @@ onMounted(() => {
               <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openQuizDetail(item.quiz)">
                 {{ copy.viewDetails }}
               </button>
-              <button v-if="canEditCourseContent" class="text-sm font-medium text-amber-600 transition-colors hover:text-amber-700" type="button" @click="editQuiz(item.quiz)">
+              <button v-if="canEditCourseContent" class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="editQuiz(item.quiz)">
                 {{ copy.editQuiz }}
               </button>
               <button v-if="canEditCourseContent" class="text-sm font-medium text-red-600 transition-colors hover:text-red-700" type="button" @click="deleteQuiz(item.quiz)">
@@ -4158,7 +4158,7 @@ onMounted(() => {
                           <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="viewQuestion(question)">
                             {{ copy.viewDetails }}
                           </button>
-                          <button v-if="canEditCourseContent && quizDialogMode !== 'detail'" class="text-sm font-medium text-amber-600 transition-colors hover:text-amber-700" type="button" @click="editQuestion(question)">
+                          <button v-if="canEditCourseContent && quizDialogMode !== 'detail'" class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="editQuestion(question)">
                             {{ copy.edit }}
                           </button>
                           <button v-if="canEditCourseContent && quizDialogMode !== 'detail'" class="text-sm font-medium text-red-600 transition-colors hover:text-red-700" type="button" @click="deleteQuestion(question)">

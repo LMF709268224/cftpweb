@@ -575,7 +575,7 @@ onMounted(load)
               <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openFileEditor(file)">
                 {{ copy.editFile }}
               </button>
-              <button class="ui-btn ui-btn-sm text-danger-600 hover:bg-red-50" type="button" @click="requestDeleteFile(file)">
+              <button class="ui-btn ui-btn-ghost ui-btn-sm text-red-600 hover:bg-red-50 hover:text-red-700" type="button" @click="requestDeleteFile(file)">
                 {{ copy.deleteFile }}
               </button>
             </div>
@@ -624,7 +624,7 @@ onMounted(load)
                   <div class="tnum readonly-field readonly-field--compact break-all">{{ displayValue(form.file_id) }}</div>
                 </div>
                 <label class="grid content-start gap-1.5">
-                  <span class="ui-label"><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.pack }}</span>
+                  <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.pack }}</span>
                   <div v-if="mode === 'detail'" class="readonly-field">{{ packFieldText(form.pack_id) }}</div>
                   <select v-else v-model="form.pack_id" class="ui-input" :disabled="mode === 'edit'">
                     <option value="">{{ copy.selectPack }}</option>
@@ -632,12 +632,12 @@ onMounted(load)
                   </select>
                 </label>
                 <label class="grid content-start gap-1.5">
-                  <span class="ui-label"><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
+                  <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
                   <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.title) }}</div>
                   <input v-else v-model="form.title" class="ui-input" :placeholder="copy.placeholders.title" />
                 </label>
                 <label class="grid content-start gap-1.5">
-                  <span class="ui-label"><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.fileType }}</span>
+                  <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.fileType }}</span>
                   <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ fileTypeLabel(form.file_type) }}</div>
                   <select v-else v-model.number="form.file_type" class="ui-input">
                     <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
