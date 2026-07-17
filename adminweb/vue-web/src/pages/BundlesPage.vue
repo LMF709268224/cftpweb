@@ -813,7 +813,7 @@ const thumbnailFileInput = ref<HTMLInputElement | null>(null)
 
 watch(() => form.value.name, (newName, oldName) => {
   if (mode.value !== "create") return
-  const generatePath = (t: string) => t ? `/bundle/${t.trim().replace(/\s+/g, '_')}` : ''
+  const generatePath = (t: string) => t ? `/bundle/${t.trim().toLowerCase().replace(/\s+/g, '_')}` : ''
   const newPath = generatePath(newName)
   const oldPath = generatePath(oldName)
   
