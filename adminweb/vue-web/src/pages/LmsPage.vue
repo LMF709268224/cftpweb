@@ -3872,7 +3872,7 @@ onMounted(() => {
               <form v-else class="rounded-2xl border border-slate-200 p-4" @submit.prevent="saveQuiz">
                 <h3 class="font-black">{{ editingQuizId ? copy.editQuiz : copy.createQuiz }}</h3>
                 <div class="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
-                  {{ copy.saveQuizOwner }}{{ quizTarget().label }} 路 {{ quizTarget().id ? quizTarget().title : copy.unselectedTarget(quizTarget().label) }}
+                  {{ copy.saveQuizOwner }}{{ quizTarget().label }} - {{ quizTarget().id ? quizTarget().title : copy.unselectedTarget(quizTarget().label) }}
                 </div>
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
                   <label class="block">
@@ -3894,7 +3894,7 @@ onMounted(() => {
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizOwnerObject }}</span>
                     <select v-model="quizForm.owner_id" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
                       <option value="">{{ copy.selectLesson }}</option>
-                      <option v-for="item in quizLessonOptions" :key="lessonId(item.lesson)" :value="lessonId(item.lesson)">{{ chapterTitle(item.chapter) }} 路 {{ lessonTitle(item.lesson) }}</option>
+                      <option v-for="item in quizLessonOptions" :key="lessonId(item.lesson)" :value="lessonId(item.lesson)">{{ chapterTitle(item.chapter) }} - {{ lessonTitle(item.lesson) }}</option>
                     </select>
                   </label>
                   <div v-else class="block">
@@ -4089,13 +4089,13 @@ onMounted(() => {
                     <button v-if="questionDialogMode !== 'detail'" class="flex-1 text-left" type="button" @click="editOption(option)">
                       <div class="font-black">{{ optionTitle(option) }}</div>
                       <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
-                        {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} 路 {{ copy.sortMeta(option.sort_order || 0) }}
+                        {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} - {{ copy.sortMeta(option.sort_order || 0) }}
                       </div>
                     </button>
                     <div v-else class="flex-1">
                       <div class="font-black">{{ optionTitle(option) }}</div>
                       <div class="mt-1 text-xs" :class="option.is_correct ? 'text-emerald-600' : 'text-slate-500'">
-                        {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} 路 {{ copy.sortMeta(option.sort_order || 0) }}
+                        {{ option.is_correct ? copy.correctAnswer : copy.normalOption }} - {{ copy.sortMeta(option.sort_order || 0) }}
                       </div>
                     </div>
                     <button v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="text-xs font-bold text-red-600 transition hover:underline" type="button" @click="deleteOption(option)">{{ copy.delete }}</button>
