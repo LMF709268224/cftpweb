@@ -139,6 +139,7 @@ func (s *Server) buildRouter(h *handler.Handler) http.Handler {
 
 		r.Route("/quizzes", func(r chi.Router) {
 			r.Post("/{quizId}/take", h.TakeQuiz)
+			r.Post("/{quizId}/complete", h.CompleteLmsQuiz)
 			r.Get("/attempts/{attemptId}/paper", h.GetQuizPaper)
 			r.Get("/attempts/{attemptId}/detail", h.GetQuizAttemptDetail)
 			r.Post("/attempts/{attemptId}/submit", h.SubmitQuiz)

@@ -56,6 +56,7 @@ type QuizForm = {
   passing_score: string
   time_limit: string
   randomize_questions: boolean
+  quiz_type: number
 }
 
 type QuestionForm = {
@@ -451,6 +452,7 @@ function emptyQuizForm(): QuizForm {
     passing_score: "70",
     time_limit: "0",
     randomize_questions: false,
+    quiz_type: 1,
   }
 }
 
@@ -2147,6 +2149,7 @@ function editQuiz(quiz: JsonRecord, openDialog = true) {
     passing_score: String(quiz.passing_score || 70),
     time_limit: String(quiz.time_limit || 0),
     randomize_questions: Boolean(quiz.randomize_questions),
+    quiz_type: Number(quiz.quiz_type || 1),
   }
   questionDialogOpen.value = false
   void loadQuestions()
@@ -3881,6 +3884,13 @@ onMounted(() => {
                 <label class="mt-3 block">
                   <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.quizTitlePlaceholder }}</span>
                   <input v-model="quizForm.title" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.quizTitlePlaceholder" />
+                </label>
+                <label class="mt-3 block">
+                  <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ (copy as any).quizType || '测验类型' }}</span>
+                  <select v-model.number="quizForm.quiz_type" class="mt-2 h-11 w-full rounded-xl border border-slate-200 px-3">
+                    <option :value="1">{{ (copy as any).quizTypeMustPass || '必过测验' }}</option>
+                    <option :value="2">{{ (copy as any).quizTypeSkippable || '可跳过/自助完成测验' }}</option>
+                  </select>
                 </label>
                 <textarea v-model="quizForm.description" class="mt-3 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.description" />
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
