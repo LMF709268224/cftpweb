@@ -370,8 +370,14 @@ const totalQuizzesCount = computed(() => {
   return count
 })
 
-function quizCompleted(quizId?: string) {
-  return Boolean(quizId && quizProgress.value[quizId]?.is_passed)
+function quizCompleted(quizId?: string, quizType: number = 1) {
+  const p = quizProgress.value[quizId || ""]
+  if (!p) return false
+  if (quizType === 2) {
+    const s = String(p.status || "").trim().toUpperCase()
+    return p.is_passed || s === "3" || s.includes("COMPLETED")
+  }
+  return Boolean(p.is_passed)
 }
 
 const quizTasks = computed<QuizTask[]>(() => {
@@ -386,7 +392,7 @@ const quizTasks = computed<QuizTask[]>(() => {
       scope: "course",
       scopeLabel: t.value.learning.quizScopeCourse,
       ownerTitle: course.value?.title || t.value.common.unknownCourse,
-      completed: quizCompleted(quizId),
+      completed: quizCompleted(quizId, Number(quiz.quiz_type || 1)),
       quizType: Number(quiz.quiz_type || 1),
     })
   })
@@ -405,7 +411,7 @@ const quizTasks = computed<QuizTask[]>(() => {
         ownerTitle: chapterTitle,
         chapterId,
         chapterTitle,
-        completed: quizCompleted(quizId),
+        completed: quizCompleted(quizId, Number(quiz.quiz_type || 1)),
         quizType: Number(quiz.quiz_type || 1),
       })
     })
@@ -425,7 +431,7 @@ const quizTasks = computed<QuizTask[]>(() => {
           chapterTitle,
           lessonId: lessonIdOf(lessonDetail.lesson),
           lessonTitle,
-          completed: quizCompleted(quizId),
+          completed: quizCompleted(quizId, Number(quiz.quiz_type || 1)),
           quizType: Number(quiz.quiz_type || 1),
         })
       })
