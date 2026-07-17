@@ -3158,6 +3158,7 @@ export const zh = {
         confirmConfig: "确定配置",
         cancelConfig: "取消",
         saveQuestion: "保存题目",
+        saveQuestionAndCurrentOption: "保存题目并保存当前选项",
         optionsTitle: "选项",
         optionsSelectedHint: "选项属于当前题目。",
         optionsNeedQuestionHint: "请先选择题目。",
@@ -3169,6 +3170,7 @@ export const zh = {
         newOption: "新选项",
         optionTextPlaceholder: "选项内容",
         saveOption: "保存选项",
+        saveCurrentOption: "仅保存当前选项",
         quizReadonlyFields: "测验/题目只读字段",
         quizFieldLabels: {
             quiz_ulid: "测验 ID",
@@ -3304,6 +3306,7 @@ export const zh = {
             optionRequired: "请先选择题目并填写选项",
             optionUpdated: "选项已更新",
             optionCreated: "选项已创建",
+            questionAndCurrentOptionSaved: "题目和当前选项已保存",
             optionSaveFailed: "选项保存失败",
             optionDeleted: "选项已删除",
             optionDeleteFailed: "选项删除失败",

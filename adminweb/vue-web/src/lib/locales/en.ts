@@ -3160,6 +3160,7 @@ export const en: AdminTranslations = {
         confirmConfig: "Confirm Config",
         cancelConfig: "Cancel",
         saveQuestion: "Save Question",
+        saveQuestionAndCurrentOption: "Save Question and Current Option",
         optionsTitle: "Options",
         optionsSelectedHint: "Options belong to the current question.",
         optionsNeedQuestionHint: "Please select a question first.",
@@ -3171,6 +3172,7 @@ export const en: AdminTranslations = {
         newOption: "New Option",
         optionTextPlaceholder: "Option content",
         saveOption: "Save Option",
+        saveCurrentOption: "Save Current Option Only",
         quizReadonlyFields: "Quiz / Question Read-only Fields",
         quizFieldLabels: {
             quiz_ulid: "Quiz ID",
@@ -3306,6 +3308,7 @@ export const en: AdminTranslations = {
             optionRequired: "Please select a question and fill in option content",
             optionUpdated: "Option updated",
             optionCreated: "Option created",
+            questionAndCurrentOptionSaved: "Question and current option saved",
             optionSaveFailed: "Failed to save option",
             optionDeleted: "Option deleted",
             optionDeleteFailed: "Failed to delete option",

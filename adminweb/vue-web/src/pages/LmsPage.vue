@@ -75,6 +75,16 @@ type OptionForm = {
   sort_order: string
 }
 
+type SaveQuestionOptions = {
+  closeDialog?: boolean
+  resetEditor?: boolean
+  silentSuccess?: boolean
+}
+
+type SaveOptionOptions = {
+  silentSuccess?: boolean
+}
+
 type DetailDeleteKind = "supplementaryItem" | "supplementaryConfig" | "material" | "quiz" | "question" | "option"
 
 type PendingDetailDelete = {
@@ -254,6 +264,19 @@ const supplementaryMaterialItems = computed<SupplementaryMaterialItem[]>(() => p
 }), "Chapter"))
 const selectedQuizId = computed(() => quizId(selectedQuiz.value))
 const selectedQuestionId = computed(() => questionId(selectedQuestion.value))
+const editingOptionRecord = computed(() => options.value.find((item) => optionId(item) === editingOptionId.value) || null)
+const hasUnsavedCurrentOption = computed(() => {
+  if (quizDialogMode.value === "detail" || questionDialogMode.value === "detail") return false
+  const optionText = optionForm.value.option_text.trim()
+  if (!editingOptionId.value) return Boolean(optionText)
+
+  const current = editingOptionRecord.value
+  if (!current) return Boolean(optionText)
+  return optionText !== String(current.option_text || "").trim()
+    || Boolean(optionForm.value.is_correct) !== Boolean(current.is_correct)
+    || Number(optionForm.value.sort_order || 0) !== Number(current.sort_order || 0)
+})
+const questionSaveButtonLabel = computed(() => hasUnsavedCurrentOption.value ? copy.value.saveQuestionAndCurrentOption : copy.value.saveQuestion)
 const selectedCourseStatusBadge = computed(() => courseStatusBadgeValue(selectedCourse.value))
 const canDeleteSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
 const canPublishSelectedCourse = computed(() => !!selectedCourseId.value && courseStatusKey(selectedCourse.value) === "draft")
@@ -2295,7 +2318,7 @@ async function confirmDeleteQuiz(deleteInfo: PendingDetailDelete) {
   }
 }
 
-async function loadQuestions(id = selectedQuizId.value) {
+async function loadQuestions(id = selectedQuizId.value, resetEditor = true) {
   if (!id) return
   questionsLoading.value = true
   try {
@@ -2312,12 +2335,14 @@ async function loadQuestions(id = selectedQuizId.value) {
       }
     }))
     questions.value = details
-    selectedQuestion.value = null
-    options.value = []
-    editingQuestionId.value = ""
-    editingOptionId.value = ""
-    questionForm.value = emptyQuestionForm()
-    optionForm.value = emptyOptionForm()
+    if (resetEditor) {
+      selectedQuestion.value = null
+      options.value = []
+      editingQuestionId.value = ""
+      editingOptionId.value = ""
+      questionForm.value = emptyQuestionForm()
+      optionForm.value = emptyOptionForm()
+    }
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.questionsLoadFailed))
@@ -2390,30 +2415,48 @@ function saveMediaConfig() {
   advancedMediaDialogOpen.value = false
 }
 
+function extractQuestionRecord(value: unknown) {
+  if (!isJsonRecord(value)) return null
+  const question = value.question
+  return isJsonRecord(question) ? question : value
+}
+
+function findSavedQuestion(body: JsonRecord, fallbackId = "") {
+  if (fallbackId) {
+    const byId = questions.value.find((item) => questionId(item) === fallbackId)
+    if (byId) return byId
+  }
+  return questions.value.find((item) =>
+    String(item.question_text || "").trim() === String(body.question_text || "").trim()
+    && Number(item.sort_order || 0) === Number(body.sort_order || 0)
+  ) || null
+}
+
 function addMediaItem() {
   parsedMediaItems.value.push({ type: "image", url: "" })
 }
 
-async function saveQuestion() {
+async function saveQuestion({ closeDialog = true, resetEditor = true, silentSuccess = false }: SaveQuestionOptions = {}) {
   if (!selectedQuizId.value || !questionForm.value.question_text.trim()) {
     toast.error(copy.value.toasts.questionRequired)
-    return
+    return ""
   }
   const targetSort = Number(questionForm.value.sort_order || 1)
   const isConflict = questions.value.some(q => Number(q.sort_order || 0) === targetSort && questionId(q) !== editingQuestionId.value)
   if (isConflict) {
     toast.error((copy.value.toasts as any)?.duplicateQuestionSort || "该课检下已有相同排序的题目，请更换")
-    return
+    return ""
   }
   const mediaJson = questionForm.value.media_items_json.trim() || "[]"
   try {
     JSON.parse(mediaJson)
   } catch {
     toast.error(copy.value.toasts.mediaInvalidJson)
-    return
+    return ""
   }
 
   savingQuestion.value = true
+  let savedQuestionId = editingQuestionId.value
   try {
     const body: JsonRecord = {
       question_text: questionForm.value.question_text.trim(),
@@ -2426,18 +2469,34 @@ async function saveQuestion() {
     }
     if (editingQuestionId.value) {
       body.version = questions.value.find((item) => questionId(item) === editingQuestionId.value)?.version || 0
-      await apiClient(`/api/lms/questions/${encodeURIComponent(editingQuestionId.value)}`, { method: "PUT", body: JSON.stringify(body) })
-      toast.success(copy.value.toasts.questionUpdated)
+      const data = await apiClient<JsonRecord>(`/api/lms/questions/${encodeURIComponent(editingQuestionId.value)}`, { method: "PUT", body: JSON.stringify(body) })
+      savedQuestionId = questionId(extractQuestionRecord(data)) || savedQuestionId
+      if (!silentSuccess) toast.success(copy.value.toasts.questionUpdated)
     } else {
-      await apiClient(`/api/lms/quizzes/${encodeURIComponent(selectedQuizId.value)}/questions`, { method: "POST", body: JSON.stringify(body) })
-      toast.success(copy.value.toasts.questionCreated)
+      const data = await apiClient<JsonRecord>(`/api/lms/quizzes/${encodeURIComponent(selectedQuizId.value)}/questions`, { method: "POST", body: JSON.stringify(body) })
+      savedQuestionId = questionId(extractQuestionRecord(data))
+      if (!silentSuccess) toast.success(copy.value.toasts.questionCreated)
     }
-    await loadQuestions()
+    await loadQuestions(selectedQuizId.value, resetEditor)
+    if (!resetEditor) {
+      const savedQuestion = findSavedQuestion(body, savedQuestionId)
+      if (savedQuestion) {
+        selectedQuestion.value = savedQuestion
+        savedQuestionId = questionId(savedQuestion) || savedQuestionId
+      } else if (savedQuestionId) {
+        selectedQuestion.value = { ...(selectedQuestion.value || {}), ...body, question_ulid: savedQuestionId }
+      }
+      editingQuestionId.value = savedQuestionId
+      questionDialogMode.value = "edit"
+      return savedQuestionId
+    }
     resetQuestionEditor()
-    questionDialogOpen.value = false
+    if (closeDialog) questionDialogOpen.value = false
+    return savedQuestionId
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.questionSaveFailed))
+    return ""
   } finally {
     savingQuestion.value = false
   }
@@ -2513,16 +2572,16 @@ function newOption() {
   optionForm.value.sort_order = String(maxSort + 1)
 }
 
-async function saveOption() {
-  if (!selectedQuestionId.value || !optionForm.value.option_text.trim()) {
+async function saveOptionForQuestion(questionIdValue = selectedQuestionId.value, { silentSuccess = false }: SaveOptionOptions = {}) {
+  if (!questionIdValue || !optionForm.value.option_text.trim()) {
     toast.error(copy.value.toasts.optionRequired)
-    return
+    return false
   }
   const targetSort = Number(optionForm.value.sort_order || 1)
   const isConflict = options.value.some(o => Number(o.sort_order || 0) === targetSort && optionId(o) !== editingOptionId.value)
   if (isConflict) {
     toast.error((copy.value.toasts as any)?.duplicateOptionSort || "该题目下已有相同排序的选项，请更换")
-    return
+    return false
   }
 
   savingOption.value = true
@@ -2535,19 +2594,43 @@ async function saveOption() {
     if (editingOptionId.value) {
       body.version = options.value.find((item) => optionId(item) === editingOptionId.value)?.version || 0
       await apiClient(`/api/lms/options/${encodeURIComponent(editingOptionId.value)}`, { method: "PUT", body: JSON.stringify(body) })
-      toast.success(copy.value.toasts.optionUpdated)
+      if (!silentSuccess) toast.success(copy.value.toasts.optionUpdated)
     } else {
-      await apiClient(`/api/lms/questions/${encodeURIComponent(selectedQuestionId.value)}/options`, { method: "POST", body: JSON.stringify(body) })
-      toast.success(copy.value.toasts.optionCreated)
+      await apiClient(`/api/lms/questions/${encodeURIComponent(questionIdValue)}/options`, { method: "POST", body: JSON.stringify(body) })
+      if (!silentSuccess) toast.success(copy.value.toasts.optionCreated)
     }
-    await loadOptions()
+    await loadOptions(questionIdValue)
     newOption()
+    return true
   } catch (err) {
     console.error(err)
     toast.error(apiErrorMessage(err, copy.value.toasts.optionSaveFailed))
+    return false
   } finally {
     savingOption.value = false
   }
+}
+
+async function saveOption() {
+  await saveOptionForQuestion()
+}
+
+async function saveQuestionWithCurrentOption() {
+  if (savingQuestion.value || savingOption.value) return
+  if (!hasUnsavedCurrentOption.value) {
+    await saveQuestion()
+    return
+  }
+
+  const savedQuestionId = await saveQuestion({ closeDialog: false, resetEditor: false, silentSuccess: true })
+  if (!savedQuestionId) return
+
+  const optionSaved = await saveOptionForQuestion(savedQuestionId, { silentSuccess: true })
+  if (!optionSaved) return
+
+  toast.success(copy.value.toasts.questionAndCurrentOptionSaved)
+  resetQuestionEditor()
+  questionDialogOpen.value = false
 }
 
 function deleteOption(option: JsonRecord) {
@@ -4032,7 +4115,7 @@ onMounted(() => {
                     <div class="mt-1 text-lg font-black text-slate-900">{{ copy.questionMeta(selectedQuestion ? questionTypeLabel(selectedQuestion.question_type) : questionTypeLabel(questionForm.question_type), selectedQuestion?.points || questionForm.points || 0) }}</div>
                   </div>
                 </div>
-                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-question-form" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestion">
+                <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-question-form" class="border-t border-slate-200 p-4" @submit.prevent="saveQuestionWithCurrentOption">
                   <h4 class="font-black">{{ editingQuestionId ? copy.editQuestion : copy.createQuestion }}</h4>
                   <label class="mt-3 block">
                     <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.questionStemLabel }}</span>
@@ -4105,7 +4188,7 @@ onMounted(() => {
                 <form v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" id="lms-option-form" class="border-t border-slate-200 p-4" @submit.prevent="saveOption">
                   <div class="flex items-center justify-between gap-3">
                     <h4 class="font-black">{{ editingOptionId ? copy.editOption : copy.createOption }}</h4>
-                    <button class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuestionId" type="button" @click="newOption">
+                    <button class="inline-flex h-9 items-center gap-2 rounded-xl bg-blue-700 px-3 text-xs font-bold text-white shadow-sm disabled:opacity-40" :disabled="!selectedQuestionId || savingOption || savingQuestion" type="button" @click="newOption">
                       <Plus class="h-3.5 w-3.5" />
                       {{ copy.newOption }}
                     </button>
@@ -4121,6 +4204,13 @@ onMounted(() => {
                       {{ copy.correctAnswer }}
                     </label>
                   </div>
+                  <div class="mt-3 flex justify-end">
+                    <button class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:opacity-50 sm:w-auto" :disabled="!selectedQuestionId || savingOption || savingQuestion" type="submit">
+                      <Loader2 v-if="savingOption" class="h-4 w-4 animate-spin" />
+                      <Save v-else class="h-4 w-4" />
+                      {{ savingOption ? copy.saving : copy.saveCurrentOption }}
+                    </button>
+                  </div>
                 </form>
                 <div v-if="selectedQuestion" class="border-t border-slate-200 p-4">
                   <h4 class="font-black">{{ copy.quizReadonlyFields }}</h4>
@@ -4131,11 +4221,8 @@ onMounted(() => {
               </section>
             </div>
             <div v-if="quizDialogMode !== 'detail' && questionDialogMode !== 'detail'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
-              <button class="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-200 px-4 font-bold text-slate-700 disabled:opacity-50 sm:w-auto" :disabled="!selectedQuestionId || savingOption" form="lms-option-form" type="submit">
-                {{ savingOption ? copy.saving : copy.saveOption }}
-              </button>
-              <button class="inline-flex h-10 w-full items-center justify-center rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="!selectedQuizId || savingQuestion" form="lms-question-form" type="submit">
-                {{ savingQuestion ? copy.saving : copy.saveQuestion }}
+              <button class="inline-flex h-10 w-full items-center justify-center rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" :disabled="!selectedQuizId || savingQuestion || savingOption" type="button" @click="saveQuestionWithCurrentOption">
+                {{ savingQuestion || savingOption ? copy.saving : questionSaveButtonLabel }}
               </button>
             </div>
           </div>

@@ -457,6 +457,7 @@ function jsonText(value: unknown) {
 }
 
 function detailFieldText(key: string, value: unknown) {
+  if (key === "status" || key === "raw_status") return bundleStatusLabel({ [key]: value } as JsonRecord)
   if (key.endsWith("_at")) return formatDate(String(value || "")) || "-"
   const text = String(value ?? "").trim()
   return text || "-"
