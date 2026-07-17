@@ -85,6 +85,14 @@ function summary(record: JsonRecord | null) {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : record
 }
 
+function statusBadgeClass(value: string) {
+  const status = value.trim().toUpperCase()
+  if (status.includes("SUCCESS") || status.includes("OK") || status.includes("COMPLETED")) return "bg-emerald-50 text-emerald-700"
+  if (status.includes("FAIL") || status.includes("ERROR") || status.includes("REJECT")) return "bg-red-50 text-red-700"
+  if (status.includes("PENDING") || status.includes("WAIT")) return "bg-amber-50 text-amber-700"
+  return "bg-slate-100 text-slate-600"
+}
+
 async function load() {
   loading.value = true
   try {
@@ -183,161 +191,182 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
+  <main class="ui-page">
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
-        <p class="text-sm font-black uppercase tracking-[0.2em] text-sky-600">{{ copy.eyebrow }}</p>
-        <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 max-w-3xl text-slate-600">{{ copy.subtitle }}</p>
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" :disabled="loading" @click="load">
+      <button class="ui-btn ui-btn-secondary" type="button" :disabled="loading" @click="load">
         <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
-        <RefreshCw v-else class="h-4 w-4" />
+        <RefreshCw v-else class="h-4 w-4 text-slate-400" />
         {{ copy.refresh }}
       </button>
     </header>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+    <section class="ui-card mt-6 p-4 md:p-5">
       <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.keyword }}
-          <input v-model="filters.keyword" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.keyword" @keydown.enter="resetAndLoad" />
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.keyword }}</span>
+          <input v-model="filters.keyword" class="ui-input" :placeholder="copy.placeholders.keyword" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.sourceService }}
-          <input v-model="filters.source_service" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.sourceService" @keydown.enter="resetAndLoad" />
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.sourceService }}</span>
+          <input v-model="filters.source_service" class="ui-input" :placeholder="copy.placeholders.sourceService" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.action }}
-          <input v-model="filters.action" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.action" @keydown.enter="resetAndLoad" />
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.action }}</span>
+          <input v-model="filters.action" class="ui-input" :placeholder="copy.placeholders.action" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.status }}
-          <input v-model="filters.status" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.status" @keydown.enter="resetAndLoad" />
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.status }}</span>
+          <input v-model="filters.status" class="ui-input" :placeholder="copy.placeholders.status" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.operator }}
-          <input v-model="filters.operator_id" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.operator" @keydown.enter="resetAndLoad" />
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.operator }}</span>
+          <input v-model="filters.operator_id" class="ui-input" :placeholder="copy.placeholders.operator" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.resourceType }}
-          <input v-model="filters.resource_type" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.resourceType" @keydown.enter="resetAndLoad" />
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.resourceType }}</span>
+          <input v-model="filters.resource_type" class="ui-input" :placeholder="copy.placeholders.resourceType" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.resourceId }}
-          <input v-model="filters.resource_id" class="h-11 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.resourceId" @keydown.enter="resetAndLoad" />
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.resourceId }}</span>
+          <input v-model="filters.resource_id" class="ui-input" :placeholder="copy.placeholders.resourceId" @keydown.enter="resetAndLoad" />
         </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.startTime }}
-          <input v-model="filters.start_time" class="h-11 w-full rounded-xl border border-slate-200 px-3" type="datetime-local" />
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.startTime }}</span>
+          <input v-model="filters.start_time" class="ui-input" type="datetime-local" />
         </label>
-        <label class="grid gap-2 text-sm font-bold">
-          {{ copy.filters.endTime }}
-          <input v-model="filters.end_time" class="h-11 w-full rounded-xl border border-slate-200 px-3" type="datetime-local" />
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.endTime }}</span>
+          <input v-model="filters.end_time" class="ui-input" type="datetime-local" />
         </label>
-        <button class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm md:mt-7" type="button" @click="resetAndLoad">
+        <button class="ui-btn ui-btn-primary w-full self-end" type="button" @click="resetAndLoad">
           <Search class="h-4 w-4" />
           {{ copy.search }}
         </button>
       </div>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:p-5">
+    <section class="ui-card mt-4 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
         <div class="min-w-0">
-          <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+          <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-500">{{ copy.totalText(total) }}</span>
+        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
 
-      <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:p-12">
-        <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-        {{ copy.loading }}
+      <div v-if="loading" class="divide-y divide-hairline">
+        <div v-for="i in 6" :key="`sk-${i}`" class="grid gap-3 px-4 py-3.5 md:px-5 lg:grid-cols-[180px_130px_minmax(0,1fr)_180px_120px] lg:items-center lg:gap-4">
+          <div class="skeleton h-4 w-28" />
+          <div class="skeleton h-4 w-16" />
+          <div class="min-w-0">
+            <div class="skeleton h-4 w-3/5" />
+            <div class="skeleton mt-2 h-3 w-2/5" />
+          </div>
+          <div class="skeleton h-4 w-24" />
+          <div class="skeleton h-5 w-16 rounded-full lg:justify-self-center" />
+        </div>
       </div>
-      <div v-else-if="!logs.length" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
+      <div v-else-if="!logs.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <FileText class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.empty }}</p>
+      </div>
       <div v-else>
-        <div class="hidden grid-cols-[180px_130px_minmax(0,1fr)_180px_120px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
+        <div class="ui-table-head hidden grid-cols-[180px_130px_minmax(0,1fr)_180px_120px] gap-4 px-5 py-3 lg:grid">
           <span>{{ copy.columns.time }}</span>
           <span>{{ copy.columns.service }}</span>
           <span>{{ copy.columns.summary }}</span>
           <span>{{ copy.columns.operator }}</span>
           <span class="text-center">{{ copy.columns.status }}</span>
         </div>
-        <button
-          v-for="item in logs"
-          :key="auditId(item)"
-          class="grid w-full gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:px-5 lg:grid-cols-[180px_130px_minmax(0,1fr)_180px_120px] lg:items-center lg:gap-4"
-          :class="auditId(item) === auditId(selected) ? 'bg-sky-50/70' : ''"
-          type="button"
-          @click="openDetail(item)"
-        >
-          <span class="text-sm font-semibold text-slate-600">{{ formatDate(fieldText(item, ["created_at"])) }}</span>
-          <span class="font-mono text-xs font-black uppercase text-sky-700">{{ fieldText(item, ["source_service"]) }}</span>
-          <span class="min-w-0">
-            <span class="block break-words text-base font-black text-slate-950 lg:truncate">{{ fieldText(item, ["summary_text", "action"]) }}</span>
-            <span class="mt-1 block break-all text-xs font-semibold text-slate-500 lg:truncate">{{ fieldText(item, ["resource_display_name", "resource_id", "audit_ulid"]) }}</span>
-          </span>
-          <span class="break-all text-sm font-bold text-slate-700 lg:truncate">{{ fieldText(item, ["operator_name", "operator_id"]) }}</span>
-          <span class="justify-self-start rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-black uppercase text-slate-600 lg:justify-self-center">
-            {{ fieldText(item, ["status"]) }}
-          </span>
-        </button>
-      </div>
-
-      <div class="flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 px-4 py-4 md:p-5">
-        <span class="w-full text-sm font-bold text-slate-500 md:mr-auto md:w-auto">{{ copy.pageText(page, totalPages) }}</span>
-        <button class="flex-1 rounded-xl border px-4 py-2 font-bold disabled:opacity-40 md:flex-none" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
-        <button class="flex-1 rounded-xl border px-4 py-2 font-bold disabled:opacity-40 md:flex-none" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
-      </div>
-    </section>
-
-    <section v-if="detailOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-      <div class="flex h-full max-h-none w-full max-w-[980px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:p-5">
-          <div class="min-w-0">
-            <h2 class="text-xl font-black">{{ copy.detailTitle }}</h2>
-            <p class="mt-1 break-all text-sm text-slate-500">{{ auditId(selected) }}</p>
-          </div>
-          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="detailOpen = false">
-            <X class="h-5 w-5" />
+        <div class="divide-y divide-hairline">
+          <button
+            v-for="item in logs"
+            :key="auditId(item)"
+            class="ui-table-row grid w-full gap-3 px-4 py-3.5 text-left md:px-5 lg:grid-cols-[180px_130px_minmax(0,1fr)_180px_120px] lg:items-center lg:gap-4"
+            :class="auditId(item) === auditId(selected) ? 'bg-primary-50/60' : ''"
+            type="button"
+            @click="openDetail(item)"
+          >
+            <span class="tnum text-sm text-slate-500">{{ formatDate(fieldText(item, ["created_at"])) }}</span>
+            <span class="font-mono text-xs font-medium uppercase text-primary-700">{{ fieldText(item, ["source_service"]) }}</span>
+            <span class="min-w-0">
+              <span class="block break-words text-sm font-medium text-ink lg:truncate">{{ fieldText(item, ["summary_text", "action"]) }}</span>
+              <span class="tnum mt-0.5 block break-all text-xs text-slate-400 lg:truncate">{{ fieldText(item, ["resource_display_name", "resource_id", "audit_ulid"]) }}</span>
+            </span>
+            <span class="break-all text-sm text-slate-600 lg:truncate">{{ fieldText(item, ["operator_name", "operator_id"]) }}</span>
+            <span class="ui-badge justify-self-start uppercase lg:justify-self-center" :class="statusBadgeClass(fieldText(item, ['status']))">
+              {{ fieldText(item, ["status"]) }}
+            </span>
           </button>
         </div>
+      </div>
 
-        <div v-if="detailLoading" class="px-4 py-10 text-center text-slate-500 md:p-12">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          {{ copy.detailLoading }}
-        </div>
-        <div v-else class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
-          <div class="grid gap-4 md:grid-cols-3">
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.summaryCards.service }}</div>
-              <div class="mt-2 break-words text-lg font-black text-slate-950">{{ fieldText(summary(detail), ["source_service"]) }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.summaryCards.action }}</div>
-              <div class="mt-2 break-words text-lg font-black text-slate-950">{{ fieldText(summary(detail), ["action"]) }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.summaryCards.resource }}</div>
-              <div class="mt-2 break-words text-lg font-black text-slate-950">{{ fieldText(summary(detail), ["resource_display_name", "resource_id"]) }}</div>
-            </div>
-          </div>
-
-          <div class="rounded-2xl border border-slate-200 bg-slate-50">
-            <div class="flex items-center gap-2 border-b border-slate-200 px-4 py-3 text-sm font-black">
-              <FileText class="h-4 w-4 text-blue-700" />
-              {{ copy.detailFields }}
-            </div>
-            <div class="divide-y divide-slate-200 px-4">
-              <div v-for="[key, value] in detailEntries" :key="key" class="grid gap-2 py-3 text-sm md:grid-cols-[170px_1fr]">
-                <div class="text-[11px] font-black uppercase text-slate-400">{{ humanizeKey(key) }}</div>
-                <pre class="whitespace-pre-wrap break-words font-sans font-semibold text-slate-700">{{ prettyValue(value) }}</pre>
-              </div>
-            </div>
-          </div>
+      <div class="flex flex-col items-stretch justify-between gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+        <span class="tnum text-center text-sm text-slate-500 sm:text-left">{{ copy.pageText(page, totalPages) }}</span>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
         </div>
       </div>
     </section>
-  </section>
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="detailOpen" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-[980px]">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <div class="min-w-0">
+                <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
+                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ auditId(selected) }}</p>
+              </div>
+              <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="detailOpen = false">
+                <X class="h-5 w-5" />
+              </button>
+            </div>
+
+            <div v-if="detailLoading" class="space-y-3 p-4 md:p-6">
+              <div class="skeleton h-20 w-full" />
+              <div class="skeleton h-12 w-4/5" />
+              <div class="skeleton h-12 w-3/5" />
+            </div>
+            <div v-else class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-6">
+              <div class="grid gap-4 md:grid-cols-3">
+                <div class="rounded-2xl bg-slate-50 p-4">
+                  <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summaryCards.service }}</div>
+                  <div class="mt-1.5 break-words text-base font-semibold text-ink">{{ fieldText(summary(detail), ["source_service"]) }}</div>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4">
+                  <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summaryCards.action }}</div>
+                  <div class="mt-1.5 break-words text-base font-semibold text-ink">{{ fieldText(summary(detail), ["action"]) }}</div>
+                </div>
+                <div class="rounded-2xl bg-slate-50 p-4">
+                  <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summaryCards.resource }}</div>
+                  <div class="mt-1.5 break-words text-base font-semibold text-ink">{{ fieldText(summary(detail), ["resource_display_name", "resource_id"]) }}</div>
+                </div>
+              </div>
+
+              <div class="overflow-hidden rounded-2xl border border-edge">
+                <div class="flex items-center gap-2 border-b border-hairline bg-slate-50/60 px-4 py-3 text-sm font-semibold text-ink">
+                  <FileText class="h-4 w-4 text-slate-400" />
+                  {{ copy.detailFields }}
+                </div>
+                <div class="divide-y divide-hairline px-4">
+                  <div v-for="[key, value] in detailEntries" :key="key" class="grid gap-2 py-3 text-sm md:grid-cols-[170px_1fr]">
+                    <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ humanizeKey(key) }}</div>
+                    <pre class="tnum whitespace-pre-wrap break-words font-sans text-slate-600">{{ prettyValue(value) }}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
+  </main>
 </template>

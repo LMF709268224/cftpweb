@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown, Copy, Info, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
+import { Award, BookOpen, ChevronDown, Copy, GraduationCap, Inbox, Info, Layers, Loader2, Plus, RefreshCw, Save, Send, ShieldCheck, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -942,637 +942,750 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1520px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
+  <main class="ui-page">
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
-        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
-          <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
+        <button class="ui-btn ui-btn-secondary" type="button" @click="load">
+          <RefreshCw class="h-4 w-4 text-slate-400" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
-        <button v-if="!creating" class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="newPipeline">
+        <button v-if="!creating" class="ui-btn ui-btn-primary" type="button" @click="newPipeline">
           <Plus class="h-4 w-4" />
           {{ copy.newPipeline }}
         </button>
       </div>
     </header>
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-5">
+    <section class="ui-card mt-6 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
         <div class="min-w-0">
-          <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+          <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
         <div class="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-          <input v-model="categoryFilter" class="h-10 w-full rounded-xl border border-slate-200 px-3 text-sm sm:w-auto" :placeholder="copy.categoryPlaceholder" />
-          <label class="inline-flex h-10 w-full items-center gap-2 rounded-xl border border-slate-200 px-3 text-sm font-bold sm:w-auto">
-            <input v-model="onlyCurrent" type="checkbox" />
+          <input v-model="categoryFilter" class="ui-input sm:w-64" :placeholder="copy.categoryPlaceholder" />
+          <label class="inline-flex h-10 w-full shrink-0 cursor-pointer items-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3 text-sm font-medium text-slate-600 sm:w-auto">
+            <input v-model="onlyCurrent" type="checkbox" class="h-4 w-4 accent-primary-600" />
             {{ copy.onlyCurrent }}
           </label>
         </div>
       </div>
-      <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:px-6">
-        <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-        {{ copy.loading }}
+      <div v-if="loading" class="divide-y divide-hairline">
+        <div
+          v-for="i in 5"
+          :key="`sk-${i}`"
+          class="flex flex-col gap-3 px-4 py-3.5 md:grid md:grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] md:items-center md:gap-4 md:px-6"
+        >
+          <div>
+            <div class="skeleton h-4 w-40 max-w-full" />
+            <div class="skeleton mt-2 h-3 w-56 max-w-full" />
+          </div>
+          <div class="skeleton h-5 w-16 rounded-full md:justify-self-center" />
+          <div class="skeleton h-4 w-10 md:justify-self-center" />
+          <div class="skeleton h-4 w-24 md:justify-self-end" />
+          <div class="skeleton h-4 w-16 md:justify-self-end" />
+        </div>
       </div>
-      <div v-else-if="!pipelines.length" class="px-4 py-10 text-center text-slate-500 md:px-6">{{ copy.empty }}</div>
+      <div v-else-if="!pipelines.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <Inbox class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.empty }}</p>
+      </div>
       <template v-else>
-        <div class="hidden grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
+        <div class="ui-table-head hidden grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] gap-4 px-4 py-3 md:grid md:px-6">
           <span>{{ copy.columns.pipeline }}</span>
           <span class="text-center">{{ copy.columns.status }}</span>
           <span class="text-center">{{ copy.columns.version }}</span>
           <span class="text-right">{{ copy.columns.updatedAt }}</span>
           <span class="text-right">{{ copy.columns.action }}</span>
         </div>
-        <div
-          v-for="pipeline in pipelines"
-          :key="pipelineUlid(pipeline)"
-          class="flex w-full cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 md:grid md:grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] md:gap-4 md:px-5"
-          role="button"
-          tabindex="0"
-          @click="selectPipeline(pipeline)"
-          @keydown.enter.prevent="selectPipeline(pipeline)"
-          @keydown.space.prevent="selectPipeline(pipeline)"
-        >
-          <div class="min-w-0">
-            <div class="break-words text-lg font-black md:truncate">{{ pipelineName(pipeline) }}</div>
-            <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pipeline.description || copy.noDescription }}</div>
-            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
-              <span class="max-w-full break-words rounded-full bg-slate-100 px-2 py-1 text-slate-600">{{ pipeline.category_tips || "-" }}</span>
-              <span class="max-w-full break-all text-slate-400">ID: {{ pipelineUlid(pipeline) || "-" }}</span>
+        <div class="divide-y divide-hairline">
+          <div
+            v-for="pipeline in pipelines"
+            :key="pipelineUlid(pipeline)"
+            class="ui-table-row flex w-full cursor-pointer flex-col gap-2 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] md:items-center md:gap-4 md:px-6"
+            role="button"
+            tabindex="0"
+            @click="selectPipeline(pipeline)"
+            @keydown.enter.prevent="selectPipeline(pipeline)"
+            @keydown.space.prevent="selectPipeline(pipeline)"
+          >
+            <div class="min-w-0">
+              <div class="break-words text-sm font-medium text-ink md:truncate">{{ pipelineName(pipeline) }}</div>
+              <div class="mt-0.5 line-clamp-1 text-sm text-slate-500">{{ pipeline.description || copy.noDescription }}</div>
+              <div class="mt-2 flex flex-wrap items-center gap-2">
+                <span class="ui-badge max-w-full bg-slate-100 text-slate-600"><span class="truncate">{{ pipeline.category_tips || "-" }}</span></span>
+                <span class="tnum max-w-full break-all text-xs text-slate-400">ID: {{ pipelineUlid(pipeline) || "-" }}</span>
+              </div>
             </div>
+            <div class="flex items-center justify-between gap-3 md:block md:justify-self-center md:text-center">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
+              <span class="ui-badge" :class="badgeClass(pipelineStatus(pipeline))">{{ pipelineStatusLabel(pipelineStatus(pipeline)) }}</span>
+            </div>
+            <div class="flex items-center justify-between gap-3 md:block md:text-center">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.version }}</span>
+              <span class="tnum text-sm text-slate-600">v{{ pipeline.version || 0 }}</span>
+            </div>
+            <div class="flex items-center justify-between gap-3 md:block md:justify-self-end md:text-right">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
+              <span class="tnum text-sm text-slate-500">{{ formatDate(String(pipeline.updated_at || pipeline.created_at || "")) }}</span>
+            </div>
+            <button
+              class="inline-flex h-8 items-center justify-center rounded-lg px-3 text-sm font-medium text-primary-700 transition-colors duration-150 hover:bg-primary-50 hover:text-primary-600 md:justify-self-end"
+              type="button"
+              @click.stop="selectPipeline(pipeline)"
+            >
+              {{ copy.viewDetails }}
+            </button>
           </div>
-          <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
-            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
-            <span class="inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(pipeline))">{{ pipelineStatusLabel(pipelineStatus(pipeline)) }}</span>
-          </span>
-          <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:rounded-none md:bg-transparent md:p-0 md:text-center">
-            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.version }}</span>
-            <span class="text-sm font-black text-slate-700">v{{ pipeline.version || 0 }}</span>
-          </span>
-          <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-end md:rounded-none md:bg-transparent md:p-0 md:text-right">
-            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
-            <span class="text-sm font-semibold text-slate-500">{{ formatDate(String(pipeline.updated_at || pipeline.created_at || "")) }}</span>
-          </span>
-          <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectPipeline(pipeline)">
-            {{ copy.viewDetails }}
-          </button>
         </div>
       </template>
-      <div class="flex flex-col justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row md:px-5">
-        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="pageToken = prevToken; load()">{{ copy.prev }}</button>
-        <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="pageToken = nextToken; load()">{{ copy.next }}</button>
+      <div class="flex flex-col items-stretch justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canPrev" @click="pageToken = prevToken; load()">{{ copy.prev }}</button>
+        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canNext" @click="pageToken = nextToken; load()">{{ copy.next }}</button>
       </div>
     </section>
 
     <Teleport to="body">
-      <div v-if="inEditor" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-0 md:p-6">
-        <div class="flex h-full max-h-none w-full max-w-[1320px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
-            <div class="min-w-0">
-              <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ creating ? copy.newPipeline : form.name || copy.detailTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
-            </div>
-            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="back">
-              <X class="h-5 w-5" />
-            </button>
-          </div>
-
-          <section class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-6">
-      <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
-        <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <div class="min-w-0">
-            <h2 class="text-xl font-black md:text-2xl">{{ copy.basicTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.basicDescription }}</p>
-          </div>
-          <div v-if="!creating" class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2 font-bold" type="button" @click="clonePipeline">
-              <Copy class="h-4 w-4" />
-              {{ copy.cloneVersion }}
-            </button>
-            <button class="rounded-xl border px-4 py-2 font-bold" type="button" @click="publish">{{ copy.publish }}</button>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
-            <button v-if="canDeleteSelectedPipeline" class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 font-bold text-white" type="button" @click="removePipeline">
-              <Trash2 class="h-4 w-4" />
-              {{ copy.delete }}
-            </button>
-          </div>
-        </div>
-        <div class="grid gap-4 md:grid-cols-2">
-          <label class="grid gap-2 text-sm font-bold md:col-span-2">
-            <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
-            <input v-model="form.name" class="rounded-xl border border-slate-200 px-4 py-3" />
-          </label>
-          <details class="group md:col-span-2">
-            <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-              {{ (copy as any).advancedConfig || '高级配置' }}
-              <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
-            </summary>
-            <div class="mt-4 grid gap-4 md:grid-cols-2">
-              <label class="grid gap-2 text-sm font-bold">
-                <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.categoryTips }}</span>
-                <input v-model="form.category_tips" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
-              </label>
-              <label class="grid gap-2 text-sm font-bold">
-                <span><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.respath }}</span>
-                <input v-model="form.pipeline_gpath" :disabled="!creating" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" />
-                <p v-if="creating" class="text-xs font-semibold text-slate-500">{{ copy.respathHint }}</p>
-              </label>
-            </div>
-          </details>
-        </div>
-      </div>
-
-      <div v-if="!creating" class="min-h-0 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 px-5 py-4">
-          <div>
-            <h3 class="text-lg font-black">{{ copy.layerTitle }}</h3>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.layerDescription }}</p>
-          </div>
-          <div class="mt-4 flex gap-2 overflow-x-auto pb-1">
-              <button
-                v-for="layer in layerItems"
-                :key="layer.key"
-                class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-sm font-black transition"
-                :class="activeLayer === layer.key ? 'border-sky-200 bg-sky-50 text-slate-950' : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'"
-                type="button"
-                @click="activeLayer = layer.key"
-              >
-                  <span>{{ layer.title }}</span>
-                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ layer.count }}</span>
-              </button>
-          </div>
-        </div>
-
-        <div v-if="structureLocked" class="border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-900">
-            {{ copy.structureLockedHint }}
-          </div>
-
-        <main class="h-full min-h-0 max-h-none min-w-0 overflow-y-auto md:h-[60vh] md:min-h-[360px] md:max-h-[620px]">
-          <div class="border-b border-slate-200 p-4 md:p-5">
-            <h3 class="text-xl font-black">{{ layerItems.find((layer) => layer.key === activeLayer)?.title }}</h3>
-            <p class="mt-1 text-sm text-slate-500">{{ layerItems.find((layer) => layer.key === activeLayer)?.desc }}</p>
-          </div>
-
-          <div v-if="activeLayer === 'overview'" class="grid gap-4 p-4 md:gap-5 md:p-5 lg:grid-cols-2">
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineId }}</div>
-              <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selectedId || "-" }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.pipelineGuid }}</div>
-              <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected?.pipeline_guid || "-" }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.status }}</div>
-              <div class="mt-2"><span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(pipelineStatus(selected || {}))">{{ pipelineStatusLabel(pipelineStatus(selected || {})) }}</span></div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.version }}</div>
-              <div class="mt-2 text-sm font-bold text-slate-950">v{{ selected?.version || 0 }}</div>
-            </div>
-            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.fields.createdAt }}</div>
-              <div class="mt-2 text-sm font-bold text-slate-950">{{ formatDate(String(selected?.created_at || "")) }}</div>
-            </div>
-          </div>
-
-          <div v-else-if="activeLayer === 'stages'" class="grid min-h-[620px] lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-              <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
-                <div>
-                  <div class="font-black">{{ copy.stageListTitle }}</div>
-                  <div class="text-xs text-slate-500">{{ copy.stageListDescription }}</div>
-                </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addStage">{{ copy.newStage }}</button>
+      <Transition name="modal">
+        <div v-if="inEditor" class="ui-modal-mask z-50">
+          <section class="ui-modal-panel max-w-[1320px]">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <div class="min-w-0">
+                <h2 class="break-words text-base font-semibold text-ink md:truncate md:text-lg">{{ creating ? copy.newPipeline : form.name || copy.detailTitle }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
               </div>
               <button
-                v-for="(stage, index) in stages"
-                :key="`${itemId(stage, ['stage_ulid'])}-${index}`"
-                class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50"
-                :class="selectedStageIndex === index ? 'bg-sky-50' : ''"
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
                 type="button"
-                @click="selectedStageIndex = index"
+                :aria-label="copy.close"
+                @click="back"
               >
-                <div class="font-black">{{ itemTitle(stage, copy.stageFallback(index + 1)) }}</div>
-                <div class="mt-1 text-sm text-slate-500">{{ copy.stageMeta(stage.sort_order ?? index + 1, asArray(stage.units).length) }}</div>
-                <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(stage, ['stage_ulid']) || "-" }}</div>
+                <X class="h-5 w-5" />
               </button>
-              <div v-if="!stages.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noStages }}</div>
             </div>
-            <div class="space-y-5 p-5">
-              <template v-if="selectedStage">
-                <div class="flex items-center justify-between gap-3">
-                  <div>
-                    <h4 class="text-lg font-black">{{ copy.stageDetailTitle }}</h4>
-                    <p class="text-sm text-slate-500">{{ copy.stageDetailDescription }}</p>
+
+            <section class="min-h-0 flex-1 space-y-5 overflow-y-auto bg-canvas p-4 md:p-6">
+              <div class="ui-card p-4 md:p-5">
+                <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+                  <div class="min-w-0">
+                    <h2 class="text-base font-semibold text-ink">{{ copy.basicTitle }}</h2>
+                    <p class="mt-1 text-sm text-slate-500">{{ copy.basicDescription }}</p>
                   </div>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeStage()">{{ copy.deleteStage }}</button>
+                  <div v-if="!creating" class="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+                    <button class="ui-btn ui-btn-secondary" type="button" @click="clonePipeline">
+                      <Copy class="h-4 w-4 text-slate-400" />
+                      {{ copy.cloneVersion }}
+                    </button>
+                    <button class="ui-btn ui-btn-secondary" type="button" @click="publish">{{ copy.publish }}</button>
+                    <button class="ui-btn ui-btn-secondary" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
+                    <button v-if="canDeleteSelectedPipeline" class="ui-btn ui-btn-danger" type="button" @click="removePipeline">
+                      <Trash2 class="h-4 w-4" />
+                      {{ copy.delete }}
+                    </button>
+                  </div>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.stageId }}
-                    <input :value="fieldValue(selectedStage, 'stage_ulid')" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" />
+                  <label class="grid gap-1.5 md:col-span-2">
+                    <span class="ui-label"><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+                    <input v-model="form.name" class="ui-input" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.sortOrder }}
-                    <input :value="numberValue(selectedStage, 'sort_order')" :disabled="isStructureLocked()" type="number" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'sort_order', eventNumber($event))" />
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.name }}
-                    <input :value="fieldValue(selectedStage, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedStage, 'name', eventValue($event))" />
-                  </label>
-                </div>
-                <section class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                  <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h5 class="font-black text-slate-950">{{ copy.stageUnitsSummaryTitle }}</h5>
-                      <p class="mt-1 text-sm text-slate-500">{{ copy.stageUnitsSummaryDescription(selectedStageUnits.length) }}</p>
-                    </div>
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">{{ selectedStageUnits.length }}</span>
-                  </div>
-                  <div v-if="selectedStageUnits.length" class="mt-4 grid gap-3 xl:grid-cols-2">
-                    <article
-                      v-for="(unit, unitIndex) in selectedStageUnits"
-                      :key="`${itemId(unit, ['unit_ulid'])}-${unitIndex}`"
-                      class="rounded-2xl border border-slate-200 bg-white p-4"
-                    >
-                      <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                          <div class="truncate font-black text-slate-950">{{ itemTitle(unit, copy.unitFallback(unitIndex + 1)) }}</div>
-                          <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ copy.stageUnitSummaryId(itemId(unit, ['unit_ulid'])) }}</div>
-                        </div>
-                        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.stageUnitSummarySort(numberValue(unit, 'sort_order') || unitIndex + 1) }}</span>
-                      </div>
-                      <dl class="mt-4 grid gap-2 text-xs sm:grid-cols-2">
-                        <div class="rounded-xl bg-slate-50 p-3">
-                          <dt class="font-black text-slate-400">{{ copy.fields.glmsCourse }}</dt>
-                          <dd class="mt-1 break-all font-bold text-slate-700">{{ unitCourseLabel(unit) }}</dd>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 p-3">
-                          <dt class="font-black text-slate-400">{{ copy.fields.examCode }}</dt>
-                          <dd class="mt-1 break-all font-bold text-slate-700">{{ fieldValue(unit, 'exam_ulid') || "-" }}</dd>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 p-3">
-                          <dt class="font-black text-slate-400">{{ copy.fields.formCode }}</dt>
-                          <dd class="mt-1 break-all font-bold text-slate-700">{{ fieldValue(unit, 'form_code') || "-" }}</dd>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 p-3">
-                          <dt class="font-black text-slate-400">{{ copy.fields.allowExemption }}</dt>
-                          <dd class="mt-1 font-bold text-slate-700">{{ boolValue(unit, 'allow_exemption') ? copy.stageUnitSummaryExemptionEnabled : copy.stageUnitSummaryExemptionDisabled }}</dd>
-                        </div>
-                      </dl>
-                    </article>
-                  </div>
-                  <div v-else class="mt-4 rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-sm font-semibold text-slate-500">
-                    {{ copy.stageUnitsSummaryEmpty }}
-                  </div>
-                </section>
-              </template>
-              <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddStage }}</div>
-            </div>
-          </div>
-
-          <div v-else-if="activeLayer === 'units'" class="grid min-h-[620px] lg:grid-cols-[360px_minmax(0,1fr)]">
-            <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-              <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
-                <div>
-                  <div class="font-black">{{ copy.unitListTitle }}</div>
-                  <div class="text-xs text-slate-500">{{ copy.unitListDescription }}</div>
-                </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addUnit()">{{ copy.newUnit }}</button>
-              </div>
-              <button
-                v-for="item in units"
-                :key="item.path"
-                class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50"
-                :class="selectedUnitPath === item.path ? 'bg-sky-50' : ''"
-                type="button"
-                @click="selectedUnitPath = item.path"
-              >
-                <div class="font-black">{{ itemTitle(item.unit, copy.unitFallback(item.unitIndex + 1)) }}</div>
-                <div class="mt-1 text-sm text-slate-500">{{ copy.parentStagePrefix }}{{ itemTitle(item.stage, copy.stageFallback(item.stageIndex + 1)) }}</div>
-                <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(item.unit, ['unit_ulid']) || "-" }}</div>
-              </button>
-              <div v-if="!units.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noUnits }}</div>
-            </div>
-            <div class="space-y-5 p-5">
-              <template v-if="selectedUnitItem">
-                <div class="flex items-center justify-between gap-3">
-                  <div>
-                    <h4 class="text-lg font-black">{{ copy.unitDetailTitle }}</h4>
-                    <p class="text-sm text-slate-500">{{ copy.unitDetailDescription }}</p>
-                  </div>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeSelectedUnit">{{ copy.deleteUnit }}</button>
-                </div>
-                <div class="grid gap-4 md:grid-cols-2">
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.parentStage }}
-                    <select :value="selectedUnitItem.stageIndex" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="moveSelectedUnit(eventNumber($event))">
-                      <option v-for="(stage, index) in stages" :key="index" :value="index">{{ itemTitle(stage, copy.stageFallback(index + 1)) }}{{ copy.stageOptionId(itemId(stage, ['stage_ulid'])) }}</option>
-                    </select>
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.unitId }}
-                    <input :value="fieldValue(selectedUnitItem.unit, 'unit_ulid')" disabled class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" />
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
-                    <input :value="fieldValue(selectedUnitItem.unit, 'name')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'name', eventValue($event))" />
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.sortOrder }}
-                    <input :value="numberValue(selectedUnitItem.unit, 'sort_order')" :disabled="isStructureLocked()" type="number" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'sort_order', eventNumber($event))" />
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.glmsCourse }}
-                    <select :value="unitCourseId(selectedUnitItem.unit)" :disabled="isStructureLocked() || courseOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCourse(selectedUnitItem?.unit, eventValue($event))">
-                      <option value="">{{ courseOptionsLoading ? copy.loadingCourses : copy.selectCourse }}</option>
-                      <option v-for="course in courseOptions" :key="courseId(course)" :value="courseId(course)">{{ courseOptionLabel(course) }}</option>
-                    </select>
-                    <p class="text-xs font-semibold text-slate-500">{{ copy.glmsCourseHint }}</p>
-                  </label>
-                  <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="mb-4 text-sm font-black text-slate-700">{{ (copy as any).examConfig || '考试配置' }}</div>
-                    <div class="grid gap-4 md:grid-cols-2">
-                      <label class="grid gap-2 text-sm font-bold">
-                        {{ copy.fields.program }}
-                        <input :value="fieldValue(selectedUnitItem.unit, 'program')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 bg-white px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'program', eventValue($event))" />
-                      </label>
-                      <label class="grid gap-2 text-sm font-bold">
-                        {{ copy.fields.examCode }}
-                        <input :value="fieldValue(selectedUnitItem.unit, 'exam_ulid')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 bg-white px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'exam_ulid', eventValue($event))" />
-                      </label>
-                      <label class="grid gap-2 text-sm font-bold">
-                        {{ copy.fields.formCode }}
-                        <input :value="fieldValue(selectedUnitItem.unit, 'form_code')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 bg-white px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedUnitItem?.unit, 'form_code', eventValue($event))" />
-                      </label>
-                      <label class="mb-4 inline-flex items-center gap-2 self-end text-sm font-bold">
-                        <input :checked="boolValue(selectedUnitItem.unit, 'allow_exemption')" :disabled="isStructureLocked()" type="checkbox" @change="setField(selectedUnitItem?.unit, 'allow_exemption', eventChecked($event))" />
-                        {{ copy.fields.allowExemption }}
-                      </label>
-                    </div>
-
-                    <div v-if="boolValue(selectedUnitItem.unit, 'allow_exemption')" class="mt-4 border-t border-slate-200 pt-4">
-                      <div class="mb-2 flex items-center gap-1 text-sm font-bold text-slate-700">
-                        {{ copy.exemptionQualificationsJsonLabel || '豁免资格' }}
-                        <span :title="(copy as any).exemptionQualificationsTooltip || '只需满足任一勾选的资格即可免考'" class="cursor-help flex items-center">
-                          <Info class="h-4 w-4 text-slate-400" />
-                        </span>
-                      </div>
-                      <div v-if="credentialOptionsLoading" class="text-xs text-slate-500">{{ copy.loadingQualifications }}</div>
-                      <div v-else-if="!credentialOptions.length" class="text-xs text-slate-500">（无可用资格）</div>
-                      <div v-else class="grid gap-2 md:grid-cols-2">
-                        <label v-for="definition in credentialOptions" :key="credentialId(definition)" class="flex items-center gap-2 text-sm font-medium text-slate-600">
-                          <input type="checkbox" :value="credentialId(definition)" :checked="(Array.isArray(selectedUnitItem.unit?.exemption_quals) ? selectedUnitItem.unit?.exemption_quals : []).includes(credentialId(definition))" :disabled="isStructureLocked()" @change="toggleExemptionQual(selectedUnitItem?.unit, credentialId(definition), eventChecked($event))" />
-                          <span>{{ credentialOptionLabel(definition) }}</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
                   <details class="group md:col-span-2">
-                    <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-bold text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
-                      {{ (copy as any).certConfig || '资格证书配置' }}
+                    <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20">
+                      {{ (copy as any).advancedConfig || '高级配置' }}
                       <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
                     </summary>
-                    <div class="mt-4 grid gap-4 rounded-xl border border-slate-100 bg-slate-50 p-4 md:grid-cols-2">
-                      <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                        {{ copy.unitCertificateQualificationLabel }}
-                        <select :value="fieldValue(selectedUnitItem.unit, 'cert_qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 bg-white px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyUnitCertificateQualification(selectedUnitItem?.unit, eventValue($event))">
-                          <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
-                          <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
-                        </select>
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                      <label class="grid gap-1.5">
+                        <span class="ui-label"><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.categoryTips }}</span>
+                        <input v-model="form.category_tips" :disabled="!creating" class="ui-input" />
                       </label>
-                      <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                        {{ copy.unitCertificatePdfTemplateLabel }}
-                        <select :value="fieldValue(selectedUnitItem.unit, 'cert_pdf_template_ulid')" :disabled="isStructureLocked() || pdfTemplateOptionsLoading" class="rounded-xl border border-slate-200 bg-white px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyPdfTemplate(selectedUnitItem?.unit, 'cert_pdf_template_ulid', eventValue($event))">
-                          <option value="">{{ pdfTemplateOptionsLoading ? copy.loadingPdfTemplates : copy.selectPdfTemplate }}</option>
-                          <option v-for="template in pdfTemplateOptions" :key="pdfTemplateId(template)" :value="pdfTemplateId(template)">{{ pdfTemplateOptionLabel(template) }}</option>
-                        </select>
+                      <label class="grid gap-1.5">
+                        <span class="ui-label"><span v-if="creating" class="mr-1 text-red-500">*</span>{{ copy.fields.respath }}</span>
+                        <input v-model="form.pipeline_gpath" :disabled="!creating" class="ui-input" />
+                        <p v-if="creating" class="text-xs text-slate-400">{{ copy.respathHint }}</p>
                       </label>
-
                     </div>
                   </details>
                 </div>
-              </template>
-              <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddUnit }}</div>
-            </div>
-          </div>
-
-          <div v-else-if="activeLayer === 'certs'" class="grid min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-              <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
-                <div>
-                  <div class="font-black">{{ copy.certListTitle }}</div>
-                  <div class="text-xs text-slate-500">{{ copy.certListDescription }}</div>
-                </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="addCert">{{ copy.newCert }}</button>
               </div>
-              <button v-for="(cert, index) in certs" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedCertIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedCertIndex = index">
-                <div class="font-black">{{ itemTitle(cert, copy.certFallback(index + 1)) }}</div>
-                <div class="mt-2 break-all text-xs font-semibold text-slate-500">{{ copy.qualIdPrefix }}{{ itemId(cert, ['qual_ulid']) || "-" }}</div>
-              </button>
-              <div v-if="!certs.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noCerts }}</div>
-            </div>
-            <div class="space-y-5 p-5">
-              <template v-if="selectedCert">
-                <div class="flex items-center justify-between gap-3">
-                  <h4 class="text-lg font-black">{{ copy.certDetailTitle }}</h4>
-                  <button class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="removeGenericItem('certs', selectedCertIndex)">{{ copy.deleteCert }}</button>
-                </div>
-                <div class="grid gap-4">
-                  <label class="grid gap-2 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500">*</span>{{ copy.certificateQualificationLabel }}</span>
-                    <select :value="fieldValue(selectedCert, 'qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyQualification(selectedCert, eventValue($event))">
-                      <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
-                      <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
-                    </select>
-                    <p class="text-xs font-semibold text-slate-500">{{ copy.qualificationSelectHint }}</p>
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500">*</span>{{ copy.certificatePdfTemplateLabel }}</span>
-                    <select :value="fieldValue(selectedCert, 'pdf_template_ulid')" :disabled="isStructureLocked() || pdfTemplateOptionsLoading" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @change="applyPdfTemplate(selectedCert, 'pdf_template_ulid', eventValue($event))">
-                      <option value="">{{ pdfTemplateOptionsLoading ? copy.loadingPdfTemplates : copy.selectPdfTemplate }}</option>
-                      <option v-for="template in pdfTemplateOptions" :key="pdfTemplateId(template)" :value="pdfTemplateId(template)">{{ pdfTemplateOptionLabel(template) }}</option>
-                    </select>
-                    <p class="text-xs font-semibold text-slate-500">{{ copy.pdfTemplateSelectHint }}</p>
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.nameHintLabel }}
-                    <input :value="fieldValue(selectedCert, 'name_hint')" :disabled="isStructureLocked()" class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500" @input="setField(selectedCert, 'name_hint', eventValue($event))" />
-                  </label>
-                </div>
-              </template>
-              <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddCert }}</div>
-            </div>
-          </div>
 
-          <div v-else-if="activeLayer === 'unlock_quals' || activeLayer === 'certs_quals'" class="grid min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-              <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
-                <div>
-                  <div class="font-black">{{ activeLayer === 'unlock_quals' ? copy.unlockQualListTitle : copy.certQualListTitle }}</div>
-                  <div class="text-xs text-slate-500">{{ copy.qualListDescription }}</div>
-                </div>
-                <button class="rounded-xl border px-3 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="activeLayer === 'unlock_quals' ? addUnlockQual() : addCertQual()">{{ copy.add }}</button>
-              </div>
-              <template v-if="activeLayer === 'unlock_quals'">
-                <button v-for="(qual, index) in unlockQuals" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedUnlockQualIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedUnlockQualIndex = index">
-                  <div class="font-black">{{ itemTitle(qual, copy.unlockQualFallback(index + 1)) }}</div>
-                  <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
-                </button>
-                <div v-if="!unlockQuals.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noUnlockQuals }}</div>
-              </template>
-              <template v-else>
-                <button v-for="(qual, index) in certQuals" :key="index" class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50" :class="selectedCertQualIndex === index ? 'bg-sky-50' : ''" type="button" @click="selectedCertQualIndex = index">
-                  <div class="font-black">{{ itemTitle(qual, copy.certQualFallback(index + 1)) }}</div>
-                  <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
-                </button>
-                <div v-if="!certQuals.length" class="p-8 text-center text-sm text-slate-500">{{ copy.noCertQuals }}</div>
-              </template>
-            </div>
-            <div class="space-y-5 p-5">
-              <template v-if="activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual">
-                <div class="flex items-center justify-between gap-3">
-                  <h4 class="text-lg font-black">{{ copy.qualDetailTitle }}</h4>
-                  <button
-                    class="rounded-xl border border-red-200 px-4 py-2 font-bold text-red-600 disabled:opacity-40"
-                    type="button"
-                    :disabled="isStructureLocked()"
-                    @click="activeLayer === 'unlock_quals' ? removeGenericItem('unlock_quals', selectedUnlockQualIndex) : removeGenericItem('certs_quals', selectedCertQualIndex)"
-                  >
-                    {{ copy.deleteQual }}
-                  </button>
-                </div>
-                <div class="grid gap-4">
-                  <label class="grid gap-2 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500">*</span>{{ copy.qualificationDefinitionLabel }}</span>
-                    <select
-                      :value="qualificationId(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual)"
-                      :disabled="isStructureLocked() || credentialOptionsLoading"
-                      class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500"
-                      @change="applyQualification(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, eventValue($event))"
+              <div v-if="!creating" class="ui-card min-h-0 overflow-hidden">
+                <div class="border-b border-hairline">
+                  <div class="px-4 pt-4 md:px-6 md:pt-5">
+                    <h3 class="text-base font-semibold text-ink">{{ copy.layerTitle }}</h3>
+                    <p class="mt-1 text-sm text-slate-500">{{ copy.layerDescription }}</p>
+                  </div>
+                  <div class="mt-2 flex gap-5 overflow-x-auto px-4 md:px-6">
+                    <button
+                      v-for="layer in layerItems"
+                      :key="layer.key"
+                      class="ui-tab"
+                      :class="activeLayer === layer.key ? 'ui-tab-active' : ''"
+                      type="button"
+                      @click="activeLayer = layer.key"
                     >
-                      <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
-                      <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
-                    </select>
-                    <p class="text-xs font-semibold text-slate-500">{{ copy.qualificationSelectHint }}</p>
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.nameHintLabel }}
-                    <input
-                      :value="fieldValue(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, 'name_hint')"
-                      :disabled="isStructureLocked()"
-                      class="rounded-xl border border-slate-200 px-4 py-3 disabled:bg-slate-100 disabled:text-slate-500"
-                      @input="setField(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, 'name_hint', eventValue($event))"
-                    />
-                  </label>
+                      {{ layer.title }}
+                      <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ layer.count }}</span>
+                    </button>
+                  </div>
                 </div>
-                <JsonPreview
-                  :title="copy.jsonPreview"
-                  :value="activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="420px"
-                />
-              </template>
-              <div v-else class="p-12 text-center text-slate-500">{{ copy.selectOrAddQual }}</div>
-            </div>
-          </div>
 
-          <div v-else-if="activeLayer === 'raw'" class="space-y-5 p-5">
-            <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              {{ copy.rawHint }}
-            </div>
-            <textarea v-model="form.structure_json" :disabled="isStructureLocked()" class="min-h-[560px] w-full rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6 disabled:bg-slate-100 disabled:text-slate-500" />
-            <div class="flex flex-col justify-end gap-3 sm:flex-row">
-              <button class="rounded-xl border px-5 py-3 font-bold disabled:opacity-40" type="button" :disabled="isStructureLocked()" @click="applyRawStructure">{{ copy.applyRaw }}</button>
-              <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
-                <Send class="h-4 w-4" />
-                {{ copy.saveStructure }}
+                <div v-if="structureLocked" class="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700 md:px-6">
+                  {{ copy.structureLockedHint }}
+                </div>
+
+                <main class="h-full max-h-none min-h-0 min-w-0 overflow-y-auto md:h-[60vh] md:max-h-[620px] md:min-h-[360px]">
+                  <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+                    <h3 class="text-base font-semibold text-ink">{{ layerItems.find((layer) => layer.key === activeLayer)?.title }}</h3>
+                    <p class="mt-1 text-sm text-slate-500">{{ layerItems.find((layer) => layer.key === activeLayer)?.desc }}</p>
+                  </div>
+
+                  <div v-if="activeLayer === 'overview'" class="grid gap-4 p-4 md:gap-5 md:p-6 lg:grid-cols-2">
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.pipelineId }}</div>
+                      <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ selectedId || "-" }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.pipelineGuid }}</div>
+                      <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ selected?.pipeline_guid || "-" }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.status }}</div>
+                      <div class="mt-2"><span class="ui-badge" :class="badgeClass(pipelineStatus(selected || {}))">{{ pipelineStatusLabel(pipelineStatus(selected || {})) }}</span></div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.version }}</div>
+                      <div class="tnum mt-2 text-sm font-medium text-ink">v{{ selected?.version || 0 }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.createdAt }}</div>
+                      <div class="tnum mt-2 text-sm font-medium text-ink">{{ formatDate(String(selected?.created_at || "")) }}</div>
+                    </div>
+                  </div>
+
+                  <div v-else-if="activeLayer === 'stages'" class="grid min-h-[620px] lg:grid-cols-[320px_minmax(0,1fr)]">
+                    <div class="border-b border-hairline lg:border-b-0 lg:border-r">
+                      <div class="flex items-center justify-between gap-3 border-b border-hairline p-4">
+                        <div class="min-w-0">
+                          <div class="text-sm font-semibold text-ink">{{ copy.stageListTitle }}</div>
+                          <div class="mt-0.5 text-xs text-slate-400">{{ copy.stageListDescription }}</div>
+                        </div>
+                        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="addStage">{{ copy.newStage }}</button>
+                      </div>
+                      <button
+                        v-for="(stage, index) in stages"
+                        :key="`${itemId(stage, ['stage_ulid'])}-${index}`"
+                        class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
+                        :class="selectedStageIndex === index ? 'bg-primary-50/60' : ''"
+                        type="button"
+                        @click="selectedStageIndex = index"
+                      >
+                        <div class="text-sm font-semibold text-ink">{{ itemTitle(stage, copy.stageFallback(index + 1)) }}</div>
+                        <div class="tnum mt-1 text-xs text-slate-500">{{ copy.stageMeta(stage.sort_order ?? index + 1, asArray(stage.units).length) }}</div>
+                        <div class="tnum mt-1.5 break-all text-xs text-slate-400">ID: {{ itemId(stage, ['stage_ulid']) || "-" }}</div>
+                      </button>
+                      <div v-if="!stages.length" class="ui-empty">
+                        <div class="ui-empty-icon">
+                          <Layers class="h-6 w-6" />
+                        </div>
+                        <p class="ui-empty-title">{{ copy.noStages }}</p>
+                      </div>
+                    </div>
+                    <div class="space-y-5 p-4 md:p-5">
+                      <template v-if="selectedStage">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <div class="min-w-0">
+                            <h4 class="text-base font-semibold text-ink">{{ copy.stageDetailTitle }}</h4>
+                            <p class="mt-0.5 text-sm text-slate-500">{{ copy.stageDetailDescription }}</p>
+                          </div>
+                          <button class="ui-btn ui-btn-danger ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="removeStage()">{{ copy.deleteStage }}</button>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                          <label class="grid gap-1.5">
+                            <span class="ui-label">{{ copy.fields.stageId }}</span>
+                            <input :value="fieldValue(selectedStage, 'stage_ulid')" disabled class="ui-input tnum" />
+                          </label>
+                          <label class="grid gap-1.5">
+                            <span class="ui-label">{{ copy.fields.sortOrder }}</span>
+                            <input :value="numberValue(selectedStage, 'sort_order')" :disabled="isStructureLocked()" type="number" class="ui-input tnum" @input="setField(selectedStage, 'sort_order', eventNumber($event))" />
+                          </label>
+                          <label class="grid gap-1.5 md:col-span-2">
+                            <span class="ui-label">{{ copy.fields.name }}</span>
+                            <input :value="fieldValue(selectedStage, 'name')" :disabled="isStructureLocked()" class="ui-input" @input="setField(selectedStage, 'name', eventValue($event))" />
+                          </label>
+                        </div>
+                        <section class="rounded-2xl bg-slate-50 p-4">
+                          <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div class="min-w-0">
+                              <h5 class="text-sm font-semibold text-ink">{{ copy.stageUnitsSummaryTitle }}</h5>
+                              <p class="mt-1 text-sm text-slate-500">{{ copy.stageUnitsSummaryDescription(selectedStageUnits.length) }}</p>
+                            </div>
+                            <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ selectedStageUnits.length }}</span>
+                          </div>
+                          <div v-if="selectedStageUnits.length" class="mt-4 grid gap-3 xl:grid-cols-2">
+                            <article
+                              v-for="(unit, unitIndex) in selectedStageUnits"
+                              :key="`${itemId(unit, ['unit_ulid'])}-${unitIndex}`"
+                              class="rounded-2xl border border-edge bg-white p-4"
+                            >
+                              <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                  <div class="truncate text-sm font-semibold text-ink">{{ itemTitle(unit, copy.unitFallback(unitIndex + 1)) }}</div>
+                                  <div class="tnum mt-1 break-all text-xs text-slate-400">{{ copy.stageUnitSummaryId(itemId(unit, ['unit_ulid'])) }}</div>
+                                </div>
+                                <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.stageUnitSummarySort(numberValue(unit, 'sort_order') || unitIndex + 1) }}</span>
+                              </div>
+                              <dl class="mt-4 grid gap-3 text-xs sm:grid-cols-2">
+                                <div>
+                                  <dt class="font-medium text-slate-400">{{ copy.fields.glmsCourse }}</dt>
+                                  <dd class="mt-1 break-all text-slate-600">{{ unitCourseLabel(unit) }}</dd>
+                                </div>
+                                <div>
+                                  <dt class="font-medium text-slate-400">{{ copy.fields.examCode }}</dt>
+                                  <dd class="tnum mt-1 break-all text-slate-600">{{ fieldValue(unit, 'exam_ulid') || "-" }}</dd>
+                                </div>
+                                <div>
+                                  <dt class="font-medium text-slate-400">{{ copy.fields.formCode }}</dt>
+                                  <dd class="tnum mt-1 break-all text-slate-600">{{ fieldValue(unit, 'form_code') || "-" }}</dd>
+                                </div>
+                                <div>
+                                  <dt class="font-medium text-slate-400">{{ copy.fields.allowExemption }}</dt>
+                                  <dd class="mt-1 text-slate-600">{{ boolValue(unit, 'allow_exemption') ? copy.stageUnitSummaryExemptionEnabled : copy.stageUnitSummaryExemptionDisabled }}</dd>
+                                </div>
+                              </dl>
+                            </article>
+                          </div>
+                          <div v-else class="mt-4 rounded-[10px] border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
+                            {{ copy.stageUnitsSummaryEmpty }}
+                          </div>
+                        </section>
+                      </template>
+                      <div v-else class="ui-empty">
+                        <div class="ui-empty-icon">
+                          <Layers class="h-6 w-6" />
+                        </div>
+                        <p class="ui-empty-title">{{ copy.selectOrAddStage }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-else-if="activeLayer === 'units'" class="grid min-h-[620px] lg:grid-cols-[360px_minmax(0,1fr)]">
+                    <div class="border-b border-hairline lg:border-b-0 lg:border-r">
+                      <div class="flex items-center justify-between gap-3 border-b border-hairline p-4">
+                        <div class="min-w-0">
+                          <div class="text-sm font-semibold text-ink">{{ copy.unitListTitle }}</div>
+                          <div class="mt-0.5 text-xs text-slate-400">{{ copy.unitListDescription }}</div>
+                        </div>
+                        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="addUnit()">{{ copy.newUnit }}</button>
+                      </div>
+                      <button
+                        v-for="item in units"
+                        :key="item.path"
+                        class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
+                        :class="selectedUnitPath === item.path ? 'bg-primary-50/60' : ''"
+                        type="button"
+                        @click="selectedUnitPath = item.path"
+                      >
+                        <div class="text-sm font-semibold text-ink">{{ itemTitle(item.unit, copy.unitFallback(item.unitIndex + 1)) }}</div>
+                        <div class="mt-1 text-xs text-slate-500">{{ copy.parentStagePrefix }}{{ itemTitle(item.stage, copy.stageFallback(item.stageIndex + 1)) }}</div>
+                        <div class="tnum mt-1.5 break-all text-xs text-slate-400">ID: {{ itemId(item.unit, ['unit_ulid']) || "-" }}</div>
+                      </button>
+                      <div v-if="!units.length" class="ui-empty">
+                        <div class="ui-empty-icon">
+                          <BookOpen class="h-6 w-6" />
+                        </div>
+                        <p class="ui-empty-title">{{ copy.noUnits }}</p>
+                      </div>
+                    </div>
+                    <div class="space-y-5 p-4 md:p-5">
+                      <template v-if="selectedUnitItem">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <div class="min-w-0">
+                            <h4 class="text-base font-semibold text-ink">{{ copy.unitDetailTitle }}</h4>
+                            <p class="mt-0.5 text-sm text-slate-500">{{ copy.unitDetailDescription }}</p>
+                          </div>
+                          <button class="ui-btn ui-btn-danger ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="removeSelectedUnit">{{ copy.deleteUnit }}</button>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                          <label class="grid gap-1.5">
+                            <span class="ui-label">{{ copy.fields.parentStage }}</span>
+                            <select :value="selectedUnitItem.stageIndex" :disabled="isStructureLocked()" class="ui-input" @change="moveSelectedUnit(eventNumber($event))">
+                              <option v-for="(stage, index) in stages" :key="index" :value="index">{{ itemTitle(stage, copy.stageFallback(index + 1)) }}{{ copy.stageOptionId(itemId(stage, ['stage_ulid'])) }}</option>
+                            </select>
+                          </label>
+                          <label class="grid gap-1.5">
+                            <span class="ui-label">{{ copy.fields.unitId }}</span>
+                            <input :value="fieldValue(selectedUnitItem.unit, 'unit_ulid')" disabled class="ui-input tnum" />
+                          </label>
+                          <label class="grid gap-1.5">
+                            <span class="ui-label"><span class="mr-1 text-red-500">*</span>{{ copy.fields.name }}</span>
+                            <input :value="fieldValue(selectedUnitItem.unit, 'name')" :disabled="isStructureLocked()" class="ui-input" @input="setField(selectedUnitItem?.unit, 'name', eventValue($event))" />
+                          </label>
+                          <label class="grid gap-1.5">
+                            <span class="ui-label">{{ copy.fields.sortOrder }}</span>
+                            <input :value="numberValue(selectedUnitItem.unit, 'sort_order')" :disabled="isStructureLocked()" type="number" class="ui-input tnum" @input="setField(selectedUnitItem?.unit, 'sort_order', eventNumber($event))" />
+                          </label>
+                          <label class="grid gap-1.5 md:col-span-2">
+                            <span class="ui-label">{{ copy.fields.glmsCourse }}</span>
+                            <select :value="unitCourseId(selectedUnitItem.unit)" :disabled="isStructureLocked() || courseOptionsLoading" class="ui-input" @change="applyUnitCourse(selectedUnitItem?.unit, eventValue($event))">
+                              <option value="">{{ courseOptionsLoading ? copy.loadingCourses : copy.selectCourse }}</option>
+                              <option v-for="course in courseOptions" :key="courseId(course)" :value="courseId(course)">{{ courseOptionLabel(course) }}</option>
+                            </select>
+                            <p class="text-xs text-slate-400">{{ copy.glmsCourseHint }}</p>
+                          </label>
+                          <div class="rounded-2xl bg-slate-50 p-4 md:col-span-2">
+                            <div class="mb-4 text-sm font-semibold text-ink">{{ (copy as any).examConfig || '考试配置' }}</div>
+                            <div class="grid gap-4 md:grid-cols-2">
+                              <label class="grid gap-1.5">
+                                <span class="ui-label">{{ copy.fields.program }}</span>
+                                <input :value="fieldValue(selectedUnitItem.unit, 'program')" :disabled="isStructureLocked()" class="ui-input" @input="setField(selectedUnitItem?.unit, 'program', eventValue($event))" />
+                              </label>
+                              <label class="grid gap-1.5">
+                                <span class="ui-label">{{ copy.fields.examCode }}</span>
+                                <input :value="fieldValue(selectedUnitItem.unit, 'exam_ulid')" :disabled="isStructureLocked()" class="ui-input tnum" @input="setField(selectedUnitItem?.unit, 'exam_ulid', eventValue($event))" />
+                              </label>
+                              <label class="grid gap-1.5">
+                                <span class="ui-label">{{ copy.fields.formCode }}</span>
+                                <input :value="fieldValue(selectedUnitItem.unit, 'form_code')" :disabled="isStructureLocked()" class="ui-input tnum" @input="setField(selectedUnitItem?.unit, 'form_code', eventValue($event))" />
+                              </label>
+                              <label class="mb-4 inline-flex cursor-pointer items-center gap-2 self-end text-sm font-medium text-slate-600">
+                                <input :checked="boolValue(selectedUnitItem.unit, 'allow_exemption')" :disabled="isStructureLocked()" type="checkbox" class="h-4 w-4 accent-primary-600" @change="setField(selectedUnitItem?.unit, 'allow_exemption', eventChecked($event))" />
+                                {{ copy.fields.allowExemption }}
+                              </label>
+                            </div>
+
+                            <div v-if="boolValue(selectedUnitItem.unit, 'allow_exemption')" class="mt-4 border-t border-slate-200 pt-4">
+                              <div class="mb-2 flex items-center gap-1 text-sm font-medium text-slate-700">
+                                {{ copy.exemptionQualificationsJsonLabel || '豁免资格' }}
+                                <span :title="(copy as any).exemptionQualificationsTooltip || '只需满足任一勾选的资格即可免考'" class="flex cursor-help items-center">
+                                  <Info class="h-4 w-4 text-slate-400" />
+                                </span>
+                              </div>
+                              <div v-if="credentialOptionsLoading" class="text-xs text-slate-400">{{ copy.loadingQualifications }}</div>
+                              <div v-else-if="!credentialOptions.length" class="text-xs text-slate-400">（无可用资格）</div>
+                              <div v-else class="grid gap-2 md:grid-cols-2">
+                                <label v-for="definition in credentialOptions" :key="credentialId(definition)" class="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-600">
+                                  <input type="checkbox" class="h-4 w-4 shrink-0 accent-primary-600" :value="credentialId(definition)" :checked="(Array.isArray(selectedUnitItem.unit?.exemption_quals) ? selectedUnitItem.unit?.exemption_quals : []).includes(credentialId(definition))" :disabled="isStructureLocked()" @change="toggleExemptionQual(selectedUnitItem?.unit, credentialId(definition), eventChecked($event))" />
+                                  <span>{{ credentialOptionLabel(definition) }}</span>
+                                </label>
+                              </div>
+                            </div>
+                          </div>
+                          <details class="group md:col-span-2">
+                            <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20">
+                              {{ (copy as any).certConfig || '资格证书配置' }}
+                              <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
+                            </summary>
+                            <div class="mt-4 grid gap-4 rounded-2xl bg-slate-50 p-4 md:grid-cols-2">
+                              <label class="grid gap-1.5 md:col-span-2">
+                                <span class="ui-label">{{ copy.unitCertificateQualificationLabel }}</span>
+                                <select :value="fieldValue(selectedUnitItem.unit, 'cert_qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="ui-input" @change="applyUnitCertificateQualification(selectedUnitItem?.unit, eventValue($event))">
+                                  <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
+                                  <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
+                                </select>
+                              </label>
+                              <label class="grid gap-1.5 md:col-span-2">
+                                <span class="ui-label">{{ copy.unitCertificatePdfTemplateLabel }}</span>
+                                <select :value="fieldValue(selectedUnitItem.unit, 'cert_pdf_template_ulid')" :disabled="isStructureLocked() || pdfTemplateOptionsLoading" class="ui-input" @change="applyPdfTemplate(selectedUnitItem?.unit, 'cert_pdf_template_ulid', eventValue($event))">
+                                  <option value="">{{ pdfTemplateOptionsLoading ? copy.loadingPdfTemplates : copy.selectPdfTemplate }}</option>
+                                  <option v-for="template in pdfTemplateOptions" :key="pdfTemplateId(template)" :value="pdfTemplateId(template)">{{ pdfTemplateOptionLabel(template) }}</option>
+                                </select>
+                              </label>
+
+                            </div>
+                          </details>
+                        </div>
+                      </template>
+                      <div v-else class="ui-empty">
+                        <div class="ui-empty-icon">
+                          <BookOpen class="h-6 w-6" />
+                        </div>
+                        <p class="ui-empty-title">{{ copy.selectOrAddUnit }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-else-if="activeLayer === 'certs'" class="grid min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
+                    <div class="border-b border-hairline lg:border-b-0 lg:border-r">
+                      <div class="flex items-center justify-between gap-3 border-b border-hairline p-4">
+                        <div class="min-w-0">
+                          <div class="text-sm font-semibold text-ink">{{ copy.certListTitle }}</div>
+                          <div class="mt-0.5 text-xs text-slate-400">{{ copy.certListDescription }}</div>
+                        </div>
+                        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="addCert">{{ copy.newCert }}</button>
+                      </div>
+                      <button
+                        v-for="(cert, index) in certs"
+                        :key="index"
+                        class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
+                        :class="selectedCertIndex === index ? 'bg-primary-50/60' : ''"
+                        type="button"
+                        @click="selectedCertIndex = index"
+                      >
+                        <div class="text-sm font-semibold text-ink">{{ itemTitle(cert, copy.certFallback(index + 1)) }}</div>
+                        <div class="tnum mt-1.5 break-all text-xs text-slate-400">{{ copy.qualIdPrefix }}{{ itemId(cert, ['qual_ulid']) || "-" }}</div>
+                      </button>
+                      <div v-if="!certs.length" class="ui-empty">
+                        <div class="ui-empty-icon">
+                          <Award class="h-6 w-6" />
+                        </div>
+                        <p class="ui-empty-title">{{ copy.noCerts }}</p>
+                      </div>
+                    </div>
+                    <div class="space-y-5 p-4 md:p-5">
+                      <template v-if="selectedCert">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <h4 class="text-base font-semibold text-ink">{{ copy.certDetailTitle }}</h4>
+                          <button class="ui-btn ui-btn-danger ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="removeGenericItem('certs', selectedCertIndex)">{{ copy.deleteCert }}</button>
+                        </div>
+                        <div class="grid gap-4">
+                          <label class="grid gap-1.5">
+                            <span class="ui-label"><span class="mr-1 text-red-500">*</span>{{ copy.certificateQualificationLabel }}</span>
+                            <select :value="fieldValue(selectedCert, 'qual_ulid')" :disabled="isStructureLocked() || credentialOptionsLoading" class="ui-input" @change="applyQualification(selectedCert, eventValue($event))">
+                              <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
+                              <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
+                            </select>
+                            <p class="text-xs text-slate-400">{{ copy.qualificationSelectHint }}</p>
+                          </label>
+                          <label class="grid gap-1.5">
+                            <span class="ui-label"><span class="mr-1 text-red-500">*</span>{{ copy.certificatePdfTemplateLabel }}</span>
+                            <select :value="fieldValue(selectedCert, 'pdf_template_ulid')" :disabled="isStructureLocked() || pdfTemplateOptionsLoading" class="ui-input" @change="applyPdfTemplate(selectedCert, 'pdf_template_ulid', eventValue($event))">
+                              <option value="">{{ pdfTemplateOptionsLoading ? copy.loadingPdfTemplates : copy.selectPdfTemplate }}</option>
+                              <option v-for="template in pdfTemplateOptions" :key="pdfTemplateId(template)" :value="pdfTemplateId(template)">{{ pdfTemplateOptionLabel(template) }}</option>
+                            </select>
+                            <p class="text-xs text-slate-400">{{ copy.pdfTemplateSelectHint }}</p>
+                          </label>
+                          <label class="grid gap-1.5 md:col-span-2">
+                            <span class="ui-label">{{ copy.nameHintLabel }}</span>
+                            <input :value="fieldValue(selectedCert, 'name_hint')" :disabled="isStructureLocked()" class="ui-input" @input="setField(selectedCert, 'name_hint', eventValue($event))" />
+                          </label>
+                        </div>
+                      </template>
+                      <div v-else class="ui-empty">
+                        <div class="ui-empty-icon">
+                          <Award class="h-6 w-6" />
+                        </div>
+                        <p class="ui-empty-title">{{ copy.selectOrAddCert }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-else-if="activeLayer === 'unlock_quals' || activeLayer === 'certs_quals'" class="grid min-h-[560px] lg:grid-cols-[320px_minmax(0,1fr)]">
+                    <div class="border-b border-hairline lg:border-b-0 lg:border-r">
+                      <div class="flex items-center justify-between gap-3 border-b border-hairline p-4">
+                        <div class="min-w-0">
+                          <div class="text-sm font-semibold text-ink">{{ activeLayer === 'unlock_quals' ? copy.unlockQualListTitle : copy.certQualListTitle }}</div>
+                          <div class="mt-0.5 text-xs text-slate-400">{{ copy.qualListDescription }}</div>
+                        </div>
+                        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="activeLayer === 'unlock_quals' ? addUnlockQual() : addCertQual()">{{ copy.add }}</button>
+                      </div>
+                      <template v-if="activeLayer === 'unlock_quals'">
+                        <button
+                          v-for="(qual, index) in unlockQuals"
+                          :key="index"
+                          class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
+                          :class="selectedUnlockQualIndex === index ? 'bg-primary-50/60' : ''"
+                          type="button"
+                          @click="selectedUnlockQualIndex = index"
+                        >
+                          <div class="text-sm font-semibold text-ink">{{ itemTitle(qual, copy.unlockQualFallback(index + 1)) }}</div>
+                          <div class="tnum mt-1.5 break-all text-xs text-slate-400">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
+                        </button>
+                        <div v-if="!unlockQuals.length" class="ui-empty">
+                          <div class="ui-empty-icon">
+                            <ShieldCheck class="h-6 w-6" />
+                          </div>
+                          <p class="ui-empty-title">{{ copy.noUnlockQuals }}</p>
+                        </div>
+                      </template>
+                      <template v-else>
+                        <button
+                          v-for="(qual, index) in certQuals"
+                          :key="index"
+                          class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
+                          :class="selectedCertQualIndex === index ? 'bg-primary-50/60' : ''"
+                          type="button"
+                          @click="selectedCertQualIndex = index"
+                        >
+                          <div class="text-sm font-semibold text-ink">{{ itemTitle(qual, copy.certQualFallback(index + 1)) }}</div>
+                          <div class="tnum mt-1.5 break-all text-xs text-slate-400">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
+                        </button>
+                        <div v-if="!certQuals.length" class="ui-empty">
+                          <div class="ui-empty-icon">
+                            <GraduationCap class="h-6 w-6" />
+                          </div>
+                          <p class="ui-empty-title">{{ copy.noCertQuals }}</p>
+                        </div>
+                      </template>
+                    </div>
+                    <div class="space-y-5 p-4 md:p-5">
+                      <template v-if="activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                          <h4 class="text-base font-semibold text-ink">{{ copy.qualDetailTitle }}</h4>
+                          <button
+                            class="ui-btn ui-btn-danger ui-btn-sm"
+                            type="button"
+                            :disabled="isStructureLocked()"
+                            @click="activeLayer === 'unlock_quals' ? removeGenericItem('unlock_quals', selectedUnlockQualIndex) : removeGenericItem('certs_quals', selectedCertQualIndex)"
+                          >
+                            {{ copy.deleteQual }}
+                          </button>
+                        </div>
+                        <div class="grid gap-4">
+                          <label class="grid gap-1.5">
+                            <span class="ui-label"><span class="mr-1 text-red-500">*</span>{{ copy.qualificationDefinitionLabel }}</span>
+                            <select
+                              :value="qualificationId(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual)"
+                              :disabled="isStructureLocked() || credentialOptionsLoading"
+                              class="ui-input"
+                              @change="applyQualification(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, eventValue($event))"
+                            >
+                              <option value="">{{ credentialOptionsLoading ? copy.loadingQualifications : copy.selectQualification }}</option>
+                              <option v-for="definition in credentialOptions" :key="credentialId(definition)" :value="credentialId(definition)">{{ credentialOptionLabel(definition) }}</option>
+                            </select>
+                            <p class="text-xs text-slate-400">{{ copy.qualificationSelectHint }}</p>
+                          </label>
+                          <label class="grid gap-1.5">
+                            <span class="ui-label">{{ copy.nameHintLabel }}</span>
+                            <input
+                              :value="fieldValue(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, 'name_hint')"
+                              :disabled="isStructureLocked()"
+                              class="ui-input"
+                              @input="setField(activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual, 'name_hint', eventValue($event))"
+                            />
+                          </label>
+                        </div>
+                        <JsonPreview
+                          :title="copy.jsonPreview"
+                          :value="activeLayer === 'unlock_quals' ? selectedUnlockQual : selectedCertQual"
+                          :copy-label="copy.copyJson"
+                          :copied-label="copy.copiedJson"
+                          :copied-message="copy.toasts.jsonCopied"
+                          :copy-error-message="copy.toasts.jsonCopyFailed"
+                          max-height="420px"
+                        />
+                      </template>
+                      <div v-else class="ui-empty">
+                        <div class="ui-empty-icon">
+                          <ShieldCheck class="h-6 w-6" />
+                        </div>
+                        <p class="ui-empty-title">{{ copy.selectOrAddQual }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div v-else-if="activeLayer === 'raw'" class="space-y-5 p-4 md:p-6">
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                      {{ copy.rawHint }}
+                    </div>
+                    <textarea v-model="form.structure_json" :disabled="isStructureLocked()" class="tnum min-h-[560px] w-full rounded-[10px] border border-slate-200 bg-white p-4 font-mono text-xs leading-6 text-slate-900 transition-colors focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400" />
+                    <div class="flex flex-col justify-end gap-3 sm:flex-row">
+                      <button class="ui-btn ui-btn-secondary" type="button" :disabled="isStructureLocked()" @click="applyRawStructure">{{ copy.applyRaw }}</button>
+                      <button class="ui-btn ui-btn-primary" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
+                        <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+                        <Send v-else class="h-4 w-4" />
+                        {{ copy.saveStructure }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div v-if="activeLayer !== 'raw'" class="flex flex-col justify-end gap-3 border-t border-hairline p-4 sm:flex-row md:px-6 md:py-5">
+                    <button class="ui-btn ui-btn-primary" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
+                      <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+                      <Send v-else class="h-4 w-4" />
+                      {{ copy.saveStructure }}
+                    </button>
+                  </div>
+                </main>
+              </div>
+
+              <JsonPreview
+                v-if="selected"
+                :title="copy.fullDetails"
+                :value="selected"
+                :copy-label="copy.copyJson"
+                :copied-label="copy.copiedJson"
+                :copied-message="copy.toasts.jsonCopied"
+                :copy-error-message="copy.toasts.jsonCopyFailed"
+                max-height="420px"
+              />
+            </section>
+
+            <div v-if="activeLayer === 'overview' || creating" class="flex shrink-0 flex-col justify-end gap-3 border-t border-hairline bg-white px-4 py-4 sm:flex-row md:px-6">
+              <button v-if="creating" class="ui-btn ui-btn-primary w-full sm:w-auto sm:min-w-[180px]" type="button" :disabled="saving" @click="createPipeline">
+                <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+                <Plus v-else class="h-4 w-4" />
+                {{ copy.createDraft }}
+              </button>
+              <button v-else class="ui-btn ui-btn-primary w-full sm:w-auto sm:min-w-[180px]" type="button" :disabled="saving" @click="saveMetadata">
+                <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+                <Save v-else class="h-4 w-4" />
+                {{ copy.saveBasic }}
               </button>
             </div>
-          </div>
-
-          <div v-if="activeLayer !== 'raw'" class="flex flex-col justify-end gap-3 border-t border-slate-200 p-4 sm:flex-row md:p-5">
-            <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving || isStructureLocked()" @click="saveStructure">
-              <Send class="h-4 w-4" />
-              {{ copy.saveStructure }}
-            </button>
-          </div>
-        </main>
-      </div>
-
-      <JsonPreview
-        v-if="selected"
-        class="rounded-2xl p-4 shadow-sm md:rounded-3xl md:p-5"
-        :title="copy.fullDetails"
-        :value="selected"
-        :copy-label="copy.copyJson"
-        :copied-label="copy.copiedJson"
-        :copied-message="copy.toasts.jsonCopied"
-        :copy-error-message="copy.toasts.jsonCopyFailed"
-        max-height="420px"
-      />
           </section>
-
-          <div v-if="activeLayer === 'overview' || creating" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
-            <button v-if="creating" class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="createPipeline">
-              <Plus class="h-4 w-4" />
-              {{ copy.createDraft }}
-            </button>
-            <button v-else class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="saveMetadata">
-              <Save class="h-4 w-4" />
-              {{ copy.saveBasic }}
-            </button>
-          </div>
         </div>
-      </div>
+      </Transition>
     </Teleport>
 
     <Teleport to="body">
-      <div v-if="deprecateConfirmOpen && selected" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-        <section class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
-          <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deprecate }}</h2>
-          <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.confirmDeprecate }}</p>
-          <div class="mt-5 rounded-2xl bg-slate-50 p-4">
-            <div class="break-words font-black text-slate-950">{{ pipelineName(selected) }}</div>
-            <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pipelineUlid(selected) }}</div>
-            <div class="mt-1 text-sm font-semibold text-slate-500">{{ copy.fields.version }}: v{{ selected.version || 0 }}</div>
-          </div>
-          <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
-            <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="closeDeprecateConfirm">{{ copy.cancel }}</button>
-            <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deprecating" @click="confirmDeprecate">
-              {{ copy.deprecate }}
-            </button>
-          </div>
-        </section>
-      </div>
+      <Transition name="modal">
+        <div v-if="deprecateConfirmOpen && selected" class="ui-modal-mask z-[60]">
+          <section class="ui-modal-panel md:max-w-md">
+            <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.deprecate }}</h2>
+            </div>
+            <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <p class="text-sm text-slate-600">{{ copy.confirmDeprecate }}</p>
+              <div class="mt-4 rounded-2xl bg-slate-50 p-4">
+                <div class="break-words text-sm font-semibold text-ink">{{ pipelineName(selected) }}</div>
+                <div class="tnum mt-1 break-all text-xs text-slate-400">{{ pipelineUlid(selected) }}</div>
+                <div class="tnum mt-1 text-xs text-slate-500">{{ copy.fields.version }}: v{{ selected.version || 0 }}</div>
+              </div>
+            </main>
+            <div class="flex flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">
+              <button class="ui-btn ui-btn-secondary" type="button" :disabled="deprecating" @click="closeDeprecateConfirm">{{ copy.cancel }}</button>
+              <button class="ui-btn ui-btn-danger" type="button" :disabled="deprecating" @click="confirmDeprecate">
+                <Loader2 v-if="deprecating" class="h-4 w-4 animate-spin" />
+                {{ copy.deprecate }}
+              </button>
+            </div>
+          </section>
+        </div>
+      </Transition>
     </Teleport>
 
     <Teleport to="body">
-      <div v-if="deleteConfirmOpen && pendingDeletePipeline" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-        <section class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
-          <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
-          <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
-          <div class="mt-5 rounded-2xl bg-slate-50 p-4">
-            <div class="break-words font-black text-slate-950">{{ pipelineName(pendingDeletePipeline) }}</div>
-            <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ pipelineUlid(pendingDeletePipeline) }}</div>
-            <div class="mt-1 text-sm font-semibold text-slate-500">{{ copy.fields.version }}: v{{ pendingDeletePipeline.version || 0 }}</div>
-          </div>
-          <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
-            <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingPipeline" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
-            <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="deletingPipeline" @click="confirmDeletePipeline">
-              {{ deletingPipeline ? copy.deleting : copy.confirmDeleteAction }}
-            </button>
-          </div>
-        </section>
-      </div>
+      <Transition name="modal">
+        <div v-if="deleteConfirmOpen && pendingDeletePipeline" class="ui-modal-mask z-[60]">
+          <section class="ui-modal-panel md:max-w-md">
+            <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.deleteConfirmTitle }}</h2>
+            </div>
+            <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <p class="text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
+              <div class="mt-4 rounded-2xl bg-slate-50 p-4">
+                <div class="break-words text-sm font-semibold text-ink">{{ pipelineName(pendingDeletePipeline) }}</div>
+                <div class="tnum mt-1 break-all text-xs text-slate-400">{{ pipelineUlid(pendingDeletePipeline) }}</div>
+                <div class="tnum mt-1 text-xs text-slate-500">{{ copy.fields.version }}: v{{ pendingDeletePipeline.version || 0 }}</div>
+              </div>
+            </main>
+            <div class="flex flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">
+              <button class="ui-btn ui-btn-secondary" type="button" :disabled="deletingPipeline" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="ui-btn ui-btn-danger" type="button" :disabled="deletingPipeline" @click="confirmDeletePipeline">
+                <Loader2 v-if="deletingPipeline" class="h-4 w-4 animate-spin" />
+                {{ deletingPipeline ? copy.deleting : copy.confirmDeleteAction }}
+              </button>
+            </div>
+          </section>
+        </div>
+      </Transition>
     </Teleport>
-  </section>
+  </main>
 </template>

@@ -96,11 +96,11 @@ const filteredUsers = computed(() => {
 })
 
 const summaryCards = computed(() => [
-  { label: copy.value.summary.totalUsers, value: userStats.value.total, tone: "text-slate-950", icon: Users },
-  { label: copy.value.summary.activeUsers, value: userStats.value.active, tone: "text-emerald-600", icon: UserCheck },
-  { label: copy.value.summary.admins, value: userStats.value.admins, tone: "text-blue-600", icon: Shield },
-  { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-blue-700", icon: Users },
-  { label: copy.value.summary.members, value: userStats.value.members, tone: "text-cyan-600", icon: Users },
+  { label: copy.value.summary.totalUsers, value: userStats.value.total, tone: "text-ink", icon: Users },
+  { label: copy.value.summary.activeUsers, value: userStats.value.active, tone: "text-success-600", icon: UserCheck },
+  { label: copy.value.summary.admins, value: userStats.value.admins, tone: "text-primary-600", icon: Shield },
+  { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-primary-700", icon: Users },
+  { label: copy.value.summary.members, value: userStats.value.members, tone: "text-info-600", icon: Users },
 ])
 
 function stageLabel(stageId: string) {
@@ -109,8 +109,8 @@ function stageLabel(stageId: string) {
 
 function roleBadgeClass(role: string) {
   const normalized = role.toLowerCase()
-  if (normalized.includes("admin")) return "bg-blue-100 text-blue-700"
-  if (normalized.includes("student")) return "bg-emerald-100 text-emerald-700"
+  if (normalized.includes("admin")) return "bg-primary-50 text-primary-700"
+  if (normalized.includes("student")) return "bg-emerald-50 text-emerald-700"
   return "bg-slate-100 text-slate-600"
 }
 
@@ -124,8 +124,8 @@ function roleLabel(role: string) {
 
 function userStatusClass(status: string) {
   const normalized = status.toLowerCase()
-  if (normalized === "active") return "bg-blue-100 text-blue-700"
-  if (normalized === "inactive") return "bg-amber-100 text-amber-700"
+  if (normalized === "active") return "bg-emerald-50 text-emerald-700"
+  if (normalized === "inactive") return "bg-amber-50 text-amber-700"
   return "bg-slate-100 text-slate-600"
 }
 
@@ -186,24 +186,24 @@ watch([keyword, roleFilter, statusFilter], () => {
 </script>
 
 <template>
-  <main class="mx-auto max-w-[1600px] px-4 py-5 md:px-6 md:py-8">
-    <header class="mb-5 flex flex-wrap items-start justify-between gap-4 md:mb-6 md:items-center">
+  <main class="ui-page">
+    <!-- Page header -->
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
-        <div class="mb-2 text-xs font-black uppercase tracking-wide text-slate-400">{{ copy.eyebrow }}</div>
-        <h1 class="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 text-sm text-slate-500">{{ copy.subtitle }}</p>
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
       <div class="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap">
-        <RouterLink to="/audit/logs" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
-          <Activity class="h-4 w-4" />
+        <RouterLink to="/audit/logs" class="ui-btn ui-btn-secondary">
+          <Activity class="h-4 w-4 text-slate-400" />
           {{ copy.auditLogs }}
         </RouterLink>
-        <RouterLink to="/mails" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold shadow-sm hover:border-slate-400">
-          <Mail class="h-4 w-4" />
+        <RouterLink to="/mails" class="ui-btn ui-btn-secondary">
+          <Mail class="h-4 w-4 text-slate-400" />
           {{ copy.emailActivity }}
         </RouterLink>
         <button
-          class="col-span-2 inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 font-bold shadow-sm transition hover:border-slate-500 disabled:opacity-50 sm:col-span-1"
+          class="ui-btn ui-btn-primary col-span-2 sm:col-span-1"
           type="button"
           :disabled="loading"
           @click="loadDashboard(userPage)"
@@ -215,44 +215,49 @@ watch([keyword, roleFilter, statusFilter], () => {
       </div>
     </header>
 
-    <section class="mb-5 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-5">
-      <div class="mb-2 flex items-center justify-between text-sm font-black text-slate-700">
-        <span>{{ copy.profileCompletion }}</span>
-        <span class="text-blue-700">{{ profileCompletion }}%</span>
+    <!-- Profile completion -->
+    <section class="ui-card mt-6 px-5 py-4">
+      <div class="mb-2.5 flex items-center justify-between text-sm">
+        <span class="font-medium text-slate-600">{{ copy.profileCompletion }}</span>
+        <span class="tnum font-semibold text-primary-700">{{ profileCompletion }}%</span>
       </div>
       <div class="h-2 overflow-hidden rounded-full bg-slate-100">
-        <div class="h-full rounded-full bg-blue-700 transition-all" :style="{ width: `${profileCompletion}%` }" />
+        <div class="h-full rounded-full bg-primary-600 transition-all duration-300" :style="{ width: `${profileCompletion}%` }" />
       </div>
     </section>
 
-    <section class="mb-4 grid grid-cols-2 gap-3 md:grid-cols-2 md:gap-4 xl:grid-cols-5">
-      <article v-for="card in summaryCards" :key="card.label" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-        <div class="flex items-center justify-between">
-          <p class="text-sm font-bold text-slate-600">{{ card.label }}</p>
-          <component :is="card.icon" class="h-5 w-5 text-slate-300" />
+    <!-- Stat cards -->
+    <section class="mt-4 grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-5">
+      <article v-for="card in summaryCards" :key="card.label" class="ui-card p-4 md:p-5">
+        <div class="flex items-center justify-between gap-2">
+          <p class="truncate text-sm font-medium text-slate-500">{{ card.label }}</p>
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-slate-50 text-slate-400">
+            <component :is="card.icon" class="h-4 w-4" />
+          </span>
         </div>
-        <p class="mt-4 text-3xl font-black md:mt-5 md:text-4xl" :class="card.tone">{{ card.value }}</p>
+        <p class="tnum mt-3 text-3xl font-bold" :class="card.tone">{{ card.value }}</p>
       </article>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div class="border-b border-slate-100 px-4 py-4 md:px-6 md:py-5">
+    <!-- User management -->
+    <section class="ui-card mt-4 overflow-hidden">
+      <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
         <div class="flex flex-wrap items-end justify-between gap-4">
           <div class="min-w-0">
-            <h2 class="text-xl font-black text-slate-950">{{ copy.userManagement }}</h2>
+            <h2 class="text-base font-semibold text-ink">{{ copy.userManagement }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.userManagementHint }}</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ copy.userPageText(userPage, userTotal) }}</span>
+          <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ copy.userPageText(userPage, userTotal) }}</span>
         </div>
         <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,2fr)_1fr_1fr]">
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.table.user }}
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.table.user }}</span>
             <div class="relative">
               <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input v-model="keyword" class="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-10" :placeholder="copy.filters.searchPlaceholder" />
+              <input v-model="keyword" class="ui-input pl-9 pr-10" :placeholder="copy.filters.searchPlaceholder" />
               <button
                 v-if="keyword"
-                class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
                 type="button"
                 :aria-label="copy.filters.clearInput"
                 :title="copy.filters.clearInput"
@@ -262,15 +267,15 @@ watch([keyword, roleFilter, statusFilter], () => {
               </button>
             </div>
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.table.role }}
-            <select v-model="roleFilter" class="h-11 rounded-xl border border-slate-200 bg-white px-3">
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.table.role }}</span>
+            <select v-model="roleFilter" class="ui-input">
               <option v-for="option in roleOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
             </select>
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.table.status }}
-            <select v-model="statusFilter" class="h-11 rounded-xl border border-slate-200 bg-white px-3">
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.table.status }}</span>
+            <select v-model="statusFilter" class="ui-input">
               <option value="all">{{ copy.filters.allStatus }}</option>
               <option value="active">{{ copy.filters.active }}</option>
               <option value="inactive">{{ copy.filters.inactive }}</option>
@@ -280,163 +285,201 @@ watch([keyword, roleFilter, statusFilter], () => {
         </div>
       </div>
 
+      <!-- Mobile card list -->
       <div class="md:hidden">
-        <div v-if="loading" class="px-4 py-10 text-center text-slate-400">
-          <Loader2 class="mr-2 inline h-5 w-5 animate-spin" />
-          {{ copy.loading }}
+        <div v-if="loading" class="space-y-4 px-4 py-4">
+          <div v-for="i in 4" :key="i" class="space-y-2.5">
+            <div class="skeleton h-4 w-2/5" />
+            <div class="skeleton h-3.5 w-4/5" />
+            <div class="skeleton h-3.5 w-3/5" />
+          </div>
         </div>
-        <div v-else-if="filteredUsers.length === 0" class="px-4 py-10 text-center text-slate-400">{{ copy.noUsers }}</div>
-        <div v-else class="divide-y divide-slate-100">
+        <div v-else-if="filteredUsers.length === 0" class="ui-empty">
+          <div class="ui-empty-icon">
+            <Users class="h-6 w-6" />
+          </div>
+          <p class="ui-empty-title">{{ copy.noUsers }}</p>
+        </div>
+        <div v-else class="divide-y divide-hairline">
           <article v-for="user in filteredUsers" :key="user.id" class="px-4 py-4">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <div class="break-words font-bold text-slate-950">{{ user.name || "-" }}</div>
-                <div class="mt-1 break-all text-xs text-slate-500">{{ user.candidate_ulid || "-" }}</div>
+                <div class="break-words text-sm font-semibold text-ink">{{ user.name || "-" }}</div>
+                <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ user.candidate_ulid || "-" }}</div>
               </div>
-              <span class="inline-flex shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
+              <span class="ui-badge shrink-0" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
             </div>
-            <div class="mt-3 grid gap-2 text-sm">
-              <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
-                <span class="text-xs font-black text-slate-400">{{ copy.table.email }}</span>
-                <span class="break-all text-right text-slate-700">{{ user.email || "-" }}</span>
+            <dl class="mt-3 divide-y divide-hairline text-sm">
+              <div class="flex items-start justify-between gap-4 py-2">
+                <dt class="shrink-0 text-xs font-medium text-slate-400">{{ copy.table.email }}</dt>
+                <dd class="m-0 break-all text-right text-slate-600">{{ user.email || "-" }}</dd>
               </div>
-              <div class="flex items-start justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
-                <span class="text-xs font-black text-slate-400">{{ copy.table.location }}</span>
-                <span class="break-words text-right text-slate-700">{{ user.location || "-" }}</span>
+              <div class="flex items-start justify-between gap-4 py-2">
+                <dt class="shrink-0 text-xs font-medium text-slate-400">{{ copy.table.location }}</dt>
+                <dd class="m-0 break-words text-right text-slate-600">{{ user.location || "-" }}</dd>
               </div>
-              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
-                <span class="text-xs font-black text-slate-400">{{ copy.table.role }}</span>
-                <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
+              <div class="flex items-center justify-between gap-4 py-2">
+                <dt class="shrink-0 text-xs font-medium text-slate-400">{{ copy.table.role }}</dt>
+                <dd class="m-0">
+                  <span class="ui-badge" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
+                </dd>
               </div>
-              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
-                <span class="text-xs font-black text-slate-400">{{ copy.table.emailVerified }}</span>
-                <span :class="['inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
-                  {{ user.email_verified ? copy.verified : copy.unverified }}
-                </span>
+              <div class="flex items-center justify-between gap-4 py-2">
+                <dt class="shrink-0 text-xs font-medium text-slate-400">{{ copy.table.emailVerified }}</dt>
+                <dd class="m-0">
+                  <span class="ui-badge" :class="user.email_verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
+                    {{ user.email_verified ? copy.verified : copy.unverified }}
+                  </span>
+                </dd>
               </div>
-              <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2">
-                <span class="text-xs font-black text-slate-400">{{ copy.table.created }}</span>
-                <span class="text-right text-slate-700">{{ formatDate(user.created_at) }}</span>
+              <div class="flex items-center justify-between gap-4 py-2">
+                <dt class="shrink-0 text-xs font-medium text-slate-400">{{ copy.table.created }}</dt>
+                <dd class="tnum m-0 text-right text-slate-600">{{ formatDate(user.created_at) }}</dd>
               </div>
-            </div>
+            </dl>
           </article>
         </div>
       </div>
 
+      <!-- Desktop table -->
       <div class="hidden overflow-x-auto md:block">
         <table class="w-full min-w-[1120px] text-left text-sm">
-          <thead class="border-b border-slate-100 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+          <thead class="ui-table-head">
             <tr>
-              <th class="px-6 py-4">{{ copy.table.user }}</th>
-              <th class="px-6 py-4">{{ copy.table.email }}</th>
-              <th class="px-6 py-4">{{ copy.table.location }}</th>
-              <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.role }}</th>
-              <th class="w-24 whitespace-nowrap px-6 py-4">{{ copy.table.status }}</th>
-              <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.emailVerified }}</th>
-              <th class="w-28 whitespace-nowrap px-6 py-4">{{ copy.table.created }}</th>
+              <th class="px-4 py-3 font-medium">{{ copy.table.user }}</th>
+              <th class="px-4 py-3 font-medium">{{ copy.table.email }}</th>
+              <th class="px-4 py-3 font-medium">{{ copy.table.location }}</th>
+              <th class="w-24 whitespace-nowrap px-4 py-3 font-medium">{{ copy.table.role }}</th>
+              <th class="w-24 whitespace-nowrap px-4 py-3 font-medium">{{ copy.table.status }}</th>
+              <th class="w-28 whitespace-nowrap px-4 py-3 font-medium">{{ copy.table.emailVerified }}</th>
+              <th class="w-28 whitespace-nowrap px-4 py-3 font-medium">{{ copy.table.created }}</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-100">
-            <tr v-if="loading">
-              <td colspan="7" class="px-6 py-10 text-center text-slate-400">
-                <Loader2 class="mr-2 inline h-5 w-5 animate-spin" />
-                {{ copy.loading }}
+          <tbody class="divide-y divide-hairline">
+            <template v-if="loading">
+              <tr v-for="i in 5" :key="`sk-${i}`">
+                <td class="px-4 py-3.5">
+                  <div class="skeleton h-4 w-28" />
+                  <div class="skeleton mt-2 h-3 w-36" />
+                </td>
+                <td class="px-4 py-3.5"><div class="skeleton h-4 w-44" /></td>
+                <td class="px-4 py-3.5"><div class="skeleton h-4 w-24" /></td>
+                <td class="px-4 py-3.5"><div class="skeleton h-5 w-16 rounded-full" /></td>
+                <td class="px-4 py-3.5"><div class="skeleton h-5 w-16 rounded-full" /></td>
+                <td class="px-4 py-3.5"><div class="skeleton h-5 w-16 rounded-full" /></td>
+                <td class="px-4 py-3.5"><div class="skeleton h-4 w-20" /></td>
+              </tr>
+            </template>
+            <tr v-else-if="filteredUsers.length === 0">
+              <td colspan="7">
+                <div class="ui-empty">
+                  <div class="ui-empty-icon">
+                    <Users class="h-6 w-6" />
+                  </div>
+                  <p class="ui-empty-title">{{ copy.noUsers }}</p>
+                </div>
               </td>
             </tr>
-            <tr v-else-if="filteredUsers.length === 0">
-              <td colspan="7" class="px-6 py-10 text-center text-slate-400">{{ copy.noUsers }}</td>
-            </tr>
             <template v-else>
-              <tr v-for="user in filteredUsers" :key="user.id" class="transition hover:bg-sky-50/60">
-                <td class="px-6 py-4">
-                  <div class="font-bold text-slate-950">{{ user.name || "-" }}</div>
-                  <div class="text-xs text-slate-500">{{ user.candidate_ulid || "-" }}</div>
+              <tr v-for="user in filteredUsers" :key="user.id" class="ui-table-row">
+                <td class="px-4 py-3.5">
+                  <div class="font-medium text-ink">{{ user.name || "-" }}</div>
+                  <div class="tnum text-xs text-slate-400">{{ user.candidate_ulid || "-" }}</div>
                 </td>
-                <td class="whitespace-nowrap px-6 py-4 text-slate-700">{{ user.email || "-" }}</td>
-                <td class="px-6 py-4 text-slate-700">{{ user.location || "-" }}</td>
-                <td class="w-24 whitespace-nowrap px-6 py-4">
-                  <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
+                <td class="whitespace-nowrap px-4 py-3.5 text-slate-600">{{ user.email || "-" }}</td>
+                <td class="px-4 py-3.5 text-slate-600">{{ user.location || "-" }}</td>
+                <td class="w-24 whitespace-nowrap px-4 py-3.5">
+                  <span class="ui-badge" :class="roleBadgeClass(user.role_label)">{{ roleLabel(user.role_label) }}</span>
                 </td>
-                <td class="w-24 whitespace-nowrap px-6 py-4">
-                  <span class="inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
+                <td class="w-24 whitespace-nowrap px-4 py-3.5">
+                  <span class="ui-badge" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
                 </td>
-                <td class="w-28 whitespace-nowrap px-6 py-4">
-                  <span :class="['inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-bold', user.email_verified ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700']">
+                <td class="w-28 whitespace-nowrap px-4 py-3.5">
+                  <span class="ui-badge" :class="user.email_verified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'">
                     {{ user.email_verified ? copy.verified : copy.unverified }}
                   </span>
                 </td>
-                <td class="w-28 whitespace-nowrap px-6 py-4 text-slate-700">{{ formatDate(user.created_at) }}</td>
+                <td class="tnum w-28 whitespace-nowrap px-4 py-3.5 text-slate-600">{{ formatDate(user.created_at) }}</td>
               </tr>
             </template>
           </tbody>
         </table>
       </div>
-      <div class="flex flex-col items-stretch justify-end gap-3 border-t border-slate-100 px-4 py-4 sm:flex-row sm:items-center md:px-6">
-        <button class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="loading || !canPrevUsers" @click="loadUserPage(userPage - 1)">
-          {{ copy.prev }}
-        </button>
-        <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pageText(userPage) }}</span>
-        <button class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold disabled:opacity-40" type="button" :disabled="loading || !canNextUsers" @click="loadUserPage(userPage + 1)">
-          {{ copy.next }}
-        </button>
+
+      <!-- Pagination -->
+      <div class="flex flex-col items-stretch justify-between gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+        <span class="tnum text-center text-sm text-slate-500 sm:text-left">{{ copy.pageText(userPage) }}</span>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="loading || !canPrevUsers" @click="loadUserPage(userPage - 1)">
+            {{ copy.prev }}
+          </button>
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="loading || !canNextUsers" @click="loadUserPage(userPage + 1)">
+            {{ copy.next }}
+          </button>
+        </div>
       </div>
     </section>
 
-    <section class="mt-7 hidden gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-      <article class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-100 p-6">
-          <div>
-            <h2 class="text-xl font-black">{{ copy.stageDistribution }}</h2>
+    <!-- Block cards -->
+    <section class="mt-6 hidden gap-6 xl:grid xl:grid-cols-[1.1fr_0.9fr]">
+      <article class="ui-card overflow-hidden">
+        <div class="flex items-center justify-between gap-4 border-b border-hairline px-6 py-5">
+          <div class="min-w-0">
+            <h2 class="text-base font-semibold text-ink">{{ copy.stageDistribution }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.stageDistributionHint }}</p>
           </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{{ totalPipelines }} {{ copy.pipelines }}</span>
+          <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ totalPipelines }} {{ copy.pipelines }}</span>
         </div>
-        <div v-if="loading" class="flex h-48 items-center justify-center text-slate-400">
-          <Loader2 class="mr-2 h-5 w-5 animate-spin" />
-          {{ copy.loading }}
+        <div v-if="loading" class="space-y-3 p-6">
+          <div v-for="i in 3" :key="i" class="skeleton h-12 w-full" />
         </div>
-        <div v-else-if="!data?.stage_buckets.length" class="flex h-48 items-center justify-center text-slate-400">
-          {{ copy.noStageData }}
+        <div v-else-if="!data?.stage_buckets.length" class="ui-empty">
+          <div class="ui-empty-icon">
+            <BarChart3 class="h-6 w-6" />
+          </div>
+          <p class="ui-empty-title">{{ copy.noStageData }}</p>
         </div>
-        <div v-else class="divide-y divide-slate-100">
-          <div v-for="item in data.stage_buckets" :key="`${item.stage_id}-${item.status}`" class="flex items-center justify-between gap-4 p-5">
+        <div v-else class="divide-y divide-hairline">
+          <div v-for="item in data.stage_buckets" :key="`${item.stage_id}-${item.status}`" class="flex items-center justify-between gap-4 px-6 py-4">
             <div class="min-w-0">
-              <p class="break-all text-base font-black">{{ stageLabel(item.stage_id) }}</p>
-              <span class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-bold" :class="badgeClass(item.status)">
+              <p class="break-all text-sm font-medium text-ink">{{ stageLabel(item.stage_id) }}</p>
+              <span class="ui-badge mt-2" :class="badgeClass(item.status)">
                 {{ item.status || copy.unknownStatus }}
               </span>
             </div>
-            <div class="text-right">
-              <p class="text-3xl font-black">{{ item.count }}</p>
-              <p class="text-xs text-slate-500">{{ copy.peoplePipelines }}</p>
+            <div class="shrink-0 text-right">
+              <p class="tnum text-3xl font-bold text-ink">{{ item.count }}</p>
+              <p class="text-xs text-slate-400">{{ copy.peoplePipelines }}</p>
             </div>
           </div>
         </div>
       </article>
 
-      <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="flex items-center justify-between">
-          <div>
-            <h2 class="text-xl font-black">{{ copy.businessOverview }}</h2>
+      <article class="ui-card p-6">
+        <div class="flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <h2 class="text-base font-semibold text-ink">{{ copy.businessOverview }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.businessOverviewHint }}</p>
           </div>
-          <BarChart3 class="h-6 w-6 text-slate-400" />
+          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-slate-50 text-slate-400">
+            <BarChart3 class="h-4 w-4" />
+          </span>
         </div>
         <div class="mt-6 grid gap-4 sm:grid-cols-2">
           <div class="rounded-2xl bg-slate-50 p-5">
             <div class="flex items-center gap-2 text-slate-500">
-              <Users class="h-4 w-4" />
-              <span class="text-sm font-bold">{{ copy.candidatesTotal }}</span>
+              <Users class="h-4 w-4 text-slate-400" />
+              <span class="text-sm font-medium">{{ copy.candidatesTotal }}</span>
             </div>
-            <p class="mt-4 text-3xl font-black">{{ data?.candidate_total ?? "-" }}</p>
+            <p class="tnum mt-4 text-3xl font-bold text-ink">{{ data?.candidate_total ?? "-" }}</p>
           </div>
           <div class="rounded-2xl bg-slate-50 p-5">
             <div class="flex items-center gap-2 text-slate-500">
-              <CreditCard class="h-4 w-4" />
-              <span class="text-sm font-bold">{{ copy.todayRevenue }}</span>
+              <CreditCard class="h-4 w-4 text-slate-400" />
+              <span class="text-sm font-medium">{{ copy.todayRevenue }}</span>
             </div>
-            <p class="mt-4 text-2xl font-black">{{ revenueText }}</p>
-            <p class="mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
+            <p class="tnum mt-4 text-2xl font-bold text-ink">{{ revenueText }}</p>
+            <p class="tnum mt-2 text-sm text-slate-500">{{ copy.paidOrders(totalPaidOrders) }}</p>
           </div>
         </div>
       </article>

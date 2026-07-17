@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
+import { FileText, Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -380,7 +380,7 @@ async function handleFileUpload(event: Event) {
       file_hash: hashHex
     }
     const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
-    
+
     if (!uploadRes.upload_url) throw new Error("Missing upload URL")
     const uploadResponse = await fetch(String(uploadRes.upload_url), {
       method: "PUT",
@@ -429,7 +429,7 @@ async function handleThumbnailFileUpload(event: Event) {
       file_hash: hashHex
     }
     const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
-    
+
     if (!uploadRes.upload_url) throw new Error("Missing upload URL")
     const uploadResponse = await fetch(String(uploadRes.upload_url), {
       method: "PUT",
@@ -471,281 +471,313 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
+  <main class="ui-page">
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
-        <h1 class="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" :disabled="loading" @click="load">
+        <button class="ui-btn ui-btn-secondary" type="button" :disabled="loading" @click="load">
           <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
-          <RefreshCw v-else class="h-4 w-4" />
+          <RefreshCw v-else class="h-4 w-4 text-slate-400" />
           {{ copy.refresh }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="startCreate">
+        <button class="ui-btn ui-btn-primary" type="button" @click="startCreate">
           <Plus class="h-4 w-4" />
           {{ copy.newFile }}
         </button>
       </div>
     </header>
 
-    <div class="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm md:px-5">
+    <section class="ui-card mt-6 px-4 py-4 md:px-6 md:py-5">
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div class="min-w-0">
-          <h2 class="text-lg font-black">{{ copy.filterTitle }}</h2>
+          <h2 class="text-base font-semibold text-ink">{{ copy.filterTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.filterDescription }}</p>
         </div>
-        <select v-model="packFilter" class="h-10 w-full min-w-0 rounded-xl border border-slate-200 px-3 text-sm font-bold sm:w-auto sm:min-w-[360px]" @change="changePackFilter">
+        <select v-model="packFilter" class="ui-input sm:w-auto sm:min-w-[360px]" @change="changePackFilter">
           <option value="">{{ copy.allPacks }}</option>
           <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
         </select>
       </div>
-    </div>
+    </section>
 
-    <div class="grid gap-6">
-      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-5">
-          <div class="min-w-0">
-            <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
-          </div>
-          
-          </div>
-
-        <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:px-6">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          {{ copy.loading }}
+    <section class="ui-card mt-4 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <div v-else-if="!files.length" class="px-4 py-10 text-center text-slate-500 md:px-6">{{ copy.empty }}</div>
-        <div v-else class="hidden grid-cols-[minmax(0,1fr)_72px_130px_280px] gap-5 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
+        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.pageSizeText(files.length, pageSize) }}</span>
+      </div>
+
+      <div v-if="loading" class="divide-y divide-hairline">
+        <div
+          v-for="i in 5"
+          :key="`sk-${i}`"
+          class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_72px_130px_280px] md:items-center md:gap-5 md:py-3.5"
+        >
+          <div>
+            <div class="skeleton h-4 w-2/5" />
+            <div class="skeleton mt-2 h-3 w-4/5" />
+          </div>
+          <div class="skeleton h-4 w-8" />
+          <div class="skeleton h-5 w-16 rounded-full" />
+          <div class="skeleton h-8 w-3/5 md:w-full" />
+        </div>
+      </div>
+
+      <div v-else-if="!files.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <FileText class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.empty }}</p>
+        <p class="ui-empty-hint">{{ copy.filterDescription }}</p>
+      </div>
+
+      <div v-else>
+        <div class="hidden grid-cols-[minmax(0,1fr)_72px_130px_280px] gap-5 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid">
           <span>{{ copy.columns.file }}</span>
           <span class="text-center">{{ copy.columns.sort }}</span>
           <span class="text-center">{{ copy.columns.type }}</span>
           <span class="text-center">{{ copy.columns.action }}</span>
         </div>
-        <div
-          v-for="file in files"
-          :key="fileId(file)"
-          class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_72px_130px_280px] md:gap-5 md:px-5"
-          :class="fileId(selected) === fileId(file) ? 'bg-sky-50' : ''"
-        >
-          <button class="min-w-0 text-left" type="button" @click="openFileDetail(file)">
-            <div class="break-words text-lg font-black text-slate-950 md:truncate">{{ fileTitle(file) }}</div>
-            <div class="mt-1 line-clamp-2 text-sm text-slate-500">{{ file.description || "-" }}</div>
-            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
-              <span class="max-w-full truncate rounded-full bg-blue-50 px-2 py-1 text-blue-700">{{ copy.ownerPrefix }}{{ ownerText(file) }}</span>
-              <span class="rounded-full bg-slate-100 px-2 py-1">Version: {{ file.version || 0 }}</span>
+        <div class="divide-y divide-hairline">
+          <div
+            v-for="file in files"
+            :key="fileId(file)"
+            class="ui-table-row grid w-full gap-3 px-4 py-4 text-left md:grid-cols-[minmax(0,1fr)_72px_130px_280px] md:items-center md:gap-5 md:py-3.5"
+            :class="fileId(selected) === fileId(file) ? 'bg-primary-50/60' : ''"
+          >
+            <button class="min-w-0 text-left" type="button" @click="openFileDetail(file)">
+              <div class="break-words text-sm font-medium text-ink md:truncate">{{ fileTitle(file) }}</div>
+              <div class="mt-0.5 line-clamp-2 text-sm text-slate-500">{{ file.description || "-" }}</div>
+              <div class="mt-2 flex flex-wrap items-center gap-2">
+                <span class="ui-badge max-w-full bg-primary-50 text-primary-700">
+                  <span class="truncate">{{ copy.ownerPrefix }}{{ ownerText(file) }}</span>
+                </span>
+                <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ copy.fields.version }}: {{ file.version || 0 }}</span>
+              </div>
+            </button>
+            <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 text-sm md:block md:border-0 md:pt-0 md:text-center">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.sort }}</span>
+              <span class="tnum text-slate-600">{{ file.sort_order || 0 }}</span>
             </div>
-          </button>
-          <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:rounded-none md:bg-transparent md:p-0 md:text-center">
-            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.sort }}</span>
-            <span class="text-sm font-black text-slate-700">{{ file.sort_order || 0 }}</span>
-          </span>
-          <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
-            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.type }}</span>
-            <span class="inline-flex h-fit whitespace-nowrap rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-black text-slate-700">
-              {{ fileTypeLabel(file.file_type) }}
-            </span>
-          </span>
-          <div class="flex min-w-0 flex-col gap-3 sm:flex-row sm:justify-end md:items-center md:gap-4">
-            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openFileDetail(file)">
-              {{ copy.viewDetails }}
-            </button>
-            <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="openFileEditor(file)">
-              {{ copy.editFile }}
-            </button>
-            <button class="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:underline md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click="requestDeleteFile(file)">
-              {{ copy.deleteFile }}
-            </button>
-          </div>
-        </div>
-
-        <div class="flex flex-col items-stretch justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-5">
-          <span class="text-center text-sm font-bold text-slate-500 sm:mr-auto sm:text-left">{{ `${currentPage} / ${Math.max(1, Math.ceil(total / pageSize))}` }}</span>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
-        </div>
-      </section>
-
-      <section v-if="detailOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-        <div class="flex h-full max-h-none w-full max-w-[1100px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-        <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-5">
-          <div class="min-w-0">
-            <h2 class="break-words text-xl font-black">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ mode === "detail" ? copy.readonlyHint : mode === "create" ? copy.createHint : copy.editHint }}</p>
-            <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
-              <Loader2 class="h-3.5 w-3.5 animate-spin" />
-              {{ copy.detailLoading }}
-            </p>
-          </div>
-          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeFileDetail">
-            <X class="h-5 w-5" />
-          </button>
-        </div>
-
-        <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
-          <div class="mb-5 rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
-            <div class="text-xs font-black uppercase text-blue-600">{{ copy.ownerCardTitle }}</div>
-            <div class="mt-1 text-lg font-black text-slate-950">{{ selectedPack ? packTitle(selectedPack) : copy.selectPack }}</div>
-            <div class="mt-1 break-all text-sm font-bold text-blue-700">{{ form.pack_id || "-" }}</div>
-          </div>
-
-          <div class="mb-3 text-sm font-black text-slate-700">{{ copy.sections.basic }}</div>
-          <div class="grid gap-3 md:grid-cols-2">
-          <div v-if="mode !== 'create'" class="text-sm font-bold">
-            {{ copy.fields.fileId }}
-            <div class="readonly-field readonly-field--compact">{{ displayValue(form.file_id) }}</div>
-          </div>
-          <label class="block">
-            <span class="block text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.pack }}</span>
-            <div v-if="mode === 'detail'" class="mt-2 readonly-field">{{ packFieldText(form.pack_id) }}</div>
-            <select v-else v-model="form.pack_id" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" :disabled="mode === 'edit'">
-              <option value="">{{ copy.selectPack }}</option>
-              <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
-            </select>
-          </label>
-          <label class="block">
-            <span class="block text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
-            <div v-if="mode === 'detail'" class="mt-2 readonly-field">{{ displayValue(form.title) }}</div>
-            <input v-else v-model="form.title" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.title" />
-          </label>
-          <label class="block">
-            <span class="block text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.fileType }}</span>
-            <div v-if="mode === 'detail'" class="mt-2 readonly-field readonly-field--compact">{{ fileTypeLabel(form.file_type) }}</div>
-            <select v-else v-model.number="form.file_type" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3">
-              <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-            </select>
-          </label>
-          <label class="md:col-span-2 text-sm font-bold">
-            {{ copy.fields.description }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--textarea">{{ displayValue(form.description) }}</div>
-            <textarea v-else v-model="form.description" class="mt-2 min-h-20 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.description" />
-          </label>
-          </div>
-
-          <div class="mb-3 mt-5 border-t border-slate-100 pt-5 text-sm font-black text-slate-700">{{ copy.sections.fileThumbnail }}</div>
-          <div class="grid gap-3 md:grid-cols-2">
-          <label class="text-sm font-bold">
-            {{ copy.fields.fileName }}
-            <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_name) }}</div>
-            <input v-else v-model="form.file_name" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileName" />
-          </label>
-          <label class="text-sm font-bold" v-if="form.file_type !== 1">
-            {{ copy.fields.fileSize }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.file_size) }}</div>
-            <input v-else v-model.number="form.file_size" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
-          </label>
-          <label class="text-sm font-bold" v-if="form.file_type !== 1">
-            {{ copy.fields.fileObjectKey }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_object_key) }}</div>
-            <div v-else class="mt-2 flex flex-col gap-3 sm:flex-row">
-              <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
-              <input v-model="form.file_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.fileObjectKey" />
-              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="fileInput?.click()">
-                <Loader2 v-if="uploadingFile" class="h-4 w-4 animate-spin" />
-                <UploadCloud v-else class="h-4 w-4" />
-                {{ uploadingFile ? (copy as any).uploading : (copy as any).uploadFile }}
+            <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 md:block md:justify-self-center md:border-0 md:pt-0">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.type }}</span>
+              <span class="ui-badge bg-slate-100 text-slate-600">{{ fileTypeLabel(file.file_type) }}</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 border-t border-hairline pt-3 sm:flex sm:flex-wrap sm:items-center md:justify-center md:border-0 md:pt-0">
+              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openFileDetail(file)">
+                {{ copy.viewDetails }}
+              </button>
+              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openFileEditor(file)">
+                {{ copy.editFile }}
+              </button>
+              <button class="ui-btn ui-btn-sm text-danger-600 hover:bg-red-50" type="button" @click="requestDeleteFile(file)">
+                {{ copy.deleteFile }}
               </button>
             </div>
-          </label>
-          <label class="text-sm font-bold" v-if="form.file_type !== 1">
-            {{ copy.fields.fileHash }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_hash) }}</div>
-            <input v-else v-model="form.file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.fileHash" />
-          </label>
-          <label class="text-sm font-bold">
-            {{ copy.fields.thumbnailObjectKey }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.thumbnail_object_key) }}</div>
-            <div v-else class="mt-2 flex flex-col gap-3 sm:flex-row">
-              <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailFileUpload" />
-              <input v-model="form.thumbnail_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
-              <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingThumbnail || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="thumbnailFileInput?.click()">
-                <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
-                <UploadCloud v-else class="h-4 w-4" />
-                {{ uploadingThumbnail ? (copy as any).uploading : (copy as any).uploadFile }}
+          </div>
+        </div>
+      </div>
+
+      <div class="flex flex-col items-stretch justify-between gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+        <span class="tnum text-center text-sm text-slate-500 sm:text-left">{{ `${currentPage} / ${Math.max(1, Math.ceil(total / pageSize))}` }}</span>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
+        </div>
+      </div>
+    </section>
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="detailOpen" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-[1100px]">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <div class="min-w-0">
+                <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ mode === "detail" ? copy.readonlyHint : mode === "create" ? copy.createHint : copy.editHint }}</p>
+                <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-medium text-primary-700">
+                  <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                  {{ copy.detailLoading }}
+                </p>
+              </div>
+              <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="closeFileDetail">
+                <X class="h-5 w-5" />
               </button>
             </div>
-          </label>
-          <label class="text-sm font-bold">
-            {{ copy.fields.thumbnailHash }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.thumbnail_file_hash) }}</div>
-            <input v-else v-model="form.thumbnail_file_hash" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.thumbnailHash" />
-          </label>
-          </div>
 
-          <div class="mb-3 mt-5 border-t border-slate-100 pt-5 text-sm font-black text-slate-700">{{ copy.sections.orderVersion }}</div>
-          <div class="grid gap-3 md:grid-cols-3">
-          <label class="text-sm font-bold" v-if="form.file_type === 1">
-            {{ copy.fields.videoStreamUid }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.video_stream_uid) }}</div>
-            <input v-else v-model="form.video_stream_uid" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" :placeholder="copy.placeholders.videoStreamUid" />
-          </label>
-          <label class="text-sm font-bold">
-            {{ copy.fields.sort }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.sort_order) }}</div>
-            <input v-else v-model.number="form.sort_order" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3" type="number" min="0" />
-          </label>
-          <label class="text-sm font-bold">
-            {{ copy.fields.version }}
-            <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ displayValue(form.version) }}</div>
-            <input v-else v-model.number="form.version" class="mt-2 h-10 w-full rounded-xl border border-slate-200 px-3 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
-          </label>
-          <div v-if="mode !== 'create'" class="text-sm font-bold">
-            {{ copy.fields.createdAt }}
-            <div class="readonly-field readonly-field--compact">{{ formatDate(form.created_at) || "-" }}</div>
-          </div>
-          <div v-if="mode !== 'create'" class="text-sm font-bold">
-            {{ copy.fields.updatedAt }}
-            <div class="readonly-field readonly-field--compact">{{ formatDate(form.updated_at) || "-" }}</div>
-          </div>
-          </div>
-        </div>
+            <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <div class="rounded-[10px] bg-primary-50 p-4">
+                <div class="text-xs font-medium uppercase tracking-wider text-primary-700">{{ copy.ownerCardTitle }}</div>
+                <div class="mt-1 break-words text-sm font-semibold text-ink">{{ selectedPack ? packTitle(selectedPack) : copy.selectPack }}</div>
+                <div class="tnum mt-0.5 break-all text-xs text-primary-700">{{ form.pack_id || "-" }}</div>
+              </div>
 
-        <div v-if="mode !== 'detail'" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
-          <button class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="saveFile">
-            <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-            <Save v-else class="h-4 w-4" />
-            {{ mode === "create" ? copy.createFile : copy.saveFile }}
-          </button>
-        </div>
-        </div>
-      </section>
+              <div class="mb-3 mt-6 text-sm font-semibold text-ink">{{ copy.sections.basic }}</div>
+              <div class="grid gap-4 md:grid-cols-2">
+                <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
+                  <span class="ui-label">{{ copy.fields.fileId }}</span>
+                  <div class="tnum readonly-field readonly-field--compact break-all">{{ displayValue(form.file_id) }}</div>
+                </div>
+                <label class="grid content-start gap-1.5">
+                  <span class="ui-label"><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.pack }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field">{{ packFieldText(form.pack_id) }}</div>
+                  <select v-else v-model="form.pack_id" class="ui-input" :disabled="mode === 'edit'">
+                    <option value="">{{ copy.selectPack }}</option>
+                    <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
+                  </select>
+                </label>
+                <label class="grid content-start gap-1.5">
+                  <span class="ui-label"><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.title) }}</div>
+                  <input v-else v-model="form.title" class="ui-input" :placeholder="copy.placeholders.title" />
+                </label>
+                <label class="grid content-start gap-1.5">
+                  <span class="ui-label"><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.fileType }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ fileTypeLabel(form.file_type) }}</div>
+                  <select v-else v-model.number="form.file_type" class="ui-input">
+                    <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                  </select>
+                </label>
+                <label class="grid content-start gap-1.5 md:col-span-2">
+                  <span class="ui-label">{{ copy.fields.description }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--textarea">{{ displayValue(form.description) }}</div>
+                  <textarea v-else v-model="form.description" class="ui-textarea" :placeholder="copy.placeholders.description" />
+                </label>
+              </div>
 
-      <Teleport to="body">
-        <div v-if="deleteConfirmOpen && selected" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-          <section class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
-            <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
-            <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
-            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
-              <div class="break-words font-black text-slate-950">{{ fileTitle(selected) }}</div>
-              <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ fileId(selected) }}</div>
+              <div class="mb-3 mt-6 border-t border-hairline pt-6 text-sm font-semibold text-ink">{{ copy.sections.fileThumbnail }}</div>
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="grid content-start gap-1.5">
+                  <span class="ui-label">{{ copy.fields.fileName }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_name) }}</div>
+                  <input v-else v-model="form.file_name" class="ui-input" :placeholder="copy.placeholders.fileName" />
+                </label>
+                <label class="grid content-start gap-1.5" v-if="form.file_type !== 1">
+                  <span class="ui-label">{{ copy.fields.fileSize }}</span>
+                  <div v-if="mode === 'detail'" class="tnum readonly-field readonly-field--compact">{{ displayValue(form.file_size) }}</div>
+                  <input v-else v-model.number="form.file_size" class="tnum ui-input" type="number" min="0" />
+                </label>
+                <label class="grid content-start gap-1.5" v-if="form.file_type !== 1">
+                  <span class="ui-label">{{ copy.fields.fileObjectKey }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_object_key) }}</div>
+                  <div v-else class="flex flex-col gap-3 sm:flex-row">
+                    <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
+                    <input v-model="form.file_object_key" class="ui-input" :placeholder="copy.placeholders.fileObjectKey" />
+                    <button type="button" class="ui-btn ui-btn-secondary sm:shrink-0" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="fileInput?.click()">
+                      <Loader2 v-if="uploadingFile" class="h-4 w-4 animate-spin" />
+                      <UploadCloud v-else class="h-4 w-4 text-slate-400" />
+                      {{ uploadingFile ? (copy as any).uploading : (copy as any).uploadFile }}
+                    </button>
+                  </div>
+                </label>
+                <label class="grid content-start gap-1.5" v-if="form.file_type !== 1">
+                  <span class="ui-label">{{ copy.fields.fileHash }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_hash) }}</div>
+                  <input v-else v-model="form.file_hash" class="ui-input" :placeholder="copy.placeholders.fileHash" />
+                </label>
+                <label class="grid content-start gap-1.5">
+                  <span class="ui-label">{{ copy.fields.thumbnailObjectKey }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.thumbnail_object_key) }}</div>
+                  <div v-else class="flex flex-col gap-3 sm:flex-row">
+                    <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailFileUpload" />
+                    <input v-model="form.thumbnail_object_key" class="ui-input" :placeholder="copy.placeholders.thumbnailObjectKey" />
+                    <button type="button" class="ui-btn ui-btn-secondary sm:shrink-0" :disabled="uploadingThumbnail || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="thumbnailFileInput?.click()">
+                      <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
+                      <UploadCloud v-else class="h-4 w-4 text-slate-400" />
+                      {{ uploadingThumbnail ? (copy as any).uploading : (copy as any).uploadFile }}
+                    </button>
+                  </div>
+                </label>
+                <label class="grid content-start gap-1.5">
+                  <span class="ui-label">{{ copy.fields.thumbnailHash }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.thumbnail_file_hash) }}</div>
+                  <input v-else v-model="form.thumbnail_file_hash" class="ui-input" :placeholder="copy.placeholders.thumbnailHash" />
+                </label>
+              </div>
+
+              <div class="mb-3 mt-6 border-t border-hairline pt-6 text-sm font-semibold text-ink">{{ copy.sections.orderVersion }}</div>
+              <div class="grid gap-4 md:grid-cols-3">
+                <label class="grid content-start gap-1.5" v-if="form.file_type === 1">
+                  <span class="ui-label">{{ copy.fields.videoStreamUid }}</span>
+                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact break-all">{{ displayValue(form.video_stream_uid) }}</div>
+                  <input v-else v-model="form.video_stream_uid" class="ui-input" :placeholder="copy.placeholders.videoStreamUid" />
+                </label>
+                <label class="grid content-start gap-1.5">
+                  <span class="ui-label">{{ copy.fields.sort }}</span>
+                  <div v-if="mode === 'detail'" class="tnum readonly-field readonly-field--compact">{{ displayValue(form.sort_order) }}</div>
+                  <input v-else v-model.number="form.sort_order" class="tnum ui-input" type="number" min="0" />
+                </label>
+                <label class="grid content-start gap-1.5">
+                  <span class="ui-label">{{ copy.fields.version }}</span>
+                  <div v-if="mode === 'detail'" class="tnum readonly-field readonly-field--compact">{{ displayValue(form.version) }}</div>
+                  <input v-else v-model.number="form.version" class="tnum ui-input" type="number" min="0" :disabled="mode === 'create'" />
+                </label>
+                <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
+                  <span class="ui-label">{{ copy.fields.createdAt }}</span>
+                  <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.created_at) || "-" }}</div>
+                </div>
+                <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
+                  <span class="ui-label">{{ copy.fields.updatedAt }}</span>
+                  <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.updated_at) || "-" }}</div>
+                </div>
+              </div>
             </div>
-            <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
-              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="saving" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
-              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="deleteFile">
+
+            <div v-if="mode !== 'detail'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">
+              <button class="ui-btn ui-btn-primary w-full sm:w-auto" type="button" :disabled="saving" @click="saveFile">
+                <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+                <Save v-else class="h-4 w-4" />
+                {{ mode === "create" ? copy.createFile : copy.saveFile }}
+              </button>
+            </div>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="deleteConfirmOpen && selected" class="ui-modal-mask z-50">
+          <section class="ui-modal-panel md:max-w-md">
+            <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.deleteConfirmTitle }}</h2>
+            </div>
+            <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <p class="text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
+              <div class="mt-4 rounded-[10px] bg-slate-50 p-4">
+                <div class="break-words text-sm font-semibold text-ink">{{ fileTitle(selected) }}</div>
+                <div class="tnum mt-1 break-all text-xs text-slate-400">{{ fileId(selected) }}</div>
+              </div>
+            </div>
+            <div class="flex flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">
+              <button class="ui-btn ui-btn-secondary" type="button" :disabled="saving" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="ui-btn ui-btn-danger" type="button" :disabled="saving" @click="deleteFile">
                 {{ saving ? copy.deleting : copy.confirmDeleteAction }}
               </button>
             </div>
           </section>
         </div>
-      </Teleport>
-    </div>
-  </section>
+      </Transition>
+    </Teleport>
+  </main>
 </template>
 
 <style scoped>
 .readonly-field {
   min-height: 2.5rem;
-  margin-top: 0.5rem;
   width: 100%;
   border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
-  background: #f1f5f9;
-  padding: 0.625rem 0.75rem;
-  color: #0f172a;
-  font-weight: 700;
-  line-height: 1.45;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 0.5rem 0.75rem;
+  color: #475569;
+  font-size: 0.875rem;
+  line-height: 1.5;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
@@ -764,6 +796,28 @@ onMounted(load)
 }
 
 .readonly-field--textarea {
+  min-height: 6rem;
+}
+
+.ui-textarea {
   min-height: 5rem;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.ui-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.ui-textarea:focus {
+  border-color: #a5b4fc;
+  outline: none;
+  box-shadow: 0 0 0 4px rgb(99 102 241 / 0.1);
 }
 </style>

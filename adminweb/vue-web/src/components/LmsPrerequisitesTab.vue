@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, Plus, Trash2 } from "lucide-vue-next"
+import { ListChecks, Loader2, Plus, Trash2 } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
@@ -23,9 +23,9 @@ const formRequiredResult = ref<number>(1)
 // Flatten all available entities from the course tree
 const availableEntities = computed(() => {
   if (!props.course) return []
-  
+
   const entities: { id: string; type: number; title: string; result: number }[] = []
-  
+
   const chapters = (props.course.chapters || []) as any[]
   chapters.forEach((chapterDetail: any) => {
     const chapter = chapterDetail.chapter
@@ -38,7 +38,7 @@ const availableEntities = computed(() => {
         result: 1 // COMPLETED
       })
     }
-    
+
     const lessons = (chapterDetail.lessons || []) as any[]
     lessons.forEach((lessonDetail: any) => {
       const lesson = lessonDetail.lesson
@@ -51,7 +51,7 @@ const availableEntities = computed(() => {
           result: 1 // COMPLETED
         })
       }
-      
+
       const quizzes = (lessonDetail.quizzes || []) as any[]
       quizzes.forEach((quizDetail: any) => {
         const quiz = quizDetail.quiz
@@ -66,7 +66,7 @@ const availableEntities = computed(() => {
         }
       })
     })
-    
+
     const chapterQuizzes = (chapterDetail.quizzes || []) as any[]
     chapterQuizzes.forEach((quizDetail: any) => {
       const quiz = quizDetail.quiz
@@ -81,7 +81,7 @@ const availableEntities = computed(() => {
       }
     })
   })
-  
+
   const courseQuizzes = (props.course.quizzes || []) as any[]
   courseQuizzes.forEach((quizDetail: any) => {
     const quiz = quizDetail.quiz
@@ -95,7 +95,7 @@ const availableEntities = computed(() => {
       })
     }
   })
-  
+
   return entities
 })
 
@@ -113,7 +113,7 @@ watch(formRequiredEntity, () => {
 
 async function loadPrerequisites() {
   if (!props.targetEntityId) return
-  
+
   loading.value = true
   try {
     const res = await apiClient<any>(`/api/lms/prerequisites?target_entity_type=${props.targetEntityType}&target_entity_id=${props.targetEntityId}`, {
@@ -130,10 +130,10 @@ async function loadPrerequisites() {
 
 async function addPrerequisite() {
   if (!formRequiredEntity.value) return
-  
+
   const entity = availableEntities.value.find(e => e.id === formRequiredEntity.value)
   if (!entity) return
-  
+
   adding.value = true
   try {
     await apiClient("/api/lms/prerequisites", {
@@ -159,7 +159,7 @@ async function addPrerequisite() {
 
 async function deletePrerequisite(prerequisite: JsonRecord) {
   if (!confirm(props.copy.deleteConfirm || 'Are you sure?')) return
-  
+
   try {
     const pId = prerequisite.prerequisite_id || prerequisite.prerequisite_ulid
     const version = prerequisite.version || 1
@@ -191,52 +191,56 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-6 rounded-2xl border border-slate-200 p-5">
+  <div class="space-y-6 rounded-2xl border border-edge p-4 md:p-5">
     <div>
-      <h3 class="text-base font-black">{{ copy.prerequisites || '前置条件' }}</h3>
+      <h3 class="text-base font-semibold text-ink">{{ copy.prerequisites || '前置条件' }}</h3>
       <p class="mt-1 text-sm text-slate-500">{{ copy.prerequisitesDesc || '添加必须完成的课时或测验' }}</p>
     </div>
-    
-    <div v-if="loading" class="flex justify-center p-8 text-slate-400">
-      <Loader2 class="h-6 w-6 animate-spin" />
+
+    <div v-if="loading" class="space-y-3">
+      <div class="skeleton h-12 w-full" />
+      <div class="skeleton h-12 w-4/5" />
     </div>
     <div v-else>
-      <div v-if="prerequisites.length === 0" class="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm font-semibold text-slate-500">
-        {{ copy.noPrerequisites || '尚未添加前置条件' }}
+      <div v-if="prerequisites.length === 0" class="ui-empty">
+        <div class="ui-empty-icon">
+          <ListChecks class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.noPrerequisites || '尚未添加前置条件' }}</p>
       </div>
-      <div v-else class="space-y-3">
-        <div v-for="item in prerequisites" :key="String(item.prerequisite_id || item.prerequisite_ulid)" class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-          <div>
-            <div class="font-bold text-slate-700">{{ entityName(String(item.required_entity_id || item.required_entity_ulid)) }}</div>
-            <div class="mt-0.5 text-xs text-slate-500">
+      <div v-else class="divide-y divide-hairline overflow-hidden rounded-2xl border border-edge">
+        <div v-for="item in prerequisites" :key="String(item.prerequisite_id || item.prerequisite_ulid)" class="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-primary-50/40">
+          <div class="min-w-0">
+            <div class="break-words text-sm font-medium text-ink">{{ entityName(String(item.required_entity_id || item.required_entity_ulid)) }}</div>
+            <div class="mt-0.5 text-xs text-slate-400">
               {{ item.required_result === 2 || item.required_result === 'PREREQUISITE_RESULT_PASSED' ? (copy.mustPass || '必须通过') : (copy.mustComplete || '必须完成') }}
             </div>
           </div>
-          <button class="shrink-0 rounded-full p-2 text-slate-400 transition hover:bg-slate-200 hover:text-red-500" :aria-label="copy.delete" @click="deletePrerequisite(item)">
+          <button class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600" type="button" :aria-label="copy.delete" @click="deletePrerequisite(item)">
             <Trash2 class="h-4 w-4" />
           </button>
         </div>
       </div>
     </div>
-    
-    <form class="flex flex-wrap items-end gap-3 border-t border-slate-200 pt-5" @submit.prevent="addPrerequisite">
-      <label class="flex-1 space-y-2 text-sm font-bold min-w-[200px]">
-        <span>{{ copy.requireEntity || '要求完成项' }}</span>
-        <select v-model="formRequiredEntity" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>
+
+    <form class="flex flex-wrap items-end gap-3 border-t border-hairline pt-5" @submit.prevent="addPrerequisite">
+      <label class="grid min-w-[200px] flex-1 gap-1.5">
+        <span class="ui-label">{{ copy.requireEntity || '要求完成项' }}</span>
+        <select v-model="formRequiredEntity" class="ui-input" required>
           <option value="" disabled>{{ copy.selectRequireEntity || '请选择一个课时/章节/测验' }}</option>
           <option v-for="entity in availableEntities" :key="entity.id" :value="entity.id">
             {{ entity.title }}
           </option>
         </select>
       </label>
-      <label v-if="selectedEntityType === 2" class="space-y-2 text-sm font-bold w-[140px]">
-        <span>{{ copy.requireStandard || '要求标准' }}</span>
-        <select v-model="formRequiredResult" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>
+      <label v-if="selectedEntityType === 2" class="grid w-[150px] gap-1.5">
+        <span class="ui-label">{{ copy.requireStandard || '要求标准' }}</span>
+        <select v-model="formRequiredResult" class="ui-input" required>
           <option :value="2">{{ copy.mustPass || '必须通过' }}</option>
           <option :value="1">{{ copy.mustComplete || '必须完成' }}</option>
         </select>
       </label>
-      <button class="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-blue-700 px-4 font-bold text-white shadow-sm hover:bg-blue-800 disabled:opacity-50" type="submit" :disabled="!formRequiredEntity || adding">
+      <button class="ui-btn ui-btn-primary" type="submit" :disabled="!formRequiredEntity || adding">
         <Loader2 v-if="adding" class="h-4 w-4 animate-spin" />
         <Plus v-else class="h-4 w-4" />
         {{ copy.add || '添加' }}

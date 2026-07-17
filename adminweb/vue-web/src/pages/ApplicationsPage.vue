@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, Download, Eye, FileText, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
+import { CheckCircle2, Download, Eye, FileText, Inbox, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -353,49 +353,64 @@ onMounted(() => load(1))
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1520px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
+  <main class="ui-page">
+    <!-- Page header -->
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
+      <div class="min-w-0">
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
-        <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
+      <button class="ui-btn ui-btn-secondary" type="button" @click="load(page)">
+        <RefreshCw class="h-4 w-4 text-slate-400" :class="loading ? 'animate-spin' : ''" />
         {{ copy.refresh }}
       </button>
     </header>
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 p-4 md:p-5">
-          <div class="flex min-w-0 flex-wrap items-center gap-3">
-            <div>
-              <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
-            </div>
-            <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+    <!-- Application list -->
+    <section class="ui-card mt-6 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+        <div class="flex min-w-0 flex-wrap items-center gap-3">
+          <div class="min-w-0">
+            <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
           </div>
-          <select v-model="statusFilter" class="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">
-            <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-          </select>
+          <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
         </div>
+        <select v-model="statusFilter" class="ui-input md:w-64">
+          <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+        </select>
+      </div>
 
-        <div v-if="loading" class="p-8 text-center text-slate-500 md:p-12">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          {{ copy.loading }}
-        </div>
-        <div v-else-if="!applications.length" class="p-8 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
-        <template v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_160px_170px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
-            <span>{{ copy.columns.application }}</span>
-            <span class="text-center">{{ copy.columns.status }}</span>
-            <span class="text-right">{{ copy.columns.submittedAt }}</span>
-            <span class="text-right">{{ copy.columns.action }}</span>
+      <div v-if="loading" class="divide-y divide-hairline">
+        <div v-for="i in 5" :key="`sk-${i}`" class="grid gap-3 px-4 py-3.5 md:grid-cols-[minmax(0,1fr)_160px_170px_112px] md:items-center md:gap-4">
+          <div class="space-y-2">
+            <div class="skeleton h-4 w-2/5" />
+            <div class="skeleton h-3 w-3/5" />
           </div>
+          <div class="skeleton h-5 w-16 rounded-full md:justify-self-center" />
+          <div class="skeleton h-4 w-24 md:justify-self-end" />
+          <div class="skeleton h-4 w-14 md:justify-self-end" />
+        </div>
+      </div>
+      <div v-else-if="!applications.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <Inbox class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.empty }}</p>
+      </div>
+      <template v-else>
+        <div class="ui-table-head hidden grid-cols-[minmax(0,1fr)_160px_170px_112px] gap-4 px-4 py-3 md:grid">
+          <span>{{ copy.columns.application }}</span>
+          <span class="text-center">{{ copy.columns.status }}</span>
+          <span class="text-right">{{ copy.columns.submittedAt }}</span>
+          <span class="text-right">{{ copy.columns.action }}</span>
+        </div>
+        <div class="divide-y divide-hairline">
           <div
             v-for="app in applications"
             :key="appUlid(app)"
-            class="flex w-full cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 md:grid md:grid-cols-[minmax(0,1fr)_160px_170px_112px] md:gap-4 md:px-5"
-            :class="appUlid(selected) === appUlid(app) ? 'bg-sky-50' : ''"
+            class="ui-table-row flex w-full cursor-pointer flex-col px-4 py-4 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_160px_170px_112px] md:items-center md:gap-4 md:py-3.5"
+            :class="appUlid(selected) === appUlid(app) ? 'bg-primary-50/60' : ''"
             role="button"
             tabindex="0"
             @click="selectApplication(app)"
@@ -403,172 +418,187 @@ onMounted(() => load(1))
             @keydown.space.prevent="selectApplication(app)"
           >
             <div class="min-w-0">
-              <div class="break-words text-lg font-black text-slate-950 md:truncate">{{ credential(app) }}</div>
-              <div class="mt-1 break-all text-sm text-slate-500">{{ copy.candidatePrefix }}{{ candidate(app) }}</div>
-              <div class="mt-2 break-all text-xs font-semibold text-slate-500">{{ copy.appIdPrefix }}{{ appUlid(app) || "-" }}</div>
+              <div class="break-words text-sm font-semibold text-ink md:truncate">{{ credential(app) }}</div>
+              <div class="mt-1 break-all text-sm text-slate-600">{{ copy.candidatePrefix }}{{ candidate(app) }}</div>
+              <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ copy.appIdPrefix }}{{ appUlid(app) || "-" }}</div>
             </div>
-            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
-              <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
-              <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(status(app))">
-                {{ applicationLabel(status(app)) }}
-              </span>
-            </span>
-            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-end md:rounded-none md:bg-transparent md:p-0">
-              <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.submittedAt }}</span>
-              <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(app.created_at || "")) }}</span>
-            </span>
-            <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectApplication(app)">
-              {{ copy.viewDetails }}
-            </button>
+            <div class="mt-3 flex items-center justify-between gap-4 border-t border-hairline py-2 md:mt-0 md:block md:border-0 md:py-0 md:text-center">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
+              <span class="ui-badge" :class="badgeClass(status(app))">{{ applicationLabel(status(app)) }}</span>
+            </div>
+            <div class="flex items-center justify-between gap-4 border-t border-hairline py-2 md:block md:border-0 md:py-0 md:text-right">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.submittedAt }}</span>
+              <span class="tnum text-sm text-slate-600">{{ formatDate(String(app.created_at || "")) }}</span>
+            </div>
+            <div class="mt-1 md:mt-0 md:text-right">
+              <button class="ui-btn ui-btn-secondary ui-btn-sm w-full md:w-auto" type="button" @click.stop="selectApplication(app)">
+                {{ copy.viewDetails }}
+              </button>
+            </div>
           </div>
-        </template>
-
-        <div class="flex flex-col justify-end gap-3 border-t border-slate-200 p-4 sm:flex-row md:p-5">
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="load(page - 1)">{{ copy.prev }}</button>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="load(page + 1)">{{ copy.next }}</button>
         </div>
+      </template>
+
+      <!-- Pagination -->
+      <div class="flex flex-col items-stretch justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canPrev" @click="load(page - 1)">{{ copy.prev }}</button>
+        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canNext" @click="load(page + 1)">{{ copy.next }}</button>
+      </div>
     </section>
 
+    <!-- Detail dialog -->
     <Teleport to="body">
-      <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-0 md:p-6">
-        <section class="flex h-full max-h-none w-full max-w-[1280px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-        <div v-if="!selected" class="flex items-start justify-between gap-4 p-4 md:p-6">
-          <div>
-            <h2 class="text-xl font-black md:text-2xl">{{ copy.detailTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.selectApplication }}</p>
-          </div>
-          <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
-            <X class="h-5 w-5" />
-          </button>
-        </div>
-        <template v-else>
-          <div class="border-b border-slate-200 p-4 md:p-5">
-            <div class="flex flex-wrap items-start justify-between gap-4">
+      <Transition name="modal">
+        <div v-if="detailOpen" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-[1280px]">
+            <div v-if="!selected" class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
               <div class="min-w-0">
-                <h2 class="break-words text-xl font-black md:text-2xl">{{ credential(selected) }}</h2>
-                <p class="mt-1 break-all text-sm text-slate-500">{{ appUlid(selected) }}</p>
+                <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ copy.selectApplication }}</p>
               </div>
-              <div class="flex items-center gap-3">
-                <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
-                <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
-                  <X class="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                type="button"
+                :aria-label="copy.close"
+                @click="closeDetail"
+              >
+                <X class="h-5 w-5" />
+              </button>
             </div>
-          </div>
+            <template v-else>
+              <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+                <div class="min-w-0">
+                  <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ credential(selected) }}</h2>
+                  <p class="tnum mt-1 break-all text-sm text-slate-500">{{ appUlid(selected) }}</p>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                  <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
+                  <button
+                    class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                    type="button"
+                    :aria-label="copy.close"
+                    @click="closeDetail"
+                  >
+                    <X class="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
 
-          <div class="border-b border-slate-200 px-4 py-3 md:px-5 md:py-4">
-            <div class="flex gap-2 overflow-x-auto">
+              <div class="flex shrink-0 gap-5 overflow-x-auto border-b border-hairline px-4 md:px-6">
                 <button
                   v-for="tab in detailTabs"
                   :key="tab.key"
-                  class="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border px-3 text-left text-sm font-black transition md:gap-3 md:px-4"
-                  :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50' : 'border-slate-100 hover:bg-slate-50'"
+                  class="ui-tab"
+                  :class="activeTab === tab.key ? 'ui-tab-active' : ''"
                   type="button"
                   @click="activeTab = tab.key"
                 >
-                  <span>{{ tab.title }}</span>
-                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
+                  {{ tab.title }}
+                  <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ tab.count }}</span>
                 </button>
-            </div>
-          </div>
-
-          <main class="min-h-0 flex-1 overflow-y-auto p-4 md:h-[60vh] md:min-h-[360px] md:max-h-[620px] md:p-5">
-              <div v-if="activeTab === 'overview'" class="grid gap-4 md:grid-cols-2">
-                <div v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
-                  <span class="text-xs font-black uppercase text-slate-400">{{ field.label }}</span>
-                  <pre
-                    v-if="isStructuredValue(field.value)"
-                    class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
-                  >{{ jsonText(field.value) }}</pre>
-                  <div v-else class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
-                    {{ field.displayValue }}
-                  </div>
-                </div>
               </div>
 
-              <div v-else-if="activeTab === 'files'" class="space-y-4">
-                <div v-if="detailLoading" class="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500">
-                  <Loader2 class="h-4 w-4 animate-spin" />
-                  {{ copy.filesLoading }}
-                </div>
-                <div v-else-if="!selectedFiles.length" class="rounded-xl border border-dashed border-slate-200 bg-white p-5 text-sm text-slate-500">
-                  {{ copy.noFiles }}
-                </div>
-                <div v-for="file in selectedFiles" v-else :key="String(file.file_hash || file.file_name || file.name)" class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-                  <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div class="min-w-0">
-                      <div class="flex items-center gap-2 text-sm font-black text-slate-900">
-                        <FileText class="h-4 w-4 shrink-0 text-blue-600" />
-                        <span class="truncate">{{ fileName(file) }}</span>
-                      </div>
-                      <div class="mt-3 grid gap-2 text-xs font-bold text-slate-600 sm:grid-cols-3 lg:max-w-2xl">
-                        <span class="min-w-0 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">{{ copy.fileMeta.usage }}{{ fileUsage(file) }}</span>
-                        <span v-if="fileSize(file)" class="min-w-0 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">{{ copy.fileMeta.size }}{{ fileSize(file) }}</span>
-                        <span v-if="file.file_ext" class="min-w-0 truncate rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">{{ copy.fileMeta.ext }}{{ file.file_ext }}</span>
-                      </div>
-                      <div v-if="fileHash(file)" class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                        <div class="text-[11px] font-black uppercase text-slate-400">{{ copy.fileMeta.sha256 }}</div>
-                        <div class="mt-1 break-all font-mono text-xs leading-5 text-slate-600">{{ fileHash(file) }}</div>
-                      </div>
-                    </div>
-                    <div class="flex shrink-0 flex-wrap gap-2 sm:justify-end">
-                      <a
-                        v-if="previewUrl(file)"
-                        class="inline-flex h-9 w-full items-center justify-center gap-1 rounded-xl border border-blue-200 bg-blue-50 px-3 text-xs font-black text-blue-700 hover:bg-blue-100 sm:w-auto"
-                        :href="previewUrl(file)"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Eye class="h-4 w-4" />
-                        {{ copy.preview }}
-                      </a>
-                      <button
-                        v-if="fileUrl(file)"
-                        class="inline-flex h-9 w-full items-center justify-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-black text-slate-700 hover:bg-slate-50 sm:w-auto disabled:opacity-50"
-                        type="button"
-                        :disabled="downloadingFile === String(file.file_hash || file.file_name || file.name)"
-                        @click="handleDownload(file)"
-                      >
-                        <Loader2 v-if="downloadingFile === String(file.file_hash || file.file_name || file.name)" class="h-4 w-4 animate-spin" />
-                        <Download v-else class="h-4 w-4" />
-                        {{ copy.download }}
-                      </button>
-                      <span v-else class="w-full rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs font-black text-amber-700 sm:w-auto">{{ copy.missingLink }}</span>
+              <main class="min-h-0 flex-1 overflow-y-auto p-4 md:h-[60vh] md:max-h-[620px] md:min-h-[360px] md:p-6">
+                <div v-if="activeTab === 'overview'" class="grid gap-4 md:grid-cols-2">
+                  <div v-for="field in selectedFields" :key="field.key" class="grid gap-1.5" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
+                    <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
+                    <pre
+                      v-if="isStructuredValue(field.value)"
+                      class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-[10px] border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
+                    >{{ jsonText(field.value) }}</pre>
+                    <div v-else class="break-words text-sm font-medium text-ink">
+                      {{ field.displayValue }}
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div v-else-if="activeTab === 'audit'" class="space-y-4">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                  {{ copy.auditHint }}
+                <div v-else-if="activeTab === 'files'" class="space-y-4">
+                  <div v-if="detailLoading" class="flex items-center gap-2 rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">
+                    <Loader2 class="h-4 w-4 animate-spin" />
+                    {{ copy.filesLoading }}
+                  </div>
+                  <div v-else-if="!selectedFiles.length" class="ui-empty">
+                    <div class="ui-empty-icon">
+                      <FileText class="h-6 w-6" />
+                    </div>
+                    <p class="ui-empty-title">{{ copy.noFiles }}</p>
+                  </div>
+                  <div v-for="file in selectedFiles" v-else :key="String(file.file_hash || file.file_name || file.name)" class="rounded-2xl border border-edge p-4 md:p-5">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                          <FileText class="h-4 w-4 shrink-0 text-primary-600" />
+                          <span class="truncate text-sm font-semibold text-ink">{{ fileName(file) }}</span>
+                        </div>
+                        <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                          <span class="min-w-0 break-all">{{ copy.fileMeta.usage }}{{ fileUsage(file) }}</span>
+                          <span v-if="fileSize(file)" class="tnum">{{ copy.fileMeta.size }}{{ fileSize(file) }}</span>
+                          <span v-if="file.file_ext">{{ copy.fileMeta.ext }}{{ file.file_ext }}</span>
+                        </div>
+                        <div v-if="fileHash(file)" class="tnum mt-2 break-all font-mono text-xs text-slate-400">{{ copy.fileMeta.sha256 }}{{ fileHash(file) }}</div>
+                      </div>
+                      <div class="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+                        <a
+                          v-if="previewUrl(file)"
+                          class="ui-btn ui-btn-secondary ui-btn-sm w-full sm:w-auto"
+                          :href="previewUrl(file)"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Eye class="h-4 w-4 text-slate-400" />
+                          {{ copy.preview }}
+                        </a>
+                        <button
+                          v-if="fileUrl(file)"
+                          class="ui-btn ui-btn-secondary ui-btn-sm w-full sm:w-auto"
+                          type="button"
+                          :disabled="downloadingFile === String(file.file_hash || file.file_name || file.name)"
+                          @click="handleDownload(file)"
+                        >
+                          <Loader2 v-if="downloadingFile === String(file.file_hash || file.file_name || file.name)" class="h-4 w-4 animate-spin" />
+                          <Download v-else class="h-4 w-4 text-slate-400" />
+                          {{ copy.download }}
+                        </button>
+                        <span v-else class="ui-badge w-full justify-center bg-amber-50 text-amber-700 sm:w-auto">{{ copy.missingLink }}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <textarea
-                  v-model="auditRemark"
-                  class="min-h-32 w-full rounded-2xl border border-slate-200 p-4 text-sm"
-                  :placeholder="copy.auditRemarkPlaceholder"
-                />
-                <div class="grid gap-3 md:grid-cols-3">
-                  <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('approve')">
-                    <CheckCircle2 class="h-4 w-4" />
-                    {{ copy.approve }}
-                  </button>
-                  <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('resubmit')">
-                    <RotateCcw class="h-4 w-4" />
-                    {{ copy.resubmit }}
-                  </button>
-                  <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="auditing" @click="audit('reject')">
-                    <XCircle class="h-4 w-4" />
-                    {{ copy.reject }}
-                  </button>
-                </div>
-              </div>
 
-          </main>
-        </template>
-        </section>
-      </div>
+                <div v-else-if="activeTab === 'audit'" class="space-y-4">
+                  <div class="rounded-2xl bg-slate-50 p-4 text-sm text-slate-600">
+                    {{ copy.auditHint }}
+                  </div>
+                  <textarea
+                    v-model="auditRemark"
+                    class="ui-input h-auto min-h-32 py-2.5"
+                    :placeholder="copy.auditRemarkPlaceholder"
+                  />
+                  <div class="grid gap-3 md:grid-cols-3">
+                    <button
+                      class="ui-btn bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98] focus-visible:ring-emerald-500/20"
+                      type="button"
+                      :disabled="auditing"
+                      @click="audit('approve')"
+                    >
+                      <CheckCircle2 class="h-4 w-4" />
+                      {{ copy.approve }}
+                    </button>
+                    <button class="ui-btn ui-btn-secondary text-amber-700" type="button" :disabled="auditing" @click="audit('resubmit')">
+                      <RotateCcw class="h-4 w-4" />
+                      {{ copy.resubmit }}
+                    </button>
+                    <button class="ui-btn ui-btn-danger" type="button" :disabled="auditing" @click="audit('reject')">
+                      <XCircle class="h-4 w-4" />
+                      {{ copy.reject }}
+                    </button>
+                  </div>
+                </div>
+              </main>
+            </template>
+          </section>
+        </div>
+      </Transition>
     </Teleport>
-  </section>
+  </main>
 </template>

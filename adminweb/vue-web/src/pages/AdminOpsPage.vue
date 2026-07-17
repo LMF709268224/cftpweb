@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue"
-import { Search, X } from "lucide-vue-next"
+import { Filter, Inbox, Loader2, RefreshCw, Search, X } from "lucide-vue-next"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
@@ -1476,6 +1476,10 @@ function closeDetailModal() {
   showDetailModal.value = false
 }
 
+function actionBtnClass(key: OpsAction["key"]) {
+  return key === "ignore" ? "ui-btn-danger" : "ui-btn-primary"
+}
+
 async function runAction(action: OpsAction) {
   const module = activeModule.value
   const id = getItemID(selected.value, module)
@@ -1522,48 +1526,50 @@ void loadList()
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1600px] flex-col gap-5 px-4 py-5 md:px-8 md:py-6">
-    <header class="flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between">
+  <main class="ui-page">
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
-        <p class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">{{ copy.eyebrow }}</p>
-        <h1 class="mt-2 text-3xl font-black text-slate-950">{{ copy.title }}</h1>
-        <p class="mt-2 text-sm font-medium text-slate-500">{{ copy.subtitle }}</p>
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-black text-slate-900 shadow-sm hover:border-slate-500" @click="loadList(true)">
+      <button class="ui-btn ui-btn-secondary" type="button" @click="loadList(true)">
+        <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
+        <RefreshCw v-else class="h-4 w-4 text-slate-400" />
         {{ copy.refresh }}
       </button>
     </header>
 
-    <div class="space-y-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-      <div v-for="group in moduleGroups" :key="group.key">
-        <div class="mb-2 text-xs font-black tracking-wider text-slate-400 uppercase">{{ (copy.groups as Record<string, string>)[group.key] }}</div>
-        <div class="flex flex-wrap gap-2">
+    <section class="ui-card mt-6 overflow-hidden pb-3">
+      <div v-for="group in moduleGroups" :key="group.key" class="px-4 pt-4 first:pt-5 md:px-6">
+        <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ (copy.groups as Record<string, string>)[group.key] }}</div>
+        <div class="mt-1 flex gap-5 overflow-x-auto border-b border-hairline">
           <button
             v-for="module in group.modules"
             :key="module.key"
-            class="min-h-10 min-w-[128px] flex-1 rounded-xl border px-3.5 py-2 text-left text-sm font-black transition md:flex-none"
-            :class="module.key === activeKey ? 'border-sky-300 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400'"
+            class="ui-tab"
+            :class="module.key === activeKey ? 'ui-tab-active' : ''"
+            type="button"
             @click="activeKey = module.key"
           >
             {{ module.label }}
           </button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+    <section class="ui-card mt-4 p-4 md:p-6">
       <div class="min-w-0">
-        <h2 class="text-xl font-black text-slate-950">{{ activeModule.label }}</h2>
-        <p class="mt-1 text-sm font-medium text-slate-500">{{ activeModule.description }}</p>
+        <h2 class="text-base font-semibold text-ink">{{ activeModule.label }}</h2>
+        <p class="mt-1 text-sm text-slate-500">{{ activeModule.description }}</p>
       </div>
 
       <div v-if="activeModule.filters?.length" class="mt-4 flex flex-wrap items-end gap-3">
-        <div v-for="filter in activeModule.filters" :key="filter.key" class="w-full space-y-1 sm:w-[200px] 2xl:w-[220px]">
-          <label class="text-xs font-black text-slate-500">{{ filter.label }}</label>
+        <label v-for="filter in activeModule.filters" :key="filter.key" class="grid w-full gap-1.5 sm:w-[200px] 2xl:w-[220px]">
+          <span class="ui-label">{{ filter.label }}</span>
           <select
             v-if="filter.options?.length"
             v-model="activeFilters[filter.key]"
-            class="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold outline-none focus:border-sky-400"
+            class="ui-input"
             @change="loadList(true)"
           >
             <option v-for="option in filter.options" :key="option.value || 'all'" :value="option.value">{{ option.label }}</option>
@@ -1571,14 +1577,14 @@ void loadList()
           <div v-else class="relative">
             <input
               v-model="activeFilters[filter.key]"
-              class="h-11 w-full rounded-xl border border-slate-200 px-3 pr-10 text-sm font-bold outline-none focus:border-sky-400"
+              class="ui-input pr-10"
               :type="filter.inputType || 'text'"
               :placeholder="filter.placeholder || ''"
               @keyup.enter="loadList(true)"
             />
             <button
               v-if="activeFilters[filter.key]"
-              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
               type="button"
               :aria-label="copy.clearInput"
               :title="copy.clearInput"
@@ -1587,126 +1593,157 @@ void loadList()
               <X class="h-4 w-4" />
             </button>
           </div>
-        </div>
-        <button class="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white hover:bg-blue-800 sm:w-auto" type="button" @click="loadList(true)">
+        </label>
+        <button class="ui-btn ui-btn-primary w-full sm:w-auto" type="button" @click="loadList(true)">
           <Search class="h-4 w-4" />
           {{ copy.search }}
         </button>
       </div>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-5">
+    <section class="ui-card mt-4 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
         <div class="min-w-0">
-          <h2 class="text-xl font-black text-slate-950">{{ copy.listTitle }}</h2>
-          <p class="mt-1 text-sm font-medium text-slate-500">{{ copy.listDescription }}</p>
+          <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.total(total) }}</span>
+        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.total(total) }}</span>
       </div>
 
-      <div v-if="missingRequiredFilters.length" class="px-6 py-14 text-center text-sm font-bold text-amber-700">
-        {{ copy.requiredPrefix }} {{ missingRequiredFilterLabels.join(", ") }}
+      <div v-if="missingRequiredFilters.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <Filter class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.requiredPrefix }} {{ missingRequiredFilterLabels.join(", ") }}</p>
       </div>
-      <div v-else-if="loading" class="px-6 py-14 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
-      <div v-else-if="!items.length" class="px-6 py-14 text-center text-sm font-bold text-slate-500">{{ copy.empty }}</div>
+      <div v-else-if="loading" class="divide-y divide-hairline">
+        <div v-for="i in 5" :key="`sk-${i}`" class="flex items-center justify-between gap-4 px-4 py-4 md:px-6">
+          <div class="min-w-0 flex-1 space-y-2">
+            <div class="skeleton h-4 w-2/5" />
+            <div class="skeleton h-3 w-4/5" />
+            <div class="skeleton h-3 w-3/5" />
+          </div>
+          <div class="skeleton h-4 w-16 shrink-0" />
+        </div>
+      </div>
+      <div v-else-if="!items.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <Inbox class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.empty }}</p>
+      </div>
       <div v-else>
-        <div class="grid grid-cols-[minmax(0,1fr)_96px] gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs font-black text-slate-500 md:grid-cols-[minmax(0,1fr)_112px] md:gap-4 md:px-5">
-          <span>{{ copy.record }}</span>
-          <span class="text-right">{{ copy.operation }}</span>
+        <div class="ui-table-head grid grid-cols-[minmax(0,1fr)_96px] gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_112px] md:gap-4 md:px-6">
+          <span class="font-medium">{{ copy.record }}</span>
+          <span class="text-right font-medium">{{ copy.operation }}</span>
         </div>
-        <button
-          v-for="item in items"
-          :key="getItemID(item) || stringify(item)"
-          class="grid w-full gap-3 border-b border-slate-100 p-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_112px] md:items-center md:gap-4 md:p-5"
-          :class="getItemID(item) === getItemID(selected) ? 'bg-sky-50' : ''"
-          @click="openItem(item)"
-        >
-          <span class="min-w-0">
-            <span class="block break-words font-black text-slate-950">{{ getTitle(item) }}</span>
-            <span class="mt-1 block break-all text-xs font-bold text-blue-700">{{ getItemID(item) || "-" }}</span>
-            <span class="mt-1 block break-words text-xs font-semibold text-slate-500">{{ getSubtitle(item) || "-" }}</span>
-          </span>
-          <span class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0 md:text-right">{{ copy.viewDetail }}</span>
-        </button>
+        <div class="divide-y divide-hairline">
+          <button
+            v-for="item in items"
+            :key="getItemID(item) || stringify(item)"
+            class="ui-table-row grid w-full gap-3 px-4 py-3.5 text-left md:grid-cols-[minmax(0,1fr)_112px] md:items-center md:gap-4 md:px-6"
+            :class="getItemID(item) === getItemID(selected) ? 'bg-primary-50/60' : ''"
+            type="button"
+            @click="openItem(item)"
+          >
+            <span class="min-w-0">
+              <span class="block break-words text-sm font-medium text-ink">{{ getTitle(item) }}</span>
+              <span class="tnum mt-0.5 block break-all text-xs text-slate-400">{{ getItemID(item) || "-" }}</span>
+              <span class="mt-1 block break-words text-xs text-slate-500">{{ getSubtitle(item) || "-" }}</span>
+            </span>
+            <span class="text-sm font-medium text-primary-700 md:justify-self-end md:text-right">{{ copy.viewDetail }}</span>
+          </button>
+        </div>
       </div>
 
-      <div class="flex items-center justify-end gap-3 border-t border-slate-200 px-4 py-4 md:px-5">
-        <div class="flex w-full gap-2 md:w-auto">
-          <button class="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold disabled:opacity-40 md:flex-none" :disabled="page <= 1 && offset <= 0" @click="previousPage">
-            {{ copy.previous }}
-          </button>
-          <button class="flex-1 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold md:flex-none" :disabled="items.length < pageSize" @click="nextPage">
-            {{ copy.next }}
-          </button>
-        </div>
+      <div class="flex flex-col items-stretch justify-end gap-2 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="page <= 1 && offset <= 0" @click="previousPage">
+          {{ copy.previous }}
+        </button>
+        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="items.length < pageSize" @click="nextPage">
+          {{ copy.next }}
+        </button>
       </div>
     </section>
 
     <Teleport to="body">
-      <div v-if="showDetailModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-        <div class="flex h-full max-h-none w-full max-w-6xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
-            <div class="min-w-0">
-              <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.detailTitle }}</h2>
-              <p class="mt-1 break-all text-xs font-bold text-blue-700">{{ getItemID(selected) || "-" }}</p>
-            </div>
-            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-xl leading-none text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetailModal">
-              ×
-            </button>
-          </div>
-
-          <div class="min-h-0 flex-1 overflow-auto p-4 md:p-6">
-            <div v-if="activeModule.actions?.length && selected" class="mb-5 flex flex-wrap justify-end gap-2">
-              <template v-for="action in activeModule.actions" :key="action.key">
-                <button
-                  v-if="!action.showIf || action.showIf(selected)"
-                  class="inline-flex h-10 w-full items-center justify-center rounded-xl border border-slate-300 px-4 text-sm font-black hover:border-slate-500 disabled:opacity-50 md:w-auto"
-                  :disabled="!!actionLoading"
-                  @click="runAction(action)"
-                >
-                  {{ actionLoading === action.key ? copy.processing : action.label }}
-                </button>
-              </template>
+      <Transition name="modal">
+        <div v-if="showDetailModal" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-6xl">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <div class="min-w-0">
+                <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
+                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ getItemID(selected) || "-" }}</p>
+              </div>
+              <button
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                type="button"
+                :aria-label="copy.close"
+                @click="closeDetailModal"
+              >
+                <X class="h-5 w-5" />
+              </button>
             </div>
 
-            <div v-if="detailNotice" class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-800">
-              {{ detailNotice }}
-            </div>
-            <div v-if="detailLoading" class="mt-10 text-center text-sm font-bold text-slate-500">{{ copy.loading }}</div>
-            <div v-else class="mt-6 space-y-5">
-              <div v-if="structuredDetailSections.length" class="space-y-4">
-                <section
-                  v-for="section in structuredDetailSections"
-                  :key="section.key"
-                  class="rounded-2xl border border-slate-200 bg-white p-4"
-                >
-                  <h3 class="text-sm font-black text-slate-950">{{ section.title }}</h3>
-                  <dl class="mt-3 grid gap-3 md:grid-cols-2">
-                    <div
-                      v-for="entry in section.entries"
-                      :key="entry.key"
-                      class="rounded-xl bg-slate-50 px-3 py-2"
-                      :class="entry.key.endsWith('_json') || entry.key === 'message_payload' ? 'md:col-span-2' : ''"
-                    >
-                      <dt class="text-xs font-black text-slate-500">{{ entry.label }}</dt>
-                      <dd
-                        class="mt-1 whitespace-pre-wrap break-words text-sm font-bold text-slate-900"
-                        :class="entry.mono ? 'font-mono text-xs leading-relaxed' : ''"
+            <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <div v-if="activeModule.actions?.length && selected" class="mb-5 flex flex-wrap justify-end gap-2">
+                <template v-for="action in activeModule.actions" :key="action.key">
+                  <button
+                    v-if="!action.showIf || action.showIf(selected)"
+                    class="ui-btn w-full md:w-auto"
+                    :class="actionBtnClass(action.key)"
+                    type="button"
+                    :disabled="!!actionLoading"
+                    @click="runAction(action)"
+                  >
+                    <Loader2 v-if="actionLoading === action.key" class="h-4 w-4 animate-spin" />
+                    {{ actionLoading === action.key ? copy.processing : action.label }}
+                  </button>
+                </template>
+              </div>
+
+              <div v-if="detailNotice" class="mb-5 rounded-[10px] bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+                {{ detailNotice }}
+              </div>
+              <div v-if="detailLoading" class="space-y-3">
+                <div class="skeleton h-12 w-full" />
+                <div class="skeleton h-12 w-4/5" />
+                <div class="skeleton h-12 w-3/5" />
+              </div>
+              <div v-else class="space-y-5">
+                <div v-if="structuredDetailSections.length" class="space-y-4">
+                  <section
+                    v-for="section in structuredDetailSections"
+                    :key="section.key"
+                    class="rounded-2xl border border-edge p-4 md:p-5"
+                  >
+                    <h3 class="text-sm font-semibold text-ink">{{ section.title }}</h3>
+                    <dl class="mt-3 grid gap-x-6 gap-y-3 md:grid-cols-2">
+                      <div
+                        v-for="entry in section.entries"
+                        :key="entry.key"
+                        :class="entry.key.endsWith('_json') || entry.key === 'message_payload' ? 'md:col-span-2' : ''"
                       >
-                        {{ entry.value }}
-                      </dd>
-                    </div>
-                  </dl>
-                </section>
+                        <dt class="text-xs font-medium text-slate-400">{{ entry.label }}</dt>
+                        <dd
+                          class="tnum mt-1 whitespace-pre-wrap break-words text-sm text-slate-700"
+                          :class="entry.mono ? 'font-mono text-xs leading-relaxed' : ''"
+                        >
+                          {{ entry.value }}
+                        </dd>
+                      </div>
+                    </dl>
+                  </section>
+                </div>
+                <div>
+                  <h3 v-if="structuredDetailSections.length" class="mb-3 text-sm font-semibold text-ink">{{ copy.rawJson }}</h3>
+                  <pre class="max-h-[60vh] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 md:max-h-[64vh] md:p-5">{{ stringify(detail || selected || {}) }}</pre>
+                </div>
               </div>
-              <div>
-                <h3 v-if="structuredDetailSections.length" class="mb-3 text-sm font-black text-slate-700">{{ copy.rawJson }}</h3>
-                <pre class="max-h-[60vh] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs font-semibold leading-relaxed text-slate-100 md:max-h-[64vh] md:p-5">{{ stringify(detail || selected || {}) }}</pre>
-              </div>
-            </div>
-          </div>
+            </main>
+          </section>
         </div>
-      </div>
+      </Transition>
     </Teleport>
-  </section>
+  </main>
 </template>

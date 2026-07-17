@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, Eye, Loader2, RefreshCw, RotateCcw, Search, ShieldX, StepForward, X } from "lucide-vue-next"
+import { ArrowLeft, BookOpen, Eye, FileBadge, Inbox, Layers, Loader2, RefreshCw, RotateCcw, ScrollText, Search, ShieldX, StepForward, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -7,7 +7,7 @@ import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
-import { badgeClass, pickFirst } from "@/lib/status"
+import { pickFirst } from "@/lib/status"
 
 type ActionKind = "trigger-next-stage" | "terminate-pipeline" | "force-completed" | "force-signup-exam"
 type DetailTab = "overview" | "stages" | "units" | "certificateTasks" | "logs"
@@ -204,6 +204,42 @@ function statusLabel(value: unknown, scope: "pipeline" | "stage" | "unit" = "pip
 
 function actionLabel(kind: ActionKind) {
   return copy.value.actions[kind]
+}
+
+// Style-only helpers: map raw status codes to Aurora badge recipes (DESIGN.md).
+function statusBadgeClass(value: unknown, scope: "pipeline" | "stage" | "unit" = "pipeline") {
+  const normalized = scope === "pipeline" ? normalizedPipelineStatus(value) : String(value ?? "")
+  if (scope === "pipeline") {
+    if (normalized === "1" || normalized === "RUNNING") return "bg-primary-50 text-primary-700"
+    if (normalized === "2" || normalized === "WAIT_FINAL_ELIG") return "bg-amber-50 text-amber-700"
+    if (normalized === "3" || normalized === "COMPLETED") return "bg-emerald-50 text-emerald-700"
+    if (normalized === "4" || normalized === "ISSUING_CERT") return "bg-primary-50 text-primary-700"
+    if (normalized === "5" || normalized === "CANCELLED") return "bg-red-50 text-red-700"
+  }
+  if (scope === "stage") {
+    if (normalized === "1") return "bg-amber-50 text-amber-700"
+    if (normalized === "2") return "bg-primary-50 text-primary-700"
+    if (normalized === "3") return "bg-emerald-50 text-emerald-700"
+    if (normalized === "4") return "bg-red-50 text-red-700"
+  }
+  if (scope === "unit") {
+    if (normalized === "1") return "bg-slate-100 text-slate-600"
+    if (normalized === "2") return "bg-amber-50 text-amber-700"
+    if (normalized === "3") return "bg-primary-50 text-primary-700"
+    if (normalized === "4") return "bg-primary-50 text-primary-700"
+    if (normalized === "5") return "bg-red-50 text-red-700"
+    if (normalized === "6") return "bg-emerald-50 text-emerald-700"
+  }
+  return "bg-slate-100 text-slate-600"
+}
+
+function certificateTaskBadgeClass(value: unknown) {
+  const normalized = String(value ?? "").trim().toUpperCase()
+  if (normalized === "COMPLETED") return "bg-emerald-50 text-emerald-700"
+  if (normalized === "FAILED" || normalized === "CANCELLED") return "bg-red-50 text-red-700"
+  if (normalized === "PENDING") return "bg-amber-50 text-amber-700"
+  if (["PROCESSING", "RUNNING", "RETRYING"].includes(normalized)) return "bg-primary-50 text-primary-700"
+  return "bg-slate-100 text-slate-600"
 }
 
 function entityStatusLabel(entityType: unknown, value: unknown) {
@@ -679,182 +715,175 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
+  <main class="ui-page">
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
+      <div class="min-w-0">
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button v-if="selectedSummary" class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="backToList">
-          <ArrowLeft class="h-4 w-4" />
+        <button v-if="selectedSummary" class="ui-btn ui-btn-secondary" type="button" @click="backToList">
+          <ArrowLeft class="h-4 w-4 text-slate-400" />
           {{ copy.backToList }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="reloadSelected">
+        <button class="ui-btn ui-btn-primary" type="button" @click="reloadSelected">
           <RefreshCw class="h-4 w-4" :class="loading || detailLoading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
       </div>
     </header>
 
-    <div class="grid gap-6">
-      <aside class="space-y-4">
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
-          <div class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto]">
-            <label class="grid gap-2 text-sm font-bold">
-              {{ copy.filters.candidate }}
-              <div class="relative">
-                <input v-model="candidateFilter" class="h-11 w-full rounded-xl border border-slate-200 px-3 pr-10" :placeholder="copy.filters.candidatePlaceholder" />
-                <button
-                  v-if="candidateFilter"
-                  class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                  type="button"
-                  :aria-label="copy.filters.clearInput"
-                  :title="copy.filters.clearInput"
-                  @click="clearCandidateFilter"
-                >
-                  <X class="h-4 w-4" />
-                </button>
-              </div>
-            </label>
-            <label class="grid gap-2 text-sm font-bold">
-              {{ copy.filters.status }}
-              <select v-model="statusFilter" class="h-11 rounded-xl border border-slate-200 px-3">
-                <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-              </select>
-            </label>
-            <button class="mt-0 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 text-sm font-black text-white shadow-sm lg:mt-7" type="button" @click="searchPipelines">
-              <Search class="h-4 w-4" />
-              {{ copy.filters.search }}
-            </button>
-          </div>
-        </div>
-
-        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:px-5">
-            <div class="min-w-0">
-              <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
-            </div>
-          
-            </div>
-          <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:px-6">
-            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            {{ copy.loading }}
-          </div>
-          <template v-else-if="pipelines.length">
-            <div class="hidden grid-cols-[minmax(0,1fr)_150px_180px_110px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
-              <span>{{ copy.columns.pipeline }}</span>
-              <span class="text-center">{{ copy.columns.status }}</span>
-              <span class="text-right">{{ copy.columns.startedAt }}</span>
-              <span class="text-right">{{ copy.columns.action }}</span>
-            </div>
+    <!-- Filters -->
+    <section class="ui-card mt-6 p-4 md:p-5">
+      <div class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto]">
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.candidate }}</span>
+          <div class="relative">
+            <input v-model="candidateFilter" class="ui-input pr-10" :placeholder="copy.filters.candidatePlaceholder" />
             <button
-              v-for="pipeline in pipelines"
-              :key="pipelineUlid(pipeline)"
-              class="flex w-full flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:grid md:grid-cols-[minmax(0,1fr)_150px_180px_110px] md:gap-4 md:px-5"
-              :class="pipelineUlid(pipeline) === selectedPipelineUlid ? 'bg-sky-50' : ''"
+              v-if="candidateFilter"
+              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
               type="button"
-              @click="openPipeline(pipeline)"
+              :aria-label="copy.filters.clearInput"
+              :title="copy.filters.clearInput"
+              @click="clearCandidateFilter"
             >
-              <div class="min-w-0">
-                <div class="break-words text-lg font-black md:truncate">{{ pipelineDisplayName(pipeline) }}</div>
-                <div class="mt-1 break-all text-sm text-slate-500">
-                  <div class="font-semibold text-slate-800">{{ copy.candidatePrefix }}{{ pipeline.candidate_name || "-" }}</div>
-                  <div class="font-mono text-xs text-slate-400">{{ pipeline.candidate_ulid || pipeline.candidate_id || "-" }}</div>
-                </div>
-                <div class="mt-3 grid gap-1 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                  <div class="break-all font-semibold">Pipeline: {{ pipelineUlid(pipeline) || "-" }}</div>
-                  <div class="break-all">{{ copy.currentStagePrefix }}{{ pipeline.current_stage_ulid || "-" }}</div>
-                </div>
-              </div>
-              <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
-                <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
-                <span class="inline-flex whitespace-nowrap rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(pipeline.status))">{{ statusLabel(pipeline.status) }}</span>
-              </span>
-              <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-end md:rounded-none md:bg-transparent md:p-0">
-                <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.startedAt }}</span>
-                <span class="text-right text-sm font-semibold text-slate-500">{{ formatDate(String(pipeline.started_at || pipeline.created_at || "")) }}</span>
-              </span>
-              <span class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0">{{ copy.viewDetails }}</span>
+              <X class="h-4 w-4" />
             </button>
-          </template>
-          <div v-else class="px-4 py-10 text-center text-slate-500 md:px-6">{{ copy.empty }}</div>
-          <div class="flex flex-col justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row md:px-5">
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - pageSize)">{{ copy.prev }}</button>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="offset += pageSize">{{ copy.next }}</button>
           </div>
-        </section>
-      </aside>
-    </div>
+        </label>
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.status }}</span>
+          <select v-model="statusFilter" class="ui-input">
+            <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+          </select>
+        </label>
+        <button class="ui-btn ui-btn-primary lg:self-end" type="button" @click="searchPipelines">
+          <Search class="h-4 w-4" />
+          {{ copy.filters.search }}
+        </button>
+      </div>
+    </section>
 
-    <div v-if="selectedSummary" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-      <div class="flex h-full max-h-none w-full max-w-[1200px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-        <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6">
+    <!-- Pipeline list -->
+    <section class="ui-card mt-4 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
+        </div>
+      </div>
+      <div v-if="loading" class="divide-y divide-hairline">
+        <div v-for="i in 5" :key="`sk-${i}`" class="px-4 py-4 md:px-6">
+          <div class="skeleton h-4 w-2/5" />
+          <div class="skeleton mt-2.5 h-3.5 w-4/5" />
+          <div class="skeleton mt-2 h-3.5 w-3/5" />
+        </div>
+      </div>
+      <template v-else-if="pipelines.length">
+        <div class="hidden grid-cols-[minmax(0,1fr)_150px_180px_110px] gap-4 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid md:px-6">
+          <span>{{ copy.columns.pipeline }}</span>
+          <span class="text-center">{{ copy.columns.status }}</span>
+          <span class="text-right">{{ copy.columns.startedAt }}</span>
+          <span class="text-right">{{ copy.columns.action }}</span>
+        </div>
+        <div class="divide-y divide-hairline">
+          <button
+            v-for="pipeline in pipelines"
+            :key="pipelineUlid(pipeline)"
+            class="ui-table-row flex w-full flex-col gap-3 px-4 py-4 text-left md:grid md:grid-cols-[minmax(0,1fr)_150px_180px_110px] md:items-center md:gap-4 md:px-6 md:py-3.5"
+            :class="pipelineUlid(pipeline) === selectedPipelineUlid ? 'bg-primary-50/60' : ''"
+            type="button"
+            @click="openPipeline(pipeline)"
+          >
+            <div class="min-w-0">
+              <div class="break-words text-sm font-semibold text-ink md:truncate">{{ pipelineDisplayName(pipeline) }}</div>
+              <div class="mt-1 text-sm text-slate-600">{{ copy.candidatePrefix }}{{ pipeline.candidate_name || "-" }}</div>
+              <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ pipeline.candidate_ulid || pipeline.candidate_id || "-" }}</div>
+              <div class="tnum mt-1.5 break-all text-xs text-slate-400">Pipeline: {{ pipelineUlid(pipeline) || "-" }}</div>
+              <div class="tnum break-all text-xs text-slate-400">{{ copy.currentStagePrefix }}{{ pipeline.current_stage_ulid || "-" }}</div>
+            </div>
+            <span class="flex items-center justify-between gap-4 md:block md:text-center">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
+              <span class="ui-badge" :class="statusBadgeClass(pipeline.status)">{{ statusLabel(pipeline.status) }}</span>
+            </span>
+            <span class="flex items-center justify-between gap-4 md:block md:text-right">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.startedAt }}</span>
+              <span class="tnum text-sm text-slate-600">{{ formatDate(String(pipeline.started_at || pipeline.created_at || "")) }}</span>
+            </span>
+            <span class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600 md:text-right">{{ copy.viewDetails }}</span>
+          </button>
+        </div>
+      </template>
+      <div v-else class="ui-empty">
+        <div class="ui-empty-icon">
+          <Inbox class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.empty }}</p>
+      </div>
+      <div class="flex flex-col items-stretch justify-end gap-2 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canPrev" @click="offset = Math.max(0, offset - pageSize)">{{ copy.prev }}</button>
+        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canNext" @click="offset += pageSize">{{ copy.next }}</button>
+      </div>
+    </section>
+
+    <!-- Detail modal -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="selectedSummary" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-[1200px]">
+        <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
           <div class="min-w-0">
-            <h2 class="text-xl font-black md:text-2xl">{{ copy.detailTitle }}</h2>
-            <p class="mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
+            <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
+            <p class="tnum mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
           </div>
-          <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="backToList">
+          <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="backToList">
             <X class="h-5 w-5" />
           </button>
         </div>
-        <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
-          <main class="min-w-0 space-y-6">
-        <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+        <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+          <main class="min-w-0 space-y-4 md:space-y-6">
+        <section class="ui-card p-4 md:p-5">
           <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
             <div class="min-w-0">
-              <h2 class="break-words text-xl font-black md:text-2xl">{{ pipelineDisplayName(selectedSummary) }}</h2>
-              <p class="mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
+              <h2 class="break-words text-base font-semibold text-ink">{{ pipelineDisplayName(selectedSummary) }}</h2>
+              <p class="tnum mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
             </div>
-            <span class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(selectedStatus))">
+            <span class="ui-badge shrink-0" :class="statusBadgeClass(selectedStatus)">
               {{ statusLabel(selectedStatus) }}
             </span>
           </div>
-          <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.summary.candidate }}</div>
-              <div class="mt-1 break-all text-sm font-bold">{{ selectedCandidateUlid || "-" }}</div>
+          <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.candidate }}</div>
+              <div class="tnum mt-1 break-all text-sm font-medium text-ink">{{ selectedCandidateUlid || "-" }}</div>
             </div>
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.summary.pipelineCc }}</div>
-              <div class="mt-1 break-all text-sm font-bold">{{ selectedPipelineCcUlid || "-" }}</div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.pipelineCc }}</div>
+              <div class="tnum mt-1 break-all text-sm font-medium text-ink">{{ selectedPipelineCcUlid || "-" }}</div>
             </div>
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.summary.currentStage }}</div>
-              <div class="mt-1 break-all text-sm font-bold">{{ selectedCurrentStageUlid || "-" }}</div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.currentStage }}</div>
+              <div class="tnum mt-1 break-all text-sm font-medium text-ink">{{ selectedCurrentStageUlid || "-" }}</div>
             </div>
-            <div class="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <div class="text-xs font-black uppercase text-slate-400">{{ copy.summary.count }}</div>
-              <div class="mt-1 text-sm font-bold">{{ copy.summary.countText(stages.length, totalUnits) }}</div>
+            <div class="rounded-2xl bg-slate-50 p-4">
+              <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.count }}</div>
+              <div class="tnum mt-1 text-sm font-medium text-ink">{{ copy.summary.countText(stages.length, totalUnits) }}</div>
             </div>
           </div>
         </section>
 
-        <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 p-4">
-              <h3 class="text-lg font-black">{{ copy.levelTitle }}</h3>
+        <section class="ui-card overflow-hidden">
+            <div class="p-4 md:p-5">
+              <h3 class="text-base font-semibold text-ink">{{ copy.levelTitle }}</h3>
               <p class="mt-1 text-sm text-slate-500">{{ copy.levelDescription }}</p>
-              <div class="mt-4 flex gap-2 overflow-x-auto pb-1">
-                <button
-                  v-for="tab in detailTabs"
-                  :key="tab.key"
-                  class="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border px-3 text-sm font-black transition md:gap-3 md:px-4"
-                  :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 text-slate-950' : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'"
-                  type="button"
-                  @click="activeTab = tab.key"
-                >
-                    <span>{{ tab.title }}</span>
-                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
-                </button>
-              </div>
 
-              <div class="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                <h4 class="font-black">{{ copy.manualActionsTitle }}</h4>
+              <div class="mt-4 rounded-2xl bg-slate-50 p-4">
+                <h4 class="text-sm font-semibold text-ink">{{ copy.manualActionsTitle }}</h4>
                 <p class="mt-1 text-xs text-slate-500">{{ copy.manualActionsDescription }}</p>
                 <div class="mt-3 flex flex-wrap gap-2">
                   <button
-                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 sm:w-auto"
+                    class="ui-btn ui-btn-primary w-full sm:w-auto"
                     type="button"
                     :disabled="!canTriggerNextStage"
                     @click="openAction({ kind: 'trigger-next-stage', pipelineUlid: selectedPipelineUlid })"
@@ -863,7 +892,7 @@ onMounted(async () => {
                     {{ copy.actions["trigger-next-stage"] }}
                   </button>
                   <button
-                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 sm:w-auto"
+                    class="ui-btn ui-btn-danger w-full sm:w-auto"
                     type="button"
                     :disabled="!canTerminatePipeline"
                     @click="openAction({ kind: 'terminate-pipeline', pipelineUlid: selectedPipelineUlid })"
@@ -873,107 +902,133 @@ onMounted(async () => {
                   </button>
                   <button
                     v-if="canViewCertificate"
-                    class="inline-flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-sm font-bold disabled:opacity-40 sm:w-auto"
+                    class="ui-btn ui-btn-secondary w-full sm:w-auto"
                     type="button"
                     :disabled="certificateLoading"
                     @click="viewCertificate"
                   >
-                    <Eye class="h-4 w-4" />
+                    <Loader2 v-if="certificateLoading" class="h-4 w-4 animate-spin" />
+                    <Eye v-else class="h-4 w-4 text-slate-400" />
                     {{ copy.viewCertificate }}
                   </button>
                 </div>
               </div>
             </div>
 
+            <div class="flex gap-5 overflow-x-auto border-b border-hairline px-4 md:px-5">
+              <button
+                v-for="tab in detailTabs"
+                :key="tab.key"
+                class="ui-tab"
+                :class="activeTab === tab.key ? 'ui-tab-active' : ''"
+                type="button"
+                @click="activeTab = tab.key"
+              >
+                {{ tab.title }}
+                <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ tab.count }}</span>
+              </button>
+            </div>
+
             <section class="max-h-none min-w-0 overflow-y-auto md:max-h-[60vh]">
-              <div v-if="detailLoading" class="px-4 py-10 text-center text-slate-500 md:px-6">
-                <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-                {{ copy.loadingDetails }}
+              <div v-if="detailLoading" class="space-y-3 p-4 md:p-5">
+                <div class="skeleton h-12 w-full" />
+                <div class="skeleton h-12 w-4/5" />
+                <div class="skeleton h-12 w-3/5" />
               </div>
 
               <div v-else-if="activeTab === 'overview'" class="space-y-4 p-4 md:p-5">
                 <div class="grid gap-3 md:grid-cols-2">
-                  <div v-for="entry in detailEntries('overview', detailPipelineRecord)" :key="entry.key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                    <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
-                    <div class="mt-1 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
+                  <div v-for="entry in detailEntries('overview', detailPipelineRecord)" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
+                    <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
+                    <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
                   </div>
                 </div>
               </div>
 
               <div v-else-if="activeTab === 'stages'" class="grid lg:grid-cols-[320px_minmax(0,1fr)]">
-                <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-                  <div class="border-b border-slate-200 p-4">
-                    <div class="font-black">{{ copy.stageListTitle }}</div>
-                    <div class="text-xs text-slate-500">{{ copy.stageListDescription }}</div>
+                <div class="border-b border-hairline lg:border-b-0 lg:border-r">
+                  <div class="border-b border-hairline p-4">
+                    <div class="text-sm font-semibold text-ink">{{ copy.stageListTitle }}</div>
+                    <div class="mt-0.5 text-xs text-slate-500">{{ copy.stageListDescription }}</div>
                   </div>
                   <button
                     v-for="(stage, index) in stages"
                     :key="stageUlid(stage) || index"
-                    class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50"
-                    :class="selectedStageIndex === index ? 'bg-sky-50' : ''"
+                    class="ui-table-row w-full border-b border-hairline p-4 text-left"
+                    :class="selectedStageIndex === index ? 'bg-primary-50/60' : ''"
                     type="button"
                     @click="selectedStageIndex = index"
                   >
-                    <div class="font-black">{{ stageName(stage) }}</div>
-                    <div class="mt-1 text-sm text-slate-500">{{ copy.courseUnitCount(courseUnits(stage).length) }}</div>
-                    <div class="mt-2 break-all text-xs text-slate-500">ID: {{ stageUlid(stage) || "-" }}</div>
-                    <span class="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(stageStatus(stage), 'stage'))">
+                    <div class="text-sm font-semibold text-ink">{{ stageName(stage) }}</div>
+                    <div class="tnum mt-1 text-xs text-slate-500">{{ copy.courseUnitCount(courseUnits(stage).length) }}</div>
+                    <div class="tnum mt-1 break-all text-xs text-slate-400">ID: {{ stageUlid(stage) || "-" }}</div>
+                    <span class="ui-badge mt-3" :class="statusBadgeClass(stageStatus(stage), 'stage')">
                       {{ statusLabel(stageStatus(stage), "stage") }}
                     </span>
                   </button>
-                  <div v-if="!stages.length" class="px-6 py-10 text-center text-slate-500">{{ copy.noStages }}</div>
+                  <div v-if="!stages.length" class="ui-empty">
+                    <div class="ui-empty-icon">
+                      <Layers class="h-6 w-6" />
+                    </div>
+                    <p class="ui-empty-title">{{ copy.noStages }}</p>
+                  </div>
                 </div>
-                <div class="space-y-5 p-4 md:p-5">
+                <div class="space-y-4 p-4 md:p-5">
                   <template v-if="selectedStage">
                     <div class="grid gap-3 md:grid-cols-2">
-                      <div v-for="entry in detailEntries('stage', stageRecord(selectedStage))" :key="entry.key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                        <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
-                        <div class="mt-1 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
+                      <div v-for="entry in detailEntries('stage', stageRecord(selectedStage))" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
+                        <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
+                        <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
                       </div>
                     </div>
                   </template>
-                  <div v-else class="p-12 text-center text-slate-500">{{ copy.selectStage }}</div>
+                  <div v-else class="flex items-center justify-center px-6 py-12 text-sm text-slate-400">{{ copy.selectStage }}</div>
                 </div>
               </div>
 
               <div v-else-if="activeTab === 'units'" class="grid lg:grid-cols-[360px_minmax(0,1fr)]">
-                <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-                  <div class="border-b border-slate-200 p-4">
-                    <div class="font-black">{{ copy.unitListTitle }}</div>
-                    <div class="text-xs text-slate-500">{{ copy.unitListDescription }}</div>
+                <div class="border-b border-hairline lg:border-b-0 lg:border-r">
+                  <div class="border-b border-hairline p-4">
+                    <div class="text-sm font-semibold text-ink">{{ copy.unitListTitle }}</div>
+                    <div class="mt-0.5 text-xs text-slate-500">{{ copy.unitListDescription }}</div>
                   </div>
                   <button
                     v-for="item in units"
                     :key="item.key"
-                    class="w-full border-b border-slate-100 p-4 text-left hover:bg-sky-50"
-                    :class="selectedUnitKey === item.key ? 'bg-sky-50' : ''"
+                    class="ui-table-row w-full border-b border-hairline p-4 text-left"
+                    :class="selectedUnitKey === item.key ? 'bg-primary-50/60' : ''"
                     type="button"
                     @click="selectedUnitKey = item.key"
                   >
-                    <div class="font-black">{{ item.unit.course_unit_cc_ulid || item.unit.course_unit_ulid || copy.unitFallback(item.unitIndex + 1) }}</div>
-                    <div class="mt-1 text-sm text-slate-500">{{ copy.parentStagePrefix }}{{ stageName(item.stage) }}</div>
-                    <div class="mt-2 break-all text-xs text-slate-500">ID: {{ courseUnitUlid(item.unit) || "-" }}</div>
-                    <span class="mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(statusLabel(courseUnitStatus(item.unit), 'unit'))">
+                    <div class="tnum break-all text-sm font-semibold text-ink">{{ item.unit.course_unit_cc_ulid || item.unit.course_unit_ulid || copy.unitFallback(item.unitIndex + 1) }}</div>
+                    <div class="mt-1 text-xs text-slate-500">{{ copy.parentStagePrefix }}{{ stageName(item.stage) }}</div>
+                    <div class="tnum mt-1 break-all text-xs text-slate-400">ID: {{ courseUnitUlid(item.unit) || "-" }}</div>
+                    <span class="ui-badge mt-3" :class="statusBadgeClass(courseUnitStatus(item.unit), 'unit')">
                       {{ statusLabel(courseUnitStatus(item.unit), "unit") }}
                     </span>
                   </button>
-                  <div v-if="!units.length" class="px-6 py-10 text-center text-slate-500">{{ copy.noUnits }}</div>
+                  <div v-if="!units.length" class="ui-empty">
+                    <div class="ui-empty-icon">
+                      <BookOpen class="h-6 w-6" />
+                    </div>
+                    <p class="ui-empty-title">{{ copy.noUnits }}</p>
+                  </div>
                 </div>
-                <div class="space-y-5 p-4 md:p-5">
+                <div class="space-y-4 p-4 md:p-5">
                   <template v-if="selectedUnit">
-                    <div class="rounded-xl border border-sky-100 bg-sky-50 p-3">
-                      <div class="text-xs font-black uppercase text-sky-600">{{ copy.parentStage }}</div>
-                      <div class="mt-1 break-all text-sm font-bold">{{ stageName(selectedUnit.stage) }} · {{ stageUlid(selectedUnit.stage) || "-" }}</div>
+                    <div class="rounded-2xl bg-primary-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-primary-700">{{ copy.parentStage }}</div>
+                      <div class="tnum mt-1 break-all text-sm font-medium text-ink">{{ stageName(selectedUnit.stage) }} · {{ stageUlid(selectedUnit.stage) || "-" }}</div>
                     </div>
                     <div class="grid gap-3 md:grid-cols-2">
-                      <div v-for="entry in detailEntries('unit', selectedUnit.unit)" :key="entry.key" class="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                        <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
-                        <div class="mt-1 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
+                      <div v-for="entry in detailEntries('unit', selectedUnit.unit)" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
+                        <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
+                        <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
                       </div>
                     </div>
-                    <div class="flex flex-wrap gap-3">
+                    <div class="flex flex-wrap gap-2">
                       <button
-                        class="w-full rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40 sm:w-auto"
+                        class="ui-btn ui-btn-secondary w-full sm:w-auto"
                         type="button"
                         :disabled="!courseUnitUlid(selectedUnit.unit)"
                         @click="openAction({ kind: 'force-completed', pipelineUlid: selectedPipelineUlid, courseUnitUlid: courseUnitUlid(selectedUnit.unit) })"
@@ -981,7 +1036,7 @@ onMounted(async () => {
                         {{ copy.forceCompleted }}
                       </button>
                       <button
-                        class="w-full rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-40 sm:w-auto"
+                        class="ui-btn ui-btn-secondary w-full sm:w-auto"
                         type="button"
                         :disabled="!courseUnitUlid(selectedUnit.unit)"
                         @click="openAction({ kind: 'force-signup-exam', pipelineUlid: selectedPipelineUlid, courseUnitUlid: courseUnitUlid(selectedUnit.unit) })"
@@ -990,51 +1045,57 @@ onMounted(async () => {
                       </button>
                     </div>
                   </template>
-                  <div v-else class="p-12 text-center text-slate-500">{{ copy.selectUnit }}</div>
+                  <div v-else class="flex items-center justify-center px-6 py-12 text-sm text-slate-400">{{ copy.selectUnit }}</div>
                 </div>
               </div>
 
               <div v-else-if="activeTab === 'certificateTasks'" class="grid lg:grid-cols-[380px_minmax(0,1fr)]">
-                <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-                  <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
-                    <div>
-                      <div class="font-black">{{ copy.certificateTasks.listTitle }}</div>
-                      <div class="text-xs text-slate-500">{{ copy.certificateTasks.listDescription }}</div>
+                <div class="border-b border-hairline lg:border-b-0 lg:border-r">
+                  <div class="flex items-center justify-between gap-3 border-b border-hairline p-4">
+                    <div class="min-w-0">
+                      <div class="text-sm font-semibold text-ink">{{ copy.certificateTasks.listTitle }}</div>
+                      <div class="mt-0.5 text-xs text-slate-500">{{ copy.certificateTasks.listDescription }}</div>
                     </div>
-                    <button class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="loadCertificateTasks">{{ copy.load }}</button>
+                    <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="loadCertificateTasks">{{ copy.load }}</button>
                   </div>
-                  <div v-if="certificateTasksLoading" class="p-10 text-center text-slate-500">
-                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-                    {{ copy.loading }}
+                  <div v-if="certificateTasksLoading" class="space-y-2.5 p-4">
+                    <div class="skeleton h-4 w-2/5" />
+                    <div class="skeleton h-3.5 w-4/5" />
+                    <div class="skeleton h-5 w-16 rounded-full" />
                   </div>
                   <button
                     v-for="task in certificateTasks"
                     v-else
                     :key="certificateTaskUlid(task)"
-                    class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
-                    :class="certificateTaskUlid(selectedCertificateTask) === certificateTaskUlid(task) ? 'bg-sky-50' : ''"
+                    class="ui-table-row w-full border-b border-hairline p-4 text-left last:border-b-0"
+                    :class="certificateTaskUlid(selectedCertificateTask) === certificateTaskUlid(task) ? 'bg-primary-50/60' : ''"
                     type="button"
                     @click="selectedCertificateTask = task; loadCertificateTaskDetail(certificateTaskUlid(task))"
                   >
-                    <div class="font-black">{{ task.degree_no || certificateTaskUlid(task) || copy.certificateTasks.taskFallback }}</div>
-                    <div class="mt-1 break-all text-sm text-slate-500">{{ certificateTaskUlid(task) || "-" }}</div>
+                    <div class="tnum break-all text-sm font-semibold text-ink">{{ task.degree_no || certificateTaskUlid(task) || copy.certificateTasks.taskFallback }}</div>
+                    <div class="tnum mt-1 break-all text-xs text-slate-400">{{ certificateTaskUlid(task) || "-" }}</div>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
-                      <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(certificateTaskStatusLabel(task.status))">
+                      <span class="ui-badge" :class="certificateTaskBadgeClass(task.status)">
                         {{ certificateTaskStatusLabel(task.status) }}
                       </span>
-                      <span class="text-xs text-slate-400">{{ formatDate(String(task.created_at || "")) }}</span>
+                      <span class="tnum text-xs text-slate-400">{{ formatDate(String(task.created_at || "")) }}</span>
                     </div>
                   </button>
-                  <div v-if="!certificateTasksLoading && !certificateTasks.length" class="p-10 text-center text-slate-500">{{ copy.certificateTasks.empty }}</div>
+                  <div v-if="!certificateTasksLoading && !certificateTasks.length" class="ui-empty">
+                    <div class="ui-empty-icon">
+                      <FileBadge class="h-6 w-6" />
+                    </div>
+                    <p class="ui-empty-title">{{ copy.certificateTasks.empty }}</p>
+                  </div>
                 </div>
-                <div class="space-y-5 p-4 md:p-5">
+                <div class="space-y-4 p-4 md:p-5">
                   <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h4 class="text-lg font-black">{{ copy.certificateTasks.detailTitle }}</h4>
-                      <p class="mt-1 break-all text-sm text-slate-500">{{ certificateTaskUlid(selectedCertificateTask) || "-" }}</p>
+                    <div class="min-w-0">
+                      <h4 class="text-base font-semibold text-ink">{{ copy.certificateTasks.detailTitle }}</h4>
+                      <p class="tnum mt-1 break-all text-sm text-slate-500">{{ certificateTaskUlid(selectedCertificateTask) || "-" }}</p>
                     </div>
                     <button
-                      class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-40 sm:w-auto"
+                      class="ui-btn ui-btn-primary w-full sm:w-auto"
                       type="button"
                       :disabled="!selectedCertificateTask || retryingCertificateTask === certificateTaskUlid(selectedCertificateTask)"
                       @click="selectedCertificateTask && retryCertificateTask(selectedCertificateTask)"
@@ -1044,24 +1105,25 @@ onMounted(async () => {
                       {{ retryingCertificateTask === certificateTaskUlid(selectedCertificateTask) ? copy.certificateTasks.retrying : copy.certificateTasks.retry }}
                     </button>
                   </div>
-                  <div v-if="certificateTaskDetailLoading" class="p-10 text-center text-slate-500">
-                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-                    {{ copy.loadingDetails }}
+                  <div v-if="certificateTaskDetailLoading" class="space-y-3">
+                    <div class="skeleton h-12 w-full" />
+                    <div class="skeleton h-12 w-4/5" />
+                    <div class="skeleton h-12 w-3/5" />
                   </div>
                   <template v-else-if="selectedCertificateTask">
-                    <div class="grid gap-4 md:grid-cols-2">
-                      <div v-for="entry in certificateTaskEntries(asRecord((certificateTaskDetail || {}).summary || selectedCertificateTask))" :key="entry.key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                        <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
-                        <div class="mt-2 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
+                    <div class="grid gap-3 md:grid-cols-2">
+                      <div v-for="entry in certificateTaskEntries(asRecord((certificateTaskDetail || {}).summary || selectedCertificateTask))" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
+                        <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
+                        <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
                       </div>
                     </div>
-                    <div v-if="certificateTaskDetail?.error_message" class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
-                      <div class="text-xs font-black uppercase text-red-400">{{ copy.certificateTasks.errorMessage }}</div>
-                      <div class="mt-2 whitespace-pre-wrap break-words">{{ certificateTaskDetail.error_message }}</div>
+                    <div v-if="certificateTaskDetail?.error_message" class="rounded-2xl bg-red-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-red-700">{{ copy.certificateTasks.errorMessage }}</div>
+                      <div class="mt-2 whitespace-pre-wrap break-words text-sm text-red-700">{{ certificateTaskDetail.error_message }}</div>
                     </div>
-                    <div v-if="certificateTaskDetail?.template_params" class="rounded-2xl border border-slate-200">
-                      <div class="border-b border-slate-100 px-4 py-3 text-sm font-black">{{ copy.certificateTasks.templateParams }}</div>
-                      <pre class="max-h-[260px] overflow-auto rounded-b-2xl bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ certificateTaskDetail.template_params }}</pre>
+                    <div v-if="certificateTaskDetail?.template_params" class="overflow-hidden rounded-2xl border border-hairline">
+                      <div class="border-b border-hairline px-4 py-3 text-sm font-semibold text-ink">{{ copy.certificateTasks.templateParams }}</div>
+                      <pre class="max-h-[260px] overflow-auto bg-slate-950 p-5 text-xs leading-6 text-slate-100">{{ certificateTaskDetail.template_params }}</pre>
                     </div>
                     <JsonPreview
                       :title="copy.certificateTasks.detailTitle"
@@ -1073,56 +1135,63 @@ onMounted(async () => {
                       max-height="360px"
                     />
                   </template>
-                  <div v-else class="p-12 text-center text-slate-500">{{ copy.certificateTasks.selectTask }}</div>
+                  <div v-else class="flex items-center justify-center px-6 py-12 text-sm text-slate-400">{{ copy.certificateTasks.selectTask }}</div>
                 </div>
               </div>
 
               <div v-else-if="activeTab === 'logs'" class="grid lg:grid-cols-[380px_minmax(0,1fr)]">
-                <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-                  <div class="flex items-center justify-between gap-3 border-b border-slate-200 p-4">
-                    <div>
-                      <div class="font-black">{{ copy.logListTitle }}</div>
-                      <div class="text-xs text-slate-500">{{ copy.logListDescription }}</div>
+                <div class="border-b border-hairline lg:border-b-0 lg:border-r">
+                  <div class="flex items-center justify-between gap-3 border-b border-hairline p-4">
+                    <div class="min-w-0">
+                      <div class="text-sm font-semibold text-ink">{{ copy.logListTitle }}</div>
+                      <div class="mt-0.5 text-xs text-slate-500">{{ copy.logListDescription }}</div>
                     </div>
-                    <button class="rounded-xl border px-3 py-2 text-sm font-bold" type="button" @click="loadLogs()">{{ copy.load }}</button>
+                    <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="loadLogs()">{{ copy.load }}</button>
                   </div>
-                  <div v-if="logsLoading" class="p-10 text-center text-slate-500">
-                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-                    {{ copy.loading }}
+                  <div v-if="logsLoading" class="space-y-2.5 p-4">
+                    <div class="skeleton h-4 w-2/5" />
+                    <div class="skeleton h-3.5 w-4/5" />
+                    <div class="skeleton h-3.5 w-3/5" />
                   </div>
                   <button
                     v-for="log in logs"
                     v-else
                     :key="String(log.transition_ulid)"
-                    class="w-full border-b border-slate-100 px-5 py-4 text-left last:border-b-0 hover:bg-sky-50"
-                    :class="selectedLog === log ? 'bg-sky-50' : ''"
+                    class="ui-table-row w-full border-b border-hairline p-4 text-left last:border-b-0"
+                    :class="selectedLog === log ? 'bg-primary-50/60' : ''"
                     type="button"
                     @click="selectedLog = log; loadLogDetail(String(log.transition_ulid || ''))"
                   >
-                    <div class="font-black">{{ entityStatusLabel(log.entity_type, log.from_status) }} -> {{ entityStatusLabel(log.entity_type, log.to_status) }}</div>
-                    <div class="mt-1 text-sm text-slate-500">{{ entityTypeLabel(log.entity_type) }} · {{ log.entity_ulid || "-" }}</div>
-                    <div class="mt-1 text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</div>
+                    <div class="text-sm font-medium text-ink">{{ entityStatusLabel(log.entity_type, log.from_status) }} -> {{ entityStatusLabel(log.entity_type, log.to_status) }}</div>
+                    <div class="tnum mt-1 break-all text-xs text-slate-500">{{ entityTypeLabel(log.entity_type) }} · {{ log.entity_ulid || "-" }}</div>
+                    <div class="tnum mt-1 text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</div>
                   </button>
-                  <div v-if="!logsLoading && !logs.length" class="p-10 text-center text-slate-500">{{ copy.noLogs }}</div>
-                  <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:px-5">
-                    <span class="text-sm font-bold text-slate-500">{{ Math.floor(logOffset / logPageSize) + 1 }} / {{ Math.max(1, Math.ceil(logsTotal / logPageSize)) }}</span>
-                    <div class="flex flex-col gap-3 sm:flex-row">
-                    <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevLogs" @click="loadLogs(selectedPipelineUlid, Math.max(0, logOffset - logPageSize))">{{ copy.prev }}</button>
-                    <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNextLogs" @click="loadLogs(selectedPipelineUlid, logOffset + logPageSize)">{{ copy.next }}</button>
+                  <div v-if="!logsLoading && !logs.length" class="ui-empty">
+                    <div class="ui-empty-icon">
+                      <ScrollText class="h-6 w-6" />
+                    </div>
+                    <p class="ui-empty-title">{{ copy.noLogs }}</p>
+                  </div>
+                  <div class="flex flex-col items-stretch justify-between gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center">
+                    <span class="tnum text-center text-sm text-slate-500 sm:text-left">{{ Math.floor(logOffset / logPageSize) + 1 }} / {{ Math.max(1, Math.ceil(logsTotal / logPageSize)) }}</span>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                      <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canPrevLogs" @click="loadLogs(selectedPipelineUlid, Math.max(0, logOffset - logPageSize))">{{ copy.prev }}</button>
+                      <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canNextLogs" @click="loadLogs(selectedPipelineUlid, logOffset + logPageSize)">{{ copy.next }}</button>
                     </div>
                   </div>
                 </div>
-                <div class="space-y-5 p-4 md:p-5">
-                  <h4 class="text-lg font-black">{{ copy.logDetailTitle }}</h4>
-                  <div v-if="logDetailLoading" class="p-10 text-center text-slate-500">
-                    <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-                    {{ copy.loadingDetails }}
+                <div class="space-y-4 p-4 md:p-5">
+                  <h4 class="text-base font-semibold text-ink">{{ copy.logDetailTitle }}</h4>
+                  <div v-if="logDetailLoading" class="space-y-3">
+                    <div class="skeleton h-12 w-full" />
+                    <div class="skeleton h-12 w-4/5" />
+                    <div class="skeleton h-12 w-3/5" />
                   </div>
                   <template v-else>
-                    <div v-if="selectedLog" class="grid gap-4 md:grid-cols-2">
-                      <div v-for="entry in detailEntries('log', asRecord((logDetail || selectedLog).summary || selectedLog))" :key="entry.key" class="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                        <div class="text-xs font-black text-slate-400">{{ entry.label }}</div>
-                        <div class="mt-2 whitespace-pre-wrap break-all text-sm font-bold">{{ entry.value }}</div>
+                    <div v-if="selectedLog" class="grid gap-3 md:grid-cols-2">
+                      <div v-for="entry in detailEntries('log', asRecord((logDetail || selectedLog).summary || selectedLog))" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
+                        <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
+                        <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
                       </div>
                     </div>
                   </template>
@@ -1132,21 +1201,33 @@ onMounted(async () => {
         </section>
           </main>
         </div>
-      </div>
-    </div>
-
-    <div v-if="pendingAction" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-      <div class="w-full max-w-lg rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
-        <h2 class="text-xl font-black md:text-2xl">{{ copy.confirmTitle }}</h2>
-        <p class="mt-2 text-sm text-slate-600">{{ copy.confirmDescription(actionLabel(pendingAction.kind)) }}</p>
-        <textarea v-model="actionReason" class="mt-5 min-h-28 w-full rounded-xl border border-slate-200 p-4" :placeholder="copy.reasonPlaceholder" />
-        <div class="mt-5 flex flex-col items-stretch justify-end gap-3 sm:flex-row sm:items-center">
-          <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:opacity-50" type="button" :disabled="actionLoading" @click="pendingAction = null">{{ copy.cancel }}</button>
-          <button class="inline-flex h-11 min-w-[112px] items-center justify-center rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="actionLoading" @click="submitAction">
-            {{ actionLoading ? copy.submitting : copy.confirmSubmit }}
-          </button>
+          </section>
         </div>
-      </div>
-    </div>
-  </section>
+      </Transition>
+    </Teleport>
+
+    <!-- Confirm dialog -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="pendingAction" class="ui-modal-mask z-50">
+          <section class="ui-modal-panel md:max-w-md">
+            <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.confirmTitle }}</h2>
+            </div>
+            <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <p class="text-sm text-slate-600">{{ copy.confirmDescription(actionLabel(pendingAction.kind)) }}</p>
+              <textarea v-model="actionReason" class="ui-input mt-4 h-auto min-h-28 py-2.5" :placeholder="copy.reasonPlaceholder" />
+            </main>
+            <div class="flex flex-col-reverse items-stretch justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+              <button class="ui-btn ui-btn-secondary" type="button" :disabled="actionLoading" @click="pendingAction = null">{{ copy.cancel }}</button>
+              <button class="ui-btn" :class="pendingAction.kind === 'terminate-pipeline' ? 'ui-btn-danger' : 'ui-btn-primary'" type="button" :disabled="actionLoading" @click="submitAction">
+                <Loader2 v-if="actionLoading" class="h-4 w-4 animate-spin" />
+                {{ actionLoading ? copy.submitting : copy.confirmSubmit }}
+              </button>
+            </div>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
+  </main>
 </template>

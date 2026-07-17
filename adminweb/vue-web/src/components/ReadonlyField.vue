@@ -30,11 +30,11 @@ const displayText = computed(() => props.text !== undefined ? stringifyValue(pro
 </script>
 
 <template>
-  <div class="grid gap-2 text-sm font-bold">
-    <span class="text-xs font-black text-slate-500">{{ label }}</span>
+  <div class="grid gap-1.5 text-sm">
+    <span class="text-xs font-medium text-slate-500">{{ label }}</span>
     <div
-      class="overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 leading-5 text-slate-700"
-      :class="mono ? 'font-mono text-xs' : 'text-sm font-bold'"
+      class="overflow-auto whitespace-pre-wrap break-words rounded-[10px] border border-slate-200 bg-slate-50 px-3.5 py-2.5 leading-5 text-slate-700"
+      :class="mono ? 'tnum font-mono text-xs' : 'text-sm'"
       :style="{ minHeight, maxHeight }"
     >
       {{ displayText }}

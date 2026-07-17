@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CheckCircle2, Loader2, ShieldAlert } from "lucide-vue-next"
+import { CheckCircle2, GraduationCap, Loader2, ShieldAlert } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { useRoute, useRouter } from "vue-router"
 import { ApiError, apiClient } from "@/lib/apiClient"
@@ -12,6 +12,7 @@ const status = ref<"loading" | "success" | "error">("loading")
 const error = ref("")
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.callback)
+const layoutCopy = computed(() => t.value.layout)
 
 function friendlyAuthError(err: unknown) {
   if (err instanceof ApiError) {
@@ -61,19 +62,38 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-white">
-    <div class="w-full max-w-sm rounded-3xl border border-white/10 bg-white/5 p-8 text-center shadow-2xl backdrop-blur">
-      <div class="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl" :class="status === 'error' ? 'bg-red-500/20 text-red-300' : status === 'success' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-sky-500/20 text-sky-300'">
-        <Loader2 v-if="status === 'loading'" class="h-8 w-8 animate-spin" />
-        <CheckCircle2 v-else-if="status === 'success'" class="h-8 w-8" />
-        <ShieldAlert v-else class="h-8 w-8" />
+  <div class="relative flex min-h-screen items-center justify-center overflow-hidden bg-canvas px-6">
+    <!-- Soft aurora glow backdrop -->
+    <div
+      class="pointer-events-none absolute -top-40 left-1/2 h-[420px] w-[720px] -translate-x-1/2 rounded-full opacity-40 blur-3xl"
+      style="background: linear-gradient(135deg, #e0e7ff, #ede9fe)"
+      aria-hidden="true"
+    />
+
+    <div class="animate-rise relative w-full max-w-sm">
+      <div class="ui-card p-8 text-center">
+        <div class="mx-auto mb-6 flex items-center justify-center gap-2.5">
+          <div class="flex h-9 w-9 items-center justify-center rounded-[10px] text-white shadow-sm" style="background: linear-gradient(135deg, #6366f1, #8b5cf6)">
+            <GraduationCap class="h-5 w-5" />
+          </div>
+          <span class="text-sm font-semibold tracking-tight text-ink">CFTP</span>
+        </div>
+        <div
+          class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl"
+          :class="status === 'error' ? 'bg-danger-50 text-danger-600' : status === 'success' ? 'bg-success-50 text-success-600' : 'bg-primary-50 text-primary-600'"
+        >
+          <Loader2 v-if="status === 'loading'" class="h-7 w-7 animate-spin" />
+          <CheckCircle2 v-else-if="status === 'success'" class="h-7 w-7" />
+          <ShieldAlert v-else class="h-7 w-7" />
+        </div>
+        <h1 class="text-xl font-semibold tracking-tight text-ink">
+          {{ status === "loading" ? copy.loadingTitle : status === "success" ? copy.successTitle : copy.errorTitle }}
+        </h1>
+        <p class="mt-3 text-sm leading-6 text-slate-500">
+          {{ status === "loading" ? copy.loadingDescription : status === "success" ? copy.successDescription : error }}
+        </p>
       </div>
-      <h1 class="text-2xl font-black">
-        {{ status === "loading" ? copy.loadingTitle : status === "success" ? copy.successTitle : copy.errorTitle }}
-      </h1>
-      <p class="mt-3 text-sm leading-6 text-slate-300">
-        {{ status === "loading" ? copy.loadingDescription : status === "success" ? copy.successDescription : error }}
-      </p>
+      <p class="mt-6 text-center text-xs text-slate-400">CFTP · {{ layoutCopy.systemName }}</p>
     </div>
   </div>
 </template>

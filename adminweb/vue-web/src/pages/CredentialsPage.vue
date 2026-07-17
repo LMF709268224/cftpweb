@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
+import { Award, Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
@@ -198,192 +198,213 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.pageTitle }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.pageDescription }}</p>
+  <main class="ui-page">
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
+      <div class="min-w-0">
+        <h1 class="ui-page-title">{{ copy.pageTitle }}</h1>
+        <p class="ui-page-subtitle">{{ copy.pageDescription }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load">
-          <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
+        <button class="ui-btn ui-btn-secondary" type="button" @click="load">
+          <RefreshCw class="h-4 w-4 text-slate-400" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="startCreate">
+        <button class="ui-btn ui-btn-primary" type="button" @click="startCreate">
           <Plus class="h-4 w-4" />
           {{ copy.newCredential }}
         </button>
       </div>
     </header>
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
-      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-4 md:p-5">
+    <section class="ui-card mt-6 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
         <div class="min-w-0">
-          <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+          <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.total(definitions.length) }}</span>
+        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.total(definitions.length) }}</span>
       </div>
-      <div v-if="loading" class="p-8 text-center text-slate-500 md:p-12">
-        <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-        {{ copy.loading }}
+      <div v-if="loading" class="divide-y divide-hairline">
+        <div v-for="i in 5" :key="`sk-${i}`" class="grid gap-3 px-4 py-3.5 md:grid-cols-[minmax(0,1fr)_180px_112px] md:items-center md:gap-4">
+          <div class="space-y-2">
+            <div class="skeleton h-4 w-2/5" />
+            <div class="skeleton h-3 w-3/5" />
+          </div>
+          <div class="skeleton h-5 w-16 rounded-full md:justify-self-center" />
+          <div class="skeleton h-8 w-20 rounded-lg md:justify-self-end" />
+        </div>
       </div>
-      <div v-else-if="!definitions.length" class="p-8 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
+      <div v-else-if="!definitions.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <Award class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.empty }}</p>
+      </div>
       <template v-else>
-        <div class="hidden grid-cols-[minmax(0,1fr)_180px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
+        <div class="hidden grid-cols-[minmax(0,1fr)_180px_112px] gap-4 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid">
           <span>{{ copy.columns.credential }}</span>
           <span class="text-center">{{ copy.columns.category }}</span>
           <span class="text-right">{{ copy.columns.action }}</span>
         </div>
-        <div
-          v-for="definition in definitions"
-          :key="definitionUlid(definition)"
-          class="flex w-full cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:gap-4 md:px-5"
-          :class="mode === 'detail' && definitionUlid(selected) === definitionUlid(definition) ? 'bg-sky-50' : ''"
-          role="button"
-          tabindex="0"
-          @click="selectDefinition(definition)"
-          @keydown.enter.prevent="selectDefinition(definition)"
-          @keydown.space.prevent="selectDefinition(definition)"
-        >
-          <div class="min-w-0">
-            <div class="break-words text-lg font-black md:truncate">{{ definitionName(definition) }}</div>
-            <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ definitionUlid(definition) || "-" }}</div>
+        <div class="divide-y divide-hairline">
+          <div
+            v-for="definition in definitions"
+            :key="definitionUlid(definition)"
+            class="ui-table-row flex w-full cursor-pointer flex-col gap-3 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:items-center md:gap-4"
+            :class="mode === 'detail' && definitionUlid(selected) === definitionUlid(definition) ? 'bg-primary-50/60' : ''"
+            role="button"
+            tabindex="0"
+            @click="selectDefinition(definition)"
+            @keydown.enter.prevent="selectDefinition(definition)"
+            @keydown.space.prevent="selectDefinition(definition)"
+          >
+            <div class="min-w-0">
+              <div class="break-words text-sm font-medium text-ink md:truncate">{{ definitionName(definition) }}</div>
+              <div class="tnum mt-0.5 break-all text-xs text-slate-400">ID: {{ definitionUlid(definition) || "-" }}</div>
+            </div>
+            <span class="flex items-center justify-between gap-3 md:block md:justify-self-center md:text-center">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.category }}</span>
+              <span class="ui-badge bg-slate-100 text-slate-600">{{ categoryLabel(definition.category) }}</span>
+            </span>
+            <button class="ui-btn ui-btn-secondary ui-btn-sm w-full md:w-auto md:justify-self-end" type="button" @click.stop="selectDefinition(definition)">
+              {{ copy.viewDetails }}
+            </button>
           </div>
-          <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
-            <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.category }}</span>
-            <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-bold text-slate-600">{{ categoryLabel(definition.category) }}</span>
-          </span>
-          <button class="inline-flex w-full items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:w-auto md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectDefinition(definition)">
-            {{ copy.viewDetails }}
-          </button>
         </div>
       </template>
     </section>
 
     <Teleport to="body">
-      <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-0 md:p-6">
-        <div class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6 md:py-5">
-            <div class="min-w-0">
-              <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ mode === "create" ? copy.createTitle : selected ? definitionName(selected) : copy.detailTitle }}</h2>
-              <p class="mt-1 break-all text-sm text-slate-500">
-                {{ mode === "create" ? copy.createHint : definitionUlid(selected) || copy.selectCredential }}
-              </p>
-            </div>
-            <div class="flex items-center gap-3">
-              <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
-              <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
-                <X class="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          <section class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-            <template v-if="mode === 'create'">
-              <div class="grid gap-5">
-                <div class="grid items-start gap-4 md:grid-cols-2">
-                  <label class="grid gap-2 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.name }}</span>
-                    <input v-model="name" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="120" :placeholder="copy.placeholders.name" />
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.category }}</span>
-                    <select v-model="category" class="rounded-xl border border-slate-200 px-4 py-3">
-                      <option value="" disabled>{{ copy.placeholders.category }}</option>
-                      <option v-for="option in categoryOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                    </select>
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.respath }}</span>
-                    <input v-model="respath" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="240" :placeholder="copy.placeholders.respath" @input="onRespathInput" />
-                    <div class="text-xs font-normal text-slate-500">{{ copy.respathHint }}</div>
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.labels.acquisitionMethod }}
-                    <input v-model="acquisitionMethod" class="rounded-xl border border-slate-200 px-4 py-3" maxlength="240" :placeholder="copy.placeholders.optional" />
-                  </label>
-                </div>
-                <label class="grid gap-2 text-sm font-bold">
-                  <span><span class="mr-1 text-red-500">*</span>{{ copy.labels.description }}</span>
-                  <textarea v-model="description" class="min-h-28 rounded-xl border border-slate-200 px-4 py-3" maxlength="1000" :placeholder="copy.placeholders.description" />
-                </label>
-                <div class="rounded-2xl border border-slate-200 p-4">
-                  <div class="mb-3 flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <div class="font-black">{{ copy.labels.fileConstraints }}</div>
-                      <div class="mt-1 text-xs text-slate-500">{{ copy.fileConstraintsHint }}</div>
-                    </div>
-                    <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold sm:w-auto" type="button" @click="addConstraint">
-                      <Plus class="h-4 w-4" />
-                      {{ copy.addFile }}
-                    </button>
-                  </div>
-                  <div v-for="(constraint, index) in constraints" :key="index" class="mb-3 grid gap-3 rounded-xl bg-slate-50 p-3 md:grid-cols-[1fr_170px_100px_auto]">
-                    <input v-model="constraint.name" class="rounded-lg border border-slate-200 px-3 py-2" maxlength="120" :placeholder="copy.placeholders.filePurpose" />
-                    <select v-model.number="constraint.type" class="rounded-lg border border-slate-200 px-3 py-2">
-                      <option v-for="type in fileTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
-                    </select>
-                    <label class="flex items-center gap-2 text-sm font-bold">
-                      <input v-model="constraint.is_required" type="checkbox" />
-                      {{ copy.required }}
-                    </label>
-                    <button class="inline-flex items-center justify-center rounded-lg border px-3 py-2 text-red-600" type="button" @click="constraints.splice(index, 1)">
-                      <Trash2 class="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div v-if="!constraints.length" class="text-sm text-slate-500">{{ copy.noFileConstraints }}</div>
-                </div>
+      <Transition name="modal">
+        <div v-if="detailOpen" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-[1180px]">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <div class="min-w-0">
+                <h2 class="break-words text-base font-semibold text-ink md:truncate md:text-lg">{{ mode === "create" ? copy.createTitle : selected ? definitionName(selected) : copy.detailTitle }}</h2>
+                <p class="tnum mt-1 break-all text-sm text-slate-500">
+                  {{ mode === "create" ? copy.createHint : definitionUlid(selected) || copy.selectCredential }}
+                </p>
               </div>
-            </template>
+              <div class="flex shrink-0 items-center gap-3">
+                <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
+                <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="closeDetail">
+                  <X class="h-5 w-5" />
+                </button>
+              </div>
+            </div>
 
-            <template v-else>
-              <div v-if="!selected" class="p-10 text-center text-slate-500">{{ copy.selectCredential }}</div>
-              <div v-else class="space-y-5">
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.name }}</div>
-                    <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ definitionName(selected) }}</div>
+            <section class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <template v-if="mode === 'create'">
+                <div class="grid gap-5">
+                  <div class="grid items-start gap-4 md:grid-cols-2">
+                    <label class="grid gap-1.5">
+                      <span class="ui-label"><span class="mr-1 text-red-500">*</span>{{ copy.labels.name }}</span>
+                      <input v-model="name" class="ui-input" maxlength="120" :placeholder="copy.placeholders.name" />
+                    </label>
+                    <label class="grid gap-1.5">
+                      <span class="ui-label"><span class="mr-1 text-red-500">*</span>{{ copy.labels.category }}</span>
+                      <select v-model="category" class="ui-input">
+                        <option value="" disabled>{{ copy.placeholders.category }}</option>
+                        <option v-for="option in categoryOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                      </select>
+                    </label>
+                    <label class="grid gap-1.5">
+                      <span class="ui-label"><span class="mr-1 text-red-500">*</span>{{ copy.labels.respath }}</span>
+                      <input v-model="respath" class="ui-input" maxlength="240" :placeholder="copy.placeholders.respath" @input="onRespathInput" />
+                      <span class="text-xs text-slate-400">{{ copy.respathHint }}</span>
+                    </label>
+                    <label class="grid gap-1.5">
+                      <span class="ui-label">{{ copy.labels.acquisitionMethod }}</span>
+                      <input v-model="acquisitionMethod" class="ui-input" maxlength="240" :placeholder="copy.placeholders.optional" />
+                    </label>
                   </div>
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.category }}</div>
-                    <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ categoryLabel(selected.category) }}</div>
-                  </div>
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.respath }}</div>
-                    <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected.respath || "-" }}</div>
-                  </div>
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">{{ copy.labels.description }}</div>
-                    <div class="mt-2 break-all text-sm font-bold text-slate-950">{{ selected.description || "-" }}</div>
+                  <label class="grid gap-1.5">
+                    <span class="ui-label"><span class="mr-1 text-red-500">*</span>{{ copy.labels.description }}</span>
+                    <textarea v-model="description" class="ui-input min-h-28 py-2.5" maxlength="1000" :placeholder="copy.placeholders.description" />
+                  </label>
+                  <div class="rounded-2xl border border-edge p-4">
+                    <div class="mb-3 flex flex-wrap items-center justify-between gap-4">
+                      <div class="min-w-0">
+                        <div class="text-sm font-semibold text-ink">{{ copy.labels.fileConstraints }}</div>
+                        <div class="mt-1 text-xs text-slate-400">{{ copy.fileConstraintsHint }}</div>
+                      </div>
+                      <button class="ui-btn ui-btn-secondary ui-btn-sm w-full sm:w-auto" type="button" @click="addConstraint">
+                        <Plus class="h-4 w-4 text-slate-400" />
+                        {{ copy.addFile }}
+                      </button>
+                    </div>
+                    <div v-for="(constraint, index) in constraints" :key="index" class="mb-3 grid gap-3 rounded-2xl bg-slate-50 p-3 md:grid-cols-[1fr_170px_100px_auto] md:items-center">
+                      <input v-model="constraint.name" class="ui-input" maxlength="120" :placeholder="copy.placeholders.filePurpose" />
+                      <select v-model.number="constraint.type" class="ui-input">
+                        <option v-for="type in fileTypes" :key="type.value" :value="type.value">{{ type.label }}</option>
+                      </select>
+                      <label class="flex items-center gap-2 text-sm font-medium text-slate-600">
+                        <input v-model="constraint.is_required" type="checkbox" class="h-4 w-4 accent-primary-600" />
+                        {{ copy.required }}
+                      </label>
+                      <button class="ui-btn ui-btn-ghost ui-btn-sm text-red-600 hover:bg-red-50 hover:text-red-700" type="button" @click="constraints.splice(index, 1)">
+                        <Trash2 class="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div v-if="!constraints.length" class="text-sm text-slate-500">{{ copy.noFileConstraints }}</div>
                   </div>
                 </div>
+              </template>
 
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div class="mb-3 text-sm font-black">{{ copy.labels.requiredFiles }}</div>
-                  <div v-if="!fileConstraints(selected).length" class="text-sm text-slate-500">{{ copy.noFileConstraints }}</div>
-                  <div v-else class="grid gap-3 md:grid-cols-2">
-                    <div v-for="constraint in fileConstraints(selected)" :key="String(constraint.name)" class="rounded-xl border border-slate-200 bg-white p-4">
-                      <div class="font-bold">{{ constraint.name || copy.unnamedFile }}</div>
-                      <div class="mt-1 text-sm text-slate-500">
-                        {{ copy.fileTypePrefix }} {{ fileTypeLabel(constraint.type) }}
-                        · {{ constraint.is_required ? copy.required : copy.optional }}
+              <template v-else>
+                <div v-if="!selected" class="ui-empty">
+                  <div class="ui-empty-icon">
+                    <Award class="h-6 w-6" />
+                  </div>
+                  <p class="ui-empty-title">{{ copy.selectCredential }}</p>
+                </div>
+                <div v-else class="space-y-5">
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.name }}</div>
+                      <div class="mt-2 break-all text-sm font-medium text-ink">{{ definitionName(selected) }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.category }}</div>
+                      <div class="mt-2 break-all text-sm font-medium text-ink">{{ categoryLabel(selected.category) }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.respath }}</div>
+                      <div class="mt-2 break-all text-sm font-medium text-ink">{{ selected.respath || "-" }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.description }}</div>
+                      <div class="mt-2 break-all text-sm font-medium text-ink">{{ selected.description || "-" }}</div>
+                    </div>
+                  </div>
+
+                  <div class="rounded-2xl bg-slate-50 p-4">
+                    <div class="mb-3 text-sm font-semibold text-ink">{{ copy.labels.requiredFiles }}</div>
+                    <div v-if="!fileConstraints(selected).length" class="text-sm text-slate-500">{{ copy.noFileConstraints }}</div>
+                    <div v-else class="grid gap-3 md:grid-cols-2">
+                      <div v-for="constraint in fileConstraints(selected)" :key="String(constraint.name)" class="rounded-[10px] border border-edge bg-white p-4">
+                        <div class="text-sm font-medium text-ink">{{ constraint.name || copy.unnamedFile }}</div>
+                        <div class="mt-1 text-sm text-slate-500">
+                          {{ copy.fileTypePrefix }} {{ fileTypeLabel(constraint.type) }}
+                          · {{ constraint.is_required ? copy.required : copy.optional }}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </template>
-          </section>
+              </template>
+            </section>
 
-          <div v-if="mode === 'create'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
-            <button class="h-10 rounded-xl border border-slate-900 px-5 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="creating" @click="closeDetail">{{ copy.cancel }}</button>
-            <button class="inline-flex h-10 min-w-[180px] items-center justify-center rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50" type="button" :disabled="creating" @click="createDefinition">
-              {{ creating ? copy.creating : copy.create }}
-            </button>
-          </div>
+            <div v-if="mode === 'create'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-hairline bg-white px-4 py-4 sm:flex-row md:px-6">
+              <button class="ui-btn ui-btn-secondary" type="button" :disabled="creating" @click="closeDetail">{{ copy.cancel }}</button>
+              <button class="ui-btn ui-btn-primary sm:min-w-[180px]" type="button" :disabled="creating" @click="createDefinition">
+                <Loader2 v-if="creating" class="h-4 w-4 animate-spin" />
+                {{ creating ? copy.creating : copy.create }}
+              </button>
+            </div>
+          </section>
         </div>
-      </div>
+      </Transition>
     </Teleport>
-  </section>
+  </main>
 </template>

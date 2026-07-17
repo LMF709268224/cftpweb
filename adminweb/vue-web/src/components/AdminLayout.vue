@@ -153,7 +153,7 @@ let redDotsTimer: ReturnType<typeof setInterval>
 onMounted(() => {
   window.addEventListener("storage", refreshUserName)
   document.addEventListener("pointerdown", closeUserMenuOnOutsideClick)
-  
+
   fetchRedDots()
   redDotsTimer = setInterval(fetchRedDots, 5 * 60 * 1000)
   router.afterEach(() => {
@@ -169,10 +169,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#f4f8fc] text-slate-950">
+  <div class="min-h-screen bg-canvas text-ink">
     <button
       v-if="!mobileNavOpen"
-      class="fixed left-4 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-700 shadow-lg shadow-slate-200/70 md:hidden"
+      class="fixed left-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-600 shadow-sm transition-colors hover:bg-slate-50 md:hidden"
       type="button"
       aria-label="打开菜单"
       @click="mobileNavOpen = true"
@@ -180,31 +180,37 @@ onUnmounted(() => {
       <Menu class="h-5 w-5" />
     </button>
 
-    <button
-      v-if="mobileNavOpen"
-      class="fixed inset-0 z-30 bg-slate-950/45 backdrop-blur-[1px] md:hidden"
-      type="button"
-      aria-label="关闭菜单"
-      @click="mobileNavOpen = false"
-    />
+    <Transition name="modal">
+      <button
+        v-if="mobileNavOpen"
+        class="fixed inset-0 z-30 bg-slate-950/40 backdrop-blur-[2px] md:hidden"
+        type="button"
+        aria-label="关闭菜单"
+        @click="mobileNavOpen = false"
+      />
+    </Transition>
 
     <aside
-      class="fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r border-slate-200 bg-blue-50/95 shadow-xl shadow-slate-900/10 transition-all duration-200 md:z-30 md:bg-white/95 md:shadow-sm"
+      class="fixed inset-y-0 left-0 z-40 flex w-[280px] flex-col border-r border-edge bg-white transition-all duration-200 md:z-30"
       :class="[
-        mobileNavOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-        collapsed ? 'md:w-[76px]' : 'md:w-[256px]',
+        mobileNavOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0',
+        collapsed ? 'md:w-[76px]' : 'md:w-[264px]',
       ]"
     >
-      <div class="flex h-20 items-center gap-3 border-b border-slate-200 px-4">
-        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0b7bdc] text-white shadow-lg shadow-sky-200">
-          <GraduationCap class="h-6 w-6" />
+      <!-- Brand -->
+      <div class="flex h-16 shrink-0 items-center gap-3 border-b border-hairline px-4">
+        <div
+          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-white shadow-sm"
+          style="background: linear-gradient(135deg, #6366f1, #8b5cf6)"
+        >
+          <GraduationCap class="h-5 w-5" />
         </div>
-        <div v-if="showSidebarText" class="leading-tight">
-          <div class="text-lg font-black">CFTP</div>
-          <div class="text-sm text-slate-500">{{ copy.systemName }}</div>
+        <div v-if="showSidebarText" class="min-w-0 leading-tight">
+          <div class="text-[15px] font-semibold tracking-tight text-ink">CFTP</div>
+          <div class="truncate text-xs text-slate-400">{{ copy.systemName }}</div>
         </div>
         <button
-          class="ml-auto flex h-9 w-9 items-center justify-center rounded-full text-slate-500 transition hover:bg-white/80 hover:text-slate-900 md:hidden"
+          class="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 md:hidden"
           type="button"
           aria-label="关闭菜单"
           @click="mobileNavOpen = false"
@@ -213,103 +219,138 @@ onUnmounted(() => {
         </button>
       </div>
 
+      <!-- Collapse toggle (desktop) -->
       <button
-        class="absolute -right-4 top-24 hidden h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm md:flex"
+        class="absolute -right-3.5 top-[72px] hidden h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-400 shadow-sm transition-colors hover:text-slate-600 md:flex"
         type="button"
+        aria-label="折叠侧边栏"
         @click="collapsed = !collapsed"
       >
-        <ChevronLeft class="h-4 w-4 transition-transform" :class="collapsed ? 'rotate-180' : ''" />
+        <ChevronLeft class="h-4 w-4 transition-transform duration-200" :class="collapsed ? 'rotate-180' : ''" />
       </button>
 
-      <nav class="flex-1 overflow-y-auto px-3 py-5">
+      <!-- Navigation -->
+      <nav class="flex-1 overflow-y-auto px-3 py-4">
         <div v-for="group in navGroups" :key="group.label" class="mb-5 last:mb-0">
-          <div v-if="showSidebarText" class="mb-2 px-3 text-[11px] font-black uppercase tracking-wider text-slate-400">
+          <div
+            v-if="showSidebarText"
+            class="mb-1.5 px-3 text-[11px] font-medium uppercase tracking-wider text-slate-400"
+          >
             {{ group.label }}
           </div>
-          <div v-else class="mx-auto mb-3 hidden h-px w-8 bg-slate-200 first:hidden md:block" />
-          <div class="space-y-1">
+          <div v-else class="mx-auto mb-3 h-px w-8 bg-hairline" />
+          <div class="space-y-0.5">
             <RouterLink
               v-for="item in group.items"
               :key="item.path"
               :to="item.path"
-              class="relative flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] font-semibold text-slate-700 transition hover:bg-slate-100"
-              :class="isActivePath(item.path) ? 'bg-blue-200 text-[#0b4ea2] shadow-none hover:bg-blue-200 md:!bg-[#0b4ea2] md:!text-white md:shadow-lg md:shadow-sky-200 md:hover:!bg-[#0b4ea2]' : ''"
+              class="group relative flex h-9 items-center gap-2.5 rounded-lg px-3 text-[13.5px] font-medium transition-colors duration-150"
+              :class="isActivePath(item.path)
+                ? 'bg-primary-50 text-primary-700'
+                : 'text-slate-600 hover:bg-slate-100/70 hover:text-slate-900'"
               @click="mobileNavOpen = false"
             >
-              <component :is="item.icon" class="h-5 w-5 shrink-0" />
-              <span v-if="showSidebarText" class="flex-1">{{ item.label }}</span>
-              <span v-if="showSidebarText && getDotCount(item.path) > 0" class="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-bold text-white shadow-sm">
+              <span
+                v-if="isActivePath(item.path)"
+                class="absolute left-0 top-1/2 h-4 w-[3px] -translate-y-1/2 rounded-full bg-primary-600"
+              />
+              <component
+                :is="item.icon"
+                class="h-[18px] w-[18px] shrink-0 transition-colors"
+                :class="isActivePath(item.path) ? 'text-primary-600' : 'text-slate-400 group-hover:text-slate-600'"
+              />
+              <span v-if="showSidebarText" class="min-w-0 flex-1 truncate">{{ item.label }}</span>
+              <span
+                v-if="showSidebarText && getDotCount(item.path) > 0"
+                class="tnum flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-50 px-1.5 text-[10.5px] font-semibold text-red-600"
+              >
                 {{ getDotCount(item.path) > 99 ? '99+' : getDotCount(item.path) }}
               </span>
-              <div v-else-if="!showSidebarText && getDotCount(item.path) > 0" class="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500 shadow-sm border border-white"></div>
+              <span
+                v-else-if="!showSidebarText && getDotCount(item.path) > 0"
+                class="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
+              />
             </RouterLink>
           </div>
         </div>
       </nav>
 
-      <div ref="userMenuRef" class="border-t border-slate-200 p-4">
+      <!-- Footer: language + user -->
+      <div ref="userMenuRef" class="relative shrink-0 border-t border-hairline p-3">
         <button
-          class="mb-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
+          class="mb-2 flex w-full items-center justify-center gap-2 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-50"
           type="button"
           :title="copy.language"
           @click="toggleLanguage"
         >
-          <Languages class="h-4 w-4 shrink-0 text-slate-500" />
+          <Languages class="h-4 w-4 shrink-0 text-slate-400" />
           <span v-if="showSidebarText">{{ copy.language }}</span>
         </button>
 
-        <div v-if="showSidebarText && userMenuOpen" class="mb-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-200/60">
-          <div class="flex items-center gap-3 px-4 py-4">
-            <div class="flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-700">
-              {{ userName.slice(0, 1).toUpperCase() }}
+        <Transition name="menu">
+          <div
+            v-if="showSidebarText && userMenuOpen"
+            class="absolute inset-x-3 bottom-full z-10 mb-2 origin-bottom overflow-hidden rounded-2xl border border-edge bg-white shadow-[0_1px_2px_rgb(15_23_42/0.04),0_16px_40px_-12px_rgb(15_23_42/0.18)]"
+          >
+            <div class="flex items-center gap-3 px-4 py-3.5">
+              <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary-700">
+                {{ userName.slice(0, 1).toUpperCase() }}
+              </div>
+              <div class="min-w-0">
+                <div class="truncate text-sm font-semibold text-ink">{{ userName }}</div>
+                <div class="truncate text-xs text-slate-400">{{ copy.roleName }}</div>
+              </div>
             </div>
-            <div class="min-w-0">
-              <div class="truncate text-sm font-bold text-slate-950">{{ userName }}</div>
-              <div class="truncate text-xs text-slate-500">{{ copy.roleName }}</div>
-            </div>
+            <RouterLink
+              class="flex items-center gap-2.5 border-t border-hairline px-4 py-2.5 text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              to="/settings"
+              @click="userMenuOpen = false; mobileNavOpen = false"
+            >
+              <Settings class="h-4 w-4 text-slate-400" />
+              {{ copy.accountSettings }}
+            </RouterLink>
+            <button
+              class="flex w-full items-center gap-2.5 border-t border-hairline px-4 py-2.5 text-left text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+              type="button"
+              @click="logout"
+            >
+              <LogOut class="h-4 w-4 text-slate-400" />
+              {{ copy.logout }}
+            </button>
           </div>
-          <RouterLink
-            class="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            to="/settings"
-            @click="userMenuOpen = false; mobileNavOpen = false"
-          >
-            <Settings class="h-4 w-4 text-slate-500" />
-            {{ copy.accountSettings }}
-          </RouterLink>
-          <button
-            class="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            type="button"
-            @click="logout"
-          >
-            <LogOut class="h-4 w-4 text-slate-500" />
-            {{ copy.logout }}
-          </button>
-        </div>
+        </Transition>
 
         <button
-          class="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition hover:bg-slate-100"
-          :class="showSidebarText && userMenuOpen ? 'bg-blue-100 text-[#0b4ea2] md:bg-blue-50' : ''"
+          class="flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-left transition-colors hover:bg-slate-100/70"
+          :class="showSidebarText && userMenuOpen ? 'bg-slate-100/70' : ''"
           type="button"
           @click="userMenuOpen = !userMenuOpen"
         >
-          <div class="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-700">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-50 text-sm font-semibold text-primary-700">
             {{ userName.slice(0, 1).toUpperCase() }}
           </div>
           <div v-if="showSidebarText" class="min-w-0">
-            <div class="truncate text-sm font-bold">{{ userName }}</div>
-            <div class="text-xs text-slate-500">{{ copy.roleName }}</div>
+            <div class="truncate text-[13px] font-semibold text-ink">{{ userName }}</div>
+            <div class="truncate text-xs text-slate-400">{{ copy.roleName }}</div>
           </div>
           <ChevronDown
             v-if="showSidebarText"
-            class="ml-auto h-4 w-4 text-slate-500 transition-transform"
+            class="ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200"
             :class="userMenuOpen ? 'rotate-180' : ''"
           />
         </button>
       </div>
     </aside>
 
-    <main class="min-h-screen pt-14 transition-all duration-200 md:pt-0" :class="collapsed ? 'md:pl-[76px]' : 'md:pl-[256px]'">
-      <RouterView />
+    <main
+      class="min-h-screen pt-14 transition-all duration-200 md:pt-0"
+      :class="collapsed ? 'md:pl-[76px]' : 'md:pl-[264px]'"
+    >
+      <RouterView v-slot="{ Component }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
     </main>
   </div>
 </template>

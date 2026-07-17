@@ -179,144 +179,147 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
+  <main class="ui-page">
+    <!-- Page header -->
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
-        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadProfile">
-        <RefreshCw class="h-4 w-4" :class="profileLoading ? 'animate-spin' : ''" />
+      <button class="ui-btn ui-btn-secondary" type="button" @click="loadProfile">
+        <RefreshCw class="h-4 w-4 text-slate-400" :class="profileLoading ? 'animate-spin' : ''" />
         {{ copy.reload }}
       </button>
     </header>
 
-    <div class="flex flex-col gap-5 md:gap-6">
-      <section class="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm md:rounded-3xl">
-        <div class="grid gap-3 md:grid-cols-2">
+    <section class="ui-card mt-6 overflow-hidden">
+      <!-- Section tabs -->
+      <div class="flex gap-5 overflow-x-auto border-b border-hairline px-4 md:px-6">
         <button
           v-for="section in sections"
           :key="section.key"
-          class="grid min-h-20 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-2xl border border-transparent px-4 py-4 text-left transition hover:bg-sky-50 md:px-5"
-          :class="activeSection === section.key ? 'border-sky-200 bg-sky-50 shadow-sm shadow-sky-100' : ''"
           type="button"
+          class="ui-tab"
+          :class="activeSection === section.key ? 'ui-tab-active' : ''"
+          :title="section.description"
           @click="activeSection = section.key"
         >
-          <div class="min-w-0">
-            <div class="break-words font-black">{{ section.title }}</div>
-            <div class="mt-1 break-words text-sm text-slate-500">{{ section.description }}</div>
-          </div>
-          <span class="h-fit shrink-0 rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">{{ section.count }}</span>
+          {{ section.title }}
+          <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ section.count }}</span>
         </button>
+      </div>
+
+      <!-- Section header -->
+      <div class="flex items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink">{{ activeSection === "profile" ? copy.sections.profile.title : copy.sections.password.title }}</h2>
+          <p class="mt-1 text-sm text-slate-500">
+            {{ activeSection === "profile" ? copy.sections.profile.detail : copy.sections.password.detail }}
+          </p>
         </div>
-      </section>
+        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-slate-50 text-slate-400">
+          <UserRound v-if="activeSection === 'profile'" class="h-4 w-4" />
+          <Shield v-else class="h-4 w-4" />
+        </span>
+      </div>
 
-      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
-        <div class="flex items-center justify-between gap-4 border-b border-slate-100 px-4 py-4 md:px-5">
-          <div class="min-w-0">
-            <h2 class="text-xl font-black">{{ activeSection === "profile" ? copy.sections.profile.title : copy.sections.password.title }}</h2>
-            <p class="mt-1 text-sm text-slate-500">
-              {{ activeSection === "profile" ? copy.sections.profile.detail : copy.sections.password.detail }}
-            </p>
+      <!-- Profile form -->
+      <form v-if="activeSection === 'profile'" class="space-y-5 p-4 md:space-y-6 md:p-6" @submit.prevent="saveProfile">
+        <div v-if="profileLoading" class="grid gap-4 md:grid-cols-2">
+          <div v-for="i in 4" :key="`sk-${i}`" class="space-y-2">
+            <div class="skeleton h-4 w-2/5" />
+            <div class="skeleton h-10 w-full" />
           </div>
-          <UserRound v-if="activeSection === 'profile'" class="h-5 w-5 shrink-0 text-blue-600" />
-          <Shield v-else class="h-5 w-5 shrink-0 text-blue-600" />
         </div>
 
-        <form v-if="activeSection === 'profile'" class="space-y-5 p-4 md:space-y-6 md:p-5" @submit.prevent="saveProfile">
-          <div v-if="profileLoading" class="rounded-2xl bg-slate-50 px-4 py-8 text-center text-slate-500 md:p-8">
-            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            {{ copy.loadingProfile }}
-          </div>
+        <div class="grid gap-4 md:grid-cols-2">
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.labels.loginId }}</span>
+            <input v-model="profile.name" class="ui-input" disabled />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.labels.email }}</span>
+            <input v-model="profile.email" class="ui-input" disabled />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.labels.displayName }}</span>
+            <input v-model.trim="profile.display_name" class="ui-input" maxlength="80" :placeholder="copy.placeholders.displayName" />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.labels.realName }}</span>
+            <input v-model.trim="profile.real_name" class="ui-input" maxlength="80" :placeholder="copy.placeholders.realName" />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.labels.gender }}</span>
+            <select v-model="profile.gender" class="ui-input">
+              <option value="">{{ copy.placeholders.selectGender }}</option>
+              <option :value="GENDER_MALE">{{ copy.genders.male }}</option>
+              <option :value="GENDER_FEMALE">{{ copy.genders.female }}</option>
+            </select>
+          </label>
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.labels.birthday }}</span>
+            <input v-model="profile.birthday" class="tnum ui-input" type="date" />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.labels.affiliation }}</span>
+            <input v-model.trim="profile.affiliation" class="ui-input" maxlength="160" :placeholder="copy.placeholders.affiliation" />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.labels.title }}</span>
+            <input v-model.trim="profile.title" class="ui-input" maxlength="120" :placeholder="copy.placeholders.title" />
+          </label>
+          <label class="grid gap-1.5 md:col-span-2">
+            <span class="ui-label">{{ copy.labels.education }}</span>
+            <input v-model.trim="profile.education" class="ui-input" maxlength="200" :placeholder="copy.placeholders.education" />
+          </label>
+          <label class="grid gap-1.5 md:col-span-2">
+            <span class="ui-label">{{ copy.labels.bio }}</span>
+            <textarea v-model.trim="profile.bio" class="ui-input h-auto min-h-28 py-2.5" :maxlength="BIO_MAX_LENGTH" :placeholder="copy.placeholders.bio" />
+            <span class="tnum block text-right text-xs text-slate-400">{{ copy.bioCount(profile.bio.length, BIO_MAX_LENGTH) }}</span>
+          </label>
+        </div>
 
-          <div class="grid gap-4 md:grid-cols-2">
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.loginId }}</span>
-              <input v-model="profile.name" class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" disabled />
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.email }}</span>
-              <input v-model="profile.email" class="mt-2 w-full rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500" disabled />
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.displayName }}</span>
-              <input v-model.trim="profile.display_name" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="80" :placeholder="copy.placeholders.displayName" />
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.realName }}</span>
-              <input v-model.trim="profile.real_name" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="80" :placeholder="copy.placeholders.realName" />
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.gender }}</span>
-              <select v-model="profile.gender" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3">
-                <option value="">{{ copy.placeholders.selectGender }}</option>
-                <option :value="GENDER_MALE">{{ copy.genders.male }}</option>
-                <option :value="GENDER_FEMALE">{{ copy.genders.female }}</option>
-              </select>
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.birthday }}</span>
-              <input v-model="profile.birthday" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" type="date" />
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.affiliation }}</span>
-              <input v-model.trim="profile.affiliation" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="160" :placeholder="copy.placeholders.affiliation" />
-            </label>
-            <label class="block">
-              <span class="text-sm font-bold">{{ copy.labels.title }}</span>
-              <input v-model.trim="profile.title" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="120" :placeholder="copy.placeholders.title" />
-            </label>
-            <label class="block md:col-span-2">
-              <span class="text-sm font-bold">{{ copy.labels.education }}</span>
-              <input v-model.trim="profile.education" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="200" :placeholder="copy.placeholders.education" />
-            </label>
-            <label class="block md:col-span-2">
-              <span class="text-sm font-bold">{{ copy.labels.bio }}</span>
-              <textarea v-model.trim="profile.bio" class="mt-2 min-h-28 w-full rounded-xl border border-slate-200 p-4" :maxlength="BIO_MAX_LENGTH" :placeholder="copy.placeholders.bio" />
-              <span class="mt-1 block text-right text-xs text-slate-400">{{ copy.bioCount(profile.bio.length, BIO_MAX_LENGTH) }}</span>
-            </label>
-          </div>
+        <button class="ui-btn ui-btn-primary w-full md:w-auto" :disabled="profileSaving" type="submit">
+          <Loader2 v-if="profileSaving" class="h-4 w-4 animate-spin" />
+          <Save v-else class="h-4 w-4" />
+          {{ profileSaving ? copy.saving : copy.saveProfile }}
+        </button>
+      </form>
 
-          <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 md:w-auto" :disabled="profileSaving" type="submit">
-            <Loader2 v-if="profileSaving" class="h-4 w-4 animate-spin" />
-            <Save v-else class="h-4 w-4" />
-            {{ profileSaving ? copy.saving : copy.saveProfile }}
-          </button>
-        </form>
+      <!-- Password form -->
+      <form v-else class="space-y-5 p-4 md:space-y-6 md:p-6" @submit.prevent="savePassword">
+        <div class="grid gap-4 md:grid-cols-2">
+          <label class="grid gap-1.5">
+            <span class="ui-label inline-flex items-center">
+              <span class="mr-1 text-red-500" aria-hidden="true">*</span>
+              {{ copy.labels.oldPassword }}
+            </span>
+            <input v-model="oldPassword" autocomplete="current-password" class="ui-input" maxlength="128" required type="password" />
+          </label>
+          <label class="grid gap-1.5">
+            <span class="ui-label inline-flex items-center">
+              <span class="mr-1 text-red-500" aria-hidden="true">*</span>
+              {{ copy.labels.newPassword }}
+            </span>
+            <input v-model="newPassword" autocomplete="new-password" class="ui-input" maxlength="128" minlength="8" required type="password" />
+            <span class="text-xs text-slate-400">{{ copy.passwordHint }}</span>
+          </label>
+          <label class="grid gap-1.5 md:col-span-2">
+            <span class="ui-label inline-flex items-center">
+              <span class="mr-1 text-red-500" aria-hidden="true">*</span>
+              {{ copy.labels.confirmPassword }}
+            </span>
+            <input v-model="confirmPassword" autocomplete="new-password" class="ui-input" maxlength="128" minlength="8" required type="password" />
+          </label>
+        </div>
 
-        <form v-else class="space-y-5 p-4 md:space-y-6 md:p-5" @submit.prevent="savePassword">
-          <div class="grid gap-4 md:grid-cols-2">
-            <label class="block">
-              <span class="inline-flex items-center text-sm font-bold">
-                <span class="mr-1 text-red-500" aria-hidden="true">*</span>
-                {{ copy.labels.oldPassword }}
-              </span>
-              <input v-model="oldPassword" autocomplete="current-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" required type="password" />
-            </label>
-            <label class="block">
-              <span class="inline-flex items-center text-sm font-bold">
-                <span class="mr-1 text-red-500" aria-hidden="true">*</span>
-                {{ copy.labels.newPassword }}
-              </span>
-              <input v-model="newPassword" autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" minlength="8" required type="password" />
-              <span class="mt-1 block text-xs text-slate-400">{{ copy.passwordHint }}</span>
-            </label>
-            <label class="block md:col-span-2">
-              <span class="inline-flex items-center text-sm font-bold">
-                <span class="mr-1 text-red-500" aria-hidden="true">*</span>
-                {{ copy.labels.confirmPassword }}
-              </span>
-              <input v-model="confirmPassword" autocomplete="new-password" class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3" maxlength="128" minlength="8" required type="password" />
-            </label>
-          </div>
-
-          <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 md:w-auto" :disabled="passwordSaving" type="submit">
-            <Loader2 v-if="passwordSaving" class="h-4 w-4 animate-spin" />
-            <Shield v-else class="h-4 w-4" />
-            {{ passwordSaving ? copy.updating : copy.updatePassword }}
-          </button>
-        </form>
-      </section>
-    </div>
-  </section>
+        <button class="ui-btn ui-btn-primary w-full md:w-auto" :disabled="passwordSaving" type="submit">
+          <Loader2 v-if="passwordSaving" class="h-4 w-4 animate-spin" />
+          <Shield v-else class="h-4 w-4" />
+          {{ passwordSaving ? copy.updating : copy.updatePassword }}
+        </button>
+      </form>
+    </section>
+  </main>
 </template>

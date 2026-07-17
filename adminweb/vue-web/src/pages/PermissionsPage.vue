@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileWarning, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, UserX, X } from "lucide-vue-next"
+import { FileWarning, Inbox, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, UserX, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
@@ -38,7 +38,7 @@ const actions = computed(() => [
     desc: copy.value.actions.grant.desc,
     endpoint: "/api/permissions/grant",
     icon: ShieldCheck,
-    tone: "bg-emerald-600 text-white",
+    tone: "bg-emerald-50 text-emerald-700",
   },
   {
     key: "revoke-upload" as const,
@@ -46,7 +46,7 @@ const actions = computed(() => [
     desc: copy.value.actions.revokeUpload.desc,
     endpoint: "/api/permissions/revoke",
     icon: ShieldOff,
-    tone: "bg-amber-500 text-white",
+    tone: "bg-amber-50 text-amber-700",
   },
   {
     key: "mark-expired" as const,
@@ -54,7 +54,7 @@ const actions = computed(() => [
     desc: copy.value.actions.markExpired.desc,
     endpoint: "/api/permissions/mark-expired",
     icon: FileWarning,
-    tone: "bg-orange-600 text-white",
+    tone: "bg-amber-50 text-amber-700",
   },
   {
     key: "revoke-credential" as const,
@@ -62,7 +62,7 @@ const actions = computed(() => [
     desc: copy.value.actions.revokeCredential.desc,
     endpoint: "/api/permissions/revoke-credential",
     icon: UserX,
-    tone: "bg-red-600 text-white",
+    tone: "bg-red-50 text-red-700",
   },
 ])
 
@@ -171,179 +171,210 @@ onMounted(loadDefinitions)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
+  <main class="ui-page">
+    <!-- Page header -->
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
-        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="loadDefinitions">
-        <RefreshCw class="h-4 w-4" :class="definitionsLoading ? 'animate-spin' : ''" />
+      <button class="ui-btn ui-btn-secondary" type="button" @click="loadDefinitions">
+        <RefreshCw class="h-4 w-4 text-slate-400" :class="definitionsLoading ? 'animate-spin' : ''" />
         {{ copy.refreshDefinitions }}
       </button>
     </header>
 
-    <div class="grid gap-6">
-      <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
-        <h2 class="text-xl font-black">{{ copy.targetTitle }}</h2>
-        <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.candidateUlid }}
-            <span class="relative block">
-              <input v-model="candidateUlid" class="w-full rounded-xl border border-slate-200 px-4 py-3 pr-11" maxlength="64" :placeholder="copy.candidatePlaceholder" />
-              <button
-                v-if="candidateUlid"
-                class="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                type="button"
-                :aria-label="clearInputLabel"
-                :title="clearInputLabel"
-                @click="clearCandidate"
-              >
-                <X class="h-4 w-4" />
-              </button>
-            </span>
-          </label>
-          <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="loading || !canCheck" @click="check">
-            <Loader2 v-if="loading && !activeAction" class="h-4 w-4 animate-spin" />
-            <Search v-else class="h-4 w-4" />
-            {{ copy.checkPermission }}
-          </button>
-        </div>
-      </section>
-
-      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:p-5">
-          <div class="min-w-0">
-            <h2 class="text-xl font-black">{{ copy.definitionsTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.definitionsDescription }}</p>
-          </div>
-        </div>
-        <div v-if="definitionsLoading" class="px-4 py-10 text-center text-slate-500 md:p-10">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          {{ copy.loading }}
-        </div>
-        <div v-else class="divide-y divide-slate-100">
-          <div
-            v-for="definition in definitions"
-            :key="definitionUlid(definition)"
-            class="grid cursor-pointer gap-4 px-4 py-4 hover:bg-sky-50 md:grid-cols-[minmax(0,1fr)_120px] md:items-center md:px-5"
-            :class="definitionUlid(selectedDefinition) === definitionUlid(definition) ? 'bg-sky-50' : ''"
-            @click="selectDefinition(definition)"
-          >
-            <div class="min-w-0">
-              <div class="break-words font-black">{{ definitionName(definition) }}</div>
-              <div class="mt-1 text-sm text-slate-500">{{ definition.category || "-" }}</div>
-              <div class="mt-2 break-all text-xs font-semibold text-slate-500">ID: {{ definitionUlid(definition) || "-" }}</div>
-            </div>
-            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 hover:text-blue-900 md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="openDetail(definition)">
-              {{ viewDetailLabel }}
+    <!-- Query target -->
+    <section class="ui-card mt-6 p-4 md:p-6">
+      <h2 class="text-base font-semibold text-ink">{{ copy.targetTitle }}</h2>
+      <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
+        <label class="grid gap-1.5">
+          <span class="ui-label">{{ copy.candidateUlid }}</span>
+          <span class="relative block">
+            <input v-model="candidateUlid" class="tnum ui-input pr-10" maxlength="64" :placeholder="copy.candidatePlaceholder" />
+            <button
+              v-if="candidateUlid"
+              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              type="button"
+              :aria-label="clearInputLabel"
+              :title="clearInputLabel"
+              @click="clearCandidate"
+            >
+              <X class="h-4 w-4" />
             </button>
-          </div>
+          </span>
+        </label>
+        <button class="ui-btn ui-btn-primary" type="button" :disabled="loading || !canCheck" @click="check">
+          <Loader2 v-if="loading && !activeAction" class="h-4 w-4 animate-spin" />
+          <Search v-else class="h-4 w-4" />
+          {{ copy.checkPermission }}
+        </button>
+      </div>
+    </section>
+
+    <!-- Credential definitions -->
+    <section class="ui-card mt-4 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink">{{ copy.definitionsTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.definitionsDescription }}</p>
         </div>
-        <div v-if="!definitionsLoading && !definitions.length" class="px-4 py-10 text-center text-slate-500 md:p-10">{{ copy.emptyDefinitions }}</div>
-      </section>
-    </div>
-
-    <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-      <div class="flex h-full max-h-none w-full max-w-[1180px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-        <div class="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:px-6">
-          <div class="min-w-0">
-            <h2 class="break-words text-xl font-black md:truncate md:text-2xl">{{ detailDialogTitle }}</h2>
-            <p class="mt-1 break-all text-sm text-slate-500">{{ definitionName(selectedDefinition) }}</p>
-          </div>
-          <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="closeLabel" @click="detailOpen = false">
-            <X class="h-5 w-5" />
-          </button>
-        </div>
-
-        <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-5">
-          <div class="space-y-6">
-            <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
-              <div class="flex flex-wrap items-start justify-between gap-4">
-                <div class="min-w-0">
-                  <h2 class="text-xl font-black md:text-2xl">{{ copy.currentTarget }}</h2>
-                  <p class="mt-1 text-sm text-slate-500">{{ copy.currentTargetDescription }}</p>
-                </div>
-                <span v-if="checkResult" class="rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(resultStatus())">
-                  {{ resultStatus() || "UNKNOWN" }}
-                </span>
-              </div>
-              <div class="mt-5 grid gap-4 md:grid-cols-2">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.candidate }}</div>
-                  <div class="mt-2 break-all text-sm font-bold">{{ candidateUlid || "-" }}</div>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.credentialDefinition }}</div>
-                  <div class="mt-2 break-all text-sm font-bold">{{ definitionName(selectedDefinition) }}</div>
-                  <div class="mt-1 break-all text-xs text-slate-500">{{ credDefUlid || "-" }}</div>
-                </div>
-              </div>
-            </section>
-
-            <section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
-                <h2 class="mb-4 text-xl font-black">{{ copy.resultTitle }}</h2>
-                <div v-if="!checkResult" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.emptyResult }}</div>
-                <div v-else class="space-y-5">
-                  <div class="grid gap-4 md:grid-cols-2">
-                    <label v-for="(value, key) in resultFields" :key="key" class="grid gap-2 text-sm font-bold">
-                      {{ key }}
-                      <textarea
-                        v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                        class="min-h-24 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                        disabled
-                        :value="JSON.stringify(value, null, 2)"
-                      />
-                      <input
-                        v-else
-                        class="rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-600"
-                        disabled
-                        :value="String(value ?? '-')"
-                      />
-                    </label>
-                  </div>
-                  <JsonPreview
-                    :title="copy.rawJson"
-                    :value="checkResult"
-                    :copy-label="copy.copyJson"
-                    :copied-label="copy.copiedJson"
-                    :copied-message="copy.toasts.jsonCopied"
-                    :copy-error-message="copy.toasts.jsonCopyFailed"
-                  />
-                </div>
-              </div>
-
-              <aside class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:rounded-3xl md:p-5">
-                <h2 class="text-xl font-black">{{ copy.actionTitle }}</h2>
-                <p class="mt-1 text-sm text-slate-500">{{ copy.actionDescription }}</p>
-                <label class="mt-4 grid gap-2 text-sm font-bold">
-                  {{ copy.reason }}
-                  <textarea v-model="reason" class="min-h-24 rounded-xl border border-slate-200 px-4 py-3" maxlength="500" :placeholder="copy.reasonPlaceholder" />
-                </label>
-                <div class="mt-4 grid gap-3">
-                  <button
-                    v-for="item in actions"
-                    :key="item.key"
-                    class="rounded-2xl px-4 py-3 text-left font-bold disabled:opacity-50"
-                    :class="item.tone"
-                    type="button"
-                    :disabled="loading || !canCheck"
-                    @click="runAction(item)"
-                  >
-                    <div class="flex items-center gap-2">
-                      <Loader2 v-if="activeAction === item.key" class="h-4 w-4 animate-spin" />
-                      <component :is="item.icon" v-else class="h-4 w-4" />
-                      {{ item.title }}
-                    </div>
-                    <div class="mt-1 text-xs font-semibold opacity-80">{{ item.desc }}</div>
-                  </button>
-                </div>
-              </aside>
-            </section>
-          </div>
+        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ definitions.length }}</span>
+      </div>
+      <div v-if="definitionsLoading" class="divide-y divide-hairline">
+        <div v-for="i in 4" :key="`sk-${i}`" class="space-y-2.5 px-4 py-4 md:px-6">
+          <div class="skeleton h-4 w-2/5" />
+          <div class="skeleton h-3.5 w-3/5" />
+          <div class="skeleton h-3 w-4/5" />
         </div>
       </div>
-    </div>
-  </section>
+      <div v-else-if="!definitions.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <Inbox class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.emptyDefinitions }}</p>
+      </div>
+      <div v-else class="divide-y divide-hairline">
+        <div
+          v-for="definition in definitions"
+          :key="definitionUlid(definition)"
+          class="grid cursor-pointer gap-4 px-4 py-4 transition-colors hover:bg-primary-50/40 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:px-6"
+          :class="definitionUlid(selectedDefinition) === definitionUlid(definition) ? 'bg-primary-50/60' : ''"
+          @click="selectDefinition(definition)"
+        >
+          <div class="min-w-0">
+            <div class="break-words text-sm font-medium text-ink">{{ definitionName(definition) }}</div>
+            <div class="mt-1 text-sm text-slate-500">{{ definition.category || "-" }}</div>
+            <div class="tnum mt-1 break-all text-xs text-slate-400">ID: {{ definitionUlid(definition) || "-" }}</div>
+          </div>
+          <button class="ui-btn ui-btn-secondary ui-btn-sm md:justify-self-end" type="button" @click.stop="openDetail(definition)">
+            {{ viewDetailLabel }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Detail modal -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="detailOpen" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-[1180px]">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <div class="min-w-0">
+                <h2 class="text-base font-semibold text-ink md:text-lg">{{ detailDialogTitle }}</h2>
+                <p class="mt-1 break-all text-sm text-slate-500">{{ definitionName(selectedDefinition) }}</p>
+              </div>
+              <button
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                type="button"
+                :aria-label="closeLabel"
+                @click="detailOpen = false"
+              >
+                <X class="h-5 w-5" />
+              </button>
+            </div>
+
+            <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <div class="space-y-6">
+                <!-- Current target -->
+                <section class="rounded-2xl border border-edge p-4 md:p-5">
+                  <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div class="min-w-0">
+                      <h2 class="text-base font-semibold text-ink">{{ copy.currentTarget }}</h2>
+                      <p class="mt-1 text-sm text-slate-500">{{ copy.currentTargetDescription }}</p>
+                    </div>
+                    <span v-if="checkResult" class="ui-badge shrink-0" :class="badgeClass(resultStatus())">
+                      {{ resultStatus() || "UNKNOWN" }}
+                    </span>
+                  </div>
+                  <div class="mt-5 grid gap-4 md:grid-cols-2">
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.candidate }}</div>
+                      <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ candidateUlid || "-" }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.credentialDefinition }}</div>
+                      <div class="mt-2 break-all text-sm font-medium text-ink">{{ definitionName(selectedDefinition) }}</div>
+                      <div class="tnum mt-1 break-all text-xs text-slate-400">{{ credDefUlid || "-" }}</div>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                  <!-- Check result -->
+                  <div class="rounded-2xl border border-edge p-4 md:p-5">
+                    <h2 class="text-base font-semibold text-ink">{{ copy.resultTitle }}</h2>
+                    <div v-if="!checkResult" class="ui-empty">
+                      <div class="ui-empty-icon">
+                        <Search class="h-6 w-6" />
+                      </div>
+                      <p class="ui-empty-title">{{ copy.emptyResult }}</p>
+                    </div>
+                    <div v-else class="mt-4 space-y-5">
+                      <div class="grid gap-4 md:grid-cols-2">
+                        <label v-for="(value, key) in resultFields" :key="key" class="grid gap-1.5">
+                          <span class="ui-label break-all">{{ key }}</span>
+                          <textarea
+                            v-if="Array.isArray(value) || (value && typeof value === 'object')"
+                            class="ui-input h-auto min-h-24 py-2.5"
+                            disabled
+                            :value="JSON.stringify(value, null, 2)"
+                          />
+                          <input
+                            v-else
+                            class="ui-input"
+                            disabled
+                            :value="String(value ?? '-')"
+                          />
+                        </label>
+                      </div>
+                      <JsonPreview
+                        :title="copy.rawJson"
+                        :value="checkResult"
+                        :copy-label="copy.copyJson"
+                        :copied-label="copy.copiedJson"
+                        :copied-message="copy.toasts.jsonCopied"
+                        :copy-error-message="copy.toasts.jsonCopyFailed"
+                      />
+                    </div>
+                  </div>
+
+                  <!-- Admin actions -->
+                  <aside class="rounded-2xl border border-edge p-4 md:p-5">
+                    <h2 class="text-base font-semibold text-ink">{{ copy.actionTitle }}</h2>
+                    <p class="mt-1 text-sm text-slate-500">{{ copy.actionDescription }}</p>
+                    <label class="mt-4 grid gap-1.5">
+                      <span class="ui-label">{{ copy.reason }}</span>
+                      <textarea v-model="reason" class="ui-input h-auto min-h-24 py-2.5" maxlength="500" :placeholder="copy.reasonPlaceholder" />
+                    </label>
+                    <div class="mt-4 grid gap-3">
+                      <button
+                        v-for="item in actions"
+                        :key="item.key"
+                        class="w-full rounded-[10px] border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20 disabled:pointer-events-none disabled:opacity-50"
+                        type="button"
+                        :disabled="loading || !canCheck"
+                        @click="runAction(item)"
+                      >
+                        <div class="flex items-start gap-3">
+                          <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]" :class="item.tone">
+                            <Loader2 v-if="activeAction === item.key" class="h-4 w-4 animate-spin" />
+                            <component :is="item.icon" v-else class="h-4 w-4" />
+                          </span>
+                          <span class="min-w-0">
+                            <span class="block text-sm font-medium text-ink">{{ item.title }}</span>
+                            <span class="mt-0.5 block text-xs text-slate-500">{{ item.desc }}</span>
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+                  </aside>
+                </section>
+              </div>
+            </main>
+          </section>
+        </div>
+      </Transition>
+    </Teleport>
+  </main>
 </template>

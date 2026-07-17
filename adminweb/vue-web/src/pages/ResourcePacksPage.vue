@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Info, Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
+import { Info, Loader2, Package, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import { ApiError, apiClient } from "@/lib/apiClient"
@@ -76,10 +76,10 @@ function packStatusLabel(pack: JsonRecord | null) {
 
 function packStatusClass(pack: JsonRecord | null) {
   const status = packStatusKey(pack)
-  if (status.includes("DRAFT")) return "border-amber-200 bg-amber-50 text-amber-700"
-  if (status.includes("DEPRECATED")) return "border-slate-200 bg-slate-100 text-slate-600"
-  if (status.includes("ACTIVE") || status.includes("PUBLISHED")) return "border-emerald-200 bg-emerald-50 text-emerald-700"
-  return "border-slate-200 bg-white text-slate-600"
+  if (status.includes("DRAFT")) return "bg-amber-50 text-amber-700"
+  if (status.includes("DEPRECATED")) return "bg-slate-100 text-slate-600"
+  if (status.includes("ACTIVE") || status.includes("PUBLISHED")) return "bg-emerald-50 text-emerald-700"
+  return "bg-slate-100 text-slate-600"
 }
 
 function canPublishPack(pack: JsonRecord | null) {
@@ -445,7 +445,7 @@ async function handleThumbnailFileUpload(event: Event) {
       file_hash: hashHex
     }
     const uploadRes = await apiClient<JsonRecord>("/api/lms/upload-url", { method: "POST", body: JSON.stringify(uploadUrlReq) })
-    
+
     if (!uploadRes.upload_url) throw new Error("Missing upload URL")
     const uploadResponse = await fetch(String(uploadRes.upload_url), {
       method: "PUT",
@@ -493,359 +493,422 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
+  <main class="ui-page">
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
-        <h1 class="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" :disabled="loading" @click="load">
+        <button class="ui-btn ui-btn-secondary" type="button" :disabled="loading" @click="load">
           <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
-          <RefreshCw v-else class="h-4 w-4" />
+          <RefreshCw v-else class="h-4 w-4 text-slate-400" />
           {{ copy.refresh }}
         </button>
-        <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white shadow-sm" type="button" @click="startCreate">
+        <button class="ui-btn ui-btn-primary" type="button" @click="startCreate">
           <Plus class="h-4 w-4" />
           {{ copy.newPack }}
         </button>
       </div>
     </header>
 
-    <div class="grid gap-6">
-      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-4 md:p-5">
-          <div class="min-w-0">
-            <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
-          </div>
-          
-          </div>
-
-        <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:p-12">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          {{ copy.loading }}
+    <section class="ui-card mt-6 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
+          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <div v-else-if="!packs.length" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
-        <div v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_300px] gap-6 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-400 lg:grid">
-            <span>{{ copy.columns.pack }}</span>
-            <span>{{ copy.columns.version }}</span>
-            <span class="text-center">{{ copy.columns.status }}</span>
-            <span class="text-center">{{ copy.columns.action }}</span>
+        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.pageSizeText(packs.length, pageSize) }}</span>
+      </div>
+
+      <div v-if="loading" class="divide-y divide-hairline">
+        <div
+          v-for="i in 5"
+          :key="`sk-${i}`"
+          class="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_84px_120px_300px] lg:items-center lg:gap-6 lg:py-3.5"
+        >
+          <div>
+            <div class="skeleton h-4 w-2/5" />
+            <div class="skeleton mt-2 h-3 w-4/5" />
           </div>
+          <div class="skeleton h-4 w-10" />
+          <div class="skeleton h-5 w-16 rounded-full" />
+          <div class="skeleton h-8 w-3/5 lg:w-full" />
+        </div>
+      </div>
+
+      <div v-else-if="!packs.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <Package class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.empty }}</p>
+        <p class="ui-empty-hint">{{ copy.listDescription }}</p>
+      </div>
+
+      <div v-else>
+        <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_300px] gap-6 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
+          <span>{{ copy.columns.pack }}</span>
+          <span>{{ copy.columns.version }}</span>
+          <span class="text-center">{{ copy.columns.status }}</span>
+          <span class="text-center">{{ copy.columns.action }}</span>
+        </div>
+        <div class="divide-y divide-hairline">
           <div
             v-for="pack in packs"
             :key="packId(pack)"
-            class="grid w-full gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 md:px-5 md:py-3 lg:grid-cols-[minmax(0,1fr)_84px_120px_300px] lg:items-center lg:gap-6"
-            :class="packId(selected) === packId(pack) ? 'bg-sky-50/70' : ''"
+            class="ui-table-row grid w-full gap-3 px-4 py-4 text-left lg:grid-cols-[minmax(0,1fr)_84px_120px_300px] lg:items-center lg:gap-6 lg:py-3.5"
+            :class="packId(selected) === packId(pack) ? 'bg-primary-50/60' : ''"
           >
             <div class="min-w-0">
-              <div class="break-words text-base font-black text-slate-950 lg:truncate">{{ packTitle(pack) }}</div>
-              <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ pack.description || "-" }}</div>
-              <div class="mt-1 break-all font-mono text-xs text-slate-500 lg:truncate">{{ copy.fields.idPrefix }}{{ pack.pack_id }}</div>
+              <div class="break-words text-sm font-medium text-ink lg:truncate">{{ packTitle(pack) }}</div>
+              <div class="mt-0.5 line-clamp-1 text-sm text-slate-500">{{ pack.description || "-" }}</div>
+              <div class="tnum mt-0.5 break-all text-xs text-slate-400 lg:truncate">{{ copy.fields.idPrefix }}{{ pack.pack_id }}</div>
             </div>
-            <div class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700 lg:block lg:rounded-none lg:bg-transparent lg:p-0">
-              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.fields.version }}</span>
-              <span>{{ pack.version || 0 }}</span>
+            <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 text-sm lg:block lg:border-0 lg:pt-0">
+              <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.fields.version }}</span>
+              <span class="tnum text-slate-600">{{ pack.version || 0 }}</span>
             </div>
-            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 lg:block lg:justify-self-center lg:rounded-none lg:bg-transparent lg:p-0">
-              <span class="text-xs font-bold text-slate-400 lg:hidden">{{ copy.columns.status }}</span>
-              <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="packStatusClass(pack)" :title="String(pack.status || '')">
+            <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 lg:block lg:justify-self-center lg:border-0 lg:pt-0">
+              <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.status }}</span>
+              <span class="ui-badge" :class="packStatusClass(pack)" :title="String(pack.status || '')">
                 {{ packStatusLabel(pack) }}
               </span>
-            </span>
-            <div class="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:items-center sm:justify-start lg:justify-center">
-              <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openPackDetail(pack)">
+            </div>
+            <div class="grid grid-cols-2 gap-2 border-t border-hairline pt-3 sm:flex sm:flex-wrap sm:items-center lg:justify-center lg:border-0 lg:pt-0">
+              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openPackDetail(pack)">
                 {{ copy.viewDetails }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm font-bold text-amber-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="openPackEditor(pack)">
+              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openPackEditor(pack)">
                 {{ copy.editPack }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" :disabled="saving" @click.stop="duplicatePack(pack)">
+              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="saving" @click.stop="duplicatePack(pack)">
                 {{ copy.copyPack }}
               </button>
-              <button v-if="canPublishPack(pack)" class="inline-flex items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-700 transition hover:underline disabled:opacity-50 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'publish')">
+              <button v-if="canPublishPack(pack)" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'publish')">
                 {{ copy.publishPack }}
               </button>
-              <button v-if="canRevertPack(pack)" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 transition hover:underline disabled:opacity-50 lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'revert-to-draft')">
+              <button v-if="canRevertPack(pack)" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'revert-to-draft')">
                 {{ copy.revertPack }}
               </button>
-              <button v-if="canDeletePack(pack)" class="inline-flex items-center justify-center rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-sm font-bold text-red-600 transition hover:underline lg:border-0 lg:bg-transparent lg:px-0 lg:py-0" type="button" @click="requestDeletePack(pack)">
+              <button v-if="canDeletePack(pack)" class="ui-btn ui-btn-sm text-danger-600 hover:bg-red-50" type="button" @click="requestDeletePack(pack)">
                 {{ copy.deletePack }}
               </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div class="flex flex-col items-stretch justify-end gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:p-5">
-          <span class="text-center text-sm font-bold text-slate-500 sm:mr-auto sm:text-left">{{ `${currentPage} / ${Math.max(1, Math.ceil(total / pageSize))}` }}</span>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
-          <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
+      <div class="flex flex-col items-stretch justify-between gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+        <span class="tnum text-center text-sm text-slate-500 sm:text-left">{{ `${currentPage} / ${Math.max(1, Math.ceil(total / pageSize))}` }}</span>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canPrevious || loading" @click="previousPage">{{ copy.prev }}</button>
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canNext || loading" @click="nextPage">{{ copy.next }}</button>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section v-if="detailOpen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-0 md:p-6">
-        <div class="flex h-full max-h-none w-full max-w-[1100px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:p-5">
-            <div class="min-w-0">
-              <h2 class="break-words text-xl font-black">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
-              <p class="mt-1 text-sm text-slate-500">{{ mode === "detail" ? copy.readonlyHint : mode === "create" ? copy.createHint : copy.editHint }}</p>
-              <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-bold text-blue-600">
-                <Loader2 class="h-3.5 w-3.5 animate-spin" />
-                {{ copy.detailLoading }}
-              </p>
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="detailOpen" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-[1100px]">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <div class="min-w-0">
+                <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ mode === "create" ? copy.createTitle : mode === "edit" ? copy.editTitle : copy.detailTitle }}</h2>
+                <p class="mt-1 text-sm text-slate-500">{{ mode === "detail" ? copy.readonlyHint : mode === "create" ? copy.createHint : copy.editHint }}</p>
+                <p v-if="detailLoading" class="mt-1 inline-flex items-center gap-2 text-xs font-medium text-primary-700">
+                  <Loader2 class="h-3.5 w-3.5 animate-spin" />
+                  {{ copy.detailLoading }}
+                </p>
+              </div>
+              <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="closePackDetail">
+                <X class="h-5 w-5" />
+              </button>
             </div>
-            <button class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closePackDetail">
-              <X class="h-5 w-5" />
-            </button>
-          </div>
 
-          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
-            <template v-if="mode === 'detail'">
-              <div>
-                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.basic }}</div>
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.title }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.title || "-" }}</div>
-                  </div>
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.category }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.category || "-" }}</div>
-                  </div>
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.icon }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.icon || "-" }}</div>
-                  </div>
-                  <div class="text-sm font-bold md:col-span-2">
-                    {{ copy.fields.description }}
-                    <div class="mt-2 min-h-24 whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.description || "-" }}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="border-t border-slate-100 pt-5">
-                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.pathThumbnail }}</div>
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.respath }}
-                    <div class="readonly-long-field">{{ form.respath || "-" }}</div>
-                  </div>
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.thumbnailObjectKey }}
-                    <div class="readonly-long-field">{{ form.thumbnail_object_key || "-" }}</div>
-                  </div>
-                  <div class="text-sm font-bold md:col-span-2">
-                    {{ copy.fields.thumbnailFileHash }}
-                    <div class="readonly-long-field">{{ form.thumbnail_file_hash || "-" }}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="border-t border-slate-100 pt-5">
-                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.system }}</div>
-                <div class="grid gap-4 md:grid-cols-3">
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.packId }}
-                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.pack_id || "-" }}</div>
-                  </div>
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.status }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">
-                      <span class="inline-flex rounded-full border px-2 py-0.5 text-xs font-black" :class="packStatusClass(form)" :title="String(form.status || '')">
-                        {{ packStatusLabel(form) }}
-                      </span>
+            <div class="min-h-0 flex-1 space-y-6 overflow-y-auto p-4 md:p-6">
+              <template v-if="mode === 'detail'">
+                <div>
+                  <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.basic }}</div>
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.title }}</span>
+                      <div class="readonly-field">{{ form.title || "-" }}</div>
+                    </div>
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.category }}</span>
+                      <div class="readonly-field">{{ form.category || "-" }}</div>
+                    </div>
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.icon }}</span>
+                      <div class="readonly-field">{{ form.icon || "-" }}</div>
+                    </div>
+                    <div class="grid content-start gap-1.5 md:col-span-2">
+                      <span class="ui-label">{{ copy.fields.description }}</span>
+                      <div class="readonly-field readonly-field--textarea">{{ form.description || "-" }}</div>
                     </div>
                   </div>
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.version }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.version || 0 }}</div>
-                  </div>
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.createdAt }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ formatDate(form.created_at) || "-" }}</div>
-                  </div>
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.updatedAt }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ formatDate(form.updated_at) || "-" }}</div>
-                  </div>
                 </div>
-              </div>
-            </template>
 
-            <template v-else>
-              <div>
-                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.basic }}</div>
-                <div class="grid gap-4 md:grid-cols-2">
-                  <label class="block">
-                    <span class="text-sm font-bold"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
-                    <input v-model="form.title" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.title" required />
-                  </label>
-                  <label class="block">
-                    <span class="flex items-center gap-1.5 text-sm font-bold">
-                      {{ copy.fields.category }}
-                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.categoryHint">
-                        <Info class="h-4 w-4" aria-hidden="true" />
-                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                          {{ copy.categoryHint }}
-                        </span>
-                      </span>
-                    </span>
-                    <input v-model="form.category" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.category" />
-                  </label>
-                  <label class="block">
-                    <span class="flex items-center gap-1.5 text-sm font-bold">
-                      {{ copy.fields.icon }}
-                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.iconHint">
-                        <Info class="h-4 w-4" aria-hidden="true" />
-                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                          {{ copy.iconHint }}
-                        </span>
-                      </span>
-                    </span>
-                    <input v-model="form.icon" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.icon" />
-                  </label>
-                  <label class="text-sm font-bold md:col-span-2">
-                    {{ copy.fields.description }}
-                    <textarea v-model="form.description" class="mt-2 min-h-24 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.description" />
-                  </label>
-                </div>
-              </div>
-
-              <div class="border-t border-slate-100 pt-5">
-                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.pathThumbnail }}</div>
-                <div class="grid gap-4 md:grid-cols-2">
-                  <label class="block">
-                    <span class="flex items-center gap-1.5 text-sm font-bold">
-                      <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.respath }}</span>
-                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.respathHint">
-                        <Info class="h-4 w-4" aria-hidden="true" />
-                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                          {{ copy.respathHint }}
-                        </span>
-                      </span>
-                    </span>
-                    <input v-model="form.respath" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.respath" required />
-                  </label>
-                  <label class="block">
-                    <span class="flex items-center gap-1.5 text-sm font-bold">
-                      {{ copy.fields.thumbnailObjectKey }}
-                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.objectKeyHint">
-                        <Info class="h-4 w-4" aria-hidden="true" />
-                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                          {{ copy.objectKeyHint }}
-                        </span>
-                      </span>
-                    </span>
-                    <div class="mt-2 flex flex-col gap-3 sm:flex-row">
-                      <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailFileUpload" />
-                      <input v-model="form.thumbnail_object_key" class="w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailObjectKey" />
-                      <button type="button" class="flex items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-2 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:shrink-0" :disabled="uploadingThumbnail || !form.pack_id" @click="thumbnailFileInput?.click()">
-                        <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
-                        <UploadCloud v-else class="h-4 w-4" />
-                        {{ uploadingThumbnail ? (copy as any).uploading : (copy as any).uploadThumbnail }}
-                      </button>
+                <div class="border-t border-hairline pt-6">
+                  <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.pathThumbnail }}</div>
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.respath }}</span>
+                      <div class="readonly-field readonly-field--long">{{ form.respath || "-" }}</div>
                     </div>
-                  </label>
-                  <label class="block md:col-span-2">
-                    <span class="flex items-center gap-1.5 text-sm font-bold">
-                      {{ copy.fields.thumbnailFileHash }}
-                      <span class="group relative inline-flex cursor-help rounded-full text-slate-600 outline-none transition-colors hover:text-slate-900 focus-visible:text-slate-900 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1" tabindex="0" :aria-label="copy.fileHashHint">
-                        <Info class="h-4 w-4" aria-hidden="true" />
-                        <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-md bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
-                          {{ copy.fileHashHint }}
-                        </span>
-                      </span>
-                    </span>
-                    <input v-model="form.thumbnail_file_hash" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2" :placeholder="copy.placeholders.thumbnailFileHash" />
-                  </label>
-                </div>
-              </div>
-
-              <div class="border-t border-slate-100 pt-5">
-                <div class="mb-3 text-sm font-black text-slate-950">{{ copy.sections.system }}</div>
-                <div class="grid gap-4 md:grid-cols-3">
-                  <div v-if="mode !== 'create'" class="text-sm font-bold">
-                    {{ copy.fields.packId }}
-                    <div class="mt-2 min-h-10 break-all rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ form.pack_id || "-" }}</div>
-                  </div>
-                  <div class="text-sm font-bold">
-                    {{ copy.fields.status }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">
-                      <span class="inline-flex rounded-full border px-2 py-0.5 text-xs font-black" :class="packStatusClass(form)" :title="String(form.status || '')">
-                        {{ packStatusLabel(form) }}
-                      </span>
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.thumbnailObjectKey }}</span>
+                      <div class="readonly-field readonly-field--long">{{ form.thumbnail_object_key || "-" }}</div>
+                    </div>
+                    <div class="grid content-start gap-1.5 md:col-span-2">
+                      <span class="ui-label">{{ copy.fields.thumbnailFileHash }}</span>
+                      <div class="readonly-field readonly-field--long">{{ form.thumbnail_file_hash || "-" }}</div>
                     </div>
                   </div>
-                  <label class="text-sm font-bold">
-                    {{ copy.fields.version }}
-                    <input v-model.number="form.version" class="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 disabled:bg-slate-100" type="number" min="0" :disabled="mode === 'create'" />
-                  </label>
-                  <div v-if="mode !== 'create'" class="text-sm font-bold">
-                    {{ copy.fields.createdAt }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ formatDate(form.created_at) || "-" }}</div>
-                  </div>
-                  <div v-if="mode !== 'create'" class="text-sm font-bold">
-                    {{ copy.fields.updatedAt }}
-                    <div class="mt-2 min-h-10 break-words rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-700">{{ formatDate(form.updated_at) || "-" }}</div>
+                </div>
+
+                <div class="border-t border-hairline pt-6">
+                  <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.system }}</div>
+                  <div class="grid gap-4 md:grid-cols-3">
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.packId }}</span>
+                      <div class="tnum readonly-field break-all">{{ form.pack_id || "-" }}</div>
+                    </div>
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.status }}</span>
+                      <div class="readonly-field readonly-field--compact">
+                        <span class="ui-badge" :class="packStatusClass(form)" :title="String(form.status || '')">
+                          {{ packStatusLabel(form) }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.version }}</span>
+                      <div class="tnum readonly-field readonly-field--compact">{{ form.version || 0 }}</div>
+                    </div>
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.createdAt }}</span>
+                      <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.created_at) || "-" }}</div>
+                    </div>
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.updatedAt }}</span>
+                      <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.updated_at) || "-" }}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </template>
 
-            </template>
-          </div>
+              <template v-else>
+                <div>
+                  <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.basic }}</div>
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <label class="grid content-start gap-1.5">
+                      <span class="ui-label"><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
+                      <input v-model="form.title" class="ui-input" :placeholder="copy.placeholders.title" required />
+                    </label>
+                    <label class="grid content-start gap-1.5">
+                      <span class="ui-label flex items-center gap-1.5">
+                        {{ copy.fields.category }}
+                        <span class="group relative inline-flex cursor-help rounded-full text-slate-400 outline-none transition-colors hover:text-slate-600 focus-visible:text-slate-600 focus-visible:ring-4 focus-visible:ring-primary-500/20" tabindex="0" :aria-label="copy.categoryHint">
+                          <Info class="h-4 w-4" aria-hidden="true" />
+                          <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                            {{ copy.categoryHint }}
+                          </span>
+                        </span>
+                      </span>
+                      <input v-model="form.category" class="ui-input" :placeholder="copy.placeholders.category" />
+                    </label>
+                    <label class="grid content-start gap-1.5">
+                      <span class="ui-label flex items-center gap-1.5">
+                        {{ copy.fields.icon }}
+                        <span class="group relative inline-flex cursor-help rounded-full text-slate-400 outline-none transition-colors hover:text-slate-600 focus-visible:text-slate-600 focus-visible:ring-4 focus-visible:ring-primary-500/20" tabindex="0" :aria-label="copy.iconHint">
+                          <Info class="h-4 w-4" aria-hidden="true" />
+                          <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                            {{ copy.iconHint }}
+                          </span>
+                        </span>
+                      </span>
+                      <input v-model="form.icon" class="ui-input" :placeholder="copy.placeholders.icon" />
+                    </label>
+                    <label class="grid content-start gap-1.5 md:col-span-2">
+                      <span class="ui-label">{{ copy.fields.description }}</span>
+                      <textarea v-model="form.description" class="ui-textarea" :placeholder="copy.placeholders.description" />
+                    </label>
+                  </div>
+                </div>
 
-          <div v-if="mode !== 'detail'" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
-            <button class="inline-flex h-10 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="savePack">
-              <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
-              <Save v-else class="h-4 w-4" />
-              {{ mode === "create" ? copy.createPack : copy.savePack }}
-            </button>
-          </div>
+                <div class="border-t border-hairline pt-6">
+                  <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.pathThumbnail }}</div>
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <label class="grid content-start gap-1.5">
+                      <span class="ui-label flex items-center gap-1.5">
+                        <span><span class="mr-1 text-danger-600" aria-hidden="true">*</span>{{ copy.fields.respath }}</span>
+                        <span class="group relative inline-flex cursor-help rounded-full text-slate-400 outline-none transition-colors hover:text-slate-600 focus-visible:text-slate-600 focus-visible:ring-4 focus-visible:ring-primary-500/20" tabindex="0" :aria-label="copy.respathHint">
+                          <Info class="h-4 w-4" aria-hidden="true" />
+                          <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                            {{ copy.respathHint }}
+                          </span>
+                        </span>
+                      </span>
+                      <input v-model="form.respath" class="ui-input" :placeholder="copy.placeholders.respath" required />
+                    </label>
+                    <label class="grid content-start gap-1.5">
+                      <span class="ui-label flex items-center gap-1.5">
+                        {{ copy.fields.thumbnailObjectKey }}
+                        <span class="group relative inline-flex cursor-help rounded-full text-slate-400 outline-none transition-colors hover:text-slate-600 focus-visible:text-slate-600 focus-visible:ring-4 focus-visible:ring-primary-500/20" tabindex="0" :aria-label="copy.objectKeyHint">
+                          <Info class="h-4 w-4" aria-hidden="true" />
+                          <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                            {{ copy.objectKeyHint }}
+                          </span>
+                        </span>
+                      </span>
+                      <div class="flex flex-col gap-3 sm:flex-row">
+                        <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailFileUpload" />
+                        <input v-model="form.thumbnail_object_key" class="ui-input" :placeholder="copy.placeholders.thumbnailObjectKey" />
+                        <button type="button" class="ui-btn ui-btn-secondary sm:shrink-0" :disabled="uploadingThumbnail || !form.pack_id" @click="thumbnailFileInput?.click()">
+                          <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
+                          <UploadCloud v-else class="h-4 w-4 text-slate-400" />
+                          {{ uploadingThumbnail ? (copy as any).uploading : (copy as any).uploadThumbnail }}
+                        </button>
+                      </div>
+                    </label>
+                    <label class="grid content-start gap-1.5 md:col-span-2">
+                      <span class="ui-label flex items-center gap-1.5">
+                        {{ copy.fields.thumbnailFileHash }}
+                        <span class="group relative inline-flex cursor-help rounded-full text-slate-400 outline-none transition-colors hover:text-slate-600 focus-visible:text-slate-600 focus-visible:ring-4 focus-visible:ring-primary-500/20" tabindex="0" :aria-label="copy.fileHashHint">
+                          <Info class="h-4 w-4" aria-hidden="true" />
+                          <span role="tooltip" class="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-72 max-w-[calc(100vw-2rem)] rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium leading-5 text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                            {{ copy.fileHashHint }}
+                          </span>
+                        </span>
+                      </span>
+                      <input v-model="form.thumbnail_file_hash" class="ui-input" :placeholder="copy.placeholders.thumbnailFileHash" />
+                    </label>
+                  </div>
+                </div>
+
+                <div class="border-t border-hairline pt-6">
+                  <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.system }}</div>
+                  <div class="grid gap-4 md:grid-cols-3">
+                    <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.packId }}</span>
+                      <div class="tnum readonly-field break-all">{{ form.pack_id || "-" }}</div>
+                    </div>
+                    <div class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.status }}</span>
+                      <div class="readonly-field readonly-field--compact">
+                        <span class="ui-badge" :class="packStatusClass(form)" :title="String(form.status || '')">
+                          {{ packStatusLabel(form) }}
+                        </span>
+                      </div>
+                    </div>
+                    <label class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.version }}</span>
+                      <input v-model.number="form.version" class="tnum ui-input" type="number" min="0" :disabled="mode === 'create'" />
+                    </label>
+                    <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.createdAt }}</span>
+                      <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.created_at) || "-" }}</div>
+                    </div>
+                    <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
+                      <span class="ui-label">{{ copy.fields.updatedAt }}</span>
+                      <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.updated_at) || "-" }}</div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <div v-if="mode !== 'detail'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">
+              <button class="ui-btn ui-btn-primary w-full sm:w-auto" type="button" :disabled="saving" @click="savePack">
+                <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
+                <Save v-else class="h-4 w-4" />
+                {{ mode === "create" ? copy.createPack : copy.savePack }}
+              </button>
+            </div>
+          </section>
         </div>
-      </section>
+      </Transition>
+    </Teleport>
 
-      <Teleport to="body">
-        <div v-if="deleteConfirmOpen && selected" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 md:p-6">
-          <section class="w-full max-w-[460px] rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
-            <h2 class="text-xl font-black text-slate-950 md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
-            <p class="mt-3 text-sm font-semibold text-slate-500">{{ copy.deleteConfirmDescription }}</p>
-            <div class="mt-5 rounded-2xl bg-slate-50 p-4">
-              <div class="break-words font-black text-slate-950">{{ packTitle(selected) }}</div>
-              <div class="mt-1 break-all text-sm font-semibold text-slate-500">{{ packId(selected) }}</div>
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="deleteConfirmOpen && selected" class="ui-modal-mask z-50">
+          <section class="ui-modal-panel md:max-w-md">
+            <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.deleteConfirmTitle }}</h2>
             </div>
-            <div class="mt-6 flex flex-col justify-end gap-3 sm:flex-row">
-              <button class="rounded-xl border border-slate-900 px-5 py-3 font-bold text-slate-950 disabled:opacity-50" type="button" :disabled="saving" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
-              <button class="rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50" type="button" :disabled="saving" @click="deletePack">
+            <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <p class="text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
+              <div class="mt-4 rounded-[10px] bg-slate-50 p-4">
+                <div class="break-words text-sm font-semibold text-ink">{{ packTitle(selected) }}</div>
+                <div class="tnum mt-1 break-all text-xs text-slate-400">{{ packId(selected) }}</div>
+              </div>
+            </div>
+            <div class="flex flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">
+              <button class="ui-btn ui-btn-secondary" type="button" :disabled="saving" @click="closeDeleteConfirm">{{ copy.cancel }}</button>
+              <button class="ui-btn ui-btn-danger" type="button" :disabled="saving" @click="deletePack">
                 {{ saving ? copy.deleting : copy.confirmDeleteAction }}
               </button>
             </div>
           </section>
         </div>
-      </Teleport>
-    </div>
-  </section>
+      </Transition>
+    </Teleport>
+  </main>
 </template>
 
 <style scoped>
-.readonly-long-field {
-  min-height: 4.75rem;
-  margin-top: 0.5rem;
+.readonly-field {
+  min-height: 2.5rem;
   width: 100%;
   border: 1px solid #e2e8f0;
-  border-radius: 0.75rem;
+  border-radius: 10px;
   background: #f8fafc;
-  padding: 0.625rem 0.75rem;
-  color: #334155;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  line-height: 1.45;
+  padding: 0.5rem 0.75rem;
+  color: #475569;
+  font-size: 0.875rem;
+  line-height: 1.5;
   overflow-wrap: anywhere;
-  word-break: break-all;
   white-space: pre-wrap;
 }
+
+.readonly-field--compact {
+  display: flex;
+  align-items: center;
+}
+
+.readonly-field--long {
+  min-height: 4.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  word-break: break-all;
+}
+
+.readonly-field--textarea {
+  min-height: 6rem;
+}
+
+.ui-textarea {
+  min-height: 6rem;
+  width: 100%;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.ui-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.ui-textarea:focus {
+  border-color: #a5b4fc;
+  outline: none;
+  box-shadow: 0 0 0 4px rgb(99 102 241 / 0.1);
+}
 </style>
-
-

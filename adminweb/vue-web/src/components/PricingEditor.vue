@@ -311,60 +311,60 @@ function unlockOptionDisabled(optionId: string, currentKey: number) {
 
 <template>
   <div class="grid gap-5">
-    <section class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-      <h4 class="font-black text-blue-950">{{ copy.title }}</h4>
-      <p class="mt-1 text-sm font-semibold leading-6 text-blue-800">{{ copy.stripePairHint }}</p>
+    <section class="rounded-2xl bg-primary-50 p-4">
+      <h4 class="text-sm font-semibold text-primary-700">{{ copy.title }}</h4>
+      <p class="mt-1 text-sm leading-6 text-slate-600">{{ copy.stripePairHint }}</p>
     </section>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-4">
-      <label class="grid gap-2 text-sm font-bold">
-        {{ copy.packageCoupon }}
-        <input v-model="state.package_coupon" class="rounded-xl border border-slate-200 px-4 py-3 font-normal" :placeholder="copy.packageCouponPlaceholder" />
+    <section class="rounded-2xl border border-edge bg-white p-4">
+      <label class="grid gap-1.5">
+        <span class="ui-label">{{ copy.packageCoupon }}</span>
+        <input v-model="state.package_coupon" class="ui-input" :placeholder="copy.packageCouponPlaceholder" />
       </label>
     </section>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-4">
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+    <section class="rounded-2xl border border-edge bg-white p-4">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-3">
         <div>
-          <h4 class="font-black text-slate-900">{{ copy.unitsTitle }}</h4>
-          <p class="mt-1 text-xs font-semibold text-slate-500">{{ copy.unitsHint }}</p>
+          <h4 class="text-base font-semibold text-ink">{{ copy.unitsTitle }}</h4>
+          <p class="mt-1 text-xs text-slate-400">{{ copy.unitsHint }}</p>
         </div>
-        <button type="button" class="inline-flex items-center gap-1 rounded-lg bg-sky-50 px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="unitOptions.length > 0 && !availableUnitOptions.length" @click="addUnit">
-          <Plus class="h-3 w-3" />
+        <button type="button" class="ui-btn ui-btn-secondary ui-btn-sm" :disabled="unitOptions.length > 0 && !availableUnitOptions.length" @click="addUnit">
+          <Plus class="h-4 w-4 text-slate-400" />
           {{ copy.addUnit }}
         </button>
       </div>
 
-      <div v-if="!state.units.length" class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+      <div v-if="!state.units.length" class="rounded-[10px] border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
         {{ copy.emptyUnits }}
       </div>
 
       <div v-else class="grid gap-4">
-        <div v-for="(unit, index) in state.units" :key="unit.key" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div v-for="(unit, index) in state.units" :key="unit.key" class="rounded-2xl bg-slate-50 p-4">
           <div class="mb-4 flex items-center justify-between gap-3">
-            <label class="grid flex-1 gap-2 text-sm font-bold">
-              {{ copy.unitId }}
-              <select v-if="unitOptions.length" v-model="unit.unit_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal">
+            <label class="grid flex-1 gap-1.5">
+              <span class="ui-label">{{ copy.unitId }}</span>
+              <select v-if="unitOptions.length" v-model="unit.unit_id" class="ui-input">
                 <option value="">{{ copy.selectUnit }}</option>
                 <option v-for="option in unitOptions" :key="option.id" :value="option.id" :disabled="unitOptionDisabled(option.id, unit.key)">{{ option.label }}</option>
               </select>
-              <input v-else v-model="unit.unit_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-normal" :placeholder="copy.unitIdPlaceholder" />
+              <input v-else v-model="unit.unit_id" class="ui-input tnum font-mono text-xs" :placeholder="copy.unitIdPlaceholder" />
             </label>
-            <button type="button" class="mt-7 rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" :aria-label="copy.delete" @click="state.units.splice(index, 1)">
+            <button type="button" class="mt-[26px] inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600" :aria-label="copy.delete" @click="state.units.splice(index, 1)">
               <Trash2 class="h-4 w-4" />
             </button>
           </div>
 
           <div class="grid gap-3 xl:grid-cols-3">
-            <div v-for="priceType in (['access', 'retake', 'exemption'] as const)" :key="priceType" class="rounded-xl border border-slate-200 bg-white p-3">
-              <div class="mb-3 text-xs font-black uppercase tracking-wide text-slate-500">{{ copy[priceType] }}</div>
-              <label class="grid gap-1 text-xs font-bold text-slate-600">
-                {{ copy.productId }}
-                <input v-model="unit[priceType].stripe_product_id" class="rounded-lg border border-slate-200 px-3 py-2 font-mono font-normal" placeholder="prod_..." />
+            <div v-for="priceType in (['access', 'retake', 'exemption'] as const)" :key="priceType" class="rounded-[10px] border border-edge bg-white p-3">
+              <div class="mb-3 text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy[priceType] }}</div>
+              <label class="grid gap-1.5">
+                <span class="text-xs font-medium text-slate-500">{{ copy.productId }}</span>
+                <input v-model="unit[priceType].stripe_product_id" class="ui-input tnum font-mono text-xs" placeholder="prod_..." />
               </label>
-              <label class="mt-3 grid gap-1 text-xs font-bold text-slate-600">
-                {{ copy.priceId }}
-                <input v-model="unit[priceType].stripe_price_id" class="rounded-lg border border-slate-200 px-3 py-2 font-mono font-normal" placeholder="price_..." />
+              <label class="mt-3 grid gap-1.5">
+                <span class="text-xs font-medium text-slate-500">{{ copy.priceId }}</span>
+                <input v-model="unit[priceType].stripe_price_id" class="ui-input tnum font-mono text-xs" placeholder="price_..." />
               </label>
             </div>
           </div>
@@ -372,50 +372,50 @@ function unlockOptionDisabled(optionId: string, currentKey: number) {
       </div>
     </section>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-4">
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+    <section class="rounded-2xl border border-edge bg-white p-4">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-3">
         <div>
-          <h4 class="font-black text-slate-900">{{ copy.membershipsTitle }}</h4>
-          <p class="mt-1 text-xs font-semibold text-slate-500">{{ copy.membershipsHint }}</p>
+          <h4 class="text-base font-semibold text-ink">{{ copy.membershipsTitle }}</h4>
+          <p class="mt-1 text-xs text-slate-400">{{ copy.membershipsHint }}</p>
         </div>
-        <button type="button" class="inline-flex items-center gap-1 rounded-lg bg-sky-50 px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="state.memberships.length >= 1 || !membershipOptions.length" @click="addMembership">
-          <Plus class="h-3 w-3" />
+        <button type="button" class="ui-btn ui-btn-secondary ui-btn-sm" :disabled="state.memberships.length >= 1 || !membershipOptions.length" @click="addMembership">
+          <Plus class="h-4 w-4 text-slate-400" />
           {{ copy.addMembership }}
         </button>
       </div>
 
-      <div v-if="!state.memberships.length" class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+      <div v-if="!state.memberships.length" class="rounded-[10px] border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
         {{ membershipOptions.length ? copy.emptyMemberships : copy.noLinkedMembership }}
       </div>
 
-      <div v-for="(membership, index) in state.memberships" v-else :key="membership.key" class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div v-for="(membership, index) in state.memberships" v-else :key="membership.key" class="rounded-2xl bg-slate-50 p-4">
         <div class="grid gap-4 lg:grid-cols-2">
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.membershipId }}
-            <select v-model="membership.membership_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal" @change="updateMembershipDuration(membership)">
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.membershipId }}</span>
+            <select v-model="membership.membership_id" class="ui-input" @change="updateMembershipDuration(membership)">
               <option value="">{{ copy.selectMembership }}</option>
               <option v-for="option in membershipOptions" :key="option.id" :value="option.id">{{ option.label }}</option>
             </select>
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.durationMonths }}
-            <input v-model.number="membership.duration_months" type="number" min="1" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal" />
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.durationMonths }}</span>
+            <input v-model.number="membership.duration_months" type="number" min="1" class="ui-input tnum" />
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.productId }}
-            <input v-model="membership.stripe_product_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-normal" placeholder="prod_..." />
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.productId }}</span>
+            <input v-model="membership.stripe_product_id" class="ui-input tnum font-mono text-xs" placeholder="prod_..." />
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.priceId }}
-            <input v-model="membership.stripe_price_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-normal" placeholder="price_..." />
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.priceId }}</span>
+            <input v-model="membership.stripe_price_id" class="ui-input tnum font-mono text-xs" placeholder="price_..." />
           </label>
-          <label class="grid gap-2 text-sm font-bold lg:col-span-2">
-            {{ copy.discountCoupon }}
-            <input v-model="membership.discount_coupon" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-normal" :placeholder="copy.discountCouponPlaceholder" />
+          <label class="grid gap-1.5 lg:col-span-2">
+            <span class="ui-label">{{ copy.discountCoupon }}</span>
+            <input v-model="membership.discount_coupon" class="ui-input tnum font-mono text-xs" :placeholder="copy.discountCouponPlaceholder" />
           </label>
         </div>
         <div class="mt-4 flex justify-end">
-          <button type="button" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-red-600 hover:bg-red-50" @click="state.memberships.splice(index, 1)">
+          <button type="button" class="inline-flex h-8 items-center gap-2 rounded-lg px-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50" @click="state.memberships.splice(index, 1)">
             <Trash2 class="h-4 w-4" />
             {{ copy.delete }}
           </button>
@@ -423,77 +423,77 @@ function unlockOptionDisabled(optionId: string, currentKey: number) {
       </div>
     </section>
 
-    <section class="rounded-2xl border border-slate-200 bg-white p-4">
-      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+    <section class="rounded-2xl border border-edge bg-white p-4">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-hairline pb-3">
         <div>
-          <h4 class="font-black text-slate-900">{{ copy.qualReviewsTitle }}</h4>
-          <p class="mt-1 text-xs font-semibold text-slate-500">{{ copy.qualReviewsHint }}</p>
+          <h4 class="text-base font-semibold text-ink">{{ copy.qualReviewsTitle }}</h4>
+          <p class="mt-1 text-xs text-slate-400">{{ copy.qualReviewsHint }}</p>
         </div>
-        <button type="button" class="inline-flex items-center gap-1 rounded-lg bg-sky-50 px-3 py-2 text-xs font-bold text-sky-700 hover:bg-sky-100" @click="addQualReview">
-          <Plus class="h-3 w-3" />
+        <button type="button" class="ui-btn ui-btn-secondary ui-btn-sm" @click="addQualReview">
+          <Plus class="h-4 w-4 text-slate-400" />
           {{ copy.addQualReview }}
         </button>
       </div>
 
-      <div v-if="!state.qual_reviews.length" class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+      <div v-if="!state.qual_reviews.length" class="rounded-[10px] border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
         {{ copy.emptyQualReviews }}
       </div>
 
       <div v-else class="grid gap-3">
-        <div v-for="(review, index) in state.qual_reviews" :key="review.key" class="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.qualId }}
-            <input v-model="review.qual_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-normal" :placeholder="copy.qualIdPlaceholder" />
+        <div v-for="(review, index) in state.qual_reviews" :key="review.key" class="grid gap-3 rounded-2xl bg-slate-50 p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.qualId }}</span>
+            <input v-model="review.qual_id" class="ui-input tnum font-mono text-xs" :placeholder="copy.qualIdPlaceholder" />
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.productId }}
-            <input v-model="review.stripe_product_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-normal" placeholder="prod_..." />
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.productId }}</span>
+            <input v-model="review.stripe_product_id" class="ui-input tnum font-mono text-xs" placeholder="prod_..." />
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.priceId }}
-            <input v-model="review.stripe_price_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-mono text-xs font-normal" placeholder="price_..." />
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.priceId }}</span>
+            <input v-model="review.stripe_price_id" class="ui-input tnum font-mono text-xs" placeholder="price_..." />
           </label>
-          <button type="button" class="mt-7 rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" :aria-label="copy.delete" @click="state.qual_reviews.splice(index, 1)">
+          <button type="button" class="mt-[26px] inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600" :aria-label="copy.delete" @click="state.qual_reviews.splice(index, 1)">
             <Trash2 class="h-4 w-4" />
           </button>
         </div>
       </div>
     </section>
 
-    <section class="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+    <section class="rounded-2xl bg-amber-50 p-4">
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-amber-200 pb-3">
         <div>
-          <h4 class="font-black text-amber-950">{{ copy.unlocksTitle }}</h4>
-          <p class="mt-1 text-xs font-semibold leading-5 text-amber-800">{{ copy.unlocksHint }}</p>
+          <h4 class="text-base font-semibold text-amber-700">{{ copy.unlocksTitle }}</h4>
+          <p class="mt-1 text-xs leading-5 text-amber-700">{{ copy.unlocksHint }}</p>
         </div>
-        <button type="button" class="inline-flex items-center gap-1 rounded-lg bg-white px-3 py-2 text-xs font-bold text-amber-800 shadow-sm hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50" :disabled="!availableUnlockOptions.length" @click="addUnlock">
-          <Plus class="h-3 w-3" />
+        <button type="button" class="ui-btn ui-btn-secondary ui-btn-sm" :disabled="!availableUnlockOptions.length" @click="addUnlock">
+          <Plus class="h-4 w-4 text-slate-400" />
           {{ copy.addUnlock }}
         </button>
       </div>
 
-      <div v-if="!state.unlocks.length" class="rounded-xl border border-dashed border-amber-200 bg-white/70 p-4 text-center text-sm text-amber-800">
+      <div v-if="!state.unlocks.length" class="rounded-[10px] border border-dashed border-amber-200 bg-white/70 p-4 text-center text-sm text-amber-700">
         {{ pipelineOptions.length ? copy.emptyUnlocks : copy.noLinkedPipeline }}
       </div>
 
       <div v-else class="grid gap-3">
-        <div v-for="(unlock, index) in state.unlocks" :key="unlock.key" class="grid gap-3 rounded-xl border border-amber-200 bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.targetId }}
-            <select v-model="unlock.target_id" class="rounded-lg border border-slate-200 bg-white px-3 py-2 font-normal">
+        <div v-for="(unlock, index) in state.unlocks" :key="unlock.key" class="grid gap-3 rounded-2xl bg-white p-4 lg:grid-cols-[1fr_1fr_1fr_auto]">
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.targetId }}</span>
+            <select v-model="unlock.target_id" class="ui-input">
               <option value="">{{ copy.selectPipeline }}</option>
               <option v-for="option in pipelineOptions" :key="option.id" :value="option.id" :disabled="unlockOptionDisabled(option.id, unlock.key)">{{ option.label }}</option>
             </select>
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.productId }}
-            <input v-model="unlock.stripe_product_id" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs font-normal" placeholder="prod_..." />
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.productId }}</span>
+            <input v-model="unlock.stripe_product_id" class="ui-input tnum font-mono text-xs" placeholder="prod_..." />
           </label>
-          <label class="grid gap-2 text-sm font-bold">
-            {{ copy.priceId }}
-            <input v-model="unlock.stripe_price_id" class="rounded-lg border border-slate-200 px-3 py-2 font-mono text-xs font-normal" placeholder="price_..." />
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.priceId }}</span>
+            <input v-model="unlock.stripe_price_id" class="ui-input tnum font-mono text-xs" placeholder="price_..." />
           </label>
-          <button type="button" class="mt-7 rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600" :aria-label="copy.delete" @click="state.unlocks.splice(index, 1)">
+          <button type="button" class="mt-[26px] inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600" :aria-label="copy.delete" @click="state.unlocks.splice(index, 1)">
             <Trash2 class="h-4 w-4" />
           </button>
         </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, UploadCloud, X } from "lucide-vue-next"
+import { Boxes, Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 
@@ -1231,220 +1231,242 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1580px] flex-col gap-5 px-4 py-5 md:gap-6 md:px-8 md:py-8">
-    <header class="flex flex-wrap items-start justify-between gap-4">
+  <main class="ui-page">
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
-        <h1 class="text-3xl font-black tracking-tight md:text-4xl">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button class="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-700 px-4 text-sm font-bold text-white shadow-sm" type="button" @click="newBundle">
+        <button class="ui-btn ui-btn-primary" type="button" @click="newBundle">
           <Plus class="h-4 w-4" />
           {{ copy.newBundle }}
         </button>
-        <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm" type="button" @click="syncDisplayPricing">
-          <RefreshCw class="h-4 w-4" />
+        <button class="ui-btn ui-btn-secondary" type="button" @click="syncDisplayPricing">
+          <RefreshCw class="h-4 w-4 text-slate-400" />
           {{ copy.syncDisplayPricing }}
         </button>
-        <button class="inline-flex h-10 items-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm" type="button" @click="load">
-          <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
+        <button class="ui-btn ui-btn-secondary" type="button" @click="load">
+          <RefreshCw class="h-4 w-4 text-slate-400" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
       </div>
     </header>
 
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm md:rounded-3xl">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 px-4 py-4 md:p-5">
+    <section class="ui-card mt-6 overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
           <div class="flex min-w-0 flex-wrap items-center gap-3">
             <div class="min-w-0">
-              <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+              <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
             </div>
-          <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+          <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
           </div>
-          <select v-model="statusFilter" class="h-11 w-full rounded-xl border border-slate-200 px-4 text-sm md:w-64">
+          <select v-model="statusFilter" class="ui-input md:w-64">
             <option value="">{{ copy.allStatus }}</option>
             <option value="Draft">{{ copy.statusOptions.Draft }}</option>
             <option value="Active">{{ copy.statusOptions.Active }}</option>
             <option value="Deprecated">{{ copy.statusOptions.Deprecated }}</option>
           </select>
         </div>
-        <div v-if="loading" class="px-4 py-10 text-center text-slate-500 md:p-12">
-          <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-          {{ copy.loading }}
+        <div v-if="loading" class="divide-y divide-hairline">
+          <div
+            v-for="i in 5"
+            :key="`sk-${i}`"
+            class="grid grid-cols-1 gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] md:items-center md:gap-4 md:px-6 md:py-3.5"
+          >
+            <div class="space-y-2">
+              <div class="skeleton h-4 w-2/5" />
+              <div class="skeleton h-3.5 w-4/5" />
+            </div>
+            <div class="skeleton h-5 w-16 rounded-full md:justify-self-center" />
+            <div class="skeleton hidden h-4 w-10 md:block md:justify-self-center" />
+            <div class="skeleton hidden h-4 w-20 md:block md:justify-self-end" />
+            <div class="skeleton hidden h-4 w-14 md:block md:justify-self-end" />
+          </div>
         </div>
         <template v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] gap-4 border-b border-slate-100 bg-slate-50 px-5 py-3 text-xs font-black uppercase tracking-wide text-slate-500 md:grid">
+          <div class="ui-table-head hidden grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] gap-4 px-4 py-3 md:grid md:px-6">
             <span>{{ copy.columns.bundle }}</span>
             <span class="text-center">{{ copy.columns.status }}</span>
             <span class="text-center">{{ copy.columns.version }}</span>
             <span class="text-right">{{ copy.columns.updatedAt }}</span>
             <span class="text-right">{{ copy.columns.action }}</span>
           </div>
-          <div
-            v-for="bundle in bundles"
-            :key="bundleUlid(bundle)"
-            class="flex w-full cursor-pointer flex-col gap-3 border-b border-slate-100 px-4 py-4 text-left transition last:border-b-0 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200 md:grid md:grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] md:gap-4 md:px-5"
-            :class="mode === 'detail' && selectedId === bundleUlid(bundle) ? 'bg-sky-50' : ''"
-            role="button"
-            tabindex="0"
-            @click="selectBundle(bundle)"
-            @keydown.enter.prevent="selectBundle(bundle)"
-            @keydown.space.prevent="selectBundle(bundle)"
-          >
-            <div class="min-w-0">
-              <div class="break-words text-lg font-black md:truncate">{{ bundleName(bundle) }}</div>
-              <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ bundle.description || copy.noDescription }}</div>
-              <div class="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
-                <span class="max-w-full break-all rounded-full bg-slate-100 px-2 py-1">{{ copy.displayPricePrefix }}{{ displayPrice(bundle) }}</span>
-                <span v-if="bundleTargetSummary(bundle)" class="max-w-full break-all rounded-full bg-slate-100 px-2 py-1">{{ copy.linkedTargetPrefix }}{{ bundleTargetSummary(bundle) }}</span>
-                <span class="max-w-full break-all rounded-full bg-slate-100 px-2 py-1">{{ copy.fields.idPrefix }}{{ bundleUlid(bundle) || "-" }}</span>
+          <div class="divide-y divide-hairline">
+            <div
+              v-for="bundle in bundles"
+              :key="bundleUlid(bundle)"
+              class="ui-table-row flex w-full cursor-pointer flex-col gap-3 px-4 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] md:gap-4 md:px-6 md:py-3.5"
+              :class="mode === 'detail' && selectedId === bundleUlid(bundle) ? 'bg-primary-50/60' : ''"
+              role="button"
+              tabindex="0"
+              @click="selectBundle(bundle)"
+              @keydown.enter.prevent="selectBundle(bundle)"
+              @keydown.space.prevent="selectBundle(bundle)"
+            >
+              <div class="min-w-0">
+                <div class="break-words font-medium text-ink md:truncate">{{ bundleName(bundle) }}</div>
+                <div class="mt-0.5 line-clamp-1 text-sm text-slate-500">{{ bundle.description || copy.noDescription }}</div>
+                <div class="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-600">
+                  <span class="tnum max-w-full break-all rounded-full bg-slate-100 px-2.5 py-1">{{ copy.displayPricePrefix }}{{ displayPrice(bundle) }}</span>
+                  <span v-if="bundleTargetSummary(bundle)" class="tnum max-w-full break-all rounded-full bg-slate-100 px-2.5 py-1">{{ copy.linkedTargetPrefix }}{{ bundleTargetSummary(bundle) }}</span>
+                  <span class="tnum max-w-full break-all rounded-full bg-slate-100 px-2.5 py-1">{{ copy.fields.idPrefix }}{{ bundleUlid(bundle) || "-" }}</span>
+                </div>
               </div>
+              <span class="flex items-center justify-between gap-3 md:block md:self-center md:justify-self-center">
+                <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
+                <span class="ui-badge" :class="badgeClass(bundleStatusBadgeValue(bundle))">{{ bundleStatusLabel(bundle) }}</span>
+              </span>
+              <span class="flex items-center justify-between gap-3 md:block md:self-center md:text-center">
+                <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.version }}</span>
+                <span class="tnum text-sm text-slate-600">{{ copy.fields.versionPrefix }} {{ bundle.version || 0 }}</span>
+              </span>
+              <span class="flex items-center justify-between gap-3 md:block md:self-center md:justify-self-end md:text-right">
+                <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
+                <span class="tnum text-sm text-slate-500">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</span>
+              </span>
+              <button
+                class="inline-flex h-8 items-center justify-center rounded-lg text-sm font-medium text-primary-700 transition-colors hover:text-primary-600 md:self-center md:justify-self-end"
+                type="button"
+                @click.stop="selectBundle(bundle)"
+              >
+                {{ copy.viewDetails }}
+              </button>
             </div>
-            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-center md:rounded-none md:bg-transparent md:p-0">
-              <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.status }}</span>
-              <span class="inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(bundleStatusBadgeValue(bundle))">{{ bundleStatusLabel(bundle) }}</span>
-            </span>
-            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:rounded-none md:bg-transparent md:p-0 md:text-center">
-              <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.version }}</span>
-              <span class="text-sm font-black text-slate-700">{{ copy.fields.versionPrefix }} {{ bundle.version || 0 }}</span>
-            </span>
-            <span class="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-3 py-2 md:block md:self-center md:justify-self-end md:rounded-none md:bg-transparent md:p-0 md:text-right">
-              <span class="text-xs font-black text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
-              <span class="text-sm font-semibold text-slate-500">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</span>
-            </span>
-            <button class="inline-flex items-center justify-center rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:underline md:self-center md:justify-self-end md:border-0 md:bg-transparent md:px-0 md:py-0" type="button" @click.stop="selectBundle(bundle)">
-              {{ copy.viewDetails }}
-            </button>
           </div>
         </template>
-        <div v-if="!loading && !bundles.length" class="px-4 py-10 text-center text-slate-500 md:p-12">{{ copy.empty }}</div>
-        <div class="flex flex-col items-stretch justify-between gap-3 border-t border-slate-200 px-4 py-4 sm:flex-row sm:items-center md:p-5">
-          <span class="text-center text-sm font-bold text-slate-500 sm:text-left">{{ copy.pageText(currentPage, totalPages, total) }}</span>
-          <div class="flex gap-3">
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canPrev" @click="prevPage">{{ copy.prev }}</button>
-            <button class="rounded-xl border px-4 py-2 font-bold disabled:opacity-40" type="button" :disabled="!canNext" @click="nextPage">{{ copy.next }}</button>
+        <div v-if="!loading && !bundles.length" class="ui-empty">
+          <div class="ui-empty-icon"><Boxes class="h-6 w-6" /></div>
+          <p class="ui-empty-title">{{ copy.empty }}</p>
+        </div>
+        <div class="flex flex-col items-stretch justify-between gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+          <span class="tnum text-center text-sm text-slate-500 sm:text-left">{{ copy.pageText(currentPage, totalPages, total) }}</span>
+          <div class="flex flex-col gap-2 sm:flex-row">
+            <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canPrev" @click="prevPage">{{ copy.prev }}</button>
+            <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canNext" @click="nextPage">{{ copy.next }}</button>
           </div>
         </div>
     </section>
 
     <Teleport to="body">
-      <div v-if="detailOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-0 md:p-6">
-        <section class="flex h-full max-h-none w-full max-w-[1320px] flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
+      <Transition name="modal">
+        <div v-if="detailOpen" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-[1280px]">
         <template v-if="mode === 'create'">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-4 md:p-5">
+          <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
             <div class="min-w-0">
-              <h2 class="break-words text-xl font-black md:text-2xl">{{ copy.createTitle }}</h2>
+              <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ copy.createTitle }}</h2>
               <p class="mt-1 text-sm text-slate-500">{{ copy.createDescription }}</p>
             </div>
-            <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
+            <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="closeDetail">
               <X class="h-5 w-5" />
             </button>
           </div>
-          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-5">
-            <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+          <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-6">
+            <section class="rounded-2xl border border-edge p-4 md:p-5">
               <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <h3 class="text-lg font-black text-slate-950">{{ copy.createSections.linkTarget }}</h3>
+                  <h3 class="text-base font-semibold text-ink">{{ copy.createSections.linkTarget }}</h3>
                   <p class="mt-1 text-sm text-slate-500">{{ copy.createSections.linkTargetDesc }}</p>
                 </div>
                 <div class="flex items-center gap-3">
-                  <Loader2 v-if="targetOptionsLoading" class="h-5 w-5 animate-spin text-slate-400" />
-                  <button class="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" type="button" :disabled="createItems.length >= 2" @click="addCreateItem">
+                  <Loader2 v-if="targetOptionsLoading" class="h-4 w-4 animate-spin text-slate-400" />
+                  <button class="ui-btn ui-btn-primary" type="button" :disabled="createItems.length >= 2" @click="addCreateItem">
                     <Plus class="h-4 w-4" />
                     {{ copy.addLinkedItem }}
                   </button>
                 </div>
               </div>
               <div class="mt-4 grid gap-4">
-                <div v-for="(item, index) in createItems" :key="item.key" class="rounded-2xl border border-slate-200 bg-white p-4">
+                <div v-for="(item, index) in createItems" :key="item.key" class="rounded-2xl border border-edge bg-white p-4">
                   <div class="grid gap-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_auto]">
-                    <label class="grid gap-2 text-sm font-bold">
-                      <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.itemType }}</span>
-                      <select v-model="item.item_type" class="h-11 rounded-xl border border-slate-200 bg-white px-4" @change="changeCreateItemType(item)">
+                    <label class="grid gap-1.5">
+                      <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.itemType }}</span>
+                      <select v-model="item.item_type" class="ui-input" @change="changeCreateItemType(item)">
                         <option v-for="option in createItemTypeOptions" :key="option.value" :value="option.value" :disabled="createItemTypeDisabled(item, option.value)">
                           {{ option.label }}
                         </option>
                       </select>
-                      <p class="text-xs font-semibold text-slate-500">{{ copy.itemTypeHint }}</p>
+                      <p class="text-xs text-slate-400">{{ copy.itemTypeHint }}</p>
                     </label>
-                    <label class="grid gap-2 text-sm font-bold">
-                      <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.linkedTarget }}</span>
-                      <select v-model="item.ref_ulid" class="h-11 rounded-xl border border-slate-200 bg-white px-4" :disabled="targetOptionsLoading || !createTargetOptions(item.item_type).length">
+                    <label class="grid gap-1.5">
+                      <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.linkedTarget }}</span>
+                      <select v-model="item.ref_ulid" class="ui-input" :disabled="targetOptionsLoading || !createTargetOptions(item.item_type).length">
                         <option value="" disabled>{{ targetOptionsLoading ? copy.loadingTargets : copy.selectLinkedTarget }}</option>
                         <option v-for="option in createTargetOptions(item.item_type)" :key="option.id" :value="option.id">{{ option.title }} · {{ option.subtitle }}</option>
                       </select>
-                      <p class="text-xs font-semibold text-slate-500">{{ createTargetOptions(item.item_type).length ? copy.linkedTargetHint : copy.noLinkedTargets }}</p>
+                      <p class="text-xs text-slate-400">{{ createTargetOptions(item.item_type).length ? copy.linkedTargetHint : copy.noLinkedTargets }}</p>
                     </label>
-                    <button class="mt-7 inline-flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 text-slate-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40" type="button" :disabled="createItems.length <= 1" :aria-label="copy.removeLinkedItem" @click="removeCreateItem(index)">
+                    <button class="mt-[26px] inline-flex h-10 w-10 items-center justify-center rounded-[10px] border border-slate-200 text-slate-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40" type="button" :disabled="createItems.length <= 1" :aria-label="copy.removeLinkedItem" @click="removeCreateItem(index)">
                       <Trash2 class="h-4 w-4" />
                     </button>
                   </div>
-                  <div v-if="selectedCreateTarget(item)" class="mt-4 rounded-xl border border-sky-100 bg-sky-50 p-4">
-                    <div class="text-xs font-black uppercase tracking-wide text-slate-400">{{ copy.selectedTarget }}</div>
-                    <div class="mt-2 text-base font-black text-slate-950">{{ selectedCreateTarget(item)?.title }}</div>
-                    <div class="mt-1 break-all text-xs font-semibold text-slate-500">{{ selectedCreateTarget(item)?.subtitle }}</div>
+                  <div v-if="selectedCreateTarget(item)" class="mt-4 rounded-[10px] bg-primary-50 p-4">
+                    <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.selectedTarget }}</div>
+                    <div class="mt-2 text-sm font-semibold text-ink">{{ selectedCreateTarget(item)?.title }}</div>
+                    <div class="tnum mt-1 break-all text-xs text-slate-500">{{ selectedCreateTarget(item)?.subtitle }}</div>
                   </div>
                 </div>
               </div>
             </section>
 
-            <section class="rounded-2xl border border-slate-200 p-4 md:p-5">
-              <h3 class="text-lg font-black text-slate-950">{{ copy.createSections.basicInfo }}</h3>
+            <section class="rounded-2xl border border-edge p-4 md:p-5">
+              <h3 class="text-base font-semibold text-ink">{{ copy.createSections.basicInfo }}</h3>
               <p class="mt-1 text-sm text-slate-500">{{ copy.createSections.basicInfoDesc }}</p>
               <div class="mt-4 grid gap-4 md:grid-cols-2">
-                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold md:col-span-2">
-                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.name }}</span>
-                  <input v-model="form.name" class="h-11 rounded-xl border border-slate-200 px-4" maxlength="160" :placeholder="copy.placeholders.name" />
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-1.5 md:col-span-2">
+                  <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.name }}</span>
+                  <input v-model="form.name" class="ui-input" maxlength="160" :placeholder="copy.placeholders.name" />
                   <span aria-hidden="true"></span>
                 </label>
-                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
-                  {{ copy.fields.thumbnailObjectKey }}
-                  <input v-model="form.thumbnail_object_key" class="h-11 rounded-xl border border-slate-200 px-4" :placeholder="copy.placeholders.thumbnailObjectKey" />
-                  <p class="text-xs font-semibold text-slate-500">{{ copy.optionalImageHint }}</p>
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-1.5">
+                  <span class="ui-label">{{ copy.fields.thumbnailObjectKey }}</span>
+                  <input v-model="form.thumbnail_object_key" class="ui-input" :placeholder="copy.placeholders.thumbnailObjectKey" />
+                  <p class="text-xs text-slate-400">{{ copy.optionalImageHint }}</p>
                 </label>
-                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
-                  {{ copy.fields.thumbnailFileHash }}
-                  <input v-model="form.thumbnail_file_hash" class="h-11 rounded-xl border border-slate-200 px-4" :placeholder="copy.placeholders.thumbnailFileHash" />
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-1.5">
+                  <span class="ui-label">{{ copy.fields.thumbnailFileHash }}</span>
+                  <input v-model="form.thumbnail_file_hash" class="ui-input" :placeholder="copy.placeholders.thumbnailFileHash" />
                   <span aria-hidden="true"></span>
                 </label>
                 <div class="md:col-span-2 mt-2 flex gap-3">
                   <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailUpload" />
-                  <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:w-auto" :disabled="uploadingThumbnail" @click="thumbnailFileInput?.click()">
+                  <button type="button" class="ui-btn ui-btn-secondary w-full sm:w-auto" :disabled="uploadingThumbnail" @click="thumbnailFileInput?.click()">
                     <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
-                    <UploadCloud v-else class="h-4 w-4" />
+                    <UploadCloud v-else class="h-4 w-4 text-slate-400" />
                     {{ uploadingThumbnail ? (copy as any).uploading || "上传中..." : (copy as any).uploadThumbnail || "上传封面图" }}
                   </button>
                 </div>
-                <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                  {{ copy.fields.description }}
-                  <textarea v-model="form.description" class="min-h-24 rounded-xl border border-slate-200 p-4" maxlength="1200" :placeholder="copy.placeholders.description" />
+                <label class="grid gap-1.5 md:col-span-2">
+                  <span class="ui-label">{{ copy.fields.description }}</span>
+                  <textarea v-model="form.description" class="min-h-24 w-full rounded-[10px] border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10" maxlength="1200" :placeholder="copy.placeholders.description" />
                 </label>
               </div>
             </section>
 
-            <details class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 mt-4">
-              <summary class="cursor-pointer text-sm font-black text-slate-700">{{ (copy as any).advancedConfig || "高级配置" }}</summary>
+            <details class="rounded-2xl border border-edge bg-white p-4 md:p-5 mt-4">
+              <summary class="cursor-pointer text-sm font-medium text-slate-700">{{ (copy as any).advancedConfig || "高级配置" }}</summary>
               <div class="mt-4 grid gap-4 md:grid-cols-2">
-                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold md:col-span-2">
-                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.bundleGpath }}</span>
-                  <input v-model="form.bundle_gpath" class="h-11 rounded-xl border border-slate-200 px-4" :placeholder="copy.placeholders.bundleGpath" />
-                  <p class="text-xs font-semibold text-slate-500">{{ copy.bundleGpathHint }}</p>
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-1.5 md:col-span-2">
+                  <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.bundleGpath }}</span>
+                  <input v-model="form.bundle_gpath" class="ui-input" :placeholder="copy.placeholders.bundleGpath" />
+                  <p class="text-xs text-slate-400">{{ copy.bundleGpathHint }}</p>
                 </label>
-                <label class="grid gap-2 text-sm font-bold md:col-span-2 xl:col-span-1">
-                  {{ copy.fields.itemsJson }}
-                  <textarea :value="createItemsJson" readonly class="min-h-[180px] rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-6 text-slate-600" />
+                <label class="grid gap-1.5 md:col-span-2 xl:col-span-1">
+                  <span class="ui-label">{{ copy.fields.itemsJson }}</span>
+                  <textarea :value="createItemsJson" readonly class="tnum min-h-[180px] w-full rounded-[10px] border border-slate-200 bg-slate-50 p-3 font-mono text-xs leading-6 text-slate-600 focus:outline-none" />
                 </label>
-                <label class="grid gap-2 text-sm font-bold">
-                  {{ copy.fields.pricingJson }}
-                  <textarea v-model="form.pricing_json" class="min-h-[180px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
-                  <p class="text-xs font-semibold text-slate-500">{{ copy.pricingJsonCreateHint }}</p>
+                <label class="grid gap-1.5">
+                  <span class="ui-label">{{ copy.fields.pricingJson }}</span>
+                  <textarea v-model="form.pricing_json" class="tnum min-h-[180px] w-full rounded-[10px] border border-slate-200 bg-white p-3 font-mono text-xs leading-6 text-slate-900 transition-colors focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10" />
+                  <p class="text-xs text-slate-400">{{ copy.pricingJsonCreateHint }}</p>
                 </label>
               </div>
             </details>
           </div>
-          <div class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
-            <button class="inline-flex h-11 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="createBundle">
+          <div class="flex shrink-0 flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">
+            <button class="ui-btn ui-btn-primary w-full min-w-[180px] sm:w-auto" type="button" :disabled="saving" @click="createBundle">
               <Plus class="h-4 w-4" />
               {{ copy.createDraft }}
             </button>
@@ -1453,78 +1475,76 @@ onMounted(load)
 
         <div v-else-if="!selected" class="flex items-start justify-between gap-4 p-4 md:p-6">
           <div class="min-w-0">
-            <h2 class="text-xl font-black md:text-2xl">{{ copy.detailTitle }}</h2>
+            <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
           </div>
-          <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
+          <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="closeDetail">
             <X class="h-5 w-5" />
           </button>
         </div>
 
         <template v-else>
-          <div class="border-b border-slate-200 px-4 py-4 md:p-5">
+          <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="min-w-0">
-                <h2 class="break-words text-xl font-black md:text-2xl">{{ bundleName(selected) }}</h2>
-                <p class="mt-1 break-all text-sm text-slate-500">{{ selectedId }}</p>
+                <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ bundleName(selected) }}</h2>
+                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ selectedId }}</p>
               </div>
               <div class="flex items-center gap-3">
-                <button class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900" type="button" :aria-label="copy.close" @click="closeDetail">
+                <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="closeDetail">
                   <X class="h-5 w-5" />
                 </button>
               </div>
             </div>
           </div>
 
-          <div class="border-b border-slate-200 p-4">
-            <div class="flex gap-2 overflow-x-auto">
-              <button
-                v-for="tab in detailTabs"
-                :key="tab.key"
-                class="inline-flex h-11 shrink-0 items-center gap-3 rounded-2xl border px-4 text-sm font-black transition"
-                :class="activeTab === tab.key ? 'border-sky-200 bg-sky-50 text-slate-950' : 'border-slate-100 bg-white text-slate-700 hover:bg-slate-50'"
-                type="button"
-                @click="activeTab = tab.key"
-              >
-                <span>{{ tab.title }}</span>
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-black text-slate-600">{{ tab.count }}</span>
-              </button>
-            </div>
+          <div class="flex gap-5 overflow-x-auto border-b border-hairline px-4 md:px-6">
+            <button
+              v-for="tab in detailTabs"
+              :key="tab.key"
+              class="ui-tab"
+              :class="activeTab === tab.key ? 'ui-tab-active' : ''"
+              type="button"
+              @click="activeTab = tab.key"
+            >
+              {{ tab.title }}
+              <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ tab.count }}</span>
+            </button>
           </div>
 
           <div class="min-h-0 flex-1 overflow-hidden">
-            <main class="h-full min-h-0 max-h-none min-w-0 overflow-y-auto p-4 md:h-[60vh] md:min-h-[360px] md:max-h-[620px] md:p-5">
+            <main class="h-full min-h-0 max-h-none min-w-0 overflow-y-auto p-4 md:h-[60vh] md:min-h-[360px] md:max-h-[620px] md:p-6">
               <div v-if="activeTab === 'summary'" class="space-y-5">
                 <div class="grid gap-4 md:grid-cols-2">
-                  <div v-for="field in summaryFields" :key="field.label" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <div class="text-xs font-black uppercase text-slate-400">{{ field.label }}</div>
-                    <div class="mt-2 break-all text-sm font-black text-slate-800">{{ field.value }}</div>
+                  <div v-for="field in summaryFields" :key="field.label" class="rounded-2xl border border-edge p-4">
+                    <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</div>
+                    <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ field.value }}</div>
                   </div>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div class="text-xs font-black uppercase text-slate-400">{{ copy.summary.description }}</div>
-                  <p class="mt-2 whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">{{ form.description || "-" }}</p>
+                <div class="rounded-2xl border border-edge bg-white p-4">
+                  <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.description }}</div>
+                  <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{{ form.description || "-" }}</p>
                 </div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div class="mb-3 text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.linkedItems }}</div>
+                <div class="rounded-2xl border border-edge bg-white p-4">
+                  <div class="mb-3 text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.linkedItems }}</div>
                   <div v-if="linkedItemsPreview.length" class="grid gap-2 md:grid-cols-2">
-                    <div v-for="item in linkedItemsPreview" :key="`${item.type}-${item.ref}`" class="rounded-xl bg-slate-50 p-3 text-sm">
-                        <div class="font-bold text-slate-600">{{ copy.pricingPreview.itemType }}: {{ linkedItemTypeLabel(item.type) }}</div>
-                      <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ copy.pricingPreview.itemRef }}: {{ item.ref }}</div>
+                    <div v-for="item in linkedItemsPreview" :key="`${item.type}-${item.ref}`" class="rounded-[10px] bg-slate-50 p-3 text-sm">
+                        <div class="font-medium text-slate-600">{{ copy.pricingPreview.itemType }}: {{ linkedItemTypeLabel(item.type) }}</div>
+                      <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ copy.pricingPreview.itemRef }}: {{ item.ref }}</div>
                     </div>
                   </div>
-                  <div v-else class="rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+                  <div v-else class="rounded-[10px] border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
                     {{ copy.pricingPreview.emptyJson }}
                   </div>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
-                  <div v-for="field in selectedFields" :key="field.key" class="grid gap-2 text-sm font-bold" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
-                    <span class="text-xs font-black uppercase text-slate-400">{{ field.label }}</span>
+                  <div v-for="field in selectedFields" :key="field.key" class="grid gap-1.5" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
+                    <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
                     <pre
                       v-if="isStructuredValue(field.value)"
-                      class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
+                      class="tnum max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-2.5 font-mono text-xs leading-5 text-slate-600"
                     >{{ jsonText(field.value) }}</pre>
-                    <div v-else class="min-h-11 break-words rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-bold leading-5 text-slate-700">
+                    <div v-else class="tnum min-h-10 break-words rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-5 text-slate-700">
                       {{ detailFieldText(field.key, field.value) }}
                     </div>
                   </div>
@@ -1533,48 +1553,48 @@ onMounted(load)
 
               <div v-else-if="activeTab === 'meta'" class="space-y-5">
                 <div class="grid gap-4 md:grid-cols-2">
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.bundleUlid }}
-                    <input v-model="form.bundle_ulid" disabled class="h-11 rounded-xl border border-slate-200 bg-slate-100 px-4" />
+                  <label class="grid gap-1.5 md:col-span-2">
+                    <span class="ui-label">{{ copy.fields.bundleUlid }}</span>
+                    <input v-model="form.bundle_ulid" disabled class="ui-input tnum" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.name }}
-                    <input v-model="form.name" class="h-11 rounded-xl border border-slate-200 px-4" maxlength="160" />
+                  <label class="grid gap-1.5 md:col-span-2">
+                    <span class="ui-label">{{ copy.fields.name }}</span>
+                    <input v-model="form.name" class="ui-input" maxlength="160" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.thumbnailObjectKey }}
-                    <input v-model="form.thumbnail_object_key" class="h-11 rounded-xl border border-slate-200 px-4" />
+                  <label class="grid gap-1.5">
+                    <span class="ui-label">{{ copy.fields.thumbnailObjectKey }}</span>
+                    <input v-model="form.thumbnail_object_key" class="ui-input" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.description }}
-                    <textarea v-model="form.description" class="min-h-28 rounded-xl border border-slate-200 p-4" maxlength="1200" />
+                  <label class="grid gap-1.5 md:col-span-2">
+                    <span class="ui-label">{{ copy.fields.description }}</span>
+                    <textarea v-model="form.description" class="min-h-28 w-full rounded-[10px] border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10" maxlength="1200" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
-                    {{ copy.fields.thumbnailFileHash }}
-                    <input v-model="form.thumbnail_file_hash" class="h-11 rounded-xl border border-slate-200 px-4" />
+                  <label class="grid gap-1.5 md:col-span-2">
+                    <span class="ui-label">{{ copy.fields.thumbnailFileHash }}</span>
+                    <input v-model="form.thumbnail_file_hash" class="ui-input tnum" />
                   </label>
                   <div class="md:col-span-2 mt-2 flex gap-3">
                     <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailUpload" />
-                    <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:w-auto" :disabled="uploadingThumbnail" @click="thumbnailFileInput?.click()">
+                    <button type="button" class="ui-btn ui-btn-secondary w-full sm:w-auto" :disabled="uploadingThumbnail" @click="thumbnailFileInput?.click()">
                       <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
-                      <UploadCloud v-else class="h-4 w-4" />
+                      <UploadCloud v-else class="h-4 w-4 text-slate-400" />
                       {{ uploadingThumbnail ? (copy as any).uploading || "上传中..." : (copy as any).uploadThumbnail || "上传封面图" }}
                     </button>
                   </div>
                 </div>
 
-                <details class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 mt-6 mb-4">
-                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ (copy as any).advancedConfig || "高级配置" }}</summary>
+                <details class="rounded-2xl border border-edge bg-white p-4 md:p-5 mt-6 mb-4">
+                  <summary class="cursor-pointer text-sm font-medium text-slate-700">{{ (copy as any).advancedConfig || "高级配置" }}</summary>
                   <div class="mt-4 grid gap-4">
-                    <label class="grid gap-2 text-sm font-bold">
-                      {{ copy.fields.bundleGpath }}
-                      <input v-model="form.bundle_gpath" disabled class="h-11 rounded-xl border border-slate-200 bg-slate-100 px-4" />
+                    <label class="grid gap-1.5">
+                      <span class="ui-label">{{ copy.fields.bundleGpath }}</span>
+                      <input v-model="form.bundle_gpath" disabled class="ui-input" />
                     </label>
                   </div>
                 </details>
 
                 <div class="flex justify-stretch sm:justify-end">
-                  <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="saveMeta">
+                  <button class="ui-btn ui-btn-primary w-full sm:w-auto" type="button" :disabled="saving" @click="saveMeta">
                     <Save class="h-4 w-4" />
                     {{ copy.saveMeta }}
                   </button>
@@ -1582,26 +1602,26 @@ onMounted(load)
               </div>
 
               <div v-else-if="activeTab === 'pricing'" class="space-y-5">
-                <section class="rounded-2xl border border-sky-200 bg-sky-50 p-4 md:p-5">
+                <section class="rounded-2xl bg-primary-50 p-4 md:p-5">
                   <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <h3 class="text-lg font-black text-slate-950">{{ copy.relink.title }}</h3>
-                      <p class="mt-1 text-sm font-semibold text-slate-600">{{ copy.relink.description }}</p>
+                      <h3 class="text-base font-semibold text-ink">{{ copy.relink.title }}</h3>
+                      <p class="mt-1 text-sm text-slate-600">{{ copy.relink.description }}</p>
                     </div>
-                    <button class="rounded-xl border bg-white px-4 py-2 text-sm font-bold disabled:opacity-50" type="button" :disabled="targetOptionsLoading" @click="loadCreateTargetOptions">
-                      <Loader2 v-if="targetOptionsLoading" class="mr-2 inline h-4 w-4 animate-spin" />
+                    <button class="ui-btn ui-btn-secondary" type="button" :disabled="targetOptionsLoading" @click="loadCreateTargetOptions">
+                      <Loader2 v-if="targetOptionsLoading" class="h-4 w-4 animate-spin text-slate-400" />
                       {{ copy.relink.reloadTargets }}
                     </button>
                   </div>
                   <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto]">
-                    <div class="rounded-xl bg-white p-4">
-                      <div class="text-xs font-black uppercase text-slate-400">{{ copy.relink.currentPipeline }}</div>
-                      <div v-if="currentPipelineRef" class="mt-2 break-all font-mono text-xs font-bold text-blue-700">{{ currentPipelineRef }}</div>
-                      <div v-else class="mt-2 text-sm font-semibold text-slate-500">{{ copy.relink.noPipelineBinding }}</div>
+                    <div class="rounded-[10px] bg-white p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.relink.currentPipeline }}</div>
+                      <div v-if="currentPipelineRef" class="tnum mt-2 break-all font-mono text-xs text-primary-700">{{ currentPipelineRef }}</div>
+                      <div v-else class="mt-2 text-sm text-slate-500">{{ copy.relink.noPipelineBinding }}</div>
                     </div>
-                    <label class="grid gap-2 text-sm font-bold">
-                      {{ copy.relink.newPipeline }}
-                      <select v-model="replacementPipelineId" class="h-11 rounded-xl border border-slate-200 bg-white px-4" :disabled="!currentPipelineRef || targetOptionsLoading">
+                    <label class="grid gap-1.5">
+                      <span class="ui-label">{{ copy.relink.newPipeline }}</span>
+                      <select v-model="replacementPipelineId" class="ui-input" :disabled="!currentPipelineRef || targetOptionsLoading">
                         <option value="">{{ copy.relink.selectNewPipeline }}</option>
                         <option v-for="option in replacementPipelineOptions" :key="option.id" :value="option.id">
                           {{ option.title }} · {{ option.subtitle }}
@@ -1609,20 +1629,20 @@ onMounted(load)
                       </select>
                     </label>
                     <div class="flex flex-wrap items-end">
-                      <button class="inline-flex h-10 items-center justify-center rounded-xl bg-blue-700 px-5 text-sm font-bold text-white disabled:opacity-50" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replaceAndSavePipelineBinding">
-                        <Loader2 v-if="saving" class="mr-2 inline h-4 w-4 animate-spin" />
+                      <button class="ui-btn ui-btn-primary" type="button" :disabled="!currentPipelineRef || !replacementPipelineId || saving" @click="replaceAndSavePipelineBinding">
+                        <Loader2 v-if="saving" class="h-4 w-4 animate-spin" />
                         {{ copy.relink.save }}
                       </button>
                     </div>
                   </div>
                 </section>
-                <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+                <section class="rounded-2xl border border-edge p-4 md:p-5">
                   <div class="mb-5 flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h3 class="text-lg font-black text-slate-950">{{ copy.pricingEditorTitle }}</h3>
-                      <p class="mt-1 text-sm font-semibold text-slate-600">{{ copy.pricingEditorDescription }}</p>
+                      <h3 class="text-base font-semibold text-ink">{{ copy.pricingEditorTitle }}</h3>
+                      <p class="mt-1 text-sm text-slate-500">{{ copy.pricingEditorDescription }}</p>
                     </div>
-                    <div v-if="pricingTargetsLoading" class="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-500">
+                    <div v-if="pricingTargetsLoading" class="inline-flex items-center gap-2 text-xs text-slate-400">
                       <Loader2 class="h-4 w-4 animate-spin" />
                       {{ copy.loadingPricingTargets }}
                     </div>
@@ -1634,115 +1654,115 @@ onMounted(load)
                     :membership-options="linkedMembershipPricingOptions"
                   />
                 </section>
-                <section class="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
+                <section class="rounded-2xl border border-edge p-4 md:p-5">
                   <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h3 class="text-lg font-black text-slate-950">{{ copy.pricingPreview.title }}</h3>
+                      <h3 class="text-base font-semibold text-ink">{{ copy.pricingPreview.title }}</h3>
                       <p class="mt-1 text-sm text-slate-500">{{ copy.pricingPreview.description }}</p>
                     </div>
-                    <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600">
+                    <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">
                       {{ copy.summary.displayPrice }}: {{ selected ? displayPrice(selected) : "-" }}
                     </span>
                   </div>
 
                   <div class="mt-5 grid gap-4 xl:grid-cols-2">
-                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                      <h4 class="font-black text-slate-900">{{ copy.pricingPreview.linkedItems }}</h4>
+                    <div class="rounded-2xl border border-edge bg-white p-4">
+                      <h4 class="text-sm font-semibold text-ink">{{ copy.pricingPreview.linkedItems }}</h4>
                       <div v-if="linkedItemsPreview.length" class="mt-3 grid gap-2">
-                        <div v-for="item in linkedItemsPreview" :key="`${item.type}-${item.ref}`" class="rounded-xl bg-slate-50 p-3 text-sm">
-                            <div class="font-bold text-slate-600">{{ copy.pricingPreview.itemType }}: {{ linkedItemTypeLabel(item.type) }}</div>
-                          <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ copy.pricingPreview.itemRef }}: {{ item.ref }}</div>
+                        <div v-for="item in linkedItemsPreview" :key="`${item.type}-${item.ref}`" class="rounded-[10px] bg-slate-50 p-3 text-sm">
+                            <div class="font-medium text-slate-600">{{ copy.pricingPreview.itemType }}: {{ linkedItemTypeLabel(item.type) }}</div>
+                          <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ copy.pricingPreview.itemRef }}: {{ item.ref }}</div>
                         </div>
                       </div>
-                      <div v-else class="mt-3 rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+                      <div v-else class="mt-3 rounded-[10px] border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
                         {{ copy.pricingPreview.emptyJson }}
                       </div>
                     </div>
 
-                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                      <h4 class="font-black text-slate-900">{{ copy.pricingPreview.otherConfig }}</h4>
+                    <div class="rounded-2xl border border-edge bg-white p-4">
+                      <h4 class="text-sm font-semibold text-ink">{{ copy.pricingPreview.otherConfig }}</h4>
                       <div v-if="pricingPreview" class="mt-3 grid gap-2 text-sm">
-                        <div class="rounded-xl bg-slate-50 p-3">
-                          <span class="font-bold text-slate-500">{{ copy.pricingPreview.packageCoupon }}</span>
-                          <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ pricingPreview.packageCoupon }}</div>
+                        <div class="rounded-[10px] bg-slate-50 p-3">
+                          <span class="font-medium text-slate-500">{{ copy.pricingPreview.packageCoupon }}</span>
+                          <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ pricingPreview.packageCoupon }}</div>
                         </div>
                         <div class="grid gap-2 sm:grid-cols-2">
-                          <div class="rounded-xl bg-slate-50 p-3">
-                            <span class="font-bold text-slate-500">{{ copy.pricingPreview.memberships }}</span>
-                            <div class="mt-1 text-lg font-black">{{ pricingPreview.memberships }}</div>
+                          <div class="rounded-[10px] bg-slate-50 p-3">
+                            <span class="font-medium text-slate-500">{{ copy.pricingPreview.memberships }}</span>
+                            <div class="tnum mt-1 text-lg font-semibold text-ink">{{ pricingPreview.memberships }}</div>
                           </div>
-                          <div class="rounded-xl bg-slate-50 p-3">
-                            <span class="font-bold text-slate-500">{{ copy.pricingPreview.qualReviews }}</span>
-                            <div class="mt-1 text-lg font-black">{{ pricingPreview.qualReviews }}</div>
+                          <div class="rounded-[10px] bg-slate-50 p-3">
+                            <span class="font-medium text-slate-500">{{ copy.pricingPreview.qualReviews }}</span>
+                            <div class="tnum mt-1 text-lg font-semibold text-ink">{{ pricingPreview.qualReviews }}</div>
                           </div>
                         </div>
                       </div>
-                      <div v-else class="mt-3 rounded-xl border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
+                      <div v-else class="mt-3 rounded-[10px] border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
                         {{ copy.pricingPreview.invalidJson }}
                       </div>
                     </div>
                   </div>
 
                   <div v-if="pricingPreview" class="mt-4 grid gap-4">
-                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                      <div class="border-b border-slate-200 px-4 py-3 font-black">{{ copy.pricingPreview.unitsTitle }}</div>
-                      <div v-if="pricingPreview.units.length" class="divide-y divide-slate-100">
+                    <div class="overflow-hidden rounded-2xl border border-edge bg-white">
+                      <div class="border-b border-hairline px-4 py-3 text-sm font-semibold text-ink">{{ copy.pricingPreview.unitsTitle }}</div>
+                      <div v-if="pricingPreview.units.length" class="divide-y divide-hairline">
                         <div v-for="unit in pricingPreview.units" :key="unit.unitId" class="grid gap-3 p-4 xl:grid-cols-[240px_1fr]">
                           <div>
-                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.unitId }}</div>
-                            <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ unit.unitId }}</div>
+                            <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.unitId }}</div>
+                            <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ unit.unitId }}</div>
                           </div>
                           <div v-if="unit.prices.length" class="grid gap-3 lg:grid-cols-3">
-                            <div v-for="price in unit.prices" :key="`${unit.unitId}-${price.label}`" class="rounded-xl bg-slate-50 p-3">
-                              <div class="font-black text-slate-900">{{ price.label }}</div>
-                              <div class="mt-2 text-xs font-bold text-slate-500">{{ copy.pricingPreview.priceId }}</div>
-                              <div class="break-all font-mono text-xs text-blue-700">{{ price.priceId }}</div>
-                              <div class="mt-2 text-xs font-bold text-slate-500">{{ copy.pricingPreview.productId }}</div>
-                              <div class="break-all font-mono text-xs text-slate-600">{{ price.productId }}</div>
+                            <div v-for="price in unit.prices" :key="`${unit.unitId}-${price.label}`" class="rounded-[10px] bg-slate-50 p-3">
+                              <div class="text-sm font-medium text-ink">{{ price.label }}</div>
+                              <div class="mt-2 text-xs font-medium text-slate-500">{{ copy.pricingPreview.priceId }}</div>
+                              <div class="tnum break-all font-mono text-xs text-primary-700">{{ price.priceId }}</div>
+                              <div class="mt-2 text-xs font-medium text-slate-500">{{ copy.pricingPreview.productId }}</div>
+                              <div class="tnum break-all font-mono text-xs text-slate-600">{{ price.productId }}</div>
                             </div>
                           </div>
-                          <div v-else class="rounded-xl border border-dashed border-slate-200 p-4 text-sm text-slate-500">
+                          <div v-else class="rounded-[10px] border border-dashed border-slate-200 p-4 text-sm text-slate-500">
                             {{ copy.pricingPreview.notConfigured }}
                           </div>
                         </div>
                       </div>
-                      <div v-else class="p-5 text-center text-sm text-slate-500">{{ copy.pricingPreview.notConfigured }}</div>
+                      <div v-else class="px-4 py-6 text-center text-sm text-slate-500">{{ copy.pricingPreview.notConfigured }}</div>
                     </div>
 
-                    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                      <div class="border-b border-slate-200 px-4 py-3 font-black">{{ copy.pricingPreview.unlocksTitle }}</div>
-                      <div v-if="pricingPreview.unlocks.length" class="divide-y divide-slate-100">
+                    <div class="overflow-hidden rounded-2xl border border-edge bg-white">
+                      <div class="border-b border-hairline px-4 py-3 text-sm font-semibold text-ink">{{ copy.pricingPreview.unlocksTitle }}</div>
+                      <div v-if="pricingPreview.unlocks.length" class="divide-y divide-hairline">
                         <div v-for="unlock in pricingPreview.unlocks" :key="unlock.targetId" class="grid gap-3 p-4 md:grid-cols-3">
                           <div>
-                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.unlockTarget }}</div>
-                            <div class="mt-1 break-all font-mono text-xs font-bold text-blue-700">{{ unlock.targetId }}</div>
+                            <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.unlockTarget }}</div>
+                            <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ unlock.targetId }}</div>
                           </div>
                           <div>
-                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.priceId }}</div>
-                            <div class="mt-1 break-all font-mono text-xs text-blue-700">{{ unlock.priceId }}</div>
+                            <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.priceId }}</div>
+                            <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ unlock.priceId }}</div>
                           </div>
                           <div>
-                            <div class="text-xs font-black uppercase text-slate-400">{{ copy.pricingPreview.productId }}</div>
-                            <div class="mt-1 break-all font-mono text-xs text-slate-600">{{ unlock.productId }}</div>
+                            <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.productId }}</div>
+                            <div class="tnum mt-1 break-all font-mono text-xs text-slate-600">{{ unlock.productId }}</div>
                           </div>
                         </div>
                       </div>
-                      <div v-else class="p-5 text-center text-sm text-slate-500">{{ copy.pricingPreview.notConfigured }}</div>
+                      <div v-else class="px-4 py-6 text-center text-sm text-slate-500">{{ copy.pricingPreview.notConfigured }}</div>
                     </div>
                   </div>
 
-                  <details class="mt-5 rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
-                    <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.advancedJsonTitle }}</summary>
+                  <details class="mt-5 rounded-2xl border border-edge bg-white p-4 md:p-5">
+                    <summary class="cursor-pointer text-sm font-medium text-slate-700">{{ copy.advancedJsonTitle }}</summary>
                     <p class="mt-2 text-sm text-slate-500">{{ copy.advancedJsonHint }}</p>
                     <div class="mt-4 grid gap-4 xl:grid-cols-2">
-                      <label class="grid gap-2 text-sm font-bold">
-                        {{ copy.fields.itemsJson }}
-                        <textarea v-model="form.items_json" class="min-h-[180px] rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-6" />
+                      <label class="grid gap-1.5">
+                        <span class="ui-label">{{ copy.fields.itemsJson }}</span>
+                        <textarea v-model="form.items_json" class="tnum min-h-[180px] w-full rounded-[10px] border border-slate-200 bg-slate-50 p-3 font-mono text-xs leading-6 text-slate-700 transition-colors focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10" />
                       </label>
-                      <label class="grid gap-2 text-sm font-bold">
-                        {{ copy.fields.pricingJson }}
-                        <textarea v-model="form.pricing_json" class="min-h-[180px] rounded-xl border border-slate-200 p-4 font-mono text-xs leading-6" />
-                        <p class="text-xs font-semibold text-slate-500">{{ copy.pricingJsonCreateHint }}</p>
+                      <label class="grid gap-1.5">
+                        <span class="ui-label">{{ copy.fields.pricingJson }}</span>
+                        <textarea v-model="form.pricing_json" class="tnum min-h-[180px] w-full rounded-[10px] border border-slate-200 bg-white p-3 font-mono text-xs leading-6 text-slate-900 transition-colors focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10" />
+                        <p class="text-xs text-slate-400">{{ copy.pricingJsonCreateHint }}</p>
                       </label>
                     </div>
                   </details>
@@ -1750,24 +1770,24 @@ onMounted(load)
               </div>
 
               <div v-else-if="activeTab === 'actions'" class="space-y-5">
-                  <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:p-5">
-                  <h3 class="font-black">{{ copy.actionsTitle }}</h3>
+                  <div class="rounded-2xl border border-edge p-4 md:p-5">
+                  <h3 class="text-base font-semibold text-ink">{{ copy.actionsTitle }}</h3>
                   <p class="mt-1 text-sm text-slate-500">{{ copy.actionsDescription }}</p>
                   <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    <button v-if="canCloneSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="duplicateBundle">
+                    <button v-if="canCloneSelectedBundle" class="ui-btn ui-btn-secondary" type="button" :disabled="statusActionBusy" @click="duplicateBundle">
                       <Loader2 v-if="duplicating" class="h-4 w-4 animate-spin" />
-                      <Copy v-else class="h-4 w-4" />
+                      <Copy v-else class="h-4 w-4 text-slate-400" />
                       {{ duplicating ? copy.duplicating : copy.duplicateDraft }}
                     </button>
-                    <button v-if="canPublishSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="publish">
+                    <button v-if="canPublishSelectedBundle" class="ui-btn ui-btn-secondary" type="button" :disabled="statusActionBusy" @click="publish">
                       <Loader2 v-if="publishing" class="h-4 w-4 animate-spin" />
                       {{ publishing ? copy.publishing : copy.publish }}
                     </button>
-                    <button v-if="canDeprecateSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border bg-white px-4 text-sm font-bold shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="deprecate">
+                    <button v-if="canDeprecateSelectedBundle" class="ui-btn ui-btn-secondary" type="button" :disabled="statusActionBusy" @click="deprecate">
                       <Loader2 v-if="deprecating" class="h-4 w-4 animate-spin" />
                       {{ deprecating ? copy.deprecating : copy.deprecate }}
                     </button>
-                    <button v-if="canDeleteSelectedBundle" class="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-bold text-white shadow-sm shadow-red-200 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="statusActionBusy" @click="showDeleteConfirm = true">
+                    <button v-if="canDeleteSelectedBundle" class="ui-btn ui-btn-danger" type="button" :disabled="statusActionBusy" @click="showDeleteConfirm = true">
                       <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
                       <Trash2 v-else class="h-4 w-4" />
                       {{ deleting ? copy.deleting : copy.delete }}
@@ -1778,36 +1798,43 @@ onMounted(load)
 
             </main>
           </div>
-          <div v-if="activeTab === 'pricing'" class="flex shrink-0 flex-col justify-end border-t border-slate-200 bg-white px-4 py-4 sm:flex-row md:px-5">
-            <button class="inline-flex h-11 w-full min-w-[180px] items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="savePricing">
+          <div v-if="activeTab === 'pricing'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">
+            <button class="ui-btn ui-btn-primary w-full min-w-[180px] sm:w-auto" type="button" :disabled="saving" @click="savePricing">
               <Send class="h-4 w-4" />
               {{ copy.savePricing }}
             </button>
           </div>
         </template>
-        </section>
-      </div>
+          </section>
+        </div>
+      </Transition>
     </Teleport>
 
     <Teleport to="body">
-      <div v-if="showDeleteConfirm && canDeleteSelectedBundle" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 p-4 md:p-6">
-        <div class="w-full max-w-md rounded-2xl bg-white p-4 shadow-2xl md:rounded-3xl md:p-6">
-          <h2 class="text-xl font-black md:text-2xl">{{ copy.deleteConfirmTitle }}</h2>
-          <p class="mt-3 text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
-          <div class="mt-5 rounded-2xl bg-slate-50 p-4">
-            <div class="font-black">{{ bundleName(selected) }}</div>
-            <div class="mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
-          </div>
-          <div class="mt-6 flex flex-col items-stretch justify-end gap-3 sm:flex-row sm:items-center">
-            <button class="inline-flex h-11 min-w-[96px] items-center justify-center rounded-xl border px-5 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="showDeleteConfirm = false">{{ copy.cancel }}</button>
-            <button class="inline-flex h-11 min-w-[112px] items-center justify-center gap-2 rounded-xl bg-red-600 px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60" type="button" :disabled="deleting" @click="removeBundle">
-              <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
-              {{ deleting ? copy.deleting : copy.confirmDelete }}
-            </button>
-          </div>
+      <Transition name="modal">
+        <div v-if="showDeleteConfirm && canDeleteSelectedBundle" class="ui-modal-mask z-50">
+          <section class="ui-modal-panel md:max-w-md">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.deleteConfirmTitle }}</h2>
+            </div>
+            <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+              <p class="text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
+              <div class="mt-4 rounded-[10px] bg-slate-50 p-4">
+                <div class="text-sm font-semibold text-ink">{{ bundleName(selected) }}</div>
+                <div class="tnum mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
+              </div>
+            </main>
+            <div class="flex flex-col items-stretch justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+              <button class="ui-btn ui-btn-secondary min-w-[96px]" type="button" :disabled="deleting" @click="showDeleteConfirm = false">{{ copy.cancel }}</button>
+              <button class="ui-btn ui-btn-danger min-w-[112px]" type="button" :disabled="deleting" @click="removeBundle">
+                <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
+                {{ deleting ? copy.deleting : copy.confirmDelete }}
+              </button>
+            </div>
+          </section>
         </div>
-      </div>
+      </Transition>
     </Teleport>
-  </section>
+  </main>
 </template>
 

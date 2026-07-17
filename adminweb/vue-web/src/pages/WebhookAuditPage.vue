@@ -270,58 +270,71 @@ onMounted(() => load(1))
 </script>
 
 <template>
-  <section class="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-8 py-8">
-    <header class="flex items-start justify-between gap-4">
-      <div>
-        <h1 class="text-4xl font-black tracking-tight">{{ copy.title }}</h1>
-        <p class="mt-2 text-slate-600">{{ copy.subtitle }}</p>
+  <main class="ui-page">
+    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
+      <div class="min-w-0">
+        <h1 class="ui-page-title">{{ copy.title }}</h1>
+        <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
-      <button class="inline-flex items-center gap-2 rounded-xl border bg-white px-4 py-3 text-sm font-bold shadow-sm" type="button" @click="load(page)">
-        <RefreshCw class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
+      <button class="ui-btn ui-btn-secondary" type="button" @click="load(page)">
+        <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
+        <RefreshCw v-else class="h-4 w-4 text-slate-400" />
         {{ copy.refresh }}
       </button>
     </header>
 
-    <form class="grid gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-[1fr_auto]" @submit.prevent="search">
-      <select v-model="status" class="rounded-xl border border-slate-200 px-4 py-3">
+    <form class="ui-card mt-6 grid gap-4 p-4 md:grid-cols-[1fr_auto] md:p-5" @submit.prevent="search">
+      <select v-model="status" class="ui-input">
         <option value="">{{ copy.allStatus }}</option>
         <option value="PROCESSED">{{ copy.statusOptions.processed }}</option>
         <option value="SKIPPED">{{ copy.statusOptions.skipped }}</option>
         <option value="FAILED">{{ copy.statusOptions.failed }}</option>
         <option value="PENDING">{{ copy.statusOptions.pending }}</option>
       </select>
-      <button class="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white" type="submit">
+      <button class="ui-btn ui-btn-primary" type="submit">
         <Search class="h-4 w-4" />
         {{ copy.search }}
       </button>
     </form>
 
-    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div class="flex items-center justify-between border-b border-slate-200 p-5">
-        <div>
-          <h2 class="text-xl font-black">{{ copy.listTitle }}</h2>
+    <section class="ui-card mt-4 overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+        <div class="min-w-0">
+          <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
           <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="rounded-full bg-slate-100 px-3 py-1 text-sm font-black text-slate-600">{{ copy.totalText(total) }}</span>
+        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
-      <div class="grid grid-cols-[minmax(0,1fr)_180px_180px_112px] gap-5 border-b border-slate-200 bg-slate-50 px-5 py-3 text-xs font-black text-slate-500">
+      <div class="ui-table-head grid grid-cols-[minmax(0,1fr)_180px_180px_112px] gap-5 px-4 py-3">
         <span>{{ copy.columns.webhook }}</span>
         <span class="text-center">{{ copy.columns.status }}</span>
         <span class="text-right">{{ copy.columns.createdAt }}</span>
         <span class="text-right">{{ copy.columns.action }}</span>
       </div>
 
-      <div v-if="loading" class="p-12 text-center text-slate-500">
-        <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-        {{ copy.loading }}
+      <div v-if="loading" class="divide-y divide-hairline">
+        <div v-for="i in 5" :key="`sk-${i}`" class="grid grid-cols-[minmax(0,1fr)_180px_180px_112px] items-center gap-5 px-4 py-3.5">
+          <div class="min-w-0">
+            <div class="skeleton h-4 w-2/5" />
+            <div class="skeleton mt-2 h-3 w-3/5" />
+          </div>
+          <div class="skeleton h-5 w-16 justify-self-center rounded-full" />
+          <div class="skeleton h-4 w-24 justify-self-end" />
+          <div class="skeleton h-4 w-14 justify-self-end" />
+        </div>
       </div>
-      <div v-else-if="!messages.length" class="p-12 text-center text-slate-500">{{ copy.empty }}</div>
-      <div v-else class="divide-y divide-slate-100">
+      <div v-else-if="!messages.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <Webhook class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ copy.empty }}</p>
+      </div>
+      <div v-else class="divide-y divide-hairline">
         <div
           v-for="message in messages"
           :key="msgKey(message)"
-          class="grid cursor-pointer grid-cols-[minmax(0,1fr)_180px_180px_112px] items-center gap-5 px-5 py-4 transition hover:bg-sky-50"
-          :class="msgKey(selected || {}) === msgKey(message) ? 'bg-sky-50' : ''"
+          class="ui-table-row grid cursor-pointer grid-cols-[minmax(0,1fr)_180px_180px_112px] items-center gap-5 px-4 py-3.5"
+          :class="msgKey(selected || {}) === msgKey(message) ? 'bg-primary-50/60' : ''"
           role="button"
           tabindex="0"
           @click="loadDetail(message)"
@@ -329,18 +342,18 @@ onMounted(() => load(1))
           @keydown.space.prevent="loadDetail(message)"
         >
           <div class="min-w-0">
-            <div class="truncate text-base font-black">{{ messageTitle(message) }}</div>
-            <div class="mt-1 truncate text-sm font-semibold text-slate-600">{{ messageSubtitle(message) }}</div>
+            <div class="truncate text-sm font-medium text-ink">{{ messageTitle(message) }}</div>
+            <div class="tnum mt-0.5 truncate text-xs text-slate-400">{{ messageSubtitle(message) }}</div>
           </div>
           <div class="min-w-0 text-center">
-            <span class="inline-flex max-w-full truncate rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(messageStatus(message))">
+            <span class="ui-badge max-w-full truncate" :class="badgeClass(messageStatus(message))">
               {{ statusText(messageStatus(message)) }}
             </span>
           </div>
-          <div class="text-right text-sm font-semibold text-slate-500">{{ formatDate(message.created_at) || copy.noCreatedAt }}</div>
+          <div class="tnum text-right text-sm text-slate-500">{{ formatDate(message.created_at) || copy.noCreatedAt }}</div>
           <div class="text-right">
             <button
-              class="text-sm font-bold text-blue-700 transition hover:underline"
+              class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600"
               type="button"
               @click.stop="loadDetail(message)"
             >
@@ -350,114 +363,117 @@ onMounted(() => load(1))
         </div>
       </div>
 
-      <div class="flex items-center justify-between gap-3 border-t border-slate-200 p-5">
-        <span class="text-sm font-bold text-slate-500">{{ copy.pageText(page, totalPages) }}</span>
-        <div class="flex gap-3">
+      <div class="flex flex-col items-stretch justify-between gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+        <span class="tnum text-center text-sm text-slate-500 sm:text-left">{{ copy.pageText(page, totalPages) }}</span>
+        <div class="flex flex-col gap-2 sm:flex-row">
           <button
-            class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
+            class="ui-btn ui-btn-secondary ui-btn-sm"
             type="button"
             :disabled="page <= 1 || loading"
             @click="goPage(page - 1)"
           >
-            <ChevronLeft class="h-4 w-4" />
+            <ChevronLeft class="h-4 w-4 text-slate-400" />
             {{ copy.prev }}
           </button>
           <button
-            class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40"
+            class="ui-btn ui-btn-secondary ui-btn-sm"
             type="button"
             :disabled="!hasMore || loading"
             @click="goPage(page + 1)"
           >
             {{ copy.next }}
-            <ChevronRight class="h-4 w-4" />
+            <ChevronRight class="h-4 w-4 text-slate-400" />
           </button>
         </div>
       </div>
     </section>
 
     <Teleport to="body">
-      <div v-if="detailOpen && selected" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/50 p-6">
-        <section class="flex max-h-[88vh] w-full max-w-[1120px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-          <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
-            <div class="flex min-w-0 items-start gap-3">
-              <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
-                <Webhook class="h-5 w-5" />
-              </span>
-              <div class="min-w-0">
-                <h2 class="text-2xl font-black text-slate-950">{{ copy.detailTitle }}</h2>
-                <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
-              </div>
-            </div>
-            <div class="flex shrink-0 items-center gap-3">
-              <button
-                class="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-                type="button"
-                :disabled="reprocessing === String(webhookMsgId(selected))"
-                @click="reprocess(selected)"
-              >
-                <RotateCcw class="h-4 w-4" :class="reprocessing === String(webhookMsgId(selected)) ? 'animate-spin' : ''" />
-                {{ copy.reprocess }}
-              </button>
-              <button
-                class="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
-                type="button"
-                :aria-label="copy.close"
-                @click="closeDetail"
-              >
-                <X class="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-
-          <div v-if="detailLoading" class="p-12 text-center text-slate-500">
-            <Loader2 class="mx-auto mb-2 h-6 w-6 animate-spin" />
-            {{ copy.detailLoading }}
-          </div>
-          <div v-else class="min-h-0 flex-1 space-y-5 overflow-y-auto p-5">
-            <div class="rounded-2xl border border-blue-100 bg-blue-50 p-4">
-              <div class="flex items-center gap-2 text-sm font-black text-blue-700">
-                <Webhook class="h-4 w-4" />
-                {{ copy.currentWebhook }}
-              </div>
-              <div class="mt-1 break-all text-lg font-black text-slate-950">{{ eventTitle(activeRecord) }}</div>
-              <p class="mt-2 text-sm font-semibold leading-6 text-slate-600">{{ eventDescription(activeRecord) }}</p>
-              <div class="mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-black" :class="badgeClass(messageStatus(activeDetail || selected))">
-                {{ statusText(messageStatus(activeDetail || selected)) }}
-              </div>
-            </div>
-
-            <div class="grid gap-4 md:grid-cols-2">
-              <div v-for="field in summaryFields" :key="field.label" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                <span class="text-xs font-black tracking-wide text-slate-400">{{ field.label }}</span>
-                <div class="mt-2 break-words rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700">{{ field.value }}</div>
-              </div>
-            </div>
-
-            <details class="rounded-2xl border border-slate-200">
-              <summary class="cursor-pointer px-4 py-3 text-sm font-black">{{ copy.technicalFields }}</summary>
-              <div class="border-t border-slate-100 p-4">
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div v-for="field in detailFields" :key="field.key" class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                    <span class="text-xs font-black tracking-wide text-slate-400">{{ field.label }}</span>
-                    <div class="mt-2 break-words rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700">{{ field.value }}</div>
-                  </div>
+      <Transition name="modal">
+        <div v-if="detailOpen && selected" class="ui-modal-mask">
+          <section class="ui-modal-panel max-w-[1120px]">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+              <div class="flex min-w-0 items-start gap-3">
+                <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary-50 text-primary-700">
+                  <Webhook class="h-5 w-5" />
+                </span>
+                <div class="min-w-0">
+                  <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
+                  <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
                 </div>
               </div>
-              <div class="border-t border-slate-100 p-4">
-                <JsonPreview
-                  :title="copy.rawJson"
-                  :value="activeDetail || selected || {}"
-                  :copy-label="copy.copyJson"
-                  :copied-label="copy.copiedJson"
-                  :copied-message="copy.toasts.jsonCopied"
-                  :copy-error-message="copy.toasts.jsonCopyFailed"
-                  max-height="460px"
-                />
+              <div class="flex shrink-0 items-center gap-2">
+                <button
+                  class="ui-btn ui-btn-secondary"
+                  type="button"
+                  :disabled="reprocessing === String(webhookMsgId(selected))"
+                  @click="reprocess(selected)"
+                >
+                  <RotateCcw class="h-4 w-4 text-slate-400" :class="reprocessing === String(webhookMsgId(selected)) ? 'animate-spin' : ''" />
+                  {{ copy.reprocess }}
+                </button>
+                <button
+                  class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  type="button"
+                  :aria-label="copy.close"
+                  @click="closeDetail"
+                >
+                  <X class="h-5 w-5" />
+                </button>
               </div>
-            </details>
-          </div>
-        </section>
-      </div>
+            </div>
+
+            <div v-if="detailLoading" class="space-y-3 p-4 md:p-6">
+              <div class="skeleton h-24 w-full" />
+              <div class="skeleton h-12 w-4/5" />
+              <div class="skeleton h-12 w-3/5" />
+            </div>
+            <div v-else class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-6">
+              <div class="rounded-2xl bg-primary-50 p-4 md:p-5">
+                <div class="flex items-center gap-2 text-sm font-medium text-primary-700">
+                  <Webhook class="h-4 w-4" />
+                  {{ copy.currentWebhook }}
+                </div>
+                <div class="mt-1 break-all text-base font-semibold text-ink">{{ eventTitle(activeRecord) }}</div>
+                <p class="mt-2 text-sm leading-6 text-slate-600">{{ eventDescription(activeRecord) }}</p>
+                <span class="ui-badge mt-3" :class="badgeClass(messageStatus(activeDetail || selected))">
+                  {{ statusText(messageStatus(activeDetail || selected)) }}
+                </span>
+              </div>
+
+              <div class="grid gap-4 md:grid-cols-2">
+                <div v-for="field in summaryFields" :key="field.label" class="rounded-2xl bg-slate-50 p-4">
+                  <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
+                  <div class="tnum mt-1.5 break-words text-sm font-medium text-slate-700">{{ field.value }}</div>
+                </div>
+              </div>
+
+              <details class="overflow-hidden rounded-2xl border border-edge">
+                <summary class="cursor-pointer px-4 py-3 text-sm font-medium text-ink transition-colors hover:bg-slate-50">{{ copy.technicalFields }}</summary>
+                <div class="border-t border-hairline p-4">
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div v-for="field in detailFields" :key="field.key" class="rounded-2xl bg-slate-50 p-4">
+                      <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
+                      <div class="tnum mt-1.5 break-words text-sm font-medium text-slate-700">{{ field.value }}</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="border-t border-hairline p-4">
+                  <JsonPreview
+                    :title="copy.rawJson"
+                    :value="activeDetail || selected || {}"
+                    :copy-label="copy.copyJson"
+                    :copied-label="copy.copiedJson"
+                    :copied-message="copy.toasts.jsonCopied"
+                    :copy-error-message="copy.toasts.jsonCopyFailed"
+                    max-height="460px"
+                  />
+                </div>
+              </details>
+            </div>
+          </section>
+        </div>
+      </Transition>
     </Teleport>
-  </section>
+  </main>
 </template>
