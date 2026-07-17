@@ -3178,6 +3178,7 @@ export const en: AdminTranslations = {
             quiz_ulid: "Quiz ID",
             quizzable_type: "Owner Type",
             quizzable_ulid: "Owner ID",
+            quiz_type: "Quiz Type",
             title: "Quiz Title",
             description: "Quiz Description",
             passing_score: "Passing Score",

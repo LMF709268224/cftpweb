@@ -808,8 +808,15 @@ function quizReadonlyFieldLabel(key: string) {
   return labels[key] || lessonReadonlyFieldLabel(key)
 }
 
+function quizTypeLabel(value: unknown) {
+  if (value === 1) return (copy.value as any).quizTypeMustPass || '必过测验'
+  if (value === 2) return (copy.value as any).quizTypeSkippable || '可跳过/自助完成测验'
+  return String(value || "-")
+}
+
 function quizReadonlyValue(key: string, value: unknown) {
   if (key === "quizzable_type") return quizzableTypeLabel(value)
+  if (key === "quiz_type") return quizTypeLabel(value)
   return displayReadonlyValue(key, value)
 }
 

@@ -3176,6 +3176,7 @@ export const zh = {
             quiz_ulid: "测验 ID",
             quizzable_type: "归属类型",
             quizzable_ulid: "归属 ID",
+            quiz_type: "测验类型",
             title: "测验标题",
             description: "测验描述",
             passing_score: "通过分",
