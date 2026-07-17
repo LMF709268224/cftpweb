@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, X } from "lucide-vue-next"
+import { Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 
@@ -800,7 +800,6 @@ function newBundle() {
   showDeleteConfirm.value = false
   createItems.value = [createBundleItem()]
   form.value = { ...emptyForm }
-  void loadCreateTargetOptions()
 }
 
 function closeDetail() {
@@ -808,7 +807,78 @@ function closeDetail() {
   if (mode.value === "create") mode.value = "detail"
 }
 
-async function createBundle() {
+const deleteDraftDialogError = ref("")
+
+const uploadingThumbnail = ref(false)
+const thumbnailFileInput = ref<HTMLInputElement | null>(null)
+
+watch(() => form.value.name, (newName, oldName) => {
+  if (mode.value !== "create") return
+  const generatePath = (t: string) => t ? `/bundle/${t.trim().replace(/\s+/g, '_')}` : ''
+  const newPath = generatePath(newName)
+  const oldPath = generatePath(oldName)
+  
+  if (!form.value.bundle_gpath || form.value.bundle_gpath === oldPath) {
+    form.value.bundle_gpath = newPath
+  }
+})
+
+async function handleThumbnailUpload(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  if (!form.value.bundle_ulid) {
+    toast.error("请先保存草稿")
+    return
+  }
+
+  uploadingThumbnail.value = true
+  try {
+    const arrayBuffer = await file.arrayBuffer()
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+
+    const uploadUrlReq = {
+      bundle_ulid: form.value.bundle_ulid,
+      file_name: file.name,
+      content_type: file.type || "application/octet-stream",
+      file_hash: hashHex,
+    }
+    const uploadUrlRes = await apiClient<JsonRecord>(`/api/mall/bundles/upload-url`, {
+      method: "POST",
+      body: JSON.stringify(uploadUrlReq),
+    })
+
+    const uploadUrl = String(uploadUrlRes.upload_url || "")
+    const objectKey = String(uploadUrlRes.object_key || "")
+    if (!uploadUrl || !objectKey) throw new Error("Invalid upload URL response")
+
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type || "application/octet-stream",
+      },
+    })
+
+    if (!uploadRes.ok) {
+      throw new Error(`Upload failed with status ${uploadRes.status}`)
+    }
+
+    form.value.thumbnail_object_key = objectKey
+    form.value.thumbnail_file_hash = hashHex
+    toast.success("上传成功")
+  } catch (err: any) {
+    console.error(err)
+    toast.error(apiErrorMessage(err, "上传失败"))
+  } finally {
+    uploadingThumbnail.value = false
+    if (thumbnailFileInput.value) thumbnailFileInput.value.value = ""
+  }
+}
+
+async function startCreateBundle() {
   form.value.items_json = createItemsJson.value
   if (!form.value.bundle_gpath.trim() || !form.value.name.trim()) {
     toast.error(copy.value.toasts.createRequired)
@@ -1304,12 +1374,7 @@ onMounted(load)
               <h3 class="text-lg font-black text-slate-950">{{ copy.createSections.basicInfo }}</h3>
               <p class="mt-1 text-sm text-slate-500">{{ copy.createSections.basicInfoDesc }}</p>
               <div class="mt-4 grid gap-4 md:grid-cols-2">
-                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
-                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.bundleGpath }}</span>
-                  <input v-model="form.bundle_gpath" class="h-11 rounded-xl border border-slate-200 px-4" :placeholder="copy.placeholders.bundleGpath" />
-                  <p class="text-xs font-semibold text-slate-500">{{ copy.bundleGpathHint }}</p>
-                </label>
-                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold">
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold md:col-span-2">
                   <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.name }}</span>
                   <input v-model="form.name" class="h-11 rounded-xl border border-slate-200 px-4" maxlength="160" :placeholder="copy.placeholders.name" />
                   <span aria-hidden="true"></span>
@@ -1324,6 +1389,17 @@ onMounted(load)
                   <input v-model="form.thumbnail_file_hash" class="h-11 rounded-xl border border-slate-200 px-4" :placeholder="copy.placeholders.thumbnailFileHash" />
                   <span aria-hidden="true"></span>
                 </label>
+                <div class="md:col-span-2 mt-2 flex gap-3">
+                  <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailUpload" />
+                  <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:w-auto" :disabled="uploadingThumbnail || !form.bundle_ulid" @click="thumbnailFileInput?.click()">
+                    <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
+                    <UploadCloud v-else class="h-4 w-4" />
+                    {{ uploadingThumbnail ? (copy as any).uploading || "上传中..." : (copy as any).uploadThumbnail || "上传封面图" }}
+                  </button>
+                  <span v-if="!form.bundle_ulid" class="flex items-center text-xs font-semibold text-amber-600">
+                    {{ (copy as any).uploadAfterSaveHint || "保存草稿后才可以上传文件" }}
+                  </span>
+                </div>
                 <label class="grid gap-2 text-sm font-bold md:col-span-2">
                   {{ copy.fields.description }}
                   <textarea v-model="form.description" class="min-h-24 rounded-xl border border-slate-200 p-4" maxlength="1200" :placeholder="copy.placeholders.description" />
@@ -1331,11 +1407,15 @@ onMounted(load)
               </div>
             </section>
 
-            <details class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5">
-              <summary class="cursor-pointer text-sm font-black text-slate-700">{{ copy.advancedJsonTitle }}</summary>
-              <p class="mt-2 text-sm text-slate-500">{{ copy.advancedJsonHint }}</p>
-              <div class="mt-4 grid gap-4 xl:grid-cols-2">
-                <label class="grid gap-2 text-sm font-bold">
+            <details class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 mt-4">
+              <summary class="cursor-pointer text-sm font-black text-slate-700">{{ (copy as any).advancedConfig || "高级配置" }}</summary>
+              <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <label class="grid grid-rows-[auto_auto_1.25rem] gap-2 text-sm font-bold md:col-span-2">
+                  <span><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.bundleGpath }}</span>
+                  <input v-model="form.bundle_gpath" class="h-11 rounded-xl border border-slate-200 px-4" :placeholder="copy.placeholders.bundleGpath" />
+                  <p class="text-xs font-semibold text-slate-500">{{ copy.bundleGpathHint }}</p>
+                </label>
+                <label class="grid gap-2 text-sm font-bold md:col-span-2 xl:col-span-1">
                   {{ copy.fields.itemsJson }}
                   <textarea :value="createItemsJson" readonly class="min-h-[180px] rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono text-xs leading-6 text-slate-600" />
                 </label>
@@ -1437,15 +1517,11 @@ onMounted(load)
 
               <div v-else-if="activeTab === 'meta'" class="space-y-5">
                 <div class="grid gap-4 md:grid-cols-2">
-                  <label class="grid gap-2 text-sm font-bold">
+                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     {{ copy.fields.bundleUlid }}
                     <input v-model="form.bundle_ulid" disabled class="h-11 rounded-xl border border-slate-200 bg-slate-100 px-4" />
                   </label>
-                  <label class="grid gap-2 text-sm font-bold">
-                    {{ copy.fields.bundleGpath }}
-                    <input v-model="form.bundle_gpath" disabled class="h-11 rounded-xl border border-slate-200 bg-slate-100 px-4" />
-                  </label>
-                  <label class="grid gap-2 text-sm font-bold">
+                  <label class="grid gap-2 text-sm font-bold md:col-span-2">
                     {{ copy.fields.name }}
                     <input v-model="form.name" class="h-11 rounded-xl border border-slate-200 px-4" maxlength="160" />
                   </label>
@@ -1461,7 +1537,26 @@ onMounted(load)
                     {{ copy.fields.thumbnailFileHash }}
                     <input v-model="form.thumbnail_file_hash" class="h-11 rounded-xl border border-slate-200 px-4" />
                   </label>
+                  <div class="md:col-span-2 mt-2 flex gap-3">
+                    <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailUpload" />
+                    <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:w-auto" :disabled="uploadingThumbnail" @click="thumbnailFileInput?.click()">
+                      <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
+                      <UploadCloud v-else class="h-4 w-4" />
+                      {{ uploadingThumbnail ? (copy as any).uploading || "上传中..." : (copy as any).uploadThumbnail || "上传封面图" }}
+                    </button>
+                  </div>
                 </div>
+
+                <details class="rounded-2xl border border-slate-200 bg-white p-4 md:p-5 mt-6 mb-4">
+                  <summary class="cursor-pointer text-sm font-black text-slate-700">{{ (copy as any).advancedConfig || "高级配置" }}</summary>
+                  <div class="mt-4 grid gap-4">
+                    <label class="grid gap-2 text-sm font-bold">
+                      {{ copy.fields.bundleGpath }}
+                      <input v-model="form.bundle_gpath" disabled class="h-11 rounded-xl border border-slate-200 bg-slate-100 px-4" />
+                    </label>
+                  </div>
+                </details>
+
                 <div class="flex justify-stretch sm:justify-end">
                   <button class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white disabled:opacity-50 sm:w-auto" type="button" :disabled="saving" @click="saveMeta">
                     <Save class="h-4 w-4" />
