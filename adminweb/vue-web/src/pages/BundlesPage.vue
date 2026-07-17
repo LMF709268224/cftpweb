@@ -828,8 +828,17 @@ async function handleThumbnailUpload(event: Event) {
   const file = input.files?.[0]
   if (!file) return
   if (!form.value.bundle_ulid) {
-    toast.error("请先保存草稿")
-    return
+    if (mode.value === "create") {
+      await startCreateBundle()
+      if (!form.value.bundle_ulid) {
+        if (thumbnailFileInput.value) thumbnailFileInput.value.value = ""
+        return
+      }
+    } else {
+      toast.error("状态错误，请先刷新页面")
+      if (thumbnailFileInput.value) thumbnailFileInput.value.value = ""
+      return
+    }
   }
 
   uploadingThumbnail.value = true
@@ -1391,14 +1400,11 @@ onMounted(load)
                 </label>
                 <div class="md:col-span-2 mt-2 flex gap-3">
                   <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailUpload" />
-                  <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:w-auto" :disabled="uploadingThumbnail || !form.bundle_ulid" @click="thumbnailFileInput?.click()">
+                  <button type="button" class="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-500 bg-blue-50 px-4 py-3 font-bold text-blue-700 shadow-sm transition hover:bg-blue-100 disabled:opacity-50 sm:w-auto" :disabled="uploadingThumbnail" @click="thumbnailFileInput?.click()">
                     <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
                     <UploadCloud v-else class="h-4 w-4" />
                     {{ uploadingThumbnail ? (copy as any).uploading || "上传中..." : (copy as any).uploadThumbnail || "上传封面图" }}
                   </button>
-                  <span v-if="!form.bundle_ulid" class="flex items-center text-xs font-semibold text-amber-600">
-                    {{ (copy as any).uploadAfterSaveHint || "保存草稿后才可以上传文件" }}
-                  </span>
                 </div>
                 <label class="grid gap-2 text-sm font-bold md:col-span-2">
                   {{ copy.fields.description }}
