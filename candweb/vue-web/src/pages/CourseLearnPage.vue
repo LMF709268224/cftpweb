@@ -371,6 +371,9 @@ const totalQuizzesCount = computed(() => {
 })
 
 function quizCompleted(quizId?: string, quizType: number = 1, unitStatus?: any) {
+  if (quizType === 2 && quizId && completedOfflineQuizIds.value.has(quizId)) {
+    return true
+  }
   if (quizType === 2 && unitStatus) {
     const s = normalizeEnumValueUpper(unitStatus)
     if (s === "7" || s === "COMPLETED" || s.includes("COMPLETED")) return true
@@ -1148,6 +1151,7 @@ async function loadProgress() {
   } catch {
     progressRecords.value = []
   }
+  loadCompletedOfflineQuizzes()
 }
 
 async function loadRuntime(suppressErrorToast = false) {
@@ -1238,14 +1242,32 @@ async function startQuiz(quizId: string) {
     startingQuizId.value = ""
   }
 }
-
 const completingQuizId = ref("")
+
+const LOCAL_STORAGE_QUIZ_KEY = "completed_offline_quizzes"
+const completedOfflineQuizIds = ref<Set<string>>(new Set())
+
+function loadCompletedOfflineQuizzes() {
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_QUIZ_KEY)
+    if (raw) completedOfflineQuizIds.value = new Set(JSON.parse(raw))
+  } catch {
+    // ignore
+  }
+}
+function addCompletedOfflineQuiz(quizId: string) {
+  completedOfflineQuizIds.value.add(quizId)
+  localStorage.setItem(LOCAL_STORAGE_QUIZ_KEY, JSON.stringify(Array.from(completedOfflineQuizIds.value)))
+}
 async function completeQuiz(quizId: string) {
   if (!quizId || completingQuizId.value) return
   completingQuizId.value = quizId
   try {
-    await apiClient(`/api/quizzes/${quizId}/complete`, { method: "POST" })
+    const res = await apiClient(`/api/quizzes/${quizId}/complete`, { method: "POST" })
     toast.success("测验已标记为完成")
+    if (res?.quiz_status === "completed" || res?.quiz_status === "QUIZ_ATTEMPT_STATUS_COMPLETED") {
+      addCompletedOfflineQuiz(quizId)
+    }
     // Reload course data to update progress
     await loadCourse(true)
   } catch (err: any) {

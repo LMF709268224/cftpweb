@@ -205,12 +205,12 @@ onMounted(loadPaper)
                 </div>
               </div>
             </div>
-            <div v-if="getAnswerDetail(question.question_id)?.explanation" class="mt-6 rounded-md bg-blue-50 p-4 border border-blue-100">
+            <div v-if="question.explanation || getAnswerDetail(question.question_id)?.explanation" class="mt-6 rounded-md bg-blue-50 p-4 border border-blue-100">
               <div class="flex items-center gap-2 text-blue-800 font-semibold mb-2">
                 <AlertCircle class="h-4 w-4" />
                 <span>解答说明</span>
               </div>
-              <p class="text-sm text-blue-900 leading-relaxed whitespace-pre-wrap">{{ getAnswerDetail(question.question_id)?.explanation }}</p>
+              <p class="text-sm text-blue-900 leading-relaxed whitespace-pre-wrap">{{ question.explanation || getAnswerDetail(question.question_id)?.explanation }}</p>
             </div>
           </div>
         </div>
