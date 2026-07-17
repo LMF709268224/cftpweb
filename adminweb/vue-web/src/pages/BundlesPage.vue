@@ -800,6 +800,7 @@ function newBundle() {
   showDeleteConfirm.value = false
   createItems.value = [createBundleItem()]
   form.value = { ...emptyForm }
+  void loadCreateTargetOptions()
 }
 
 function closeDetail() {
