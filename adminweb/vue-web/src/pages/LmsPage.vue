@@ -2277,7 +2277,7 @@ async function saveQuiz() {
       selectedQuiz.value = createdQuiz
       editingQuizId.value = createdId
       quizDialogMode.value = "edit"
-      quizDialogOpen.value = true
+      quizDialogOpen.value = false
       await loadQuestions(createdId)
       newQuestion()
       toast.success(copy.value.toasts.quizCreatedAddQuestions)
@@ -4267,7 +4267,7 @@ onMounted(() => {
     </div>
   </div>
   <teleport to="body">
-    <div v-if="advancedMediaDialogOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-0 backdrop-blur-sm md:p-6" role="dialog" aria-modal="true">
+    <div v-if="advancedMediaDialogOpen" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 p-0 backdrop-blur-sm md:p-6" role="dialog" aria-modal="true">
       <div class="flex h-full max-h-none w-full max-w-2xl flex-col overflow-hidden rounded-none bg-white shadow-2xl md:h-auto md:max-h-[88vh] md:rounded-3xl">
         <div class="flex items-center justify-between border-b border-slate-100 px-4 py-4 md:px-6">
           <h2 class="text-lg font-black">{{ copy.mediaJsonLabel }}</h2>
