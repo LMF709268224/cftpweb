@@ -807,8 +807,15 @@ function quizReadonlyFieldLabel(key: string) {
   return labels[key] || lessonReadonlyFieldLabel(key)
 }
 
+function quizTypeLabel(value: unknown) {
+  if (value === 1) return (copy.value as any).quizTypeMustPass || '必过测验'
+  if (value === 2) return (copy.value as any).quizTypeSkippable || '可跳过/自助完成测验'
+  return String(value || "-")
+}
+
 function quizReadonlyValue(key: string, value: unknown) {
   if (key === "quizzable_type") return quizzableTypeLabel(value)
+  if (key === "quiz_type") return quizTypeLabel(value)
   return displayReadonlyValue(key, value)
 }
 
@@ -1273,7 +1280,7 @@ async function publishCourse() {
   } catch (err: any) {
     console.error(err)
     if (err?.status === 409) {
-      toast.error((copy.value.toasts as any).coursePublishMissingConfig || "课程发布失败，请检查下方带有「缺少内容」标签的章节或课时并完善配置")
+      toast.error(apiErrorMessage(err, (copy.value.toasts as any).coursePublishMissingConfig || "课程发布失败，请检查下方带有「缺少内容」标签的章节或课时并完善配置"))
     } else {
       toast.error(apiErrorMessage(err, copy.value.toasts.coursePublishFailed))
     }
@@ -2561,6 +2568,20 @@ async function saveOptionForQuestion(questionIdValue = selectedQuestionId.value,
   if (!questionIdValue || !optionForm.value.option_text.trim()) {
     toast.error(copy.value.toasts.optionRequired)
     return false
+  }
+
+  const qType = Number(selectedQuestion.value?.question_type || 0)
+  if (qType === 3 && !editingOptionId.value && options.value.length >= 2) {
+    toast.error((copy.value.toasts as any)?.judgementMaxOptions || "判断题最多只能有 2 个选项")
+    return false
+  }
+
+  if ((qType === 1 || qType === 3) && optionForm.value.is_correct) {
+    const hasOtherCorrect = options.value.some(o => o.is_correct && optionId(o) !== editingOptionId.value)
+    if (hasOtherCorrect) {
+      toast.error((copy.value.toasts as any)?.singleCorrectOptionLimit || "该题型只能有一个正确选项，请先取消其他选项的正确答案状态")
+      return false
+    }
   }
   const targetSort = Number(optionForm.value.sort_order || 1)
   const isConflict = options.value.some(o => Number(o.sort_order || 0) === targetSort && optionId(o) !== editingOptionId.value)

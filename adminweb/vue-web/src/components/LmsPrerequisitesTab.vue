@@ -230,7 +230,7 @@ onMounted(() => {
         </select>
       </label>
       <label v-if="selectedEntityType === 2" class="space-y-2 text-sm font-bold w-[140px]">
-        <span>要求标准</span>
+        <span>{{ copy.requireStandard || '要求标准' }}</span>
         <select v-model="formRequiredResult" class="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 font-semibold outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" required>
           <option :value="2">{{ copy.mustPass || '必须通过' }}</option>
           <option :value="1">{{ copy.mustComplete || '必须完成' }}</option>
