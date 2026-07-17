@@ -807,8 +807,6 @@ function closeDetail() {
   if (mode.value === "create") mode.value = "detail"
 }
 
-const deleteDraftDialogError = ref("")
-
 const uploadingThumbnail = ref(false)
 const thumbnailFileInput = ref<HTMLInputElement | null>(null)
 
@@ -829,7 +827,7 @@ async function handleThumbnailUpload(event: Event) {
   if (!file) return
   if (!form.value.bundle_ulid) {
     if (mode.value === "create") {
-      await startCreateBundle()
+      await createBundle()
       if (!form.value.bundle_ulid) {
         if (thumbnailFileInput.value) thumbnailFileInput.value.value = ""
         return
@@ -887,7 +885,7 @@ async function handleThumbnailUpload(event: Event) {
   }
 }
 
-async function startCreateBundle() {
+async function createBundle() {
   form.value.items_json = createItemsJson.value
   if (!form.value.bundle_gpath.trim() || !form.value.name.trim()) {
     toast.error(copy.value.toasts.createRequired)
