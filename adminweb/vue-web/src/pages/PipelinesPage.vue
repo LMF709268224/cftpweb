@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { Award, BookOpen, ChevronDown, Copy, GraduationCap, Inbox, Info, Layers, Loader2, Plus, RefreshCw, Save, Send, ShieldCheck, Trash2, X } from "lucide-vue-next"
-import { computed, onMounted, ref, watch } from "vue"
+import { Award, BookOpen, ChevronDown, ChevronRight, Copy, GraduationCap, History, Inbox, Info, Layers, Loader2, Plus, RefreshCw, Save, Send, ShieldCheck, Trash2, TriangleAlert, X } from "lucide-vue-next"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import RowMenu from "@/components/RowMenu.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
+import { groupByLineage } from "@/lib/versionGroup"
 
 type PipelineForm = {
   name: string
@@ -73,6 +77,9 @@ const deletingPipeline = ref(false)
 const limit = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pipelineConfigAdmin)
+const route = useRoute()
+const expandedGroups = ref<Record<string, boolean>>({})
+const collapsedStages = ref<Record<string, boolean>>({})
 
 const canPrev = computed(() => !!prevToken.value)
 const canNext = computed(() => hasMore.value)
@@ -105,9 +112,63 @@ const units = computed<UnitListItem[]>(() => {
   return list
 })
 
-const selectedStage = computed(() => stages.value[selectedStageIndex.value] || null)
-const selectedStageUnits = computed(() => selectedStage.value ? asArray(selectedStage.value.units) : [])
 const selectedUnitItem = computed(() => units.value.find((item) => item.path === selectedUnitPath.value) || units.value[0] || null)
+
+const lineageGroups = computed(() => {
+  const groups = groupByLineage(
+    pipelines.value,
+    (pipeline) => pipelineName(pipeline),
+    (pipeline) => String(pipeline.category_tips || ""),
+  )
+  return groups.map((group) => {
+    const versions = [group.primary, ...group.history]
+    const primary = versions.find((item) => pipelineStatusKey(item) !== "DEPRECATED") || versions[0]
+    return {
+      stem: group.stem,
+      key: `${String(primary.category_tips || "")}::${group.stem}`,
+      primary,
+      history: versions.filter((item) => item !== primary),
+    }
+  })
+})
+
+function toggleGroup(key: string) {
+  expandedGroups.value[key] = !expandedGroups.value[key]
+}
+
+function isDeprecatedPipeline(pipeline: JsonRecord) {
+  return pipelineStatusKey(pipeline) === "DEPRECATED"
+}
+
+function stageCardKey(stage: JsonRecord, index: number) {
+  return itemId(stage, ["stage_ulid"]) || `stage-${index}`
+}
+
+function isStageCollapsed(stage: JsonRecord, index: number) {
+  return Boolean(collapsedStages.value[stageCardKey(stage, index)])
+}
+
+function toggleStageCard(stage: JsonRecord, index: number) {
+  const key = stageCardKey(stage, index)
+  collapsedStages.value[key] = !collapsedStages.value[key]
+}
+
+const stageMenuItems = computed(() => [
+  { key: "removeStage", label: copy.value.deleteStage, icon: Trash2, danger: true, disabled: isStructureLocked() },
+])
+
+function onStageMenu(key: string, index: number) {
+  if (key === "removeStage") {
+    selectedStageIndex.value = index
+    removeStage(index)
+  }
+}
+
+function openUnitEditor(stageIndex: number, unitIndex: number) {
+  selectedStageIndex.value = stageIndex
+  selectedUnitPath.value = `${stageIndex}:${unitIndex}`
+  activeLayer.value = "units"
+}
 const selectedCert = computed(() => certs.value[selectedCertIndex.value] || null)
 const selectedUnlockQual = computed(() => unlockQuals.value[selectedUnlockQualIndex.value] || null)
 const selectedCertQual = computed(() => certQuals.value[selectedCertQualIndex.value] || null)
@@ -119,6 +180,7 @@ const layerItems = computed(() => [
   { key: "certs" as const, title: copy.value.layers.certs.title, desc: copy.value.layers.certs.desc, count: certs.value.length },
   { key: "unlock_quals" as const, title: copy.value.layers.unlockQuals.title, desc: copy.value.layers.unlockQuals.desc, count: unlockQuals.value.length },
   { key: "certs_quals" as const, title: copy.value.layers.certQuals.title, desc: copy.value.layers.certQuals.desc, count: certQuals.value.length },
+  { key: "raw" as const, title: copy.value.layers.raw.title, desc: copy.value.layers.raw.desc, count: undefined as number | undefined },
 ])
 
 function asArray(value: unknown): JsonRecord[] {
@@ -923,7 +985,18 @@ async function clonePipeline() {
   }
 }
 
-watch([categoryFilter, onlyCurrent], () => { pageToken.value = ""; load() })
+let filterDebounceTimer: number | undefined
+watch([categoryFilter, onlyCurrent], () => {
+  if (filterDebounceTimer) window.clearTimeout(filterDebounceTimer)
+  filterDebounceTimer = window.setTimeout(() => {
+    pageToken.value = ""
+    void load()
+  }, 250)
+})
+
+onBeforeUnmount(() => {
+  if (filterDebounceTimer) window.clearTimeout(filterDebounceTimer)
+})
 
 watch(() => form.value.name, (newName, oldName) => {
   if (!creating.value) return
@@ -934,7 +1007,12 @@ watch(() => form.value.name, (newName, oldName) => {
 })
 
 onMounted(() => {
-  void load()
+  const deepLinkCategory = String(route.query.category || "")
+  if (deepLinkCategory) {
+    categoryFilter.value = deepLinkCategory
+  } else {
+    void load()
+  }
   void loadCourseOptions()
   void loadCredentialOptions()
   void loadPdfTemplateOptions()
@@ -1005,44 +1083,99 @@ onMounted(() => {
           <span class="text-right">{{ copy.columns.action }}</span>
         </div>
         <div class="divide-y divide-hairline">
-          <div
-            v-for="pipeline in pipelines"
-            :key="pipelineUlid(pipeline)"
-            class="ui-table-row flex w-full cursor-pointer flex-col gap-2 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] md:items-center md:gap-4 md:px-6"
-            role="button"
-            tabindex="0"
-            @click="selectPipeline(pipeline)"
-            @keydown.enter.prevent="selectPipeline(pipeline)"
-            @keydown.space.prevent="selectPipeline(pipeline)"
-          >
-            <div class="min-w-0">
-              <div class="break-words text-sm font-medium text-ink md:truncate">{{ pipelineName(pipeline) }}</div>
-              <div class="mt-0.5 line-clamp-1 text-sm text-slate-500">{{ pipeline.description || copy.noDescription }}</div>
-              <div class="mt-2 flex flex-wrap items-center gap-2">
-                <span class="ui-badge max-w-full bg-slate-100 text-slate-600"><span class="truncate">{{ pipeline.category_tips || "-" }}</span></span>
-                <span class="tnum max-w-full break-all text-xs text-slate-400">ID: {{ pipelineUlid(pipeline) || "-" }}</span>
+          <template v-for="group in lineageGroups" :key="group.key">
+            <div
+              class="ui-table-row flex w-full cursor-pointer flex-col gap-2 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] md:items-center md:gap-4 md:px-6"
+              role="button"
+              tabindex="0"
+              @click="selectPipeline(group.primary)"
+              @keydown.enter.prevent="selectPipeline(group.primary)"
+              @keydown.space.prevent="selectPipeline(group.primary)"
+            >
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="min-w-0 break-words text-sm font-medium text-ink md:truncate">{{ pipelineName(group.primary) }}</span>
+                  <button
+                    v-if="group.history.length"
+                    type="button"
+                    class="tnum inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
+                    :aria-expanded="Boolean(expandedGroups[group.key])"
+                    :title="t.common.historyVersions"
+                    :aria-label="t.common.historyVersions"
+                    @click.stop="toggleGroup(group.key)"
+                    @keydown.enter.stop
+                    @keydown.space.stop
+                  >
+                    <History class="h-3 w-3" />
+                    {{ group.history.length }}
+                    <ChevronDown class="h-3 w-3 transition-transform duration-150" :class="expandedGroups[group.key] ? 'rotate-180' : ''" />
+                  </button>
+                </div>
+                <div class="mt-0.5 line-clamp-1 text-sm text-slate-500">{{ group.primary.description || copy.noDescription }}</div>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <span class="ui-badge max-w-full bg-slate-100 text-slate-600"><span class="truncate">{{ group.primary.category_tips || "-" }}</span></span>
+                  <UlidChip :value="pipelineUlid(group.primary)" />
+                </div>
+              </div>
+              <div class="flex items-center justify-between gap-3 md:block md:justify-self-center md:text-center">
+                <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
+                <span class="ui-badge" :class="badgeClass(pipelineStatus(group.primary))">{{ pipelineStatusLabel(pipelineStatus(group.primary)) }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 md:block md:text-center">
+                <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.version }}</span>
+                <span class="tnum text-sm text-slate-600">v{{ group.primary.version || 0 }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-3 md:block md:justify-self-end md:text-right">
+                <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
+                <span class="tnum text-sm text-slate-500">{{ formatDate(String(group.primary.updated_at || group.primary.created_at || "")) }}</span>
+              </div>
+              <div class="flex items-center justify-end gap-1 md:justify-self-end">
+                <button
+                  class="inline-flex h-8 items-center justify-center rounded-lg px-3 text-sm font-medium text-primary-700 transition-colors duration-150 hover:bg-primary-50 hover:text-primary-600"
+                  type="button"
+                  @click.stop="selectPipeline(group.primary)"
+                >
+                  {{ copy.viewDetails }}
+                </button>
+                <ChevronRight class="hidden h-4 w-4 shrink-0 text-slate-300 md:block" />
               </div>
             </div>
-            <div class="flex items-center justify-between gap-3 md:block md:justify-self-center md:text-center">
-              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
-              <span class="ui-badge" :class="badgeClass(pipelineStatus(pipeline))">{{ pipelineStatusLabel(pipelineStatus(pipeline)) }}</span>
-            </div>
-            <div class="flex items-center justify-between gap-3 md:block md:text-center">
-              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.version }}</span>
-              <span class="tnum text-sm text-slate-600">v{{ pipeline.version || 0 }}</span>
-            </div>
-            <div class="flex items-center justify-between gap-3 md:block md:justify-self-end md:text-right">
-              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
-              <span class="tnum text-sm text-slate-500">{{ formatDate(String(pipeline.updated_at || pipeline.created_at || "")) }}</span>
-            </div>
-            <button
-              class="inline-flex h-8 items-center justify-center rounded-lg px-3 text-sm font-medium text-primary-700 transition-colors duration-150 hover:bg-primary-50 hover:text-primary-600 md:justify-self-end"
-              type="button"
-              @click.stop="selectPipeline(pipeline)"
-            >
-              {{ copy.viewDetails }}
-            </button>
-          </div>
+            <template v-if="expandedGroups[group.key]">
+              <div
+                v-for="old in group.history"
+                :key="pipelineUlid(old)"
+                class="ui-table-row flex w-full cursor-pointer flex-col gap-2 bg-slate-50/60 px-4 py-2.5 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_150px_72px_170px_112px] md:items-center md:gap-4 md:px-6"
+                role="button"
+                tabindex="0"
+                @click="selectPipeline(old)"
+                @keydown.enter.prevent="selectPipeline(old)"
+                @keydown.space.prevent="selectPipeline(old)"
+              >
+                <div class="min-w-0 border-l-2 border-slate-200 pl-3">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="min-w-0 break-words text-sm text-slate-500 md:truncate">{{ pipelineName(old) }}</span>
+                    <span v-if="isDeprecatedPipeline(old)" class="ui-badge shrink-0 bg-slate-100 text-slate-500">{{ t.common.deprecatedMuted }}</span>
+                  </div>
+                  <div class="mt-1"><UlidChip :value="pipelineUlid(old)" /></div>
+                </div>
+                <div class="flex items-center justify-between gap-3 md:block md:justify-self-center md:text-center">
+                  <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
+                  <span class="ui-badge" :class="badgeClass(pipelineStatus(old))">{{ pipelineStatusLabel(pipelineStatus(old)) }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 md:block md:text-center">
+                  <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.version }}</span>
+                  <span class="tnum text-sm text-slate-500">v{{ old.version || 0 }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-3 md:block md:justify-self-end md:text-right">
+                  <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
+                  <span class="tnum text-sm text-slate-400">{{ formatDate(String(old.updated_at || old.created_at || "")) }}</span>
+                </div>
+                <div class="hidden items-center justify-end md:flex md:justify-self-end">
+                  <ChevronRight class="h-4 w-4 shrink-0 text-slate-300" />
+                </div>
+              </div>
+            </template>
+          </template>
         </div>
       </template>
       <div class="flex flex-col items-stretch justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
@@ -1058,6 +1191,11 @@ onMounted(() => {
             <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
               <div class="min-w-0">
                 <h2 class="break-words text-base font-semibold text-ink md:truncate md:text-lg">{{ creating ? copy.newPipeline : form.name || copy.detailTitle }}</h2>
+                <div v-if="!creating && selected" class="mt-1.5 flex flex-wrap items-center gap-2">
+                  <span class="ui-badge" :class="badgeClass(pipelineStatus(selected))">{{ pipelineStatusLabel(pipelineStatus(selected)) }}</span>
+                  <span class="tnum text-xs text-slate-500">v{{ selected.version || 0 }}</span>
+                  <UlidChip :value="selectedId" />
+                </div>
                 <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
               </div>
               <button
@@ -1083,11 +1221,6 @@ onMounted(() => {
                       {{ copy.cloneVersion }}
                     </button>
                     <button class="ui-btn ui-btn-secondary" type="button" @click="publish">{{ copy.publish }}</button>
-                    <button class="ui-btn ui-btn-secondary" type="button" :disabled="deprecating" @click="deprecate">{{ copy.deprecate }}</button>
-                    <button v-if="canDeleteSelectedPipeline" class="ui-btn ui-btn-danger" type="button" @click="removePipeline">
-                      <Trash2 class="h-4 w-4" />
-                      {{ copy.delete }}
-                    </button>
                   </div>
                 </div>
                 <div class="grid gap-4 md:grid-cols-2">
@@ -1097,7 +1230,7 @@ onMounted(() => {
                   </label>
                   <details class="group md:col-span-2">
                     <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20">
-                      {{ (copy as any).advancedConfig || '高级配置' }}
+                      {{ t.lmsAdmin.advancedConfig }}
                       <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
                     </summary>
                     <div class="mt-4 grid gap-4 md:grid-cols-2">
@@ -1131,7 +1264,7 @@ onMounted(() => {
                       @click="activeLayer = layer.key"
                     >
                       {{ layer.title }}
-                      <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ layer.count }}</span>
+                      <span v-if="layer.count !== undefined" class="tnum ui-badge bg-slate-100 text-slate-600">{{ layer.count }}</span>
                     </button>
                   </div>
                 </div>
@@ -1149,11 +1282,11 @@ onMounted(() => {
                   <div v-if="activeLayer === 'overview'" class="grid gap-4 p-4 md:gap-5 md:p-6 lg:grid-cols-2">
                     <div class="rounded-2xl bg-slate-50 p-4">
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.pipelineId }}</div>
-                      <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ selectedId || "-" }}</div>
+                      <div class="mt-2"><UlidChip :value="selectedId" /></div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 p-4">
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.pipelineGuid }}</div>
-                      <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ selected?.pipeline_guid || "-" }}</div>
+                      <div class="mt-2"><UlidChip :value="String(selected?.pipeline_guid || '')" /></div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 p-4">
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.status }}</div>
@@ -1167,111 +1300,96 @@ onMounted(() => {
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.createdAt }}</div>
                       <div class="tnum mt-2 text-sm font-medium text-ink">{{ formatDate(String(selected?.created_at || "")) }}</div>
                     </div>
+                    <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.fields.updatedAt }}</div>
+                      <div class="tnum mt-2 text-sm font-medium text-ink">{{ formatDate(String(selected?.updated_at || "")) }}</div>
+                    </div>
                   </div>
 
-                  <div v-else-if="activeLayer === 'stages'" class="grid min-h-[620px] lg:grid-cols-[320px_minmax(0,1fr)]">
-                    <div class="border-b border-hairline lg:border-b-0 lg:border-r">
-                      <div class="flex items-center justify-between gap-3 border-b border-hairline p-4">
-                        <div class="min-w-0">
-                          <div class="text-sm font-semibold text-ink">{{ copy.stageListTitle }}</div>
-                          <div class="mt-0.5 text-xs text-slate-400">{{ copy.stageListDescription }}</div>
-                        </div>
-                        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="addStage">{{ copy.newStage }}</button>
+                  <div v-else-if="activeLayer === 'stages'" class="p-4 md:p-6">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                      <div class="min-w-0">
+                        <div class="text-sm font-semibold text-ink">{{ copy.stageListTitle }}</div>
+                        <div class="mt-0.5 text-xs text-slate-400">{{ copy.stageListDescription }}</div>
                       </div>
-                      <button
-                        v-for="(stage, index) in stages"
-                        :key="`${itemId(stage, ['stage_ulid'])}-${index}`"
-                        class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
-                        :class="selectedStageIndex === index ? 'bg-primary-50/60' : ''"
-                        type="button"
-                        @click="selectedStageIndex = index"
-                      >
-                        <div class="text-sm font-semibold text-ink">{{ itemTitle(stage, copy.stageFallback(index + 1)) }}</div>
-                        <div class="tnum mt-1 text-xs text-slate-500">{{ copy.stageMeta(stage.sort_order ?? index + 1, asArray(stage.units).length) }}</div>
-                        <div class="tnum mt-1.5 break-all text-xs text-slate-400">ID: {{ itemId(stage, ['stage_ulid']) || "-" }}</div>
-                      </button>
-                      <div v-if="!stages.length" class="ui-empty">
-                        <div class="ui-empty-icon">
-                          <Layers class="h-6 w-6" />
-                        </div>
-                        <p class="ui-empty-title">{{ copy.noStages }}</p>
-                      </div>
+                      <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="addStage">{{ copy.newStage }}</button>
                     </div>
-                    <div class="space-y-5 p-4 md:p-5">
-                      <template v-if="selectedStage">
-                        <div class="flex flex-wrap items-center justify-between gap-3">
-                          <div class="min-w-0">
-                            <h4 class="text-base font-semibold text-ink">{{ copy.stageDetailTitle }}</h4>
-                            <p class="mt-0.5 text-sm text-slate-500">{{ copy.stageDetailDescription }}</p>
-                          </div>
-                          <button class="ui-btn ui-btn-danger ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="removeStage()">{{ copy.deleteStage }}</button>
-                        </div>
-                        <div class="grid gap-4 md:grid-cols-2">
-                          <label class="grid gap-1.5">
-                            <span class="ui-label">{{ copy.fields.stageId }}</span>
-                            <input :value="fieldValue(selectedStage, 'stage_ulid')" disabled class="ui-input tnum" />
-                          </label>
-                          <label class="grid gap-1.5">
-                            <span class="ui-label">{{ copy.fields.sortOrder }}</span>
-                            <input :value="numberValue(selectedStage, 'sort_order')" :disabled="isStructureLocked()" type="number" class="ui-input tnum" @input="setField(selectedStage, 'sort_order', eventNumber($event))" />
-                          </label>
-                          <label class="grid gap-1.5 md:col-span-2">
-                            <span class="ui-label">{{ copy.fields.name }}</span>
-                            <input :value="fieldValue(selectedStage, 'name')" :disabled="isStructureLocked()" class="ui-input" @input="setField(selectedStage, 'name', eventValue($event))" />
-                          </label>
-                        </div>
-                        <section class="rounded-2xl bg-slate-50 p-4">
-                          <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div class="min-w-0">
-                              <h5 class="text-sm font-semibold text-ink">{{ copy.stageUnitsSummaryTitle }}</h5>
-                              <p class="mt-1 text-sm text-slate-500">{{ copy.stageUnitsSummaryDescription(selectedStageUnits.length) }}</p>
+                    <div v-if="stages.length" class="mt-4 space-y-3">
+                      <section
+                        v-for="(stage, index) in stages"
+                        :key="stageCardKey(stage, index)"
+                        class="rounded-2xl border border-edge bg-white"
+                      >
+                        <header class="flex flex-wrap items-center gap-3 px-4 py-3">
+                          <button
+                            type="button"
+                            class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
+                            :aria-expanded="!isStageCollapsed(stage, index)"
+                            :title="isStageCollapsed(stage, index) ? t.common.expand : t.common.collapse"
+                            :aria-label="isStageCollapsed(stage, index) ? t.common.expand : t.common.collapse"
+                            @click="toggleStageCard(stage, index)"
+                          >
+                            <ChevronDown class="h-4 w-4 transition-transform duration-150" :class="isStageCollapsed(stage, index) ? '-rotate-90' : ''" />
+                          </button>
+                          <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <span class="min-w-0 truncate text-sm font-semibold text-ink">{{ itemTitle(stage, copy.stageFallback(index + 1)) }}</span>
+                              <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.stageMeta(stage.sort_order ?? index + 1, asArray(stage.units).length) }}</span>
                             </div>
-                            <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ selectedStageUnits.length }}</span>
+                            <div class="mt-1"><UlidChip :value="itemId(stage, ['stage_ulid'])" /></div>
                           </div>
-                          <div v-if="selectedStageUnits.length" class="mt-4 grid gap-3 xl:grid-cols-2">
-                            <article
-                              v-for="(unit, unitIndex) in selectedStageUnits"
-                              :key="`${itemId(unit, ['unit_ulid'])}-${unitIndex}`"
-                              class="rounded-2xl border border-edge bg-white p-4"
-                            >
-                              <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                  <div class="truncate text-sm font-semibold text-ink">{{ itemTitle(unit, copy.unitFallback(unitIndex + 1)) }}</div>
-                                  <div class="tnum mt-1 break-all text-xs text-slate-400">{{ copy.stageUnitSummaryId(itemId(unit, ['unit_ulid'])) }}</div>
+                          <div class="flex shrink-0 items-center gap-2">
+                            <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="addUnit(index)">{{ copy.newUnit }}</button>
+                            <RowMenu :items="stageMenuItems" @select="(key) => onStageMenu(key, index)" />
+                          </div>
+                        </header>
+                        <div v-show="!isStageCollapsed(stage, index)">
+                          <div class="grid gap-4 border-t border-hairline p-4 md:grid-cols-2">
+                            <label class="grid gap-1.5">
+                              <span class="ui-label">{{ copy.fields.name }}</span>
+                              <input :value="fieldValue(stage, 'name')" :disabled="isStructureLocked()" class="ui-input" @input="setField(stage, 'name', eventValue($event))" />
+                            </label>
+                            <label class="grid gap-1.5">
+                              <span class="ui-label">{{ copy.fields.sortOrder }}</span>
+                              <input :value="numberValue(stage, 'sort_order')" :disabled="isStructureLocked()" type="number" class="ui-input tnum" @input="setField(stage, 'sort_order', eventNumber($event))" />
+                            </label>
+                          </div>
+                          <div class="overflow-hidden rounded-b-2xl border-t border-hairline">
+                            <div v-if="asArray(stage.units).length" class="divide-y divide-hairline">
+                              <div
+                                v-for="(unit, unitIndex) in asArray(stage.units)"
+                                :key="`${itemId(unit, ['unit_ulid'])}-${unitIndex}`"
+                                class="ui-table-row flex cursor-pointer items-center gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+                                role="button"
+                                tabindex="0"
+                                @click="openUnitEditor(index, unitIndex)"
+                                @keydown.enter.prevent="openUnitEditor(index, unitIndex)"
+                                @keydown.space.prevent="openUnitEditor(index, unitIndex)"
+                              >
+                                <div class="min-w-0 flex-1">
+                                  <div class="flex flex-wrap items-center gap-2">
+                                    <span class="min-w-0 truncate text-sm font-medium text-ink">{{ itemTitle(unit, copy.unitFallback(unitIndex + 1)) }}</span>
+                                    <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.stageUnitSummarySort(numberValue(unit, 'sort_order') || unitIndex + 1) }}</span>
+                                    <span v-if="boolValue(unit, 'allow_exemption')" class="ui-badge shrink-0 bg-sky-50 text-sky-700">{{ copy.fields.allowExemption }}</span>
+                                  </div>
+                                  <div class="mt-1 flex flex-wrap items-center gap-2">
+                                    <span class="min-w-0 truncate text-xs text-slate-500">{{ unitCourseLabel(unit) }}</span>
+                                    <UlidChip :value="itemId(unit, ['unit_ulid'])" />
+                                  </div>
                                 </div>
-                                <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.stageUnitSummarySort(numberValue(unit, 'sort_order') || unitIndex + 1) }}</span>
+                                <ChevronRight class="h-4 w-4 shrink-0 text-slate-300" />
                               </div>
-                              <dl class="mt-4 grid gap-3 text-xs sm:grid-cols-2">
-                                <div>
-                                  <dt class="font-medium text-slate-400">{{ copy.fields.glmsCourse }}</dt>
-                                  <dd class="mt-1 break-all text-slate-600">{{ unitCourseLabel(unit) }}</dd>
-                                </div>
-                                <div>
-                                  <dt class="font-medium text-slate-400">{{ copy.fields.examCode }}</dt>
-                                  <dd class="tnum mt-1 break-all text-slate-600">{{ fieldValue(unit, 'exam_ulid') || "-" }}</dd>
-                                </div>
-                                <div>
-                                  <dt class="font-medium text-slate-400">{{ copy.fields.formCode }}</dt>
-                                  <dd class="tnum mt-1 break-all text-slate-600">{{ fieldValue(unit, 'form_code') || "-" }}</dd>
-                                </div>
-                                <div>
-                                  <dt class="font-medium text-slate-400">{{ copy.fields.allowExemption }}</dt>
-                                  <dd class="mt-1 text-slate-600">{{ boolValue(unit, 'allow_exemption') ? copy.stageUnitSummaryExemptionEnabled : copy.stageUnitSummaryExemptionDisabled }}</dd>
-                                </div>
-                              </dl>
-                            </article>
+                            </div>
+                            <div v-else class="px-4 py-6 text-center text-sm text-slate-500">{{ copy.stageUnitsSummaryEmpty }}</div>
                           </div>
-                          <div v-else class="mt-4 rounded-[10px] border border-dashed border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-                            {{ copy.stageUnitsSummaryEmpty }}
-                          </div>
-                        </section>
-                      </template>
-                      <div v-else class="ui-empty">
-                        <div class="ui-empty-icon">
-                          <Layers class="h-6 w-6" />
                         </div>
-                        <p class="ui-empty-title">{{ copy.selectOrAddStage }}</p>
+                      </section>
+                    </div>
+                    <div v-else class="ui-empty">
+                      <div class="ui-empty-icon">
+                        <Layers class="h-6 w-6" />
                       </div>
+                      <p class="ui-empty-title">{{ copy.noStages }}</p>
                     </div>
                   </div>
 
@@ -1284,18 +1402,21 @@ onMounted(() => {
                         </div>
                         <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="addUnit()">{{ copy.newUnit }}</button>
                       </div>
-                      <button
+                      <div
                         v-for="item in units"
                         :key="item.path"
-                        class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
+                        class="w-full cursor-pointer border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
                         :class="selectedUnitPath === item.path ? 'bg-primary-50/60' : ''"
-                        type="button"
+                        role="button"
+                        tabindex="0"
                         @click="selectedUnitPath = item.path"
+                        @keydown.enter.prevent="selectedUnitPath = item.path"
+                        @keydown.space.prevent="selectedUnitPath = item.path"
                       >
                         <div class="text-sm font-semibold text-ink">{{ itemTitle(item.unit, copy.unitFallback(item.unitIndex + 1)) }}</div>
                         <div class="mt-1 text-xs text-slate-500">{{ copy.parentStagePrefix }}{{ itemTitle(item.stage, copy.stageFallback(item.stageIndex + 1)) }}</div>
-                        <div class="tnum mt-1.5 break-all text-xs text-slate-400">ID: {{ itemId(item.unit, ['unit_ulid']) || "-" }}</div>
-                      </button>
+                        <div class="mt-1.5"><UlidChip :value="itemId(item.unit, ['unit_ulid'])" /></div>
+                      </div>
                       <div v-if="!units.length" class="ui-empty">
                         <div class="ui-empty-icon">
                           <BookOpen class="h-6 w-6" />
@@ -1340,7 +1461,7 @@ onMounted(() => {
                             <p class="text-xs text-slate-400">{{ copy.glmsCourseHint }}</p>
                           </label>
                           <div class="rounded-2xl bg-slate-50 p-4 md:col-span-2">
-                            <div class="mb-4 text-sm font-semibold text-ink">{{ (copy as any).examConfig || '考试配置' }}</div>
+                            <div class="mb-4 text-sm font-semibold text-ink">{{ copy.examConfig }}</div>
                             <div class="grid gap-4 md:grid-cols-2">
                               <label class="grid gap-1.5">
                                 <span class="ui-label">{{ copy.fields.program }}</span>
@@ -1362,13 +1483,13 @@ onMounted(() => {
 
                             <div v-if="boolValue(selectedUnitItem.unit, 'allow_exemption')" class="mt-4 border-t border-slate-200 pt-4">
                               <div class="mb-2 flex items-center gap-1 text-sm font-medium text-slate-700">
-                                {{ copy.exemptionQualificationsJsonLabel || '豁免资格' }}
-                                <span :title="(copy as any).exemptionQualificationsTooltip || '只需满足任一勾选的资格即可免考'" class="flex cursor-help items-center">
+                                {{ copy.exemptionQualificationsJsonLabel }}
+                                <span :title="copy.exemptionQualificationsTooltip" class="flex cursor-help items-center">
                                   <Info class="h-4 w-4 text-slate-400" />
                                 </span>
                               </div>
                               <div v-if="credentialOptionsLoading" class="text-xs text-slate-400">{{ copy.loadingQualifications }}</div>
-                              <div v-else-if="!credentialOptions.length" class="text-xs text-slate-400">（无可用资格）</div>
+                              <div v-else-if="!credentialOptions.length" class="text-xs text-slate-400">{{ t.common.noResults }}</div>
                               <div v-else class="grid gap-2 md:grid-cols-2">
                                 <label v-for="definition in credentialOptions" :key="credentialId(definition)" class="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-600">
                                   <input type="checkbox" class="h-4 w-4 shrink-0 accent-primary-600" :value="credentialId(definition)" :checked="(Array.isArray(selectedUnitItem.unit?.exemption_quals) ? selectedUnitItem.unit?.exemption_quals : []).includes(credentialId(definition))" :disabled="isStructureLocked()" @change="toggleExemptionQual(selectedUnitItem?.unit, credentialId(definition), eventChecked($event))" />
@@ -1379,7 +1500,7 @@ onMounted(() => {
                           </div>
                           <details class="group md:col-span-2">
                             <summary class="inline-flex cursor-pointer select-none items-center gap-1 rounded-lg text-sm font-medium text-slate-500 transition-colors hover:text-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20">
-                              {{ (copy as any).certConfig || '资格证书配置' }}
+                              {{ copy.certConfig }}
                               <ChevronDown class="h-4 w-4 transition-transform group-open:rotate-180" />
                             </summary>
                             <div class="mt-4 grid gap-4 rounded-2xl bg-slate-50 p-4 md:grid-cols-2">
@@ -1420,17 +1541,23 @@ onMounted(() => {
                         </div>
                         <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="addCert">{{ copy.newCert }}</button>
                       </div>
-                      <button
+                      <div
                         v-for="(cert, index) in certs"
                         :key="index"
-                        class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
+                        class="w-full cursor-pointer border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
                         :class="selectedCertIndex === index ? 'bg-primary-50/60' : ''"
-                        type="button"
+                        role="button"
+                        tabindex="0"
                         @click="selectedCertIndex = index"
+                        @keydown.enter.prevent="selectedCertIndex = index"
+                        @keydown.space.prevent="selectedCertIndex = index"
                       >
                         <div class="text-sm font-semibold text-ink">{{ itemTitle(cert, copy.certFallback(index + 1)) }}</div>
-                        <div class="tnum mt-1.5 break-all text-xs text-slate-400">{{ copy.qualIdPrefix }}{{ itemId(cert, ['qual_ulid']) || "-" }}</div>
-                      </button>
+                        <div class="mt-1.5 flex flex-wrap items-center gap-1 text-xs text-slate-400">
+                          <span>{{ copy.qualIdPrefix }}</span>
+                          <UlidChip :value="itemId(cert, ['qual_ulid'])" />
+                        </div>
+                      </div>
                       <div v-if="!certs.length" class="ui-empty">
                         <div class="ui-empty-icon">
                           <Award class="h-6 w-6" />
@@ -1486,17 +1613,20 @@ onMounted(() => {
                         <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="isStructureLocked()" @click="activeLayer === 'unlock_quals' ? addUnlockQual() : addCertQual()">{{ copy.add }}</button>
                       </div>
                       <template v-if="activeLayer === 'unlock_quals'">
-                        <button
+                        <div
                           v-for="(qual, index) in unlockQuals"
                           :key="index"
-                          class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
+                          class="w-full cursor-pointer border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
                           :class="selectedUnlockQualIndex === index ? 'bg-primary-50/60' : ''"
-                          type="button"
+                          role="button"
+                          tabindex="0"
                           @click="selectedUnlockQualIndex = index"
+                          @keydown.enter.prevent="selectedUnlockQualIndex = index"
+                          @keydown.space.prevent="selectedUnlockQualIndex = index"
                         >
                           <div class="text-sm font-semibold text-ink">{{ itemTitle(qual, copy.unlockQualFallback(index + 1)) }}</div>
-                          <div class="tnum mt-1.5 break-all text-xs text-slate-400">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
-                        </button>
+                          <div class="mt-1.5"><UlidChip :value="itemId(qual, ['qual_ulid', 'qual_id'])" /></div>
+                        </div>
                         <div v-if="!unlockQuals.length" class="ui-empty">
                           <div class="ui-empty-icon">
                             <ShieldCheck class="h-6 w-6" />
@@ -1505,17 +1635,20 @@ onMounted(() => {
                         </div>
                       </template>
                       <template v-else>
-                        <button
+                        <div
                           v-for="(qual, index) in certQuals"
                           :key="index"
-                          class="w-full border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40"
+                          class="w-full cursor-pointer border-b border-hairline p-4 text-left transition-colors hover:bg-primary-50/40 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
                           :class="selectedCertQualIndex === index ? 'bg-primary-50/60' : ''"
-                          type="button"
+                          role="button"
+                          tabindex="0"
                           @click="selectedCertQualIndex = index"
+                          @keydown.enter.prevent="selectedCertQualIndex = index"
+                          @keydown.space.prevent="selectedCertQualIndex = index"
                         >
                           <div class="text-sm font-semibold text-ink">{{ itemTitle(qual, copy.certQualFallback(index + 1)) }}</div>
-                          <div class="tnum mt-1.5 break-all text-xs text-slate-400">ID: {{ itemId(qual, ['qual_ulid', 'qual_id']) || "-" }}</div>
-                        </button>
+                          <div class="mt-1.5"><UlidChip :value="itemId(qual, ['qual_ulid', 'qual_id'])" /></div>
+                        </div>
                         <div v-if="!certQuals.length" class="ui-empty">
                           <div class="ui-empty-icon">
                             <GraduationCap class="h-6 w-6" />
@@ -1615,6 +1748,31 @@ onMounted(() => {
                 :copy-error-message="copy.toasts.jsonCopyFailed"
                 max-height="420px"
               />
+
+              <section v-if="!creating && selectedId" class="rounded-2xl border border-danger-200 bg-danger-50/40 p-4 md:p-5">
+                <h3 class="flex items-center gap-2 text-sm font-semibold text-danger-600">
+                  <TriangleAlert class="h-4 w-4" />
+                  {{ t.common.dangerZone }}
+                </h3>
+                <div class="mt-3 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+                  <p v-if="canDeleteSelectedPipeline" class="text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
+                  <span v-else />
+                  <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <button
+                      class="ui-btn ui-btn-secondary shrink-0 text-danger-600 hover:border-danger-200 hover:bg-danger-50"
+                      type="button"
+                      :disabled="deprecating"
+                      @click="deprecate"
+                    >
+                      {{ copy.deprecate }}
+                    </button>
+                    <button v-if="canDeleteSelectedPipeline" class="ui-btn ui-btn-danger shrink-0" type="button" @click="removePipeline">
+                      <Trash2 class="h-4 w-4" />
+                      {{ copy.delete }}
+                    </button>
+                  </div>
+                </div>
+              </section>
             </section>
 
             <div v-if="activeLayer === 'overview' || creating" class="flex shrink-0 flex-col justify-end gap-3 border-t border-hairline bg-white px-4 py-4 sm:flex-row md:px-6">
@@ -1645,7 +1803,7 @@ onMounted(() => {
               <p class="text-sm text-slate-600">{{ copy.confirmDeprecate }}</p>
               <div class="mt-4 rounded-2xl bg-slate-50 p-4">
                 <div class="break-words text-sm font-semibold text-ink">{{ pipelineName(selected) }}</div>
-                <div class="tnum mt-1 break-all text-xs text-slate-400">{{ pipelineUlid(selected) }}</div>
+                <div class="mt-1"><UlidChip :value="pipelineUlid(selected)" /></div>
                 <div class="tnum mt-1 text-xs text-slate-500">{{ copy.fields.version }}: v{{ selected.version || 0 }}</div>
               </div>
             </main>
@@ -1672,7 +1830,7 @@ onMounted(() => {
               <p class="text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
               <div class="mt-4 rounded-2xl bg-slate-50 p-4">
                 <div class="break-words text-sm font-semibold text-ink">{{ pipelineName(pendingDeletePipeline) }}</div>
-                <div class="tnum mt-1 break-all text-xs text-slate-400">{{ pipelineUlid(pendingDeletePipeline) }}</div>
+                <div class="mt-1"><UlidChip :value="pipelineUlid(pendingDeletePipeline)" /></div>
                 <div class="tnum mt-1 text-xs text-slate-500">{{ copy.fields.version }}: v{{ pendingDeletePipeline.version || 0 }}</div>
               </div>
             </main>

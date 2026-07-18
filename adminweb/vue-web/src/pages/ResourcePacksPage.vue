@@ -1,10 +1,33 @@
 <script setup lang="ts">
-import { Info, Loader2, Package, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
+import {
+  ArrowUpRight,
+  ChevronDown,
+  ChevronRight,
+  CopyPlus,
+  Eye,
+  History,
+  Info,
+  Loader2,
+  Package,
+  Plus,
+  RefreshCw,
+  Save,
+  Trash2,
+  Undo2,
+  Upload,
+  UploadCloud,
+  X,
+} from "lucide-vue-next"
+import type { Component } from "vue"
 import { computed, onMounted, ref, watch } from "vue"
+import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
+import RowMenu from "@/components/RowMenu.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { ApiError, apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
+import { groupByLineage } from "@/lib/versionGroup"
 
 const pageSize = 10
 
@@ -96,6 +119,51 @@ function canDeletePack(pack: JsonRecord | null) {
   return !!pack && !packStatusKey(pack).includes("DEPRECATED")
 }
 
+function isDeprecatedPack(pack: JsonRecord | null) {
+  return packStatusKey(pack).includes("DEPRECATED")
+}
+
+const lineageGroups = computed(() =>
+  groupByLineage(packs.value, (pack) => String(pack.title || ""), (pack) => String(pack.category || "")),
+)
+const expandedStems = ref<Record<string, boolean>>({})
+
+function groupKey(group: { primary: JsonRecord }) {
+  return packId(group.primary)
+}
+
+function toggleHistory(group: { primary: JsonRecord }) {
+  const key = groupKey(group)
+  expandedStems.value[key] = !expandedStems.value[key]
+}
+
+type PackMenuItem = { key: string; label: string; icon?: Component; danger?: boolean; disabled?: boolean }
+
+function packMenuItems(pack: JsonRecord): PackMenuItem[] {
+  const items: PackMenuItem[] = [
+    { key: "detail", label: copy.value.viewDetails, icon: Eye },
+    { key: "clone", label: copy.value.copyPack, icon: CopyPlus, disabled: saving.value },
+  ]
+  if (canPublishPack(pack)) {
+    items.push({ key: "publish", label: copy.value.publishPack, icon: Upload, disabled: saving.value })
+  }
+  if (canRevertPack(pack)) {
+    items.push({ key: "revert", label: copy.value.revertPack, icon: Undo2, disabled: saving.value })
+  }
+  if (canDeletePack(pack)) {
+    items.push({ key: "delete", label: copy.value.deletePack, icon: Trash2, danger: true, disabled: saving.value })
+  }
+  return items
+}
+
+function onPackMenu(key: string, pack: JsonRecord) {
+  if (key === "detail") openPackDetail(pack)
+  if (key === "clone") void duplicatePack(pack)
+  if (key === "publish") void runPackAction(pack, "publish")
+  if (key === "revert") void runPackAction(pack, "revert-to-draft")
+  if (key === "delete") requestDeletePack(pack)
+}
+
 function fillForm(pack: JsonRecord | null) {
   form.value = {
     pack_id: String(pack?.pack_id || ""),
@@ -107,9 +175,9 @@ function fillForm(pack: JsonRecord | null) {
     status: String(pack?.status || (mode.value === "create" ? "Draft" : "Active")),
     version: Number(pack?.version || 0),
     icon: String(pack?.icon || ""),
-      category: String(pack?.category || (mode.value === "create" ? "public" : "")),
-      created_at: String(pack?.created_at || ""),
-      updated_at: String(pack?.updated_at || ""),
+    category: String(pack?.category || (mode.value === "create" ? "public" : "")),
+    created_at: String(pack?.created_at || ""),
+    updated_at: String(pack?.updated_at || ""),
   }
 }
 
@@ -482,13 +550,6 @@ function nextPage() {
   void load()
 }
 
-watch(() => form.value.title, (newTitle) => {
-  if (mode.value !== 'create') return
-  if (newTitle && !form.value.respath) {
-    form.value.respath = `/res-packages/${newTitle.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "")}`
-  }
-})
-
 onMounted(load)
 </script>
 
@@ -525,7 +586,7 @@ onMounted(load)
         <div
           v-for="i in 5"
           :key="`sk-${i}`"
-          class="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_84px_120px_300px] lg:items-center lg:gap-6 lg:py-3.5"
+          class="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_84px_120px_190px] lg:items-center lg:gap-6 lg:py-3.5"
         >
           <div>
             <div class="skeleton h-4 w-2/5" />
@@ -546,55 +607,125 @@ onMounted(load)
       </div>
 
       <div v-else>
-        <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_300px] gap-6 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
+        <div class="hidden grid-cols-[minmax(0,1fr)_84px_120px_190px] gap-6 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
           <span>{{ copy.columns.pack }}</span>
           <span>{{ copy.columns.version }}</span>
           <span class="text-center">{{ copy.columns.status }}</span>
-          <span class="text-center">{{ copy.columns.action }}</span>
+          <span class="text-right">{{ copy.columns.action }}</span>
         </div>
         <div class="divide-y divide-hairline">
-          <div
-            v-for="pack in packs"
-            :key="packId(pack)"
-            class="ui-table-row grid w-full gap-3 px-4 py-4 text-left lg:grid-cols-[minmax(0,1fr)_84px_120px_300px] lg:items-center lg:gap-6 lg:py-3.5"
-            :class="packId(selected) === packId(pack) ? 'bg-primary-50/60' : ''"
-          >
-            <div class="min-w-0">
-              <div class="break-words text-sm font-medium text-ink lg:truncate">{{ packTitle(pack) }}</div>
-              <div class="mt-0.5 line-clamp-1 text-sm text-slate-500">{{ pack.description || "-" }}</div>
-              <div class="tnum mt-0.5 break-all text-xs text-slate-400 lg:truncate">{{ copy.fields.idPrefix }}{{ pack.pack_id }}</div>
+          <template v-for="group in lineageGroups" :key="groupKey(group)">
+            <div
+              class="ui-table-row grid w-full cursor-pointer gap-3 px-4 py-4 text-left lg:grid-cols-[minmax(0,1fr)_84px_120px_190px] lg:items-center lg:gap-6 lg:py-3.5"
+              :class="packId(selected) === packId(group.primary) ? 'bg-primary-50/60' : ''"
+              role="button"
+              tabindex="0"
+              @click="openPackDetail(group.primary)"
+              @keydown.enter.self.prevent="openPackDetail(group.primary)"
+              @keydown.space.self.prevent="openPackDetail(group.primary)"
+            >
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="break-words text-sm font-medium" :class="isDeprecatedPack(group.primary) ? 'text-slate-500' : 'text-ink'">{{ packTitle(group.primary) }}</span>
+                  <button
+                    v-if="group.history.length"
+                    type="button"
+                    class="tnum inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
+                    :aria-expanded="Boolean(expandedStems[groupKey(group)])"
+                    :title="t.common.historyVersions"
+                    @click.stop="toggleHistory(group)"
+                  >
+                    <History class="h-3 w-3" />
+                    {{ group.history.length }}
+                    <ChevronDown class="h-3 w-3 transition-transform duration-150" :class="expandedStems[groupKey(group)] ? 'rotate-180' : ''" />
+                  </button>
+                </div>
+                <div class="mt-0.5 line-clamp-1 text-sm text-slate-500">{{ group.primary.description || "-" }}</div>
+                <div class="mt-1.5 flex flex-wrap items-center gap-2">
+                  <UlidChip :value="packId(group.primary)" />
+                  <RouterLink
+                    :to="{ path: '/resource-pack-files', query: { pack: packId(group.primary) } }"
+                    class="inline-flex items-center gap-1 text-sm text-slate-600 underline decoration-slate-300 decoration-dashed underline-offset-4 transition-colors hover:text-primary-700 hover:decoration-primary-400"
+                    @click.stop
+                  >
+                    {{ t.common.viewFiles }}
+                    <ArrowUpRight class="h-3.5 w-3.5 text-slate-400" />
+                  </RouterLink>
+                </div>
+              </div>
+              <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 text-sm lg:block lg:border-0 lg:pt-0">
+                <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.fields.version }}</span>
+                <span class="tnum text-slate-600">{{ group.primary.version || 0 }}</span>
+              </div>
+              <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 lg:block lg:justify-self-center lg:border-0 lg:pt-0">
+                <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.status }}</span>
+                <span class="ui-badge" :class="packStatusClass(group.primary)" :title="String(group.primary.status || '')">
+                  {{ packStatusLabel(group.primary) }}
+                </span>
+              </div>
+              <div class="flex items-center justify-between gap-2 border-t border-hairline pt-3 lg:justify-end lg:border-0 lg:pt-0">
+                <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.action }}</span>
+                <div class="flex items-center gap-2">
+                  <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click.stop="openPackEditor(group.primary)">
+                    {{ copy.editPack }}
+                  </button>
+                  <RowMenu :items="packMenuItems(group.primary)" @select="(key) => onPackMenu(key, group.primary)" />
+                  <ChevronRight class="hidden h-4 w-4 shrink-0 text-slate-300 lg:block" />
+                </div>
+              </div>
             </div>
-            <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 text-sm lg:block lg:border-0 lg:pt-0">
-              <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.fields.version }}</span>
-              <span class="tnum text-slate-600">{{ pack.version || 0 }}</span>
-            </div>
-            <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 lg:block lg:justify-self-center lg:border-0 lg:pt-0">
-              <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.status }}</span>
-              <span class="ui-badge" :class="packStatusClass(pack)" :title="String(pack.status || '')">
-                {{ packStatusLabel(pack) }}
-              </span>
-            </div>
-            <div class="grid grid-cols-2 gap-2 border-t border-hairline pt-3 sm:flex sm:flex-wrap sm:items-center lg:justify-center lg:border-0 lg:pt-0">
-              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openPackDetail(pack)">
-                {{ copy.viewDetails }}
-              </button>
-              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openPackEditor(pack)">
-                {{ copy.editPack }}
-              </button>
-              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="saving" @click.stop="duplicatePack(pack)">
-                {{ copy.copyPack }}
-              </button>
-              <button v-if="canPublishPack(pack)" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'publish')">
-                {{ copy.publishPack }}
-              </button>
-              <button v-if="canRevertPack(pack)" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="saving" @click.stop="runPackAction(pack, 'revert-to-draft')">
-                {{ copy.revertPack }}
-              </button>
-              <button v-if="canDeletePack(pack)" class="ui-btn ui-btn-ghost ui-btn-sm text-red-600 hover:bg-red-50 hover:text-red-700" type="button" @click="requestDeletePack(pack)">
-                {{ copy.deletePack }}
-              </button>
-            </div>
-          </div>
+            <template v-if="expandedStems[groupKey(group)]">
+              <div
+                v-for="old in group.history"
+                :key="packId(old)"
+                class="ui-table-row grid w-full cursor-pointer gap-3 px-4 py-3 text-left lg:grid-cols-[minmax(0,1fr)_84px_120px_190px] lg:items-center lg:gap-6 lg:py-2.5"
+                :class="packId(selected) === packId(old) ? 'bg-primary-50/60' : 'bg-slate-50/60'"
+                role="button"
+                tabindex="0"
+                @click="openPackDetail(old)"
+                @keydown.enter.self.prevent="openPackDetail(old)"
+                @keydown.space.self.prevent="openPackDetail(old)"
+              >
+                <div class="min-w-0 border-l-2 border-slate-200 pl-3">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="break-words text-sm text-slate-500">{{ packTitle(old) }}</span>
+                    <span v-if="isDeprecatedPack(old)" class="ui-badge bg-slate-100 text-slate-500">{{ t.common.deprecatedMuted }}</span>
+                  </div>
+                  <div class="mt-1 flex flex-wrap items-center gap-2">
+                    <UlidChip :value="packId(old)" />
+                    <RouterLink
+                      :to="{ path: '/resource-pack-files', query: { pack: packId(old) } }"
+                      class="inline-flex items-center gap-1 text-sm text-slate-500 underline decoration-slate-300 decoration-dashed underline-offset-4 transition-colors hover:text-primary-700 hover:decoration-primary-400"
+                      @click.stop
+                    >
+                      {{ t.common.viewFiles }}
+                      <ArrowUpRight class="h-3.5 w-3.5 text-slate-400" />
+                    </RouterLink>
+                  </div>
+                </div>
+                <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 text-sm lg:block lg:border-0 lg:pt-0">
+                  <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.fields.version }}</span>
+                  <span class="tnum text-slate-500">{{ old.version || 0 }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 lg:block lg:justify-self-center lg:border-0 lg:pt-0">
+                  <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.status }}</span>
+                  <span class="ui-badge" :class="packStatusClass(old)" :title="String(old.status || '')">
+                    {{ packStatusLabel(old) }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between gap-2 border-t border-hairline pt-3 lg:justify-end lg:border-0 lg:pt-0">
+                  <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.action }}</span>
+                  <div class="flex items-center gap-2">
+                    <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click.stop="openPackEditor(old)">
+                      {{ copy.editPack }}
+                    </button>
+                    <RowMenu :items="packMenuItems(old)" @select="(key) => onPackMenu(key, old)" />
+                    <ChevronRight class="hidden h-4 w-4 shrink-0 text-slate-300 lg:block" />
+                  </div>
+                </div>
+              </div>
+            </template>
+          </template>
         </div>
       </div>
 
@@ -629,72 +760,72 @@ onMounted(load)
               <template v-if="mode === 'detail'">
                 <div>
                   <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.basic }}</div>
-                  <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.title }}</span>
-                      <div class="readonly-field">{{ form.title || "-" }}</div>
+                  <dl class="grid gap-4 md:grid-cols-2">
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.title }}</dt>
+                      <dd class="mt-1 break-words text-sm text-ink">{{ form.title || "-" }}</dd>
                     </div>
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.category }}</span>
-                      <div class="readonly-field">{{ form.category || "-" }}</div>
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.category }}</dt>
+                      <dd class="mt-1 break-words text-sm text-slate-600">{{ form.category || "-" }}</dd>
                     </div>
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.icon }}</span>
-                      <div class="readonly-field">{{ form.icon || "-" }}</div>
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.icon }}</dt>
+                      <dd class="mt-1 break-words text-sm text-slate-600">{{ form.icon || "-" }}</dd>
                     </div>
-                    <div class="grid content-start gap-1.5 md:col-span-2">
-                      <span class="ui-label">{{ copy.fields.description }}</span>
-                      <div class="readonly-field readonly-field--textarea">{{ form.description || "-" }}</div>
+                    <div class="min-w-0 md:col-span-2">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.description }}</dt>
+                      <dd class="mt-1 whitespace-pre-wrap break-words text-sm text-slate-600">{{ form.description || "-" }}</dd>
                     </div>
-                  </div>
+                  </dl>
                 </div>
 
                 <div class="border-t border-hairline pt-6">
                   <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.pathThumbnail }}</div>
-                  <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.respath }}</span>
-                      <div class="readonly-field readonly-field--long">{{ form.respath || "-" }}</div>
+                  <dl class="grid gap-4 md:grid-cols-2">
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.respath }}</dt>
+                      <dd class="mt-1"><UlidChip :value="form.respath" :truncate="false" /></dd>
                     </div>
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.thumbnailObjectKey }}</span>
-                      <div class="readonly-field readonly-field--long">{{ form.thumbnail_object_key || "-" }}</div>
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.thumbnailObjectKey }}</dt>
+                      <dd class="mt-1"><UlidChip :value="form.thumbnail_object_key" :truncate="false" /></dd>
                     </div>
-                    <div class="grid content-start gap-1.5 md:col-span-2">
-                      <span class="ui-label">{{ copy.fields.thumbnailFileHash }}</span>
-                      <div class="readonly-field readonly-field--long">{{ form.thumbnail_file_hash || "-" }}</div>
+                    <div class="min-w-0 md:col-span-2">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.thumbnailFileHash }}</dt>
+                      <dd class="mt-1"><UlidChip :value="form.thumbnail_file_hash" :truncate="false" /></dd>
                     </div>
-                  </div>
+                  </dl>
                 </div>
 
                 <div class="border-t border-hairline pt-6">
                   <div class="mb-3 text-sm font-semibold text-ink">{{ copy.sections.system }}</div>
-                  <div class="grid gap-4 md:grid-cols-3">
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.packId }}</span>
-                      <div class="tnum readonly-field break-all">{{ form.pack_id || "-" }}</div>
+                  <dl class="grid gap-4 md:grid-cols-3">
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.packId }}</dt>
+                      <dd class="mt-1"><UlidChip :value="form.pack_id" :truncate="false" /></dd>
                     </div>
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.status }}</span>
-                      <div class="readonly-field readonly-field--compact">
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.status }}</dt>
+                      <dd class="mt-1">
                         <span class="ui-badge" :class="packStatusClass(form)" :title="String(form.status || '')">
                           {{ packStatusLabel(form) }}
                         </span>
-                      </div>
+                      </dd>
                     </div>
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.version }}</span>
-                      <div class="tnum readonly-field readonly-field--compact">{{ form.version || 0 }}</div>
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.version }}</dt>
+                      <dd class="tnum mt-1 text-sm text-slate-600">{{ form.version || 0 }}</dd>
                     </div>
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.createdAt }}</span>
-                      <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.created_at) || "-" }}</div>
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.createdAt }}</dt>
+                      <dd class="tnum mt-1 text-sm text-slate-600">{{ formatDate(form.created_at) || "-" }}</dd>
                     </div>
-                    <div class="grid content-start gap-1.5">
-                      <span class="ui-label">{{ copy.fields.updatedAt }}</span>
-                      <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.updated_at) || "-" }}</div>
+                    <div class="min-w-0">
+                      <dt class="text-xs font-medium text-slate-400">{{ copy.fields.updatedAt }}</dt>
+                      <dd class="tnum mt-1 text-sm text-slate-600">{{ formatDate(form.updated_at) || "-" }}</dd>
                     </div>
-                  </div>
+                  </dl>
                 </div>
               </template>
 
@@ -792,7 +923,7 @@ onMounted(load)
                   <div class="grid gap-4 md:grid-cols-3">
                     <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
                       <span class="ui-label">{{ copy.fields.packId }}</span>
-                      <div class="tnum readonly-field break-all">{{ form.pack_id || "-" }}</div>
+                      <div class="flex min-h-10 items-center"><UlidChip :value="form.pack_id" :truncate="false" /></div>
                     </div>
                     <div class="grid content-start gap-1.5">
                       <span class="ui-label">{{ copy.fields.status }}</span>
@@ -842,7 +973,7 @@ onMounted(load)
               <p class="text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
               <div class="mt-4 rounded-[10px] bg-slate-50 p-4">
                 <div class="break-words text-sm font-semibold text-ink">{{ packTitle(selected) }}</div>
-                <div class="tnum mt-1 break-all text-xs text-slate-400">{{ packId(selected) }}</div>
+                <div class="mt-1.5"><UlidChip :value="packId(selected)" :truncate="false" /></div>
               </div>
             </div>
             <div class="flex flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">

@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { Award, Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
+import { Award, ChevronRight, Copy, Eye, Loader2, Plus, RefreshCw, Trash2, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
+import RowMenu from "@/components/RowMenu.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { copyTextToClipboard } from "@/lib/clipboard"
 import { type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
@@ -47,12 +51,69 @@ const categoryOptions = computed(() => [
 ])
 const categoryValues = computed(() => new Set(categoryOptions.value.map((option) => option.value)))
 
+// 分类快捷筛选（纯前端 computed，点击已激活的 chip 即清除）
+const categoryFilter = ref("")
+
+function definitionCategoryValue(definition: JsonRecord) {
+  const text = String(definition.category ?? "").trim()
+  if (text === "学业类") return "Academic"
+  const option = categoryOptions.value.find((item) => item.value.toLowerCase() === text.toLowerCase())
+  return option?.value || text
+}
+
+const filteredDefinitions = computed(() => {
+  if (!categoryFilter.value) return definitions.value
+  return definitions.value.filter((item) => definitionCategoryValue(item) === categoryFilter.value)
+})
+
+const categoryChips = computed(() =>
+  categoryOptions.value.map((option) => ({
+    value: option.value,
+    label: option.label,
+    count: definitions.value.filter((item) => definitionCategoryValue(item) === option.value).length,
+  })),
+)
+
+function toggleCategoryChip(value: string) {
+  categoryFilter.value = categoryFilter.value === value ? "" : value
+}
+
 function definitionUlid(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
 }
 
 function definitionName(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["name", "name_hint", "title"]) || copy.value.unnamedCredential)
+}
+
+function truncateUlid(value: string) {
+  const raw = value.trim()
+  if (raw.length <= 14) return raw
+  return `${raw.slice(0, 6)}…${raw.slice(-5)}`
+}
+
+function definitionMenuItems(definition: JsonRecord) {
+  const ulid = definitionUlid(definition)
+  return [
+    { key: "detail", label: copy.value.viewDetails, icon: Eye },
+    { key: "copy-ulid", label: ulid ? truncateUlid(ulid) : "-", icon: Copy, disabled: !ulid },
+  ]
+}
+
+async function onDefinitionMenuSelect(definition: JsonRecord, key: string) {
+  if (key === "detail") {
+    void selectDefinition(definition)
+    return
+  }
+  if (key !== "copy-ulid") return
+  const ulid = definitionUlid(definition)
+  if (!ulid) return
+  try {
+    await copyTextToClipboard(ulid)
+    toast.success(t.value.common.copied)
+  } catch (err) {
+    console.error(err)
+  }
 }
 
 function fileConstraints(definition: JsonRecord | null | undefined) {
@@ -224,8 +285,24 @@ onMounted(load)
         </div>
         <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.total(definitions.length) }}</span>
       </div>
+      <div class="flex flex-wrap items-center gap-2 border-b border-hairline px-4 py-3 md:px-6">
+        <button
+          v-for="chip in categoryChips"
+          :key="chip.value"
+          type="button"
+          class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+          :class="categoryFilter === chip.value
+            ? 'bg-primary-600 text-white shadow-sm'
+            : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+          :aria-pressed="categoryFilter === chip.value"
+          @click="toggleCategoryChip(chip.value)"
+        >
+          {{ chip.label }}
+          <span class="tnum text-xs" :class="categoryFilter === chip.value ? 'text-white/80' : 'text-slate-400'">{{ chip.count }}</span>
+        </button>
+      </div>
       <div v-if="loading" class="divide-y divide-hairline">
-        <div v-for="i in 5" :key="`sk-${i}`" class="grid gap-3 px-4 py-3.5 md:grid-cols-[minmax(0,1fr)_180px_112px] md:items-center md:gap-4">
+        <div v-for="i in 5" :key="`sk-${i}`" class="grid gap-3 px-4 py-3.5 md:grid-cols-[minmax(0,1fr)_180px_148px] md:items-center md:gap-4">
           <div class="space-y-2">
             <div class="skeleton h-4 w-2/5" />
             <div class="skeleton h-3 w-3/5" />
@@ -240,35 +317,46 @@ onMounted(load)
         </div>
         <p class="ui-empty-title">{{ copy.empty }}</p>
       </div>
+      <div v-else-if="!filteredDefinitions.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <Award class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ t.common.noResults }}</p>
+      </div>
       <template v-else>
-        <div class="hidden grid-cols-[minmax(0,1fr)_180px_112px] gap-4 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid">
+        <div class="hidden grid-cols-[minmax(0,1fr)_180px_148px] gap-4 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid">
           <span>{{ copy.columns.credential }}</span>
           <span class="text-center">{{ copy.columns.category }}</span>
           <span class="text-right">{{ copy.columns.action }}</span>
         </div>
         <div class="divide-y divide-hairline">
           <div
-            v-for="definition in definitions"
+            v-for="definition in filteredDefinitions"
             :key="definitionUlid(definition)"
-            class="ui-table-row flex w-full cursor-pointer flex-col gap-3 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:items-center md:gap-4"
+            class="ui-table-row flex w-full cursor-pointer flex-col gap-3 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_180px_148px] md:items-center md:gap-4"
             :class="mode === 'detail' && definitionUlid(selected) === definitionUlid(definition) ? 'bg-primary-50/60' : ''"
             role="button"
             tabindex="0"
+            :title="copy.viewDetails"
             @click="selectDefinition(definition)"
-            @keydown.enter.prevent="selectDefinition(definition)"
-            @keydown.space.prevent="selectDefinition(definition)"
+            @keydown.enter.self.prevent="selectDefinition(definition)"
+            @keydown.space.self.prevent="selectDefinition(definition)"
           >
             <div class="min-w-0">
               <div class="break-words text-sm font-medium text-ink md:truncate">{{ definitionName(definition) }}</div>
-              <div class="tnum mt-0.5 break-all text-xs text-slate-400">ID: {{ definitionUlid(definition) || "-" }}</div>
+              <div class="mt-1"><UlidChip :value="definitionUlid(definition)" /></div>
             </div>
             <span class="flex items-center justify-between gap-3 md:block md:justify-self-center md:text-center">
               <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.category }}</span>
               <span class="ui-badge bg-slate-100 text-slate-600">{{ categoryLabel(definition.category) }}</span>
             </span>
-            <button class="ui-btn ui-btn-secondary ui-btn-sm w-full md:w-auto md:justify-self-end" type="button" @click.stop="selectDefinition(definition)">
-              {{ copy.viewDetails }}
-            </button>
+            <span class="flex items-center justify-start gap-2 md:justify-self-end">
+              <span class="flex items-center gap-1 text-sm font-medium text-primary-700">
+                {{ copy.viewDetails }}
+                <ChevronRight class="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+              </span>
+              <RowMenu :items="definitionMenuItems(definition)" @select="(key) => onDefinitionMenuSelect(definition, key)" />
+            </span>
           </div>
         </div>
       </template>
@@ -281,9 +369,11 @@ onMounted(load)
             <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
               <div class="min-w-0">
                 <h2 class="break-words text-base font-semibold text-ink md:truncate md:text-lg">{{ mode === "create" ? copy.createTitle : selected ? definitionName(selected) : copy.detailTitle }}</h2>
-                <p class="tnum mt-1 break-all text-sm text-slate-500">
-                  {{ mode === "create" ? copy.createHint : definitionUlid(selected) || copy.selectCredential }}
+                <p v-if="mode === 'create'" class="mt-1 text-sm text-slate-500">{{ copy.createHint }}</p>
+                <p v-else-if="definitionUlid(selected)" class="mt-1 text-sm text-slate-500">
+                  <UlidChip :value="definitionUlid(selected)" :truncate="false" />
                 </p>
+                <p v-else class="mt-1 text-sm text-slate-500">{{ copy.selectCredential }}</p>
               </div>
               <div class="flex shrink-0 items-center gap-3">
                 <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
@@ -373,6 +463,10 @@ onMounted(load)
                       <div class="mt-2 break-all text-sm font-medium text-ink">{{ selected.respath || "-" }}</div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.acquisitionMethod }}</div>
+                      <div class="mt-2 break-all text-sm font-medium text-ink">{{ selected.acquisition_method || "-" }}</div>
+                    </div>
+                    <div class="rounded-2xl bg-slate-50 p-4 md:col-span-2">
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.description }}</div>
                       <div class="mt-2 break-all text-sm font-medium text-ink">{{ selected.description || "-" }}</div>
                     </div>
@@ -391,6 +485,16 @@ onMounted(load)
                       </div>
                     </div>
                   </div>
+
+                  <JsonPreview
+                    :title="copy.labels.rawJson"
+                    :value="selected"
+                    :copy-label="copy.copyJson"
+                    :copied-label="copy.copiedJson"
+                    :copied-message="copy.toasts.jsonCopied"
+                    :copy-error-message="copy.toasts.jsonCopyFailed"
+                    max-height="360px"
+                  />
                 </div>
               </template>
             </section>

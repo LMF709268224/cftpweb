@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { FileText, List, Loader2, Mail, Plus, RefreshCw, Send, Users, X, XCircle } from "lucide-vue-next"
+import { ChevronRight, FileText, List, Loader2, Mail, Plus, RefreshCw, Search, Send, TriangleAlert, Users, X, XCircle } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -63,6 +64,17 @@ const formParameterSchema = ref("{}")
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.mailsAdmin)
 
+const recipientSearch = ref("")
+
+const filteredUsers = computed(() => {
+  const keyword = recipientSearch.value.trim().toLowerCase()
+  if (!keyword) return users.value
+  return users.value.filter((user) => {
+    const haystack = [userName(user), userEmail(user), userId(user)]
+    return haystack.some((text) => text.toLowerCase().includes(keyword))
+  })
+})
+
 const tabs = computed(() => [
   { key: "send" as const, label: copy.value.tabs.send, icon: Send, count: selectedUserIds.value.length },
   { key: "sent" as const, label: copy.value.tabs.sent, icon: List, count: total.value },
@@ -112,6 +124,19 @@ function userName(user: JsonRecord) {
   return String(pickFirst(user, ["name", "nickname", "email", "id"]) || userEmail(user) || copy.value.defaults.user)
 }
 
+function userInitial(user: JsonRecord) {
+  return userName(user).trim().charAt(0).toUpperCase() || "-"
+}
+
+function selectAllVisible() {
+  const merged = new Set(selectedUserIds.value)
+  for (const user of filteredUsers.value) {
+    const id = userId(user)
+    if (id) merged.add(id)
+  }
+  selectedUserIds.value = Array.from(merged)
+}
+
 function resolvedTemplate(template: JsonRecord | null | undefined) {
   if (!template || typeof template !== "object" || Array.isArray(template)) return {}
   const nested = template.template
@@ -144,6 +169,14 @@ function descriptionOf(template: JsonRecord | null | undefined) {
 function templateFieldValue(key: string, value: unknown) {
   if (key.endsWith("_at")) return formatDate(value) || String(value ?? "-")
   return value
+}
+
+function isMonoFieldKey(key: string) {
+  return key === "id" || key === "path" || /(_id|_ulid|_path|_schema)$/.test(key)
+}
+
+function fieldIsMono(key: string, value: unknown) {
+  return Array.isArray(value) || (!!value && typeof value === "object") || isMonoFieldKey(key)
 }
 
 function templateFieldLabel(key: string) {
@@ -600,31 +633,72 @@ onMounted(async () => {
       <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
         <h2 class="text-base font-semibold text-ink">{{ copy.sendTitle }}</h2>
       </div>
-      <div class="grid gap-6 p-4 md:p-6 lg:grid-cols-[1fr_1fr]">
+      <div class="grid gap-6 p-4 md:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <!-- Recipient picker -->
         <div>
           <div class="mb-1.5 flex items-center justify-between gap-3">
-            <label class="ui-label">{{ copy.recipients }}</label>
+            <span class="ui-label">{{ copy.recipients }}</span>
             <div class="flex gap-4 text-sm">
-              <button class="font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="selectedUserIds = users.map(userId).filter(Boolean)">{{ copy.selectAll }}</button>
+              <button class="font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="selectAllVisible">{{ copy.selectAll }}</button>
               <button class="font-medium text-slate-500 transition-colors hover:text-slate-700" type="button" @click="selectedUserIds = []">{{ copy.clear }}</button>
             </div>
           </div>
-          <div class="max-h-[360px] overflow-y-auto rounded-[10px] border border-slate-200 p-2 md:max-h-[520px]">
-            <label v-for="user in users" :key="userId(user)" class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-slate-50">
-              <input v-model="selectedUserIds" class="h-4 w-4 accent-primary-600" type="checkbox" :value="userId(user)" />
-              <span class="text-sm font-medium text-ink">{{ userName(user) }}</span>
-              <span class="break-all text-xs text-slate-400">{{ userEmail(user) }}</span>
-            </label>
-            <div v-if="!users.length" class="ui-empty">
+          <div class="max-h-[400px] overflow-y-auto rounded-[10px] border border-slate-200 lg:max-h-[560px]">
+            <div class="sticky top-0 z-10 border-b border-hairline bg-white/95 p-2.5 backdrop-blur">
+              <div class="relative">
+                <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input v-model="recipientSearch" class="ui-input pl-9 pr-10" :placeholder="t.common.searchCandidate" :aria-label="t.common.searchCandidate" />
+                <button
+                  v-if="recipientSearch"
+                  class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  type="button"
+                  :aria-label="copy.clear"
+                  :title="copy.clear"
+                  @click="recipientSearch = ''"
+                >
+                  <X class="h-4 w-4" />
+                </button>
+              </div>
+              <div class="mt-2 flex items-center justify-between gap-3 px-0.5">
+                <span class="tnum ui-badge bg-primary-50 text-primary-700">{{ copy.selectedUsers(selectedUserIds.length) }}</span>
+                <span class="tnum text-xs text-slate-400">{{ filteredUsers.length }}/{{ users.length }}</span>
+              </div>
+            </div>
+            <div v-if="usersLoading" class="space-y-2 p-2">
+              <div v-for="i in 6" :key="`user-sk-${i}`" class="skeleton h-10 w-full" />
+            </div>
+            <div v-else-if="filteredUsers.length" class="p-2">
+              <label
+                v-for="user in filteredUsers"
+                :key="userId(user)"
+                class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors"
+                :class="selectedUserIds.includes(userId(user)) ? 'bg-primary-50/60' : 'hover:bg-slate-50'"
+              >
+                <input v-model="selectedUserIds" class="h-4 w-4 shrink-0 accent-primary-600" type="checkbox" :value="userId(user)" />
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-50 text-xs font-medium text-primary-700" aria-hidden="true">{{ userInitial(user) }}</span>
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-medium text-ink">{{ userName(user) }}</span>
+                  <span class="block truncate text-xs text-slate-400">{{ userEmail(user) }}</span>
+                </span>
+                <UlidChip :value="userId(user)" />
+              </label>
+            </div>
+            <div v-else-if="users.length" class="ui-empty">
+              <div class="ui-empty-icon">
+                <Search class="h-6 w-6" />
+              </div>
+              <p class="ui-empty-title">{{ t.common.noResults }}</p>
+            </div>
+            <div v-else class="ui-empty">
               <div class="ui-empty-icon">
                 <Users class="h-6 w-6" />
               </div>
               <p class="ui-empty-title">{{ copy.noUsers }}</p>
             </div>
           </div>
-          <p class="tnum mt-2 text-sm text-slate-500">{{ copy.selectedUsers(selectedUserIds.length) }}</p>
         </div>
 
+        <!-- Compose -->
         <div class="space-y-4">
           <label class="grid gap-1.5">
             <span class="ui-label">{{ copy.template }}</span>
@@ -643,11 +717,19 @@ onMounted(async () => {
             <span class="ui-label">{{ templatePath ? copy.payloadLabel : copy.bodyLabel }}</span>
             <textarea v-model="payload" class="min-h-52 w-full rounded-[10px] border border-slate-200 bg-white p-3 font-mono text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10" />
           </label>
-          <button class="ui-btn ui-btn-primary w-full sm:w-auto" :disabled="sending" type="button" @click="sendMail">
-            <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
-            <Mail v-else class="h-4 w-4" />
-            {{ sending ? copy.sending : copy.sendMail }}
-          </button>
+          <span class="inline-flex w-full sm:w-auto" :title="!selectedUserIds.length ? copy.toasts.recipientsRequired : undefined">
+            <button
+              class="ui-btn ui-btn-primary w-full"
+              :disabled="sending || !selectedUserIds.length"
+              :aria-label="!selectedUserIds.length ? copy.toasts.recipientsRequired : undefined"
+              type="button"
+              @click="sendMail"
+            >
+              <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
+              <Mail v-else class="h-4 w-4" />
+              {{ sending ? copy.sending : copy.sendMail }}
+            </button>
+          </span>
         </div>
       </div>
     </section>
@@ -658,12 +740,22 @@ onMounted(async () => {
         <div class="min-w-0">
           <h2 class="text-base font-semibold text-ink">{{ copy.sentTitle }}</h2>
         </div>
-        <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
-          <select v-model="statusFilter" class="ui-input min-w-0 flex-1 sm:w-44 sm:flex-none">
-            <option v-for="option in statusOptions" :key="option.value || 'all'" :value="option.value">{{ option.label }}</option>
-          </select>
-        </div>
+        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-2 border-b border-hairline px-4 py-3 md:px-6">
+        <button
+          v-for="chip in statusOptions"
+          :key="`mail-status-${chip.value}`"
+          type="button"
+          class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+          :class="statusFilter === chip.value
+            ? 'bg-primary-600 text-white shadow-sm'
+            : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+          :aria-pressed="statusFilter === chip.value"
+          @click="statusFilter = chip.value"
+        >
+          {{ chip.label }}
+        </button>
       </div>
       <div class="hidden grid-cols-[minmax(0,1fr)_220px_150px_180px_112px] gap-5 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid">
         <span>{{ copy.columns.mail }}</span>
@@ -692,13 +784,14 @@ onMounted(async () => {
           :class="mailId(selectedMail) === mailId(mail) ? 'bg-primary-50/60' : ''"
           role="button"
           tabindex="0"
+          :aria-label="copy.viewDetails"
           @click="openMail(mail)"
-          @keydown.enter.prevent="openMail(mail)"
-          @keydown.space.prevent="openMail(mail)"
+          @keydown.enter.self.prevent="openMail(mail)"
+          @keydown.space.self.prevent="openMail(mail)"
         >
           <div class="min-w-0">
             <div class="break-words text-sm font-medium text-ink md:truncate">{{ pickFirst(mail, ["subject", "template_path", "mail_id"]) || copy.defaults.mail }}</div>
-            <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ copy.mailIdPrefix }}{{ mailId(mail) || "-" }}</div>
+            <div class="mt-1"><UlidChip :value="mailId(mail)" /></div>
           </div>
           <div class="mt-3 flex min-w-0 items-start justify-between gap-4 border-t border-hairline pt-2.5 md:mt-0 md:block md:border-0 md:pt-0">
             <span class="shrink-0 text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.recipient }}</span>
@@ -712,14 +805,11 @@ onMounted(async () => {
             <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.time }}</span>
             <span class="tnum text-sm text-slate-600">{{ formatDate(String(pickFirst(mail, ["created_at", "sent_at", "updated_at"]) || "")) }}</span>
           </div>
-          <div class="mt-3 flex justify-end md:mt-0 md:block md:text-right">
-            <button
-              class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600"
-              type="button"
-              @click.stop="openMail(mail)"
-            >
+          <div class="mt-3 flex justify-end md:mt-0">
+            <span class="inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition-colors hover:text-primary-600">
               {{ copy.viewDetails }}
-            </button>
+              <ChevronRight class="h-4 w-4" />
+            </span>
           </div>
         </div>
       </div>
@@ -773,12 +863,18 @@ onMounted(async () => {
         <div
           v-for="template in templates"
           :key="pathOf(template)"
-          class="ui-table-row flex flex-col px-4 py-4 md:grid md:grid-cols-[minmax(0,1fr)_140px_180px_160px] md:items-center md:gap-5 md:py-3.5"
+          class="ui-table-row flex cursor-pointer flex-col px-4 py-4 md:grid md:grid-cols-[minmax(0,1fr)_140px_180px_160px] md:items-center md:gap-5 md:py-3.5"
           :class="pathOf(selectedTemplate) === pathOf(template) ? 'bg-primary-50/60' : ''"
+          role="button"
+          tabindex="0"
+          :aria-label="copy.viewDetails"
+          @click="openTemplateDetail(template)"
+          @keydown.enter.self.prevent="openTemplateDetail(template)"
+          @keydown.space.self.prevent="openTemplateDetail(template)"
         >
           <div class="min-w-0">
             <div class="break-words text-sm font-medium text-ink md:truncate">{{ nameOf(template) }}</div>
-            <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ pathOf(template) }}</div>
+            <div class="mt-1"><UlidChip :value="pathOf(template)" :truncate="false" /></div>
             <div v-if="template.description" class="mt-1 break-words text-xs text-slate-400 md:truncate">{{ template.description }}</div>
           </div>
           <div class="mt-3 flex items-center justify-between gap-4 border-t border-hairline pt-2.5 md:mt-0 md:block md:border-0 md:pt-0 md:text-center">
@@ -789,9 +885,9 @@ onMounted(async () => {
             <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.templateColumns.updatedAt }}</span>
             <span class="tnum text-sm text-slate-600">{{ formatDate(String(pickFirst(template, ["updated_at", "created_at"]) || "")) }}</span>
           </div>
-          <div class="mt-3 flex items-center justify-end gap-4 md:mt-0">
-            <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openTemplateDetail(template)">{{ copy.viewDetails }}</button>
-            <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openTemplateEdit(template)">{{ copy.editTemplate }}</button>
+          <div class="mt-3 flex items-center justify-end gap-2 md:mt-0">
+            <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click.stop="openTemplateEdit(template)">{{ copy.editTemplate }}</button>
+            <ChevronRight class="h-4 w-4 shrink-0 text-slate-400" />
           </div>
         </div>
       </div>
@@ -847,7 +943,7 @@ onMounted(async () => {
                     :key="key"
                     :label="templateFieldLabel(String(key))"
                     :value="templateFieldValue(String(key), value)"
-                    :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
+                    :mono="fieldIsMono(String(key), value)"
                     :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
                   />
                 </div>
@@ -898,31 +994,19 @@ onMounted(async () => {
       <Transition name="modal">
         <div v-if="mailDetailOpen && selectedMail" class="ui-modal-mask">
           <section class="ui-modal-panel max-w-[1280px]">
-            <div class="flex flex-wrap items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+            <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
               <div class="min-w-0">
                 <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
+                <div class="mt-1"><UlidChip :value="mailId(selectedMail)" /></div>
               </div>
-              <div class="flex w-full shrink-0 flex-wrap items-center gap-3 sm:w-auto">
-                <button
-                  v-if="selectedMailCanCancel"
-                  class="ui-btn ui-btn-danger flex-1 sm:flex-none"
-                  type="button"
-                  :disabled="!selectedMail || canceling"
-                  @click="cancelMail"
-                >
-                  <Loader2 v-if="canceling" class="h-4 w-4 animate-spin" />
-                  <XCircle v-else class="h-4 w-4" />
-                  {{ copy.cancelMail }}
-                </button>
-                <button
-                  class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                  type="button"
-                  :aria-label="copy.close"
-                  @click="closeMailDetail"
-                >
-                  <X class="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                type="button"
+                :aria-label="copy.close"
+                @click="closeMailDetail"
+              >
+                <X class="h-5 w-5" />
+              </button>
             </div>
 
             <div class="min-h-0 flex-1 space-y-5 overflow-y-auto p-4 md:p-6">
@@ -953,6 +1037,26 @@ onMounted(async () => {
                   :copy-error-message="copy.toasts.jsonCopyFailed"
                 />
               </template>
+
+              <section v-if="selectedMailCanCancel" class="rounded-2xl border border-danger-200 bg-danger-50/40 p-4 md:p-5">
+                <h3 class="flex items-center gap-2 text-sm font-semibold text-danger-600">
+                  <TriangleAlert class="h-4 w-4" />
+                  {{ t.common.dangerZone }}
+                </h3>
+                <div class="mt-3 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+                  <p class="text-sm text-slate-600">{{ copy.toasts.cancelNotAllowed }}</p>
+                  <button
+                    class="ui-btn ui-btn-danger shrink-0"
+                    type="button"
+                    :disabled="!selectedMail || canceling"
+                    @click="cancelMail"
+                  >
+                    <Loader2 v-if="canceling" class="h-4 w-4 animate-spin" />
+                    <XCircle v-else class="h-4 w-4" />
+                    {{ copy.cancelMail }}
+                  </button>
+                </div>
+              </section>
             </div>
           </section>
         </div>

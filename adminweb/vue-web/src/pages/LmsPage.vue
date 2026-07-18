@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { BookOpen, ChevronDown, ClipboardList, FileJson, FileText, HelpCircle, Info, Layers, Loader2, Paperclip, Plus, RefreshCw, Save, Search, Trash2, UploadCloud, X } from "lucide-vue-next"
+import { ArrowLeft, BookOpen, ChevronDown, ChevronRight, ClipboardList, CopyPlus, Eye, FileJson, FileText, HelpCircle, Info, Layers, Loader2, Paperclip, Plus, RefreshCw, Save, Search, Trash2, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
 import LmsPrerequisitesTab from "@/components/LmsPrerequisitesTab.vue"
+import RowMenu from "@/components/RowMenu.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -1258,11 +1260,11 @@ async function cloneCourse(course: JsonRecord) {
         from_course_id: id,
       })
     })
-    toast.success("课程克隆成功")
+    toast.success(copy.value.toasts.courseCloneSuccess)
     await loadCourses()
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, "课程克隆失败"))
+    toast.error(apiErrorMessage(err, copy.value.toasts.courseCloneFailed))
   } finally {
     cloningCourseId.value = ""
   }
@@ -1576,10 +1578,10 @@ async function handleLessonFileUpload(event: Event) {
     lessonForm.value.asset_file_hash = hashHex
     
     await saveLesson()
-    toast.success((copy.value.toasts as any)?.uploadSuccess || "课时资产直传并配置成功")
+    toast.success(copy.value.toasts.lessonUpdated)
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, (copy.value.toasts as any)?.uploadFailed || "上传失败"))
+    toast.error(apiErrorMessage(err, copy.value.toasts.lessonSaveFailed))
   } finally {
     uploadingLesson.value = false
     if (lessonFileInput.value) lessonFileInput.value.value = ""
@@ -1598,7 +1600,7 @@ async function saveLesson() {
     return
   }
   if (lessonForm.value.lesson_type === '7' && !lessonForm.value.asset_object_key.trim()) {
-    toast.error((copy.value.toasts as any)?.externalUrlRequired || "外部链接不能为空 (External URL required)")
+    toast.error(copy.value.toasts.materialUrlRequired)
     return
   }
 
@@ -1633,7 +1635,7 @@ async function saveLesson() {
       toast.success(copy.value.toasts.lessonCreated)
       if ([1, 3, 4, 5, 6].includes(type)) {
         editingLessonId.value = String(res.lesson_ulid)
-        toast.info("请继续点击下方按钮上传课时文件 (视频/PDF等)")
+        toast.info(copy.value.toasts.lessonUploadFilePrompt)
         await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
       } else {
         await Promise.all([loadLessons(), loadCompleteCourse(), loadCourseDetail()])
@@ -1817,7 +1819,7 @@ async function saveSupplementaryItem() {
     return
   }
   if (isSupplementaryAssetRequired(type) && !supplementaryItemForm.value.url.trim()) {
-    toast.error((copy.value.toasts as any)?.externalUrlRequired || "外部链接不能为空 (URL required)")
+    toast.error(copy.value.toasts.materialUrlRequired)
     return
   }
   const records = supplementaryEditableRecords()
@@ -1956,10 +1958,10 @@ async function handleMaterialFileUpload(event: Event) {
     materialForm.value.file_size = String(file.size)
     
     await saveMaterial()
-    toast.success((copy.value.toasts as any)?.uploadSuccess || "文件直传并配置成功")
+    toast.success(copy.value.toasts.materialUpdated)
   } catch (err) {
     console.error(err)
-    toast.error(apiErrorMessage(err, (copy.value.toasts as any)?.uploadFailed || "上传失败"))
+    toast.error(apiErrorMessage(err, copy.value.toasts.materialSaveFailed))
   } finally {
     uploadingMaterial.value = false
     if (materialFileInput.value) materialFileInput.value.value = ""
@@ -2004,10 +2006,10 @@ async function handleSupplementaryFileUpload(event: Event) {
     supplementaryItemForm.value.url = String(uploadRes.object_key)
     
     await saveSupplementaryItem()
-    toast.success((copy.value.toasts as any)?.uploadSuccess || "上传成功")
+    toast.success(copy.value.toasts.supplementaryUpdated)
   } catch (err) {
     console.error(err)
-    toast.error((copy.value.toasts as any)?.uploadFailed || "上传失败")
+    toast.error(copy.value.toasts.supplementarySaveFailed)
   } finally {
     uploadingSupplementary.value = false
     if (supplementaryFileInput.value) supplementaryFileInput.value.value = ""
@@ -2766,6 +2768,110 @@ watch(() => lessonForm.value.chapter_id, (newId, oldId) => {
   lessonForm.value.sort_order = String(maxSort + 1)
 })
 
+// ---- Phase 3 产品重构：纯前端组合状态（不新增任何请求形态） ----
+type EditorTabKey = "outline" | "materials" | "quizzes" | "info"
+
+const editorTab = ref<EditorTabKey>("outline")
+const courseStatusFilter = ref("")
+const collapsedChapters = ref<Record<string, boolean>>({})
+
+const courseStatusChips = computed(() => (["published", "draft", "deprecated"] as const).map((key) => ({
+  value: key as string,
+  label: copy.value.courseStatuses[key],
+  count: courses.value.filter((course) => courseStatusKey(course) === key).length,
+})))
+
+const filteredCourses = computed(() => {
+  const list = courseStatusFilter.value
+    ? courses.value.filter((course) => courseStatusKey(course) === courseStatusFilter.value)
+    : courses.value
+  return [...list].sort((a, b) => (courseStatusKey(a) === "deprecated" ? 1 : 0) - (courseStatusKey(b) === "deprecated" ? 1 : 0))
+})
+
+function toggleCourseStatusFilter(value: string) {
+  courseStatusFilter.value = courseStatusFilter.value === value ? "" : value
+}
+
+type OutlineChapterGroup = { chapter: JsonRecord; lessons: LessonListItem[] }
+
+const outlineChapters = computed<OutlineChapterGroup[]>(() => {
+  const base = chapters.value.length ? chapters.value : completeChapterRecords.value
+  return [...base]
+    .sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))
+    .map((chapter) => ({
+      chapter,
+      lessons: allLessonItems.value
+        .filter((item) => chapterId(item.chapter) === chapterId(chapter))
+        .sort((a, b) => (Number(a.lesson.sort_order) || 0) - (Number(b.lesson.sort_order) || 0)),
+    }))
+})
+
+const outlineUngroupedLessons = computed<LessonListItem[]>(() => {
+  const known = new Set(outlineChapters.value.map((group) => chapterId(group.chapter)))
+  return allLessonItems.value.filter((item) => !known.has(chapterId(item.chapter)))
+})
+
+const editorTabs = computed<Array<{ key: EditorTabKey; label: string; count?: number }>>(() => [
+  { key: "outline", label: copy.value.chapterListTitle, count: outlineChapters.value.length },
+  { key: "materials", label: copy.value.materialsTitle, count: supplementaryMaterialItems.value.length + materials.value.length },
+  { key: "quizzes", label: copy.value.quizBankTitle, count: allQuizItems.value.length },
+  { key: "info", label: (copy.value as any).basicInfo || "基本信息" },
+])
+
+function toggleChapterCollapse(id: string) {
+  collapsedChapters.value = { ...collapsedChapters.value, [id]: !collapsedChapters.value[id] }
+}
+
+function openNewLessonForChapter(chapter: JsonRecord) {
+  selectedChapter.value = chapter
+  openNewLesson()
+}
+
+function courseRowMenuItems(course: JsonRecord) {
+  return [
+    { key: "detail", label: copy.value.viewDetails, icon: Eye },
+    { key: "clone", label: copy.value.clone, icon: CopyPlus, disabled: cloningCourseId.value === courseId(course) },
+  ]
+}
+
+function onCourseRowMenu(key: string, course: JsonRecord) {
+  if (key === "detail") void openCourseDetailDialog(course)
+  else if (key === "clone") void cloneCourse(course)
+}
+
+const outlineRowMenuItems = computed(() => [
+  { key: "detail", label: copy.value.viewDetails, icon: Eye },
+  { key: "delete", label: copy.value.delete, icon: Trash2, danger: true },
+])
+
+function onChapterRowMenu(key: string, chapter: JsonRecord) {
+  if (key === "detail") openChapterDetail(chapter)
+  else if (key === "delete") deleteChapter(chapter)
+}
+
+function onLessonRowMenu(key: string, lesson: JsonRecord) {
+  if (key === "detail") openLessonDetail(lesson)
+  else if (key === "delete") deleteLesson(lesson)
+}
+
+function onQuizRowMenu(key: string, quiz: JsonRecord) {
+  if (key === "detail") openQuizDetail(quiz)
+  else if (key === "delete") deleteQuiz(quiz)
+}
+
+function onMaterialRowMenu(key: string, material: JsonRecord) {
+  if (key === "detail") viewMaterial(material)
+  else if (key === "delete") deleteMaterial(material)
+}
+
+watch(courseView, (view) => {
+  if (view === "detail") editorTab.value = "outline"
+})
+
+watch(selectedCourseId, () => {
+  collapsedChapters.value = {}
+})
+
 onMounted(() => {
   void loadCourses()
 })
@@ -2773,13 +2879,13 @@ onMounted(() => {
 
 <template>
   <main class="ui-page">
-    <header class="flex flex-wrap items-start justify-between gap-4 md:items-center">
+    <header v-if="courseView === 'list'" class="flex flex-wrap items-start justify-between gap-4 md:items-center">
       <div class="min-w-0">
         <h1 class="ui-page-title">{{ copy.title }}</h1>
         <p class="ui-page-subtitle">{{ copy.subtitle }}</p>
       </div>
       <div class="flex flex-wrap gap-3">
-        <button v-if="courseView === 'list' && !isCreatingCourse" class="ui-btn ui-btn-secondary" type="button" :disabled="loading" @click="loadCourses()">
+        <button v-if="!isCreatingCourse" class="ui-btn ui-btn-secondary" type="button" :disabled="loading" @click="loadCourses()">
           <RefreshCw class="h-4 w-4 text-slate-400" :class="loading ? 'animate-spin' : ''" />
           {{ copy.refresh }}
         </button>
@@ -2787,14 +2893,32 @@ onMounted(() => {
           <FileJson class="h-4 w-4 text-slate-400" />
           {{ copy.importJson }}
         </button>
-        <button v-if="courseView === 'detail'" class="ui-btn ui-btn-secondary" type="button" @click="backToCourseList">
-          {{ copy.backToList }}
-        </button>
         <button v-if="!isCreatingCourse" class="ui-btn ui-btn-primary" type="button" @click="newCourse">
           <Plus class="h-4 w-4" />
           {{ copy.newCourse }}
         </button>
       </div>
+    </header>
+
+    <header v-else class="flex flex-wrap items-center gap-3 md:gap-4">
+      <button class="ui-btn ui-btn-secondary ui-btn-sm shrink-0" type="button" @click="backToCourseList">
+        <ArrowLeft class="h-4 w-4 text-slate-400" />
+        {{ copy.backToList }}
+      </button>
+      <div class="min-w-0 flex-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <h1 class="max-w-full truncate text-xl font-semibold tracking-tight text-ink md:text-2xl">{{ courseTitle(selectedCourse) }}</h1>
+          <span class="ui-badge shrink-0" :class="badgeClass(selectedCourseStatusBadge)">{{ courseStatusLabel(selectedCourse) }}</span>
+          <span class="tnum shrink-0 text-xs text-slate-400">{{ copy.columns.version }} {{ versionOf(selectedCourse) }}</span>
+        </div>
+        <div class="mt-1">
+          <UlidChip :value="selectedCourseId" />
+        </div>
+      </div>
+      <button class="ui-btn ui-btn-secondary ui-btn-sm shrink-0" type="button" @click="importOpen = true">
+        <FileJson class="h-4 w-4 text-slate-400" />
+        {{ copy.importJson }}
+      </button>
     </header>
 
     <Teleport to="body">
@@ -2882,7 +3006,9 @@ onMounted(() => {
             <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
               <div class="min-w-0">
                 <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.courseTopData }}</h2>
-                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ courseDetailDialogCourseId || "-" }}</p>
+                <div class="mt-1">
+                  <UlidChip :value="courseDetailDialogCourseId" />
+                </div>
               </div>
               <div class="flex shrink-0 items-center gap-3">
                 <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="closeCourseDetailDialog">
@@ -2922,8 +3048,9 @@ onMounted(() => {
       </Transition>
     </Teleport>
 
-    <section v-if="courseView === 'list'" class="ui-card mt-6 overflow-hidden">
-      <div class="grid gap-3 border-b border-hairline px-4 py-4 md:px-6 lg:grid-cols-[1fr_auto]">
+    <Transition name="page" mode="out-in">
+    <section v-if="courseView === 'list'" class="ui-card mt-6">
+      <div class="grid gap-3 border-b border-hairline px-4 py-4 md:px-6">
         <div class="relative min-w-0">
           <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input v-model="categoryFilter" class="ui-input pl-9 pr-10" :placeholder="copy.categoryPlaceholder" />
@@ -2938,10 +3065,22 @@ onMounted(() => {
             <X class="h-4 w-4" />
           </button>
         </div>
-        <label class="inline-flex h-10 cursor-pointer items-center gap-2 rounded-[10px] border border-slate-200 bg-white px-4 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50">
-          <input v-model="publishedOnly" type="checkbox" />
-          {{ copy.publishedOnly }}
-        </label>
+        <div class="flex flex-wrap items-center gap-2">
+          <button
+            v-for="chip in courseStatusChips"
+            :key="chip.value"
+            type="button"
+            class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+            :class="courseStatusFilter === chip.value
+              ? 'bg-primary-600 text-white shadow-sm'
+              : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+            :aria-pressed="courseStatusFilter === chip.value"
+            @click="toggleCourseStatusFilter(chip.value)"
+          >
+            {{ chip.label }}
+            <span class="tnum text-xs" :class="courseStatusFilter === chip.value ? 'text-white/80' : 'text-slate-400'">{{ chip.count }}</span>
+          </button>
+        </div>
       </div>
 
       <div v-if="loading && !courses.length" class="divide-y divide-hairline">
@@ -2950,63 +3089,61 @@ onMounted(() => {
           <div class="skeleton h-3.5 w-4/5" />
         </div>
       </div>
-      <div v-else-if="!courses.length" class="ui-empty">
+      <div v-else-if="!filteredCourses.length" class="ui-empty">
         <div class="ui-empty-icon">
           <BookOpen class="h-6 w-6" />
         </div>
-        <p class="ui-empty-title">{{ copy.emptyCourses }}</p>
+        <p class="ui-empty-title">{{ courses.length ? t.common.noResults : copy.emptyCourses }}</p>
       </div>
       <div v-else>
-        <div class="hidden grid-cols-[minmax(0,1fr)_120px_260px_120px_180px] gap-6 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
+        <div class="hidden grid-cols-[minmax(0,1fr)_100px_220px_120px_190px] gap-6 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
           <span>{{ copy.columns.course }}</span>
           <span>{{ copy.columns.version }}</span>
           <span>{{ copy.columns.updatedAt }}</span>
-          <span class="text-right">{{ copy.columns.status }}</span>
+          <span>{{ copy.columns.status }}</span>
           <span class="text-right">{{ copy.columns.action }}</span>
         </div>
         <div
-          v-for="course in courses"
+          v-for="course in filteredCourses"
           :key="courseId(course)"
           class="block w-full cursor-pointer border-b border-hairline px-4 py-4 text-left transition-colors last:border-b-0 hover:bg-primary-50/40 lg:py-3.5"
           :class="courseId(course) === selectedCourseId ? 'bg-primary-50/60' : ''"
           role="button"
           tabindex="0"
           @click="selectCourse(course)"
-          @keyup.enter="selectCourse(course)"
+          @keyup.enter.self="selectCourse(course)"
         >
-          <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_120px_260px_120px_180px] lg:items-center lg:gap-6">
+          <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_100px_220px_120px_190px] lg:items-center lg:gap-6">
             <div class="min-w-0">
-              <div class="break-words text-sm font-medium text-ink lg:truncate">{{ courseTitle(course) }}</div>
-              <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+              <div class="break-words text-sm font-medium lg:truncate" :class="courseStatusKey(course) === 'deprecated' ? 'text-slate-400' : 'text-ink'">{{ courseTitle(course) }}</div>
+              <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs" :class="courseStatusKey(course) === 'deprecated' ? 'text-slate-300' : 'text-slate-400'">
                 <span class="max-w-full break-words">{{ course.category_tips || copy.uncategorized }}</span>
-                <span class="tnum max-w-full break-all">ID: {{ courseId(course) || "-" }}</span>
+                <UlidChip :value="courseId(course)" />
               </div>
             </div>
-            <div class="flex items-center justify-between gap-3 py-1 text-sm text-slate-600 lg:block lg:p-0">
+            <div class="flex items-center justify-between gap-3 py-1 text-sm lg:block lg:p-0" :class="courseStatusKey(course) === 'deprecated' ? 'text-slate-400' : 'text-slate-600'">
               <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.version }}</span>
               <span class="tnum">{{ course.version || 0 }}</span>
             </div>
-            <div class="flex items-center justify-between gap-3 py-1 text-sm text-slate-600 lg:block lg:p-0">
+            <div class="flex items-center justify-between gap-3 py-1 text-sm lg:block lg:p-0" :class="courseStatusKey(course) === 'deprecated' ? 'text-slate-400' : 'text-slate-600'">
               <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.updatedShort }}</span>
               <span class="tnum">{{ formatDate(String(course.updated_at || course.created_at || "")) }}</span>
             </div>
-            <span class="flex items-center justify-between gap-3 py-1 lg:block lg:justify-self-end lg:p-0">
+            <span class="flex items-center justify-between gap-3 py-1 lg:block lg:p-0">
               <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.status }}</span>
               <span class="ui-badge" :class="badgeClass(courseStatusBadgeValue(course))">
                 {{ courseStatusLabel(course) }}
               </span>
             </span>
-            <div class="flex flex-col gap-2 sm:flex-row lg:items-center lg:justify-end lg:gap-4">
-              <button class="inline-flex items-center justify-center rounded-[10px] bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 lg:bg-transparent lg:p-0 lg:hover:bg-transparent lg:hover:text-primary-600" type="button" @click.stop="openCourseDetailDialog(course)">
-                {{ copy.viewDetails }}
-              </button>
-              <button class="inline-flex items-center justify-center rounded-[10px] bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 lg:bg-transparent lg:p-0 lg:hover:bg-transparent lg:hover:text-primary-600" type="button" @click.stop="selectCourse(course)">
+            <div class="flex items-center justify-between gap-2 py-1 lg:justify-end lg:p-0">
+              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click.stop="selectCourse(course)">
                 {{ copy.edit }}
               </button>
-              <button class="inline-flex items-center justify-center rounded-[10px] bg-primary-50 px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-100 disabled:opacity-50 lg:bg-transparent lg:p-0 lg:hover:bg-transparent lg:hover:text-primary-600" type="button" :disabled="cloningCourseId === courseId(course)" @click.stop="cloneCourse(course)">
-                <Loader2 v-if="cloningCourseId === courseId(course)" class="mr-1 h-3 w-3 animate-spin lg:hidden" />
-                克隆
-              </button>
+              <div class="flex items-center gap-1.5">
+                <Loader2 v-if="cloningCourseId === courseId(course)" class="h-4 w-4 animate-spin text-slate-400" />
+                <RowMenu :items="courseRowMenuItems(course)" @select="(key) => onCourseRowMenu(key, course)" />
+                <ChevronRight class="hidden h-4 w-4 shrink-0 text-slate-300 lg:block" />
+              </div>
             </div>
           </div>
         </div>
@@ -3018,16 +3155,28 @@ onMounted(() => {
       </div>
     </section>
 
-    <div v-else class="mt-6 space-y-6">
+    <div v-else class="mt-6">
+      <div class="flex gap-5 overflow-x-auto border-b border-hairline">
+        <button
+          v-for="tab in editorTabs"
+          :key="tab.key"
+          type="button"
+          class="ui-tab"
+          :class="editorTab === tab.key ? 'ui-tab-active' : ''"
+          @click="editorTab = tab.key"
+        >
+          {{ tab.label }}
+          <span v-if="tab.count !== undefined" class="tnum ui-badge bg-slate-100 text-slate-600">{{ tab.count }}</span>
+        </button>
+      </div>
+
+      <div v-show="editorTab === 'info'" class="mt-6">
       <section class="ui-card overflow-hidden">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+        <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
           <div class="min-w-0">
-            <h2 class="text-base font-semibold text-ink">{{ selectedCourseId ? copy.courseTopData : copy.newCourse }}</h2>
-            <p class="tnum mt-1 break-all text-sm text-slate-500">{{ selectedCourseId || copy.fillCourseHint }}</p>
+            <h2 class="text-base font-semibold text-ink">{{ copy.courseTopData }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.fillCourseHint }}</p>
           </div>
-          <span v-if="selectedCourseId" class="ui-badge shrink-0" :class="badgeClass(selectedCourseStatusBadge)">
-            {{ courseStatusLabel(selectedCourse) }}
-          </span>
         </div>
 
         <div class="p-4 md:p-6">
@@ -3077,23 +3226,10 @@ onMounted(() => {
               <span class="ui-label">{{ copy.thumbnailFileHash }}</span>
               <input v-model="courseForm.thumbnail_file_hash" class="ui-input" />
             </label>
-            <div class="flex flex-col gap-3 sm:flex-row lg:col-span-2">
-              <button class="ui-btn ui-btn-primary w-full sm:w-auto" :disabled="savingCourse" type="submit">
-                <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
-                <Save v-else class="h-4 w-4" />
-                {{ savingCourse ? copy.saving : copy.saveCourse }}
-              </button>
-              <button v-if="canPublishSelectedCourse" class="ui-btn ui-btn-secondary w-full sm:w-auto" :disabled="!selectedCourseId || publishing" type="button" @click="publishCourse">
-                {{ publishing ? copy.publishing : copy.publishCourse }}
-              </button>
-              <button v-if="canDeleteSelectedCourse" class="ui-btn ui-btn-danger w-full sm:w-auto" :disabled="!selectedCourseId" type="button" @click="deleteCourse">
-                <Trash2 class="h-4 w-4" />
-                {{ copy.deleteCourse }}
-              </button>
-            </div>
           </form>
         </div>
       </section>
+      </div>
 
       <template v-if="showCourseContentSections">
         <Teleport to="body">
@@ -3105,7 +3241,7 @@ onMounted(() => {
                   <p class="mt-2 text-sm text-slate-600">{{ copy.courseDeleteConfirmDescription }}</p>
                   <div class="mt-5 rounded-2xl bg-slate-50 p-4">
                     <div class="break-words text-sm font-semibold text-ink">{{ courseTitle(pendingDeleteCourse) }}</div>
-                    <div class="tnum mt-1 break-all text-sm text-slate-500">{{ courseId(pendingDeleteCourse) }}</div>
+                    <div class="mt-1"><UlidChip :value="courseId(pendingDeleteCourse)" /></div>
                     <div class="tnum mt-1 text-sm text-slate-500">{{ copy.readonlyCourseFieldLabels.version }}: {{ versionOf(pendingDeleteCourse) }}</div>
                   </div>
                 </div>
@@ -3120,8 +3256,8 @@ onMounted(() => {
           </Transition>
         </Teleport>
 
-      <section class="ui-card overflow-hidden" :class="!selectedCourseId ? 'opacity-50' : ''">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+      <div v-show="editorTab === 'outline'" class="mt-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="min-w-0">
             <h2 class="text-base font-semibold text-ink">{{ copy.chapterListTitle }}</h2>
             <p class="mt-1 text-sm text-slate-500">{{ copy.chapterListDescription }}</p>
@@ -3131,58 +3267,133 @@ onMounted(() => {
             {{ copy.newChapter }}
           </button>
         </div>
-        <div v-if="chaptersLoading" class="divide-y divide-hairline">
-          <div v-for="i in 3" :key="`chapter-sk-${i}`" class="space-y-2.5 px-4 py-4 md:px-6">
+
+        <div v-if="chaptersLoading || completeLoading" class="space-y-4">
+          <div v-for="i in 3" :key="`chapter-sk-${i}`" class="ui-card space-y-2.5 p-4 md:p-5">
             <div class="skeleton h-4 w-2/5" />
             <div class="skeleton h-3.5 w-3/5" />
           </div>
         </div>
-        <div v-else-if="!chapters.length" class="ui-empty">
-          <div class="ui-empty-icon">
-            <Layers class="h-6 w-6" />
+        <section v-else-if="!outlineChapters.length && !outlineUngroupedLessons.length" class="ui-card">
+          <div class="ui-empty">
+            <div class="ui-empty-icon">
+              <Layers class="h-6 w-6" />
+            </div>
+            <p class="ui-empty-title">{{ copy.emptyChapters }}</p>
           </div>
-          <p class="ui-empty-title">{{ copy.emptyChapters }}</p>
-        </div>
-        <div v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_110px_110px_240px] gap-6 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
-            <span>{{ copy.chapterColumns.chapter }}</span>
-            <span class="text-center">{{ copy.chapterColumns.sort }}</span>
-            <span class="text-center">{{ copy.chapterColumns.version }}</span>
-            <span class="text-center">{{ copy.chapterColumns.action }}</span>
-          </div>
-          <div
-            v-for="chapter in chapters"
-            :key="chapterId(chapter)"
-            class="grid w-full gap-3 border-b border-hairline px-4 py-4 text-left transition-colors last:border-b-0 hover:bg-primary-50/40 lg:grid-cols-[minmax(0,1fr)_110px_110px_240px] lg:items-center lg:gap-6 lg:py-3.5"
-            :class="chapterId(chapter) === selectedChapterId ? 'bg-primary-50/60' : ''"
-          >
-            <div class="min-w-0">
-              <div class="flex items-center gap-2 overflow-hidden">
-                <span class="truncate text-sm font-medium text-ink">{{ chapterTitle(chapter) }}</span>
-                <span v-if="isChapterEmpty(chapter)" class="ui-badge shrink-0 bg-red-50 text-red-700">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+        </section>
+        <template v-else>
+          <section v-for="group in outlineChapters" :key="chapterId(group.chapter)" class="ui-card">
+            <div class="flex flex-wrap items-center gap-3 px-4 py-3.5 md:px-5" :class="chapterId(group.chapter) === selectedChapterId ? 'bg-primary-50/40' : ''">
+              <button
+                type="button"
+                class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
+                :aria-expanded="!collapsedChapters[chapterId(group.chapter)]"
+                :aria-label="collapsedChapters[chapterId(group.chapter)] ? t.common.expand : t.common.collapse"
+                :title="collapsedChapters[chapterId(group.chapter)] ? t.common.expand : t.common.collapse"
+                @click="toggleChapterCollapse(chapterId(group.chapter))"
+              >
+                <ChevronDown class="h-4 w-4 transition-transform duration-150" :class="collapsedChapters[chapterId(group.chapter)] ? '-rotate-90' : ''" />
+              </button>
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="truncate text-sm font-semibold text-ink">{{ chapterTitle(group.chapter) }}</span>
+                  <span v-if="isChapterEmpty(group.chapter)" class="ui-badge shrink-0 bg-red-50 text-red-700">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+                  <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.countText(group.lessons.length) }}</span>
+                </div>
+                <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                  <span class="tnum">{{ copy.sortMeta(group.chapter.sort_order || 0) }}</span>
+                  <span class="tnum">{{ copy.chapterColumns.version }} {{ group.chapter.version || 0 }}</span>
+                  <UlidChip :value="chapterId(group.chapter)" />
+                </div>
               </div>
-              <div class="tnum mt-1 truncate text-xs text-slate-400">ID: {{ chapterId(chapter) || "-" }}</div>
+              <div class="flex shrink-0 items-center gap-2">
+                <button v-if="canEditCourseContent" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="editChapter(group.chapter)">{{ copy.editChapter }}</button>
+                <button v-else class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openChapterDetail(group.chapter)">{{ copy.viewDetails }}</button>
+                <RowMenu v-if="canEditCourseContent" :items="outlineRowMenuItems" @select="(key) => onChapterRowMenu(key, group.chapter)" />
+              </div>
             </div>
-            <div class="text-sm text-slate-600 lg:text-center">
-              <span class="mr-2 text-xs font-medium text-slate-400 lg:hidden">{{ copy.chapterColumns.sort }}</span><span class="tnum">{{ chapter.sort_order || 0 }}</span>
+            <div v-show="!collapsedChapters[chapterId(group.chapter)]" class="border-t border-hairline">
+              <div v-if="lessonsLoading && chapterId(group.chapter) === selectedChapterId" class="space-y-2.5 px-4 py-4 md:px-5">
+                <div class="skeleton h-4 w-2/5" />
+                <div class="skeleton h-3.5 w-3/5" />
+              </div>
+              <div v-else-if="!group.lessons.length" class="px-4 py-4 text-sm text-slate-400 md:px-5">{{ copy.emptyLessons }}</div>
+              <div v-else class="divide-y divide-hairline">
+                <div
+                  v-for="item in group.lessons"
+                  :key="lessonId(item.lesson)"
+                  class="flex flex-wrap items-center gap-3 px-4 py-3 transition-colors hover:bg-primary-50/40 md:px-5 md:pl-[3.75rem]"
+                  :class="lessonId(item.lesson) === editingLessonId ? 'bg-primary-50/60' : ''"
+                >
+                  <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="truncate text-sm font-medium text-ink">{{ lessonTitle(item.lesson) }}</span>
+                      <span class="ui-badge shrink-0 bg-primary-50 text-primary-700">{{ lessonTypeLabel(item.lesson.lesson_type) }}</span>
+                      <span v-if="isLessonEmpty(item.lesson)" class="ui-badge shrink-0 bg-red-50 text-red-700">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+                    </div>
+                    <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                      <span class="tnum">{{ copy.sortMeta(item.lesson.sort_order || 0) }}</span>
+                      <UlidChip :value="lessonId(item.lesson)" />
+                    </div>
+                  </div>
+                  <div class="flex shrink-0 items-center gap-2">
+                    <button v-if="canEditCourseContent" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="editLesson(item.lesson)">{{ copy.editLesson }}</button>
+                    <button v-else class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openLessonDetail(item.lesson)">{{ copy.viewDetails }}</button>
+                    <RowMenu v-if="canEditCourseContent" :items="outlineRowMenuItems" @select="(key) => onLessonRowMenu(key, item.lesson)" />
+                  </div>
+                </div>
+              </div>
+              <div v-if="canEditCourseContent" class="border-t border-hairline px-4 py-3 md:px-5 md:pl-[3.75rem]">
+                <button
+                  type="button"
+                  class="flex h-9 w-full items-center justify-center gap-2 rounded-[10px] border border-dashed border-slate-300 bg-white text-sm font-medium text-slate-500 transition-colors hover:border-slate-400 hover:bg-slate-50 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
+                  @click="openNewLessonForChapter(group.chapter)"
+                >
+                  <Plus class="h-4 w-4" />
+                  {{ copy.newLesson }}
+                </button>
+              </div>
             </div>
-            <div class="text-sm text-slate-600 lg:text-center">
-              <span class="mr-2 text-xs font-medium text-slate-400 lg:hidden">{{ copy.chapterColumns.version }}</span><span class="tnum">{{ chapter.version || 0 }}</span>
+          </section>
+
+          <section v-if="outlineUngroupedLessons.length" class="ui-card">
+            <div class="flex flex-wrap items-center gap-3 px-4 py-3.5 md:px-5">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="truncate text-sm font-semibold text-slate-500">{{ copy.unselectedChapter }}</span>
+                  <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.countText(outlineUngroupedLessons.length) }}</span>
+                </div>
+              </div>
             </div>
-            <div class="flex items-center justify-start gap-4 lg:justify-center">
-              <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openChapterDetail(chapter)">
-                {{ copy.viewDetails }}
-              </button>
-              <button v-if="canEditCourseContent" class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="editChapter(chapter)">
-                {{ copy.editChapter }}
-              </button>
-              <button v-if="canEditCourseContent" class="text-sm font-medium text-red-600 transition-colors hover:text-red-700" type="button" @click="deleteChapter(chapter)">
-                {{ copy.delete }}
-              </button>
+            <div class="divide-y divide-hairline border-t border-hairline">
+              <div
+                v-for="item in outlineUngroupedLessons"
+                :key="lessonId(item.lesson)"
+                class="flex flex-wrap items-center gap-3 px-4 py-3 transition-colors hover:bg-primary-50/40 md:px-5"
+                :class="lessonId(item.lesson) === editingLessonId ? 'bg-primary-50/60' : ''"
+              >
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <span class="truncate text-sm font-medium text-ink">{{ lessonTitle(item.lesson) }}</span>
+                    <span class="ui-badge shrink-0 bg-primary-50 text-primary-700">{{ lessonTypeLabel(item.lesson.lesson_type) }}</span>
+                    <span v-if="isLessonEmpty(item.lesson)" class="ui-badge shrink-0 bg-red-50 text-red-700">{{ (copy as any).missingConfig || '缺少内容' }}</span>
+                  </div>
+                  <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                    <span class="tnum">{{ copy.sortMeta(item.lesson.sort_order || 0) }}</span>
+                    <UlidChip :value="lessonId(item.lesson)" />
+                  </div>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                  <button v-if="canEditCourseContent" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="editLesson(item.lesson)">{{ copy.editLesson }}</button>
+                  <button v-else class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openLessonDetail(item.lesson)">{{ copy.viewDetails }}</button>
+                  <RowMenu v-if="canEditCourseContent" :items="outlineRowMenuItems" @select="(key) => onLessonRowMenu(key, item.lesson)" />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        </template>
+      </div>
 
       <Teleport to="body">
         <Transition name="modal">
@@ -3255,7 +3466,7 @@ onMounted(() => {
                 <p class="mt-2 text-sm text-slate-600">{{ copy.chapterDeleteConfirmDescription }}</p>
                 <div class="mt-5 rounded-2xl bg-slate-50 p-4">
                   <div class="break-words text-sm font-semibold text-ink">{{ chapterTitle(pendingDeleteChapter) }}</div>
-                  <div class="tnum mt-1 break-all text-sm text-slate-500">{{ chapterId(pendingDeleteChapter) }}</div>
+                  <div class="mt-1"><UlidChip :value="chapterId(pendingDeleteChapter)" /></div>
                 </div>
               </div>
               <div class="flex justify-end gap-3 border-t border-hairline px-4 py-4 md:px-6">
@@ -3268,75 +3479,6 @@ onMounted(() => {
           </section>
         </Transition>
       </Teleport>
-
-      <section class="ui-card overflow-hidden" :class="!selectedCourseId ? 'opacity-50' : ''">
-        <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
-          <div class="min-w-0">
-            <h2 class="text-base font-semibold text-ink">{{ copy.lessonListTitle }}</h2>
-            <p class="mt-1 text-sm text-slate-500">{{ copy.lessonListDescription }}</p>
-          </div>
-          <button v-if="canEditCourseContent" class="ui-btn ui-btn-primary" :disabled="!selectedCourseId" type="button" @click="openNewLesson">
-            <Plus class="h-4 w-4" />
-            {{ copy.newLesson }}
-          </button>
-        </div>
-        <div v-if="completeLoading || lessonsLoading" class="divide-y divide-hairline">
-          <div v-for="i in 3" :key="`lesson-sk-${i}`" class="space-y-2.5 px-4 py-4 md:px-6">
-            <div class="skeleton h-4 w-2/5" />
-            <div class="skeleton h-3.5 w-3/5" />
-          </div>
-        </div>
-        <div v-else-if="!allLessonItems.length" class="ui-empty">
-          <div class="ui-empty-icon">
-            <FileText class="h-6 w-6" />
-          </div>
-          <p class="ui-empty-title">{{ copy.emptyLessons }}</p>
-        </div>
-        <div v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_220px_100px_100px_240px] gap-6 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
-            <span>{{ copy.lessonColumns.lesson }}</span>
-            <span>{{ copy.lessonColumns.chapter }}</span>
-            <span class="text-center">{{ copy.lessonColumns.sort }}</span>
-            <span class="text-center">{{ copy.lessonColumns.type }}</span>
-            <span class="text-center">{{ copy.lessonColumns.action }}</span>
-          </div>
-          <div
-            v-for="item in allLessonItems"
-            :key="lessonId(item.lesson)"
-            class="grid w-full gap-3 border-b border-hairline px-4 py-4 text-left transition-colors last:border-b-0 hover:bg-primary-50/40 lg:grid-cols-[minmax(0,1fr)_220px_100px_100px_240px] lg:items-center lg:gap-6 lg:py-3.5"
-            :class="lessonId(item.lesson) === editingLessonId ? 'bg-primary-50/60' : ''"
-          >
-            <div class="min-w-0">
-              <div class="flex items-center gap-2 overflow-hidden">
-                <span class="truncate text-sm font-medium text-ink">{{ lessonTitle(item.lesson) }}</span>
-                <span v-if="isLessonEmpty(item.lesson)" class="ui-badge shrink-0 bg-red-50 text-red-700">{{ (copy as any).missingConfig || '缺少内容' }}</span>
-              </div>
-              <div class="tnum mt-1 truncate text-xs text-slate-400">ID: {{ lessonId(item.lesson) || "-" }}</div>
-            </div>
-            <div class="min-w-0 text-sm text-slate-600">
-              <span class="mr-2 text-xs font-medium text-slate-400 lg:hidden">{{ copy.lessonColumns.chapter }}</span>
-              <span class="truncate">{{ chapterTitle(item.chapter) }}</span>
-            </div>
-            <div class="text-sm text-slate-600 lg:text-center">
-              <span class="mr-2 text-xs font-medium text-slate-400 lg:hidden">{{ copy.lessonColumns.sort }}</span><span class="tnum">{{ item.lesson.sort_order || 0 }}</span>
-            </div>
-            <div class="text-sm text-slate-600 lg:text-center">
-              <span class="mr-2 text-xs font-medium text-slate-400 lg:hidden">{{ copy.lessonColumns.type }}</span>{{ lessonTypeLabel(item.lesson.lesson_type) }}
-            </div>
-            <div class="flex items-center justify-start gap-4 lg:justify-center">
-              <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openLessonDetail(item.lesson)">
-                {{ copy.viewDetails }}
-              </button>
-              <button v-if="canEditCourseContent" class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="editLesson(item.lesson)">
-                {{ copy.editLesson }}
-              </button>
-              <button v-if="canEditCourseContent" class="text-sm font-medium text-red-600 transition-colors hover:text-red-700" type="button" @click="deleteLesson(item.lesson)">
-                {{ copy.delete }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <Teleport to="body">
         <Transition name="modal">
@@ -3362,7 +3504,7 @@ onMounted(() => {
                   <div class="rounded-2xl bg-primary-50 p-4">
                     <div class="text-xs font-medium uppercase tracking-wider text-primary-700">{{ copy.ownerChapter }}</div>
                     <div class="mt-1 text-base font-semibold text-ink">{{ selectedLessonOwnerChapter ? chapterTitle(selectedLessonOwnerChapter) : (selectedChapterId ? chapterTitle(selectedChapter) : copy.unselectedChapter) }}</div>
-                    <div class="tnum mt-2 break-all text-xs text-slate-500">ID: {{ selectedLessonOwnerChapter ? chapterId(selectedLessonOwnerChapter) : (selectedChapterId || "-") }}</div>
+                    <div class="mt-2"><UlidChip :value="selectedLessonOwnerChapter ? chapterId(selectedLessonOwnerChapter) : selectedChapterId" /></div>
                   </div>
                   <div class="rounded-2xl border border-edge p-4">
                     <h3 class="text-sm font-semibold text-ink">{{ copy.readonlyFields }}</h3>
@@ -3480,7 +3622,7 @@ onMounted(() => {
                 <p class="mt-2 text-sm text-slate-600">{{ copy.lessonDeleteConfirmDescription }}</p>
                 <div class="mt-5 rounded-2xl bg-slate-50 p-4">
                   <div class="break-words text-sm font-semibold text-ink">{{ lessonTitle(pendingDeleteLesson) }}</div>
-                  <div class="tnum mt-1 break-all text-sm text-slate-500">{{ lessonId(pendingDeleteLesson) }}</div>
+                  <div class="mt-1"><UlidChip :value="lessonId(pendingDeleteLesson)" /></div>
                 </div>
               </div>
               <div class="flex justify-end gap-3 border-t border-hairline px-4 py-4 md:px-6">
@@ -3503,7 +3645,7 @@ onMounted(() => {
                 <p class="mt-2 text-sm text-slate-600">{{ pendingDetailDelete.description }}</p>
                 <div class="mt-5 rounded-2xl bg-slate-50 p-4">
                   <div class="break-words text-sm font-semibold text-ink">{{ pendingDetailDelete.title }}</div>
-                  <div v-if="pendingDetailDelete.id" class="tnum mt-1 break-all text-sm text-slate-500">{{ pendingDetailDelete.id }}</div>
+                  <div v-if="pendingDetailDelete.id" class="mt-1"><UlidChip :value="pendingDetailDelete.id" /></div>
                   <div v-if="pendingDetailDelete.version !== undefined" class="tnum mt-1 text-sm text-slate-500">{{ copy.readonlyCourseFieldLabels.version }}: {{ pendingDetailDelete.version }}</div>
                 </div>
               </div>
@@ -3518,7 +3660,8 @@ onMounted(() => {
         </Transition>
       </Teleport>
 
-      <section class="ui-card overflow-hidden" :class="!selectedCourseId ? 'opacity-50' : ''">
+      <div v-show="editorTab === 'materials'" class="mt-6">
+      <section class="ui-card">
         <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
           <div class="min-w-0">
             <h2 class="text-base font-semibold text-ink">{{ copy.materialsTitle }}</h2>
@@ -3747,7 +3890,7 @@ onMounted(() => {
           </div>
         </div>
         <div class="p-4 md:p-6">
-          <div class="overflow-hidden rounded-2xl border border-edge">
+          <div class="rounded-2xl border border-edge">
             <div v-if="materialsLoading" class="divide-y divide-hairline">
               <div v-for="i in 2" :key="`material-sk-${i}`" class="space-y-2.5 px-4 py-4">
                 <div class="skeleton h-4 w-2/5" />
@@ -3760,38 +3903,41 @@ onMounted(() => {
               </div>
               <p class="ui-empty-title">{{ copy.emptyMaterials }}</p>
             </div>
-            <div v-else class="overflow-x-auto">
-              <table class="min-w-full text-left text-sm">
-                <thead class="ui-table-head">
-                  <tr>
-                    <th class="px-4 py-3 font-medium">{{ copy.materialTitlePlaceholder }}</th>
-                    <th class="px-4 py-3 font-medium">{{ copy.materialType }}</th>
-                    <th class="px-4 py-3 font-medium">{{ copy.fileObjectKey }}</th>
-                    <th class="px-4 py-3 font-medium">{{ copy.sort }}</th>
-                    <th class="w-48 px-4 py-3 text-right font-medium">{{ copy.chapterColumns.action }}</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-hairline">
-                  <tr v-for="material in materials" :key="materialId(material)" class="ui-table-row">
-                    <td class="px-4 py-3.5">
-                      <div class="font-medium text-ink">{{ materialTitle(material) }}</div>
-                      <div v-if="material.description" class="mt-1 line-clamp-2 text-xs text-slate-400">{{ material.description }}</div>
-                    </td>
-                    <td class="px-4 py-3.5 text-slate-600">{{ materialTypeLabel(material.material_type) }}</td>
-                    <td class="max-w-[520px] px-4 py-3.5">
-                      <div class="tnum break-all text-xs text-slate-400">{{ material.file_object_key || "-" }}</div>
-                    </td>
-                    <td class="tnum px-4 py-3.5 text-slate-600">{{ material.sort_order || 0 }}</td>
-                    <td class="w-48 whitespace-nowrap px-4 py-3.5 text-right">
-                      <div class="inline-flex items-center justify-end gap-3">
-                        <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="viewMaterial(material)">{{ copy.viewDetails }}</button>
-                        <button v-if="canEditCourseContent" class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="editMaterial(material)">{{ copy.edit }}</button>
-                        <button v-if="canEditCourseContent" class="text-sm font-medium text-red-600 transition-colors hover:text-red-700" type="button" @click="deleteMaterial(material)">{{ copy.delete }}</button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div v-else>
+              <div class="hidden grid-cols-[minmax(0,1fr)_150px_220px_80px_170px] gap-5 rounded-t-2xl border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
+                <span>{{ copy.materialTitlePlaceholder }}</span>
+                <span>{{ copy.materialType }}</span>
+                <span>{{ copy.fileObjectKey }}</span>
+                <span class="text-center">{{ copy.sort }}</span>
+                <span class="text-right">{{ copy.chapterColumns.action }}</span>
+              </div>
+              <div
+                v-for="material in materials"
+                :key="materialId(material)"
+                class="grid gap-3 border-b border-hairline px-4 py-4 transition-colors last:border-b-0 hover:bg-primary-50/40 lg:grid-cols-[minmax(0,1fr)_150px_220px_80px_170px] lg:items-center lg:gap-5 lg:py-3.5"
+              >
+                <div class="min-w-0">
+                  <div class="break-words text-sm font-medium text-ink lg:truncate">{{ materialTitle(material) }}</div>
+                  <div v-if="material.description" class="mt-1 line-clamp-2 text-xs text-slate-400">{{ material.description }}</div>
+                </div>
+                <div class="flex items-center justify-between gap-3 text-sm text-slate-600 lg:block">
+                  <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.materialType }}</span>
+                  {{ materialTypeLabel(material.material_type) }}
+                </div>
+                <div class="flex min-w-0 items-center justify-between gap-3 lg:block">
+                  <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.fileObjectKey }}</span>
+                  <UlidChip :value="String(material.file_object_key || '')" />
+                </div>
+                <div class="flex items-center justify-between gap-3 text-sm text-slate-600 lg:block lg:text-center">
+                  <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.sort }}</span>
+                  <span class="tnum">{{ material.sort_order || 0 }}</span>
+                </div>
+                <div class="flex items-center justify-end gap-2">
+                  <button v-if="canEditCourseContent" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="editMaterial(material)">{{ copy.edit }}</button>
+                  <button v-else class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="viewMaterial(material)">{{ copy.viewDetails }}</button>
+                  <RowMenu v-if="canEditCourseContent" :items="outlineRowMenuItems" @select="(key) => onMaterialRowMenu(key, material)" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -3911,8 +4057,10 @@ onMounted(() => {
           </Transition>
         </Teleport>
       </section>
+      </div>
 
-      <section class="ui-card overflow-hidden" :class="!selectedCourseId ? 'opacity-50' : ''">
+      <div v-show="editorTab === 'quizzes'" class="mt-6">
+      <section class="ui-card">
         <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
           <div class="min-w-0">
             <h2 class="text-base font-semibold text-ink">{{ copy.quizBankTitle }}</h2>
@@ -3953,18 +4101,18 @@ onMounted(() => {
           <p class="ui-empty-title">{{ copy.emptyQuizzes }}</p>
         </div>
         <div v-else>
-          <div class="hidden grid-cols-[minmax(0,1fr)_170px_220px_110px_110px_240px] gap-6 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
+          <div class="hidden grid-cols-[minmax(0,1fr)_150px_200px_100px_100px_170px] gap-6 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 lg:grid">
             <span>{{ copy.quizColumns.quiz }}</span>
             <span>{{ copy.quizColumns.ownerType }}</span>
             <span>{{ copy.quizColumns.owner }}</span>
             <span class="text-center">{{ copy.quizColumns.passingScore }}</span>
             <span class="text-center">{{ copy.quizColumns.questions }}</span>
-            <span class="text-center">{{ copy.quizColumns.action }}</span>
+            <span class="text-right">{{ copy.quizColumns.action }}</span>
           </div>
           <div
             v-for="item in allQuizItems"
             :key="quizId(item.quiz)"
-            class="grid w-full gap-3 border-b border-hairline px-4 py-4 text-left transition-colors last:border-b-0 hover:bg-primary-50/40 lg:grid-cols-[minmax(0,1fr)_170px_220px_110px_110px_240px] lg:items-center lg:gap-6 lg:py-3.5"
+            class="grid w-full gap-3 border-b border-hairline px-4 py-4 text-left transition-colors last:border-b-0 hover:bg-primary-50/40 lg:grid-cols-[minmax(0,1fr)_150px_200px_100px_100px_170px] lg:items-center lg:gap-6 lg:py-3.5"
             :class="quizId(item.quiz) === selectedQuizId ? 'bg-primary-50/60' : ''"
           >
             <div class="min-w-0">
@@ -3972,7 +4120,9 @@ onMounted(() => {
                 <span class="truncate text-sm font-medium text-ink">{{ quizTitle(item.quiz) }}</span>
                 <span v-if="isQuizEmpty(item)" class="ui-badge shrink-0 bg-red-50 text-red-700">{{ (copy as any).missingConfig || '缺少内容' }}</span>
               </div>
-              <div class="tnum mt-1 truncate text-xs text-slate-400">ID: {{ quizId(item.quiz) || "-" }}</div>
+              <div class="mt-1">
+                <UlidChip :value="quizId(item.quiz)" />
+              </div>
             </div>
             <div class="text-sm text-slate-600">
               <span class="mr-2 text-xs font-medium text-slate-400 lg:hidden">{{ copy.quizColumns.ownerType }}</span>{{ quizzableTypeLabel(item.ownerType) }}
@@ -3986,20 +4136,19 @@ onMounted(() => {
             <div class="text-sm text-slate-600 lg:text-center">
               <span class="mr-2 text-xs font-medium text-slate-400 lg:hidden">{{ copy.quizColumns.questions }}</span><span class="tnum">{{ item.questionCount }}</span>
             </div>
-            <div class="flex items-center justify-start gap-4 lg:justify-center">
-              <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openQuizDetail(item.quiz)">
-                {{ copy.viewDetails }}
-              </button>
-              <button v-if="canEditCourseContent" class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="editQuiz(item.quiz)">
+            <div class="flex items-center justify-start gap-2 lg:justify-end">
+              <button v-if="canEditCourseContent" class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="editQuiz(item.quiz)">
                 {{ copy.editQuiz }}
               </button>
-              <button v-if="canEditCourseContent" class="text-sm font-medium text-red-600 transition-colors hover:text-red-700" type="button" @click="deleteQuiz(item.quiz)">
-                {{ copy.delete }}
+              <button v-else class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openQuizDetail(item.quiz)">
+                {{ copy.viewDetails }}
               </button>
+              <RowMenu v-if="canEditCourseContent" :items="outlineRowMenuItems" @select="(key) => onQuizRowMenu(key, item.quiz)" />
             </div>
           </div>
         </div>
       </section>
+      </div>
 
       <Teleport to="body">
         <Transition name="modal">
@@ -4146,7 +4295,7 @@ onMounted(() => {
                       >
                         <div class="min-w-0">
                           <div class="line-clamp-2 text-sm font-medium text-ink">{{ questionTitle(question) }}</div>
-                          <div class="tnum mt-1 break-all text-xs text-slate-400">ID: {{ questionId(question) || "-" }}</div>
+                          <div class="mt-1"><UlidChip :value="questionId(question)" /></div>
                         </div>
                         <div class="text-sm text-slate-600">
                           <span class="mr-2 text-xs font-medium text-slate-400 lg:hidden">{{ copy.questionTypePoints }}</span>{{ copy.questionMeta(questionTypeLabel(question.question_type), question.points || 0) }}
@@ -4207,7 +4356,7 @@ onMounted(() => {
                     <div class="rounded-2xl bg-primary-50 p-4">
                       <div class="text-xs font-medium uppercase tracking-wider text-primary-700">{{ copy.ownerQuiz }}</div>
                       <div class="mt-1 text-base font-semibold text-ink">{{ selectedQuizId ? quizTitle(selectedQuiz) : copy.unselectedQuiz }}</div>
-                      <div class="tnum mt-2 break-all text-xs text-slate-500">ID: {{ selectedQuizId || "-" }}</div>
+                      <div class="mt-2"><UlidChip :value="selectedQuizId" /></div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 p-4">
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.questionTypePoints }}</div>
@@ -4336,7 +4485,43 @@ onMounted(() => {
         </Transition>
       </Teleport>
       </template>
+
+      <div
+        v-if="selectedCourseId"
+        class="sticky bottom-0 z-20 -mx-4 mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-hairline bg-white/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6 lg:-mx-8 lg:px-8"
+        style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom))"
+      >
+        <span class="tnum text-xs text-slate-400">{{ copy.readonlyCourseFieldLabels.version }}: {{ versionOf(selectedCourse) }}</span>
+        <div class="flex flex-wrap items-center gap-3">
+          <button
+            v-if="canDeleteSelectedCourse"
+            class="ui-btn ui-btn-secondary text-danger-600 hover:border-danger-200 hover:bg-danger-50"
+            type="button"
+            :disabled="deletingCourse"
+            @click="deleteCourse"
+          >
+            <Trash2 class="h-4 w-4" />
+            {{ copy.deleteCourse }}
+          </button>
+          <button
+            v-if="canPublishSelectedCourse"
+            class="ui-btn ui-btn-secondary"
+            type="button"
+            :disabled="publishing"
+            @click="publishCourse"
+          >
+            <Loader2 v-if="publishing" class="h-4 w-4 animate-spin" />
+            {{ publishing ? copy.publishing : copy.publishCourse }}
+          </button>
+          <button class="ui-btn ui-btn-primary" type="button" :disabled="savingCourse" @click="saveCourse">
+            <Loader2 v-if="savingCourse" class="h-4 w-4 animate-spin" />
+            <Save v-else class="h-4 w-4" />
+            {{ savingCourse ? copy.saving : copy.saveCourse }}
+          </button>
+        </div>
+      </div>
     </div>
+    </Transition>
 
     <Teleport to="body">
       <Transition name="modal">

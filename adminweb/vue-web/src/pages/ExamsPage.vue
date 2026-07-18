@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { CheckCircle2, History, Inbox, Loader2, PlayCircle, RefreshCw, Search, X } from "lucide-vue-next"
+import { ArrowUpRight, CheckCircle2, ChevronRight, Filter, History, Inbox, Loader2, PlayCircle, RefreshCw, Search, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
+import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
+import CandidatePicker from "@/components/CandidatePicker.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient, ApiError } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -9,6 +12,8 @@ import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
 
 const pageSize = 10
+
+const route = useRoute()
 
 const exams = ref<JsonRecord[]>([])
 const selectedSummary = ref<JsonRecord | null>(null)
@@ -34,6 +39,7 @@ const courseUnitFilter = ref("")
 const appliedCandidateFilter = ref("")
 const appliedConfirmationFilter = ref("")
 const appliedCourseUnitFilter = ref("")
+const advancedFiltersOpen = ref(false)
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.exams)
 
@@ -45,6 +51,15 @@ const candidateName = computed(() => {
   const source = detail.value || selectedSummary.value || {}
   return [source.candidate_first_name, source.candidate_middle_name, source.candidate_last_name].filter(Boolean).join(" ") || "-"
 })
+const detailCandidateUlid = computed(() => rawField(detail.value || selectedSummary.value, ["candidate_ulid", "candidate_id"]))
+const sortedTransitions = computed(() =>
+  [...transitions.value].sort((a, b) => {
+    const timeA = new Date(String(a.transitioned_at || a.created_at || 0)).getTime() || 0
+    const timeB = new Date(String(b.transitioned_at || b.created_at || 0)).getTime() || 0
+    return timeB - timeA
+  }),
+)
+const hasAdvancedFilters = computed(() => Boolean(appliedConfirmationFilter.value || appliedCourseUnitFilter.value))
 
 const statusOptions = computed(() => [
   { value: "", label: copy.value.statusOptions.allFlow },
@@ -163,7 +178,7 @@ async function loadExams(targetPage = page.value) {
 
     }
 
-    
+
 
     if (cursor) params.set("cursor", cursor)
 
@@ -286,12 +301,19 @@ async function search() {
   await executeSearch()
 }
 
-async function clearCandidateSearch() {
-  const shouldSearch = Boolean(appliedCandidateFilter.value)
-  candidateFilter.value = ""
-  if (!shouldSearch) return
-  appliedCandidateFilter.value = ""
-  await executeSearch()
+function setFlowStatus(value: string) {
+  statusFilter.value = value
+  void search()
+}
+
+function setResultStatus(value: string) {
+  resultStatusFilter.value = value
+  void search()
+}
+
+function onCandidateChange(value: string) {
+  candidateFilter.value = value
+  void search()
 }
 
 async function clearConfirmationSearch() {
@@ -347,7 +369,18 @@ function field(source: JsonRecord | null, keys: string[]) {
   return label(pickFirst(source || {}, keys))
 }
 
-onMounted(() => loadExams(1))
+function rawField(source: JsonRecord | null, keys: string[]) {
+  return String(pickFirst(source || {}, keys) || "")
+}
+
+onMounted(() => {
+  const deepLinkCandidate = String(route.query.candidate || "")
+  if (deepLinkCandidate) {
+    candidateFilter.value = deepLinkCandidate
+    appliedCandidateFilter.value = deepLinkCandidate
+  }
+  void loadExams(1)
+})
 </script>
 
 <template>
@@ -368,71 +401,97 @@ onMounted(() => loadExams(1))
 
     <!-- Filters -->
     <section class="ui-card mt-6 p-4 md:p-5">
-      <div class="grid gap-4 xl:grid-cols-[1fr_1fr_1.2fr_1.2fr_1.2fr_auto]">
-        <label class="grid gap-1.5">
+      <div class="grid gap-4">
+        <div class="grid gap-1.5">
           <span class="ui-label">{{ copy.filters.flowStatus }}</span>
-          <select v-model="statusFilter" class="ui-input" @change="search">
-            <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-          </select>
-        </label>
-        <label class="grid gap-1.5">
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              v-for="chip in statusOptions"
+              :key="`flow-${chip.value}`"
+              type="button"
+              class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+              :class="statusFilter === chip.value
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+              :aria-pressed="statusFilter === chip.value"
+              @click="setFlowStatus(chip.value)"
+            >
+              {{ chip.label }}
+            </button>
+          </div>
+        </div>
+        <div class="grid gap-1.5">
           <span class="ui-label">{{ copy.filters.resultStatus }}</span>
-          <select v-model="resultStatusFilter" class="ui-input" @change="search">
-            <option v-for="option in resultOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-          </select>
-        </label>
-        <label class="grid gap-1.5">
-          <span class="ui-label">{{ copy.filters.candidateUlid }}</span>
-          <div class="relative">
-            <input v-model="candidateFilter" class="ui-input pr-10" :placeholder="copy.filters.candidatePlaceholder" @keyup.enter="search" />
+          <div class="flex flex-wrap items-center gap-2">
             <button
-              v-if="candidateFilter"
-              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              v-for="chip in resultOptions"
+              :key="`result-${chip.value}`"
               type="button"
-              :aria-label="copy.filters.clearInput"
-              :title="copy.filters.clearInput"
-              @click="clearCandidateSearch"
+              class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+              :class="resultStatusFilter === chip.value
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+              :aria-pressed="resultStatusFilter === chip.value"
+              @click="setResultStatus(chip.value)"
             >
-              <X class="h-4 w-4" />
+              {{ chip.label }}
             </button>
           </div>
-        </label>
-        <label class="grid gap-1.5">
-          <span class="ui-label">{{ copy.filters.confirmationNumber }}</span>
-          <div class="relative">
-            <input v-model="confirmationFilter" class="ui-input pr-10" :placeholder="copy.filters.confirmationPlaceholder" @keyup.enter="search" />
-            <button
-              v-if="confirmationFilter"
-              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-              type="button"
-              :aria-label="copy.filters.clearInput"
-              :title="copy.filters.clearInput"
-              @click="clearConfirmationSearch"
-            >
-              <X class="h-4 w-4" />
-            </button>
-          </div>
-        </label>
-        <label class="grid gap-1.5">
-          <span class="ui-label">{{ copy.filters.courseUnitUlid }}</span>
-          <div class="relative">
-            <input v-model="courseUnitFilter" class="ui-input pr-10" :placeholder="copy.filters.courseUnitPlaceholder" @keyup.enter="search" />
-            <button
-              v-if="courseUnitFilter"
-              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-              type="button"
-              :aria-label="copy.filters.clearInput"
-              :title="copy.filters.clearInput"
-              @click="clearCourseUnitSearch"
-            >
-              <X class="h-4 w-4" />
-            </button>
-          </div>
-        </label>
-        <button class="ui-btn ui-btn-primary xl:self-end" type="button" @click="search">
-          <Search class="h-4 w-4" />
-          {{ copy.filters.search }}
-        </button>
+        </div>
+        <div class="grid gap-4 lg:grid-cols-[minmax(0,380px)_auto_auto] lg:items-end">
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.filters.candidateUlid }}</span>
+            <CandidatePicker v-model="candidateFilter" @update:model-value="onCandidateChange" />
+          </label>
+          <button
+            class="ui-btn ui-btn-secondary lg:self-end"
+            type="button"
+            :class="advancedFiltersOpen || hasAdvancedFilters ? 'border-primary-200 bg-primary-50 text-primary-700' : ''"
+            :aria-expanded="advancedFiltersOpen"
+            @click="advancedFiltersOpen = !advancedFiltersOpen"
+          >
+            <Filter class="h-4 w-4" :class="advancedFiltersOpen || hasAdvancedFilters ? 'text-primary-600' : 'text-slate-400'" />
+            {{ t.common.advancedFilters }}
+          </button>
+          <button class="ui-btn ui-btn-primary lg:self-end" type="button" @click="search">
+            <Search class="h-4 w-4" />
+            {{ copy.filters.search }}
+          </button>
+        </div>
+        <div v-if="advancedFiltersOpen" class="grid gap-4 border-t border-hairline pt-4 md:grid-cols-2">
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.filters.confirmationNumber }}</span>
+            <div class="relative">
+              <input v-model="confirmationFilter" class="ui-input pr-10" :placeholder="copy.filters.confirmationPlaceholder" @keyup.enter="search" />
+              <button
+                v-if="confirmationFilter"
+                class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                type="button"
+                :aria-label="copy.filters.clearInput"
+                :title="copy.filters.clearInput"
+                @click="clearConfirmationSearch"
+              >
+                <X class="h-4 w-4" />
+              </button>
+            </div>
+          </label>
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.filters.courseUnitUlid }}</span>
+            <div class="relative">
+              <input v-model="courseUnitFilter" class="ui-input pr-10" :placeholder="copy.filters.courseUnitPlaceholder" @keyup.enter="search" />
+              <button
+                v-if="courseUnitFilter"
+                class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                type="button"
+                :aria-label="copy.filters.clearInput"
+                :title="copy.filters.clearInput"
+                @click="clearCourseUnitSearch"
+              >
+                <X class="h-4 w-4" />
+              </button>
+            </div>
+          </label>
+        </div>
       </div>
     </section>
 
@@ -465,22 +524,31 @@ onMounted(() => loadExams(1))
           <article
             v-for="exam in exams"
             :key="examUlid(exam)"
-            class="px-4 py-4 transition-colors"
+            class="cursor-pointer px-4 py-4 transition-colors hover:bg-primary-50/40"
             :class="examUlid(exam) === selectedExamUlid ? 'bg-primary-50/60' : ''"
+            role="button"
+            tabindex="0"
+            :aria-label="copy.viewDetails"
+            @click="openExam(exam)"
+            @keydown.enter.prevent="openExam(exam)"
+            @keydown.space.prevent="openExam(exam)"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="break-words text-sm font-semibold text-ink">{{ field(exam, ["exam_code", "program_code", "exam_ulid"]) }}</div>
-                <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ examUlid(exam) }}</div>
+                <div class="mt-1"><UlidChip :value="examUlid(exam)" /></div>
               </div>
-              <span class="ui-badge shrink-0" :class="badgeClass(exam.exam_status)">{{ examStatusLabel(exam.exam_status) }}</span>
+              <div class="flex shrink-0 items-center gap-2">
+                <span class="ui-badge" :class="badgeClass(exam.exam_status)">{{ examStatusLabel(exam.exam_status) }}</span>
+                <ChevronRight class="h-4 w-4 text-slate-400" />
+              </div>
             </div>
             <dl class="mt-3 divide-y divide-hairline text-sm">
               <div class="flex items-start justify-between gap-4 py-2">
                 <dt class="shrink-0 text-xs font-medium text-slate-400">{{ copy.columns.candidate }}</dt>
-                <dd class="m-0 min-w-0 text-right">
+                <dd class="m-0 flex min-w-0 flex-col items-end gap-1 text-right">
                   <div class="break-words text-slate-600">{{ candidateDisplay(exam) }}</div>
-                  <div v-if="candidateIdentifier(exam)" class="tnum break-all text-xs text-slate-400">{{ candidateIdentifier(exam) }}</div>
+                  <UlidChip v-if="candidateIdentifier(exam)" :value="candidateIdentifier(exam)" />
                 </dd>
               </div>
               <div class="flex items-center justify-between gap-4 py-2">
@@ -489,18 +557,17 @@ onMounted(() => loadExams(1))
                   <span class="ui-badge bg-slate-100 text-slate-600">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
                 </dd>
               </div>
-              <div class="flex items-start justify-between gap-4 py-2">
+              <div class="flex items-center justify-between gap-4 py-2">
                 <dt class="shrink-0 text-xs font-medium text-slate-400">{{ copy.columns.confirmation }}</dt>
-                <dd class="tnum m-0 break-all text-right text-slate-600">{{ label(exam.confirmation_number) }}</dd>
+                <dd class="m-0 text-right">
+                  <UlidChip :value="String(exam.confirmation_number || '')" />
+                </dd>
               </div>
               <div class="flex items-center justify-between gap-4 py-2">
                 <dt class="shrink-0 text-xs font-medium text-slate-400">{{ copy.columns.appointment }}</dt>
                 <dd class="tnum m-0 text-right text-slate-600">{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</dd>
               </div>
             </dl>
-            <button class="ui-btn ui-btn-secondary ui-btn-sm mt-2 w-full" type="button" @click="openExam(exam)">
-              {{ copy.viewDetails }}
-            </button>
           </article>
         </div>
       </div>
@@ -548,29 +615,38 @@ onMounted(() => loadExams(1))
               <tr
                 v-for="exam in exams"
                 :key="examUlid(exam)"
-                class="ui-table-row"
+                class="ui-table-row cursor-pointer"
                 :class="examUlid(exam) === selectedExamUlid ? 'bg-primary-50/60' : ''"
+                role="button"
+                tabindex="0"
+                :aria-label="copy.viewDetails"
+                @click="openExam(exam)"
+                @keydown.enter.prevent="openExam(exam)"
+                @keydown.space.prevent="openExam(exam)"
               >
                 <td class="px-4 py-3.5">
                   <div class="font-medium text-ink">{{ field(exam, ["exam_code", "program_code", "exam_ulid"]) }}</div>
-                  <div class="tnum max-w-[220px] truncate text-xs text-slate-400">{{ examUlid(exam) }}</div>
+                  <div class="mt-1"><UlidChip :value="examUlid(exam)" /></div>
                 </td>
                 <td class="px-4 py-3.5">
                   <div class="text-slate-600">{{ candidateDisplay(exam) }}</div>
-                  <div v-if="candidateIdentifier(exam)" class="tnum max-w-[220px] truncate text-xs text-slate-400">{{ candidateIdentifier(exam) }}</div>
+                  <div v-if="candidateIdentifier(exam)" class="mt-1"><UlidChip :value="candidateIdentifier(exam)" /></div>
                 </td>
                 <td class="px-4 py-3.5">
                   <span class="ui-badge bg-slate-100 text-slate-600">{{ resultStatusLabel(exam.result_status, exam.is_passed) }}</span>
                 </td>
-                <td class="tnum px-4 py-3.5 text-slate-600">{{ label(exam.confirmation_number) }}</td>
+                <td class="px-4 py-3.5">
+                  <UlidChip :value="String(exam.confirmation_number || '')" />
+                </td>
                 <td class="tnum whitespace-nowrap px-4 py-3.5 text-slate-600">{{ formatDate(String(exam.appointment_start_time || "")) || "-" }}</td>
                 <td class="px-4 py-3.5">
                   <span class="ui-badge" :class="badgeClass(exam.exam_status)">{{ examStatusLabel(exam.exam_status) }}</span>
                 </td>
                 <td class="w-28 whitespace-nowrap px-4 py-3.5 text-right">
-                  <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openExam(exam)">
+                  <span class="inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition-colors hover:text-primary-600">
                     {{ copy.viewDetails }}
-                  </button>
+                    <ChevronRight class="h-4 w-4" />
+                  </span>
                 </td>
               </tr>
             </template>
@@ -598,14 +674,27 @@ onMounted(() => loadExams(1))
                 <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
                 <p class="mt-1 text-sm text-slate-500">{{ copy.detailDescription }}</p>
               </div>
-              <button
-                class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                type="button"
-                :aria-label="copy.close"
-                @click="closeDetailDialog"
-              >
-                <X class="h-5 w-5" />
-              </button>
+              <div class="flex shrink-0 items-center gap-2">
+                <button
+                  v-if="selectedExamUlid"
+                  class="ui-btn ui-btn-primary ui-btn-sm"
+                  type="button"
+                  :disabled="actionLoading"
+                  @click="syncExamResult"
+                >
+                  <Loader2 v-if="actionLoading" class="h-4 w-4 animate-spin" />
+                  <PlayCircle v-else class="h-4 w-4" />
+                  {{ copy.syncResult }}
+                </button>
+                <button
+                  class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  type="button"
+                  :aria-label="copy.close"
+                  @click="closeDetailDialog"
+                >
+                  <X class="h-5 w-5" />
+                </button>
+              </div>
             </div>
 
             <div class="min-h-0 flex-1 overflow-y-auto">
@@ -621,7 +710,7 @@ onMounted(() => loadExams(1))
                     <div class="min-w-0">
                       <p class="text-xs font-medium uppercase tracking-wider text-primary-600">{{ copy.currentExam }}</p>
                       <h3 class="mt-1 break-all text-lg font-semibold text-ink md:text-xl">{{ field(detail || selectedSummary, ["exam_code", "exam_ulid"]) }}</h3>
-                      <p class="tnum mt-1 break-all text-sm text-primary-700">{{ selectedExamUlid }}</p>
+                      <div class="mt-1.5"><UlidChip :value="selectedExamUlid" /></div>
                     </div>
                     <span class="ui-badge shrink-0" :class="badgeClass((detail || selectedSummary)?.exam_status)">
                       {{ examStatusLabel((detail || selectedSummary)?.exam_status) }}
@@ -635,11 +724,24 @@ onMounted(() => loadExams(1))
                     <dl class="mt-4 grid gap-4">
                       <div>
                         <dt class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.pipeline }}</dt>
-                        <dd class="tnum m-0 mt-1 break-all text-sm font-medium text-ink">{{ field(detail, ["pipeline_ulid"]) }}</dd>
+                        <dd class="m-0 mt-1 flex flex-wrap items-center gap-2">
+                          <UlidChip :value="rawField(detail, ['pipeline_ulid'])" />
+                          <RouterLink
+                            v-if="rawField(detail, ['pipeline_ulid']) && detailCandidateUlid"
+                            :to="{ path: '/prog', query: { candidate: detailCandidateUlid } }"
+                            class="inline-flex items-center gap-1 text-sm text-slate-600 underline decoration-slate-300 decoration-dashed underline-offset-4 transition-colors hover:text-primary-700 hover:decoration-primary-400"
+                            @click.stop
+                          >
+                            {{ t.common.openLink }}
+                            <ArrowUpRight class="h-3.5 w-3.5 text-slate-400" />
+                          </RouterLink>
+                        </dd>
                       </div>
                       <div>
                         <dt class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.courseUnit }}</dt>
-                        <dd class="tnum m-0 mt-1 break-all text-sm font-medium text-ink">{{ field(detail, ["course_unit_ulid"]) }}</dd>
+                        <dd class="m-0 mt-1">
+                          <UlidChip :value="rawField(detail, ['course_unit_ulid'])" />
+                        </dd>
                       </div>
                       <div>
                         <dt class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.certification }}</dt>
@@ -661,7 +763,9 @@ onMounted(() => loadExams(1))
                       </div>
                       <div class="sm:col-span-2">
                         <dt class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.candidateUlid }}</dt>
-                        <dd class="tnum m-0 mt-1 break-all text-sm font-medium text-ink">{{ field(detail || selectedSummary, ["candidate_ulid"]) }}</dd>
+                        <dd class="m-0 mt-1">
+                          <UlidChip :value="detailCandidateUlid" />
+                        </dd>
                       </div>
                     </dl>
                   </article>
@@ -673,7 +777,9 @@ onMounted(() => loadExams(1))
                     <dl class="mt-4 grid gap-4 sm:grid-cols-2">
                       <div>
                         <dt class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.confirmationNumber }}</dt>
-                        <dd class="tnum m-0 mt-1 break-all text-sm font-medium text-ink">{{ field(detail || selectedSummary, ["confirmation_number"]) }}</dd>
+                        <dd class="m-0 mt-1">
+                          <UlidChip :value="rawField(detail || selectedSummary, ['confirmation_number'])" />
+                        </dd>
                       </div>
                       <div>
                         <dt class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.site }}</dt>
@@ -717,39 +823,44 @@ onMounted(() => loadExams(1))
                     <h4 class="text-base font-semibold text-ink">{{ copy.sections.transitions }}</h4>
                     <p class="mt-1 text-sm text-slate-500">{{ copy.transitionsDescription }}</p>
                   </div>
-                  <div v-if="!transitions.length" class="ui-empty">
+                  <div v-if="!sortedTransitions.length" class="ui-empty">
                     <div class="ui-empty-icon">
                       <History class="h-6 w-6" />
                     </div>
                     <p class="ui-empty-title">{{ copy.emptyTransitions }}</p>
                   </div>
-                  <div v-else class="divide-y divide-hairline">
-                    <div
-                      v-for="transition in transitions"
-                      :key="String(transition.msg_fp || transition.transitioned_at)"
-                      class="grid gap-3 px-4 py-4 md:px-5 lg:grid-cols-[160px_minmax(0,1fr)_180px]"
-                    >
-                      <div>
-                        <span class="ui-badge bg-slate-100 text-slate-600">{{ transitionStatusTypeLabel(transition.status_type) }}</span>
-                        <p class="mt-2 text-sm font-medium text-ink">{{ transitionEventLabel(transition.event_type) }}</p>
-                      </div>
-                      <div class="min-w-0">
-                        <p class="text-sm font-medium text-ink">{{ transitionStatusLabel(transition, transition.from_status) }} → {{ transitionStatusLabel(transition, transition.to_status) }}</p>
-                        <p class="tnum mt-1 break-all text-xs text-slate-400">{{ label(transition.msg_fp) }}</p>
-                      </div>
-                      <div class="tnum text-sm text-slate-500">{{ formatDate(String(transition.transitioned_at || transition.created_at || "")) || "-" }}</div>
-                    </div>
+                  <div v-else class="p-4 md:p-5">
+                    <ol class="relative space-y-0 pl-0">
+                      <li
+                        v-for="(transition, index) in sortedTransitions"
+                        :key="String(transition.msg_fp || transition.transitioned_at || index)"
+                        class="relative flex gap-3 pb-6 last:pb-0"
+                      >
+                        <div class="flex flex-col items-center">
+                          <span
+                            class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                            :class="index === 0 ? 'bg-primary-600 ring-4 ring-primary-500/15' : 'bg-slate-300'"
+                          />
+                          <span v-if="index < sortedTransitions.length - 1" class="mt-1 w-px flex-1 bg-hairline" />
+                        </div>
+                        <div class="-mt-0.5 min-w-0 flex-1">
+                          <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-sm font-medium" :class="index === 0 ? 'text-ink' : 'text-slate-600'">{{ transitionEventLabel(transition.event_type) }}</span>
+                            <span class="ui-badge bg-slate-100 text-slate-600">{{ transitionStatusTypeLabel(transition.status_type) }}</span>
+                          </div>
+                          <p class="mt-0.5 text-sm" :class="index === 0 ? 'text-slate-600' : 'text-slate-500'">
+                            {{ transitionStatusLabel(transition, transition.from_status) }} → {{ transitionStatusLabel(transition, transition.to_status) }}
+                          </p>
+                          <p class="tnum mt-0.5 text-xs text-slate-400">{{ formatDate(String(transition.transitioned_at || transition.created_at || "")) || "-" }}</p>
+                          <div v-if="transition.msg_fp" class="mt-1">
+                            <UlidChip :value="String(transition.msg_fp)" />
+                          </div>
+                        </div>
+                      </li>
+                    </ol>
                   </div>
                 </article>
               </div>
-            </div>
-
-            <div v-if="selectedExamUlid" class="flex shrink-0 justify-end border-t border-hairline px-4 py-4 md:px-6">
-              <button class="ui-btn ui-btn-primary w-full sm:w-auto" type="button" :disabled="actionLoading" @click="syncExamResult">
-                <Loader2 v-if="actionLoading" class="h-4 w-4 animate-spin" />
-                <PlayCircle v-else class="h-4 w-4" />
-                {{ copy.syncResult }}
-              </button>
             </div>
           </section>
         </div>

@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { FileWarning, Inbox, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, UserX, X } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { Check, FileWarning, Inbox, Loader2, RefreshCw, Search, ShieldCheck, ShieldOff, TriangleAlert, UserX, X } from "lucide-vue-next"
+import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import CandidatePicker from "@/components/CandidatePicker.vue"
 import JsonPreview from "@/components/JsonPreview.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { type JsonRecord } from "@/lib/display"
@@ -20,16 +22,19 @@ const definitionsLoading = ref(false)
 const loading = ref(false)
 const activeAction = ref<PermissionAction | null>(null)
 const detailOpen = ref(false)
-const { t, isZh } = useAdminLanguage()
+const { t } = useAdminLanguage()
 const copy = computed(() => t.value.permissions)
 
 const credDefUlid = computed(() => definitionUlid(selectedDefinition.value))
 const canCheck = computed(() => Boolean(candidateUlid.value.trim() && credDefUlid.value))
 const resultFields = computed(() => checkResult.value || {})
-const viewDetailLabel = computed(() => copy.value.viewDetail || (isZh.value ? "查看详情" : "View Details"))
-const detailDialogTitle = computed(() => copy.value.detailDialogTitle || (isZh.value ? "权限详情" : "Permission Details"))
-const closeLabel = computed(() => copy.value.close || (isZh.value ? "关闭" : "Close"))
-const clearInputLabel = computed(() => copy.value.clearInput || (isZh.value ? "清除输入" : "Clear input"))
+const viewDetailLabel = computed(() => copy.value.viewDetail)
+const detailDialogTitle = computed(() => copy.value.detailDialogTitle)
+const closeLabel = computed(() => copy.value.close)
+const resultStatusText = computed(() => {
+  const value = pickFirst(checkResult.value || {}, ["credential_status", "status", "state", "eligible"])
+  return value === undefined || value === null || value === "" ? "" : String(value)
+})
 
 const actions = computed(() => [
   {
@@ -39,6 +44,7 @@ const actions = computed(() => [
     endpoint: "/api/permissions/grant",
     icon: ShieldCheck,
     tone: "bg-emerald-50 text-emerald-700",
+    danger: false,
   },
   {
     key: "revoke-upload" as const,
@@ -47,6 +53,7 @@ const actions = computed(() => [
     endpoint: "/api/permissions/revoke",
     icon: ShieldOff,
     tone: "bg-amber-50 text-amber-700",
+    danger: false,
   },
   {
     key: "mark-expired" as const,
@@ -55,6 +62,7 @@ const actions = computed(() => [
     endpoint: "/api/permissions/mark-expired",
     icon: FileWarning,
     tone: "bg-amber-50 text-amber-700",
+    danger: false,
   },
   {
     key: "revoke-credential" as const,
@@ -63,8 +71,22 @@ const actions = computed(() => [
     endpoint: "/api/permissions/revoke-credential",
     icon: UserX,
     tone: "bg-red-50 text-red-700",
+    danger: true,
   },
 ])
+
+const normalActions = computed(() => actions.value.filter((item) => !item.danger))
+const dangerActions = computed(() => actions.value.filter((item) => item.danger))
+
+const ULID_LIKE = /^[0-9A-HJKMNP-TV-Z]{26}$/i
+
+function isUlidLike(value: unknown) {
+  return ULID_LIKE.test(String(value ?? "").trim())
+}
+
+function isStructured(value: unknown) {
+  return Array.isArray(value) || (!!value && typeof value === "object")
+}
 
 function definitionUlid(definition: JsonRecord | null | undefined) {
   return String(pickFirst(definition || {}, ["cred_def_ulid", "cred_def_id", "qual_ulid"]) || "")
@@ -85,15 +107,10 @@ function openDetail(definition: JsonRecord) {
   detailOpen.value = true
 }
 
-function clearCandidate() {
-  candidateUlid.value = ""
+watch(candidateUlid, () => {
   checkResult.value = null
-  detailOpen.value = false
-}
-
-function resultStatus() {
-  return pickFirst(checkResult.value || {}, ["credential_status", "status", "state", "eligible"])
-}
+  if (!candidateUlid.value.trim()) detailOpen.value = false
+})
 
 async function loadDefinitions() {
   definitionsLoading.value = true
@@ -188,22 +205,10 @@ onMounted(loadDefinitions)
     <section class="ui-card mt-6 p-4 md:p-6">
       <h2 class="text-base font-semibold text-ink">{{ copy.targetTitle }}</h2>
       <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
-        <label class="grid gap-1.5">
+        <div class="grid gap-1.5">
           <span class="ui-label">{{ copy.candidateUlid }}</span>
-          <span class="relative block">
-            <input v-model="candidateUlid" class="tnum ui-input pr-10" maxlength="64" :placeholder="copy.candidatePlaceholder" />
-            <button
-              v-if="candidateUlid"
-              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-              type="button"
-              :aria-label="clearInputLabel"
-              :title="clearInputLabel"
-              @click="clearCandidate"
-            >
-              <X class="h-4 w-4" />
-            </button>
-          </span>
-        </label>
+          <CandidatePicker v-model="candidateUlid" />
+        </div>
         <button class="ui-btn ui-btn-primary" type="button" :disabled="loading || !canCheck" @click="check">
           <Loader2 v-if="loading && !activeAction" class="h-4 w-4 animate-spin" />
           <Search v-else class="h-4 w-4" />
@@ -240,12 +245,33 @@ onMounted(loadDefinitions)
           :key="definitionUlid(definition)"
           class="grid cursor-pointer gap-4 px-4 py-4 transition-colors hover:bg-primary-50/40 md:grid-cols-[minmax(0,1fr)_auto] md:items-center md:px-6"
           :class="definitionUlid(selectedDefinition) === definitionUlid(definition) ? 'bg-primary-50/60' : ''"
+          role="button"
+          tabindex="0"
+          :aria-pressed="definitionUlid(selectedDefinition) === definitionUlid(definition)"
           @click="selectDefinition(definition)"
+          @keydown.enter.prevent="selectDefinition(definition)"
+          @keydown.space.prevent="selectDefinition(definition)"
         >
-          <div class="min-w-0">
-            <div class="break-words text-sm font-medium text-ink">{{ definitionName(definition) }}</div>
-            <div class="mt-1 text-sm text-slate-500">{{ definition.category || "-" }}</div>
-            <div class="tnum mt-1 break-all text-xs text-slate-400">ID: {{ definitionUlid(definition) || "-" }}</div>
+          <div class="flex min-w-0 items-start gap-3">
+            <span
+              class="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors"
+              :class="definitionUlid(selectedDefinition) === definitionUlid(definition) ? 'border-primary-600 bg-primary-600 text-white' : 'border-slate-300 bg-white text-transparent'"
+              aria-hidden="true"
+            >
+              <Check class="h-3 w-3" />
+            </span>
+            <div class="min-w-0">
+              <div
+                class="break-words text-sm font-medium"
+                :class="definitionUlid(selectedDefinition) === definitionUlid(definition) ? 'text-primary-700' : 'text-ink'"
+              >
+                {{ definitionName(definition) }}
+              </div>
+              <div class="mt-1 text-sm text-slate-500">{{ definition.category || "-" }}</div>
+              <div class="mt-1.5">
+                <UlidChip :value="definitionUlid(definition)" />
+              </div>
+            </div>
           </div>
           <button class="ui-btn ui-btn-secondary ui-btn-sm md:justify-self-end" type="button" @click.stop="openDetail(definition)">
             {{ viewDetailLabel }}
@@ -283,19 +309,23 @@ onMounted(loadDefinitions)
                       <h2 class="text-base font-semibold text-ink">{{ copy.currentTarget }}</h2>
                       <p class="mt-1 text-sm text-slate-500">{{ copy.currentTargetDescription }}</p>
                     </div>
-                    <span v-if="checkResult" class="ui-badge shrink-0" :class="badgeClass(resultStatus())">
-                      {{ resultStatus() || "UNKNOWN" }}
+                    <span v-if="checkResult && resultStatusText" class="ui-badge shrink-0" :class="badgeClass(resultStatusText)">
+                      {{ resultStatusText }}
                     </span>
                   </div>
                   <div class="mt-5 grid gap-4 md:grid-cols-2">
                     <div class="rounded-2xl bg-slate-50 p-4">
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.candidate }}</div>
-                      <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ candidateUlid || "-" }}</div>
+                      <div class="mt-2">
+                        <UlidChip :value="candidateUlid" />
+                      </div>
                     </div>
                     <div class="rounded-2xl bg-slate-50 p-4">
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.credentialDefinition }}</div>
                       <div class="mt-2 break-all text-sm font-medium text-ink">{{ definitionName(selectedDefinition) }}</div>
-                      <div class="tnum mt-1 break-all text-xs text-slate-400">{{ credDefUlid || "-" }}</div>
+                      <div class="mt-1.5">
+                        <UlidChip :value="credDefUlid" />
+                      </div>
                     </div>
                   </div>
                 </section>
@@ -312,21 +342,22 @@ onMounted(loadDefinitions)
                     </div>
                     <div v-else class="mt-4 space-y-5">
                       <div class="grid gap-4 md:grid-cols-2">
-                        <label v-for="(value, key) in resultFields" :key="key" class="grid gap-1.5">
-                          <span class="ui-label break-all">{{ key }}</span>
-                          <textarea
-                            v-if="Array.isArray(value) || (value && typeof value === 'object')"
-                            class="ui-input h-auto min-h-24 py-2.5"
-                            disabled
-                            :value="JSON.stringify(value, null, 2)"
-                          />
-                          <input
-                            v-else
-                            class="ui-input"
-                            disabled
-                            :value="String(value ?? '-')"
-                          />
-                        </label>
+                        <div
+                          v-for="(value, key) in resultFields"
+                          :key="key"
+                          class="rounded-2xl bg-slate-50 p-4"
+                          :class="isStructured(value) ? 'md:col-span-2' : ''"
+                        >
+                          <div class="break-all text-xs font-medium uppercase tracking-wider text-slate-400">{{ key }}</div>
+                          <pre
+                            v-if="isStructured(value)"
+                            class="tnum mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700"
+                          >{{ JSON.stringify(value, null, 2) }}</pre>
+                          <div v-else-if="isUlidLike(value)" class="mt-2">
+                            <UlidChip :value="String(value)" />
+                          </div>
+                          <div v-else class="tnum mt-2 break-all text-sm font-medium text-ink">{{ String(value ?? "-") }}</div>
+                        </div>
                       </div>
                       <JsonPreview
                         :title="copy.rawJson"
@@ -349,7 +380,7 @@ onMounted(loadDefinitions)
                     </label>
                     <div class="mt-4 grid gap-3">
                       <button
-                        v-for="item in actions"
+                        v-for="item in normalActions"
                         :key="item.key"
                         class="w-full rounded-[10px] border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-all duration-150 hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20 disabled:pointer-events-none disabled:opacity-50"
                         type="button"
@@ -368,6 +399,33 @@ onMounted(loadDefinitions)
                         </div>
                       </button>
                     </div>
+                    <section class="mt-5 rounded-2xl border border-danger-200 bg-danger-50/40 p-4">
+                      <h3 class="flex items-center gap-2 text-sm font-semibold text-danger-600">
+                        <TriangleAlert class="h-4 w-4" />
+                        {{ t.common.dangerZone }}
+                      </h3>
+                      <div class="mt-3 grid gap-3">
+                        <button
+                          v-for="item in dangerActions"
+                          :key="item.key"
+                          class="w-full rounded-[10px] border border-danger-200 bg-white px-4 py-3 text-left shadow-sm transition-all duration-150 hover:border-danger-200 hover:bg-danger-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-danger-600/15 disabled:pointer-events-none disabled:opacity-50"
+                          type="button"
+                          :disabled="loading || !canCheck"
+                          @click="runAction(item)"
+                        >
+                          <div class="flex items-start gap-3">
+                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]" :class="item.tone">
+                              <Loader2 v-if="activeAction === item.key" class="h-4 w-4 animate-spin" />
+                              <component :is="item.icon" v-else class="h-4 w-4" />
+                            </span>
+                            <span class="min-w-0">
+                              <span class="block text-sm font-medium text-danger-600">{{ item.title }}</span>
+                              <span class="mt-0.5 block text-xs text-slate-500">{{ item.desc }}</span>
+                            </span>
+                          </div>
+                        </button>
+                      </div>
+                    </section>
                   </aside>
                 </section>
               </div>

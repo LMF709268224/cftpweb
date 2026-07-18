@@ -1,10 +1,13 @@
 ﻿<script setup lang="ts">
-import { FileText, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
+import { ChevronRight, Copy, Eye, FileText, Loader2, Plus, RefreshCw, Save, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import RowMenu from "@/components/RowMenu.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
+import { copyTextToClipboard } from "@/lib/clipboard"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { pickFirst } from "@/lib/status"
@@ -52,6 +55,36 @@ function templateUlid(template: JsonRecord | null | undefined) {
 
 function templateName(template: JsonRecord | null | undefined) {
   return String(pickFirst(template || {}, ["name", "title"]) || copy.value.unnamed)
+}
+
+function truncateUlid(value: string) {
+  const raw = value.trim()
+  if (raw.length <= 14) return raw
+  return `${raw.slice(0, 6)}…${raw.slice(-5)}`
+}
+
+function templateMenuItems(template: JsonRecord) {
+  const ulid = templateUlid(template)
+  return [
+    { key: "detail", label: copy.value.viewDetails, icon: Eye },
+    { key: "copy-ulid", label: ulid ? truncateUlid(ulid) : "-", icon: Copy, disabled: !ulid },
+  ]
+}
+
+async function onTemplateMenuSelect(template: JsonRecord, key: string) {
+  if (key === "detail") {
+    openTemplateDetail(template)
+    return
+  }
+  if (key !== "copy-ulid") return
+  const ulid = templateUlid(template)
+  if (!ulid) return
+  try {
+    await copyTextToClipboard(ulid)
+    toast.success(t.value.common.copied)
+  } catch (err) {
+    console.error(err)
+  }
 }
 
 function formFromTemplate(template: JsonRecord | null) {
@@ -255,13 +288,19 @@ onMounted(load)
           <div
             v-for="template in templates"
             :key="templateUlid(template)"
-            class="ui-table-row grid w-full gap-3 px-4 py-3.5 text-left lg:grid-cols-[minmax(0,1fr)_96px_150px_150px] lg:items-center lg:gap-6"
+            class="ui-table-row grid w-full cursor-pointer gap-3 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/20 lg:grid-cols-[minmax(0,1fr)_96px_150px_150px] lg:items-center lg:gap-6"
             :class="templateUlid(selected) === templateUlid(template) ? 'bg-primary-50/60' : ''"
+            role="button"
+            tabindex="0"
+            :title="copy.viewDetails"
+            @click="openTemplateDetail(template)"
+            @keydown.enter.self.prevent="openTemplateDetail(template)"
+            @keydown.space.self.prevent="openTemplateDetail(template)"
           >
             <div class="min-w-0">
               <div class="break-words text-sm font-medium text-ink lg:truncate">{{ templateName(template) }}</div>
               <div class="mt-1 line-clamp-1 text-sm text-slate-500">{{ template.description || copy.noDescription }}</div>
-              <div class="tnum mt-1 break-all text-xs text-slate-400 lg:truncate">ID: {{ templateUlid(template) || "-" }}</div>
+              <div class="mt-1"><UlidChip :value="templateUlid(template)" /></div>
             </div>
             <div class="flex items-center justify-between gap-4 lg:block">
               <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.version }}</span>
@@ -271,13 +310,12 @@ onMounted(load)
               <span class="text-xs font-medium text-slate-400 lg:hidden">{{ copy.columns.createdAt }}</span>
               <span class="tnum text-sm text-slate-600">{{ formatDate(String(template.created_at || "")) }}</span>
             </div>
-            <div class="grid grid-cols-2 gap-3 sm:flex sm:items-center sm:justify-start lg:justify-center">
-              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openTemplateDetail(template)">
-                {{ copy.viewDetails }}
-              </button>
-              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openTemplateEditor(template)">
+            <div class="flex items-center justify-start gap-2 lg:justify-center">
+              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click.stop="openTemplateEditor(template)">
                 {{ copy.edit }}
               </button>
+              <RowMenu :items="templateMenuItems(template)" @select="(key) => onTemplateMenuSelect(template, key)" />
+              <ChevronRight class="hidden h-4 w-4 shrink-0 text-slate-300 lg:block" aria-hidden="true" />
             </div>
           </div>
         </div>
@@ -293,7 +331,8 @@ onMounted(load)
                 <h2 class="text-base font-semibold text-ink md:text-lg">
                   {{ mode === "create" ? copy.newTemplate : mode === "edit" ? copy.editTitle : copy.detailTitle }}
                 </h2>
-                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ mode === "create" ? copy.createDescription : templateUlid(selected) }}</p>
+                <p v-if="mode === 'create'" class="mt-1 text-sm text-slate-500">{{ copy.createDescription }}</p>
+                <p v-else class="mt-1 text-sm text-slate-500"><UlidChip :value="templateUlid(selected)" :truncate="false" /></p>
               </div>
               <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-50" type="button" :aria-label="copy.close" :disabled="saving" @click="closeDialog">
                 <X class="h-5 w-5" />

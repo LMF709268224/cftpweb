@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { CheckCircle2, Download, Eye, FileText, Inbox, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
-import { computed, onMounted, ref, watch } from "vue"
+import { CheckCircle2, ChevronRight, Download, Eye, FileText, Inbox, Loader2, RefreshCw, RotateCcw, X, XCircle } from "lucide-vue-next"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -29,6 +31,15 @@ const pageSize = 20
 let detailRequestId = 0
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.applications)
+
+// lg 及以上使用左右分栏审核工作台；小屏保持列表 + 弹窗形态
+const isDesktop = ref(false)
+let desktopQuery: MediaQueryList | null = null
+
+function syncDesktop(query: MediaQueryList | MediaQueryListEvent) {
+  isDesktop.value = query.matches
+  if (query.matches) detailOpen.value = false
+}
 
 const canPrev = computed(() => page.value > 1)
 const canNext = computed(() => hasMore.value)
@@ -162,8 +173,8 @@ function isStructuredValue(value: unknown) {
   return Array.isArray(value) || (!!value && typeof value === "object")
 }
 
-function jsonText(value: unknown) {
-  return JSON.stringify(value ?? {}, null, 2)
+function isUlidField(key: string) {
+  return key === "id" || key.endsWith("_ulid") || key.endsWith("_id")
 }
 
 function mergeApplicationDetail(appID: string, detail: JsonRecord) {
@@ -213,7 +224,7 @@ async function loadApplicationDetail(app: JsonRecord | null) {
 
 function selectApplication(app: JsonRecord) {
   selected.value = app
-  detailOpen.value = true
+  detailOpen.value = !isDesktop.value
   auditRemark.value = ""
   activeTab.value = "overview"
   void loadApplicationDetail(app)
@@ -349,7 +360,17 @@ watch(statusFilter, () => {
   resetCursorPagination()
   void load(1)
 })
-onMounted(() => load(1))
+
+onMounted(() => {
+  desktopQuery = window.matchMedia("(min-width: 1024px)")
+  syncDesktop(desktopQuery)
+  desktopQuery.addEventListener("change", syncDesktop)
+  void load(1)
+})
+
+onBeforeUnmount(() => {
+  desktopQuery?.removeEventListener("change", syncDesktop)
+})
 </script>
 
 <template>
@@ -366,8 +387,227 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <!-- Application list -->
-    <section class="ui-card mt-6 overflow-hidden">
+    <!-- Status chips: click to query immediately (replaces the status select) -->
+    <div class="mt-6 flex flex-wrap items-center gap-2">
+      <button
+        v-for="option in statusOptions"
+        :key="option.value || 'all'"
+        type="button"
+        class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+        :class="statusFilter === option.value
+          ? 'bg-primary-600 text-white shadow-sm'
+          : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+        :aria-pressed="statusFilter === option.value"
+        @click="statusFilter = option.value"
+      >
+        {{ option.label }}
+      </button>
+    </div>
+
+    <!-- Desktop (lg+): split-view review workbench -->
+    <section class="mt-4 hidden gap-6 lg:grid lg:grid-cols-[minmax(320px,2fr)_minmax(0,3fr)] lg:items-start">
+      <!-- Left: review queue -->
+      <section class="ui-card overflow-hidden">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-4 py-4 md:px-5">
+          <div class="min-w-0">
+            <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
+          </div>
+          <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
+        </div>
+
+        <div v-if="loading" class="divide-y divide-hairline">
+          <div v-for="i in 6" :key="`qsk-${i}`" class="space-y-2 px-4 py-4">
+            <div class="skeleton h-4 w-3/5" />
+            <div class="skeleton h-3.5 w-4/5" />
+            <div class="skeleton h-3 w-2/5" />
+          </div>
+        </div>
+        <div v-else-if="!applications.length" class="ui-empty">
+          <div class="ui-empty-icon">
+            <CheckCircle2 class="h-6 w-6" />
+          </div>
+          <p class="ui-empty-title">{{ copy.empty }}</p>
+        </div>
+        <div v-else class="divide-y divide-hairline">
+          <div
+            v-for="app in applications"
+            :key="`queue-${appUlid(app)}`"
+            class="ui-table-row group flex w-full cursor-pointer items-start gap-3 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+            :class="appUlid(selected) === appUlid(app) ? 'bg-primary-50/60' : ''"
+            role="button"
+            tabindex="0"
+            @click="selectApplication(app)"
+            @keydown.enter.prevent="selectApplication(app)"
+            @keydown.space.prevent="selectApplication(app)"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="truncate text-sm font-semibold text-ink">{{ credential(app) }}</div>
+              <div class="mt-0.5 truncate text-sm text-slate-600">{{ copy.candidatePrefix }}{{ candidate(app) }}</div>
+              <div class="tnum mt-1 text-xs text-slate-400">{{ formatDate(String(app.created_at || "")) }}</div>
+            </div>
+            <div class="flex shrink-0 flex-col items-end gap-2">
+              <span class="ui-badge" :class="badgeClass(status(app))">{{ applicationLabel(status(app)) }}</span>
+              <ChevronRight class="h-4 w-4 text-slate-300 transition-colors duration-150 group-hover:text-slate-400" />
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 border-t border-hairline px-4 py-3 md:px-5">
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canPrev" @click="load(page - 1)">{{ copy.prev }}</button>
+          <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="!canNext" @click="load(page + 1)">{{ copy.next }}</button>
+        </div>
+      </section>
+
+      <!-- Right: detail panel with sticky audit bar -->
+      <section class="ui-card flex min-h-[420px] flex-col overflow-hidden lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)]">
+        <div v-if="!selected" class="ui-empty flex-1">
+          <div class="ui-empty-icon">
+            <Inbox class="h-6 w-6" />
+          </div>
+          <p class="ui-empty-title">{{ copy.detailTitle }}</p>
+          <p class="ui-empty-hint">{{ copy.selectApplication }}</p>
+        </div>
+        <template v-else>
+          <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-5">
+            <div class="min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <h2 class="break-words text-base font-semibold text-ink">{{ credential(selected) }}</h2>
+                <span class="ui-badge shrink-0" :class="badgeClass(status(selected))">{{ applicationLabel(status(selected)) }}</span>
+              </div>
+              <p class="mt-1 break-all text-sm text-slate-600">{{ copy.candidatePrefix }}{{ candidate(selected) }}</p>
+              <div class="mt-1.5 flex min-w-0 items-center gap-1 text-xs text-slate-400">
+                <span class="shrink-0">{{ copy.appIdPrefix }}</span>
+                <UlidChip :value="appUlid(selected)" />
+              </div>
+            </div>
+            <Loader2 v-if="detailLoading" class="mt-1 h-4 w-4 shrink-0 animate-spin text-slate-400" />
+          </div>
+
+          <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-5 md:py-5">
+            <!-- Candidate & application info -->
+            <h3 class="text-sm font-semibold text-ink">{{ copy.tabs.overview }}</h3>
+            <div class="mt-3 grid gap-x-6 gap-y-4 xl:grid-cols-2">
+              <div
+                v-for="field in selectedFields"
+                :key="`panel-${field.key}`"
+                class="grid content-start gap-1"
+                :class="isStructuredValue(field.value) ? 'xl:col-span-2' : ''"
+              >
+                <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
+                <JsonPreview
+                  v-if="isStructuredValue(field.value)"
+                  :title="field.label"
+                  :value="field.value"
+                  :copy-label="copy.copyJson"
+                  :copied-label="copy.copiedJson"
+                  :copied-message="copy.toasts.jsonCopied"
+                  :copy-error-message="copy.toasts.jsonCopyFailed"
+                  max-height="256px"
+                />
+                <div v-else-if="isUlidField(field.key)">
+                  <UlidChip :value="String(field.value ?? '')" />
+                </div>
+                <div v-else class="break-words text-sm font-medium text-ink">{{ field.displayValue }}</div>
+              </div>
+            </div>
+
+            <!-- Materials & preview links -->
+            <div class="mt-6 border-t border-hairline pt-5">
+              <div class="flex items-center gap-2">
+                <h3 class="text-sm font-semibold text-ink">{{ copy.tabs.files }}</h3>
+                <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ selectedFiles.length }}</span>
+              </div>
+              <div v-if="detailLoading && !selectedFiles.length" class="mt-3 flex items-center gap-2 rounded-2xl bg-slate-50 p-5 text-sm text-slate-500">
+                <Loader2 class="h-4 w-4 animate-spin" />
+                {{ copy.filesLoading }}
+              </div>
+              <div v-else-if="!selectedFiles.length" class="ui-empty py-8">
+                <div class="ui-empty-icon">
+                  <FileText class="h-6 w-6" />
+                </div>
+                <p class="ui-empty-title">{{ copy.noFiles }}</p>
+              </div>
+              <div v-else class="mt-3 space-y-3">
+                <div v-for="file in selectedFiles" :key="`panel-${String(file.file_hash || file.file_name || file.name)}`" class="rounded-2xl border border-edge p-4">
+                  <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2">
+                        <FileText class="h-4 w-4 shrink-0 text-primary-600" />
+                        <span class="truncate text-sm font-semibold text-ink">{{ fileName(file) }}</span>
+                      </div>
+                      <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                        <span class="min-w-0 break-all">{{ copy.fileMeta.usage }}{{ fileUsage(file) }}</span>
+                        <span v-if="fileSize(file)" class="tnum">{{ copy.fileMeta.size }}{{ fileSize(file) }}</span>
+                        <span v-if="file.file_ext">{{ copy.fileMeta.ext }}{{ file.file_ext }}</span>
+                      </div>
+                      <div v-if="fileHash(file)" class="tnum mt-2 break-all font-mono text-xs text-slate-400">{{ copy.fileMeta.sha256 }}{{ fileHash(file) }}</div>
+                    </div>
+                    <div class="flex shrink-0 flex-wrap gap-2 xl:justify-end">
+                      <a
+                        v-if="previewUrl(file)"
+                        class="ui-btn ui-btn-secondary ui-btn-sm"
+                        :href="previewUrl(file)"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Eye class="h-4 w-4 text-slate-400" />
+                        {{ copy.preview }}
+                      </a>
+                      <button
+                        v-if="fileUrl(file)"
+                        class="ui-btn ui-btn-secondary ui-btn-sm"
+                        type="button"
+                        :disabled="downloadingFile === String(file.file_hash || file.file_name || file.name)"
+                        @click="handleDownload(file)"
+                      >
+                        <Loader2 v-if="downloadingFile === String(file.file_hash || file.file_name || file.name)" class="h-4 w-4 animate-spin" />
+                        <Download v-else class="h-4 w-4 text-slate-400" />
+                        {{ copy.download }}
+                      </button>
+                      <span v-else class="ui-badge bg-amber-50 text-amber-700">{{ copy.missingLink }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sticky audit action bar -->
+          <div v-if="!isApprovedSelected" class="shrink-0 border-t border-hairline bg-white/95 px-4 py-3.5 backdrop-blur md:px-5">
+            <p class="text-xs text-slate-500">{{ copy.auditHint }}</p>
+            <textarea
+              v-model="auditRemark"
+              class="ui-input mt-2 h-auto min-h-16 py-2.5"
+              :placeholder="copy.auditRemarkPlaceholder"
+            />
+            <div class="mt-3 flex flex-wrap items-center justify-end gap-3">
+              <button
+                class="ui-btn ui-btn-secondary text-danger-600 hover:border-danger-200 hover:bg-danger-50"
+                type="button"
+                :disabled="auditing"
+                @click="audit('reject')"
+              >
+                <XCircle class="h-4 w-4" />
+                {{ copy.reject }}
+              </button>
+              <button class="ui-btn ui-btn-secondary" type="button" :disabled="auditing" @click="audit('resubmit')">
+                <RotateCcw class="h-4 w-4 text-slate-400" />
+                {{ copy.resubmit }}
+              </button>
+              <button class="ui-btn ui-btn-primary" type="button" :disabled="auditing" @click="audit('approve')">
+                <Loader2 v-if="auditing" class="h-4 w-4 animate-spin" />
+                <CheckCircle2 v-else class="h-4 w-4" />
+                {{ copy.approve }}
+              </button>
+            </div>
+          </div>
+        </template>
+      </section>
+    </section>
+
+    <!-- Mobile / tablet (<lg): existing list + dialog form -->
+    <section class="ui-card mt-4 overflow-hidden lg:hidden">
       <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
         <div class="flex min-w-0 flex-wrap items-center gap-3">
           <div class="min-w-0">
@@ -376,9 +616,6 @@ onMounted(() => load(1))
           </div>
           <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
         </div>
-        <select v-model="statusFilter" class="ui-input md:w-64">
-          <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-        </select>
       </div>
 
       <div v-if="loading" class="divide-y divide-hairline">
@@ -420,7 +657,10 @@ onMounted(() => load(1))
             <div class="min-w-0">
               <div class="break-words text-sm font-semibold text-ink md:truncate">{{ credential(app) }}</div>
               <div class="mt-1 break-all text-sm text-slate-600">{{ copy.candidatePrefix }}{{ candidate(app) }}</div>
-              <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ copy.appIdPrefix }}{{ appUlid(app) || "-" }}</div>
+              <div class="mt-1 flex min-w-0 items-center gap-1 text-xs text-slate-400">
+                <span class="shrink-0">{{ copy.appIdPrefix }}</span>
+                <UlidChip :value="appUlid(app)" />
+              </div>
             </div>
             <div class="mt-3 flex items-center justify-between gap-4 border-t border-hairline py-2 md:mt-0 md:block md:border-0 md:py-0 md:text-center">
               <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
@@ -469,7 +709,7 @@ onMounted(() => load(1))
               <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
                 <div class="min-w-0">
                   <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ credential(selected) }}</h2>
-                  <p class="tnum mt-1 break-all text-sm text-slate-500">{{ appUlid(selected) }}</p>
+                  <div class="mt-1"><UlidChip :value="appUlid(selected)" /></div>
                 </div>
                 <div class="flex shrink-0 items-center gap-2">
                   <Loader2 v-if="detailLoading" class="h-4 w-4 animate-spin text-slate-400" />
@@ -500,12 +740,21 @@ onMounted(() => load(1))
 
               <main class="min-h-0 flex-1 overflow-y-auto p-4 md:h-[60vh] md:max-h-[620px] md:min-h-[360px] md:p-6">
                 <div v-if="activeTab === 'overview'" class="grid gap-4 md:grid-cols-2">
-                  <div v-for="field in selectedFields" :key="field.key" class="grid gap-1.5" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
+                  <div v-for="field in selectedFields" :key="field.key" class="grid content-start gap-1.5" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
                     <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
-                    <pre
+                    <JsonPreview
                       v-if="isStructuredValue(field.value)"
-                      class="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-[10px] border border-slate-200 bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
-                    >{{ jsonText(field.value) }}</pre>
+                      :title="field.label"
+                      :value="field.value"
+                      :copy-label="copy.copyJson"
+                      :copied-label="copy.copiedJson"
+                      :copied-message="copy.toasts.jsonCopied"
+                      :copy-error-message="copy.toasts.jsonCopyFailed"
+                      max-height="256px"
+                    />
+                    <div v-else-if="isUlidField(field.key)">
+                      <UlidChip :value="String(field.value ?? '')" />
+                    </div>
                     <div v-else class="break-words text-sm font-medium text-ink">
                       {{ field.displayValue }}
                     </div>
@@ -576,21 +825,22 @@ onMounted(() => load(1))
                   />
                   <div class="grid gap-3 md:grid-cols-3">
                     <button
-                      class="ui-btn bg-emerald-600 text-white shadow-sm hover:bg-emerald-700 active:scale-[0.98] focus-visible:ring-emerald-500/20"
+                      class="ui-btn ui-btn-secondary text-danger-600 hover:border-danger-200 hover:bg-danger-50"
                       type="button"
                       :disabled="auditing"
-                      @click="audit('approve')"
+                      @click="audit('reject')"
                     >
-                      <CheckCircle2 class="h-4 w-4" />
-                      {{ copy.approve }}
-                    </button>
-                    <button class="ui-btn ui-btn-secondary text-amber-700" type="button" :disabled="auditing" @click="audit('resubmit')">
-                      <RotateCcw class="h-4 w-4" />
-                      {{ copy.resubmit }}
-                    </button>
-                    <button class="ui-btn ui-btn-danger" type="button" :disabled="auditing" @click="audit('reject')">
                       <XCircle class="h-4 w-4" />
                       {{ copy.reject }}
+                    </button>
+                    <button class="ui-btn ui-btn-secondary" type="button" :disabled="auditing" @click="audit('resubmit')">
+                      <RotateCcw class="h-4 w-4 text-slate-400" />
+                      {{ copy.resubmit }}
+                    </button>
+                    <button class="ui-btn ui-btn-primary" type="button" :disabled="auditing" @click="audit('approve')">
+                      <Loader2 v-if="auditing" class="h-4 w-4 animate-spin" />
+                      <CheckCircle2 v-else class="h-4 w-4" />
+                      {{ copy.approve }}
                     </button>
                   </div>
                 </div>

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from "vue"
-import { Filter, Inbox, Loader2, RefreshCw, Search, X } from "lucide-vue-next"
+import { ChevronRight, Filter, Inbox, Loader2, RefreshCw, Search, TriangleAlert, X } from "lucide-vue-next"
 import { toast } from "vue-sonner"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate } from "@/lib/display"
@@ -507,6 +508,12 @@ const missingRequiredFilters = computed(() =>
 const missingRequiredFilterLabels = computed(() => missingRequiredFilters.value.map(fieldLabel))
 const canLoad = computed(() => missingRequiredFilters.value.length === 0)
 const structuredDetailSections = computed(() => buildStructuredDetailSections(detail.value || selected.value))
+// P6 危险操作收敛：忽略类操作与常规操作分离，集中到详情底部危险区
+const visibleActions = computed(() =>
+  (activeModule.value.actions || []).filter((action) => !!selected.value && (!action.showIf || action.showIf(selected.value as JsonRecord))),
+)
+const visibleRegularActions = computed(() => visibleActions.value.filter((action) => action.key !== "ignore"))
+const visibleDangerActions = computed(() => visibleActions.value.filter((action) => action.key === "ignore"))
 
 function ensureOptionFilterDefaults(module = activeModule.value) {
   const moduleFilters = filters[module.key] || (filters[module.key] = {})
@@ -1539,132 +1546,158 @@ void loadList()
       </button>
     </header>
 
-    <section class="ui-card mt-6 overflow-hidden pb-3">
-      <div v-for="group in moduleGroups" :key="group.key" class="px-4 pt-4 first:pt-5 md:px-6">
-        <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ (copy.groups as Record<string, string>)[group.key] }}</div>
-        <div class="mt-1 flex gap-5 overflow-x-auto border-b border-hairline">
-          <button
-            v-for="module in group.modules"
-            :key="module.key"
-            class="ui-tab"
-            :class="module.key === activeKey ? 'ui-tab-active' : ''"
-            type="button"
-            @click="activeKey = module.key"
-          >
-            {{ module.label }}
-          </button>
-        </div>
-      </div>
+    <section class="ui-card mt-6 p-4 lg:hidden">
+      <label class="grid gap-1.5">
+        <span class="ui-label">{{ t.common.selectTypeFirst }}</span>
+        <select v-model="activeKey" class="ui-input">
+          <optgroup v-for="group in moduleGroups" :key="group.key" :label="(copy.groups as Record<string, string>)[group.key]">
+            <option v-for="module in group.modules" :key="module.key" :value="module.key">{{ module.label }}</option>
+          </optgroup>
+        </select>
+      </label>
     </section>
 
-    <section class="ui-card mt-4 p-4 md:p-6">
-      <div class="min-w-0">
-        <h2 class="text-base font-semibold text-ink">{{ activeModule.label }}</h2>
-        <p class="mt-1 text-sm text-slate-500">{{ activeModule.description }}</p>
-      </div>
-
-      <div v-if="activeModule.filters?.length" class="mt-4 flex flex-wrap items-end gap-3">
-        <label v-for="filter in activeModule.filters" :key="filter.key" class="grid w-full gap-1.5 sm:w-[200px] 2xl:w-[220px]">
-          <span class="ui-label">{{ filter.label }}</span>
-          <select
-            v-if="filter.options?.length"
-            v-model="activeFilters[filter.key]"
-            class="ui-input"
-            @change="loadList(true)"
-          >
-            <option v-for="option in filter.options" :key="option.value || 'all'" :value="option.value">{{ option.label }}</option>
-          </select>
-          <div v-else class="relative">
-            <input
-              v-model="activeFilters[filter.key]"
-              class="ui-input pr-10"
-              :type="filter.inputType || 'text'"
-              :placeholder="filter.placeholder || ''"
-              @keyup.enter="loadList(true)"
-            />
+    <div class="mt-4 flex flex-col gap-4 lg:mt-6 lg:flex-row lg:items-start">
+      <nav class="ui-card hidden w-60 shrink-0 p-3 lg:sticky lg:top-6 lg:block xl:w-64" :aria-label="copy.title">
+        <div v-for="group in moduleGroups" :key="group.key" class="mb-3 last:mb-0">
+          <div class="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wider text-slate-400">{{ (copy.groups as Record<string, string>)[group.key] }}</div>
+          <div class="grid gap-0.5">
             <button
-              v-if="activeFilters[filter.key]"
-              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              v-for="module in group.modules"
+              :key="module.key"
               type="button"
-              :aria-label="copy.clearInput"
-              :title="copy.clearInput"
-              @click="clearFilterInput(filter.key)"
+              class="flex w-full items-center rounded-[10px] px-3 py-2 text-left text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
+              :class="module.key === activeKey ? 'bg-primary-50 font-medium text-primary-700' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+              :aria-current="module.key === activeKey ? 'true' : undefined"
+              :title="module.label"
+              @click="activeKey = module.key"
             >
-              <X class="h-4 w-4" />
+              <span class="min-w-0 flex-1 truncate">{{ module.label }}</span>
+              <ChevronRight v-if="module.key === activeKey" class="h-4 w-4 shrink-0 text-primary-400" />
             </button>
           </div>
-        </label>
-        <button class="ui-btn ui-btn-primary w-full sm:w-auto" type="button" @click="loadList(true)">
-          <Search class="h-4 w-4" />
-          {{ copy.search }}
-        </button>
-      </div>
-    </section>
-
-    <section class="ui-card mt-4 overflow-hidden">
-      <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
-        <div class="min-w-0">
-          <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
-          <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
         </div>
-        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.total(total) }}</span>
-      </div>
+      </nav>
 
-      <div v-if="missingRequiredFilters.length" class="ui-empty">
-        <div class="ui-empty-icon">
-          <Filter class="h-6 w-6" />
-        </div>
-        <p class="ui-empty-title">{{ copy.requiredPrefix }} {{ missingRequiredFilterLabels.join(", ") }}</p>
-      </div>
-      <div v-else-if="loading" class="divide-y divide-hairline">
-        <div v-for="i in 5" :key="`sk-${i}`" class="flex items-center justify-between gap-4 px-4 py-4 md:px-6">
-          <div class="min-w-0 flex-1 space-y-2">
-            <div class="skeleton h-4 w-2/5" />
-            <div class="skeleton h-3 w-4/5" />
-            <div class="skeleton h-3 w-3/5" />
+      <div class="min-w-0 flex-1">
+        <section class="ui-card p-4 md:p-6">
+          <div class="min-w-0">
+            <h2 class="text-base font-semibold text-ink">{{ activeModule.label }}</h2>
+            <p class="mt-1 text-sm text-slate-500">{{ activeModule.description }}</p>
           </div>
-          <div class="skeleton h-4 w-16 shrink-0" />
-        </div>
-      </div>
-      <div v-else-if="!items.length" class="ui-empty">
-        <div class="ui-empty-icon">
-          <Inbox class="h-6 w-6" />
-        </div>
-        <p class="ui-empty-title">{{ copy.empty }}</p>
-      </div>
-      <div v-else>
-        <div class="ui-table-head grid grid-cols-[minmax(0,1fr)_96px] gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_112px] md:gap-4 md:px-6">
-          <span class="font-medium">{{ copy.record }}</span>
-          <span class="text-right font-medium">{{ copy.operation }}</span>
-        </div>
-        <div class="divide-y divide-hairline">
-          <button
-            v-for="item in items"
-            :key="getItemID(item) || stringify(item)"
-            class="ui-table-row grid w-full gap-3 px-4 py-3.5 text-left md:grid-cols-[minmax(0,1fr)_112px] md:items-center md:gap-4 md:px-6"
-            :class="getItemID(item) === getItemID(selected) ? 'bg-primary-50/60' : ''"
-            type="button"
-            @click="openItem(item)"
-          >
-            <span class="min-w-0">
-              <span class="block break-words text-sm font-medium text-ink">{{ getTitle(item) }}</span>
-              <span class="tnum mt-0.5 block break-all text-xs text-slate-400">{{ getItemID(item) || "-" }}</span>
-              <span class="mt-1 block break-words text-xs text-slate-500">{{ getSubtitle(item) || "-" }}</span>
-            </span>
-            <span class="text-sm font-medium text-primary-700 md:justify-self-end md:text-right">{{ copy.viewDetail }}</span>
-          </button>
-        </div>
-      </div>
 
-      <div class="flex flex-col items-stretch justify-end gap-2 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
-        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="page <= 1 && offset <= 0" @click="previousPage">
-          {{ copy.previous }}
-        </button>
-        <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="items.length < pageSize" @click="nextPage">
-          {{ copy.next }}
-        </button>
+          <div v-if="activeModule.filters?.length" class="mt-4 flex flex-wrap items-end gap-3">
+            <label v-for="filter in activeModule.filters" :key="filter.key" class="grid w-full gap-1.5 sm:w-[200px] 2xl:w-[220px]">
+              <span class="ui-label">{{ filter.label }}</span>
+              <select
+                v-if="filter.options?.length"
+                v-model="activeFilters[filter.key]"
+                class="ui-input"
+                @change="loadList(true)"
+              >
+                <option v-for="option in filter.options" :key="option.value || 'all'" :value="option.value">{{ option.label }}</option>
+              </select>
+              <div v-else class="relative">
+                <input
+                  v-model="activeFilters[filter.key]"
+                  class="ui-input pr-10"
+                  :type="filter.inputType || 'text'"
+                  :placeholder="filter.placeholder || ''"
+                  @keyup.enter="loadList(true)"
+                />
+                <button
+                  v-if="activeFilters[filter.key]"
+                  class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  type="button"
+                  :aria-label="copy.clearInput"
+                  :title="copy.clearInput"
+                  @click="clearFilterInput(filter.key)"
+                >
+                  <X class="h-4 w-4" />
+                </button>
+              </div>
+            </label>
+            <button class="ui-btn ui-btn-primary w-full sm:w-auto" type="button" @click="loadList(true)">
+              <Search class="h-4 w-4" />
+              {{ copy.search }}
+            </button>
+          </div>
+        </section>
+
+        <section class="ui-card mt-4 overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
+            <div class="min-w-0">
+              <h2 class="text-base font-semibold text-ink">{{ copy.listTitle }}</h2>
+              <p class="mt-1 text-sm text-slate-500">{{ copy.listDescription }}</p>
+            </div>
+            <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.total(total) }}</span>
+          </div>
+
+          <div v-if="missingRequiredFilters.length" class="ui-empty">
+            <div class="ui-empty-icon">
+              <Filter class="h-6 w-6" />
+            </div>
+            <p class="ui-empty-title">{{ copy.requiredPrefix }} {{ missingRequiredFilterLabels.join(", ") }}</p>
+            <p class="ui-empty-hint">{{ activeModule.description }}</p>
+          </div>
+          <div v-else-if="loading" class="divide-y divide-hairline">
+            <div v-for="i in 5" :key="`sk-${i}`" class="flex items-center justify-between gap-4 px-4 py-4 md:px-6">
+              <div class="min-w-0 flex-1 space-y-2">
+                <div class="skeleton h-4 w-2/5" />
+                <div class="skeleton h-3 w-4/5" />
+                <div class="skeleton h-3 w-3/5" />
+              </div>
+              <div class="skeleton h-4 w-16 shrink-0" />
+            </div>
+          </div>
+          <div v-else-if="!items.length" class="ui-empty">
+            <div class="ui-empty-icon">
+              <Inbox class="h-6 w-6" />
+            </div>
+            <p class="ui-empty-title">{{ copy.empty }}</p>
+            <p class="ui-empty-hint">{{ activeModule.description }}</p>
+          </div>
+          <div v-else>
+            <div class="ui-table-head grid grid-cols-[minmax(0,1fr)_96px] gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_112px] md:gap-4 md:px-6">
+              <span class="font-medium">{{ copy.record }}</span>
+              <span class="text-right font-medium">{{ copy.operation }}</span>
+            </div>
+            <div class="divide-y divide-hairline">
+              <div
+                v-for="item in items"
+                :key="getItemID(item) || stringify(item)"
+                class="ui-table-row grid w-full cursor-pointer gap-3 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/20 md:grid-cols-[minmax(0,1fr)_112px] md:items-center md:gap-4 md:px-6"
+                :class="getItemID(item) === getItemID(selected) ? 'bg-primary-50/60' : ''"
+                role="button"
+                tabindex="0"
+                @click="openItem(item)"
+                @keydown.enter.self.prevent="openItem(item)"
+                @keydown.space.self.prevent="openItem(item)"
+              >
+                <span class="min-w-0">
+                  <span class="block break-words text-sm font-medium text-ink">{{ getTitle(item) }}</span>
+                  <span class="mt-1 block"><UlidChip :value="getItemID(item)" /></span>
+                  <span class="mt-1 block break-words text-xs text-slate-500">{{ getSubtitle(item) || "-" }}</span>
+                </span>
+                <span class="flex items-center gap-1 text-sm font-medium text-primary-700 md:justify-self-end">
+                  {{ copy.viewDetail }}
+                  <ChevronRight class="h-4 w-4 shrink-0 text-slate-400" />
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col items-stretch justify-end gap-2 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">
+            <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="page <= 1 && offset <= 0" @click="previousPage">
+              {{ copy.previous }}
+            </button>
+            <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" :disabled="items.length < pageSize" @click="nextPage">
+              {{ copy.next }}
+            </button>
+          </div>
+        </section>
       </div>
-    </section>
+    </div>
 
     <Teleport to="body">
       <Transition name="modal">
@@ -1673,7 +1706,7 @@ void loadList()
             <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
               <div class="min-w-0">
                 <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
-                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ getItemID(selected) || "-" }}</p>
+                <p class="mt-1 text-sm text-slate-500"><UlidChip :value="getItemID(selected)" :truncate="false" /></p>
               </div>
               <button
                 class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
@@ -1686,20 +1719,19 @@ void loadList()
             </div>
 
             <main class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
-              <div v-if="activeModule.actions?.length && selected" class="mb-5 flex flex-wrap justify-end gap-2">
-                <template v-for="action in activeModule.actions" :key="action.key">
-                  <button
-                    v-if="!action.showIf || action.showIf(selected)"
-                    class="ui-btn w-full md:w-auto"
-                    :class="actionBtnClass(action.key)"
-                    type="button"
-                    :disabled="!!actionLoading"
-                    @click="runAction(action)"
-                  >
-                    <Loader2 v-if="actionLoading === action.key" class="h-4 w-4 animate-spin" />
-                    {{ actionLoading === action.key ? copy.processing : action.label }}
-                  </button>
-                </template>
+              <div v-if="visibleRegularActions.length" class="mb-5 flex flex-wrap justify-end gap-2">
+                <button
+                  v-for="action in visibleRegularActions"
+                  :key="action.key"
+                  class="ui-btn w-full md:w-auto"
+                  :class="actionBtnClass(action.key)"
+                  type="button"
+                  :disabled="!!actionLoading"
+                  @click="runAction(action)"
+                >
+                  <Loader2 v-if="actionLoading === action.key" class="h-4 w-4 animate-spin" />
+                  {{ actionLoading === action.key ? copy.processing : action.label }}
+                </button>
               </div>
 
               <div v-if="detailNotice" class="mb-5 rounded-[10px] bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
@@ -1725,7 +1757,21 @@ void loadList()
                         :class="entry.key.endsWith('_json') || entry.key === 'message_payload' ? 'md:col-span-2' : ''"
                       >
                         <dt class="text-xs font-medium text-slate-400">{{ entry.label }}</dt>
+                        <dd v-if="entry.key.endsWith('_ulid') && entry.value !== '-'" class="mt-1">
+                          <UlidChip :value="entry.value" :truncate="false" />
+                        </dd>
+                        <dd v-else-if="(entry.key.endsWith('_json') || entry.key === 'message_payload') && entry.value !== '-'" class="mt-1 min-w-0">
+                          <details class="group min-w-0">
+                            <summary class="inline-flex cursor-pointer select-none items-center gap-1 text-sm font-medium text-primary-700 transition-colors hover:text-primary-600">
+                              <ChevronRight class="h-3.5 w-3.5 transition-transform duration-150 group-open:rotate-90" />
+                              <span class="group-open:hidden">{{ t.common.expand }}</span>
+                              <span class="hidden group-open:inline">{{ t.common.collapse }}</span>
+                            </summary>
+                            <pre class="tnum mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-slate-50 p-3 font-mono text-xs leading-5 text-slate-600">{{ entry.value }}</pre>
+                          </details>
+                        </dd>
                         <dd
+                          v-else
                           class="tnum mt-1 whitespace-pre-wrap break-words text-sm text-slate-700"
                           :class="entry.mono ? 'font-mono text-xs leading-relaxed' : ''"
                         >
@@ -1735,10 +1781,38 @@ void loadList()
                     </dl>
                   </section>
                 </div>
-                <div>
-                  <h3 v-if="structuredDetailSections.length" class="mb-3 text-sm font-semibold text-ink">{{ copy.rawJson }}</h3>
-                  <pre class="max-h-[60vh] overflow-auto rounded-2xl bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 md:max-h-[64vh] md:p-5">{{ stringify(detail || selected || {}) }}</pre>
-                </div>
+                <details class="group overflow-hidden rounded-2xl border border-edge" :open="!structuredDetailSections.length">
+                  <summary class="flex cursor-pointer select-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-slate-50">
+                    {{ copy.rawJson }}
+                    <span class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary-700">
+                      <span class="group-open:hidden">{{ t.common.expand }}</span>
+                      <span class="hidden group-open:inline">{{ t.common.collapse }}</span>
+                      <ChevronRight class="h-3.5 w-3.5 transition-transform duration-150 group-open:rotate-90" />
+                    </span>
+                  </summary>
+                  <pre class="max-h-[60vh] overflow-auto bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 md:max-h-[64vh] md:p-5">{{ stringify(detail || selected || {}) }}</pre>
+                </details>
+
+                <section v-if="visibleDangerActions.length" class="rounded-2xl border border-danger-200 bg-danger-50/40 p-4 md:p-5">
+                  <h3 class="flex items-center gap-2 text-sm font-semibold text-danger-600">
+                    <TriangleAlert class="h-4 w-4" />
+                    {{ t.common.dangerZone }}
+                  </h3>
+                  <div class="mt-3 flex flex-wrap justify-end gap-3">
+                    <button
+                      v-for="action in visibleDangerActions"
+                      :key="action.key"
+                      class="ui-btn w-full md:w-auto"
+                      :class="actionBtnClass(action.key)"
+                      type="button"
+                      :disabled="!!actionLoading"
+                      @click="runAction(action)"
+                    >
+                      <Loader2 v-if="actionLoading === action.key" class="h-4 w-4 animate-spin" />
+                      {{ actionLoading === action.key ? copy.processing : action.label }}
+                    </button>
+                  </div>
+                </section>
               </div>
             </main>
           </section>

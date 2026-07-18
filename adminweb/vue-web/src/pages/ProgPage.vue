@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { ArrowLeft, BookOpen, Eye, FileBadge, Inbox, Layers, Loader2, RefreshCw, RotateCcw, ScrollText, Search, ShieldX, StepForward, X } from "lucide-vue-next"
+import { ArrowLeft, ArrowUpRight, BookOpen, Check, ChevronRight, Eye, FileBadge, Inbox, Layers, Loader2, RefreshCw, RotateCcw, ScrollText, Search, ShieldX, StepForward, TriangleAlert, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
+import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
+import CandidatePicker from "@/components/CandidatePicker.vue"
 import JsonPreview from "@/components/JsonPreview.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -12,6 +15,7 @@ import { pickFirst } from "@/lib/status"
 type ActionKind = "trigger-next-stage" | "terminate-pipeline" | "force-completed" | "force-signup-exam"
 type DetailTab = "overview" | "stages" | "units" | "certificateTasks" | "logs"
 type DetailTabItem = { key: DetailTab; title: string; desc: string; count: number }
+type StageStepState = "done" | "current" | "pending"
 
 type PendingAction = {
   kind: ActionKind
@@ -31,6 +35,8 @@ const pageSize = 20
 const logPageSize = 20
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.progAdmin)
+
+const route = useRoute()
 
 const pipelines = ref<JsonRecord[]>([])
 const pipelineNameByCc = ref<Record<string, string>>({})
@@ -87,6 +93,7 @@ function asArray(value: unknown): JsonRecord[] {
 const detailPipelineRecord = computed(() => asRecord(detail.value?.pipeline))
 const selectedPipelineUlid = computed(() => String(detailPipelineRecord.value.pipeline_ulid || selectedSummary.value?.pipeline_ulid || ""))
 const selectedCandidateUlid = computed(() => String(detailPipelineRecord.value.candidate_ulid || selectedSummary.value?.candidate_ulid || ""))
+const selectedCandidateName = computed(() => String(detailPipelineRecord.value.candidate_name || selectedSummary.value?.candidate_name || ""))
 const selectedPipelineCcUlid = computed(() => String(detailPipelineRecord.value.pipeline_cc_ulid || selectedSummary.value?.pipeline_cc_ulid || ""))
 const selectedCurrentStageUlid = computed(() => String(detailPipelineRecord.value.current_stage_ulid || selectedSummary.value?.current_stage_ulid || ""))
 const selectedStatus = computed(() => detailPipelineRecord.value.status ?? selectedSummary.value?.status)
@@ -109,6 +116,14 @@ const units = computed<UnitListItem[]>(() => {
 const selectedStage = computed(() => stages.value[selectedStageIndex.value] || null)
 const selectedUnit = computed(() => units.value.find((item) => item.key === selectedUnitKey.value) || units.value[0] || null)
 const totalUnits = computed(() => units.value.length)
+const currentStageNumber = computed(() => {
+  const list = stages.value
+  if (!list.length) return 0
+  const index = list.findIndex((stage) => stageUlid(stage) && stageUlid(stage) === selectedCurrentStageUlid.value)
+  if (index >= 0) return index + 1
+  const done = list.filter((stage) => stageStepState(stage) === "done").length
+  return Math.min(list.length, Math.max(1, done))
+})
 const canPrev = computed(() => offset.value > 0)
 const canNext = computed(() => hasMore.value)
 const canPrevLogs = computed(() => logOffset.value > 0)
@@ -266,6 +281,16 @@ function isDateField(key: string) {
   return key.endsWith("_at") || key.endsWith("_time") || key === "created_at" || key === "updated_at"
 }
 
+// Frontend-only helper: which keys render as UlidChip inside definition tiles (P2).
+function isChipKey(key: string) {
+  const normalized = key.toLowerCase()
+  return normalized.endsWith("_ulid") || normalized.endsWith("_key") || normalized.endsWith("_hash") || ["task_id", "certificate_id", "request_id", "msg_fp"].includes(normalized)
+}
+
+function chipValue(value: string) {
+  return value === "-" ? "" : value
+}
+
 function fieldLabel(group: "overview" | "stage" | "unit" | "log", key: string) {
   const labels: Record<string, string> = copy.value.fieldLabels
   const groupLabels = {
@@ -347,6 +372,15 @@ function stageName(stage: JsonRecord | null | undefined) {
   return seqNo ? copy.value.stageNameWithSeq(String(seqNo)) : copy.value.stageFallback
 }
 
+// Frontend-only helper: map stage status to Stepper tri-state (DESIGN-PRODUCT.md (d)).
+function stageStepState(stage: JsonRecord | null | undefined): StageStepState {
+  const status = String(stageStatus(stage) ?? "")
+  if (status === "3") return "done"
+  if (status === "2") return "current"
+  if (stageUlid(stage) && stageUlid(stage) === selectedCurrentStageUlid.value) return "current"
+  return "pending"
+}
+
 function courseUnits(stage: JsonRecord | null | undefined) {
   return asArray(stage?.course_units)
 }
@@ -403,7 +437,7 @@ async function loadPipelines() {
 
     }
 
-    
+
 
     if (cursor) params.set("cursor", cursor)
 
@@ -692,10 +726,13 @@ function searchPipelines() {
   void loadPipelines()
 }
 
-function clearCandidateFilter() {
-  const shouldSearch = Boolean(candidateFilter.value.trim() || appliedCandidateFilter.value)
-  candidateFilter.value = ""
-  if (shouldSearch) searchPipelines()
+function setStatusFilter(value: string) {
+  statusFilter.value = value
+}
+
+function onCandidateChange(value: string) {
+  candidateFilter.value = value
+  searchPipelines()
 }
 
 watch(statusFilter, () => searchPipelines())
@@ -710,6 +747,11 @@ watch(canShowCertificateTasks, (visible) => {
 })
 
 onMounted(async () => {
+  const deepLinkCandidate = String(route.query.candidate || "")
+  if (deepLinkCandidate) {
+    candidateFilter.value = deepLinkCandidate
+    appliedCandidateFilter.value = deepLinkCandidate
+  }
   await Promise.all([loadPipelineCatalog(), loadPipelines()])
 })
 </script>
@@ -735,33 +777,35 @@ onMounted(async () => {
 
     <!-- Filters -->
     <section class="ui-card mt-6 p-4 md:p-5">
-      <div class="grid gap-4 lg:grid-cols-[1.5fr_1fr_auto]">
-        <label class="grid gap-1.5">
-          <span class="ui-label">{{ copy.filters.candidate }}</span>
-          <div class="relative">
-            <input v-model="candidateFilter" class="ui-input pr-10" :placeholder="copy.filters.candidatePlaceholder" />
+      <div class="grid gap-4">
+        <div class="grid gap-1.5">
+          <span class="ui-label">{{ copy.filters.status }}</span>
+          <div class="flex flex-wrap items-center gap-2">
             <button
-              v-if="candidateFilter"
-              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              v-for="chip in statusOptions"
+              :key="chip.value"
               type="button"
-              :aria-label="copy.filters.clearInput"
-              :title="copy.filters.clearInput"
-              @click="clearCandidateFilter"
+              class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+              :class="statusFilter === chip.value
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+              :aria-pressed="statusFilter === chip.value"
+              @click="setStatusFilter(chip.value)"
             >
-              <X class="h-4 w-4" />
+              {{ chip.label }}
             </button>
           </div>
-        </label>
-        <label class="grid gap-1.5">
-          <span class="ui-label">{{ copy.filters.status }}</span>
-          <select v-model="statusFilter" class="ui-input">
-            <option v-for="option in statusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-          </select>
-        </label>
-        <button class="ui-btn ui-btn-primary lg:self-end" type="button" @click="searchPipelines">
-          <Search class="h-4 w-4" />
-          {{ copy.filters.search }}
-        </button>
+        </div>
+        <div class="grid gap-4 lg:grid-cols-[minmax(0,380px)_auto] lg:items-end">
+          <label class="grid gap-1.5">
+            <span class="ui-label">{{ copy.filters.candidate }}</span>
+            <CandidatePicker v-model="candidateFilter" @update:model-value="onCandidateChange" />
+          </label>
+          <button class="ui-btn ui-btn-primary lg:self-end" type="button" @click="searchPipelines">
+            <Search class="h-4 w-4" />
+            {{ copy.filters.search }}
+          </button>
+        </div>
       </div>
     </section>
 
@@ -797,11 +841,22 @@ onMounted(async () => {
             @click="openPipeline(pipeline)"
           >
             <div class="min-w-0">
-              <div class="break-words text-sm font-semibold text-ink md:truncate">{{ pipelineDisplayName(pipeline) }}</div>
-              <div class="mt-1 text-sm text-slate-600">{{ copy.candidatePrefix }}{{ pipeline.candidate_name || "-" }}</div>
-              <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ pipeline.candidate_ulid || pipeline.candidate_id || "-" }}</div>
-              <div class="tnum mt-1.5 break-all text-xs text-slate-400">Pipeline: {{ pipelineUlid(pipeline) || "-" }}</div>
-              <div class="tnum break-all text-xs text-slate-400">{{ copy.currentStagePrefix }}{{ pipeline.current_stage_ulid || "-" }}</div>
+              <div class="break-words text-sm font-semibold text-ink md:truncate">{{ pipeline.candidate_name || "-" }}</div>
+              <div class="mt-0.5 break-words text-sm text-slate-600">{{ pipelineDisplayName(pipeline) }}</div>
+              <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <span class="inline-flex items-center gap-1 text-xs text-slate-400">
+                  {{ copy.candidatePrefix }}
+                  <UlidChip :value="String(pipeline.candidate_ulid || pipeline.candidate_id || '')" />
+                </span>
+                <span class="inline-flex items-center gap-1 text-xs text-slate-400">
+                  {{ copy.columns.pipeline }}
+                  <UlidChip :value="pipelineUlid(pipeline)" />
+                </span>
+                <span class="inline-flex items-center gap-1 text-xs text-slate-400">
+                  {{ copy.currentStagePrefix }}
+                  <UlidChip :value="String(pipeline.current_stage_ulid || '')" />
+                </span>
+              </div>
             </div>
             <span class="flex items-center justify-between gap-4 md:block md:text-center">
               <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
@@ -811,7 +866,10 @@ onMounted(async () => {
               <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.startedAt }}</span>
               <span class="tnum text-sm text-slate-600">{{ formatDate(String(pipeline.started_at || pipeline.created_at || "")) }}</span>
             </span>
-            <span class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600 md:text-right">{{ copy.viewDetails }}</span>
+            <span class="inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition-colors hover:text-primary-600 md:justify-end">
+              {{ copy.viewDetails }}
+              <ChevronRight class="h-4 w-4" />
+            </span>
           </button>
         </div>
       </template>
@@ -835,7 +893,7 @@ onMounted(async () => {
         <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
           <div class="min-w-0">
             <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
-            <p class="tnum mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
+            <div class="mt-1.5"><UlidChip :value="selectedPipelineUlid" /></div>
           </div>
           <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="backToList">
             <X class="h-5 w-5" />
@@ -843,28 +901,72 @@ onMounted(async () => {
         </div>
         <div class="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
           <main class="min-w-0 space-y-4 md:space-y-6">
+        <!-- Hero: candidate-first summary + entity link + stage stepper -->
         <section class="ui-card p-4 md:p-5">
-          <div class="mb-4 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
-              <h2 class="break-words text-base font-semibold text-ink">{{ pipelineDisplayName(selectedSummary) }}</h2>
-              <p class="tnum mt-1 break-all text-sm text-slate-500">{{ selectedPipelineUlid }}</p>
+              <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ selectedCandidateName || pipelineDisplayName(selectedSummary) }}</h2>
+              <p v-if="selectedCandidateName" class="mt-0.5 break-words text-sm text-slate-500">{{ pipelineDisplayName(selectedSummary) }}</p>
+              <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                <RouterLink
+                  v-if="selectedCandidateUlid"
+                  :to="{ path: '/exams', query: { candidate: selectedCandidateUlid } }"
+                  class="inline-flex items-center gap-1 text-sm text-slate-600 underline decoration-slate-300 decoration-dashed underline-offset-4 transition-colors hover:text-primary-700 hover:decoration-primary-400"
+                  @click.stop
+                >
+                  {{ t.common.openLink }}
+                  <ArrowUpRight class="h-3.5 w-3.5 text-slate-400" />
+                </RouterLink>
+                <span v-if="stages.length" class="tnum text-xs text-slate-400">{{ t.common.progress }} {{ currentStageNumber }}/{{ stages.length }}</span>
+              </div>
             </div>
             <span class="ui-badge shrink-0" :class="statusBadgeClass(selectedStatus)">
               {{ statusLabel(selectedStatus) }}
             </span>
           </div>
-          <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+
+          <!-- Horizontal stage stepper (P3) -->
+          <ol v-if="stages.length" class="mt-5 flex items-start gap-0 overflow-x-auto pb-1">
+            <li v-for="(stage, index) in stages" :key="stageUlid(stage) || index" class="flex min-w-0 flex-1 items-start">
+              <div class="flex min-w-0 flex-col items-center gap-1.5 px-1 text-center" style="min-width: 72px">
+                <span
+                  v-if="stageStepState(stage) === 'done'"
+                  class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white"
+                ><Check class="h-3.5 w-3.5" /></span>
+                <span
+                  v-else-if="stageStepState(stage) === 'current'"
+                  class="tnum flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-50 text-xs font-medium text-primary-700 ring-4 ring-primary-500/15"
+                >{{ index + 1 }}</span>
+                <span
+                  v-else
+                  class="tnum flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-400"
+                >{{ index + 1 }}</span>
+                <span
+                  class="w-full truncate text-xs"
+                  :class="stageStepState(stage) === 'current' ? 'font-medium text-primary-700' : stageStepState(stage) === 'done' ? 'text-slate-600' : 'text-slate-400'"
+                  :title="stageName(stage)"
+                >{{ stageName(stage) }}</span>
+              </div>
+              <div
+                v-if="index < stages.length - 1"
+                class="mt-3 h-0.5 min-w-4 flex-1 rounded-full"
+                :class="stageStepState(stage) === 'done' ? 'bg-primary-600' : 'bg-slate-200'"
+              />
+            </li>
+          </ol>
+
+          <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div class="rounded-2xl bg-slate-50 p-4">
               <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.candidate }}</div>
-              <div class="tnum mt-1 break-all text-sm font-medium text-ink">{{ selectedCandidateUlid || "-" }}</div>
+              <div class="mt-1.5"><UlidChip :value="selectedCandidateUlid" /></div>
             </div>
             <div class="rounded-2xl bg-slate-50 p-4">
               <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.pipelineCc }}</div>
-              <div class="tnum mt-1 break-all text-sm font-medium text-ink">{{ selectedPipelineCcUlid || "-" }}</div>
+              <div class="mt-1.5"><UlidChip :value="selectedPipelineCcUlid" /></div>
             </div>
             <div class="rounded-2xl bg-slate-50 p-4">
               <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.currentStage }}</div>
-              <div class="tnum mt-1 break-all text-sm font-medium text-ink">{{ selectedCurrentStageUlid || "-" }}</div>
+              <div class="mt-1.5"><UlidChip :value="selectedCurrentStageUlid" /></div>
             </div>
             <div class="rounded-2xl bg-slate-50 p-4">
               <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.count }}</div>
@@ -877,42 +979,6 @@ onMounted(async () => {
             <div class="p-4 md:p-5">
               <h3 class="text-base font-semibold text-ink">{{ copy.levelTitle }}</h3>
               <p class="mt-1 text-sm text-slate-500">{{ copy.levelDescription }}</p>
-
-              <div class="mt-4 rounded-2xl bg-slate-50 p-4">
-                <h4 class="text-sm font-semibold text-ink">{{ copy.manualActionsTitle }}</h4>
-                <p class="mt-1 text-xs text-slate-500">{{ copy.manualActionsDescription }}</p>
-                <div class="mt-3 flex flex-wrap gap-2">
-                  <button
-                    class="ui-btn ui-btn-primary w-full sm:w-auto"
-                    type="button"
-                    :disabled="!canTriggerNextStage"
-                    @click="openAction({ kind: 'trigger-next-stage', pipelineUlid: selectedPipelineUlid })"
-                  >
-                    <StepForward class="h-4 w-4" />
-                    {{ copy.actions["trigger-next-stage"] }}
-                  </button>
-                  <button
-                    class="ui-btn ui-btn-danger w-full sm:w-auto"
-                    type="button"
-                    :disabled="!canTerminatePipeline"
-                    @click="openAction({ kind: 'terminate-pipeline', pipelineUlid: selectedPipelineUlid })"
-                  >
-                    <ShieldX class="h-4 w-4" />
-                    {{ copy.actions["terminate-pipeline"] }}
-                  </button>
-                  <button
-                    v-if="canViewCertificate"
-                    class="ui-btn ui-btn-secondary w-full sm:w-auto"
-                    type="button"
-                    :disabled="certificateLoading"
-                    @click="viewCertificate"
-                  >
-                    <Loader2 v-if="certificateLoading" class="h-4 w-4 animate-spin" />
-                    <Eye v-else class="h-4 w-4 text-slate-400" />
-                    {{ copy.viewCertificate }}
-                  </button>
-                </div>
-              </div>
             </div>
 
             <div class="flex gap-5 overflow-x-auto border-b border-hairline px-4 md:px-5">
@@ -938,10 +1004,24 @@ onMounted(async () => {
 
               <div v-else-if="activeTab === 'overview'" class="space-y-4 p-4 md:p-5">
                 <div class="grid gap-3 md:grid-cols-2">
-                  <div v-for="entry in detailEntries('overview', detailPipelineRecord)" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
-                    <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
-                    <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
-                  </div>
+                  <template v-for="entry in detailEntries('overview', detailPipelineRecord)" :key="entry.key">
+                    <JsonPreview
+                      v-if="entry.key === 'course_selection_json'"
+                      class="md:col-span-2"
+                      :title="entry.label"
+                      :text="entry.value"
+                      :copy-label="copy.copyJson"
+                      :copied-label="copy.copiedJson"
+                      :copied-message="copy.toasts.jsonCopied"
+                      :copy-error-message="copy.toasts.jsonCopyFailed"
+                      max-height="260px"
+                    />
+                    <div v-else class="rounded-2xl bg-slate-50 p-4">
+                      <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
+                      <div v-if="isChipKey(entry.key)" class="mt-1.5"><UlidChip :value="chipValue(entry.value)" /></div>
+                      <div v-else class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
+                    </div>
+                  </template>
                 </div>
               </div>
 
@@ -961,7 +1041,7 @@ onMounted(async () => {
                   >
                     <div class="text-sm font-semibold text-ink">{{ stageName(stage) }}</div>
                     <div class="tnum mt-1 text-xs text-slate-500">{{ copy.courseUnitCount(courseUnits(stage).length) }}</div>
-                    <div class="tnum mt-1 break-all text-xs text-slate-400">ID: {{ stageUlid(stage) || "-" }}</div>
+                    <div class="mt-1.5"><UlidChip :value="stageUlid(stage)" /></div>
                     <span class="ui-badge mt-3" :class="statusBadgeClass(stageStatus(stage), 'stage')">
                       {{ statusLabel(stageStatus(stage), "stage") }}
                     </span>
@@ -978,7 +1058,8 @@ onMounted(async () => {
                     <div class="grid gap-3 md:grid-cols-2">
                       <div v-for="entry in detailEntries('stage', stageRecord(selectedStage))" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
                         <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
-                        <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
+                        <div v-if="isChipKey(entry.key)" class="mt-1.5"><UlidChip :value="chipValue(entry.value)" /></div>
+                        <div v-else class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
                       </div>
                     </div>
                   </template>
@@ -1000,9 +1081,12 @@ onMounted(async () => {
                     type="button"
                     @click="selectedUnitKey = item.key"
                   >
-                    <div class="tnum break-all text-sm font-semibold text-ink">{{ item.unit.course_unit_cc_ulid || item.unit.course_unit_ulid || copy.unitFallback(item.unitIndex + 1) }}</div>
+                    <div class="text-sm font-semibold text-ink">{{ copy.unitFallback(item.unitIndex + 1) }}</div>
                     <div class="mt-1 text-xs text-slate-500">{{ copy.parentStagePrefix }}{{ stageName(item.stage) }}</div>
-                    <div class="tnum mt-1 break-all text-xs text-slate-400">ID: {{ courseUnitUlid(item.unit) || "-" }}</div>
+                    <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <UlidChip :value="String(item.unit.course_unit_cc_ulid || '')" />
+                      <UlidChip :value="courseUnitUlid(item.unit)" />
+                    </div>
                     <span class="ui-badge mt-3" :class="statusBadgeClass(courseUnitStatus(item.unit), 'unit')">
                       {{ statusLabel(courseUnitStatus(item.unit), "unit") }}
                     </span>
@@ -1018,12 +1102,16 @@ onMounted(async () => {
                   <template v-if="selectedUnit">
                     <div class="rounded-2xl bg-primary-50 p-4">
                       <div class="text-xs font-medium uppercase tracking-wider text-primary-700">{{ copy.parentStage }}</div>
-                      <div class="tnum mt-1 break-all text-sm font-medium text-ink">{{ stageName(selectedUnit.stage) }} · {{ stageUlid(selectedUnit.stage) || "-" }}</div>
+                      <div class="mt-1.5 flex flex-wrap items-center gap-2">
+                        <span class="text-sm font-medium text-ink">{{ stageName(selectedUnit.stage) }}</span>
+                        <UlidChip :value="stageUlid(selectedUnit.stage)" />
+                      </div>
                     </div>
                     <div class="grid gap-3 md:grid-cols-2">
                       <div v-for="entry in detailEntries('unit', selectedUnit.unit)" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
                         <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
-                        <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
+                        <div v-if="isChipKey(entry.key)" class="mt-1.5"><UlidChip :value="chipValue(entry.value)" /></div>
+                        <div v-else class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
                       </div>
                     </div>
                     <div class="flex flex-wrap gap-2">
@@ -1072,8 +1160,8 @@ onMounted(async () => {
                     type="button"
                     @click="selectedCertificateTask = task; loadCertificateTaskDetail(certificateTaskUlid(task))"
                   >
-                    <div class="tnum break-all text-sm font-semibold text-ink">{{ task.degree_no || certificateTaskUlid(task) || copy.certificateTasks.taskFallback }}</div>
-                    <div class="tnum mt-1 break-all text-xs text-slate-400">{{ certificateTaskUlid(task) || "-" }}</div>
+                    <div class="tnum break-all text-sm font-semibold text-ink">{{ task.degree_no || copy.certificateTasks.taskFallback }}</div>
+                    <div class="mt-1.5"><UlidChip :value="certificateTaskUlid(task)" /></div>
                     <div class="mt-3 flex flex-wrap items-center gap-2">
                       <span class="ui-badge" :class="certificateTaskBadgeClass(task.status)">
                         {{ certificateTaskStatusLabel(task.status) }}
@@ -1092,7 +1180,7 @@ onMounted(async () => {
                   <div class="flex flex-wrap items-start justify-between gap-3">
                     <div class="min-w-0">
                       <h4 class="text-base font-semibold text-ink">{{ copy.certificateTasks.detailTitle }}</h4>
-                      <p class="tnum mt-1 break-all text-sm text-slate-500">{{ certificateTaskUlid(selectedCertificateTask) || "-" }}</p>
+                      <div class="mt-1.5"><UlidChip :value="certificateTaskUlid(selectedCertificateTask)" /></div>
                     </div>
                     <button
                       class="ui-btn ui-btn-primary w-full sm:w-auto"
@@ -1114,7 +1202,8 @@ onMounted(async () => {
                     <div class="grid gap-3 md:grid-cols-2">
                       <div v-for="entry in certificateTaskEntries(asRecord((certificateTaskDetail || {}).summary || selectedCertificateTask))" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
                         <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
-                        <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
+                        <div v-if="isChipKey(entry.key)" class="mt-1.5"><UlidChip :value="chipValue(entry.value)" /></div>
+                        <div v-else class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
                       </div>
                     </div>
                     <div v-if="certificateTaskDetail?.error_message" class="rounded-2xl bg-red-50 p-4">
@@ -1153,19 +1242,35 @@ onMounted(async () => {
                     <div class="skeleton h-3.5 w-4/5" />
                     <div class="skeleton h-3.5 w-3/5" />
                   </div>
-                  <button
-                    v-for="log in logs"
-                    v-else
-                    :key="String(log.transition_ulid)"
-                    class="ui-table-row w-full border-b border-hairline p-4 text-left last:border-b-0"
-                    :class="selectedLog === log ? 'bg-primary-50/60' : ''"
-                    type="button"
-                    @click="selectedLog = log; loadLogDetail(String(log.transition_ulid || ''))"
-                  >
-                    <div class="text-sm font-medium text-ink">{{ entityStatusLabel(log.entity_type, log.from_status) }} -> {{ entityStatusLabel(log.entity_type, log.to_status) }}</div>
-                    <div class="tnum mt-1 break-all text-xs text-slate-500">{{ entityTypeLabel(log.entity_type) }} · {{ log.entity_ulid || "-" }}</div>
-                    <div class="tnum mt-1 text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</div>
-                  </button>
+                  <!-- Vertical timeline (P3): newest on top, primary dot on latest -->
+                  <ol v-else class="px-2 py-3">
+                    <li v-for="(log, index) in logs" :key="String(log.transition_ulid)">
+                      <button
+                        class="flex w-full gap-3 rounded-xl px-3 py-2.5 text-left transition-colors"
+                        :class="selectedLog === log ? 'bg-primary-50/60' : 'hover:bg-slate-50'"
+                        type="button"
+                        @click="selectedLog = log; loadLogDetail(String(log.transition_ulid || ''))"
+                      >
+                        <span class="flex flex-col items-center">
+                          <span
+                            class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                            :class="index === 0 ? 'bg-primary-600 ring-4 ring-primary-500/15' : 'bg-slate-300'"
+                          />
+                          <span v-if="index < logs.length - 1" class="mt-1 w-px flex-1 bg-hairline" />
+                        </span>
+                        <span class="min-w-0 flex-1">
+                          <span class="block text-sm font-medium" :class="index === 0 ? 'text-ink' : 'text-slate-600'">
+                            {{ entityStatusLabel(log.entity_type, log.from_status) }} → {{ entityStatusLabel(log.entity_type, log.to_status) }}
+                          </span>
+                          <span class="tnum mt-0.5 block text-xs text-slate-400">{{ formatDate(String(log.created_at || "")) }}</span>
+                          <span class="mt-1 flex flex-wrap items-center gap-1.5">
+                            <span class="text-xs text-slate-500">{{ entityTypeLabel(log.entity_type) }}</span>
+                            <UlidChip :value="String(log.entity_ulid || '')" />
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  </ol>
                   <div v-if="!logsLoading && !logs.length" class="ui-empty">
                     <div class="ui-empty-icon">
                       <ScrollText class="h-6 w-6" />
@@ -1191,13 +1296,65 @@ onMounted(async () => {
                     <div v-if="selectedLog" class="grid gap-3 md:grid-cols-2">
                       <div v-for="entry in detailEntries('log', asRecord((logDetail || selectedLog).summary || selectedLog))" :key="entry.key" class="rounded-2xl bg-slate-50 p-4">
                         <div class="text-xs font-medium text-slate-400">{{ entry.label }}</div>
-                        <div class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
+                        <div v-if="isChipKey(entry.key)" class="mt-1.5"><UlidChip :value="chipValue(entry.value)" /></div>
+                        <div v-else class="tnum mt-1 whitespace-pre-wrap break-all text-sm font-medium text-ink">{{ entry.value }}</div>
                       </div>
                     </div>
                   </template>
                 </div>
               </div>
             </section>
+        </section>
+
+        <!-- Bottom action bar: manual operations (P6) -->
+        <section class="ui-card p-4 md:p-5">
+          <h3 class="text-sm font-semibold text-ink">{{ copy.manualActionsTitle }}</h3>
+          <p class="mt-1 text-xs text-slate-500">{{ copy.manualActionsDescription }}</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <span class="inline-flex w-full sm:w-auto" :title="!canTriggerNextStage ? t.common.reasonUnavailable : undefined">
+              <button
+                class="ui-btn ui-btn-primary w-full sm:w-auto"
+                type="button"
+                :disabled="!canTriggerNextStage"
+                @click="openAction({ kind: 'trigger-next-stage', pipelineUlid: selectedPipelineUlid })"
+              >
+                <StepForward class="h-4 w-4" />
+                {{ copy.actions["trigger-next-stage"] }}
+              </button>
+            </span>
+            <button
+              v-if="canViewCertificate"
+              class="ui-btn ui-btn-secondary w-full sm:w-auto"
+              type="button"
+              :disabled="certificateLoading"
+              @click="viewCertificate"
+            >
+              <Loader2 v-if="certificateLoading" class="h-4 w-4 animate-spin" />
+              <Eye v-else class="h-4 w-4 text-slate-400" />
+              {{ copy.viewCertificate }}
+            </button>
+          </div>
+        </section>
+
+        <!-- Danger zone (P6) -->
+        <section class="rounded-2xl border border-danger-200 bg-danger-50/40 p-4 md:p-5">
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-danger-600">
+            <TriangleAlert class="h-4 w-4" />
+            {{ t.common.dangerZone }}
+          </h3>
+          <div class="mt-3 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-end">
+            <span class="inline-flex shrink-0" :title="!canTerminatePipeline ? t.common.reasonUnavailable : undefined">
+              <button
+                class="ui-btn ui-btn-danger w-full sm:w-auto"
+                type="button"
+                :disabled="!canTerminatePipeline"
+                @click="openAction({ kind: 'terminate-pipeline', pipelineUlid: selectedPipelineUlid })"
+              >
+                <ShieldX class="h-4 w-4" />
+                {{ copy.actions["terminate-pipeline"] }}
+              </button>
+            </span>
+          </div>
         </section>
           </main>
         </div>

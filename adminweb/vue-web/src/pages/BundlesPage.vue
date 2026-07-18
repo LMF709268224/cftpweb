@@ -1,14 +1,19 @@
 <script setup lang="ts">
-import { Boxes, Copy, Loader2, Plus, RefreshCw, Save, Send, Trash2, UploadCloud, X } from "lucide-vue-next"
+import { Archive, ArrowUpRight, Boxes, ChevronDown, ChevronRight, Copy, Eye, History, Loader2, Plus, RefreshCw, Save, Send, Trash2, TriangleAlert, UploadCloud, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
+import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
 
+import JsonPreview from "@/components/JsonPreview.vue"
 import PricingEditor from "@/components/PricingEditor.vue"
+import RowMenu from "@/components/RowMenu.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass, pickFirst } from "@/lib/status"
+import { groupByLineage } from "@/lib/versionGroup"
 
 type BundleForm = {
   bundle_ulid: string
@@ -29,10 +34,6 @@ type CreateBundleItem = {
   item_type: BundleItemType
   ref_ulid: string
 }
-type SummaryField = {
-  label: string
-  value: string
-}
 type DetailField = {
   key: string
   label: string
@@ -41,6 +42,13 @@ type DetailField = {
 type LinkedItemView = {
   type: string
   ref: string
+}
+type LinkedRefDisplay = {
+  kind: "pipeline" | "membership" | "other"
+  typeLabel: string
+  ref: string
+  title: string
+  category: string
 }
 type PriceRefView = {
   label: string
@@ -119,6 +127,17 @@ let nextCreateItemKey = 1
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.bundlesAdmin)
 
+const expandedStems = ref<Record<string, boolean>>({})
+const lineageGroups = computed(() =>
+  groupByLineage(bundles.value, (bundle) => String(pickFirst(bundle, ["name", "title"]) || "") || bundleUlid(bundle)),
+)
+const statusChips = computed(() => [
+  { value: "", label: copy.value.allStatus },
+  { value: "Draft", label: copy.value.statusOptions.Draft },
+  { value: "Active", label: copy.value.statusOptions.Active },
+  { value: "Deprecated", label: copy.value.statusOptions.Deprecated },
+])
+
 const currentPage = computed(() => Math.floor(offset.value / limit) + 1)
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / limit)))
 const canPrev = computed(() => offset.value > 0)
@@ -154,14 +173,6 @@ const detailTabs = computed(() => [
   { key: "pricing" as const, title: copy.value.tabs.pricing, count: 2 },
   { key: "actions" as const, title: copy.value.tabs.actions, count: statusActionCount.value },
 ])
-const summaryFields = computed<SummaryField[]>(() => {
-  const bundle = selected.value
-  if (!bundle) return []
-  return [
-    { label: copy.value.summary.displayPrice, value: displayPrice(bundle) },
-    { label: copy.value.summary.version, value: String(bundle.version ?? "-") },
-  ]
-})
 const linkedItemsPreview = computed<LinkedItemView[]>(() => {
   const parsed = parseJsonSilently(form.value.items_json)
   if (!Array.isArray(parsed)) return []
@@ -172,6 +183,7 @@ const linkedItemsPreview = computed<LinkedItemView[]>(() => {
       ref: String(pickFirst(item, ["ref_ulid", "ref_id", "ulid", "id"]) || "-"),
     }))
 })
+const linkedItemsDisplay = computed<LinkedRefDisplay[]>(() => linkedItemsPreview.value.map((item) => linkedRefDisplay(item.type, item.ref)))
 const currentPipelineRefs = computed(() => pipelineRefsFromItemsJson(form.value.items_json))
 const currentPipelineRef = computed(() => currentPipelineRefs.value[0] || "")
 const currentMembershipRefs = computed(() => membershipRefsFromItemsJson(form.value.items_json))
@@ -205,7 +217,7 @@ const pricingPreview = computed<PricingPreviewView | null>(() => {
         priceRef(copy.value.pricingPreview.exemption, unit.exemption),
       ].filter((item): item is PriceRefView => !!item)
       return {
-        unitId: String(unit.unit_id || "-"),
+        unitId: String(unit.unit_id || ""),
         prices,
       }
     })
@@ -344,30 +356,79 @@ function pipelineUnitIds(value: unknown) {
   return unitIds
 }
 
-function bundleTargetSummary(bundle: JsonRecord | null | undefined) {
+function linkedRefDisplay(type: unknown, ref: string): LinkedRefDisplay {
+  const normalized = normalizeItemType(type)
+  const kind: LinkedRefDisplay["kind"] = normalized.includes("pipeline") ? "pipeline" : normalized.includes("membership") ? "membership" : "other"
+  let title = ""
+  let category = ""
+  if (kind === "pipeline") {
+    const target = pipelineOptions.value.find((item) => pipelineTargetOption(item).id === ref)
+    if (target) {
+      title = pipelineTargetOption(target).title
+      category = String(pickFirst(target, ["category_tips", "program"]) || "")
+    }
+  } else if (kind === "membership") {
+    const target = membershipOptions.value.find((item) => membershipTargetOption(item).id === ref)
+    if (target) title = membershipTargetOption(target).title
+  }
+  return { kind, typeLabel: linkedItemTypeLabel(type), ref, title, category }
+}
+
+function bundleLinkedRefs(bundle: JsonRecord | null | undefined): LinkedRefDisplay[] {
+  const results: LinkedRefDisplay[] = []
+  const seen = new Set<string>()
+  const push = (type: string, ref: string) => {
+    const trimmed = String(ref || "").trim()
+    if (!trimmed) return
+    const display = linkedRefDisplay(type, trimmed)
+    const dedupeKey = `${display.kind}:${trimmed}`
+    if (seen.has(dedupeKey)) return
+    seen.add(dedupeKey)
+    results.push(display)
+  }
   const directPipelineId = String(pickFirst(bundle || {}, ["pipeline_id", "pipeline_cc_ulid"]) || "")
   const directMembershipId = String(pickFirst(bundle || {}, ["membership_id", "membership_ulid"]) || "")
-  const directSummaries = [
-    directPipelineId ? `${copy.value.createItemTypes.pipeline} · ${directPipelineId}` : "",
-    directMembershipId ? `${copy.value.createItemTypes.membership} · ${directMembershipId}` : "",
-  ].filter(Boolean)
-  if (directSummaries.length) return directSummaries.join(" + ")
+  if (directPipelineId) push("pipeline", directPipelineId)
+  if (directMembershipId) push("membership", directMembershipId)
+  if (results.length) return results
+  const itemsJson = String(bundle?.items_json || "")
+  for (const ref of pipelineRefsFromItemsJson(itemsJson)) push("pipeline", ref)
+  for (const ref of membershipRefsFromItemsJson(itemsJson)) push("membership", ref)
+  return results
+}
 
-  const parsed = parseJsonSilently(String(bundle?.items_json || ""))
-  const items = Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" ? [parsed] : []
-  const summaries: string[] = []
-  for (const item of items) {
-    const record = asRecord(item)
-    if (!record) continue
-    const itemType = String(record.item_type || record.type || record.itemType || record.kind || "").toLowerCase()
-    const ref = String(record.ref_ulid || record.item_id || record.id || record.pipeline_id || record.pipeline_cc_ulid || record.membership_id || "").trim()
-    if (!ref) continue
-    if (itemType.includes("pipeline")) summaries.push(`${copy.value.createItemTypes.pipeline} · ${ref}`)
-    else if (itemType.includes("membership")) summaries.push(`${copy.value.createItemTypes.membership} · ${ref}`)
-    else summaries.push(`${itemType || copy.value.fields.linkedTarget} · ${ref}`)
+function bundleRowMenuItems(bundle: JsonRecord) {
+  const statusKey = bundleStatusKey(bundle)
+  const busy = statusActionBusy.value
+  return [
+    { key: "detail", label: copy.value.viewDetails, icon: Eye },
+    { key: "clone", label: copy.value.duplicateDraft, icon: Copy, disabled: busy },
+    { key: "publish", label: copy.value.publish, icon: Send, disabled: busy || statusKey !== "draft" },
+    { key: "deprecate", label: copy.value.deprecate, icon: Archive, disabled: busy || statusKey !== "published" },
+    { key: "delete", label: copy.value.delete, icon: Trash2, danger: true, disabled: busy || statusKey !== "draft" },
+  ]
+}
+
+async function onBundleRowMenu(key: string, bundle: JsonRecord) {
+  if (key === "detail") {
+    await selectBundle(bundle)
+    return
   }
-  if (summaries.length <= 2) return summaries.join(" + ")
-  return `${summaries.slice(0, 2).join(" + ")} + ${copy.value.moreLinkedItems(summaries.length - 2)}`
+  await selectBundle(bundle, false)
+  if (key === "clone") await duplicateBundle()
+  else if (key === "publish") await publish()
+  else if (key === "deprecate") await deprecate()
+  else if (key === "delete" && canDeleteSelectedBundle.value) showDeleteConfirm.value = true
+}
+
+function onRowKeydown(event: KeyboardEvent, bundle: JsonRecord) {
+  if (event.target !== event.currentTarget) return
+  event.preventDefault()
+  void selectBundle(bundle)
+}
+
+function toggleStem(stem: string) {
+  expandedStems.value[stem] = !expandedStems.value[stem]
 }
 
 function displayPrice(bundle: JsonRecord | null | undefined) {
@@ -463,8 +524,10 @@ function isStructuredValue(value: unknown) {
   return Array.isArray(value) || (!!value && typeof value === "object")
 }
 
-function jsonText(value: unknown) {
-  return JSON.stringify(value ?? {}, null, 2)
+const ID_DETAIL_KEYS = new Set(["bundle_ulid", "bundle_id", "thumbnail_object_key", "thumbnail_file_hash"])
+
+function isIdDetailField(key: string) {
+  return ID_DETAIL_KEYS.has(key)
 }
 
 function detailFieldText(key: string, value: unknown) {
@@ -1227,7 +1290,10 @@ watch(activeTab, (tab) => {
 watch(() => form.value.items_json, () => {
   if (mode.value === "detail" && activeTab.value === "pricing") void loadPricingTargets()
 })
-onMounted(load)
+onMounted(() => {
+  void load()
+  void loadCreateTargetOptions()
+})
 </script>
 
 <template>
@@ -1262,78 +1328,133 @@ onMounted(load)
             </div>
           <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
           </div>
-          <select v-model="statusFilter" class="ui-input md:w-64">
-            <option value="">{{ copy.allStatus }}</option>
-            <option value="Draft">{{ copy.statusOptions.Draft }}</option>
-            <option value="Active">{{ copy.statusOptions.Active }}</option>
-            <option value="Deprecated">{{ copy.statusOptions.Deprecated }}</option>
-          </select>
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              v-for="chip in statusChips"
+              :key="chip.value"
+              type="button"
+              class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+              :class="statusFilter === chip.value
+                ? 'bg-primary-600 text-white shadow-sm'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+              :aria-pressed="statusFilter === chip.value"
+              @click="statusFilter = chip.value"
+            >
+              {{ chip.label }}
+            </button>
+          </div>
         </div>
         <div v-if="loading" class="divide-y divide-hairline">
           <div
             v-for="i in 5"
             :key="`sk-${i}`"
-            class="grid grid-cols-1 gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] md:items-center md:gap-4 md:px-6 md:py-3.5"
+            class="grid grid-cols-1 gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_130px_110px_70px_150px_88px] md:items-center md:gap-4 md:px-6 md:py-3.5"
           >
             <div class="space-y-2">
               <div class="skeleton h-4 w-2/5" />
               <div class="skeleton h-3.5 w-4/5" />
             </div>
+            <div class="skeleton hidden h-4 w-16 md:block md:justify-self-end" />
             <div class="skeleton h-5 w-16 rounded-full md:justify-self-center" />
-            <div class="skeleton hidden h-4 w-10 md:block md:justify-self-center" />
+            <div class="skeleton hidden h-4 w-8 md:block md:justify-self-center" />
             <div class="skeleton hidden h-4 w-20 md:block md:justify-self-end" />
             <div class="skeleton hidden h-4 w-14 md:block md:justify-self-end" />
           </div>
         </div>
         <template v-else>
-          <div class="ui-table-head hidden grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] gap-4 px-4 py-3 md:grid md:px-6">
+          <div class="ui-table-head hidden grid-cols-[minmax(0,1fr)_130px_110px_70px_150px_88px] gap-4 px-4 py-3 md:grid md:px-6">
             <span>{{ copy.columns.bundle }}</span>
+            <span class="text-right">{{ copy.summary.displayPrice }}</span>
             <span class="text-center">{{ copy.columns.status }}</span>
             <span class="text-center">{{ copy.columns.version }}</span>
             <span class="text-right">{{ copy.columns.updatedAt }}</span>
             <span class="text-right">{{ copy.columns.action }}</span>
           </div>
           <div class="divide-y divide-hairline">
-            <div
-              v-for="bundle in bundles"
-              :key="bundleUlid(bundle)"
-              class="ui-table-row flex w-full cursor-pointer flex-col gap-3 px-4 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_160px_110px_170px_112px] md:gap-4 md:px-6 md:py-3.5"
-              :class="mode === 'detail' && selectedId === bundleUlid(bundle) ? 'bg-primary-50/60' : ''"
-              role="button"
-              tabindex="0"
-              @click="selectBundle(bundle)"
-              @keydown.enter.prevent="selectBundle(bundle)"
-              @keydown.space.prevent="selectBundle(bundle)"
-            >
-              <div class="min-w-0">
-                <div class="break-words font-medium text-ink md:truncate">{{ bundleName(bundle) }}</div>
-                <div class="mt-0.5 line-clamp-1 text-sm text-slate-500">{{ bundle.description || copy.noDescription }}</div>
-                <div class="mt-2 flex flex-wrap gap-2 text-xs font-medium text-slate-600">
-                  <span class="tnum max-w-full break-all rounded-full bg-slate-100 px-2.5 py-1">{{ copy.displayPricePrefix }}{{ displayPrice(bundle) }}</span>
-                  <span v-if="bundleTargetSummary(bundle)" class="tnum max-w-full break-all rounded-full bg-slate-100 px-2.5 py-1">{{ copy.linkedTargetPrefix }}{{ bundleTargetSummary(bundle) }}</span>
-                  <span class="tnum max-w-full break-all rounded-full bg-slate-100 px-2.5 py-1">{{ copy.fields.idPrefix }}{{ bundleUlid(bundle) || "-" }}</span>
+            <template v-for="group in lineageGroups" :key="group.stem">
+              <template v-for="(bundle, rowIndex) in [group.primary, ...(expandedStems[group.stem] ? group.history : [])]" :key="bundleUlid(bundle) || `${group.stem}-${rowIndex}`">
+                <div
+                  class="ui-table-row flex w-full cursor-pointer flex-col gap-3 px-4 py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/20 md:grid md:grid-cols-[minmax(0,1fr)_130px_110px_70px_150px_88px] md:gap-4 md:px-6"
+                  :class="[
+                    rowIndex > 0 ? 'md:py-2.5' : 'md:py-3.5',
+                    mode === 'detail' && selectedId === bundleUlid(bundle) ? 'bg-primary-50/60' : rowIndex > 0 ? 'bg-slate-50/60' : '',
+                  ]"
+                  role="button"
+                  tabindex="0"
+                  @click="selectBundle(bundle)"
+                  @keydown.enter="onRowKeydown($event, bundle)"
+                  @keydown.space="onRowKeydown($event, bundle)"
+                >
+                  <div class="min-w-0" :class="rowIndex > 0 ? 'border-l-2 border-slate-200 pl-3' : ''">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span class="break-words font-medium" :class="rowIndex > 0 ? 'text-sm text-slate-500' : 'text-ink'">{{ bundleName(bundle) }}</span>
+                      <button
+                        v-if="rowIndex === 0 && group.history.length"
+                        type="button"
+                        class="tnum inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-200/70 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/30"
+                        :aria-expanded="Boolean(expandedStems[group.stem])"
+                        :title="t.common.historyVersions"
+                        @click.stop="toggleStem(group.stem)"
+                        @keydown.enter.stop
+                        @keydown.space.stop
+                      >
+                        <History class="h-3 w-3" />
+                        {{ group.history.length }}
+                        <ChevronDown class="h-3 w-3 transition-transform duration-150" :class="expandedStems[group.stem] ? 'rotate-180' : ''" />
+                      </button>
+                      <span v-if="rowIndex > 0 && bundleStatusKey(bundle) === 'deprecated'" class="ui-badge shrink-0 bg-slate-100 text-slate-500">{{ t.common.deprecatedMuted }}</span>
+                    </div>
+                    <div v-if="rowIndex === 0" class="mt-0.5 line-clamp-1 text-sm text-slate-500">{{ bundle.description || copy.noDescription }}</div>
+                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                      <span
+                        v-for="item in bundleLinkedRefs(bundle)"
+                        :key="`${item.kind}-${item.ref}`"
+                        class="inline-flex min-w-0 max-w-full items-center gap-1.5"
+                      >
+                        <span class="shrink-0 text-xs text-slate-400">{{ item.typeLabel }}</span>
+                        <RouterLink
+                          v-if="item.kind === 'pipeline' && item.category"
+                          :to="{ path: '/pipelines', query: { category: item.category } }"
+                          class="inline-flex min-w-0 items-center gap-1 text-sm text-slate-600 underline decoration-slate-300 decoration-dashed underline-offset-4 transition-colors hover:text-primary-700 hover:decoration-primary-400"
+                          @click.stop
+                        >
+                          <span class="truncate">{{ item.title || item.ref }}</span>
+                          <ArrowUpRight class="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        </RouterLink>
+                        <UlidChip v-else :value="item.ref" />
+                      </span>
+                      <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                        <span class="shrink-0 text-xs text-slate-400">{{ copy.fields.idPrefix }}</span>
+                        <UlidChip :value="bundleUlid(bundle)" />
+                      </span>
+                    </div>
+                  </div>
+                  <span class="flex items-center justify-between gap-3 md:block md:self-center md:justify-self-end md:text-right">
+                    <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.summary.displayPrice }}</span>
+                    <span class="tnum text-sm font-semibold" :class="rowIndex > 0 ? 'text-slate-500' : 'text-ink'">{{ displayPrice(bundle) }}</span>
+                  </span>
+                  <span class="flex items-center justify-between gap-3 md:block md:self-center md:justify-self-center">
+                    <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
+                    <span class="ui-badge" :class="badgeClass(bundleStatusBadgeValue(bundle))">{{ bundleStatusLabel(bundle) }}</span>
+                  </span>
+                  <span class="flex items-center justify-between gap-3 md:block md:self-center md:text-center">
+                    <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.version }}</span>
+                    <span class="tnum text-sm" :class="rowIndex > 0 ? 'text-slate-400' : 'text-slate-600'">{{ bundle.version || 0 }}</span>
+                  </span>
+                  <span class="flex items-center justify-between gap-3 md:block md:self-center md:justify-self-end md:text-right">
+                    <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
+                    <span class="tnum text-sm" :class="rowIndex > 0 ? 'text-slate-400' : 'text-slate-500'">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</span>
+                  </span>
+                  <span class="flex items-center justify-between gap-3 md:justify-end md:self-center">
+                    <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.action }}</span>
+                    <span class="flex items-center gap-1">
+                      <RowMenu :items="bundleRowMenuItems(bundle)" @select="(key) => onBundleRowMenu(key, bundle)" />
+                      <ChevronRight class="h-4 w-4 shrink-0 text-slate-300" />
+                    </span>
+                  </span>
                 </div>
-              </div>
-              <span class="flex items-center justify-between gap-3 md:block md:self-center md:justify-self-center">
-                <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.status }}</span>
-                <span class="ui-badge" :class="badgeClass(bundleStatusBadgeValue(bundle))">{{ bundleStatusLabel(bundle) }}</span>
-              </span>
-              <span class="flex items-center justify-between gap-3 md:block md:self-center md:text-center">
-                <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.version }}</span>
-                <span class="tnum text-sm text-slate-600">{{ copy.fields.versionPrefix }} {{ bundle.version || 0 }}</span>
-              </span>
-              <span class="flex items-center justify-between gap-3 md:block md:self-center md:justify-self-end md:text-right">
-                <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.updatedAt }}</span>
-                <span class="tnum text-sm text-slate-500">{{ formatDate(String(bundle.updated_at || bundle.created_at || "")) }}</span>
-              </span>
-              <button
-                class="inline-flex h-8 items-center justify-center rounded-lg text-sm font-medium text-primary-700 transition-colors hover:text-primary-600 md:self-center md:justify-self-end"
-                type="button"
-                @click.stop="selectBundle(bundle)"
-              >
-                {{ copy.viewDetails }}
-              </button>
-            </div>
+              </template>
+            </template>
           </div>
         </template>
         <div v-if="!loading && !bundles.length" class="ui-empty">
@@ -1487,8 +1608,15 @@ onMounted(load)
           <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
               <div class="min-w-0">
-                <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ bundleName(selected) }}</h2>
-                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ selectedId }}</p>
+                <div class="flex flex-wrap items-center gap-2.5">
+                  <h2 class="break-words text-base font-semibold text-ink md:text-lg">{{ bundleName(selected) }}</h2>
+                  <span class="ui-badge shrink-0" :class="badgeClass(bundleStatusBadgeValue(selected))">{{ bundleStatusLabel(selected) }}</span>
+                </div>
+                <div class="tnum mt-2 text-2xl font-bold text-ink md:text-3xl">{{ displayPrice(selected) }}</div>
+                <div class="mt-2 flex flex-wrap items-center gap-2">
+                  <UlidChip :value="selectedId" />
+                  <span class="tnum text-xs text-slate-400">{{ copy.summary.version }} {{ selected?.version ?? 0 }}</span>
+                </div>
               </div>
               <div class="flex items-center gap-3">
                 <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="closeDetail">
@@ -1515,40 +1643,59 @@ onMounted(load)
           <div class="min-h-0 flex-1 overflow-hidden">
             <main class="h-full min-h-0 max-h-none min-w-0 overflow-y-auto p-4 md:h-[60vh] md:min-h-[360px] md:max-h-[620px] md:p-6">
               <div v-if="activeTab === 'summary'" class="space-y-5">
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div v-for="field in summaryFields" :key="field.label" class="rounded-2xl border border-edge p-4">
-                    <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</div>
-                    <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ field.value }}</div>
+                <section class="rounded-2xl border border-edge p-4 md:p-5">
+                  <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.linkedItems }}</div>
+                  <div v-if="linkedItemsDisplay.length" class="mt-3 flex flex-col gap-2.5">
+                    <div v-for="item in linkedItemsDisplay" :key="`${item.kind}-${item.ref}`" class="flex flex-wrap items-center gap-2">
+                      <span class="ui-badge shrink-0 bg-slate-100 text-slate-600">{{ item.typeLabel }}</span>
+                      <template v-if="item.kind === 'pipeline' && item.category">
+                        <RouterLink
+                          :to="{ path: '/pipelines', query: { category: item.category } }"
+                          class="inline-flex min-w-0 items-center gap-1 text-sm text-slate-600 underline decoration-slate-300 decoration-dashed underline-offset-4 transition-colors hover:text-primary-700 hover:decoration-primary-400"
+                        >
+                          <span class="truncate">{{ item.title || item.ref }}</span>
+                          <ArrowUpRight class="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                        </RouterLink>
+                        <UlidChip :value="item.ref" />
+                      </template>
+                      <template v-else>
+                        <span v-if="item.title" class="min-w-0 truncate text-sm text-slate-600">{{ item.title }}</span>
+                        <UlidChip :value="item.ref" />
+                      </template>
+                    </div>
                   </div>
-                </div>
-                <div class="rounded-2xl border border-edge bg-white p-4">
+                  <div v-else class="mt-3 text-sm text-slate-500">{{ copy.pricingPreview.emptyJson }}</div>
+                </section>
+                <section class="rounded-2xl border border-edge p-4 md:p-5">
                   <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.summary.description }}</div>
                   <p class="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">{{ form.description || "-" }}</p>
-                </div>
-                <div class="rounded-2xl border border-edge bg-white p-4">
-                  <div class="mb-3 text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.linkedItems }}</div>
-                  <div v-if="linkedItemsPreview.length" class="grid gap-2 md:grid-cols-2">
-                    <div v-for="item in linkedItemsPreview" :key="`${item.type}-${item.ref}`" class="rounded-[10px] bg-slate-50 p-3 text-sm">
-                        <div class="font-medium text-slate-600">{{ copy.pricingPreview.itemType }}: {{ linkedItemTypeLabel(item.type) }}</div>
-                      <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ copy.pricingPreview.itemRef }}: {{ item.ref }}</div>
+                </section>
+                <section class="rounded-2xl border border-edge p-4 md:p-5">
+                  <dl class="grid gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-3">
+                    <div
+                      v-for="field in selectedFields"
+                      :key="field.key"
+                      class="min-w-0"
+                      :class="isStructuredValue(field.value) ? 'sm:col-span-2 xl:col-span-3' : ''"
+                    >
+                      <dt class="text-xs font-medium uppercase tracking-wider text-slate-400" :class="isStructuredValue(field.value) ? 'sr-only' : ''">{{ field.label }}</dt>
+                      <dd class="m-0 mt-1">
+                        <UlidChip v-if="isIdDetailField(field.key)" :value="String(field.value ?? '')" />
+                        <JsonPreview
+                          v-else-if="isStructuredValue(field.value)"
+                          :title="field.label"
+                          :value="field.value"
+                          :copy-label="copy.copyJson"
+                          :copied-label="copy.copiedJson"
+                          :copied-message="copy.toasts.jsonCopied"
+                          :copy-error-message="copy.toasts.jsonCopyFailed"
+                          max-height="256px"
+                        />
+                        <span v-else class="tnum break-words text-sm text-slate-700">{{ detailFieldText(field.key, field.value) }}</span>
+                      </dd>
                     </div>
-                  </div>
-                  <div v-else class="rounded-[10px] border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
-                    {{ copy.pricingPreview.emptyJson }}
-                  </div>
-                </div>
-                <div class="grid gap-4 md:grid-cols-2">
-                  <div v-for="field in selectedFields" :key="field.key" class="grid gap-1.5" :class="isStructuredValue(field.value) ? 'md:col-span-2' : ''">
-                    <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
-                    <pre
-                      v-if="isStructuredValue(field.value)"
-                      class="tnum max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-2.5 font-mono text-xs leading-5 text-slate-600"
-                    >{{ jsonText(field.value) }}</pre>
-                    <div v-else class="tnum min-h-10 break-words rounded-[10px] border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-5 text-slate-700">
-                      {{ detailFieldText(field.key, field.value) }}
-                    </div>
-                  </div>
-                </div>
+                  </dl>
+                </section>
               </div>
 
               <div v-else-if="activeTab === 'meta'" class="space-y-5">
@@ -1616,7 +1763,7 @@ onMounted(load)
                   <div class="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)_auto]">
                     <div class="rounded-[10px] bg-white p-4">
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.relink.currentPipeline }}</div>
-                      <div v-if="currentPipelineRef" class="tnum mt-2 break-all font-mono text-xs text-primary-700">{{ currentPipelineRef }}</div>
+                      <div v-if="currentPipelineRef" class="mt-2"><UlidChip :value="currentPipelineRef" /></div>
                       <div v-else class="mt-2 text-sm text-slate-500">{{ copy.relink.noPipelineBinding }}</div>
                     </div>
                     <label class="grid gap-1.5">
@@ -1671,7 +1818,10 @@ onMounted(load)
                       <div v-if="linkedItemsPreview.length" class="mt-3 grid gap-2">
                         <div v-for="item in linkedItemsPreview" :key="`${item.type}-${item.ref}`" class="rounded-[10px] bg-slate-50 p-3 text-sm">
                             <div class="font-medium text-slate-600">{{ copy.pricingPreview.itemType }}: {{ linkedItemTypeLabel(item.type) }}</div>
-                          <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ copy.pricingPreview.itemRef }}: {{ item.ref }}</div>
+                          <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                            <span class="text-xs font-medium text-slate-500">{{ copy.pricingPreview.itemRef }}</span>
+                            <UlidChip :value="item.ref" />
+                          </div>
                         </div>
                       </div>
                       <div v-else class="mt-3 rounded-[10px] border border-dashed border-slate-200 p-4 text-center text-sm text-slate-500">
@@ -1707,10 +1857,10 @@ onMounted(load)
                     <div class="overflow-hidden rounded-2xl border border-edge bg-white">
                       <div class="border-b border-hairline px-4 py-3 text-sm font-semibold text-ink">{{ copy.pricingPreview.unitsTitle }}</div>
                       <div v-if="pricingPreview.units.length" class="divide-y divide-hairline">
-                        <div v-for="unit in pricingPreview.units" :key="unit.unitId" class="grid gap-3 p-4 xl:grid-cols-[240px_1fr]">
+                        <div v-for="(unit, unitIndex) in pricingPreview.units" :key="unit.unitId || `unit-${unitIndex}`" class="grid gap-3 p-4 xl:grid-cols-[240px_1fr]">
                           <div>
                             <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.unitId }}</div>
-                            <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ unit.unitId }}</div>
+                            <div class="mt-1"><UlidChip :value="unit.unitId" :truncate="false" /></div>
                           </div>
                           <div v-if="unit.prices.length" class="grid gap-3 lg:grid-cols-3">
                             <div v-for="price in unit.prices" :key="`${unit.unitId}-${price.label}`" class="rounded-[10px] bg-slate-50 p-3">
@@ -1735,7 +1885,7 @@ onMounted(load)
                         <div v-for="unlock in pricingPreview.unlocks" :key="unlock.targetId" class="grid gap-3 p-4 md:grid-cols-3">
                           <div>
                             <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.unlockTarget }}</div>
-                            <div class="tnum mt-1 break-all font-mono text-xs text-primary-700">{{ unlock.targetId }}</div>
+                            <div class="mt-1"><UlidChip :value="unlock.targetId" :truncate="false" /></div>
                           </div>
                           <div>
                             <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.pricingPreview.priceId }}</div>
@@ -1770,30 +1920,52 @@ onMounted(load)
               </div>
 
               <div v-else-if="activeTab === 'actions'" class="space-y-5">
-                  <div class="rounded-2xl border border-edge p-4 md:p-5">
+                <div class="rounded-2xl border border-edge p-4 md:p-5">
                   <h3 class="text-base font-semibold text-ink">{{ copy.actionsTitle }}</h3>
                   <p class="mt-1 text-sm text-slate-500">{{ copy.actionsDescription }}</p>
-                  <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div class="mt-4 flex flex-col flex-wrap gap-3 sm:flex-row">
                     <button v-if="canCloneSelectedBundle" class="ui-btn ui-btn-secondary" type="button" :disabled="statusActionBusy" @click="duplicateBundle">
                       <Loader2 v-if="duplicating" class="h-4 w-4 animate-spin" />
                       <Copy v-else class="h-4 w-4 text-slate-400" />
                       {{ duplicating ? copy.duplicating : copy.duplicateDraft }}
                     </button>
-                    <button v-if="canPublishSelectedBundle" class="ui-btn ui-btn-secondary" type="button" :disabled="statusActionBusy" @click="publish">
+                    <button v-if="canPublishSelectedBundle" class="ui-btn ui-btn-primary" type="button" :disabled="statusActionBusy" @click="publish">
                       <Loader2 v-if="publishing" class="h-4 w-4 animate-spin" />
+                      <Send v-else class="h-4 w-4" />
                       {{ publishing ? copy.publishing : copy.publish }}
                     </button>
-                    <button v-if="canDeprecateSelectedBundle" class="ui-btn ui-btn-secondary" type="button" :disabled="statusActionBusy" @click="deprecate">
+                  </div>
+                </div>
+                <section v-if="canDeprecateSelectedBundle || canDeleteSelectedBundle" class="rounded-2xl border border-danger-200 bg-danger-50/40 p-4 md:p-5">
+                  <h3 class="flex items-center gap-2 text-sm font-semibold text-danger-600">
+                    <TriangleAlert class="h-4 w-4" />
+                    {{ t.common.dangerZone }}
+                  </h3>
+                  <div class="mt-3 flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+                    <button
+                      v-if="canDeprecateSelectedBundle"
+                      class="ui-btn ui-btn-secondary text-danger-600 hover:border-danger-200 hover:bg-danger-50"
+                      type="button"
+                      :disabled="statusActionBusy"
+                      @click="deprecate"
+                    >
                       <Loader2 v-if="deprecating" class="h-4 w-4 animate-spin" />
+                      <Archive v-else class="h-4 w-4" />
                       {{ deprecating ? copy.deprecating : copy.deprecate }}
                     </button>
-                    <button v-if="canDeleteSelectedBundle" class="ui-btn ui-btn-danger" type="button" :disabled="statusActionBusy" @click="showDeleteConfirm = true">
+                    <button
+                      v-if="canDeleteSelectedBundle"
+                      class="ui-btn ui-btn-danger"
+                      type="button"
+                      :disabled="statusActionBusy"
+                      @click="showDeleteConfirm = true"
+                    >
                       <Loader2 v-if="deleting" class="h-4 w-4 animate-spin" />
                       <Trash2 v-else class="h-4 w-4" />
                       {{ deleting ? copy.deleting : copy.delete }}
                     </button>
                   </div>
-                </div>
+                </section>
               </div>
 
             </main>
@@ -1821,7 +1993,7 @@ onMounted(load)
               <p class="text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
               <div class="mt-4 rounded-[10px] bg-slate-50 p-4">
                 <div class="text-sm font-semibold text-ink">{{ bundleName(selected) }}</div>
-                <div class="tnum mt-1 break-all text-xs text-slate-500">{{ selectedId }}</div>
+                <div class="mt-1"><UlidChip :value="selectedId" /></div>
               </div>
             </main>
             <div class="flex flex-col items-stretch justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">

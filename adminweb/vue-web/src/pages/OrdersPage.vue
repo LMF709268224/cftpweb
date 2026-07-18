@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { Inbox, RefreshCw, Search, Trash2, X } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { ArrowUpRight, ChevronRight, Inbox, RefreshCw, Search, Trash2, TriangleAlert, X } from "lucide-vue-next"
+import { computed, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
+import CandidatePicker from "@/components/CandidatePicker.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -21,6 +23,9 @@ type DetailTab = "summary" | "business-detail" | "actions"
 type SummaryField = {
   label: string
   value: string
+  kind?: "ulid" | "candidate"
+  ulid?: string
+  name?: string
 }
 
 const { t } = useAdminLanguage()
@@ -53,6 +58,10 @@ const isBundlePurchase = computed(() => normalizeStatus(biz(selected.value || {}
 
 const localizedBizTypeOptions = computed(() => localizeOptions(bizTypeOptions, "bizTypes"))
 const localizedOrderStatusOptions = computed(() => localizeOptions(orderStatusOptions, "orderStatuses"))
+const statusChips = computed(() => [
+  { value: "", label: copy.value.allStatuses },
+  ...localizedOrderStatusOptions.value,
+])
 const detailTabs = computed(() => [
   { key: "summary" as const, title: copy.value.tabs.summary, count: selected.value ? 1 : 0 },
   { key: "business-detail" as const, title: copy.value.tabs.bundleDetail, count: businessDetail.value ? 1 : 0 },
@@ -70,10 +79,21 @@ const orderSummaryFields = computed<SummaryField[]>(() => {
     { label: copy.value.fields.bizTypeCode, value: stringValue(biz(order)) },
     { label: copy.value.fields.currency, value: stringValue(pickFirst(order, ["currency_code", "currencyCode", "currency"])) },
     { label: copy.value.fields.rawAmount, value: stringValue(pickFirst(order, ["amount_minor"])) },
-    { label: copy.value.fields.candidate, value: candidate(order) },
-    { label: copy.value.fields.orderId, value: orderUlid(order) },
-    { label: copy.value.fields.payOrderId, value: stringValue(pickFirst(order, ["pay_order_ulid", "payOrderUlid"])) },
-    { label: copy.value.fields.bizRefId, value: bizRef(order) || "-" },
+    {
+      label: copy.value.fields.candidate,
+      value: candidate(order),
+      kind: "candidate" as const,
+      ulid: candidateUlidOf(order),
+      name: candidateName(order),
+    },
+    { label: copy.value.fields.orderId, value: orderUlid(order), kind: "ulid" as const, ulid: orderUlid(order) },
+    {
+      label: copy.value.fields.payOrderId,
+      value: stringValue(pickFirst(order, ["pay_order_ulid", "payOrderUlid"])),
+      kind: "ulid" as const,
+      ulid: String(pickFirst(order, ["pay_order_ulid", "payOrderUlid"]) || ""),
+    },
+    { label: copy.value.fields.bizRefId, value: bizRef(order) || "-", kind: "ulid" as const, ulid: bizRef(order) },
     { label: copy.value.fields.createdAt, value: createdAt(order) },
   ]
 })
@@ -111,6 +131,20 @@ function orderUlid(order: JsonRecord | null | undefined) {
 
 function candidate(order: JsonRecord | null | undefined) {
   return String(pickFirst(order || {}, ["candidate_name", "candidate_email", "candidate_ulid", "candidate_id"]) || "-")
+}
+
+function candidateName(order: JsonRecord | null | undefined) {
+  return String(pickFirst(order || {}, ["candidate_name", "candidate_email"]) || "")
+}
+
+function candidateUlidOf(order: JsonRecord | null | undefined) {
+  return String(pickFirst(order || {}, ["candidate_ulid", "candidateUlid", "candidate_id"]) || "")
+}
+
+const ULID_LIKE = /^[0-9A-HJKMNP-TV-Z]{26}$/i
+
+function isUlidLike(value: unknown) {
+  return ULID_LIKE.test(String(value ?? "").trim())
 }
 
 function productName(order: JsonRecord | null | undefined) {
@@ -234,22 +268,12 @@ async function load(targetPage = page.value) {
     })
 
     let cursor = ""
-
     if (targetPage > lastPage.value) {
-
       cursor = nextCursor.value
-
     } else if (targetPage < lastPage.value) {
-
       cursor = prevCursor.value
-
-
     }
-
-    
-
     if (cursor) params.set("cursor", cursor)
-
 
     if (candidateUlid.value.trim()) params.set("candidate_ulid", candidateUlid.value.trim())
     if (bizType.value) params.set("biz_type", bizType.value)
@@ -276,8 +300,7 @@ async function load(targetPage = page.value) {
     total.value = Number(data.total ?? data.total_count ?? data.totalCount ?? orders.value.length) || 0
     const isBackward = page.value < lastPage.value
     hasMore.value = isBackward ? true : Boolean(data.has_more)
-    lastPage.value = page.value
-nextCursor.value = String(data.next_cursor || "")
+    nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = targetPage
@@ -343,11 +366,14 @@ function search() {
   void load(1)
 }
 
-function clearCandidateSearch() {
-  if (!candidateUlid.value) return
-  candidateUlid.value = ""
+function setOrderStatus(value: string) {
+  orderStatus.value = value
   search()
 }
+
+watch(candidateUlid, () => {
+  search()
+})
 
 onMounted(() => load(1))
 </script>
@@ -366,41 +392,37 @@ onMounted(() => load(1))
     </header>
 
     <form class="ui-card mt-6 p-4 md:p-5" @submit.prevent="search">
-      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_180px_180px_auto]">
-        <label class="grid gap-1.5">
+      <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px_auto]">
+        <div class="grid gap-1.5">
           <span class="ui-label">{{ copy.candidatePlaceholder }}</span>
-          <div class="relative">
-            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input v-model="candidateUlid" class="ui-input pl-9 pr-10" :placeholder="copy.candidatePlaceholder" />
-            <button
-              v-if="candidateUlid"
-              class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-              type="button"
-              :aria-label="copy.close"
-              :title="copy.close"
-              @click="clearCandidateSearch"
-            >
-              <X class="h-4 w-4" />
-            </button>
-          </div>
-        </label>
+          <CandidatePicker v-model="candidateUlid" />
+        </div>
         <label class="grid gap-1.5">
           <span class="ui-label">{{ copy.fields.bizType }}</span>
-          <select v-model="bizType" class="ui-input">
+          <select v-model="bizType" class="ui-input" @change="search()">
             <option value="">{{ copy.allTypes }}</option>
             <option v-for="option in localizedBizTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-          </select>
-        </label>
-        <label class="grid gap-1.5">
-          <span class="ui-label">{{ copy.fields.orderStatus }}</span>
-          <select v-model="orderStatus" class="ui-input">
-            <option value="">{{ copy.allStatuses }}</option>
-            <option v-for="option in localizedOrderStatusOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
           </select>
         </label>
         <button class="ui-btn ui-btn-primary xl:self-end" type="submit">
           <Search class="h-4 w-4" />
           {{ copy.search }}
+        </button>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <span class="ui-label mr-1">{{ copy.fields.orderStatus }}</span>
+        <button
+          v-for="chip in statusChips"
+          :key="chip.value"
+          type="button"
+          class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+          :class="orderStatus === chip.value
+            ? 'bg-primary-600 text-white shadow-sm'
+            : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+          :aria-pressed="orderStatus === chip.value"
+          @click="setOrderStatus(chip.value)"
+        >
+          {{ chip.label }}
         </button>
       </div>
     </form>
@@ -463,12 +485,16 @@ onMounted(() => load(1))
             <div class="break-words text-sm font-medium text-ink md:truncate">{{ productName(order) }}</div>
             <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
               <span>{{ localizedLabelFor("bizTypes", biz(order), bizTypeOptions) }}</span>
-              <span class="tnum break-all">{{ copy.orderPrefix }} {{ orderUlid(order) || "-" }}</span>
+              <span class="inline-flex items-center gap-1">
+                <span>{{ copy.orderPrefix }}</span>
+                <UlidChip :value="orderUlid(order)" />
+              </span>
             </div>
           </div>
           <div class="flex min-w-0 items-center justify-between gap-4 border-t border-hairline pt-3 md:block md:border-0 md:pt-0">
             <span class="shrink-0 text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.candidate }}</span>
-            <span class="break-all text-right text-sm text-slate-600 md:text-left">{{ candidate(order) }}</span>
+            <span v-if="candidateName(order)" class="break-all text-right text-sm text-slate-600 md:text-left">{{ candidateName(order) }}</span>
+            <UlidChip v-else :value="candidateUlidOf(order)" />
           </div>
           <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 md:block md:border-0 md:pt-0 md:text-right">
             <span class="shrink-0 text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.amount }}</span>
@@ -486,11 +512,12 @@ onMounted(() => load(1))
           </div>
           <div class="border-t border-hairline pt-3 text-right md:border-0 md:pt-0">
             <button
-              class="inline-flex w-full items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50 md:w-auto md:border-0 md:bg-transparent md:p-0 md:hover:bg-transparent md:hover:text-primary-600"
+              class="inline-flex w-full items-center justify-center gap-1 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50 md:w-auto md:border-0 md:bg-transparent md:p-0 md:hover:bg-transparent md:hover:text-primary-600"
               type="button"
               @click.stop="selectOrder(order)"
             >
               {{ copy.viewDetails }}
+              <ChevronRight class="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -517,7 +544,9 @@ onMounted(() => load(1))
             <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
               <div class="min-w-0">
                 <h2 class="break-words text-base font-semibold text-ink md:truncate md:text-lg">{{ productName(selected) }}</h2>
-                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ orderUlid(selected) }}</p>
+                <div class="mt-1">
+                  <UlidChip :value="orderUlid(selected)" />
+                </div>
               </div>
               <button
                 class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
@@ -572,7 +601,33 @@ onMounted(() => load(1))
                     class="rounded-2xl bg-slate-50 p-4"
                   >
                     <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</div>
-                    <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ field.value }}</div>
+                    <div v-if="field.kind === 'ulid'" class="mt-2">
+                      <UlidChip :value="field.ulid || ''" />
+                    </div>
+                    <div v-else-if="field.kind === 'candidate'" class="mt-2 flex flex-wrap items-center gap-2">
+                      <RouterLink
+                        v-if="field.ulid && field.name"
+                        :to="{ path: '/prog', query: { candidate: field.ulid } }"
+                        class="inline-flex items-center gap-1 break-all text-sm font-medium text-slate-700 underline decoration-slate-300 decoration-dashed underline-offset-4 transition-colors hover:text-primary-700 hover:decoration-primary-400"
+                        @click.stop
+                      >
+                        {{ field.name }}
+                        <ArrowUpRight class="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      </RouterLink>
+                      <UlidChip v-if="field.ulid" :value="field.ulid" />
+                      <RouterLink
+                        v-if="field.ulid && !field.name"
+                        :to="{ path: '/prog', query: { candidate: field.ulid } }"
+                        class="inline-flex h-6 w-6 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-primary-700"
+                        :aria-label="t.common.openLink"
+                        :title="t.common.openLink"
+                        @click.stop
+                      >
+                        <ArrowUpRight class="h-3.5 w-3.5" />
+                      </RouterLink>
+                      <span v-if="!field.ulid" class="tnum break-all text-sm font-medium text-ink">{{ field.value }}</span>
+                    </div>
+                    <div v-else class="tnum mt-2 break-all text-sm font-medium text-ink">{{ field.value }}</div>
                   </div>
                 </div>
               </div>
@@ -589,7 +644,10 @@ onMounted(() => load(1))
                       class="rounded-2xl bg-slate-50 p-4"
                     >
                       <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</div>
-                      <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ field.value }}</div>
+                      <div v-if="isUlidLike(field.value)" class="mt-2">
+                        <UlidChip :value="field.value" />
+                      </div>
+                      <div v-else class="tnum mt-2 break-all text-sm font-medium text-ink">{{ field.value }}</div>
                     </div>
                   </div>
                 </div>
@@ -608,15 +666,25 @@ onMounted(() => load(1))
                     {{ copy.actionsDescription }}
                   </p>
                 </div>
-                <button
-                  class="ui-btn ui-btn-danger w-full sm:w-auto"
-                  type="button"
-                  :disabled="!isBundlePurchase || Boolean(purging)"
-                  @click="showPurgeConfirm = true"
-                >
-                  <Trash2 class="h-4 w-4" />
-                  {{ copy.purgeAction }}
-                </button>
+                <section class="rounded-2xl border border-danger-200 bg-danger-50/40 p-4 md:p-5">
+                  <h3 class="flex items-center gap-2 text-sm font-semibold text-danger-600">
+                    <TriangleAlert class="h-4 w-4" />
+                    {{ t.common.dangerZone }}
+                  </h3>
+                  <div class="mt-3 flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+                    <p class="text-sm text-slate-600">{{ copy.confirmDescription }}</p>
+                    <button
+                      class="ui-btn ui-btn-danger shrink-0"
+                      type="button"
+                      :disabled="!isBundlePurchase || Boolean(purging)"
+                      :title="!isBundlePurchase ? t.common.reasonUnavailable : undefined"
+                      @click="showPurgeConfirm = true"
+                    >
+                      <Trash2 class="h-4 w-4" />
+                      {{ copy.purgeAction }}
+                    </button>
+                  </div>
+                </section>
               </div>
 
             </main>
@@ -635,7 +703,9 @@ onMounted(() => load(1))
             <p class="text-sm text-slate-600">{{ copy.confirmDescription }}</p>
             <div class="mt-4 rounded-2xl bg-slate-50 p-4">
               <div class="text-sm font-medium text-ink">{{ productName(selected) }}</div>
-              <div class="tnum mt-1 break-all text-xs text-slate-500">{{ bizRef(selected) }}</div>
+              <div class="mt-1.5">
+                <UlidChip :value="bizRef(selected)" />
+              </div>
             </div>
           </main>
           <div class="flex flex-col items-stretch justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row sm:items-center md:px-6">

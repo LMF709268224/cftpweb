@@ -1,6 +1,28 @@
 import type { AdminTranslations } from "./zh"
 
 export const en: AdminTranslations = {
+    common: {
+        moreActions: "More actions",
+        historyVersions: "Version history",
+        dangerZone: "Danger zone",
+        searchCandidate: "Search candidate name or email",
+        selectedCount: "Selected",
+        clearSelection: "Clear",
+        expand: "Expand",
+        collapse: "Collapse",
+        copied: "Copied",
+        noResults: "No results",
+        selectTypeFirst: "Select a type first",
+        viewFiles: "View files",
+        deprecatedMuted: "No longer in use",
+        todayTodos: "Today's queue",
+        progress: "Progress",
+        openLink: "Open",
+        reasonUnavailable: "Not available in current state",
+        unsaved: "Unsaved changes",
+        backToList: "Back to list",
+        advancedFilters: "More filters",
+    },
     layout: {
         systemName: "Management System",
         roleName: "Admin",

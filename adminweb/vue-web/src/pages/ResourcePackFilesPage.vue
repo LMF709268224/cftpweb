@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { FileText, Loader2, Plus, RefreshCw, Save, X, UploadCloud } from "lucide-vue-next"
+import { ChevronRight, Eye, FileText, Loader2, Plus, RefreshCw, Save, Trash2, UploadCloud, X } from "lucide-vue-next"
+import type { Component } from "vue"
 import { computed, onMounted, ref } from "vue"
+import { useRoute } from "vue-router"
 import { toast } from "vue-sonner"
+import RowMenu from "@/components/RowMenu.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -25,6 +29,7 @@ const previousTokens = ref<string[]>([])
 const currentPage = ref(1)
 const packFilter = ref("")
 let detailRequestId = 0
+const route = useRoute()
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.resourcePackFilesAdmin)
 
@@ -67,13 +72,6 @@ function displayValue(value: unknown) {
   return text || "-"
 }
 
-function packFieldText(id: unknown) {
-  const value = String(id || "")
-  if (!value) return copy.value.selectPack
-  const pack = packById(value)
-  return copy.value.ownerText(pack ? packTitle(pack) : copy.value.unknownPack, value)
-}
-
 function asRecordList(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
 }
@@ -101,12 +99,6 @@ function packTitle(pack: JsonRecord | null) {
 function packById(id: unknown) {
   const value = String(id || "")
   return packs.value.find((pack) => packId(pack) === value) || null
-}
-
-function ownerText(file: JsonRecord | null) {
-  const pack = packById(file?.pack_id)
-  const id = String(file?.pack_id || "-")
-  return copy.value.ownerText(packTitle(pack), id)
 }
 
 function fileTypeLabel(value: unknown) {
@@ -175,7 +167,7 @@ async function loadFileDetail(file: JsonRecord | null) {
 
 async function loadPacks() {
   const data = await apiClient<JsonRecord>("/api/lms/resource-packs?page_size=100")
-    total.value = Number(data.total) || 0
+  total.value = Number(data.total) || 0
   packs.value = asRecordList(data.packs || data.items)
 }
 
@@ -246,6 +238,20 @@ function requestDeleteFile(file: JsonRecord | null = selected.value) {
 
 function closeDeleteConfirm() {
   deleteConfirmOpen.value = false
+}
+
+type FileMenuItem = { key: string; label: string; icon?: Component; danger?: boolean; disabled?: boolean }
+
+function fileMenuItems(): FileMenuItem[] {
+  return [
+    { key: "detail", label: copy.value.viewDetails, icon: Eye },
+    { key: "delete", label: copy.value.deleteFile, icon: Trash2, danger: true, disabled: saving.value },
+  ]
+}
+
+function onFileMenu(key: string, file: JsonRecord) {
+  if (key === "detail") openFileDetail(file)
+  if (key === "delete") requestDeleteFile(file)
 }
 
 function startCreate() {
@@ -467,7 +473,11 @@ function nextPage() {
   void loadFiles()
 }
 
-onMounted(load)
+onMounted(() => {
+  const pack = String(route.query.pack || "")
+  if (pack) packFilter.value = pack
+  void load()
+})
 </script>
 
 <template>
@@ -516,7 +526,7 @@ onMounted(load)
         <div
           v-for="i in 5"
           :key="`sk-${i}`"
-          class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_72px_130px_280px] md:items-center md:gap-5 md:py-3.5"
+          class="grid gap-3 px-4 py-4 md:grid-cols-[minmax(0,1fr)_72px_130px_180px] md:items-center md:gap-5 md:py-3.5"
         >
           <div>
             <div class="skeleton h-4 w-2/5" />
@@ -537,29 +547,35 @@ onMounted(load)
       </div>
 
       <div v-else>
-        <div class="hidden grid-cols-[minmax(0,1fr)_72px_130px_280px] gap-5 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid">
+        <div class="hidden grid-cols-[minmax(0,1fr)_72px_130px_180px] gap-5 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid">
           <span>{{ copy.columns.file }}</span>
           <span class="text-center">{{ copy.columns.sort }}</span>
           <span class="text-center">{{ copy.columns.type }}</span>
-          <span class="text-center">{{ copy.columns.action }}</span>
+          <span class="text-right">{{ copy.columns.action }}</span>
         </div>
         <div class="divide-y divide-hairline">
           <div
             v-for="file in files"
             :key="fileId(file)"
-            class="ui-table-row grid w-full gap-3 px-4 py-4 text-left md:grid-cols-[minmax(0,1fr)_72px_130px_280px] md:items-center md:gap-5 md:py-3.5"
+            class="ui-table-row grid w-full cursor-pointer gap-3 px-4 py-4 text-left md:grid-cols-[minmax(0,1fr)_72px_130px_180px] md:items-center md:gap-5 md:py-3.5"
             :class="fileId(selected) === fileId(file) ? 'bg-primary-50/60' : ''"
+            role="button"
+            tabindex="0"
+            @click="openFileDetail(file)"
+            @keydown.enter.self.prevent="openFileDetail(file)"
+            @keydown.space.self.prevent="openFileDetail(file)"
           >
-            <button class="min-w-0 text-left" type="button" @click="openFileDetail(file)">
+            <div class="min-w-0">
               <div class="break-words text-sm font-medium text-ink md:truncate">{{ fileTitle(file) }}</div>
               <div class="mt-0.5 line-clamp-2 text-sm text-slate-500">{{ file.description || "-" }}</div>
               <div class="mt-2 flex flex-wrap items-center gap-2">
                 <span class="ui-badge max-w-full bg-primary-50 text-primary-700">
-                  <span class="truncate">{{ copy.ownerPrefix }}{{ ownerText(file) }}</span>
+                  <span class="truncate">{{ copy.ownerPrefix }}{{ packTitle(packById(file.pack_id)) }}</span>
                 </span>
+                <UlidChip :value="String(file.pack_id || '')" />
                 <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ copy.fields.version }}: {{ file.version || 0 }}</span>
               </div>
-            </button>
+            </div>
             <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 text-sm md:block md:border-0 md:pt-0 md:text-center">
               <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.sort }}</span>
               <span class="tnum text-slate-600">{{ file.sort_order || 0 }}</span>
@@ -568,16 +584,15 @@ onMounted(load)
               <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.type }}</span>
               <span class="ui-badge bg-slate-100 text-slate-600">{{ fileTypeLabel(file.file_type) }}</span>
             </div>
-            <div class="grid grid-cols-2 gap-2 border-t border-hairline pt-3 sm:flex sm:flex-wrap sm:items-center md:justify-center md:border-0 md:pt-0">
-              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openFileDetail(file)">
-                {{ copy.viewDetails }}
-              </button>
-              <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click="openFileEditor(file)">
-                {{ copy.editFile }}
-              </button>
-              <button class="ui-btn ui-btn-ghost ui-btn-sm text-red-600 hover:bg-red-50 hover:text-red-700" type="button" @click="requestDeleteFile(file)">
-                {{ copy.deleteFile }}
-              </button>
+            <div class="flex items-center justify-between gap-2 border-t border-hairline pt-3 md:justify-end md:border-0 md:pt-0">
+              <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.action }}</span>
+              <div class="flex items-center gap-2">
+                <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click.stop="openFileEditor(file)">
+                  {{ copy.editFile }}
+                </button>
+                <RowMenu :items="fileMenuItems()" @select="(key) => onFileMenu(key, file)" />
+                <ChevronRight class="hidden h-4 w-4 shrink-0 text-slate-300 md:block" />
+              </div>
             </div>
           </div>
         </div>
@@ -614,118 +629,181 @@ onMounted(load)
               <div class="rounded-[10px] bg-primary-50 p-4">
                 <div class="text-xs font-medium uppercase tracking-wider text-primary-700">{{ copy.ownerCardTitle }}</div>
                 <div class="mt-1 break-words text-sm font-semibold text-ink">{{ selectedPack ? packTitle(selectedPack) : copy.selectPack }}</div>
-                <div class="tnum mt-0.5 break-all text-xs text-primary-700">{{ form.pack_id || "-" }}</div>
+                <div class="mt-1.5"><UlidChip :value="form.pack_id" :truncate="false" /></div>
               </div>
 
-              <div class="mb-3 mt-6 text-sm font-semibold text-ink">{{ copy.sections.basic }}</div>
-              <div class="grid gap-4 md:grid-cols-2">
-                <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
-                  <span class="ui-label">{{ copy.fields.fileId }}</span>
-                  <div class="tnum readonly-field readonly-field--compact break-all">{{ displayValue(form.file_id) }}</div>
-                </div>
-                <label class="grid content-start gap-1.5">
-                  <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.pack }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field">{{ packFieldText(form.pack_id) }}</div>
-                  <select v-else v-model="form.pack_id" class="ui-input" :disabled="mode === 'edit'">
-                    <option value="">{{ copy.selectPack }}</option>
-                    <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
-                  </select>
-                </label>
-                <label class="grid content-start gap-1.5">
-                  <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.title) }}</div>
-                  <input v-else v-model="form.title" class="ui-input" :placeholder="copy.placeholders.title" />
-                </label>
-                <label class="grid content-start gap-1.5">
-                  <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.fileType }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact">{{ fileTypeLabel(form.file_type) }}</div>
-                  <select v-else v-model.number="form.file_type" class="ui-input">
-                    <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
-                  </select>
-                </label>
-                <label class="grid content-start gap-1.5 md:col-span-2">
-                  <span class="ui-label">{{ copy.fields.description }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--textarea">{{ displayValue(form.description) }}</div>
-                  <textarea v-else v-model="form.description" class="ui-textarea" :placeholder="copy.placeholders.description" />
-                </label>
-              </div>
-
-              <div class="mb-3 mt-6 border-t border-hairline pt-6 text-sm font-semibold text-ink">{{ copy.sections.fileThumbnail }}</div>
-              <div class="grid gap-4 md:grid-cols-2">
-                <label class="grid content-start gap-1.5">
-                  <span class="ui-label">{{ copy.fields.fileName }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field">{{ displayValue(form.file_name) }}</div>
-                  <input v-else v-model="form.file_name" class="ui-input" :placeholder="copy.placeholders.fileName" />
-                </label>
-                <label class="grid content-start gap-1.5" v-if="form.file_type !== 1">
-                  <span class="ui-label">{{ copy.fields.fileSize }}</span>
-                  <div v-if="mode === 'detail'" class="tnum readonly-field readonly-field--compact">{{ displayValue(form.file_size) }}</div>
-                  <input v-else v-model.number="form.file_size" class="tnum ui-input" type="number" min="0" />
-                </label>
-                <label class="grid content-start gap-1.5" v-if="form.file_type !== 1">
-                  <span class="ui-label">{{ copy.fields.fileObjectKey }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_object_key) }}</div>
-                  <div v-else class="flex flex-col gap-3 sm:flex-row">
-                    <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
-                    <input v-model="form.file_object_key" class="ui-input" :placeholder="copy.placeholders.fileObjectKey" />
-                    <button type="button" class="ui-btn ui-btn-secondary sm:shrink-0" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="fileInput?.click()">
-                      <Loader2 v-if="uploadingFile" class="h-4 w-4 animate-spin" />
-                      <UploadCloud v-else class="h-4 w-4 text-slate-400" />
-                      {{ uploadingFile ? (copy as any).uploading : (copy as any).uploadFile }}
-                    </button>
+              <template v-if="mode === 'detail'">
+                <div class="mb-3 mt-6 text-sm font-semibold text-ink">{{ copy.sections.basic }}</div>
+                <dl class="grid gap-4 md:grid-cols-2">
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.fileId }}</dt>
+                    <dd class="mt-1"><UlidChip :value="form.file_id" :truncate="false" /></dd>
                   </div>
-                </label>
-                <label class="grid content-start gap-1.5" v-if="form.file_type !== 1">
-                  <span class="ui-label">{{ copy.fields.fileHash }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.file_hash) }}</div>
-                  <input v-else v-model="form.file_hash" class="ui-input" :placeholder="copy.placeholders.fileHash" />
-                </label>
-                <label class="grid content-start gap-1.5">
-                  <span class="ui-label">{{ copy.fields.thumbnailObjectKey }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.thumbnail_object_key) }}</div>
-                  <div v-else class="flex flex-col gap-3 sm:flex-row">
-                    <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailFileUpload" />
-                    <input v-model="form.thumbnail_object_key" class="ui-input" :placeholder="copy.placeholders.thumbnailObjectKey" />
-                    <button type="button" class="ui-btn ui-btn-secondary sm:shrink-0" :disabled="uploadingThumbnail || !form.file_id" :title="!form.file_id ? 'Please save to get an ID first' : ''" @click="thumbnailFileInput?.click()">
-                      <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
-                      <UploadCloud v-else class="h-4 w-4 text-slate-400" />
-                      {{ uploadingThumbnail ? (copy as any).uploading : (copy as any).uploadFile }}
-                    </button>
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.fileType }}</dt>
+                    <dd class="mt-1"><span class="ui-badge bg-slate-100 text-slate-600">{{ fileTypeLabel(form.file_type) }}</span></dd>
                   </div>
-                </label>
-                <label class="grid content-start gap-1.5">
-                  <span class="ui-label">{{ copy.fields.thumbnailHash }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--long">{{ displayValue(form.thumbnail_file_hash) }}</div>
-                  <input v-else v-model="form.thumbnail_file_hash" class="ui-input" :placeholder="copy.placeholders.thumbnailHash" />
-                </label>
-              </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.title }}</dt>
+                    <dd class="mt-1 break-words text-sm text-ink">{{ displayValue(form.title) }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.fileName }}</dt>
+                    <dd class="mt-1 break-words text-sm text-slate-600">{{ displayValue(form.file_name) }}</dd>
+                  </div>
+                  <div class="min-w-0 md:col-span-2">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.description }}</dt>
+                    <dd class="mt-1 whitespace-pre-wrap break-words text-sm text-slate-600">{{ displayValue(form.description) }}</dd>
+                  </div>
+                </dl>
 
-              <div class="mb-3 mt-6 border-t border-hairline pt-6 text-sm font-semibold text-ink">{{ copy.sections.orderVersion }}</div>
-              <div class="grid gap-4 md:grid-cols-3">
-                <label class="grid content-start gap-1.5" v-if="form.file_type === 1">
-                  <span class="ui-label">{{ copy.fields.videoStreamUid }}</span>
-                  <div v-if="mode === 'detail'" class="readonly-field readonly-field--compact break-all">{{ displayValue(form.video_stream_uid) }}</div>
-                  <input v-else v-model="form.video_stream_uid" class="ui-input" :placeholder="copy.placeholders.videoStreamUid" />
-                </label>
-                <label class="grid content-start gap-1.5">
-                  <span class="ui-label">{{ copy.fields.sort }}</span>
-                  <div v-if="mode === 'detail'" class="tnum readonly-field readonly-field--compact">{{ displayValue(form.sort_order) }}</div>
-                  <input v-else v-model.number="form.sort_order" class="tnum ui-input" type="number" min="0" />
-                </label>
-                <label class="grid content-start gap-1.5">
-                  <span class="ui-label">{{ copy.fields.version }}</span>
-                  <div v-if="mode === 'detail'" class="tnum readonly-field readonly-field--compact">{{ displayValue(form.version) }}</div>
-                  <input v-else v-model.number="form.version" class="tnum ui-input" type="number" min="0" :disabled="mode === 'create'" />
-                </label>
-                <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
-                  <span class="ui-label">{{ copy.fields.createdAt }}</span>
-                  <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.created_at) || "-" }}</div>
+                <div class="mb-3 mt-6 border-t border-hairline pt-6 text-sm font-semibold text-ink">{{ copy.sections.fileThumbnail }}</div>
+                <dl class="grid gap-4 md:grid-cols-2">
+                  <div v-if="form.file_type !== 1" class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.fileSize }}</dt>
+                    <dd class="tnum mt-1 text-sm text-slate-600">{{ displayValue(form.file_size) }}</dd>
+                  </div>
+                  <div v-if="form.file_type !== 1" class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.fileObjectKey }}</dt>
+                    <dd class="mt-1"><UlidChip :value="form.file_object_key" :truncate="false" /></dd>
+                  </div>
+                  <div v-if="form.file_type !== 1" class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.fileHash }}</dt>
+                    <dd class="mt-1"><UlidChip :value="form.file_hash" :truncate="false" /></dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.thumbnailObjectKey }}</dt>
+                    <dd class="mt-1"><UlidChip :value="form.thumbnail_object_key" :truncate="false" /></dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.thumbnailHash }}</dt>
+                    <dd class="mt-1"><UlidChip :value="form.thumbnail_file_hash" :truncate="false" /></dd>
+                  </div>
+                </dl>
+
+                <div class="mb-3 mt-6 border-t border-hairline pt-6 text-sm font-semibold text-ink">{{ copy.sections.orderVersion }}</div>
+                <dl class="grid gap-4 md:grid-cols-3">
+                  <div v-if="form.file_type === 1" class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.videoStreamUid }}</dt>
+                    <dd class="mt-1"><UlidChip :value="form.video_stream_uid" :truncate="false" /></dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.sort }}</dt>
+                    <dd class="tnum mt-1 text-sm text-slate-600">{{ displayValue(form.sort_order) }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.version }}</dt>
+                    <dd class="tnum mt-1 text-sm text-slate-600">{{ displayValue(form.version) }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.createdAt }}</dt>
+                    <dd class="tnum mt-1 text-sm text-slate-600">{{ formatDate(form.created_at) || "-" }}</dd>
+                  </div>
+                  <div class="min-w-0">
+                    <dt class="text-xs font-medium text-slate-400">{{ copy.fields.updatedAt }}</dt>
+                    <dd class="tnum mt-1 text-sm text-slate-600">{{ formatDate(form.updated_at) || "-" }}</dd>
+                  </div>
+                </dl>
+              </template>
+
+              <template v-else>
+                <div class="mb-3 mt-6 text-sm font-semibold text-ink">{{ copy.sections.basic }}</div>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
+                    <span class="ui-label">{{ copy.fields.fileId }}</span>
+                    <div class="flex min-h-10 items-center"><UlidChip :value="form.file_id" :truncate="false" /></div>
+                  </div>
+                  <label class="grid content-start gap-1.5">
+                    <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.pack }}</span>
+                    <select v-model="form.pack_id" class="ui-input" :disabled="mode === 'edit'">
+                      <option value="">{{ copy.selectPack }}</option>
+                      <option v-for="pack in packs" :key="packId(pack)" :value="packId(pack)">{{ copy.ownerText(packTitle(pack), packId(pack)) }}</option>
+                    </select>
+                  </label>
+                  <label class="grid content-start gap-1.5">
+                    <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.title }}</span>
+                    <input v-model="form.title" class="ui-input" :placeholder="copy.placeholders.title" />
+                  </label>
+                  <label class="grid content-start gap-1.5">
+                    <span class="ui-label"><span class="mr-1 text-red-500" aria-hidden="true">*</span>{{ copy.fields.fileType }}</span>
+                    <select v-model.number="form.file_type" class="ui-input">
+                      <option v-for="option in fileTypeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+                    </select>
+                  </label>
+                  <label class="grid content-start gap-1.5 md:col-span-2">
+                    <span class="ui-label">{{ copy.fields.description }}</span>
+                    <textarea v-model="form.description" class="ui-textarea" :placeholder="copy.placeholders.description" />
+                  </label>
                 </div>
-                <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
-                  <span class="ui-label">{{ copy.fields.updatedAt }}</span>
-                  <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.updated_at) || "-" }}</div>
+
+                <div class="mb-3 mt-6 border-t border-hairline pt-6 text-sm font-semibold text-ink">{{ copy.sections.fileThumbnail }}</div>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <label class="grid content-start gap-1.5">
+                    <span class="ui-label">{{ copy.fields.fileName }}</span>
+                    <input v-model="form.file_name" class="ui-input" :placeholder="copy.placeholders.fileName" />
+                  </label>
+                  <label class="grid content-start gap-1.5" v-if="form.file_type !== 1">
+                    <span class="ui-label">{{ copy.fields.fileSize }}</span>
+                    <input v-model.number="form.file_size" class="tnum ui-input" type="number" min="0" />
+                  </label>
+                  <label class="grid content-start gap-1.5" v-if="form.file_type !== 1">
+                    <span class="ui-label">{{ copy.fields.fileObjectKey }}</span>
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                      <input type="file" ref="fileInput" class="hidden" @change="handleFileUpload" />
+                      <input v-model="form.file_object_key" class="ui-input" :placeholder="copy.placeholders.fileObjectKey" />
+                      <button type="button" class="ui-btn ui-btn-secondary sm:shrink-0" :disabled="uploadingFile || !form.file_id" :title="!form.file_id ? copy.toasts.fileSaveFirst : ''" @click="fileInput?.click()">
+                        <Loader2 v-if="uploadingFile" class="h-4 w-4 animate-spin" />
+                        <UploadCloud v-else class="h-4 w-4 text-slate-400" />
+                        {{ uploadingFile ? (copy as any).uploading : (copy as any).uploadFile }}
+                      </button>
+                    </div>
+                  </label>
+                  <label class="grid content-start gap-1.5" v-if="form.file_type !== 1">
+                    <span class="ui-label">{{ copy.fields.fileHash }}</span>
+                    <input v-model="form.file_hash" class="ui-input" :placeholder="copy.placeholders.fileHash" />
+                  </label>
+                  <label class="grid content-start gap-1.5">
+                    <span class="ui-label">{{ copy.fields.thumbnailObjectKey }}</span>
+                    <div class="flex flex-col gap-3 sm:flex-row">
+                      <input type="file" ref="thumbnailFileInput" class="hidden" accept="image/*" @change="handleThumbnailFileUpload" />
+                      <input v-model="form.thumbnail_object_key" class="ui-input" :placeholder="copy.placeholders.thumbnailObjectKey" />
+                      <button type="button" class="ui-btn ui-btn-secondary sm:shrink-0" :disabled="uploadingThumbnail || !form.file_id" :title="!form.file_id ? copy.toasts.fileSaveFirst : ''" @click="thumbnailFileInput?.click()">
+                        <Loader2 v-if="uploadingThumbnail" class="h-4 w-4 animate-spin" />
+                        <UploadCloud v-else class="h-4 w-4 text-slate-400" />
+                        {{ uploadingThumbnail ? (copy as any).uploading : (copy as any).uploadFile }}
+                      </button>
+                    </div>
+                  </label>
+                  <label class="grid content-start gap-1.5">
+                    <span class="ui-label">{{ copy.fields.thumbnailHash }}</span>
+                    <input v-model="form.thumbnail_file_hash" class="ui-input" :placeholder="copy.placeholders.thumbnailHash" />
+                  </label>
                 </div>
-              </div>
+
+                <div class="mb-3 mt-6 border-t border-hairline pt-6 text-sm font-semibold text-ink">{{ copy.sections.orderVersion }}</div>
+                <div class="grid gap-4 md:grid-cols-3">
+                  <label class="grid content-start gap-1.5" v-if="form.file_type === 1">
+                    <span class="ui-label">{{ copy.fields.videoStreamUid }}</span>
+                    <input v-model="form.video_stream_uid" class="ui-input" :placeholder="copy.placeholders.videoStreamUid" />
+                  </label>
+                  <label class="grid content-start gap-1.5">
+                    <span class="ui-label">{{ copy.fields.sort }}</span>
+                    <input v-model.number="form.sort_order" class="tnum ui-input" type="number" min="0" />
+                  </label>
+                  <label class="grid content-start gap-1.5">
+                    <span class="ui-label">{{ copy.fields.version }}</span>
+                    <input v-model.number="form.version" class="tnum ui-input" type="number" min="0" :disabled="mode === 'create'" />
+                  </label>
+                  <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
+                    <span class="ui-label">{{ copy.fields.createdAt }}</span>
+                    <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.created_at) || "-" }}</div>
+                  </div>
+                  <div v-if="mode !== 'create'" class="grid content-start gap-1.5">
+                    <span class="ui-label">{{ copy.fields.updatedAt }}</span>
+                    <div class="tnum readonly-field readonly-field--compact">{{ formatDate(form.updated_at) || "-" }}</div>
+                  </div>
+                </div>
+              </template>
             </div>
 
             <div v-if="mode !== 'detail'" class="flex shrink-0 flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">
@@ -751,7 +829,7 @@ onMounted(load)
               <p class="text-sm text-slate-600">{{ copy.deleteConfirmDescription }}</p>
               <div class="mt-4 rounded-[10px] bg-slate-50 p-4">
                 <div class="break-words text-sm font-semibold text-ink">{{ fileTitle(selected) }}</div>
-                <div class="tnum mt-1 break-all text-xs text-slate-400">{{ fileId(selected) }}</div>
+                <div class="mt-1.5"><UlidChip :value="fileId(selected)" :truncate="false" /></div>
               </div>
             </div>
             <div class="flex flex-col justify-end gap-3 border-t border-hairline px-4 py-4 sm:flex-row md:px-6">

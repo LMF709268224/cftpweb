@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { FileText, List, Loader2, MessageSquare, Plus, RefreshCw, Send, Users, X } from "lucide-vue-next"
+import { ChevronRight, FileText, List, Loader2, MessageSquare, Plus, RefreshCw, Search, Send, Users, X } from "lucide-vue-next"
 import { computed, nextTick, onMounted, ref, watch } from "vue"
 import { toast } from "vue-sonner"
 import ReadonlyField from "@/components/ReadonlyField.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
 import { useAdminLanguage } from "@/lib/language"
-import { pickFirst } from "@/lib/status"
+import { badgeClass, pickFirst } from "@/lib/status"
 
 type TabKey = "send" | "sent" | "templates"
 
@@ -58,6 +59,23 @@ const templateTitleInputRef = ref<HTMLInputElement | null>(null)
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.messagesAdmin)
 
+const recipientSearch = ref("")
+
+const filteredUsers = computed(() => {
+  const keyword = recipientSearch.value.trim().toLowerCase()
+  if (!keyword) return users.value
+  return users.value.filter((user) => {
+    const haystack = [userLabel(user), userId(user), String(user.email || ""), String(user.phone || "")]
+    return haystack.some((text) => text.toLowerCase().includes(keyword))
+  })
+})
+
+const sentStatusChips = computed(() => [
+  { value: "", label: copy.value.sent.allStatus },
+  { value: "1", label: copy.value.sent.unread },
+  { value: "2", label: copy.value.sent.read },
+])
+
 const tabs = computed(() => [
   { key: "send" as const, label: copy.value.tabs.send, icon: Send, count: selectedUserIds.value.length },
   { key: "sent" as const, label: copy.value.tabs.sent, icon: List, count: total.value },
@@ -84,12 +102,33 @@ function templateFieldValue(key: string, value: unknown) {
   return value
 }
 
+function isMonoFieldKey(key: string) {
+  return key === "id" || key === "path" || /(_id|_ulid|_path|_schema)$/.test(key)
+}
+
+function fieldIsMono(key: string, value: unknown) {
+  return Array.isArray(value) || (!!value && typeof value === "object") || isMonoFieldKey(key)
+}
+
 function userId(user: JsonRecord) {
   return String(pickFirst(user, ["id", "user_id", "candidate_ulid", "ulid"]) || "")
 }
 
 function userLabel(user: JsonRecord) {
   return String(pickFirst(user, ["name", "nickname", "email", "phone", "id"]) || userId(user) || copy.value.defaults.user)
+}
+
+function userInitial(user: JsonRecord) {
+  return userLabel(user).trim().charAt(0).toUpperCase() || "-"
+}
+
+function selectAllVisible() {
+  const merged = new Set(selectedUserIds.value)
+  for (const user of filteredUsers.value) {
+    const id = userId(user)
+    if (id) merged.add(id)
+  }
+  selectedUserIds.value = Array.from(merged)
 }
 
 function pathOf(template: JsonRecord | null | undefined) {
@@ -102,6 +141,21 @@ function titleOf(template: JsonRecord | null | undefined) {
 
 function messageId(message: JsonRecord | null | undefined) {
   return String(pickFirst(message || {}, ["message_id", "msg_id", "id"]) || "")
+}
+
+function messageUserId(message: JsonRecord | null | undefined) {
+  return String(pickFirst(message || {}, ["user_id", "user_ulid"]) || "")
+}
+
+function messageStatusValue(message: JsonRecord | null | undefined) {
+  const value = pickFirst(message || {}, ["status", "raw_status"])
+  return value === undefined ? "" : String(value)
+}
+
+function messageStatusLabel(status: string) {
+  if (status === "1") return copy.value.sent.unread
+  if (status === "2") return copy.value.sent.read
+  return status || "-"
 }
 
 function extractPayloadTemplate(...texts: unknown[]) {
@@ -462,31 +516,69 @@ onMounted(async () => {
       <div class="border-b border-hairline px-4 py-4 md:px-6 md:py-5">
         <h2 class="text-base font-semibold text-ink">{{ copy.send.title }}</h2>
       </div>
-      <div class="grid gap-6 p-4 md:p-6 lg:grid-cols-[1fr_1fr]">
+      <div class="grid gap-6 p-4 md:p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <!-- Recipient picker -->
         <div>
           <div class="mb-1.5 flex items-center justify-between gap-3">
-            <label class="ui-label">{{ copy.send.recipients }}</label>
+            <span class="ui-label">{{ copy.send.recipients }}</span>
             <div class="flex gap-4 text-sm">
-              <button class="font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="selectedUserIds = users.map(userId).filter(Boolean)">{{ copy.send.selectAll }}</button>
+              <button class="font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="selectAllVisible">{{ copy.send.selectAll }}</button>
               <button class="font-medium text-slate-500 transition-colors hover:text-slate-700" type="button" @click="selectedUserIds = []">{{ copy.send.clear }}</button>
             </div>
           </div>
-          <div class="max-h-[360px] overflow-y-auto rounded-[10px] border border-slate-200 p-2 md:max-h-[520px]">
-            <label v-for="user in users" :key="userId(user)" class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-slate-50">
-              <input v-model="selectedUserIds" class="h-4 w-4 accent-primary-600" type="checkbox" :value="userId(user)" />
-              <span class="text-sm font-medium text-ink">{{ userLabel(user) }}</span>
-              <span class="tnum break-all text-xs text-slate-400">{{ userId(user) }}</span>
-            </label>
-            <div v-if="!users.length" class="ui-empty">
+          <div class="max-h-[400px] overflow-y-auto rounded-[10px] border border-slate-200 lg:max-h-[560px]">
+            <div class="sticky top-0 z-10 border-b border-hairline bg-white/95 p-2.5 backdrop-blur">
+              <div class="relative">
+                <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input v-model="recipientSearch" class="ui-input pl-9 pr-10" :placeholder="t.common.searchCandidate" :aria-label="t.common.searchCandidate" />
+                <button
+                  v-if="recipientSearch"
+                  class="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                  type="button"
+                  :aria-label="copy.send.clear"
+                  :title="copy.send.clear"
+                  @click="recipientSearch = ''"
+                >
+                  <X class="h-4 w-4" />
+                </button>
+              </div>
+              <div class="mt-2 flex items-center justify-between gap-3 px-0.5">
+                <span class="tnum ui-badge bg-primary-50 text-primary-700">{{ copy.send.selectedUsers(selectedUserIds.length) }}</span>
+                <span class="tnum text-xs text-slate-400">{{ filteredUsers.length }}/{{ users.length }}</span>
+              </div>
+            </div>
+            <div v-if="usersLoading" class="space-y-2 p-2">
+              <div v-for="i in 6" :key="`user-sk-${i}`" class="skeleton h-10 w-full" />
+            </div>
+            <div v-else-if="filteredUsers.length" class="p-2">
+              <label
+                v-for="user in filteredUsers"
+                :key="userId(user)"
+                class="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 transition-colors"
+                :class="selectedUserIds.includes(userId(user)) ? 'bg-primary-50/60' : 'hover:bg-slate-50'"
+              >
+                <input v-model="selectedUserIds" class="h-4 w-4 shrink-0 accent-primary-600" type="checkbox" :value="userId(user)" />
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-50 text-xs font-medium text-primary-700" aria-hidden="true">{{ userInitial(user) }}</span>
+                <span class="min-w-0 flex-1 truncate text-sm font-medium text-ink">{{ userLabel(user) }}</span>
+                <UlidChip :value="userId(user)" />
+              </label>
+            </div>
+            <div v-else-if="users.length" class="ui-empty">
+              <div class="ui-empty-icon">
+                <Search class="h-6 w-6" />
+              </div>
+              <p class="ui-empty-title">{{ t.common.noResults }}</p>
+            </div>
+            <div v-else class="ui-empty">
               <div class="ui-empty-icon">
                 <Users class="h-6 w-6" />
               </div>
               <p class="ui-empty-title">{{ copy.send.noUsers }}</p>
             </div>
           </div>
-          <p class="tnum mt-2 text-sm text-slate-500">{{ copy.send.selectedUsers(selectedUserIds.length) }}</p>
         </div>
 
+        <!-- Compose -->
         <div class="space-y-4">
           <label class="grid gap-1.5">
             <span class="ui-label">{{ copy.send.template }}</span>
@@ -514,11 +606,19 @@ onMounted(async () => {
             <textarea v-model="payload" class="min-h-52 w-full rounded-[10px] border border-slate-200 bg-white p-3 font-mono text-sm text-slate-900 transition-colors placeholder:text-slate-400 focus:border-primary-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10" />
           </label>
 
-          <button class="ui-btn ui-btn-primary w-full sm:w-auto" :disabled="sending" type="button" @click="sendMessage">
-            <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
-            <Send v-else class="h-4 w-4" />
-            {{ sending ? copy.send.sending : copy.send.sendButton }}
-          </button>
+          <span class="inline-flex w-full sm:w-auto" :title="!selectedUserIds.length ? copy.toasts.recipientsRequired : undefined">
+            <button
+              class="ui-btn ui-btn-primary w-full"
+              :disabled="sending || !selectedUserIds.length"
+              :aria-label="!selectedUserIds.length ? copy.toasts.recipientsRequired : undefined"
+              type="button"
+              @click="sendMessage"
+            >
+              <Loader2 v-if="sending" class="h-4 w-4 animate-spin" />
+              <Send v-else class="h-4 w-4" />
+              {{ sending ? copy.send.sending : copy.send.sendButton }}
+            </button>
+          </span>
         </div>
       </div>
     </section>
@@ -529,26 +629,38 @@ onMounted(async () => {
         <div class="min-w-0">
           <h2 class="text-base font-semibold text-ink">{{ copy.sent.title }}</h2>
         </div>
-        <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
-          <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.sent.totalText(total) }}</span>
-          <select v-model="statusFilter" class="ui-input min-w-0 flex-1 sm:w-44 sm:flex-none">
-            <option value="">{{ copy.sent.allStatus }}</option>
-            <option value="1">{{ copy.sent.unread }}</option>
-            <option value="2">{{ copy.sent.read }}</option>
-          </select>
-        </div>
+        <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.sent.totalText(total) }}</span>
       </div>
-      <div class="hidden grid-cols-[minmax(0,1fr)_180px_112px] gap-5 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid">
+      <div class="flex flex-wrap items-center gap-2 border-b border-hairline px-4 py-3 md:px-6">
+        <button
+          v-for="chip in sentStatusChips"
+          :key="`msg-status-${chip.value}`"
+          type="button"
+          class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+          :class="statusFilter === chip.value
+            ? 'bg-primary-600 text-white shadow-sm'
+            : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+          :aria-pressed="statusFilter === chip.value"
+          @click="statusFilter = chip.value"
+        >
+          {{ chip.label }}
+        </button>
+      </div>
+      <div class="hidden grid-cols-[minmax(0,1fr)_170px_110px_170px_120px] gap-5 border-b border-edge bg-slate-50/60 px-4 py-3 text-xs font-medium uppercase tracking-wider text-slate-400 md:grid">
         <span>{{ copy.sent.columns.message }}</span>
+        <span>{{ copy.sent.columns.user }}</span>
+        <span class="text-center">{{ copy.sent.columns.status }}</span>
         <span class="text-right">{{ copy.sent.columns.time }}</span>
         <span class="text-right">{{ copy.sent.columns.action }}</span>
       </div>
       <div v-if="messagesLoading" class="divide-y divide-hairline">
-        <div v-for="i in 5" :key="`msg-sk-${i}`" class="px-4 py-3.5 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:items-center md:gap-5">
+        <div v-for="i in 5" :key="`msg-sk-${i}`" class="px-4 py-3.5 md:grid md:grid-cols-[minmax(0,1fr)_170px_110px_170px_120px] md:items-center md:gap-5">
           <div>
             <div class="skeleton h-4 w-2/5" />
             <div class="skeleton mt-2 h-3 w-3/5" />
           </div>
+          <div class="skeleton mt-3 h-4 w-24 md:mt-0" />
+          <div class="skeleton mt-3 h-5 w-14 rounded-full md:mt-0 md:justify-self-center" />
           <div class="skeleton mt-3 h-4 w-24 md:mt-0 md:justify-self-end" />
           <div class="skeleton mt-3 h-4 w-16 md:mt-0 md:justify-self-end" />
         </div>
@@ -557,30 +669,37 @@ onMounted(async () => {
         <div
           v-for="message in messages"
           :key="messageId(message)"
-          class="ui-table-row flex cursor-pointer flex-col px-4 py-4 md:grid md:grid-cols-[minmax(0,1fr)_180px_112px] md:items-center md:gap-5 md:py-3.5"
+          class="ui-table-row flex cursor-pointer flex-col px-4 py-4 md:grid md:grid-cols-[minmax(0,1fr)_170px_110px_170px_120px] md:items-center md:gap-5 md:py-3.5"
           :class="messageId(selectedMessage) === messageId(message) ? 'bg-primary-50/60' : ''"
           role="button"
           tabindex="0"
+          :aria-label="copy.sent.viewDetails"
           @click="openMessage(message)"
-          @keydown.enter.prevent="openMessage(message)"
-          @keydown.space.prevent="openMessage(message)"
+          @keydown.enter.self.prevent="openMessage(message)"
+          @keydown.space.self.prevent="openMessage(message)"
         >
           <div class="min-w-0">
             <div class="break-words text-sm font-medium text-ink md:truncate">{{ pickFirst(message, ["title", "subject", "template_path", "message_id"]) || copy.defaults.message }}</div>
-            <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ copy.sent.idPrefix }}{{ messageId(message) || "-" }}</div>
+            <div class="mt-1"><UlidChip :value="messageId(message)" /></div>
           </div>
-          <div class="mt-3 flex items-center justify-between gap-4 border-t border-hairline pt-2.5 md:mt-0 md:block md:border-0 md:pt-0 md:text-right">
+          <div class="mt-3 flex min-w-0 items-center justify-between gap-4 border-t border-hairline pt-2.5 md:mt-0 md:block md:border-0 md:pt-0">
+            <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.sent.columns.user }}</span>
+            <UlidChip :value="messageUserId(message)" />
+          </div>
+          <div class="mt-2.5 flex items-center justify-between gap-4 border-t border-hairline pt-2.5 md:mt-0 md:block md:border-0 md:pt-0 md:text-center">
+            <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.sent.columns.status }}</span>
+            <span v-if="messageStatusValue(message)" class="ui-badge" :class="badgeClass(messageStatusValue(message))">{{ messageStatusLabel(messageStatusValue(message)) }}</span>
+            <span v-else class="text-sm text-slate-400">-</span>
+          </div>
+          <div class="mt-2.5 flex items-center justify-between gap-4 border-t border-hairline pt-2.5 md:mt-0 md:block md:border-0 md:pt-0 md:text-right">
             <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.sent.columns.time }}</span>
             <span class="tnum text-sm text-slate-600">{{ formatDate(String(pickFirst(message, ["created_at", "sent_at", "updated_at"]) || "")) }}</span>
           </div>
-          <div class="mt-3 flex justify-end md:mt-0 md:block md:text-right">
-            <button
-              class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600"
-              type="button"
-              @click.stop="openMessage(message)"
-            >
+          <div class="mt-3 flex justify-end md:mt-0">
+            <span class="inline-flex items-center gap-1 text-sm font-medium text-primary-700 transition-colors hover:text-primary-600">
               {{ copy.sent.viewDetails }}
-            </button>
+              <ChevronRight class="h-4 w-4" />
+            </span>
           </div>
         </div>
       </div>
@@ -634,12 +753,18 @@ onMounted(async () => {
         <div
           v-for="template in templates"
           :key="pathOf(template)"
-          class="ui-table-row flex flex-col px-4 py-4 md:grid md:grid-cols-[minmax(0,1fr)_140px_180px_160px] md:items-center md:gap-5 md:py-3.5"
+          class="ui-table-row flex cursor-pointer flex-col px-4 py-4 md:grid md:grid-cols-[minmax(0,1fr)_140px_180px_160px] md:items-center md:gap-5 md:py-3.5"
           :class="pathOf(selectedTemplate) === pathOf(template) ? 'bg-primary-50/60' : ''"
+          role="button"
+          tabindex="0"
+          :aria-label="copy.templates.viewDetails"
+          @click="openTemplateDetail(template)"
+          @keydown.enter.self.prevent="openTemplateDetail(template)"
+          @keydown.space.self.prevent="openTemplateDetail(template)"
         >
           <div class="min-w-0">
             <div class="break-words text-sm font-medium text-ink md:truncate">{{ titleOf(template) }}</div>
-            <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ pathOf(template) }}</div>
+            <div class="mt-1"><UlidChip :value="pathOf(template)" :truncate="false" /></div>
             <div v-if="template.description" class="mt-1 break-words text-xs text-slate-400 md:truncate">{{ template.description }}</div>
           </div>
           <div class="mt-3 flex items-center justify-between gap-4 border-t border-hairline pt-2.5 md:mt-0 md:block md:border-0 md:pt-0 md:text-center">
@@ -650,9 +775,9 @@ onMounted(async () => {
             <span class="text-xs font-medium text-slate-400 md:hidden">{{ copy.templates.columns.updatedAt }}</span>
             <span class="tnum text-sm text-slate-600">{{ formatDate(String(pickFirst(template, ["updated_at", "created_at"]) || "")) }}</span>
           </div>
-          <div class="mt-3 flex items-center justify-end gap-4 md:mt-0">
-            <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="openTemplateDetail(template)">{{ copy.templates.viewDetails }}</button>
-            <button class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600" type="button" @click="startTemplateEdit(template)">{{ copy.templates.edit }}</button>
+          <div class="mt-3 flex items-center justify-end gap-2 md:mt-0">
+            <button class="ui-btn ui-btn-secondary ui-btn-sm" type="button" @click.stop="startTemplateEdit(template)">{{ copy.templates.edit }}</button>
+            <ChevronRight class="h-4 w-4 shrink-0 text-slate-400" />
           </div>
         </div>
       </div>
@@ -697,7 +822,7 @@ onMounted(async () => {
                   :key="key"
                   :label="messageFieldLabel(String(key))"
                   :value="value"
-                  :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
+                  :mono="fieldIsMono(String(key), value)"
                   :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
                 />
               </div>
@@ -734,7 +859,7 @@ onMounted(async () => {
                   :key="key"
                   :label="templateFieldLabel(String(key))"
                   :value="templateFieldValue(String(key), value)"
-                  :mono="Array.isArray(value) || (!!value && typeof value === 'object')"
+                  :mono="fieldIsMono(String(key), value)"
                   :max-height="Array.isArray(value) || (!!value && typeof value === 'object') ? '180px' : undefined"
                 />
               </div>

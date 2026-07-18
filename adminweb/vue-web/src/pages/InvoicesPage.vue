@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { Receipt, RefreshCw, X } from "lucide-vue-next"
+import { ChevronRight, ExternalLink, Receipt, RefreshCw, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, type JsonRecord } from "@/lib/display"
@@ -41,7 +42,21 @@ function invoiceId(invoice: JsonRecord | null | undefined) {
 }
 
 function orderId(invoice: JsonRecord | null | undefined) {
-  return String(pickFirst(invoice || {}, ["order_id", "order_ulid"]) || "-")
+  return String(pickFirst(invoice || {}, ["order_id", "order_ulid"]) || "")
+}
+
+const ULID_LIKE = /^[0-9A-HJKMNP-TV-Z]{26}$/i
+
+function isUlidLike(value: unknown) {
+  return ULID_LIKE.test(String(value ?? "").trim())
+}
+
+function isIdValue(key: string, value: unknown) {
+  return /(^|_)(id|ulid)$/i.test(key) || isUlidLike(value)
+}
+
+function isUrlValue(value: unknown) {
+  return typeof value === "string" && /^https?:\/\//i.test(value.trim())
 }
 
 function amountText(invoice: JsonRecord | null | undefined) {
@@ -90,22 +105,12 @@ async function load(targetPage = page.value) {
     const params = new URLSearchParams({ page_size: String(pageSize) })
 
     let cursor = ""
-
     if (targetPage > lastPage.value) {
-
       cursor = nextCursor.value
-
     } else if (targetPage < lastPage.value) {
-
       cursor = prevCursor.value
-
-
     }
-
-    
-
     if (cursor) params.set("cursor", cursor)
-
 
     const data = await apiClient<JsonRecord>(`/api/mall/invoices?${params}`)
     const list = Array.isArray(data.invoices) ? data.invoices : []
@@ -114,8 +119,7 @@ async function load(targetPage = page.value) {
     total.value = Number(data.total || invoices.value.length) || 0
     const isBackward = page.value < lastPage.value
     hasMore.value = isBackward ? true : Boolean(data.has_more)
-    lastPage.value = page.value
-nextCursor.value = String(data.next_cursor || "")
+    nextCursor.value = String(data.next_cursor || "")
     prevCursor.value = String(data?.prev_cursor || "")
 
     lastPage.value = targetPage
@@ -206,8 +210,13 @@ onMounted(() => load(1))
           @keydown.space.prevent="openInvoice(invoice)"
         >
           <div class="min-w-0">
-            <div class="tnum break-all text-sm font-medium text-ink md:truncate">{{ invoiceId(invoice) || "-" }}</div>
-            <div class="tnum mt-1 break-all text-xs text-slate-400">{{ copy.orderPrefix }}{{ orderId(invoice) }}</div>
+            <div class="flex flex-wrap items-center">
+              <UlidChip :value="invoiceId(invoice)" />
+            </div>
+            <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-slate-400">
+              <span>{{ copy.orderPrefix }}</span>
+              <UlidChip :value="orderId(invoice)" />
+            </div>
           </div>
           <div class="flex items-center justify-between gap-4 border-t border-hairline pt-3 md:block md:border-0 md:pt-0 md:text-right">
             <span class="shrink-0 text-xs font-medium text-slate-400 md:hidden">{{ copy.columns.amount }}</span>
@@ -223,11 +232,12 @@ onMounted(() => load(1))
           </div>
           <div class="border-t border-hairline pt-3 text-right md:border-0 md:pt-0">
             <button
-              class="inline-flex w-full items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50 md:w-auto md:border-0 md:bg-transparent md:p-0 md:hover:bg-transparent md:hover:text-primary-600"
+              class="inline-flex w-full items-center justify-center gap-1 rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-primary-700 transition-colors hover:bg-primary-50 md:w-auto md:border-0 md:bg-transparent md:p-0 md:hover:bg-transparent md:hover:text-primary-600"
               type="button"
               @click.stop="openInvoice(invoice)"
             >
               {{ copy.viewDetails }}
+              <ChevronRight class="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -254,7 +264,9 @@ onMounted(() => load(1))
             <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
               <div class="min-w-0">
                 <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
-                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ invoiceId(selected) || "-" }}</p>
+                <div class="mt-1">
+                  <UlidChip :value="invoiceId(selected)" />
+                </div>
               </div>
               <button
                 class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
@@ -269,7 +281,9 @@ onMounted(() => load(1))
               <div class="grid gap-4 md:grid-cols-3">
                 <div class="rounded-2xl bg-slate-50 p-4">
                   <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.order }}</div>
-                  <div class="tnum mt-2 break-all text-sm font-medium text-ink">{{ orderId(selected) }}</div>
+                  <div class="mt-2">
+                    <UlidChip :value="orderId(selected)" />
+                  </div>
                 </div>
                 <div class="rounded-2xl bg-slate-50 p-4">
                   <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ copy.labels.amount }}</div>
@@ -289,6 +303,20 @@ onMounted(() => load(1))
                     v-if="isStructuredValue(field.value)"
                     class="tnum max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-slate-50 px-4 py-3 font-mono text-xs leading-5 text-slate-700"
                   >{{ jsonText(field.value) }}</pre>
+                  <div v-else-if="isUrlValue(field.value)" class="rounded-[10px] bg-slate-50 px-4 py-3">
+                    <a
+                      :href="String(field.value)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="tnum inline-flex max-w-full items-center gap-1 text-sm leading-5 text-slate-700 underline decoration-slate-300 decoration-dashed underline-offset-4 transition-colors hover:text-primary-700 hover:decoration-primary-400"
+                    >
+                      <span class="break-all">{{ detailFieldText(field.displayValue) }}</span>
+                      <ExternalLink class="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                    </a>
+                  </div>
+                  <div v-else-if="isIdValue(field.key, field.value)" class="rounded-[10px] bg-slate-50 px-4 py-3">
+                    <UlidChip :value="String(field.value ?? '')" />
+                  </div>
                   <div v-else class="tnum break-words rounded-[10px] bg-slate-50 px-4 py-3 text-sm leading-5 text-slate-700">
                     {{ detailFieldText(field.displayValue) }}
                   </div>

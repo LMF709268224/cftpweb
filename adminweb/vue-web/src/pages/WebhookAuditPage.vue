@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Loader2, RefreshCw, RotateCcw, Search, Webho
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
 import JsonPreview from "@/components/JsonPreview.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
@@ -37,13 +38,27 @@ const summaryFields = computed(() => {
   return [
     { label: copy.value.summaryLabels.meaning, value: eventTitle(record) },
     { label: copy.value.summaryLabels.status, value: statusText(messageStatus(record)) },
-    { label: copy.value.summaryLabels.confirmationNumber, value: fieldText(record, ["confirmation_number"]) },
-    { label: copy.value.summaryLabels.examId, value: fieldText(record, ["exam_ulid", "exam_id"]) },
+    { label: copy.value.summaryLabels.confirmationNumber, value: fieldText(record, ["confirmation_number"]), chip: true },
+    { label: copy.value.summaryLabels.examId, value: fieldText(record, ["exam_ulid", "exam_id"]), chip: true },
     { label: copy.value.summaryLabels.eventTime, value: formatDate(fieldText(record, ["event_timestamp"])) || "-" },
     { label: copy.value.summaryLabels.processedTime, value: formatDate(fieldText(record, ["processed_at"])) || "-" },
-    { label: copy.value.summaryLabels.webhookMessageId, value: fieldText(record, ["webhook_msg_id", "id"]) },
+    { label: copy.value.summaryLabels.webhookMessageId, value: fieldText(record, ["webhook_msg_id", "id"]), chip: true },
   ]
 })
+
+const statusChips = computed(() => [
+  { value: "", label: copy.value.allStatus },
+  { value: "PROCESSED", label: copy.value.statusOptions.processed },
+  { value: "SKIPPED", label: copy.value.statusOptions.skipped },
+  { value: "FAILED", label: copy.value.statusOptions.failed },
+  { value: "PENDING", label: copy.value.statusOptions.pending },
+])
+
+function setStatusChip(value: string) {
+  if (status.value === value) return
+  status.value = value
+  search()
+}
 const detailFields = computed(() => {
   if (!activeDetail.value) return []
   return Object.entries(activeDetail.value)
@@ -111,12 +126,12 @@ function eventDescription(message: JsonRecord | null | undefined) {
   return copy.value.eventDescriptions.fallback
 }
 
-function messageSubtitle(message: JsonRecord) {
+function messageSubtitleParts(message: JsonRecord) {
   const confirmation = fieldText(message, ["confirmation_number"])
   const examId = fieldText(message, ["exam_ulid", "exam_id"])
-  if (confirmation !== "-") return `${copy.value.subtitlePrefix.confirmation}${confirmation}`
-  if (examId !== "-") return `${copy.value.subtitlePrefix.exam}${examId}`
-  return `${copy.value.subtitlePrefix.message}${fieldText(message, ["webhook_msg_id", "id"])}`
+  if (confirmation !== "-") return { label: copy.value.subtitlePrefix.confirmation, value: confirmation }
+  if (examId !== "-") return { label: copy.value.subtitlePrefix.exam, value: examId }
+  return { label: copy.value.subtitlePrefix.message, value: fieldText(message, ["webhook_msg_id", "id"]) }
 }
 
 function statusText(value: unknown) {
@@ -138,6 +153,12 @@ function formatFieldValue(key: string, value: unknown) {
   if (key === "processed_status" || key === "status") return statusText(value)
   if (value === null || value === undefined || value === "") return "-"
   return String(value)
+}
+
+const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/i
+
+function isUlidValue(value: string) {
+  return ULID_PATTERN.test(value.trim())
 }
 
 async function load(targetPage = page.value) {
@@ -283,15 +304,23 @@ onMounted(() => load(1))
       </button>
     </header>
 
-    <form class="ui-card mt-6 grid gap-4 p-4 md:grid-cols-[1fr_auto] md:p-5" @submit.prevent="search">
-      <select v-model="status" class="ui-input">
-        <option value="">{{ copy.allStatus }}</option>
-        <option value="PROCESSED">{{ copy.statusOptions.processed }}</option>
-        <option value="SKIPPED">{{ copy.statusOptions.skipped }}</option>
-        <option value="FAILED">{{ copy.statusOptions.failed }}</option>
-        <option value="PENDING">{{ copy.statusOptions.pending }}</option>
-      </select>
-      <button class="ui-btn ui-btn-primary" type="submit">
+    <form class="ui-card mt-6 flex flex-wrap items-center gap-3 p-4 md:p-5" @submit.prevent="search">
+      <div class="flex min-w-0 flex-wrap items-center gap-2">
+        <button
+          v-for="chip in statusChips"
+          :key="chip.value || 'all'"
+          type="button"
+          class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+          :class="status === chip.value
+            ? 'bg-primary-600 text-white shadow-sm'
+            : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+          :aria-pressed="status === chip.value"
+          @click="setStatusChip(chip.value)"
+        >
+          {{ chip.label }}
+        </button>
+      </div>
+      <button class="ui-btn ui-btn-primary w-full sm:ml-auto sm:w-auto" type="submit">
         <Search class="h-4 w-4" />
         {{ copy.search }}
       </button>
@@ -305,7 +334,7 @@ onMounted(() => load(1))
         </div>
         <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
-      <div class="ui-table-head grid grid-cols-[minmax(0,1fr)_180px_180px_112px] gap-5 px-4 py-3">
+      <div class="ui-table-head hidden grid-cols-[minmax(0,1fr)_180px_180px_112px] gap-5 px-4 py-3 md:grid">
         <span>{{ copy.columns.webhook }}</span>
         <span class="text-center">{{ copy.columns.status }}</span>
         <span class="text-right">{{ copy.columns.createdAt }}</span>
@@ -313,14 +342,14 @@ onMounted(() => load(1))
       </div>
 
       <div v-if="loading" class="divide-y divide-hairline">
-        <div v-for="i in 5" :key="`sk-${i}`" class="grid grid-cols-[minmax(0,1fr)_180px_180px_112px] items-center gap-5 px-4 py-3.5">
+        <div v-for="i in 5" :key="`sk-${i}`" class="grid gap-3 px-4 py-3.5 md:grid-cols-[minmax(0,1fr)_180px_180px_112px] md:items-center md:gap-5">
           <div class="min-w-0">
             <div class="skeleton h-4 w-2/5" />
             <div class="skeleton mt-2 h-3 w-3/5" />
           </div>
-          <div class="skeleton h-5 w-16 justify-self-center rounded-full" />
-          <div class="skeleton h-4 w-24 justify-self-end" />
-          <div class="skeleton h-4 w-14 justify-self-end" />
+          <div class="skeleton h-5 w-16 rounded-full md:justify-self-center" />
+          <div class="skeleton h-4 w-24 md:justify-self-end" />
+          <div class="skeleton h-4 w-14 md:justify-self-end" />
         </div>
       </div>
       <div v-else-if="!messages.length" class="ui-empty">
@@ -333,32 +362,31 @@ onMounted(() => load(1))
         <div
           v-for="message in messages"
           :key="msgKey(message)"
-          class="ui-table-row grid cursor-pointer grid-cols-[minmax(0,1fr)_180px_180px_112px] items-center gap-5 px-4 py-3.5"
+          class="ui-table-row grid cursor-pointer gap-3 px-4 py-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/20 md:grid-cols-[minmax(0,1fr)_180px_180px_112px] md:items-center md:gap-5"
           :class="msgKey(selected || {}) === msgKey(message) ? 'bg-primary-50/60' : ''"
           role="button"
           tabindex="0"
           @click="loadDetail(message)"
-          @keydown.enter.prevent="loadDetail(message)"
-          @keydown.space.prevent="loadDetail(message)"
+          @keydown.enter.self.prevent="loadDetail(message)"
+          @keydown.space.self.prevent="loadDetail(message)"
         >
           <div class="min-w-0">
             <div class="truncate text-sm font-medium text-ink">{{ messageTitle(message) }}</div>
-            <div class="tnum mt-0.5 truncate text-xs text-slate-400">{{ messageSubtitle(message) }}</div>
+            <div class="mt-0.5 flex min-w-0 items-center gap-1.5">
+              <span class="shrink-0 text-xs text-slate-400">{{ messageSubtitleParts(message).label }}</span>
+              <UlidChip v-if="messageSubtitleParts(message).value !== '-'" :value="messageSubtitleParts(message).value" />
+              <span v-else class="text-xs text-slate-400">-</span>
+            </div>
           </div>
-          <div class="min-w-0 text-center">
+          <div class="min-w-0 md:text-center">
             <span class="ui-badge max-w-full truncate" :class="badgeClass(messageStatus(message))">
               {{ statusText(messageStatus(message)) }}
             </span>
           </div>
-          <div class="tnum text-right text-sm text-slate-500">{{ formatDate(message.created_at) || copy.noCreatedAt }}</div>
-          <div class="text-right">
-            <button
-              class="text-sm font-medium text-primary-700 transition-colors hover:text-primary-600"
-              type="button"
-              @click.stop="loadDetail(message)"
-            >
-              {{ copy.viewDetails }}
-            </button>
+          <div class="tnum text-sm text-slate-500 md:text-right">{{ formatDate(message.created_at) || copy.noCreatedAt }}</div>
+          <div class="flex items-center justify-start gap-1 text-sm font-medium text-primary-700 md:justify-end">
+            {{ copy.viewDetails }}
+            <ChevronRight class="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -444,7 +472,10 @@ onMounted(() => load(1))
               <div class="grid gap-4 md:grid-cols-2">
                 <div v-for="field in summaryFields" :key="field.label" class="rounded-2xl bg-slate-50 p-4">
                   <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
-                  <div class="tnum mt-1.5 break-words text-sm font-medium text-slate-700">{{ field.value }}</div>
+                  <div v-if="field.chip && field.value !== '-'" class="mt-1.5">
+                    <UlidChip :value="field.value" :truncate="false" />
+                  </div>
+                  <div v-else class="tnum mt-1.5 break-words text-sm font-medium text-slate-700">{{ field.value }}</div>
                 </div>
               </div>
 
@@ -454,7 +485,10 @@ onMounted(() => load(1))
                   <div class="grid gap-4 md:grid-cols-2">
                     <div v-for="field in detailFields" :key="field.key" class="rounded-2xl bg-slate-50 p-4">
                       <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
-                      <div class="tnum mt-1.5 break-words text-sm font-medium text-slate-700">{{ field.value }}</div>
+                      <div v-if="isUlidValue(field.value)" class="mt-1.5">
+                        <UlidChip :value="field.value" :truncate="false" />
+                      </div>
+                      <div v-else class="tnum mt-1.5 break-words text-sm font-medium text-slate-700">{{ field.value }}</div>
                     </div>
                   </div>
                 </div>

@@ -2,6 +2,8 @@
 import { ChevronLeft, ChevronRight, FileBadge, Loader2, RefreshCw, X } from "lucide-vue-next"
 import { computed, onMounted, ref } from "vue"
 import { toast } from "vue-sonner"
+import JsonPreview from "@/components/JsonPreview.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiErrorMessage } from "@/lib/apiErrorMessage"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, getDisplayTitle, humanizeKey, isPrimitive, type JsonRecord } from "@/lib/display"
@@ -23,6 +25,24 @@ const lastPage = ref(1)
 const { t } = useAdminLanguage()
 const copy = computed(() => t.value.pdfRequests)
 
+// 状态快捷筛选：纯前端 computed 过滤当前页数据，点击已激活的 chip 即清除
+const statusFilter = ref(0)
+
+const statusChips = computed(() =>
+  [1, 2, 3, 4].map((value) => ({
+    value,
+    label: statusLabel(value),
+    count: requests.value.filter((item) => Number(item.status) === value).length,
+  })),
+)
+
+const filteredRequests = computed(() =>
+  statusFilter.value ? requests.value.filter((item) => Number(item.status) === statusFilter.value) : requests.value,
+)
+
+function toggleStatusChip(value: number) {
+  statusFilter.value = statusFilter.value === value ? 0 : value
+}
 
 const detailFields = computed(() => {
   if (!selected.value) return []
@@ -37,6 +57,15 @@ const detailFields = computed(() => {
 
 function fieldLabel(key: string) {
   return copy.value.fieldLabels[key as keyof typeof copy.value.fieldLabels] || humanizeKey(key)
+}
+
+const ID_KEY_PATTERN = /(_ulid|_id|_hash|_key|_no)$/
+const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/i
+
+function isIdField(key: string, value: string) {
+  if (!value || value === "-") return false
+  if (ULID_PATTERN.test(value.trim())) return true
+  return ID_KEY_PATTERN.test(key)
 }
 
 function requestUlid(request: JsonRecord) {
@@ -171,6 +200,22 @@ onMounted(() => load(1))
         </div>
         <span class="tnum ui-badge shrink-0 bg-slate-100 text-slate-600">{{ copy.totalText(total) }}</span>
       </div>
+      <div class="flex flex-wrap items-center gap-2 border-b border-hairline px-4 py-3 md:px-6">
+        <button
+          v-for="chip in statusChips"
+          :key="chip.value"
+          type="button"
+          class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+          :class="statusFilter === chip.value
+            ? 'bg-primary-600 text-white shadow-sm'
+            : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+          :aria-pressed="statusFilter === chip.value"
+          @click="toggleStatusChip(chip.value)"
+        >
+          {{ chip.label }}
+          <span class="tnum text-xs" :class="statusFilter === chip.value ? 'text-white/80' : 'text-slate-400'">{{ chip.count }}</span>
+        </button>
+      </div>
       <div class="ui-table-head flex flex-wrap gap-x-4 gap-y-2 px-4 py-3 md:grid md:grid-cols-[minmax(0,1fr)_160px_180px_112px] md:gap-5 md:px-5">
         <span>{{ copy.columns.request }}</span>
         <span class="md:text-center">{{ copy.columns.status }}</span>
@@ -195,16 +240,27 @@ onMounted(() => load(1))
         </div>
         <p class="ui-empty-title">{{ copy.empty }}</p>
       </div>
+      <div v-else-if="!filteredRequests.length" class="ui-empty">
+        <div class="ui-empty-icon">
+          <FileBadge class="h-6 w-6" />
+        </div>
+        <p class="ui-empty-title">{{ t.common.noResults }}</p>
+      </div>
       <div v-else class="divide-y divide-hairline">
         <div
-          v-for="request in requests"
+          v-for="request in filteredRequests"
           :key="requestUlid(request)"
-          class="ui-table-row grid gap-3 px-4 py-3.5 md:grid-cols-[minmax(0,1fr)_160px_180px_112px] md:items-center md:gap-5 md:px-5"
+          class="ui-table-row grid cursor-pointer gap-3 px-4 py-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/20 md:grid-cols-[minmax(0,1fr)_160px_180px_112px] md:items-center md:gap-5 md:px-5"
           :class="detailOpen && requestUlid(selected || {}) === requestUlid(request) ? 'bg-primary-50/60' : ''"
+          role="button"
+          tabindex="0"
+          @click="openRequest(request)"
+          @keydown.enter.self.prevent="openRequest(request)"
+          @keydown.space.self.prevent="openRequest(request)"
         >
           <div class="min-w-0">
             <div class="break-words text-sm font-medium text-ink md:truncate">{{ getDisplayTitle(request) }}</div>
-            <div class="tnum mt-0.5 break-all text-xs text-slate-400 md:truncate">{{ requestUlid(request) || "-" }}</div>
+            <div class="mt-1"><UlidChip :value="requestUlid(request)" /></div>
           </div>
           <div class="min-w-0 md:text-center">
             <span class="ui-badge max-w-full truncate" :class="statusBadgeClass(request.status)">
@@ -212,14 +268,9 @@ onMounted(() => load(1))
             </span>
           </div>
           <div class="tnum text-sm text-slate-500 md:text-right">{{ formatDate(request.created_at) || copy.noCreatedAt }}</div>
-          <div class="md:text-right">
-            <button
-              class="inline-flex w-full items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-primary-700 shadow-sm transition-colors hover:bg-slate-50 md:w-auto md:border-0 md:bg-transparent md:p-0 md:shadow-none md:hover:bg-transparent md:hover:text-primary-600"
-              type="button"
-              @click.stop="openRequest(request)"
-            >
-              {{ copy.viewDetails }}
-            </button>
+          <div class="flex items-center justify-start gap-1 text-sm font-medium text-primary-700 md:justify-end">
+            {{ copy.viewDetails }}
+            <ChevronRight class="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -260,7 +311,7 @@ onMounted(() => load(1))
                 </span>
                 <div class="min-w-0">
                   <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
-                  <p class="tnum mt-1 break-all text-sm text-slate-500">{{ requestUlid(selected) || "-" }}</p>
+                  <p class="mt-1 text-sm text-slate-500"><UlidChip :value="requestUlid(selected)" :truncate="false" /></p>
                 </div>
               </div>
               <button
@@ -279,7 +330,7 @@ onMounted(() => load(1))
                   <FileBadge class="h-4 w-4" />
                   {{ copy.currentRequest }}
                 </div>
-                <div class="tnum mt-1 break-all text-base font-semibold text-ink">{{ requestUlid(selected) || "-" }}</div>
+                <div class="mt-1.5"><UlidChip :value="requestUlid(selected)" :truncate="false" /></div>
                 <span class="ui-badge mt-3" :class="statusBadgeClass(selected.status)">
                   {{ statusLabel(selected.status) }}
                 </span>
@@ -288,9 +339,22 @@ onMounted(() => load(1))
               <div class="grid gap-4 md:grid-cols-2">
                 <div v-for="field in detailFields" :key="field.key" class="rounded-2xl bg-slate-50 p-4">
                   <span class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ field.label }}</span>
-                  <div class="tnum mt-1.5 break-words text-sm font-medium text-slate-700">{{ field.value }}</div>
+                  <div v-if="isIdField(field.key, field.value)" class="mt-1.5">
+                    <UlidChip :value="field.value" :truncate="false" />
+                  </div>
+                  <div v-else class="tnum mt-1.5 break-words text-sm font-medium text-slate-700">{{ field.value }}</div>
                 </div>
               </div>
+
+              <JsonPreview
+                :title="copy.rawFields"
+                :value="selected"
+                :copy-label="copy.copyJson"
+                :copied-label="copy.copiedJson"
+                :copied-message="copy.toasts.jsonCopied"
+                :copy-error-message="copy.toasts.jsonCopyFailed"
+                max-height="420px"
+              />
             </div>
           </section>
         </div>

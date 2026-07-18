@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { FileText, Loader2, RefreshCw, Search, X } from "lucide-vue-next"
-import { computed, onMounted, ref } from "vue"
+import { ChevronDown, ChevronRight, FileText, Filter, Loader2, RefreshCw, Search, X } from "lucide-vue-next"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { toast } from "vue-sonner"
 import { apiClient } from "@/lib/apiClient"
 import { formatDate, humanizeKey, type JsonRecord } from "@/lib/display"
@@ -38,6 +39,64 @@ const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize))
 const canPrevious = computed(() => page.value > 1)
 const canNext = computed(() => hasMore.value)
 const detailEntries = computed(() => Object.entries(detail.value || {}))
+const advancedOpen = ref(false)
+
+// 高频状态快捷筛选：值即接口的 status 参数（与状态徽章展示的原始代码一致）
+const statusChipValues = ["SUCCESS", "FAILED", "PENDING"]
+const activeStatusChip = computed(() => filters.value.status.trim().toUpperCase())
+
+function toggleStatusChip(value: string) {
+  filters.value.status = activeStatusChip.value === value ? "" : value
+  resetAndLoad()
+}
+
+let keywordTimer: number | undefined
+
+watch(
+  () => filters.value.keyword,
+  () => {
+    if (keywordTimer) window.clearTimeout(keywordTimer)
+    keywordTimer = window.setTimeout(() => {
+      keywordTimer = undefined
+      resetAndLoad()
+    }, 250)
+  },
+)
+
+onBeforeUnmount(() => {
+  if (keywordTimer) window.clearTimeout(keywordTimer)
+})
+
+const ULID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/i
+
+function isUlidValue(value: unknown) {
+  return typeof value === "string" && ULID_PATTERN.test(value.trim())
+}
+
+function isJsonLike(value: unknown) {
+  if (value && typeof value === "object") return true
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    return trimmed.startsWith("{") || trimmed.startsWith("[")
+  }
+  return false
+}
+
+function resourceName(record: JsonRecord) {
+  return fieldText(record, ["resource_display_name"], "")
+}
+
+function resourceId(record: JsonRecord) {
+  return fieldText(record, ["resource_id", "audit_ulid"], "")
+}
+
+function operatorName(record: JsonRecord) {
+  return fieldText(record, ["operator_name"], "")
+}
+
+function operatorId(record: JsonRecord) {
+  return fieldText(record, ["operator_id"], "")
+}
 
 function asRecordList(value: unknown) {
   return Array.isArray(value) ? value.filter((item): item is JsonRecord => !!item && typeof item === "object" && !Array.isArray(item)) : []
@@ -205,11 +264,47 @@ onMounted(load)
     </header>
 
     <section class="ui-card mt-6 p-4 md:p-5">
-      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        <label class="grid gap-1.5">
+      <div class="flex flex-wrap items-end gap-3">
+        <label class="grid w-full gap-1.5 sm:w-auto sm:min-w-64 sm:flex-1 sm:max-w-sm">
           <span class="ui-label">{{ copy.filters.keyword }}</span>
-          <input v-model="filters.keyword" class="ui-input" :placeholder="copy.placeholders.keyword" @keydown.enter="resetAndLoad" />
+          <div class="relative">
+            <Search class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input v-model="filters.keyword" class="ui-input pl-9" :placeholder="copy.placeholders.keyword" @keydown.enter="resetAndLoad" />
+          </div>
         </label>
+        <button class="ui-btn ui-btn-primary w-full sm:w-auto" type="button" @click="resetAndLoad">
+          <Search class="h-4 w-4" />
+          {{ copy.search }}
+        </button>
+        <button
+          class="ui-btn ui-btn-secondary w-full sm:w-auto"
+          type="button"
+          :aria-expanded="advancedOpen"
+          @click="advancedOpen = !advancedOpen"
+        >
+          <Filter class="h-4 w-4 text-slate-400" />
+          {{ t.common.advancedFilters }}
+          <ChevronDown class="h-4 w-4 text-slate-400 transition-transform duration-150" :class="advancedOpen ? 'rotate-180' : ''" />
+        </button>
+      </div>
+
+      <div class="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          v-for="chip in statusChipValues"
+          :key="chip"
+          type="button"
+          class="inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary-500/20"
+          :class="activeStatusChip === chip
+            ? 'bg-primary-600 text-white shadow-sm'
+            : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900'"
+          :aria-pressed="activeStatusChip === chip"
+          @click="toggleStatusChip(chip)"
+        >
+          {{ chip }}
+        </button>
+      </div>
+
+      <div v-if="advancedOpen" class="mt-4 grid gap-4 border-t border-hairline pt-4 md:grid-cols-2 xl:grid-cols-4">
         <label class="grid gap-1.5">
           <span class="ui-label">{{ copy.filters.sourceService }}</span>
           <input v-model="filters.source_service" class="ui-input" :placeholder="copy.placeholders.sourceService" @keydown.enter="resetAndLoad" />
@@ -242,10 +337,6 @@ onMounted(load)
           <span class="ui-label">{{ copy.filters.endTime }}</span>
           <input v-model="filters.end_time" class="ui-input" type="datetime-local" />
         </label>
-        <button class="ui-btn ui-btn-primary w-full self-end" type="button" @click="resetAndLoad">
-          <Search class="h-4 w-4" />
-          {{ copy.search }}
-        </button>
       </div>
     </section>
 
@@ -259,7 +350,7 @@ onMounted(load)
       </div>
 
       <div v-if="loading" class="divide-y divide-hairline">
-        <div v-for="i in 6" :key="`sk-${i}`" class="grid gap-3 px-4 py-3.5 md:px-5 lg:grid-cols-[180px_130px_minmax(0,1fr)_180px_120px] lg:items-center lg:gap-4">
+        <div v-for="i in 6" :key="`sk-${i}`" class="grid gap-3 px-4 py-3.5 md:px-5 lg:grid-cols-[180px_130px_minmax(0,1fr)_180px_120px_24px] lg:items-center lg:gap-4">
           <div class="skeleton h-4 w-28" />
           <div class="skeleton h-4 w-16" />
           <div class="min-w-0">
@@ -268,6 +359,7 @@ onMounted(load)
           </div>
           <div class="skeleton h-4 w-24" />
           <div class="skeleton h-5 w-16 rounded-full lg:justify-self-center" />
+          <div class="hidden lg:block" />
         </div>
       </div>
       <div v-else-if="!logs.length" class="ui-empty">
@@ -277,33 +369,42 @@ onMounted(load)
         <p class="ui-empty-title">{{ copy.empty }}</p>
       </div>
       <div v-else>
-        <div class="ui-table-head hidden grid-cols-[180px_130px_minmax(0,1fr)_180px_120px] gap-4 px-5 py-3 lg:grid">
+        <div class="ui-table-head hidden grid-cols-[180px_130px_minmax(0,1fr)_180px_120px_24px] gap-4 px-5 py-3 lg:grid">
           <span>{{ copy.columns.time }}</span>
           <span>{{ copy.columns.service }}</span>
           <span>{{ copy.columns.summary }}</span>
           <span>{{ copy.columns.operator }}</span>
           <span class="text-center">{{ copy.columns.status }}</span>
+          <span aria-hidden="true" />
         </div>
         <div class="divide-y divide-hairline">
-          <button
+          <div
             v-for="item in logs"
             :key="auditId(item)"
-            class="ui-table-row grid w-full gap-3 px-4 py-3.5 text-left md:px-5 lg:grid-cols-[180px_130px_minmax(0,1fr)_180px_120px] lg:items-center lg:gap-4"
+            class="ui-table-row grid w-full cursor-pointer gap-3 px-4 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/20 md:px-5 lg:grid-cols-[180px_130px_minmax(0,1fr)_180px_120px_24px] lg:items-center lg:gap-4"
             :class="auditId(item) === auditId(selected) ? 'bg-primary-50/60' : ''"
-            type="button"
+            role="button"
+            tabindex="0"
             @click="openDetail(item)"
+            @keydown.enter.self.prevent="openDetail(item)"
+            @keydown.space.self.prevent="openDetail(item)"
           >
             <span class="tnum text-sm text-slate-500">{{ formatDate(fieldText(item, ["created_at"])) }}</span>
             <span class="font-mono text-xs font-medium uppercase text-primary-700">{{ fieldText(item, ["source_service"]) }}</span>
             <span class="min-w-0">
               <span class="block break-words text-sm font-medium text-ink lg:truncate">{{ fieldText(item, ["summary_text", "action"]) }}</span>
-              <span class="tnum mt-0.5 block break-all text-xs text-slate-400 lg:truncate">{{ fieldText(item, ["resource_display_name", "resource_id", "audit_ulid"]) }}</span>
+              <span v-if="resourceName(item)" class="tnum mt-0.5 block break-all text-xs text-slate-400 lg:truncate">{{ resourceName(item) }}</span>
+              <span v-else class="mt-0.5 block"><UlidChip :value="resourceId(item)" /></span>
             </span>
-            <span class="break-all text-sm text-slate-600 lg:truncate">{{ fieldText(item, ["operator_name", "operator_id"]) }}</span>
+            <span class="min-w-0">
+              <span v-if="operatorName(item)" class="block break-all text-sm text-slate-600 lg:truncate">{{ operatorName(item) }}</span>
+              <UlidChip v-else :value="operatorId(item)" />
+            </span>
             <span class="ui-badge justify-self-start uppercase lg:justify-self-center" :class="statusBadgeClass(fieldText(item, ['status']))">
               {{ fieldText(item, ["status"]) }}
             </span>
-          </button>
+            <ChevronRight class="hidden h-4 w-4 text-slate-300 lg:block" aria-hidden="true" />
+          </div>
         </div>
       </div>
 
@@ -323,7 +424,7 @@ onMounted(load)
             <div class="flex items-start justify-between gap-4 border-b border-hairline px-4 py-4 md:px-6 md:py-5">
               <div class="min-w-0">
                 <h2 class="text-base font-semibold text-ink md:text-lg">{{ copy.detailTitle }}</h2>
-                <p class="tnum mt-1 break-all text-sm text-slate-500">{{ auditId(selected) }}</p>
+                <p class="mt-1 text-sm text-slate-500"><UlidChip :value="auditId(selected)" :truncate="false" /></p>
               </div>
               <button class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600" type="button" :aria-label="copy.close" @click="detailOpen = false">
                 <X class="h-5 w-5" />
@@ -359,7 +460,18 @@ onMounted(load)
                 <div class="divide-y divide-hairline px-4">
                   <div v-for="[key, value] in detailEntries" :key="key" class="grid gap-2 py-3 text-sm md:grid-cols-[170px_1fr]">
                     <div class="text-xs font-medium uppercase tracking-wider text-slate-400">{{ humanizeKey(key) }}</div>
-                    <pre class="tnum whitespace-pre-wrap break-words font-sans text-slate-600">{{ prettyValue(value) }}</pre>
+                    <details v-if="isJsonLike(value)" class="group min-w-0">
+                      <summary class="inline-flex cursor-pointer select-none items-center gap-1 text-sm font-medium text-primary-700 transition-colors hover:text-primary-600">
+                        <ChevronRight class="h-3.5 w-3.5 transition-transform duration-150 group-open:rotate-90" />
+                        <span class="group-open:hidden">{{ t.common.expand }}</span>
+                        <span class="hidden group-open:inline">{{ t.common.collapse }}</span>
+                      </summary>
+                      <pre class="tnum mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-[10px] bg-slate-50 p-3 font-mono text-xs leading-5 text-slate-600">{{ prettyValue(value) }}</pre>
+                    </details>
+                    <div v-else-if="isUlidValue(value)" class="min-w-0">
+                      <UlidChip :value="String(value)" :truncate="false" />
+                    </div>
+                    <pre v-else class="tnum whitespace-pre-wrap break-words font-sans text-slate-600">{{ prettyValue(value) }}</pre>
                   </div>
                 </div>
               </div>

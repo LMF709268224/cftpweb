@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { Activity, BarChart3, CreditCard, Loader2, Mail, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
+import { Activity, ArrowUpRight, BarChart3, ClipboardCheck, Copy, CreditCard, GitBranch, Loader2, Mail, MessageSquare, Receipt, RefreshCw, Search, Shield, UserCheck, Users, X } from "lucide-vue-next"
 import { computed, onMounted, ref, watch } from "vue"
 import { RouterLink } from "vue-router"
 import { toast } from "vue-sonner"
+import RowMenu from "@/components/RowMenu.vue"
+import UlidChip from "@/components/UlidChip.vue"
 import { apiClient } from "@/lib/apiClient"
+import { copyTextToClipboard } from "@/lib/clipboard"
 import { useAdminLanguage } from "@/lib/language"
 import { badgeClass } from "@/lib/status"
 
@@ -69,9 +72,12 @@ const roleFilter = ref("all")
 const statusFilter = ref("all")
 const userPage = ref(1)
 const userPageSize = 10
+const redDots = ref<Record<string, number>>({})
 let filterReloadTimer: number | undefined
 const { lang, t } = useAdminLanguage()
 const copy = computed(() => t.value.dashboard)
+const common = computed(() => t.value.common)
+const navCopy = computed(() => t.value.layout.nav)
 
 const userStats = computed<UserStats>(() => data.value?.user_stats || { total: 0, active: 0, inactive: 0, admins: 0, members: 0, email_verified: 0 })
 const totalPipelines = computed(() => data.value?.stage_buckets.reduce((sum, item) => sum + Number(item.count || 0), 0) || 0)
@@ -102,6 +108,41 @@ const summaryCards = computed(() => [
   { label: copy.value.summary.students, value: data.value?.candidate_total ?? 0, tone: "text-primary-700", icon: Users },
   { label: copy.value.summary.members, value: userStats.value.members, tone: "text-info-600", icon: Users },
 ])
+
+// 今日待办：/api/system/reddots 计数卡（计数 > 0 才显示），点击直达对应模块
+const todoCards = computed(() => [
+  { path: "/applications", label: navCopy.value.applications, icon: ClipboardCheck, count: Number(redDots.value.applications || 0) },
+  { path: "/exams", label: navCopy.value.exams, icon: ClipboardCheck, count: Number(redDots.value.exams || 0) },
+  { path: "/prog", label: navCopy.value.prog, icon: GitBranch, count: Number(redDots.value.prog || 0) },
+  { path: "/orders", label: navCopy.value.orders, icon: CreditCard, count: Number(redDots.value.orders || 0) },
+  { path: "/invoices", label: navCopy.value.invoices, icon: Receipt, count: Number(redDots.value.invoices || 0) },
+  { path: "/messages", label: navCopy.value.messages, icon: MessageSquare, count: Number(redDots.value.messages || 0) },
+].filter((card) => card.count > 0))
+const todoTotal = computed(() => todoCards.value.reduce((sum, card) => sum + card.count, 0))
+
+function truncateUlid(raw: string) {
+  if (raw.length <= 14) return raw
+  return `${raw.slice(0, 6)}…${raw.slice(-5)}`
+}
+
+function userMenuItems(user: DashboardUser) {
+  const ulid = (user.candidate_ulid || "").trim()
+  return [
+    { key: "copy-ulid", label: ulid ? truncateUlid(ulid) : "-", icon: Copy, disabled: !ulid },
+  ]
+}
+
+async function onUserMenuSelect(user: DashboardUser, key: string) {
+  if (key !== "copy-ulid") return
+  const ulid = (user.candidate_ulid || "").trim()
+  if (!ulid) return
+  try {
+    await copyTextToClipboard(ulid)
+    toast.success(common.value.copied)
+  } catch (err) {
+    console.error(err)
+  }
+}
 
 function stageLabel(stageId: string) {
   return stageId === copy.value.noStage ? copy.value.noStage : stageId
@@ -165,6 +206,19 @@ async function loadDashboard(page = userPage.value) {
   }
 }
 
+async function fetchRedDots() {
+  try {
+    redDots.value = (await apiClient<Record<string, number>>("/api/system/reddots")) || {}
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+function refreshAll() {
+  void loadDashboard(userPage.value)
+  void fetchRedDots()
+}
+
 function loadUserPage(page: number) {
   if (page < 1) return
   void loadDashboard(page)
@@ -175,7 +229,10 @@ function clearUserKeyword() {
   keyword.value = ""
 }
 
-onMounted(loadDashboard)
+onMounted(() => {
+  void loadDashboard()
+  void fetchRedDots()
+})
 
 watch([keyword, roleFilter, statusFilter], () => {
   if (filterReloadTimer) window.clearTimeout(filterReloadTimer)
@@ -206,7 +263,7 @@ watch([keyword, roleFilter, statusFilter], () => {
           class="ui-btn ui-btn-primary col-span-2 sm:col-span-1"
           type="button"
           :disabled="loading"
-          @click="loadDashboard(userPage)"
+          @click="refreshAll"
         >
           <Loader2 v-if="loading" class="h-4 w-4 animate-spin" />
           <RefreshCw v-else class="h-4 w-4" />
@@ -215,8 +272,36 @@ watch([keyword, roleFilter, statusFilter], () => {
       </div>
     </header>
 
+    <!-- Today todos: reddots counters, deep links into modules -->
+    <section v-if="todoCards.length" class="mt-6">
+      <div class="flex items-center gap-2">
+        <h2 class="text-base font-semibold text-ink">{{ common.todayTodos }}</h2>
+        <span class="tnum ui-badge bg-slate-100 text-slate-600">{{ todoTotal }}</span>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 xl:grid-cols-6">
+        <RouterLink
+          v-for="card in todoCards"
+          :key="card.path"
+          :to="card.path"
+          class="ui-card ui-card-hover group p-4"
+          :title="card.label"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <p class="truncate text-sm font-medium text-slate-500">{{ card.label }}</p>
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-warning-50 text-warning-600">
+              <component :is="card.icon" class="h-4 w-4" />
+            </span>
+          </div>
+          <div class="mt-3 flex items-end justify-between gap-2">
+            <p class="tnum text-3xl font-bold text-ink">{{ card.count }}</p>
+            <ArrowUpRight class="mb-1 h-4 w-4 shrink-0 text-slate-300 transition-colors duration-150 group-hover:text-primary-600" />
+          </div>
+        </RouterLink>
+      </div>
+    </section>
+
     <!-- Profile completion -->
-    <section class="ui-card mt-6 px-5 py-4">
+    <section class="ui-card px-5 py-4" :class="todoCards.length ? 'mt-4' : 'mt-6'">
       <div class="mb-2.5 flex items-center justify-between text-sm">
         <span class="font-medium text-slate-600">{{ copy.profileCompletion }}</span>
         <span class="tnum font-semibold text-primary-700">{{ profileCompletion }}%</span>
@@ -305,9 +390,12 @@ watch([keyword, roleFilter, statusFilter], () => {
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="break-words text-sm font-semibold text-ink">{{ user.name || "-" }}</div>
-                <div class="tnum mt-0.5 break-all text-xs text-slate-400">{{ user.candidate_ulid || "-" }}</div>
+                <div class="mt-1"><UlidChip :value="user.candidate_ulid || ''" /></div>
               </div>
-              <span class="ui-badge shrink-0" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
+              <div class="flex shrink-0 items-center gap-1.5">
+                <span class="ui-badge" :class="userStatusClass(user.status)">{{ userStatusLabel(user.status) }}</span>
+                <RowMenu :items="userMenuItems(user)" @select="(key) => onUserMenuSelect(user, key)" />
+              </div>
             </div>
             <dl class="mt-3 divide-y divide-hairline text-sm">
               <div class="flex items-start justify-between gap-4 py-2">
@@ -343,7 +431,7 @@ watch([keyword, roleFilter, statusFilter], () => {
 
       <!-- Desktop table -->
       <div class="hidden overflow-x-auto md:block">
-        <table class="w-full min-w-[1120px] text-left text-sm">
+        <table class="w-full min-w-[1180px] text-left text-sm">
           <thead class="ui-table-head">
             <tr>
               <th class="px-4 py-3 font-medium">{{ copy.table.user }}</th>
@@ -353,6 +441,7 @@ watch([keyword, roleFilter, statusFilter], () => {
               <th class="w-24 whitespace-nowrap px-4 py-3 font-medium">{{ copy.table.status }}</th>
               <th class="w-28 whitespace-nowrap px-4 py-3 font-medium">{{ copy.table.emailVerified }}</th>
               <th class="w-28 whitespace-nowrap px-4 py-3 font-medium">{{ copy.table.created }}</th>
+              <th class="w-14 px-4 py-3 font-medium"><span class="sr-only">{{ common.moreActions }}</span></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-hairline">
@@ -368,10 +457,11 @@ watch([keyword, roleFilter, statusFilter], () => {
                 <td class="px-4 py-3.5"><div class="skeleton h-5 w-16 rounded-full" /></td>
                 <td class="px-4 py-3.5"><div class="skeleton h-5 w-16 rounded-full" /></td>
                 <td class="px-4 py-3.5"><div class="skeleton h-4 w-20" /></td>
+                <td class="px-4 py-3.5"><div class="skeleton h-8 w-8 rounded-lg" /></td>
               </tr>
             </template>
             <tr v-else-if="filteredUsers.length === 0">
-              <td colspan="7">
+              <td colspan="8">
                 <div class="ui-empty">
                   <div class="ui-empty-icon">
                     <Users class="h-6 w-6" />
@@ -384,7 +474,7 @@ watch([keyword, roleFilter, statusFilter], () => {
               <tr v-for="user in filteredUsers" :key="user.id" class="ui-table-row">
                 <td class="px-4 py-3.5">
                   <div class="font-medium text-ink">{{ user.name || "-" }}</div>
-                  <div class="tnum text-xs text-slate-400">{{ user.candidate_ulid || "-" }}</div>
+                  <div class="mt-1"><UlidChip :value="user.candidate_ulid || ''" /></div>
                 </td>
                 <td class="whitespace-nowrap px-4 py-3.5 text-slate-600">{{ user.email || "-" }}</td>
                 <td class="px-4 py-3.5 text-slate-600">{{ user.location || "-" }}</td>
@@ -400,6 +490,9 @@ watch([keyword, roleFilter, statusFilter], () => {
                   </span>
                 </td>
                 <td class="tnum w-28 whitespace-nowrap px-4 py-3.5 text-slate-600">{{ formatDate(user.created_at) }}</td>
+                <td class="w-14 px-4 py-3.5 text-right">
+                  <RowMenu :items="userMenuItems(user)" @select="(key) => onUserMenuSelect(user, key)" />
+                </td>
               </tr>
             </template>
           </tbody>
