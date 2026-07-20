@@ -553,7 +553,7 @@ export const zh = {
     certificationDefaultDesc: "完成教材学习后，先通过练习测验，再进入正式考试。",
     certificationCurrentStep: "当前步骤",
     certificationProgress: "认证进度",
-    certificationLessonLabel: "教材书",
+    certificationLessonLabel: "教材",
     certificationQuizLabel: "测验",
     certificationExamLabel: "考试",
     certificationCertificateLabel: "证书",
@@ -612,7 +612,7 @@ export const zh = {
     formCity: "城市",
     formAddress: "详细地址",
     formPostalCode: "邮政编码",
-    formWorkPhone: "工作电话",
+    formWorkPhone: "联系电话",
     formHomePhone: "家庭电话",
     syncToProfile: "同步到个人信息",
     syncingToProfile: "同步中...",
@@ -847,6 +847,7 @@ export const zh = {
     submitFailed: "提交失败",
     submitting: "提交中...",
     availableQualifications: "可申请资格",
+    availableQualificationsDesc: "可在此查看已满足前置条件的资格列表。部分资格可能需要您补充提交相应的证明材料。",
     description: "描述",
     required: "必填",
     optional: "选填",
@@ -873,14 +874,15 @@ export const zh = {
     sourceSystem: "系统颁发",
     celebrationModalTitle: "恭喜！",
     celebrationModalHeadline: "恭喜您获得新证书",
-    celebrationModalDesc: "您的学习成果已经正式转化为专业证书。现在可以下载您的荣誉证书，或一键分享这一值得庆祝的成就。",
+    celebrationModalDesc: "您的学习成果已经正式转化为专业证书。现在可以下载您的荣誉证书。",
     celebrationModalDownload: "下载您的荣誉证书",
     celebrationModalShare: "一键分享",
     celebrationModalDismiss: "稍后再说",
     shareText: "我已获得 CFtP 专业认证，欢迎查看我的学习成果。",
-  }
-  ,
-
+  },
+  pdfPreview: {
+    backToCourse: "返回课程",
+  },
   todoList: {
     items: "项",
     noPendingTasks: "暂无待处理事项"

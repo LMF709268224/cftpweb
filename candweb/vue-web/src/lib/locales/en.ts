@@ -555,7 +555,7 @@ export const en: AppTranslations = {
     certificationDefaultDesc: "Complete the materials, take the practice quiz, then proceed to the final exam.",
     certificationCurrentStep: "Current Step",
     certificationProgress: "Certification Progress",
-    certificationLessonLabel: "Textbook",
+    certificationLessonLabel: "Courseware",
     certificationQuizLabel: "Quiz",
     certificationExamLabel: "Exam",
     certificationCertificateLabel: "Certificate",
@@ -614,7 +614,7 @@ export const en: AppTranslations = {
     formCity: "City",
     formAddress: "Detailed Address",
     formPostalCode: "Postal Code",
-    formWorkPhone: "Work Phone",
+    formWorkPhone: "Contact Phone",
     formHomePhone: "Home Phone",
     syncToProfile: "Sync to Profile",
     syncingToProfile: "Syncing...",
@@ -849,6 +849,7 @@ export const en: AppTranslations = {
     submitFailed: "Submit failed",
     submitting: "Submitting...",
     availableQualifications: "Available Qualifications",
+    availableQualificationsDesc: "View the list of qualifications you have met the prerequisites for. Some qualifications may require you to submit supporting materials.",
     description: "Description",
     required: "Required",
     optional: "Optional",
@@ -875,15 +876,15 @@ export const en: AppTranslations = {
     sourceSystem: "System Issued",
     celebrationModalTitle: "Congratulations!",
     celebrationModalHeadline: "You have earned your CFtP professional certificate",
-    celebrationModalDesc:
-      "Your learning achievement has officially become a professional certificate. You can now download your honor certificate or share this milestone in one click.",
+    celebrationModalDesc: "Your learning achievement has officially become a professional certificate. You can now download your honor certificate.",
     celebrationModalDownload: "Download Your Honor Certificate",
     celebrationModalShare: "Share in One Click",
     celebrationModalDismiss: "Maybe later",
     shareText: "I have earned my CFtP professional certification. Take a look at my achievement.",
-  }
-  ,
-
+  },
+  pdfPreview: {
+    backToCourse: "Back to Course",
+  },
   todoList: {
     items: "Items",
     noPendingTasks: "No pending tasks"

@@ -158,17 +158,50 @@ function handleViewerReady(registry?: any) {
   if (registry) {
     pdfViewerRegistry.value = registry
     syncViewerLocale()
+
+    if (typeof registry.getPlugin === 'function') {
+      const scrollPlugin = registry.getPlugin('scroll')
+      if (scrollPlugin && scrollPlugin.capability) {
+        const cap = scrollPlugin.capability
+        const storageKey = `pdf-bookmark:${routeFileId.value || routeLessonId.value || routeResourceKey.value}`
+        const savedPage = localStorage.getItem(storageKey)
+        
+        if (savedPage) {
+          cap.onLayoutReady((e: any) => {
+            if (e.isInitial) {
+              setTimeout(() => {
+                cap.scrollToPage({ pageNumber: parseInt(savedPage, 10) })
+              }, 100)
+            }
+          })
+        }
+        
+        cap.onPageChange((e: any) => {
+          localStorage.setItem(storageKey, e.pageNumber.toString())
+        })
+      }
+    }
   }
 }
 
 function goBack() {
-  if (window.history.length > 1) router.back()
-  else router.push("/certifications")
+  if (window.opener) {
+    window.close()
+  } else if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push("/my-certifications")
+  }
 }
 
 function goBackFromResourcePack() {
-  if (window.history.length > 1) router.back()
-  else router.push("/resource-packs")
+  if (window.opener) {
+    window.close()
+  } else if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push("/resource-packs")
+  }
 }
 
 watch(source, loadPdf, { immediate: true })

@@ -325,11 +325,14 @@ onMounted(fetchData)
     </div>
     <div v-else class="space-y-4">
       <section>
-        <div class="mb-4 flex items-center gap-3 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
-          <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Award class="h-4 w-4" />
+        <div class="mb-4 flex flex-col justify-center gap-1 rounded-[16px] bg-white px-4 py-4 shadow-[0_10px_24px_rgba(15,74,82,0.05)]">
+          <div class="flex items-center gap-3">
+            <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <Award class="h-4 w-4" />
+            </div>
+            <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.availableQualifications }}</h2>
           </div>
-          <h2 class="font-semibold text-card-foreground">{{ t.credentialsPage.availableQualifications }}</h2>
+          <p class="ml-12 text-sm text-muted-foreground">{{ t.credentialsPage.availableQualificationsDesc }}</p>
         </div>
         <div class="grid gap-4 md:grid-cols-3">
           <div v-for="def in definitions" :key="credentialDefinitionId(def)" class="group relative flex flex-col overflow-hidden rounded-[16px] bg-white text-card-foreground shadow-[0_10px_24px_rgba(15,74,82,0.05)] transition-all hover:-translate-y-0.5 hover:bg-[#f4fbfc] hover:shadow-md hover:shadow-primary/10">
