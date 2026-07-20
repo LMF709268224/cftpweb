@@ -632,6 +632,8 @@ export const zh = {
     validationInvalidPhone: "{{field}} 格式不正确，请填写 7-15 位数字，可带国家区号 +",
     validationInvalidPostalCode: "邮政编码格式不正确，请使用 2-16 位字母、数字、空格或连字符",
     backToCourse: "返回上一步",
+    backToLearning: "返回学习",
+    backToCertification: "返回认证详情",
   },
   examsPage: {
     title: "考试",

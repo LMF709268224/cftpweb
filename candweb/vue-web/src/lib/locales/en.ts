@@ -634,6 +634,8 @@ export const en: AppTranslations = {
     validationInvalidPhone: "{{field}} is invalid. Use 7-15 digits, optionally starting with +",
     validationInvalidPostalCode: "Postal code is invalid. Use 2-16 letters, digits, spaces, or hyphens",
     backToCourse: "Go Back",
+    backToLearning: "Back to learning",
+    backToCertification: "Back to certification details",
   },
   examsPage: {
     title: "Exams",

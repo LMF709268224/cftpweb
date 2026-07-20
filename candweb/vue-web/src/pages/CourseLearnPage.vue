@@ -1435,11 +1435,32 @@ async function downloadMaterial(material: CourseMaterialSummary) {
   }
 }
 
+function learningRouteQuery() {
+  const query = { ...route.query }
+  delete query.pipelineId
+  delete query.courseId
+  delete query.lessonId
+  return query
+}
+
+function learningLessonPath(lessonId?: string) {
+  if (!pipelineId.value || !courseId.value) return route.path
+  const base = `/certifications/${encodeURIComponent(pipelineId.value)}/learn/${encodeURIComponent(courseId.value)}`
+  return lessonId ? `${base}/lessons/${encodeURIComponent(lessonId)}` : base
+}
+
 async function selectLesson(lessonId?: string) {
   if (lessonId) activeLessonId.value = lessonId
   activeContentTab.value = "lesson"
   activeMaterialGroup.value = "all"
   if (materials.value.length > 0 && !selectedMaterialId.value) selectedMaterialId.value = materialIdOf(materials.value[0])
+  if (lessonId && route.path !== learningLessonPath(lessonId)) {
+    await router.replace({
+      path: learningLessonPath(lessonId),
+      query: learningRouteQuery(),
+      hash: route.hash,
+    })
+  }
   await refreshProgress(false)
 }
 
@@ -1521,6 +1542,11 @@ watch([runtime, courseId], async () => {
   }
   const showLoading = !syncing.value
   if (activeContentTab.value === "exam") await loadCourseExams(showLoading)
+})
+watch(routeLessonId, (lessonId) => {
+  const nextLessonId = lessonId || lessonIdOf(lessons.value[0]?.lesson)
+  if (nextLessonId && nextLessonId !== activeLessonId.value) activeLessonId.value = nextLessonId
+  if (lessonId) activeContentTab.value = "lesson"
 })
 watch(lessons, () => {
   if (!activeLessonId.value && lessons.value.length > 0) activeLessonId.value = lessonIdOf(lessons.value[0].lesson)

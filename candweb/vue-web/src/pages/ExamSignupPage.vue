@@ -38,7 +38,22 @@ const formData = reactive({
   postal_code: "",
   work_phone: "",
 })
-const backLink = computed(() => pipelineId ? `/certifications/${encodeURIComponent(pipelineId)}` : "/certifications")
+const returnTo = computed(() => {
+  const value = route.query.returnTo
+  return Array.isArray(value) ? String(value[0] || "") : String(value || "")
+})
+const shouldReturnToExams = computed(() => returnTo.value === "/exams")
+const backLink = computed(() => {
+  if (shouldReturnToExams.value) return "/exams"
+  if (pipelineId && courseId) return `/certifications/${encodeURIComponent(pipelineId)}/learn/${encodeURIComponent(courseId)}`
+  if (pipelineId) return `/certifications/${encodeURIComponent(pipelineId)}`
+  return "/exams"
+})
+const backLabel = computed(() => {
+  if (shouldReturnToExams.value || (!pipelineId && !courseId)) return t.value.examsPage.backToExams
+  if (pipelineId && courseId) return t.value.examSignup.backToLearning
+  return t.value.examSignup.backToCertification
+})
 const CN_STATE_LABELS: Record<string, string> = {
   AH: "安徽", BJ: "北京", CQ: "重庆", FJ: "福建", GS: "甘肃", GD: "广东", GX: "广西", GZ: "贵州",
   HI: "海南", HE: "河北", HL: "黑龙江", HA: "河南", HK: "香港", HB: "湖北", HN: "湖南", NM: "内蒙古",
@@ -393,7 +408,7 @@ async function handleSubmit() {
 
       <main class="px-5 py-8 md:px-8 lg:px-10">
         <RouterLink :to="backLink" class="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-          <ArrowLeft class="h-4 w-4" /> {{ t.examSignup.backToCourse }}
+          <ArrowLeft class="h-4 w-4" /> {{ backLabel }}
         </RouterLink>
         <div class="mb-8 max-w-2xl">
           <h1 class="text-3xl font-bold tracking-tight text-foreground">{{ t.examSignup.title }}</h1>

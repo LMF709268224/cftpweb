@@ -372,12 +372,12 @@ async function handleApplyRetake(exam: any) {
     }
     if (payment?.paid && payment?.course_unit_status) {
       toast.success(t.value.examsPage.retakeApplied)
-      await router.push(`/exams/signup?unitId=${encodeURIComponent(payment.course_unit_ulid || exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || "")}`)
+      await router.push(`/exams/signup?unitId=${encodeURIComponent(payment.course_unit_ulid || exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || "")}&returnTo=${encodeURIComponent("/exams")}`)
       return
     }
     await apiClient(`/api/exams/units/${encodeURIComponent(exam.course_unit_ulid)}/retake`, { method: "POST" })
     toast.success(t.value.examsPage.retakeApplied)
-    await router.push(`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || "")}`)
+    await router.push(`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || "")}&returnTo=${encodeURIComponent("/exams")}`)
   } catch {
     // apiClient has already shown the localized error.
   } finally {
@@ -555,7 +555,7 @@ onBeforeUnmount(() => {
                 </div>
               </div>
               <div class="flex flex-wrap gap-2 lg:min-w-[140px] lg:justify-end">
-                <RouterLink v-if="canSignupExam(exam)" :to="`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || '')}`" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto">
+                <RouterLink v-if="canSignupExam(exam)" :to="`/exams/signup?unitId=${encodeURIComponent(exam.course_unit_ulid)}&pipelineId=${encodeURIComponent(exam.pipeline_ulid || '')}&returnTo=${encodeURIComponent('/exams')}`" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto">
                   {{ t.learning.actionSignupExam }}
                 </RouterLink>
                 <button v-if="canApplyRetake(exam)" class="btn btn-primary h-10 w-full rounded-lg px-5 shadow-sm shadow-primary/20 sm:w-auto" :disabled="retakeLoadingUnitId === exam.course_unit_ulid" @click="handleApplyRetake(exam)">
