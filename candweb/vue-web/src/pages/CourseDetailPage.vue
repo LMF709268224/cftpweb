@@ -744,11 +744,9 @@ watch(firstCourseId, () => void loadFirstCourseThumbnail(), { immediate: true })
                 <p v-if="qual.description" class="mt-2 text-xs leading-5 text-slate-600">{{ qual.description }}</p>
                 <div v-if="qual.constraints.length > 0" class="mt-3 space-y-2">
                   <div class="text-xs font-semibold uppercase tracking-wide text-blue-900">{{ t.credentialsPage.uploadMaterials }}</div>
-                  <div v-for="constraint in qual.constraints" :key="constraintName(constraint) || String(constraint.type)" class="flex items-center justify-between gap-2 rounded-md bg-blue-50 px-3 py-2">
+                  <div v-for="constraint in qual.constraints" :key="constraintName(constraint) || String(constraint.type)" class="flex items-center gap-1 rounded-md bg-blue-50 px-3 py-2">
+                    <span v-if="constraintRequired(constraint)" class="text-sm font-bold text-destructive">*</span>
                     <span class="text-sm text-blue-950">{{ constraintName(constraint) || t.common.na }}</span>
-                    <span :class="['badge border-transparent text-xs', constraintRequired(constraint) ? 'bg-destructive text-destructive-foreground' : 'bg-secondary text-secondary-foreground']">
-                      {{ constraintRequired(constraint) ? t.credentialsPage.required : t.credentialsPage.optional }}
-                    </span>
                   </div>
                 </div>
                 <div v-else-if="credentialDefinitionsLoading" class="mt-3 flex items-center gap-2 text-xs text-blue-700">
