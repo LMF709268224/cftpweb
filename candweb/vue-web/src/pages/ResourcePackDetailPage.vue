@@ -381,7 +381,7 @@ onMounted(() => {
         <FileArchive v-else class="h-8 w-8 text-primary" />
       </div>
       <h2 class="mt-4 text-lg font-semibold text-foreground">{{ loading ? copy.loading : search.trim() ? copy.noSearchTitle : copy.emptyTitle }}</h2>
-      <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{{ search.trim() ? copy.noSearchDesc : copy.emptyDesc }}</p>
+      <p v-if="!loading" class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{{ search.trim() ? copy.noSearchDesc : copy.emptyDesc }}</p>
       <button v-if="search.trim()" class="btn btn-primary mt-5 rounded-lg shadow-sm shadow-primary/20" @click="search = ''">
         {{ copy.clearSearch }}
       </button>
